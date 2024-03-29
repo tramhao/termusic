@@ -5,9 +5,11 @@ use std::time::Duration;
 use super::Sample;
 
 pub use self::amplify::Amplify;
+pub use self::delay::Delay;
 pub use self::done::Done;
 pub use self::empty::Empty;
 pub use self::fadein::FadeIn;
+pub use self::mix_source::MixSource;
 pub use self::pausable::Pausable;
 pub use self::periodic::PeriodicAccess;
 pub use self::samples_converter::SamplesConverter;
@@ -20,9 +22,11 @@ pub use self::uniform::UniformSourceIterator;
 pub use self::zero::Zero;
 
 mod amplify;
+mod delay;
 mod done;
 mod empty;
 mod fadein;
+mod mix_source;
 // mod http;
 mod pausable;
 mod periodic;
@@ -224,7 +228,7 @@ where
         speed::speed(self, ratio)
     }
 
-    fn tempo_stretch(self, factor: f32) -> TempoStretch<Self>
+    fn tempo_stretch(self, factor: i32) -> TempoStretch<Self>
     where
         Self: Sized,
         Self: Source<Item = f32>,
