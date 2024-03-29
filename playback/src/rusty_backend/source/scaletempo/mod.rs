@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 
 use super::mix_source::MixSource;
 use super::Source;
-use termusic_soundtouch::{settings, SoundTouch};
+use soundtouch::{settings, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
 pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, semitones: i32) -> TempoStretch<I>
@@ -72,7 +72,7 @@ where
                 .read_samples(self.out_buffer.as_mut_slices().0);
 
             self.out_buffer
-                .truncate((read * self.input.channels() as u32) as usize)
+                .truncate((read * u32::from(self.input.channels())) as usize);
         }
 
         match (
@@ -81,8 +81,7 @@ where
         ) {
             (Some(a), Some(b)) => Some(a + b),
             (None, None) => None,
-            (None, Some(v)) => Some(v),
-            (Some(v), None) => Some(v),
+            (None, Some(v)) | (Some(v), None) => Some(v),
         }
     }
 }

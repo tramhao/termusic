@@ -3,17 +3,19 @@ use std::time::Duration;
 use super::{Sample, Source};
 
 /// Internal function that builds a `Delay` object.
+#[allow(unused)]
 pub fn delay<I>(input: I, duration: Duration) -> Delay<I>
 where
     I: Source,
     I::Item: Sample,
 {
-    let duration_ns = duration.as_secs() * 1000000000 + duration.subsec_nanos() as u64;
-    let samples = duration_ns * input.sample_rate() as u64 / 1000000000 * input.channels() as u64;
+    let duration_ns = duration.as_secs() * 1_000_000_000 + u64::from(duration.subsec_nanos());
+    let samples =
+        duration_ns * u64::from(input.sample_rate()) / 1_000_000_000 * u64::from(input.channels());
 
     Delay {
         input,
-        remaining_samples: samples as usize,
+        remaining_samples: usize::try_from(samples).expect("error in usize convert"),
         requested_duration: duration,
     }
 }
@@ -26,6 +28,7 @@ pub struct Delay<I> {
     requested_duration: Duration,
 }
 
+#[allow(unused)]
 impl<I> Delay<I>
 where
     I: Source,

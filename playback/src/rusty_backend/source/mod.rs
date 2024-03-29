@@ -9,6 +9,8 @@ pub use self::delay::Delay;
 pub use self::done::Done;
 pub use self::empty::Empty;
 pub use self::fadein::FadeIn;
+#[allow(clippy::module_name_repetitions)]
+#[allow(unused_imports)]
 pub use self::mix_source::MixSource;
 pub use self::pausable::Pausable;
 pub use self::periodic::PeriodicAccess;

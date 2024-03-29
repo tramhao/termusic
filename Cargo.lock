@@ -3503,8 +3503,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "soundtouch"
+version = "0.1.0"
+source = "git+https://github.com/Drewol/soundtouch-rs.git#8f25b368e5970da19e32e8d4dfb2c3899639f058"
+dependencies = [
+ "soundtouch-sys",
+]
+
+[[package]]
 name = "soundtouch-sys"
 version = "0.1.0"
+source = "git+https://github.com/Drewol/soundtouch-rs.git#8f25b368e5970da19e32e8d4dfb2c3899639f058"
 dependencies = [
  "bindgen 0.66.1",
  "cmake",
@@ -3988,11 +3997,11 @@ dependencies = [
  "rand",
  "reqwest",
  "serde",
+ "soundtouch",
  "souvlaki",
  "stream-download",
  "symphonia",
  "termusic-lib",
- "termusic-soundtouch",
  "tokio",
  "tonic",
  "tonic-build",
@@ -4018,13 +4027,6 @@ dependencies = [
  "termusic-playback",
  "tokio",
  "tonic",
-]
-
-[[package]]
-name = "termusic-soundtouch"
-version = "0.9.0"
-dependencies = [
- "soundtouch-sys",
 ]
 
 [[package]]
