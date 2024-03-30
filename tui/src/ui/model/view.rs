@@ -2,7 +2,7 @@ use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     ErrorPopup, FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
     MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, QuitPopup,
-    SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
+    SavePlaylistConfirmPopup, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::ui::Application;
@@ -824,7 +824,7 @@ impl Model {
             .app
             .remount(
                 Id::SavePlaylistConfirm,
-                Box::new(SavePlaylistConfirm::new(self.config.clone(), filename)),
+                Box::new(SavePlaylistConfirmPopup::new(self.config.clone(), filename)),
                 vec![]
             )
             .is_ok());

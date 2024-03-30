@@ -94,13 +94,13 @@ impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
 }
 
 #[derive(MockComponent)]
-pub struct SavePlaylistConfirm {
+pub struct SavePlaylistConfirmPopup {
     component: Radio,
     config: SharedSettings,
     filename: String,
 }
 
-impl SavePlaylistConfirm {
+impl SavePlaylistConfirmPopup {
     pub fn new(config: SharedSettings, filename: &str) -> Self {
         let component = {
             let config = config.read();
@@ -145,7 +145,7 @@ impl SavePlaylistConfirm {
     }
 }
 
-impl Component<Msg, NoUserEvent> for SavePlaylistConfirm {
+impl Component<Msg, NoUserEvent> for SavePlaylistConfirmPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().keys;

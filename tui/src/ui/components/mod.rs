@@ -53,7 +53,7 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
 pub use popups::{
-    ErrorPopup, HelpPopup, MessagePopup, PodcastAddPopup, QuitPopup, SavePlaylistConfirm,
+    ErrorPopup, HelpPopup, MessagePopup, PodcastAddPopup, QuitPopup, SavePlaylistConfirmPopup,
     SavePlaylistPopup,
 };
 pub use progress::Progress;

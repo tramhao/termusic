@@ -47,7 +47,7 @@ pub use podcast::{
     FeedDeleteConfirmInputPopup, FeedDeleteConfirmRadioPopup, PodcastAddPopup,
     PodcastSearchTablePopup,
 };
-pub use saveplaylist::{SavePlaylistConfirm, SavePlaylistPopup};
+pub use saveplaylist::{SavePlaylistConfirmPopup, SavePlaylistPopup};
 
 #[derive(MockComponent)]
 pub struct QuitPopup {
