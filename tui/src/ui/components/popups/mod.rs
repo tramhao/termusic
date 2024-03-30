@@ -2,6 +2,7 @@
 
 mod deleteconfirm;
 mod error;
+pub mod general_search;
 mod help;
 mod message;
 mod podcast;
