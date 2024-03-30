@@ -56,6 +56,10 @@ where
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // This is to skip calculation if speed is not changed
+        if (self.factor - 1.0).abs() < 0.05 {
+            return self.input.next();
+        }
         self.soundtouch.set_tempo(self.factor);
         if self.out_buffer.is_empty() {
             self.in_buffer.clear();
