@@ -375,9 +375,9 @@ checksum = "9475866fec1451be56a3c2400fd081ff546538961565ccb5b7142cbd22bc7a51"
 
 [[package]]
 name = "bindgen"
-version = "0.66.1"
+version = "0.68.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2b84e06fc203107bfbad243f4aba2af864eb7db3b1cf46ea0a023b0b433d2a7"
+checksum = "726e4313eb6ec35d2730258ad4e15b547ee75d6afaa1361a922e78e59b7d8078"
 dependencies = [
  "bitflags 2.4.2",
  "cexpr",
@@ -632,15 +632,6 @@ name = "clap_lex"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98cc8fbded0c607b7ba9dd60cd98df59af97e84d24e49c8557331cfc26d301ce"
-
-[[package]]
-name = "cmake"
-version = "0.1.50"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a31c789563b815f77f4250caee12365734369f942439b7defd71e18a48197130"
-dependencies = [
- "cc",
-]
 
 [[package]]
 name = "cocoa"
@@ -3504,19 +3495,23 @@ dependencies = [
 
 [[package]]
 name = "soundtouch"
-version = "0.1.0"
-source = "git+https://github.com/Drewol/soundtouch-rs.git#8f25b368e5970da19e32e8d4dfb2c3899639f058"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d662f67e30fe3c2295ca80dbae52b67408a2e842aa0cc3b432ddd7f1e357edd"
 dependencies = [
- "soundtouch-sys",
+ "libc",
+ "soundtouch-ffi",
 ]
 
 [[package]]
-name = "soundtouch-sys"
-version = "0.1.0"
-source = "git+https://github.com/Drewol/soundtouch-rs.git#8f25b368e5970da19e32e8d4dfb2c3899639f058"
+name = "soundtouch-ffi"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd60ce0d1c570e27bfacf57a3e159d5178d674325c01eb844d9e8fc5c48fc70c"
 dependencies = [
- "bindgen 0.66.1",
- "cmake",
+ "bindgen 0.68.1",
+ "cc",
+ "libc",
 ]
 
 [[package]]
