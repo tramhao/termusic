@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use termusiclib::types::{Id, Msg};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     event::{Key, KeyEvent},
@@ -34,10 +35,11 @@ use crate::ui::model::Model;
 #[derive(MockComponent)]
 pub struct ErrorPopup {
     component: Paragraph,
+    config: SharedSettings,
 }
 
 impl ErrorPopup {
-    pub fn new<E: Into<anyhow::Error>>(msg: E) -> Self {
+    pub fn new<E: Into<anyhow::Error>>(config: SharedSettings, msg: E) -> Self {
         let msg = msg.into();
         error!("Displaying error popup: {msg:?}");
         // TODO: Consider changing to ":?" to output "Caused By" (and possibly backtrace) OR do a custom printing (copied from anyhow) once more than 4 lines can be displayed in height
@@ -55,17 +57,26 @@ impl ErrorPopup {
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
                 .text(&[TextSpan::from(msg)]/* &msg.lines().map(|v| TextSpan::from(v)).collect::<Vec<_>>() */),
+                config
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for ErrorPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,
                 ..
             }) => Some(Msg::ErrorPopupClose),
+            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
+                Some(Msg::ErrorPopupClose)
+            }
+            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
+                Some(Msg::ErrorPopupClose)
+            }
             _ => None,
         }
     }
@@ -77,7 +88,11 @@ impl Model {
     pub fn mount_error_popup<E: Into<anyhow::Error>>(&mut self, err: E) {
         assert!(self
             .app
-            .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
+            .remount(
+                Id::ErrorPopup,
+                Box::new(ErrorPopup::new(self.config.clone(), err)),
+                vec![]
+            )
             .is_ok());
         assert!(self.app.active(&Id::ErrorPopup).is_ok());
     }
