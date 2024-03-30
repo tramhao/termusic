@@ -1,9 +1,11 @@
-use termusiclib::types::Msg;
+use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
-    props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan},
-    Component, Event, MockComponent, NoUserEvent,
+    props::{Alignment, BorderType, Borders, Color, PropPayload, TextModifiers, TextSpan},
+    AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent,
 };
+
+use crate::ui::model::Model;
 
 #[derive(MockComponent)]
 pub struct MessagePopup {
@@ -32,5 +34,34 @@ impl MessagePopup {
 impl Component<Msg, NoUserEvent> for MessagePopup {
     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
+    }
+}
+
+impl Model {
+    pub fn mount_message(&mut self, title: &str, text: &str) {
+        assert!(self
+            .app
+            .remount(
+                Id::MessagePopup,
+                Box::new(MessagePopup::new(title, text)),
+                vec![]
+            )
+            .is_ok());
+    }
+
+    /// ### `umount_message`
+    ///
+    /// Umount error message
+    pub fn umount_message(&mut self, _title: &str, text: &str) {
+        if let Ok(Some(AttrValue::Payload(PropPayload::Vec(spans)))) =
+            self.app.query(&Id::MessagePopup, Attribute::Text)
+        {
+            if let Some(display_text) = spans.first() {
+                let d = display_text.clone().unwrap_text_span().content;
+                if text.eq(&d) {
+                    self.app.umount(&Id::MessagePopup).ok();
+                }
+            }
+        }
     }
 }

@@ -1,8 +1,8 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
-    MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, SavePlaylistConfirmPopup,
-    SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
+    MusicLibrary, Playlist, PodcastAddPopup, Progress, SavePlaylistConfirmPopup, SavePlaylistPopup,
+    Source, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::ui::Application;
@@ -601,32 +601,6 @@ impl Model {
         assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
-        }
-    }
-    pub fn mount_message(&mut self, title: &str, text: &str) {
-        assert!(self
-            .app
-            .remount(
-                Id::MessagePopup,
-                Box::new(MessagePopup::new(title, text)),
-                vec![]
-            )
-            .is_ok());
-    }
-
-    /// ### `umount_message`
-    ///
-    /// Umount error message
-    pub fn umount_message(&mut self, _title: &str, text: &str) {
-        if let Ok(Some(AttrValue::Payload(PropPayload::Vec(spans)))) =
-            self.app.query(&Id::MessagePopup, Attribute::Text)
-        {
-            if let Some(display_text) = spans.first() {
-                let d = display_text.clone().unwrap_text_span().content;
-                if text.eq(&d) {
-                    self.app.umount(&Id::MessagePopup).ok();
-                }
-            }
         }
     }
 
