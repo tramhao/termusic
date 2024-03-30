@@ -1,6 +1,6 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
-    ErrorPopup, FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
+    FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
     MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, QuitPopup,
     SavePlaylistConfirmPopup, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
 };
@@ -444,15 +444,7 @@ impl Model {
             app.view(&Id::ErrorPopup, f, popup);
         }
     }
-    /// Mount error and give focus to it
-    // This should likely be refactored to be "std::error::Error", but see https://github.com/dtolnay/anyhow/issues/63 on why it was easier this way
-    pub fn mount_error_popup<E: Into<anyhow::Error>>(&mut self, err: E) {
-        assert!(self
-            .app
-            .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
-            .is_ok());
-        assert!(self.app.active(&Id::ErrorPopup).is_ok());
-    }
+
     /// Mount quit popup
     pub fn mount_quit_popup(&mut self) {
         assert!(self
@@ -736,10 +728,6 @@ impl Model {
                 Vec::default(),
             )
             .expect("Expected to remount without error");
-    }
-
-    pub fn umount_error_popup(&mut self) {
-        self.app.umount(&Id::ErrorPopup).ok();
     }
 
     pub fn umount_youtube_search_table_popup(&mut self) {

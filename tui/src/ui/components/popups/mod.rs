@@ -10,6 +10,7 @@ mod saveplaylist;
 
 #[allow(unused_imports)]
 pub use deleteconfirm::{DeleteConfirmInputPopup, DeleteConfirmRadioPopup};
+#[allow(unused_imports)]
 pub use error::ErrorPopup;
 pub use help::HelpPopup;
 pub use message::MessagePopup;

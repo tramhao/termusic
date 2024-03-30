@@ -21,13 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::Msg;
+use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     event::{Key, KeyEvent},
     props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan},
     Component, Event, MockComponent, NoUserEvent,
 };
+
+use crate::ui::model::Model;
 
 #[derive(MockComponent)]
 pub struct ErrorPopup {
@@ -66,5 +68,21 @@ impl Component<Msg, NoUserEvent> for ErrorPopup {
             }) => Some(Msg::ErrorPopupClose),
             _ => None,
         }
+    }
+}
+
+impl Model {
+    /// Mount error and give focus to it
+    // This should likely be refactored to be "std::error::Error", but see https://github.com/dtolnay/anyhow/issues/63 on why it was easier this way
+    pub fn mount_error_popup<E: Into<anyhow::Error>>(&mut self, err: E) {
+        assert!(self
+            .app
+            .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
+            .is_ok());
+        assert!(self.app.active(&Id::ErrorPopup).is_ok());
+    }
+
+    pub fn umount_error_popup(&mut self) {
+        self.app.umount(&Id::ErrorPopup).ok();
     }
 }
