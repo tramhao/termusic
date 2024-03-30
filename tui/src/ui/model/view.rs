@@ -658,19 +658,6 @@ impl Model {
                 Box::new(LabelSpan::new(
                     &config,
                     &[
-                        TextSpan::new(" Version: ")
-                            .fg(config
-                                .style_color_symbol
-                                .library_foreground()
-                                .unwrap_or(Color::Blue))
-                            .bold(),
-                        // maybe consider moving version into Help or Config or its own popup (like a About)
-                        TextSpan::new(env!("TERMUSIC_VERSION"))
-                            .fg(config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Cyan))
-                            .bold(),
                         TextSpan::new(" Help: ")
                             .fg(config
                                 .style_color_symbol
@@ -726,6 +713,19 @@ impl Model {
                                 .unwrap_or(Color::Blue))
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_layout_podcast))
+                            .fg(config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                        TextSpan::new(" Version: ")
+                            .fg(config
+                                .style_color_symbol
+                                .library_foreground()
+                                .unwrap_or(Color::Blue))
+                            .bold(),
+                        // maybe consider moving version into Help or Config or its own popup (like a About)
+                        TextSpan::new(env!("TERMUSIC_VERSION"))
                             .fg(config
                                 .style_color_symbol
                                 .library_highlight()
