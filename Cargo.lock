@@ -3956,8 +3956,6 @@ dependencies = [
  "shellexpand",
  "textwrap 0.16.1",
  "toml",
- "tui-realm-stdlib",
- "tui-realm-treeview",
  "tuirealm",
  "unicode-segmentation",
  "unicode-width",

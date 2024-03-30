@@ -58,8 +58,6 @@ shellexpand.workspace = true #  = "3"
 textwrap.workspace = true #   = "0.16"
 toml.workspace = true #  = "0.7"
 tuirealm.workspace = true #   = { version = "1", features = ["serialize"] }
-tui-realm-stdlib.workspace = true #   = "1"
-tui-realm-treeview.workspace = true #   = "1"
 unicode-segmentation.workspace = true #   = "1.10"
 unicode-width.workspace = true #   = "^0.1.8"
 urlencoding.workspace = true #   = "2"
