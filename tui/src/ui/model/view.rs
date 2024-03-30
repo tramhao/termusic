@@ -1,7 +1,7 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
-    Playlist, Progress, Source, YSInputPopup, YSTablePopup,
+    Playlist, Progress, Source,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::ui::Application;
@@ -562,33 +562,6 @@ impl Model {
         }
     }
 
-    pub fn mount_youtube_search_input(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::YoutubeSearchInputPopup,
-                Box::new(YSInputPopup::new(&self.config.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::YoutubeSearchInputPopup).is_ok());
-    }
-
-    pub fn mount_youtube_search_table(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::YoutubeSearchTablePopup,
-                Box::new(YSTablePopup::new(self.config.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
-    }
-
     pub fn mount_label_help(&mut self) {
         let config = self.config.read();
         self.app
@@ -675,15 +648,6 @@ impl Model {
                 Vec::default(),
             )
             .expect("Expected to remount without error");
-    }
-
-    pub fn umount_youtube_search_table_popup(&mut self) {
-        if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-            assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-        }
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
     }
 
     pub fn remount_save_playlist_label(&mut self, filename: &str) -> Result<()> {

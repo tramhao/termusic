@@ -50,7 +50,6 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
 pub use popups::general_search::{GSInputPopup, GSTablePopup, Source};
-pub use popups::youtube_search::{YSInputPopup, YSTablePopup};
 pub use progress::Progress;
 pub use tag_editor::*;
 use termusicplayback::SharedSettings;
