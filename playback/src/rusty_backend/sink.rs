@@ -136,9 +136,9 @@ impl Sink {
                 }
             })
             .convert_samples()
-            .tempo_stretch(1.5)
+            .tempo_stretch(1.0)
             .periodic_access(Duration::from_millis(500), move |src| {
-                src.tempo_stretch(*controls_tempo.speed.lock());
+                src.set_factor(f64::from(*controls_tempo.speed.lock()));
             });
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());

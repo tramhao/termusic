@@ -35,6 +35,7 @@ where
         out_buffer,
         in_buffer: initial_input,
         mix: 1.0,
+        factor: 1.0,
     }
 }
 
@@ -45,7 +46,7 @@ pub struct TempoStretch<I> {
     out_buffer: VecDeque<f32>,
     in_buffer: VecDeque<f32>,
     mix: f32,
-    // factor: f32,
+    factor: f64,
 }
 
 impl<I> Iterator for TempoStretch<I>
@@ -55,6 +56,7 @@ where
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
+        self.soundtouch.set_tempo(self.factor);
         if self.out_buffer.is_empty() {
             self.in_buffer.clear();
             self.input
@@ -126,5 +128,17 @@ where
 {
     fn set_mix(&mut self, mix: f32) {
         self.mix = mix;
+    }
+}
+
+#[allow(unused)]
+impl<I> TempoStretch<I>
+where
+    I: Source<Item = f32>,
+{
+    /// Modifies the speed factor.
+    #[inline]
+    pub fn set_factor(&mut self, factor: f64) {
+        self.factor = factor;
     }
 }
