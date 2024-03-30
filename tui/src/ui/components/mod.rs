@@ -40,7 +40,6 @@ mod progress;
 /// Tag Editor Controls
 mod tag_editor;
 mod xywh;
-mod youtube_search;
 
 // -- export
 pub use config_editor::*;
@@ -51,15 +50,13 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
 pub use popups::general_search::{GSInputPopup, GSTablePopup, Source};
+pub use popups::youtube_search::{YSInputPopup, YSTablePopup};
 pub use progress::Progress;
 pub use tag_editor::*;
 use termusicplayback::SharedSettings;
-pub use youtube_search::{YSInputPopup, YSTablePopup};
 
 use crate::config::Keys;
-use crate::ui::{
-    ConfigEditorMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg, YSMsg,
-};
+use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};

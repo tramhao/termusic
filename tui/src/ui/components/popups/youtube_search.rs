@@ -21,8 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{Msg, YSMsg};
 use crate::config::Settings;
+use termusiclib::types::{Msg, YSMsg};
 use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
