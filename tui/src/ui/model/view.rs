@@ -1,8 +1,8 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
-    FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
-    MusicLibrary, Playlist, PodcastAddPopup, Progress, SavePlaylistConfirmPopup, SavePlaylistPopup,
-    Source, YSInputPopup, YSTablePopup,
+    FeedsList, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
+    Playlist, PodcastAddPopup, Progress, SavePlaylistConfirmPopup, SavePlaylistPopup, Source,
+    YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::ui::Application;
@@ -443,20 +443,6 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::ErrorPopup, f, popup);
         }
-    }
-
-    /// Mount help popup
-    pub fn mount_help_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::HelpPopup,
-                Box::new(HelpPopup::new(self.config.clone())),
-                vec![]
-            )
-            .is_ok());
-        self.update_photo().ok();
-        assert!(self.app.active(&Id::HelpPopup).is_ok());
     }
 
     pub fn mount_search_library(&mut self) {

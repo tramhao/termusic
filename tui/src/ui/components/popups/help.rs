@@ -1,4 +1,7 @@
-use termusiclib::{config::BindingForEvent, types::Msg};
+use termusiclib::{
+    config::BindingForEvent,
+    types::{Id, Msg},
+};
 use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Table;
 use tuirealm::{
@@ -7,6 +10,8 @@ use tuirealm::{
     props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan},
     Component, Event, MockComponent, NoUserEvent,
 };
+
+use crate::ui::model::Model;
 
 #[derive(MockComponent)]
 pub struct HelpPopup {
@@ -310,5 +315,21 @@ impl Component<Msg, NoUserEvent> for HelpPopup {
         };
 
         Some(Msg::None)
+    }
+}
+
+impl Model {
+    /// Mount help popup
+    pub fn mount_help_popup(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::HelpPopup,
+                Box::new(HelpPopup::new(self.config.clone())),
+                vec![]
+            )
+            .is_ok());
+        self.update_photo().ok();
+        assert!(self.app.active(&Id::HelpPopup).is_ok());
     }
 }
