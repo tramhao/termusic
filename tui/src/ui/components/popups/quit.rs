@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::Msg;
+use termusiclib::types::{Id, Msg};
 use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Radio;
 use tuirealm::{
@@ -30,6 +30,8 @@ use tuirealm::{
     props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue},
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
+
+use crate::ui::model::Model;
 
 #[derive(MockComponent)]
 pub struct QuitPopup {
@@ -145,5 +147,20 @@ impl Component<Msg, NoUserEvent> for QuitPopup {
         } else {
             Some(Msg::None)
         }
+    }
+}
+
+impl Model {
+    /// Mount quit popup
+    pub fn mount_quit_popup(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::QuitPopup,
+                Box::new(QuitPopup::new(self.config.clone())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::QuitPopup).is_ok());
     }
 }

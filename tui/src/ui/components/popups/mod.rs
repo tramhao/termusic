@@ -19,5 +19,6 @@ pub use podcast::{
     FeedDeleteConfirmInputPopup, FeedDeleteConfirmRadioPopup, PodcastAddPopup,
     PodcastSearchTablePopup,
 };
+#[allow(unused_imports)]
 pub use quit::QuitPopup;
 pub use saveplaylist::{SavePlaylistConfirmPopup, SavePlaylistPopup};

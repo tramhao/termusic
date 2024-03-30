@@ -53,8 +53,7 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
 pub use popups::{
-    HelpPopup, MessagePopup, PodcastAddPopup, QuitPopup, SavePlaylistConfirmPopup,
-    SavePlaylistPopup,
+    HelpPopup, MessagePopup, PodcastAddPopup, SavePlaylistConfirmPopup, SavePlaylistPopup,
 };
 pub use progress::Progress;
 pub use tag_editor::*;

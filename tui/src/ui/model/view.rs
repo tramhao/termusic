@@ -1,8 +1,8 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
-    MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, QuitPopup,
-    SavePlaylistConfirmPopup, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
+    MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, SavePlaylistConfirmPopup,
+    SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::ui::Application;
@@ -445,18 +445,6 @@ impl Model {
         }
     }
 
-    /// Mount quit popup
-    pub fn mount_quit_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::QuitPopup,
-                Box::new(QuitPopup::new(self.config.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::QuitPopup).is_ok());
-    }
     /// Mount help popup
     pub fn mount_help_popup(&mut self) {
         assert!(self
