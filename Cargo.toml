@@ -22,7 +22,8 @@ rust-version = "1.74"
 [workspace.dependencies]
 # "version" key is required, as per https://github.com/rust-lang/cargo/issues/11133
 termusic-lib = { path = "lib/", version = "0.9.0" }
-termusic-playback = { path = "playback/", version = "0.9.0" }
+# need to disable "default-features" here for "termusic-server", otherwise the "default-features" in "termusic-server" have no effect
+termusic-playback = { path = "playback/", version = "0.9.0", default-features = false }
 ahash = "^0.8"
 anyhow = { version = "1.0", features = ["backtrace"] }
 async-channel = "2"
