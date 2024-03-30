@@ -1,4 +1,8 @@
-use termusiclib::{config::StyleColorSymbol, types::Msg};
+use anyhow::Result;
+use termusiclib::{
+    config::StyleColorSymbol,
+    types::{Id, Msg},
+};
 use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Radio};
 use tuirealm::{
@@ -7,6 +11,8 @@ use tuirealm::{
     props::{Alignment, BorderType, Borders, Color, InputType},
     Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
+
+use crate::ui::model::Model;
 
 #[derive(MockComponent)]
 pub struct SavePlaylistPopup {
@@ -193,6 +199,50 @@ impl Component<Msg, NoUserEvent> for SavePlaylistConfirmPopup {
             Some(Msg::SavePlaylistConfirmCloseOk(self.filename.clone()))
         } else {
             Some(Msg::None)
+        }
+    }
+}
+
+impl Model {
+    pub fn mount_save_playlist(&mut self) -> Result<()> {
+        assert!(self
+            .app
+            .remount(
+                Id::SavePlaylistPopup,
+                Box::new(SavePlaylistPopup::new(
+                    &self.config.read().style_color_symbol
+                )),
+                vec![]
+            )
+            .is_ok());
+
+        self.remount_save_playlist_label("")?;
+        assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
+        Ok(())
+    }
+
+    pub fn umount_save_playlist(&mut self) {
+        if self.app.mounted(&Id::SavePlaylistPopup) {
+            assert!(self.app.umount(&Id::SavePlaylistPopup).is_ok());
+            assert!(self.app.umount(&Id::SavePlaylistLabel).is_ok());
+        }
+    }
+
+    pub fn mount_save_playlist_confirm(&mut self, filename: &str) {
+        assert!(self
+            .app
+            .remount(
+                Id::SavePlaylistConfirm,
+                Box::new(SavePlaylistConfirmPopup::new(self.config.clone(), filename)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::SavePlaylistConfirm).is_ok());
+    }
+
+    pub fn umount_save_playlist_confirm(&mut self) {
+        if self.app.mounted(&Id::SavePlaylistConfirm) {
+            assert!(self.app.umount(&Id::SavePlaylistConfirm).is_ok());
         }
     }
 }

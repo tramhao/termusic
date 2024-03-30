@@ -1,8 +1,7 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
-    Playlist, PodcastAddPopup, Progress, SavePlaylistConfirmPopup, SavePlaylistPopup, Source,
-    YSInputPopup, YSTablePopup,
+    Playlist, PodcastAddPopup, Progress, Source, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::ui::Application;
@@ -687,30 +686,6 @@ impl Model {
         }
     }
 
-    pub fn mount_save_playlist(&mut self) -> Result<()> {
-        assert!(self
-            .app
-            .remount(
-                Id::SavePlaylistPopup,
-                Box::new(SavePlaylistPopup::new(
-                    &self.config.read().style_color_symbol
-                )),
-                vec![]
-            )
-            .is_ok());
-
-        self.remount_save_playlist_label("")?;
-        assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
-        Ok(())
-    }
-
-    pub fn umount_save_playlist(&mut self) {
-        if self.app.mounted(&Id::SavePlaylistPopup) {
-            assert!(self.app.umount(&Id::SavePlaylistPopup).is_ok());
-            assert!(self.app.umount(&Id::SavePlaylistLabel).is_ok());
-        }
-    }
-
     pub fn remount_save_playlist_label(&mut self, filename: &str) -> Result<()> {
         let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => id,
@@ -753,24 +728,6 @@ impl Model {
             )
             .expect("Expected to remount without error");
         Ok(())
-    }
-
-    pub fn mount_save_playlist_confirm(&mut self, filename: &str) {
-        assert!(self
-            .app
-            .remount(
-                Id::SavePlaylistConfirm,
-                Box::new(SavePlaylistConfirmPopup::new(self.config.clone(), filename)),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::SavePlaylistConfirm).is_ok());
-    }
-
-    pub fn umount_save_playlist_confirm(&mut self) {
-        if self.app.mounted(&Id::SavePlaylistConfirm) {
-            assert!(self.app.umount(&Id::SavePlaylistConfirm).is_ok());
-        }
     }
 
     pub fn mount_podcast_add_popup(&mut self) {
