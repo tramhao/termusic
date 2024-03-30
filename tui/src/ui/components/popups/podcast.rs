@@ -495,4 +495,23 @@ impl Model {
             self.mount_error_popup(e.context("update_photo"));
         }
     }
+
+    pub fn mount_podcast_add_popup(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::PodcastAddPopup,
+                Box::new(PodcastAddPopup::new(&self.config.read().style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self.app.active(&Id::PodcastAddPopup).is_ok());
+    }
+
+    pub fn umount_podcast_add_popup(&mut self) {
+        if self.app.mounted(&Id::PodcastAddPopup) {
+            assert!(self.app.umount(&Id::PodcastAddPopup).is_ok());
+        }
+    }
 }

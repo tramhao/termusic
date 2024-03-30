@@ -1,7 +1,7 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
-    Playlist, PodcastAddPopup, Progress, Source, YSInputPopup, YSTablePopup,
+    Playlist, Progress, Source, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::ui::Application;
@@ -728,25 +728,6 @@ impl Model {
             )
             .expect("Expected to remount without error");
         Ok(())
-    }
-
-    pub fn mount_podcast_add_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::PodcastAddPopup,
-                Box::new(PodcastAddPopup::new(&self.config.read().style_color_symbol)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self.app.active(&Id::PodcastAddPopup).is_ok());
-    }
-
-    pub fn umount_podcast_add_popup(&mut self) {
-        if self.app.mounted(&Id::PodcastAddPopup) {
-            assert!(self.app.umount(&Id::PodcastAddPopup).is_ok());
-        }
     }
 
     pub fn show_message_timeout_label_help<S: AsRef<str>>(

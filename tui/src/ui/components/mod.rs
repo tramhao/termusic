@@ -52,7 +52,6 @@ pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
-pub use popups::PodcastAddPopup;
 pub use progress::Progress;
 pub use tag_editor::*;
 use termusicplayback::SharedSettings;
