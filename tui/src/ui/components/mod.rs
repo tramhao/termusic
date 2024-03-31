@@ -24,7 +24,6 @@
 // -- modules
 mod config_editor;
 mod database;
-mod general_search;
 mod labels;
 mod lyric;
 mod music_library;
@@ -41,30 +40,22 @@ mod progress;
 /// Tag Editor Controls
 mod tag_editor;
 mod xywh;
-mod youtube_search;
 
 // -- export
 pub use config_editor::*;
 pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
-pub use general_search::{GSInputPopup, GSTablePopup, Source};
 pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
-pub use popups::{
-    ErrorPopup, HelpPopup, MessagePopup, PodcastAddPopup, QuitPopup, SavePlaylistConfirm,
-    SavePlaylistPopup,
-};
+pub use popups::general_search::{GSInputPopup, GSTablePopup, Source};
 pub use progress::Progress;
 pub use tag_editor::*;
 use termusicplayback::SharedSettings;
-pub use youtube_search::{YSInputPopup, YSTablePopup};
 
 use crate::config::Keys;
-use crate::ui::{
-    ConfigEditorMsg, GSMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg, YSMsg,
-};
+use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};

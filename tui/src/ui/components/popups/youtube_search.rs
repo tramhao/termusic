@@ -21,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{Msg, YSMsg};
 use crate::config::Settings;
+use crate::ui::model::Model;
+use termusiclib::types::{Id, Msg, YSMsg};
 use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -234,5 +235,43 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             _ => CmdResult::None,
         };
         Some(Msg::None)
+    }
+}
+
+impl Model {
+    pub fn mount_youtube_search_input(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::YoutubeSearchInputPopup,
+                Box::new(YSInputPopup::new(&self.config.read())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::YoutubeSearchInputPopup).is_ok());
+    }
+
+    pub fn mount_youtube_search_table(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::YoutubeSearchTablePopup,
+                Box::new(YSTablePopup::new(self.config.clone())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
+    }
+
+    pub fn umount_youtube_search_table_popup(&mut self) {
+        if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+            assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
+        }
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
     }
 }

@@ -1,8 +1,7 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
-    ErrorPopup, FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
-    MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, QuitPopup,
-    SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
+    FeedsList, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
+    Playlist, Progress, Source,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::ui::Application;
@@ -444,40 +443,6 @@ impl Model {
             app.view(&Id::ErrorPopup, f, popup);
         }
     }
-    /// Mount error and give focus to it
-    // This should likely be refactored to be "std::error::Error", but see https://github.com/dtolnay/anyhow/issues/63 on why it was easier this way
-    pub fn mount_error_popup<E: Into<anyhow::Error>>(&mut self, err: E) {
-        assert!(self
-            .app
-            .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
-            .is_ok());
-        assert!(self.app.active(&Id::ErrorPopup).is_ok());
-    }
-    /// Mount quit popup
-    pub fn mount_quit_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::QuitPopup,
-                Box::new(QuitPopup::new(self.config.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::QuitPopup).is_ok());
-    }
-    /// Mount help popup
-    pub fn mount_help_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::HelpPopup,
-                Box::new(HelpPopup::new(self.config.clone())),
-                vec![]
-            )
-            .is_ok());
-        self.update_photo().ok();
-        assert!(self.app.active(&Id::HelpPopup).is_ok());
-    }
 
     pub fn mount_search_library(&mut self) {
         assert!(self
@@ -597,59 +562,6 @@ impl Model {
         }
     }
 
-    pub fn mount_youtube_search_input(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::YoutubeSearchInputPopup,
-                Box::new(YSInputPopup::new(&self.config.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::YoutubeSearchInputPopup).is_ok());
-    }
-
-    pub fn mount_youtube_search_table(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::YoutubeSearchTablePopup,
-                Box::new(YSTablePopup::new(self.config.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
-    }
-    pub fn mount_message(&mut self, title: &str, text: &str) {
-        assert!(self
-            .app
-            .remount(
-                Id::MessagePopup,
-                Box::new(MessagePopup::new(title, text)),
-                vec![]
-            )
-            .is_ok());
-    }
-
-    /// ### `umount_message`
-    ///
-    /// Umount error message
-    pub fn umount_message(&mut self, _title: &str, text: &str) {
-        if let Ok(Some(AttrValue::Payload(PropPayload::Vec(spans)))) =
-            self.app.query(&Id::MessagePopup, Attribute::Text)
-        {
-            if let Some(display_text) = spans.first() {
-                let d = display_text.clone().unwrap_text_span().content;
-                if text.eq(&d) {
-                    self.app.umount(&Id::MessagePopup).ok();
-                }
-            }
-        }
-    }
-
     pub fn mount_label_help(&mut self) {
         let config = self.config.read();
         self.app
@@ -738,43 +650,6 @@ impl Model {
             .expect("Expected to remount without error");
     }
 
-    pub fn umount_error_popup(&mut self) {
-        self.app.umount(&Id::ErrorPopup).ok();
-    }
-
-    pub fn umount_youtube_search_table_popup(&mut self) {
-        if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-            assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-        }
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
-    }
-
-    pub fn mount_save_playlist(&mut self) -> Result<()> {
-        assert!(self
-            .app
-            .remount(
-                Id::SavePlaylistPopup,
-                Box::new(SavePlaylistPopup::new(
-                    &self.config.read().style_color_symbol
-                )),
-                vec![]
-            )
-            .is_ok());
-
-        self.remount_save_playlist_label("")?;
-        assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
-        Ok(())
-    }
-
-    pub fn umount_save_playlist(&mut self) {
-        if self.app.mounted(&Id::SavePlaylistPopup) {
-            assert!(self.app.umount(&Id::SavePlaylistPopup).is_ok());
-            assert!(self.app.umount(&Id::SavePlaylistLabel).is_ok());
-        }
-    }
-
     pub fn remount_save_playlist_label(&mut self, filename: &str) -> Result<()> {
         let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => id,
@@ -817,43 +692,6 @@ impl Model {
             )
             .expect("Expected to remount without error");
         Ok(())
-    }
-
-    pub fn mount_save_playlist_confirm(&mut self, filename: &str) {
-        assert!(self
-            .app
-            .remount(
-                Id::SavePlaylistConfirm,
-                Box::new(SavePlaylistConfirm::new(self.config.clone(), filename)),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::SavePlaylistConfirm).is_ok());
-    }
-
-    pub fn umount_save_playlist_confirm(&mut self) {
-        if self.app.mounted(&Id::SavePlaylistConfirm) {
-            assert!(self.app.umount(&Id::SavePlaylistConfirm).is_ok());
-        }
-    }
-
-    pub fn mount_podcast_add_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::PodcastAddPopup,
-                Box::new(PodcastAddPopup::new(&self.config.read().style_color_symbol)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self.app.active(&Id::PodcastAddPopup).is_ok());
-    }
-
-    pub fn umount_podcast_add_popup(&mut self) {
-        if self.app.mounted(&Id::PodcastAddPopup) {
-            assert!(self.app.umount(&Id::PodcastAddPopup).is_ok());
-        }
     }
 
     pub fn show_message_timeout_label_help<S: AsRef<str>>(
