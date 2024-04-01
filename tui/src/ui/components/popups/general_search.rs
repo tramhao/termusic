@@ -68,7 +68,7 @@ impl GSInputPopup {
                     )
                     .input_type(InputType::Text)
                     .title(
-                        "Search for all episodes from all feeds: (support * and ?)",
+                        " Search for all episodes from all feeds: (support * and ?) ",
                         Alignment::Left,
                     ),
                 source,
@@ -98,7 +98,7 @@ impl GSInputPopup {
                             .modifiers(BorderType::Rounded),
                     )
                     .input_type(InputType::Text)
-                    .title("Search for: (support * and ?)", Alignment::Left),
+                    .title(" Search for: (support * and ?) ", Alignment::Left),
                 source,
             },
         }

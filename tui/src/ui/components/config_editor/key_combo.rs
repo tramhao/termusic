@@ -984,7 +984,7 @@ mod test {
             .borders(Borders::default())
             .highlighted_color(Color::Red)
             .highlighted_str(">>")
-            .title("C'est oui ou bien c'est non?", Alignment::Center)
+            .title(" C'est oui ou bien c'est non? ", Alignment::Center)
             .choices(&["Oui!", "Non", "Peut-être"])
             .value(1, "")
             .rewind(false);

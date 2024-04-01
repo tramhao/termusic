@@ -77,7 +77,7 @@ impl DeleteConfirmInputPopup {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title("Type DELETE to confirm:", Alignment::Left),
+                .title(" Type DELETE to confirm: ", Alignment::Left),
         }
     }
 }

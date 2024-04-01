@@ -67,7 +67,7 @@ impl HelpPopup {
                 )
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .scroll(true)
-                .title("Help: Esc or Enter to exit.", Alignment::Center)
+                .title(" Help: Esc or Enter to exit ", Alignment::Center)
                 .rewind(false)
                 .step(4)
                 .row_height(1)

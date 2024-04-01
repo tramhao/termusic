@@ -164,7 +164,7 @@ impl FeedDeleteConfirmInputPopup {
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title(
-                    "You're about the erase all feeds. Type DELETE to confirm:",
+                    " You're about the erase all feeds. Type DELETE to confirm: ",
                     Alignment::Left,
                 ),
         }
