@@ -36,15 +36,10 @@ pub use key_combo::*;
 
 use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Radio, Span};
-use tuirealm::props::{
-    Alignment, BorderSides, BorderType, Borders, Color, PropPayload, PropValue, Style, TextSpan,
-};
-use tuirealm::{
-    command::{Cmd, CmdResult, Direction},
-    event::{Key, KeyEvent, NoUserEvent},
-    Component, Event, MockComponent, State, StateValue,
-};
-use tuirealm::{AttrValue, Attribute};
+use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, Style, TextSpan};
+use tuirealm::{event::NoUserEvent, Component, Event, MockComponent};
+
+use super::popups::{YNConfirm, YNConfirmStyle};
 
 #[derive(MockComponent)]
 pub struct CEHeader {
@@ -145,116 +140,39 @@ impl Component<Msg, NoUserEvent> for Footer {
 
 #[derive(MockComponent)]
 pub struct ConfigSavePopup {
-    component: Radio,
-    config: SharedSettings,
+    component: YNConfirm,
 }
 
 impl ConfigSavePopup {
     pub fn new(config: SharedSettings) -> Self {
-        let component = {
-            let config = config.read();
-            Radio::default()
-                .foreground(
-                    config
+        let component =
+            YNConfirm::new_with_cb(config, " Config changed. Do you want to save? ", |config| {
+                YNConfirmStyle {
+                    foreground_color: config
                         .style_color_symbol
                         .library_foreground()
                         .unwrap_or(Color::Yellow),
-                )
-                .background(
-                    config
+                    background_color: config
                         .style_color_symbol
                         .library_background()
                         .unwrap_or(Color::Reset),
-                )
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::Yellow),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .title(" Config changed. Do you want to save? ", Alignment::Center)
-                .rewind(true)
-                .choices(&["No", "Yes"])
-                .value(0)
-        };
-        Self { component, config }
+                    border_color: config
+                        .style_color_symbol
+                        .library_border()
+                        .unwrap_or(Color::Yellow),
+                    title_alignment: Alignment::Center,
+                }
+            });
+        Self { component }
     }
 }
 
 impl Component<Msg, NoUserEvent> for ConfigSavePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
-        let keys = &config.read().keys;
-        let cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Left, ..
-            }) => self.perform(Cmd::Move(Direction::Left)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Right, ..
-            }) => self.perform(Cmd::Move(Direction::Right)),
-
-            Event::Keyboard(key) if key == keys.global_left.key_event() => {
-                self.perform(Cmd::Move(Direction::Left))
-            }
-            Event::Keyboard(key) if key == keys.global_right.key_event() => {
-                self.perform(Cmd::Move(Direction::Right))
-            }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
-                self.perform(Cmd::Move(Direction::Left))
-            }
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
-                self.perform(Cmd::Move(Direction::Right))
-            }
-            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveCancel))
-            }
-            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveCancel))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('y'),
-                ..
-            }) => {
-                // ordering is 0 = No, 1 = Yes
-                self.component.attr(
-                    Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::Usize(1))),
-                );
-                self.perform(Cmd::Submit)
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('n'),
-                ..
-            }) => {
-                // ordering is 0 = No, 1 = Yes
-                self.component.attr(
-                    Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::Usize(0))),
-                );
-                self.perform(Cmd::Submit)
-            }
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
-            _ => return None,
-        };
-        if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(0)))
-        ) {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveCancel))
-        } else if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(1)))
-        ) {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveOk))
-        } else {
-            Some(Msg::None)
-        }
+        self.component.on(
+            ev,
+            Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveOk),
+            Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveCancel),
+        )
     }
 }

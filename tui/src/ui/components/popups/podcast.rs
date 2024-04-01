@@ -3,7 +3,7 @@ use termusiclib::{
     types::{Id, Msg, PCMsg},
 };
 use termusicplayback::SharedSettings;
-use tui_realm_stdlib::{Input, Radio, Table};
+use tui_realm_stdlib::{Input, Table};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
@@ -12,6 +12,8 @@ use tuirealm::{
 };
 
 use crate::ui::model::Model;
+
+use super::{YNConfirm, YNConfirmStyle};
 
 #[derive(MockComponent)]
 pub struct PodcastAddPopup {
@@ -97,97 +99,41 @@ impl Component<Msg, NoUserEvent> for PodcastAddPopup {
 
 #[derive(MockComponent)]
 pub struct FeedDeleteConfirmRadioPopup {
-    component: Radio,
-    config: SharedSettings,
+    component: YNConfirm,
 }
 
 impl FeedDeleteConfirmRadioPopup {
     pub fn new(config: SharedSettings) -> Self {
-        let component = {
-            let config = config.read();
-            Radio::default()
-                .foreground(
-                    config
+        let component =
+            YNConfirm::new_with_cb(config, "Are sure you to delete the feed?", |config| {
+                YNConfirmStyle {
+                    foreground_color: config
                         .style_color_symbol
                         .library_foreground()
                         .unwrap_or(Color::LightRed),
-                )
-                // .background(Color::Black)
-                .background(
-                    config
+                    background_color: config
                         .style_color_symbol
                         .library_background()
                         .unwrap_or(Color::Reset),
-                )
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .title("Are sure you to delete the feed?", Alignment::Left)
-                .rewind(true)
-                .choices(&["No", "Yes"])
-                .value(0)
-        };
+                    border_color: config
+                        .style_color_symbol
+                        .library_border()
+                        .unwrap_or(Color::LightRed),
+                    title_alignment: Alignment::Left,
+                }
+            });
 
-        Self { component, config }
+        Self { component }
     }
 }
 
 impl Component<Msg, NoUserEvent> for FeedDeleteConfirmRadioPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
-        let keys = &config.read().keys;
-        let cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Left, ..
-            }) => self.perform(Cmd::Move(Direction::Left)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Right, ..
-            }) => self.perform(Cmd::Move(Direction::Right)),
-
-            Event::Keyboard(key) if key == keys.global_left.key_event() => {
-                self.perform(Cmd::Move(Direction::Left))
-            }
-            Event::Keyboard(key) if key == keys.global_right.key_event() => {
-                self.perform(Cmd::Move(Direction::Right))
-            }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
-                self.perform(Cmd::Move(Direction::Left))
-            }
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
-                self.perform(Cmd::Move(Direction::Right))
-            }
-            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
-                return Some(Msg::Podcast(PCMsg::FeedDeleteCloseCancel))
-            }
-            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
-                return Some(Msg::Podcast(PCMsg::FeedDeleteCloseCancel))
-            }
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
-            _ => CmdResult::None,
-        };
-        if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(0)))
-        ) {
-            Some(Msg::Podcast(PCMsg::FeedDeleteCloseCancel))
-        } else if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(1)))
-        ) {
-            Some(Msg::Podcast(PCMsg::FeedDeleteCloseOk))
-        } else {
-            Some(Msg::None)
-        }
+        self.component.on(
+            ev,
+            Msg::Podcast(PCMsg::FeedDeleteCloseOk),
+            Msg::Podcast(PCMsg::FeedDeleteCloseCancel),
+        )
     }
 }
 

@@ -5,6 +5,7 @@ mod error;
 pub mod general_search;
 mod help;
 mod message;
+mod mock_yn_confirm;
 mod podcast;
 mod quit;
 mod saveplaylist;
@@ -18,6 +19,7 @@ pub use error::ErrorPopup;
 pub use help::HelpPopup;
 #[allow(unused_imports)]
 pub use message::MessagePopup;
+pub use mock_yn_confirm::{YNConfirm, YNConfirmStyle};
 #[allow(unused_imports)]
 pub use podcast::{
     FeedDeleteConfirmInputPopup, FeedDeleteConfirmRadioPopup, PodcastAddPopup,

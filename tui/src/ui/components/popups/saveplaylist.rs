@@ -4,7 +4,7 @@ use termusiclib::{
     types::{Id, Msg},
 };
 use termusicplayback::SharedSettings;
-use tui_realm_stdlib::{Input, Radio};
+use tui_realm_stdlib::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
@@ -13,6 +13,8 @@ use tuirealm::{
 };
 
 use crate::ui::model::Model;
+
+use super::{YNConfirm, YNConfirmStyle};
 
 #[derive(MockComponent)]
 pub struct SavePlaylistPopup {
@@ -101,51 +103,32 @@ impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
 
 #[derive(MockComponent)]
 pub struct SavePlaylistConfirmPopup {
-    component: Radio,
-    config: SharedSettings,
+    component: YNConfirm,
     filename: String,
 }
 
 impl SavePlaylistConfirmPopup {
     pub fn new(config: SharedSettings, filename: &str) -> Self {
-        let component = {
-            let config = config.read();
-            Radio::default()
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::Yellow),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .title(
-                    // format!(" Playlist {filename} exists. Overwrite? "),
-                    " Playlist exists. Overwrite? ",
-                    Alignment::Center,
-                )
-                .rewind(true)
-                .choices(&["No", "Yes"])
-                .value(0)
-        };
+        let component = YNConfirm::new_with_cb(config, " Playlist exists. Overwrite? ", |config| {
+            YNConfirmStyle {
+                foreground_color: config
+                    .style_color_symbol
+                    .library_foreground()
+                    .unwrap_or(Color::Yellow),
+                background_color: config
+                    .style_color_symbol
+                    .library_background()
+                    .unwrap_or(Color::Reset),
+                border_color: config
+                    .style_color_symbol
+                    .library_border()
+                    .unwrap_or(Color::Yellow),
+                title_alignment: Alignment::Center,
+            }
+        });
 
         Self {
             component,
-            config,
             filename: filename.to_string(),
         }
     }
@@ -153,53 +136,11 @@ impl SavePlaylistConfirmPopup {
 
 impl Component<Msg, NoUserEvent> for SavePlaylistConfirmPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
-        let keys = &config.read().keys;
-        let cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Left, ..
-            }) => self.perform(Cmd::Move(Direction::Left)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Right, ..
-            }) => self.perform(Cmd::Move(Direction::Right)),
-
-            Event::Keyboard(key) if key == keys.global_left.key_event() => {
-                self.perform(Cmd::Move(Direction::Left))
-            }
-            Event::Keyboard(key) if key == keys.global_right.key_event() => {
-                self.perform(Cmd::Move(Direction::Right))
-            }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
-                self.perform(Cmd::Move(Direction::Left))
-            }
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
-                self.perform(Cmd::Move(Direction::Right))
-            }
-            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
-                return Some(Msg::SavePlaylistConfirmCloseCancel)
-            }
-            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
-                return Some(Msg::SavePlaylistConfirmCloseCancel)
-            }
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
-            _ => return None,
-        };
-        if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(0)))
-        ) {
-            Some(Msg::SavePlaylistConfirmCloseCancel)
-        } else if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(1)))
-        ) {
-            Some(Msg::SavePlaylistConfirmCloseOk(self.filename.clone()))
-        } else {
-            Some(Msg::None)
-        }
+        self.component.on(
+            ev,
+            Msg::SavePlaylistConfirmCloseOk(self.filename.clone()),
+            Msg::SavePlaylistConfirmCloseCancel,
+        )
     }
 }
 
