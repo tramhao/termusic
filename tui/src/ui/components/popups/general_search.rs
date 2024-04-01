@@ -185,23 +185,23 @@ impl GSTablePopup {
     pub fn new(source: Source, config: SharedSettings) -> Self {
         let config_r = config.read();
         let title_library = format!(
-            "Results:(Enter: locate/{}: load to playlist)",
+            " Results: (Enter: locate/{}: load to playlist) ",
             config_r.keys.global_right
         );
         let title_playlist = format!(
-            "Results:(Enter: locate/{}: play selected)",
+            " Results: (Enter: locate/{}: play selected) ",
             config_r.keys.global_right
         );
         let title_database = format!(
-            "Results:( {}: load to playlist)",
+            " Results: ({}: load to playlist) ",
             config_r.keys.global_right
         );
         let title_episode = format!(
-            "Results:(Enter: locate/{}: load to playlist)",
+            " Results: (Enter: locate/{}: load to playlist) ",
             config_r.keys.global_right
         );
 
-        let title_podcast = "Results:(Enter: locate)";
+        let title_podcast = " Results: (Enter: locate) ";
         let component = match source {
             Source::Library => Table::default()
                 .borders(
