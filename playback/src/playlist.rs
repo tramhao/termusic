@@ -400,8 +400,8 @@ impl Playlist {
 
     /// # Errors
     /// Error happens when track cannot be read from local file
-    pub fn add_playlist(&mut self, vec: Vec<&str>) -> Result<()> {
-        for item in vec {
+    pub fn add_playlist<T: AsRef<str>>(&mut self, vec: &[T]) -> Result<()> {
+        for item in vec.iter().map(AsRef::as_ref) {
             if item.starts_with("http") {
                 let track = Track::new_radio(item);
                 self.tracks.push(track);

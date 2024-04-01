@@ -71,6 +71,7 @@ pub struct LabelSpan {
     component: Span,
     default_span: Vec<TextSpan>,
     active_message_start_time: Option<Instant>,
+    /// Timeout in seconds
     time_out: isize,
 }
 

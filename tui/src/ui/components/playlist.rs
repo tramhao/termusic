@@ -274,8 +274,7 @@ impl Model {
 
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
         let vec = playlist_get_vec(current_node)?;
-        let vec_str: Vec<&str> = vec.iter().map(std::convert::AsRef::as_ref).collect();
-        self.playlist.add_playlist(vec_str)?;
+        self.playlist.add_playlist(&vec)?;
         self.player_sync_playlist()?;
         self.playlist_sync();
         Ok(())
@@ -306,11 +305,7 @@ impl Model {
         }
         if p.is_dir() {
             let new_items_vec = Self::library_dir_children(p);
-            let new_items_str_vec: Vec<&str> = new_items_vec
-                .iter()
-                .map(std::convert::AsRef::as_ref)
-                .collect();
-            self.playlist.add_playlist(new_items_str_vec)?;
+            self.playlist.add_playlist(&new_items_vec)?;
             self.player_sync_playlist()?;
             self.playlist_sync();
             return Ok(());
@@ -325,16 +320,14 @@ impl Model {
             self.playlist_add_playlist(current_node)?;
             return Ok(());
         }
-        let vec = vec![current_node];
-        self.playlist.add_playlist(vec)?;
+        self.playlist.add_playlist(&[current_node])?;
         self.player_sync_playlist()?;
         Ok(())
     }
 
     pub fn playlist_add_all_from_db(&mut self, vec: &[TrackForDB]) {
-        let vec2: Vec<String> = vec.iter().map(|f| f.file.clone()).collect();
-        let vec3: Vec<&str> = vec2.iter().map(std::convert::AsRef::as_ref).collect();
-        if let Err(e) = self.playlist.add_playlist(vec3) {
+        let vec2: Vec<&str> = vec.iter().map(|f| f.file.as_str()).collect();
+        if let Err(e) = self.playlist.add_playlist(&vec2) {
             self.mount_error_popup(e.context("add all to playlist from database"));
         }
         if let Err(e) = self.player_sync_playlist() {
