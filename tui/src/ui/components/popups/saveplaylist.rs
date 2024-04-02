@@ -42,7 +42,7 @@ impl SavePlaylistPopup {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title("Save Playlist as: (Enter to confirm)", Alignment::Left),
+                .title(" Save Playlist as: (Enter to confirm) ", Alignment::Left),
         }
     }
 }

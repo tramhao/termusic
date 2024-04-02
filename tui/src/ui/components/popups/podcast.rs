@@ -105,7 +105,7 @@ pub struct FeedDeleteConfirmRadioPopup {
 impl FeedDeleteConfirmRadioPopup {
     pub fn new(config: SharedSettings) -> Self {
         let component =
-            YNConfirm::new_with_cb(config, "Are sure you to delete the feed?", |config| {
+            YNConfirm::new_with_cb(config, " Are sure you to delete the feed? ", |config| {
                 YNConfirmStyle {
                     foreground_color: config
                         .style_color_symbol
@@ -164,7 +164,7 @@ impl FeedDeleteConfirmInputPopup {
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title(
-                    "You're about the erase all feeds. Type DELETE to confirm:",
+                    " You're about the erase all feeds. Type DELETE to confirm: ",
                     Alignment::Left,
                 ),
         }

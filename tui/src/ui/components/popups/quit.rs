@@ -39,7 +39,7 @@ pub struct QuitPopup {
 
 impl QuitPopup {
     pub fn new(config: SharedSettings) -> Self {
-        let component = YNConfirm::new_with_cb(config, " Are sure you want to quit?", |config| {
+        let component = YNConfirm::new_with_cb(config, " Are sure you want to quit? ", |config| {
             YNConfirmStyle {
                 foreground_color: config
                     .style_color_symbol

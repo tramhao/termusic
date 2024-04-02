@@ -22,23 +22,24 @@ pub struct DeleteConfirmRadioPopup {
 
 impl DeleteConfirmRadioPopup {
     pub fn new(config: SharedSettings) -> Self {
-        let component = YNConfirm::new_with_cb(config, "Are sure you want to delete?", |config| {
-            YNConfirmStyle {
-                foreground_color: config
-                    .style_color_symbol
-                    .library_foreground()
-                    .unwrap_or(Color::LightRed),
-                background_color: config
-                    .style_color_symbol
-                    .library_background()
-                    .unwrap_or(Color::Reset),
-                border_color: config
-                    .style_color_symbol
-                    .library_border()
-                    .unwrap_or(Color::LightRed),
-                title_alignment: Alignment::Left,
-            }
-        });
+        let component =
+            YNConfirm::new_with_cb(config, " Are sure you want to delete? ", |config| {
+                YNConfirmStyle {
+                    foreground_color: config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::LightRed),
+                    background_color: config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                    border_color: config
+                        .style_color_symbol
+                        .library_border()
+                        .unwrap_or(Color::LightRed),
+                    title_alignment: Alignment::Left,
+                }
+            });
 
         Self { component }
     }
@@ -77,7 +78,7 @@ impl DeleteConfirmInputPopup {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title("Type DELETE to confirm:", Alignment::Left),
+                .title(" Type DELETE to confirm: ", Alignment::Left),
         }
     }
 }
