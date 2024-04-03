@@ -77,7 +77,8 @@ jobs:
         if: matrix.build == 'x86_64-macos'
         run: | 
             brew update
-            brew install protobuf
+            brew install protobuf 
+            brew install sound-touch
   
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-windows'
