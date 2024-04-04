@@ -574,11 +574,8 @@ impl PlayerTrait for GeneralPlayer {
     fn volume(&self) -> Volume {
         self.get_player().volume()
     }
-    fn volume_up(&mut self) -> Volume {
-        self.get_player_mut().volume_up()
-    }
-    fn volume_down(&mut self) -> Volume {
-        self.get_player_mut().volume_down()
+    fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
+        self.get_player_mut().add_volume(volume)
     }
     fn set_volume(&mut self, volume: Volume) -> Volume {
         self.get_player_mut().set_volume(volume)
@@ -605,12 +602,8 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().set_speed(speed)
     }
 
-    fn speed_up(&mut self) -> Speed {
-        self.get_player_mut().speed_up()
-    }
-
-    fn speed_down(&mut self) -> Speed {
-        self.get_player_mut().speed_down()
+    fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
+        self.get_player_mut().add_speed(speed)
     }
 
     fn speed(&self) -> Speed {
@@ -692,7 +685,14 @@ pub struct MediaInfo {
 }
 
 pub type Volume = u16;
+/// The type of [`Volume::saturating_add_signed`]
+pub type VolumeSigned = i16;
 pub type Speed = i32;
+// yes this is currently the same as speed, but for consistentcy with VolumeSigned (and maybe other types)
+pub type SpeedSigned = Speed;
+
+pub const MIN_SPEED: Speed = 1;
+pub const MAX_SPEED: Speed = 30;
 
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
@@ -701,14 +701,13 @@ pub trait PlayerTrait {
     async fn add_and_play(&mut self, track: &Track);
     /// Get the currently set volume
     fn volume(&self) -> Volume;
-    /// Step the volume up by a backend-set step amount
+    /// Add a relative amount to the current volume
     ///
     /// Returns the new volume
-    fn volume_up(&mut self) -> Volume;
-    /// Step the volume down by a backend-set step amount
-    ///
-    /// Returns the new volume
-    fn volume_down(&mut self) -> Volume;
+    fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
+        let volume = self.volume().saturating_add_signed(volume);
+        self.set_volume(volume)
+    }
     /// Set the volume to a specific amount.
     ///
     /// Returns the new volume
@@ -731,14 +730,14 @@ pub trait PlayerTrait {
     ///
     /// Returns the new speed
     fn set_speed(&mut self, speed: Speed) -> Speed;
-    /// Step the speed up by a backend-set step amount
+    /// Add a relative amount to the current speed
     ///
     /// Returns the new speed
-    fn speed_up(&mut self) -> Speed;
-    /// Step the speed down by a backend-set step amount
-    ///
-    /// Returns the new speed
-    fn speed_down(&mut self) -> Speed;
+    fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
+        // NOTE: the clamping should likely be done in `set_speed` instead of here
+        let speed = (self.speed() + speed).clamp(MIN_SPEED, MAX_SPEED);
+        self.set_speed(speed)
+    }
     /// Get the currently set speed
     fn speed(&self) -> Speed;
     fn stop(&mut self);

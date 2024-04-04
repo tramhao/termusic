@@ -38,8 +38,6 @@ use std::time::Duration;
 use termusiclib::config::Settings;
 use termusiclib::track::Track;
 
-static VOLUME_STEP: u16 = 5;
-
 pub struct MpvBackend {
     // player: Mpv,
     volume: u16,
@@ -292,14 +290,6 @@ impl PlayerTrait for MpvBackend {
         self.volume
     }
 
-    fn volume_up(&mut self) -> Volume {
-        self.set_volume(self.volume.saturating_add(VOLUME_STEP))
-    }
-
-    fn volume_down(&mut self) -> Volume {
-        self.set_volume(self.volume.saturating_sub(VOLUME_STEP))
-    }
-
     fn set_volume(&mut self, volume: Volume) -> Volume {
         self.volume = volume.min(100);
         self.command_tx
@@ -345,21 +335,6 @@ impl PlayerTrait for MpvBackend {
         self.speed
     }
 
-    fn speed_up(&mut self) -> Speed {
-        let mut speed = self.speed + 1;
-        if speed > 30 {
-            speed = 30;
-        }
-        self.set_speed(speed)
-    }
-
-    fn speed_down(&mut self) -> Speed {
-        let mut speed = self.speed - 1;
-        if speed < 1 {
-            speed = 1;
-        }
-        self.set_speed(speed)
-    }
     fn stop(&mut self) {
         self.command_tx.send(PlayerInternalCmd::Stop).ok();
     }
