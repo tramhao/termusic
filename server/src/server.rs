@@ -17,7 +17,7 @@ use termusicplayback::player::music_player_server::MusicPlayerServer;
 use termusicplayback::player::{GetProgressResponse, PlayerTime};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerProgress, PlayerTrait, Status,
+    PlayerProgress, PlayerTrait, Status, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::sync::oneshot;
@@ -28,6 +28,7 @@ use tonic::transport::Server;
 extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
+pub const VOLUME_STEP: VolumeSigned = 5;
 
 /// Stats for the music player responses
 #[derive(Debug, Clone, PartialEq)]
@@ -324,7 +325,7 @@ fn player_loop(
             }
             PlayerCmd::VolumeDown => {
                 info!("before volumedown: {}", player.volume());
-                let new_volume = player.volume_down();
+                let new_volume = player.add_volume(-VOLUME_STEP);
                 player.config.write().player_volume = new_volume;
                 info!("after volumedown: {}", new_volume);
                 let mut p_tick = playerstats.lock();
@@ -332,7 +333,7 @@ fn player_loop(
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
-                let new_volume = player.volume_up();
+                let new_volume = player.add_volume(VOLUME_STEP);
                 player.config.write().player_volume = new_volume;
                 info!("after volumeup: {}", new_volume);
                 let mut p_tick = playerstats.lock();

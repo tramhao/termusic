@@ -574,11 +574,8 @@ impl PlayerTrait for GeneralPlayer {
     fn volume(&self) -> Volume {
         self.get_player().volume()
     }
-    fn volume_up(&mut self) -> Volume {
-        self.get_player_mut().volume_up()
-    }
-    fn volume_down(&mut self) -> Volume {
-        self.get_player_mut().volume_down()
+    fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
+        self.get_player_mut().add_volume(volume)
     }
     fn set_volume(&mut self, volume: Volume) -> Volume {
         self.get_player_mut().set_volume(volume)
@@ -692,6 +689,8 @@ pub struct MediaInfo {
 }
 
 pub type Volume = u16;
+/// The type of [`Volume::saturating_add_signed`]
+pub type VolumeSigned = i16;
 pub type Speed = i32;
 
 #[allow(clippy::module_name_repetitions)]
@@ -701,14 +700,13 @@ pub trait PlayerTrait {
     async fn add_and_play(&mut self, track: &Track);
     /// Get the currently set volume
     fn volume(&self) -> Volume;
-    /// Step the volume up by a backend-set step amount
+    /// Add a relative amount to the current volume
     ///
     /// Returns the new volume
-    fn volume_up(&mut self) -> Volume;
-    /// Step the volume down by a backend-set step amount
-    ///
-    /// Returns the new volume
-    fn volume_down(&mut self) -> Volume;
+    fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
+        let volume = self.volume().saturating_add_signed(volume);
+        self.set_volume(volume)
+    }
     /// Set the volume to a specific amount.
     ///
     /// Returns the new volume

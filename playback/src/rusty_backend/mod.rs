@@ -51,8 +51,6 @@ use symphonia::core::io::{
 use termusiclib::config::Settings;
 use termusiclib::track::{MediaType, Track};
 
-static VOLUME_STEP: u16 = 5;
-
 pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
@@ -171,22 +169,6 @@ impl PlayerTrait for RustyBackend {
 
     fn volume(&self) -> Volume {
         self.volume.load(Ordering::SeqCst)
-    }
-
-    fn volume_up(&mut self) -> Volume {
-        let volume = self
-            .volume
-            .load(Ordering::SeqCst)
-            .saturating_add(VOLUME_STEP);
-        self.set_volume(volume)
-    }
-
-    fn volume_down(&mut self) -> Volume {
-        let volume = self
-            .volume
-            .load(Ordering::SeqCst)
-            .saturating_sub(VOLUME_STEP);
-        self.set_volume(volume)
     }
 
     fn set_volume(&mut self, volume: Volume) -> Volume {
