@@ -315,9 +315,12 @@ impl GStreamerBackend {
 
         // If we have not done so, obtain the sink through which we will send the seek events
         if let Some(sink) = self.playbin.property::<Option<Element>>("audio-sink") {
-            // try_property::<Option<Element>>("audio-sink") {
             // Send the event
-            sink.send_event(seek_event)
+            let send_event = sink.send_event(seek_event);
+            if !send_event {
+                warn!("Speed event was *NOT* handled!");
+            }
+            send_event
         } else {
             false
         }
