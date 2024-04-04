@@ -280,10 +280,15 @@ impl Source for Symphonia {
                 track_id: Some(self.track_id),
             },
         ) {
-            Ok(seeked_to) => self
-                .time_base
-                .as_ref()
-                .map(|v| v.calc_time(seeked_to.actual_ts).into()),
+            Ok(seeked_to) => {
+                // clear sample buffer after seek
+                self.current_frame_offset = 0;
+                self.buffer.clear();
+
+                self.time_base
+                    .as_ref()
+                    .map(|v| v.calc_time(seeked_to.actual_ts).into())
+            }
             Err(_) => None,
         }
     }
