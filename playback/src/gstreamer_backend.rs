@@ -109,6 +109,11 @@ impl GStreamerBackend {
                                 error!("error in sending SkipNext: {e}");
                             }
                         }
+                        PlayerCmd::SpeedUp => {
+                            // HACK: currently gstreamer does not have any internal events to be send, and there is no global "re-apply speed property", this also means that if using max speed, it will not actually use full-speed
+                            let _ = cmd_tx.send(PlayerCmd::SpeedUp);
+                            let _ = cmd_tx.send(PlayerCmd::SpeedDown);
+                        }
                         _ => {}
                     }
                 }
@@ -198,6 +203,9 @@ impl GStreamerBackend {
 
                         // clear stored title on stream start (should work without conflicting in ::Tag)
                         media_title_internal.lock().clear();
+
+                        // HACK: gstreamer does not handle seek events before some undocumented time, see other note in main_rx handler
+                        let _ = main_tx.send_blocking(PlayerCmd::SpeedUp);
                     }
                     gst::MessageView::Error(e) =>
                         error!("GStreamer Error: {}", e.error()),
@@ -264,7 +272,7 @@ impl GStreamerBackend {
         };
 
         this.set_volume(volume);
-        this.set_speed(speed);
+        // this.set_speed(speed);
 
         // Send a signal to enqueue the next media before the current finished
         this.playbin.connect("about-to-finish", false, move |_| {
