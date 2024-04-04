@@ -443,21 +443,6 @@ impl PlayerTrait for GStreamerBackend {
         self.speed
     }
 
-    fn speed_up(&mut self) -> Speed {
-        let mut speed = self.speed + 1;
-        if speed > 30 {
-            speed = 30;
-        }
-        self.set_speed(speed)
-    }
-
-    fn speed_down(&mut self) -> Speed {
-        let mut speed = self.speed - 1;
-        if speed < 1 {
-            speed = 1;
-        }
-        self.set_speed(speed)
-    }
     fn stop(&mut self) {
         self.playbin.set_state(gst::State::Null).ok();
     }

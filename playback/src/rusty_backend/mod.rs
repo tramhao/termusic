@@ -202,22 +202,6 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::SeekAbsolute(position));
     }
 
-    fn speed_up(&mut self) -> Speed {
-        let mut speed = self.speed + 1;
-        if speed > 30 {
-            speed = 30;
-        }
-        self.set_speed(speed)
-    }
-
-    fn speed_down(&mut self) -> Speed {
-        let mut speed = self.speed - 1;
-        if speed < 1 {
-            speed = 1;
-        }
-        self.set_speed(speed)
-    }
-
     fn set_speed(&mut self, speed: Speed) -> Speed {
         self.speed = speed;
         self.command(PlayerInternalCmd::Speed(speed));

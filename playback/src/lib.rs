@@ -602,12 +602,8 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().set_speed(speed)
     }
 
-    fn speed_up(&mut self) -> Speed {
-        self.get_player_mut().speed_up()
-    }
-
-    fn speed_down(&mut self) -> Speed {
-        self.get_player_mut().speed_down()
+    fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
+        self.get_player_mut().add_speed(speed)
     }
 
     fn speed(&self) -> Speed {
@@ -692,6 +688,11 @@ pub type Volume = u16;
 /// The type of [`Volume::saturating_add_signed`]
 pub type VolumeSigned = i16;
 pub type Speed = i32;
+// yes this is currently the same as speed, but for consistentcy with VolumeSigned (and maybe other types)
+pub type SpeedSigned = Speed;
+
+pub const MIN_SPEED: Speed = 1;
+pub const MAX_SPEED: Speed = 30;
 
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
@@ -729,14 +730,14 @@ pub trait PlayerTrait {
     ///
     /// Returns the new speed
     fn set_speed(&mut self, speed: Speed) -> Speed;
-    /// Step the speed up by a backend-set step amount
+    /// Add a relative amount to the current speed
     ///
     /// Returns the new speed
-    fn speed_up(&mut self) -> Speed;
-    /// Step the speed down by a backend-set step amount
-    ///
-    /// Returns the new speed
-    fn speed_down(&mut self) -> Speed;
+    fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
+        // NOTE: the clamping should likely be done in `set_speed` instead of here
+        let speed = (self.speed() + speed).clamp(MIN_SPEED, MAX_SPEED);
+        self.set_speed(speed)
+    }
     /// Get the currently set speed
     fn speed(&self) -> Speed;
     fn stop(&mut self);

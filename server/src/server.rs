@@ -17,7 +17,7 @@ use termusicplayback::player::music_player_server::MusicPlayerServer;
 use termusicplayback::player::{GetProgressResponse, PlayerTime};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerProgress, PlayerTrait, Status, VolumeSigned,
+    PlayerProgress, PlayerTrait, SpeedSigned, Status, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::sync::oneshot;
@@ -29,6 +29,7 @@ extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
 pub const VOLUME_STEP: VolumeSigned = 5;
+pub const SPEED_STEP: SpeedSigned = 1;
 
 /// Stats for the music player responses
 #[derive(Debug, Clone, PartialEq)]
@@ -239,7 +240,7 @@ fn player_loop(
                 player.next();
             }
             PlayerCmd::SpeedDown => {
-                let new_speed = player.speed_down();
+                let new_speed = player.add_speed(-SPEED_STEP);
                 info!("after speed down: {}", new_speed);
                 player.config.write().player_speed = new_speed;
                 let mut p_tick = playerstats.lock();
@@ -247,7 +248,7 @@ fn player_loop(
             }
 
             PlayerCmd::SpeedUp => {
-                let new_speed = player.speed_up();
+                let new_speed = player.add_speed(SPEED_STEP);
                 info!("after speed up: {}", new_speed);
                 player.config.write().player_speed = new_speed;
                 let mut p_tick = playerstats.lock();
