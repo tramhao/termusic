@@ -11,25 +11,25 @@ use tuirealm::props::Color;
 
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub enum ColorTermusic {
-    Reset,
-    Foreground,
-    Background,
-    Black,
-    Red,
-    Green,
-    Yellow,
-    Blue,
-    Magenta,
-    Cyan,
-    White,
-    LightBlack,
-    LightRed,
-    LightGreen,
-    LightYellow,
-    LightBlue,
-    LightMagenta,
-    LightCyan,
-    LightWhite,
+    Reset = 0,
+    Foreground = 1,
+    Background = 2,
+    Black = 3,
+    Red = 4,
+    Green = 5,
+    Yellow = 6,
+    Blue = 7,
+    Magenta = 8,
+    Cyan = 9,
+    White = 10,
+    LightBlack = 11,
+    LightRed = 12,
+    LightGreen = 13,
+    LightYellow = 14,
+    LightBlue = 15,
+    LightMagenta = 16,
+    LightCyan = 17,
+    LightWhite = 18,
 }
 
 impl From<ColorTermusic> for &'static str {
@@ -88,28 +88,9 @@ impl ColorTermusic {
             Self::Reset => Some(Color::Reset),
         }
     }
+
     pub const fn as_usize(self) -> usize {
-        match self {
-            Self::Reset => 0,
-            Self::Foreground => 1,
-            Self::Background => 2,
-            Self::Black => 3,
-            Self::Red => 4,
-            Self::Green => 5,
-            Self::Yellow => 6,
-            Self::Blue => 7,
-            Self::Magenta => 8,
-            Self::Cyan => 9,
-            Self::White => 10,
-            Self::LightBlack => 11,
-            Self::LightRed => 12,
-            Self::LightGreen => 13,
-            Self::LightYellow => 14,
-            Self::LightBlue => 15,
-            Self::LightMagenta => 16,
-            Self::LightCyan => 17,
-            Self::LightWhite => 18,
-        }
+        self as usize
     }
 }
 
