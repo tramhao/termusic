@@ -54,6 +54,7 @@ sanitize-filename.workspace = true #   = "0.4"
 semver.workspace = true #   = "^1"
 serde.workspace = true #  = { version = "1.0", features = ["derive"] }
 serde_json.workspace = true #  = "1.0"
+serde_yaml.workspace = true
 shellexpand.workspace = true #  = "3"
 textwrap.workspace = true #   = "0.16"
 toml.workspace = true #  = "0.7"
@@ -64,7 +65,6 @@ urlencoding.workspace = true #   = "2"
 viuer.workspace = true #   = "0.6"
 walkdir.workspace = true #   = "2"
 wildmatch.workspace = true #   = "2"
-yaml-rust.workspace = true #   = "^0.4.5"
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
 
 
