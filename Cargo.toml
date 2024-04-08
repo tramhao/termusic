@@ -92,7 +92,6 @@ symphonia = { version = "0.5.1", features = [
     "mkv",
 ] }
 sysinfo = "^0.30"
-tap = "1.0"
 tempfile = "3.10"
 textwrap = "0.16"
 tokio = { version = "1.37", features = ["sync", "macros", "rt","rt-multi-thread"] }
