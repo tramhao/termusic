@@ -63,7 +63,6 @@ pretty_assertions = "1.4"
 prost = "0.12"
 quick-xml = "0.31"
 rand = "0.8"
-rangemap = "1.5"
 regex = "^1.5.5"
 reqwest = { version = "0.12", features = [
     "blocking",
