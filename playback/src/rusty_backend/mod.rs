@@ -16,7 +16,6 @@ use async_trait::async_trait;
 pub use conversions::Sample;
 pub use cpal::{traits::StreamTrait, ChannelCount, SampleRate};
 pub use decoder::Symphonia;
-use reqwest::header::{HeaderMap, HeaderValue};
 pub use sink::Sink;
 pub use source::Source;
 use std::num::{NonZeroU16, NonZeroUsize};
@@ -39,7 +38,13 @@ use std::sync::mpsc::RecvTimeoutError;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
-use stream_download::http::{reqwest::Client, HttpStream};
+use stream_download::http::{
+    reqwest::{
+        header::{HeaderMap, HeaderValue},
+        Client,
+    },
+    HttpStream,
+};
 use stream_download::source::SourceStream;
 use stream_download::storage::bounded::BoundedStorageProvider;
 use stream_download::storage::memory::MemoryStorageProvider;
