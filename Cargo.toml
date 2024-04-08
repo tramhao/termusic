@@ -17,7 +17,7 @@ categories = [
 ]
 readme = "./README.md"
 version = "0.9.0"
-rust-version = "1.74"
+rust-version = "1.75"
 
 [workspace.dependencies]
 # "version" key is required, as per https://github.com/rust-lang/cargo/issues/11133
