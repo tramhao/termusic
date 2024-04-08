@@ -38,8 +38,6 @@ dirs = "5.0"
 discord-rich-presence = { version = "0.2" }
 escaper = "0.1.1"
 figment = { version = "0.10", features = ["toml"] }
-futures = "0.3"
-futures-util = "0.3"
 glib = { version = "0.19" }
 gstreamer = { version = "0.22" }
 hex = "0.4"
