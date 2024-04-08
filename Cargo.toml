@@ -100,7 +100,6 @@ tokio-util = "0.7"
 toml = "0.8"
 tonic = "0.11"
 tonic-build = "0.11"
-tracing = "0.1"
 tuirealm = { version = "~1.8", features = ["serialize"] }
 tui-realm-stdlib = "~1.2"
 tui-realm-treeview = "~1.1"
