@@ -111,7 +111,6 @@ urlencoding = "2.1"
 viuer = "0.7"
 walkdir = "2.5"
 wildmatch = "2.3"
-yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 # winit = "0.27.0"
 # windows = "0.52"
