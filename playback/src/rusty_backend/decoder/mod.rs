@@ -2,7 +2,7 @@ pub mod buffered_source;
 pub mod read_seek_source;
 
 use super::Source;
-use std::{fmt, time::Duration};
+use std::{fmt, num::NonZeroU64, time::Duration};
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
@@ -83,7 +83,7 @@ pub struct Symphonia {
     elapsed: Duration,
     track_id: u32,
     time_base: Option<TimeBase>,
-    seek_required_ts: Option<u64>,
+    seek_required_ts: Option<NonZeroU64>,
 
     media_title_tx: MediaTitleTxWrap,
 }
@@ -290,7 +290,8 @@ impl Source for Symphonia {
 
                 // Coarse seeking may seek (slightly) beyond the requested ts, so it may not actually need to be set
                 if seeked_to.required_ts > seeked_to.actual_ts {
-                    self.seek_required_ts = Some(seeked_to.required_ts);
+                    // the unwrap should never fail as "(0 > 0) == false" and "(0 > 1(or higher)) == false"
+                    self.seek_required_ts = Some(NonZeroU64::new(seeked_to.required_ts).unwrap());
                 }
 
                 // some decoders need to be reset after a seek, but not all can be reset without unexpected behavior (like mka seeking to 0 again)
@@ -418,7 +419,7 @@ fn decode_loop(
     time_base: &Option<TimeBase>,
     media_title_tx: &mut MediaTitleTxWrap,
     probed: &mut ProbedMetadata,
-    seek_required_ts: &mut Option<u64>,
+    seek_required_ts: &mut Option<NonZeroU64>,
 ) -> Result<DecodeLoopResult, symphonia::core::errors::Error> {
     let (audio_buf, elapsed) = loop {
         let packet = format.next_packet()?;
@@ -431,7 +432,7 @@ fn decode_loop(
         // seeking in symphonia can only be done to the nearest packet in the format reader
         // so we need to also seek until the actually required_ts in the decoder
         if let Some(dur) = seek_required_ts {
-            if packet.ts() < *dur {
+            if packet.ts() < dur.get() {
                 continue;
             }
             // else, remove the value as we are now at or beyond that point
