@@ -293,6 +293,12 @@ impl Source for Symphonia {
                     self.seek_required_ts = Some(seeked_to.required_ts);
                 }
 
+                // some decoders need to be reset after a seek, but not all can be reset without unexpected behavior (like mka seeking to 0 again)
+                // see https://github.com/pdeljanov/Symphonia/issues/274
+                if self.decoder.codec_params().codec == codecs::CODEC_TYPE_MP3 {
+                    self.decoder.reset();
+                }
+
                 self.time_base
                     .as_ref()
                     .map(|v| v.calc_time(seeked_to.actual_ts).into())
