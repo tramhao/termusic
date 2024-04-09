@@ -27,8 +27,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
 use gst::bus::BusWatchGuard;
-use gst::ClockTime;
 use gst::{event::Seek, Element, SeekFlags, SeekType};
+use gst::{ClockTime, StateChangeError, StateChangeSuccess};
 use gstreamer as gst;
 use gstreamer::prelude::*;
 use parking_lot::Mutex;
@@ -53,8 +53,113 @@ impl PathToURI for Path {
     }
 }
 
+/// Wrapper for a playbin gst element with common functions and some type safety
+#[derive(Debug, Clone)]
+struct PlaybinWrap(Element);
+
+impl PlaybinWrap {
+    #[inline]
+    fn new(playbin: Element) -> Self {
+        Self(playbin)
+    }
+
+    /// Send a Seek Event that sets the speed.
+    ///
+    /// Returns `false` if sending the event failed or was not handled, otherwise `true` if handled
+    fn set_speed(&self, speed: i32) -> bool {
+        let rate = f64::from(speed) / 10.0;
+        // Obtain the current position, needed for the seek event
+        let position = self.get_position();
+
+        // Create the seek event
+        let seek_event = if rate > 0. {
+            Seek::new(
+                rate,
+                SeekFlags::FLUSH | SeekFlags::ACCURATE,
+                SeekType::Set,
+                position,
+                SeekType::None,
+                position,
+            )
+        } else {
+            Seek::new(
+                rate,
+                SeekFlags::FLUSH | SeekFlags::ACCURATE,
+                SeekType::Set,
+                position,
+                SeekType::Set,
+                position,
+            )
+        };
+
+        // If we have not done so, obtain the sink through which we will send the seek events
+        if let Some(sink) = self.0.property::<Option<Element>>("audio-sink") {
+            // Send the event
+            let send_event = sink.send_event(seek_event);
+            if !send_event {
+                warn!("Speed event was *NOT* handled!");
+            }
+            send_event
+        } else {
+            false
+        }
+    }
+
+    #[inline]
+    fn get_position(&self) -> Option<ClockTime> {
+        self.0.query_position::<ClockTime>()
+    }
+
+    #[inline]
+    fn get_duration(&self) -> Option<ClockTime> {
+        self.0.query_duration::<ClockTime>()
+    }
+
+    #[inline]
+    fn set_volume(&self, volume: f64) {
+        self.0.set_property("volume", volume);
+    }
+
+    #[inline]
+    fn set_uri(&self, url: impl Into<glib::Value>) {
+        self.0.set_property("uri", url);
+    }
+
+    // #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    // pub fn get_buffer_duration(&self) -> u32 {
+    //     self.0.property::<i64>("buffer-duration") as u32
+    // }
+
+    #[inline]
+    fn set_state(&self, state: gst::State) -> Result<StateChangeSuccess, StateChangeError> {
+        self.0.set_state(state)
+    }
+
+    #[inline]
+    fn current_state(&self) -> gst::State {
+        self.0.current_state()
+    }
+
+    #[inline]
+    fn seek_simple(
+        &self,
+        seek_flags: gst::SeekFlags,
+        seek_pos: impl FormattedValue,
+    ) -> Result<(), glib::BoolError> {
+        self.0.seek_simple(seek_flags, seek_pos)
+    }
+
+    #[inline]
+    fn connect_about_to_finish<F>(&self, cb: F)
+    where
+        F: Fn(&[glib::Value]) -> Option<glib::Value> + Send + Sync + 'static,
+    {
+        self.0.connect("about-to-finish", false, cb);
+    }
+}
+
 pub struct GStreamerBackend {
-    playbin: Element,
+    playbin: PlaybinWrap,
     volume: u16,
     speed: i32,
     gapless: bool,
@@ -63,7 +168,6 @@ pub struct GStreamerBackend {
     _bus_watch_guard: BusWatchGuard,
 }
 
-#[allow(clippy::cast_lossless)]
 impl GStreamerBackend {
     #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
@@ -255,6 +359,7 @@ impl GStreamerBackend {
             })
             .expect("failed to start gstreamer mainloop thread");
 
+        let playbin = PlaybinWrap::new(playbin);
         let volume = config.player_volume;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
@@ -273,72 +378,13 @@ impl GStreamerBackend {
         // this.set_speed(speed);
 
         // Send a signal to enqueue the next media before the current finished
-        this.playbin.connect("about-to-finish", false, move |_| {
+        this.playbin.connect_about_to_finish(move |_| {
             debug!("Sending playbin AboutToFinish");
             main_tx.send_blocking(PlayerCmd::AboutToFinish).unwrap();
             None
         });
 
         this
-    }
-    fn set_volume_inside(&mut self, volume: f64) {
-        self.playbin.set_property("volume", volume);
-    }
-
-    fn get_position(&self) -> Option<ClockTime> {
-        self.playbin.query_position::<ClockTime>()
-    }
-
-    fn get_duration(&self) -> Option<ClockTime> {
-        self.playbin.query_duration::<ClockTime>()
-    }
-
-    fn send_seek_event_speed(&mut self, speed: i32) -> bool {
-        let rate = speed as f64 / 10.0;
-        // Obtain the current position, needed for the seek event
-        let position = self.get_position();
-
-        // Create the seek event
-        let seek_event = if rate > 0. {
-            Seek::new(
-                rate,
-                SeekFlags::FLUSH | SeekFlags::ACCURATE,
-                SeekType::Set,
-                position,
-                SeekType::None,
-                position,
-            )
-        } else {
-            Seek::new(
-                rate,
-                SeekFlags::FLUSH | SeekFlags::ACCURATE,
-                SeekType::Set,
-                position,
-                SeekType::Set,
-                position,
-            )
-        };
-
-        // If we have not done so, obtain the sink through which we will send the seek events
-        if let Some(sink) = self.playbin.property::<Option<Element>>("audio-sink") {
-            // Send the event
-            let send_event = sink.send_event(seek_event);
-            if !send_event {
-                warn!("Speed event was *NOT* handled!");
-            }
-            send_event
-        } else {
-            false
-        }
-    }
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    pub fn get_buffer_duration(&self) -> u32 {
-        self.playbin.property::<i64>("buffer-duration") as u32
-        // if let Some(duration) = self.playbin.property::<i64>("buffer-duration") {
-        //     duration as u64
-        // } else {
-        //     120_u64
-        // }
     }
 }
 
@@ -347,7 +393,7 @@ impl PlayerTrait for GStreamerBackend {
     async fn add_and_play(&mut self, track: &Track) {
         self.playbin
             .set_state(gst::State::Ready)
-            .expect("set gst state ready error.");
+            .expect("set gst state ready error");
         set_uri_from_track(&self.playbin, track);
         self.playbin
             .set_state(gst::State::Playing)
@@ -361,7 +407,7 @@ impl PlayerTrait for GStreamerBackend {
     fn set_volume(&mut self, volume: Volume) -> Volume {
         let volume = volume.min(100);
         self.volume = volume;
-        self.set_volume_inside(f64::from(volume) / 100.0);
+        self.playbin.set_volume(f64::from(volume) / 100.0);
 
         volume
     }
@@ -393,8 +439,8 @@ impl PlayerTrait for GStreamerBackend {
     #[allow(clippy::cast_sign_loss)]
     #[allow(clippy::cast_possible_wrap)]
     fn seek(&mut self, secs: i64) -> Result<()> {
-        if let Some(time_pos) = self.get_position() {
-            if let Some(duration) = self.get_duration() {
+        if let Some(time_pos) = self.playbin.get_position() {
+            if let Some(duration) = self.playbin.get_duration() {
                 let time_pos = time_pos.seconds() as i64;
                 let duration = duration.seconds() as i64;
 
@@ -422,7 +468,7 @@ impl PlayerTrait for GStreamerBackend {
         // expect should be fine here, as this function does not allow erroring and any duration more than u64::MAX is unlikely
         let seek_pos_clock =
             ClockTime::try_from(position).expect("Duration(u128) did not fit into ClockTime(u64)");
-        self.set_volume_inside(0.0);
+        self.playbin.set_volume(0.0);
         while self
             .playbin
             .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)
@@ -430,7 +476,7 @@ impl PlayerTrait for GStreamerBackend {
         {
             std::thread::sleep(Duration::from_millis(100));
         }
-        self.set_volume_inside(f64::from(self.volume) / 100.0);
+        self.playbin.set_volume(f64::from(self.volume) / 100.0);
     }
     fn speed(&self) -> Speed {
         self.speed
@@ -438,7 +484,7 @@ impl PlayerTrait for GStreamerBackend {
 
     fn set_speed(&mut self, speed: Speed) -> Speed {
         self.speed = speed;
-        self.send_seek_event_speed(speed);
+        self.playbin.set_speed(speed);
 
         self.speed
     }
@@ -450,8 +496,8 @@ impl PlayerTrait for GStreamerBackend {
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
     fn get_progress(&self) -> Option<PlayerProgress> {
-        let position = Some(self.get_position()?.into());
-        let total_duration = Some(self.get_duration()?.into());
+        let position = Some(self.playbin.get_position()?.into());
+        let total_duration = Some(self.playbin.get_duration()?.into());
         Some(PlayerProgress {
             position,
             total_duration,
@@ -496,17 +542,17 @@ impl Drop for GStreamerBackend {
 }
 
 /// Helper function to consistently set the `uri` on `playbin` from a [`Track`]
-fn set_uri_from_track(playbin: &Element, track: &Track) {
+fn set_uri_from_track(playbin: &PlaybinWrap, track: &Track) {
     match track.media_type {
         MediaType::Music => {
             if let Some(file) = track.file() {
                 let path = Path::new(file);
-                playbin.set_property("uri", path.to_uri());
+                playbin.set_uri(path.to_uri());
             }
         }
         MediaType::Podcast | MediaType::LiveRadio => {
             if let Some(url) = track.file() {
-                playbin.set_property("uri", url);
+                playbin.set_uri(url);
             }
         }
     }
