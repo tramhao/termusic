@@ -17,7 +17,7 @@ categories = [
 ]
 readme = "./README.md"
 version = "0.9.0"
-rust-version = "1.74"
+rust-version = "1.75"
 
 [workspace.dependencies]
 # "version" key is required, as per https://github.com/rust-lang/cargo/issues/11133
@@ -26,24 +26,23 @@ termusic-lib = { path = "lib/", version = "0.9.0" }
 termusic-playback = { path = "playback/", version = "0.9.0", default-features = false }
 ahash = "^0.8"
 anyhow = { version = "1.0", features = ["backtrace"] }
-async-channel = "2"
+async-channel = "2.2"
 async-trait = "0.1"
 base64 = "0.22"
-bytes = "1"
+bytes = "1.6"
 chrono = "^0.4.23"
-clap = { version = "4", features = ["derive", "env"] }
+clap = { version = "4.5", features = ["derive", "env"] }
 cpal = "^0.15"
-ctrlc = { version = "3", features = ["termination"] }
+ctrlc = { version = "3.4", features = ["termination"] }
 dirs = "5.0"
 discord-rich-presence = { version = "0.2" }
 escaper = "0.1.1"
 figment = { version = "0.10", features = ["toml"] }
-futures = "0.3"
-futures-util = "0.3"
 glib = { version = "0.19" }
 gstreamer = { version = "0.22" }
 hex = "0.4"
-id3 = "1"
+id3 = "1.13"
+# image cannot be upgraded to 0.25 because of viuer, see https://github.com/atanunq/viuer/issues/56
 image = "0.24"
 include_dir = "0.7"
 lazy_static = "1.4"
@@ -55,18 +54,17 @@ flexi_logger = "0.28"
 colored = "2.0"
 md5 = "0.7"
 num-bigint = "0.4"
-opml = "1"
+opml = "1.1"
 parking_lot = "^0.12"
 pathdiff = { version = "0.2", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
-pretty_assertions = "1"
+pretty_assertions = "1.4"
 prost = "0.12"
 quick-xml = "0.31"
 rand = "0.8"
-rangemap = "1"
 regex = "^1.5.5"
-reqwest = { version = "0.11", features = [
+reqwest = { version = "0.12", features = [
     "blocking",
     "cookies",
     "gzip",
@@ -74,17 +72,16 @@ reqwest = { version = "0.11", features = [
     "stream",
 ] }
 rfc822_sanitizer = "0.3"
-rss = "2"
+rss = "2.0"
 rusqlite = { version = "0.31", features = ["bundled"] }
 sanitize-filename = "0.5"
-semver = "^1"
+semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_yaml = "0.9"
-shellexpand = "3"
+shellexpand = "3.1"
 soundtouch = "0.4"
 souvlaki = "0.7.2"
-stream-download = { version = "0.5", features = ["reqwest-rustls"] }
+stream-download = { version = "0.5.2", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
     "default",
     "aac",
@@ -95,26 +92,25 @@ symphonia = { version = "0.5.1", features = [
     "mkv",
 ] }
 sysinfo = "^0.30"
-tap = "1"
-tempfile = "3"
+tempfile = "3.10"
 textwrap = "0.16"
-tokio = { version = "1", features = ["sync", "macros", "rt","rt-multi-thread"] }
+tokio = { version = "1.37", features = ["sync", "macros", "rt","rt-multi-thread"] }
 tokio-util = "0.7"
 # tokio-stream = "*"
 toml = "0.8"
 tonic = "0.11"
 tonic-build = "0.11"
-tracing = "0.1"
 tuirealm = { version = "~1.8", features = ["serialize"] }
 tui-realm-stdlib = "~1.2"
 tui-realm-treeview = "~1.1"
 unicode-segmentation = "1.10"
 unicode-width = "^0.1.8"
-urlencoding = "2"
+urlencoding = "2.1"
 # viuer = { version = "0.7", features = ["sixel"] }
 viuer = "0.7"
-walkdir = "2"
-wildmatch = "2"
+walkdir = "2.5"
+wildmatch = "2.3"
+yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 # winit = "0.27.0"
 # windows = "0.52"

@@ -3,6 +3,7 @@
 ### next
 - Unreleased
 - Change: enable `log-to-file` by default.
+- Change: updated MSRV to 1.75.
 - Feat: Add `TM_LOGTOFILE` and `TMS_LOGTOFILE` to control `--log-to-file` for tui and server respectively.
 
 ### [v0.9.0]

@@ -1,11 +1,10 @@
-use anyhow::Result;
-use base64::{engine::general_purpose, Engine as _};
 /**
  * encrypt.rs
  * Copyright (C) 2019 gmg137 <gmg137@live.com>
  * Distributed under terms of the GPLv3 license.
  */
-use lazy_static::lazy_static;
+use anyhow::Result;
+use base64::{engine::general_purpose, Engine};
 use libaes::Cipher;
 use md5::compute;
 use num_bigint::BigUint;
@@ -16,19 +15,18 @@ use std::convert::TryFrom;
 // use std::io::Write;
 // use openssl::rsa;
 
-lazy_static! {
-    static ref IV: Vec<u8> = b"0102030405060708".to_vec();
-    static ref PRESET_KEY: Vec<u8> = b"0CoJUm6Qyw8W8jud".to_vec();
-    static ref LINUX_API_KEY: Vec<u8> = b"rFgB&h#%2?^eDg:Q".to_vec();
-    static ref BASE62: Vec<u8> = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".as_bytes().to_vec();
-    static ref RSA_PUBLIC_KEY: Vec<u8> = b"-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----".to_vec();
-    static ref EAPIKEY: Vec<u8> = b"e82ckenh8dichen8".to_vec();
-}
-static MODULUS: &str = "e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7";
-// static MODULUS:&str =
-// "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
+const IV: &[u8] = b"0102030405060708";
+const PRESET_KEY: &[u8] = b"0CoJUm6Qyw8W8jud";
+const LINUX_API_KEY: &[u8] = b"rFgB&h#%2?^eDg:Q";
+const BASE62: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+// const RSA_PUBLIC_KEY: &[u8] = b"-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----";
+const EAPIKEY: &[u8] = b"e82ckenh8dichen8";
+
+const MODULUS: &[u8] = b"e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7";
+// static MODULUS: &[u8] =
+// b"00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
 // ;
-static PUBKEY: &str = "010001";
+const PUBKEY: &[u8] = b"010001";
 
 #[allow(non_snake_case)]
 pub struct Crypto;
@@ -61,7 +59,7 @@ impl Crypto {
         let digest = hex::encode(hash.as_ref());
 
         let data = format!("{url}-36cd479b6b5-{text}-36cd479b6b5-{digest}");
-        let params = Self::aes_encrypt(&data, &EAPIKEY, Some(&*IV))?;
+        let params = Self::aes_encrypt(&data, EAPIKEY, Some(IV))?;
         let params = hex::encode_upper(params);
 
         let p_value = Self::escape(&params);
@@ -85,9 +83,9 @@ impl Crypto {
 
         // let b64_url = CUSTOM_ENGINE.encode(b"hello internet~");
 
-        let params1 = Self::aes_encrypt(text, &PRESET_KEY, Some(&*IV))?;
+        let params1 = Self::aes_encrypt(text, PRESET_KEY, Some(IV))?;
 
-        let params = Self::aes_encrypt(&params1, &key, Some(&*IV))?;
+        let params = Self::aes_encrypt(&params1, &key, Some(IV))?;
 
         let key_string = key.iter().map(|&c| c as char).collect::<String>();
         let enc_sec_key = Self::rsa(&key_string);
@@ -95,7 +93,7 @@ impl Crypto {
         // code here is left for debug, as probably the public key could be banned from netease
         // server, thus we should replace the exp and modulus.
 
-        // if let Ok(key) = rsa::Rsa::public_key_from_pem(&RSA_PUBLIC_KEY) {
+        // if let Ok(key) = rsa::Rsa::public_key_from_pem(RSA_PUBLIC_KEY) {
         //     let modulus = key.n();
         //     let exp = key.e();
         //     let mut file = std::fs::File::create("data.txt").expect("create failed");
@@ -114,7 +112,7 @@ impl Crypto {
     }
 
     pub fn linuxapi(text: &str) -> Result<String> {
-        let params = Self::aes_encrypt(text, &LINUX_API_KEY, None)?;
+        let params = Self::aes_encrypt(text, LINUX_API_KEY, None)?;
         let params = hex::encode(params).to_uppercase();
 
         let e_value = Self::escape(&params);
@@ -140,8 +138,8 @@ impl Crypto {
     fn rsa(text: &str) -> String {
         let text = text.chars().rev().collect::<String>();
         let text = BigUint::parse_bytes(hex::encode(text).as_bytes(), 16).unwrap();
-        let pubkey = BigUint::parse_bytes(PUBKEY.as_bytes(), 16).unwrap();
-        let modulus = BigUint::parse_bytes(MODULUS.as_bytes(), 16).unwrap();
+        let pubkey = BigUint::parse_bytes(PUBKEY, 16).unwrap();
+        let modulus = BigUint::parse_bytes(MODULUS, 16).unwrap();
         let pow = text.modpow(&pubkey, &modulus);
         pow.to_str_radix(16)
     }
