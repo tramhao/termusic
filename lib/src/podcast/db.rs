@@ -376,7 +376,7 @@ impl Database {
         let mut old_ep_map = AHashMap::new();
         for ep in &old_episodes {
             if !ep.guid.is_empty() {
-                old_ep_map.insert(ep.guid.clone(), ep.clone());
+                old_ep_map.insert(&ep.guid, ep);
             }
         }
 
