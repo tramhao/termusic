@@ -54,6 +54,18 @@ enum CryptoApi {
     Linuxapi,
 }
 
+// types: 单曲(1)，歌手(100)，专辑(10)，歌单(1000)，用户(1002) *(type)*
+// types: single (1), singer (100), album (10), playlist (1000), user (1002) *(type)*
+#[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
+pub enum SearchRequestType {
+    Single = 1,
+    Singer = 100,
+    Album = 10,
+    Playlist = 1000,
+    User = 1002,
+}
+
 impl Api {
     #[allow(unused)]
     pub fn new() -> Self {
@@ -150,23 +162,22 @@ impl Api {
 
     // 搜索
     // keywords: 关键词
-    // types: 单曲(1)，歌手(100)，专辑(10)，歌单(1000)，用户(1002) *(type)*
     // offset: 起始点
     // limit: 数量
     pub fn search(
         &mut self,
         keywords: &str,
-        types: u32,
+        types: SearchRequestType,
         offset: u16,
         limit: u16,
     ) -> Result<Vec<SongTag>> {
         let path = "/weapi/search/get";
         let mut params = HashMap::new();
-        let types_str = &types.to_string();
+        let types_str = (types as usize).to_string();
         let offset = &offset.to_string();
         let limit = &limit.to_string();
         params.insert("s", keywords);
-        params.insert("type", types_str);
+        params.insert("type", types_str.as_str());
         params.insert("offset", offset);
         params.insert("limit", limit);
         let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
@@ -176,7 +187,7 @@ impl Api {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => {
+            SearchRequestType::Single => {
                 let songtag_vec =
                     to_song_info(&result, Parse::Search).ok_or_else(|| anyhow!("Search Error"))?;
                 Ok(songtag_vec)

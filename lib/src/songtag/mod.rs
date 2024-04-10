@@ -82,7 +82,12 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let search_str_netease = search_str.to_string();
     let handle_netease = thread::spawn(move || -> Result<()> {
         let mut netease_api = netease::Api::new();
-        if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
+        if let Ok(results) = netease_api.search(
+            &search_str_netease,
+            netease::SearchRequestType::Single,
+            0,
+            30,
+        ) {
             tx1.send(results).ok();
         }
         Ok(())
