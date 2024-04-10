@@ -158,12 +158,23 @@ impl PlaybinWrap {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum PlayerInternalCmd {
+    Eos,
+    AboutToFinish,
+    SkipNext,
+    ReloadSpeed,
+
+    Play,
+    Pause,
+}
+
 pub struct GStreamerBackend {
     playbin: PlaybinWrap,
     volume: u16,
     speed: i32,
     gapless: bool,
-    message_tx: async_channel::Sender<PlayerCmd>,
+    message_tx: async_channel::Sender<PlayerInternalCmd>,
     media_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
@@ -193,30 +204,30 @@ impl GStreamerBackend {
             .spawn(move || loop {
                 if let Ok(msg) = main_rx.try_recv() {
                     match msg {
-                        PlayerCmd::Eos => {
+                        PlayerInternalCmd::Eos => {
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                                 error!("error in sending Eos: {e}");
                             }
                         }
-                        PlayerCmd::AboutToFinish => {
+                        PlayerInternalCmd::AboutToFinish => {
                             info!("about to finish received by gstreamer internal !!!!!");
                             if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("error in sending AboutToFinish: {e}");
                             }
                         }
-                        PlayerCmd::SkipNext => {
+                        PlayerInternalCmd::SkipNext => {
                             // store it here, as there will be no EOS event send by gst
                             eos_watcher_clone.store(true, std::sync::atomic::Ordering::SeqCst);
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                                 error!("error in sending SkipNext: {e}");
                             }
                         }
-                        PlayerCmd::SpeedUp => {
+                        PlayerInternalCmd::ReloadSpeed => {
                             // HACK: currently gstreamer does not have any internal events to be send, and there is no global "re-apply speed property", this also means that if using max speed, it will not actually use full-speed
                             let _ = cmd_tx.send(PlayerCmd::SpeedUp);
                             let _ = cmd_tx.send(PlayerCmd::SpeedDown);
                         }
-                        _ => {}
+                        PlayerInternalCmd::Pause | PlayerInternalCmd::Play => {}
                     }
                 }
                 std::thread::sleep(std::time::Duration::from_millis(100));
@@ -287,7 +298,7 @@ impl GStreamerBackend {
                     gst::MessageView::Eos(_) => {
                         // debug tracking, as gapless interferes with it
                         debug!("gstreamer message EOS");
-                        main_tx.send_blocking(PlayerCmd::Eos)
+                        main_tx.send_blocking(PlayerInternalCmd::Eos)
                             .expect("Unable to send message to main()");
                         eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
 
@@ -297,7 +308,7 @@ impl GStreamerBackend {
                     gst::MessageView::StreamStart(_e) => {
                         if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
                             trace!("Sending EOS because it was not sent since last StreamStart");
-                            main_tx.send_blocking(PlayerCmd::Eos)
+                            main_tx.send_blocking(PlayerInternalCmd::Eos)
                                 .expect("Unable to send message to main()");
                         }
 
@@ -307,7 +318,7 @@ impl GStreamerBackend {
                         media_title_internal.lock().clear();
 
                         // HACK: gstreamer does not handle seek events before some undocumented time, see other note in main_rx handler
-                        let _ = main_tx.send_blocking(PlayerCmd::SpeedUp);
+                        let _ = main_tx.send_blocking(PlayerInternalCmd::ReloadSpeed);
                     }
                     gst::MessageView::Error(e) =>
                         error!("GStreamer Error: {}", e.error()),
@@ -330,9 +341,9 @@ impl GStreamerBackend {
                         // info!("mode is: {mode:?}, and left is: {left}");
                         let percent = buffering.percent();
                         if percent < 100 {
-                            let _ = main_tx.send_blocking(PlayerCmd::Pause);
+                            let _ = main_tx.send_blocking(PlayerInternalCmd::Pause);
                         } else {
-                            let _ = main_tx.send_blocking(PlayerCmd::Play);
+                            let _ = main_tx.send_blocking(PlayerInternalCmd::Play);
                         }
                         // Left for debug
                         // let msg = buffering.message();
@@ -380,7 +391,9 @@ impl GStreamerBackend {
         // Send a signal to enqueue the next media before the current finished
         this.playbin.connect_about_to_finish(move |_| {
             debug!("Sending playbin AboutToFinish");
-            main_tx.send_blocking(PlayerCmd::AboutToFinish).unwrap();
+            main_tx
+                .send_blocking(PlayerInternalCmd::AboutToFinish)
+                .unwrap();
             None
         });
 
@@ -513,7 +526,9 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn skip_one(&mut self) {
-        self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
+        self.message_tx
+            .send_blocking(PlayerInternalCmd::SkipNext)
+            .ok();
     }
 
     fn enqueue_next(&mut self, track: &Track) {
