@@ -11,7 +11,7 @@ use lazy_static::lazy_static;
 use lofty::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
-use reqwest::blocking::{Client, ClientBuilder};
+use reqwest::{Client, ClientBuilder};
 // use std::io::Write;
 use bytes::Buf;
 use std::{collections::HashMap, time::Duration};
@@ -86,7 +86,7 @@ impl Api {
     // params: 请求参数
     // cryptoapi: 请求加密方式
     // ua: 要使用的 USER_AGENT_LIST
-    fn request(
+    async fn request(
         &mut self,
         method: Method,
         path: &str,
@@ -135,7 +135,8 @@ impl Api {
                     .header("Referer", "https://music.163.com")
                     .header("User-Agent", user_agent)
                     .body(body)
-                    .send()?;
+                    .send()
+                    .await?;
                 // .send_string(&body)?;
 
                 if self.csrf.is_empty() {
@@ -154,9 +155,9 @@ impl Api {
                         }
                     }
                 }
-                Ok(response.text()?)
+                Ok(response.text().await?)
             }
-            Method::Get => Ok(self.client.get(&url).send()?.text()?),
+            Method::Get => Ok(self.client.get(&url).send().await?.text().await?),
         }
     }
 
@@ -164,7 +165,7 @@ impl Api {
     // keywords: 关键词
     // offset: 起始点
     // limit: 数量
-    pub fn search(
+    pub async fn search(
         &mut self,
         keywords: &str,
         types: SearchRequestType,
@@ -180,7 +181,9 @@ impl Api {
         params.insert("type", types_str.as_str());
         params.insert("offset", offset);
         params.insert("limit", limit);
-        let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
+        let result = self
+            .request(Method::Post, path, params, CryptoApi::Weapi, "")
+            .await?;
 
         // Left for debug
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
@@ -198,7 +201,7 @@ impl Api {
 
     // 查询歌词
     // music_id: 歌曲id
-    pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
+    pub async fn song_lyric(&mut self, music_id: &str) -> Result<String> {
         let csrf_token = self.csrf.clone();
         let path = "/weapi/song/lyric";
         let mut params = HashMap::new();
@@ -206,14 +209,16 @@ impl Api {
         params.insert("lv", "-1");
         params.insert("tv", "-1");
         params.insert("csrf_token", &csrf_token);
-        let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
+        let result = self
+            .request(Method::Post, path, params, CryptoApi::Weapi, "")
+            .await?;
         to_lyric(&result).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // 歌曲 URL
     // ids: 歌曲列表
     #[allow(unused)]
-    pub fn songs_url(&mut self, ids: &[u64]) -> Result<Vec<SongUrl>> {
+    pub async fn songs_url(&mut self, ids: &[u64]) -> Result<Vec<SongUrl>> {
         let csrf_token = self.csrf.clone();
         let path = "/weapi/song/enhance/player/url/v1";
         let mut params = HashMap::new();
@@ -222,14 +227,16 @@ impl Api {
         params.insert("level", "standard");
         params.insert("encodeType", "aac");
         params.insert("csrf_token", &csrf_token);
-        let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
+        let result = self
+            .request(Method::Post, path, params, CryptoApi::Weapi, "")
+            .await?;
         to_song_url(&result).ok_or_else(|| anyhow!("Search Error"))
     }
 
-    pub fn song_url(&mut self, id: &str) -> Result<String> {
+    pub async fn song_url(&mut self, id: &str) -> Result<String> {
         let song_id_u64 = id.parse::<u64>()?;
 
-        let result = self.songs_url(&[song_id_u64])?;
+        let result = self.songs_url(&[song_id_u64]).await?;
         if result.is_empty() {
             bail!("None Error");
         }
@@ -239,16 +246,16 @@ impl Api {
     }
 
     // download picture
-    pub fn pic(&mut self, pic_id: &str) -> Result<Picture> {
+    pub async fn pic(&mut self, pic_id: &str) -> Result<Picture> {
         // pub fn pic(&mut self, pic_id: &str) -> Result<Vec<u8>> {
         let id_encrypted = Crypto::encrypt_id(pic_id);
         let url = format!("https://p3.music.126.net/{id_encrypted}/{pic_id}.jpg?param=300y300");
 
-        let result = self.client.get(url).send()?; //.map_err(|_| Errors::None)?;
+        let result = self.client.get(url).send().await?; //.map_err(|_| Errors::None)?;
 
         // let mut bytes: Vec<u8> = Vec::new();
         // result.into_reader().read_to_end(&mut bytes)?;
-        let mut reader = result.bytes()?.reader();
+        let mut reader = result.bytes().await?.reader();
         let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
 

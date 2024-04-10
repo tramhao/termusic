@@ -74,24 +74,28 @@ impl std::fmt::Display for ServiceProvider {
 }
 
 // Search function of 3 servers. Run in parallel to get results faster.
-pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
+pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
     let (tx, rx) = mpsc::channel::<Vec<SongTag>>();
 
     let tx1 = tx.clone();
     let search_str_netease = search_str.to_string();
-    let handle_netease = thread::spawn(move || -> Result<()> {
+    // TODO: this will execute immediately, not spawning the other threads
+    let _handle_netease = async {
         let mut netease_api = netease::Api::new();
-        if let Ok(results) = netease_api.search(
-            &search_str_netease,
-            netease::SearchRequestType::Single,
-            0,
-            30,
-        ) {
+        if let Ok(results) = netease_api
+            .search(
+                &search_str_netease,
+                netease::SearchRequestType::Single,
+                0,
+                30,
+            )
+            .await
+        {
             tx1.send(results).ok();
         }
-        Ok(())
-    });
+    }
+    .await;
 
     let tx2 = tx.clone();
     let search_str_migu = search_str.to_string();
@@ -116,10 +120,8 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     });
 
     thread::spawn(move || {
-        if handle_netease.join().is_ok() {
-            if let Ok(result_new) = rx.try_recv() {
-                results.extend(result_new);
-            }
+        if let Ok(result_new) = rx.try_recv() {
+            results.extend(result_new);
         }
 
         if handle_migu.join().is_ok() {
@@ -184,7 +186,7 @@ impl SongTag {
         self.url.as_ref().map(std::string::ToString::to_string)
     }
     // get lyric by lyric_id
-    pub fn fetch_lyric(&self) -> Result<String> {
+    pub async fn fetch_lyric(&self) -> Result<String> {
         let mut lyric_string = String::new();
 
         match self.service_provider {
@@ -197,7 +199,7 @@ impl SongTag {
             Some(ServiceProvider::Netease) => {
                 let mut netease_api = netease::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = netease_api.song_lyric(lyric_id)?;
+                    lyric_string = netease_api.song_lyric(lyric_id).await?;
                 }
             }
             Some(ServiceProvider::Migu) => {
@@ -213,7 +215,7 @@ impl SongTag {
     }
 
     // get photo by pic_id(kugou/netease) or song_id(migu)
-    pub fn fetch_photo(&self) -> Result<Picture> {
+    pub async fn fetch_photo(&self) -> Result<Picture> {
         // let mut encoded_image_bytes: Vec<u8> = Vec::new();
 
         match self.service_provider {
@@ -232,7 +234,7 @@ impl SongTag {
             Some(ServiceProvider::Netease) => {
                 let mut netease_api = netease::Api::new();
                 if let Some(p) = &self.pic_id {
-                    Ok(netease_api.pic(p)?)
+                    Ok(netease_api.pic(p).await?)
                 } else {
                     bail!("pic_id is missing for netease")
                 }
@@ -263,7 +265,7 @@ impl SongTag {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn download(&self, file: &str, tx_tageditor: &Sender<Msg>) -> Result<()> {
+    pub async fn download(&self, file: &str, tx_tageditor: &Sender<Msg>) -> Result<()> {
         let p_parent = get_parent_folder(file);
         let song_id = self
             .song_id
@@ -279,8 +281,8 @@ impl SongTag {
             .unwrap_or_else(|| "Unknown Title".to_string());
 
         let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
-        let lyric = self.fetch_lyric();
-        let photo = self.fetch_photo();
+        let lyric = self.fetch_lyric().await;
+        let photo = self.fetch_photo().await;
         let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
 
         let filename = format!("{artist}-{title}.%(ext)s");
@@ -308,7 +310,7 @@ impl SongTag {
             match s {
                 ServiceProvider::Netease => {
                     let mut netease_api = netease::Api::new();
-                    url = netease_api.song_url(song_id)?;
+                    url = netease_api.song_url(song_id).await?;
                 }
                 ServiceProvider::Migu => {}
                 ServiceProvider::Kugou => {
