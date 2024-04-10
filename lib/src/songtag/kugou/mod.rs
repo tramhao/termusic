@@ -28,7 +28,7 @@ use anyhow::{anyhow, Result};
 use bytes::Buf;
 use lofty::Picture;
 use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
-use reqwest::blocking::{Client, ClientBuilder};
+use reqwest::{Client, ClientBuilder};
 use std::time::Duration;
 
 const URL_SEARCH_KUGOU: &str = "http://mobilecdn.kugou.com/api/v3/search/song";
@@ -55,7 +55,7 @@ impl Api {
         Self { client }
     }
 
-    pub fn search(
+    pub async fn search(
         &self,
         keywords: &str,
         types: SearchRequestType,
@@ -80,8 +80,10 @@ impl Api {
             .post(URL_SEARCH_KUGOU)
             .header("Referer", "https://m.music.migu.cn")
             .query(&query_vec)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -96,7 +98,7 @@ impl Api {
 
     // search and download lyrics
     // music_id: 歌曲id
-    pub fn song_lyric(&self, music_id: &str) -> Result<String> {
+    pub async fn song_lyric(&self, music_id: &str) -> Result<String> {
         let query_vec = vec![
             ("keyword", "%20-%20"),
             ("ver", "1"),
@@ -109,8 +111,10 @@ impl Api {
             .client
             .get(URL_LYRIC_SEARCH_KUGOU)
             .query(&query_vec)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         let (accesskey, id) =
             to_lyric_id_accesskey(&result).ok_or_else(|| anyhow!("Search Error"))?;
@@ -127,15 +131,17 @@ impl Api {
             .client
             .get(URL_LYRIC_DOWNLOAD_KUGOU)
             .query(&query_vec)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         to_lyric(&result).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // 歌曲 URL
     // ids: 歌曲列表
-    pub fn song_url(&self, id: &str, album_id: &str) -> Result<String> {
+    pub async fn song_url(&self, id: &str, album_id: &str) -> Result<String> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
 
         let query_vec = vec![("hash", id), ("album_id", album_id)];
@@ -144,8 +150,10 @@ impl Api {
             .get(URL_SONG_DOWNLOAD_KUGOU)
             .header("Cookie", format!("kg_mid={kg_mid}").as_str())
             .query(&query_vec)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -154,7 +162,7 @@ impl Api {
     }
 
     // download picture
-    pub fn pic(&self, id: &str, album_id: &str) -> Result<Picture> {
+    pub async fn pic(&self, id: &str, album_id: &str) -> Result<Picture> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
         let query_vec = vec![("hash", id), ("album_id", album_id)];
         let result = self
@@ -162,12 +170,14 @@ impl Api {
             .get(URL_SONG_DOWNLOAD_KUGOU)
             .header("Cookie", format!("kg_mid={kg_mid}").as_str())
             .query(&query_vec)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         let url = to_pic_url(&result).ok_or_else(|| anyhow!("Search Error"))?;
 
-        let result = self.client.get(url).send()?;
+        let result = self.client.get(url).send().await?;
 
         // let mut bytes: Vec<u8> = Vec::new();
         // result.into_reader().read_to_end(&mut bytes)?;
@@ -176,7 +186,7 @@ impl Api {
         // let mut bytes = Vec::new();
         // result.read_to_end(&mut bytes)?;
 
-        let mut reader = result.bytes()?.reader();
+        let mut reader = result.bytes().await?.reader();
         let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
     }

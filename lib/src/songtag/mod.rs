@@ -113,14 +113,16 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 
     let kugou_api = kugou::Api::new();
     let search_str_kugou = search_str.to_string();
-    let handle_kugou = thread::spawn(move || -> Result<()> {
-        if let Ok(results) =
-            kugou_api.search(&search_str_kugou, kugou::SearchRequestType::Song, 0, 30)
+    // TODO: this will execute immediately, not spawning the other threads / futures
+    let _handle_kugou = async {
+        if let Ok(results) = kugou_api
+            .search(&search_str_kugou, kugou::SearchRequestType::Song, 0, 30)
+            .await
         {
             tx.send(results).ok();
         }
-        Ok(())
-    });
+    }
+    .await;
 
     thread::spawn(move || {
         if let Ok(result_new) = rx.try_recv() {
@@ -131,10 +133,8 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
             results.extend(result_new);
         }
 
-        if handle_kugou.join().is_ok() {
-            if let Ok(result_new) = rx.try_recv() {
-                results.extend(result_new);
-            }
+        if let Ok(result_new) = rx.try_recv() {
+            results.extend(result_new);
         }
 
         tx_tageditor.send(SearchLyricState::Finish(results)).ok();
@@ -194,7 +194,7 @@ impl SongTag {
             Some(ServiceProvider::Kugou) => {
                 let kugou_api = kugou::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = kugou_api.song_lyric(lyric_id)?;
+                    lyric_string = kugou_api.song_lyric(lyric_id).await?;
                 }
             }
             Some(ServiceProvider::Netease) => {
@@ -224,7 +224,7 @@ impl SongTag {
                 let kugou_api = kugou::Api::new();
                 if let Some(p) = &self.pic_id {
                     if let Some(album_id) = &self.album_id {
-                        Ok(kugou_api.pic(p, album_id)?)
+                        Ok(kugou_api.pic(p, album_id).await?)
                     } else {
                         bail!("album_id is missing for kugou")
                     }
@@ -316,7 +316,7 @@ impl SongTag {
                 ServiceProvider::Migu => {}
                 ServiceProvider::Kugou => {
                     let kugou_api = kugou::Api::new();
-                    url = kugou_api.song_url(song_id, &album_id)?;
+                    url = kugou_api.song_url(song_id, &album_id).await?;
                 }
             }
         }
