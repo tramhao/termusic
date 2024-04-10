@@ -24,7 +24,7 @@
 mod model;
 
 use super::{encrypt::Crypto, SongTag};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use bytes::Buf;
 use lofty::Picture;
 use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
@@ -35,6 +35,11 @@ static URL_SEARCH_KUGOU: &str = "http://mobilecdn.kugou.com/api/v3/search/song";
 static URL_LYRIC_SEARCH_KUGOU: &str = "http://krcs.kugou.com/search";
 static URL_LYRIC_DOWNLOAD_KUGOU: &str = "http://lyrics.kugou.com/download";
 static URL_SONG_DOWNLOAD_KUGOU: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
+
+#[derive(Debug, Clone, Copy)]
+pub enum SearchRequestType {
+    Song = 1,
+}
 
 pub struct Api {
     client: Client,
@@ -53,7 +58,7 @@ impl Api {
     pub fn search(
         &self,
         keywords: &str,
-        types: u32,
+        types: SearchRequestType,
         offset: u16,
         limit: u16,
     ) -> Result<Vec<SongTag>> {
@@ -82,11 +87,10 @@ impl Api {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => {
+            SearchRequestType::Song => {
                 let song_info = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
                 Ok(song_info)
             }
-            _ => bail!("None Error"),
         }
     }
 

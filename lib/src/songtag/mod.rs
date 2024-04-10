@@ -107,7 +107,9 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let kugou_api = kugou::Api::new();
     let search_str_kugou = search_str.to_string();
     let handle_kugou = thread::spawn(move || -> Result<()> {
-        if let Ok(results) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
+        if let Ok(results) =
+            kugou_api.search(&search_str_kugou, kugou::SearchRequestType::Song, 0, 30)
+        {
             tx.send(results).ok();
         }
         Ok(())
