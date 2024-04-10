@@ -39,7 +39,7 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct SongTag {
     artist: Option<String>,
     title: Option<String>,
@@ -54,8 +54,7 @@ pub struct SongTag {
     // genre: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
-#[allow(clippy::use_self)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum ServiceProvider {
     Netease,
     Kugou,
