@@ -34,7 +34,7 @@ use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedText
 use lofty::{Accessor, Picture, TagExt, TextEncoding};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Sender};
 use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
@@ -76,7 +76,7 @@ impl std::fmt::Display for ServiceProvider {
 // Search function of 3 servers. Run in parallel to get results faster.
 pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
-    let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
+    let (tx, rx) = mpsc::channel::<Vec<SongTag>>();
 
     let tx1 = tx.clone();
     let search_str_netease = search_str.to_string();
