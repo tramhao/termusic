@@ -39,7 +39,7 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct SongTag {
     artist: Option<String>,
     title: Option<String>,
@@ -54,7 +54,7 @@ pub struct SongTag {
     // genre: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub enum ServiceProvider {
     Netease,
     Kugou,
