@@ -76,32 +76,24 @@ impl std::fmt::Display for ServiceProvider {
 pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
 
-    let search_str_netease = search_str.to_string();
     let handle_netease = async {
         let mut netease_api = netease::Api::new();
         netease_api
-            .search(
-                &search_str_netease,
-                netease::SearchRequestType::Single,
-                0,
-                30,
-            )
+            .search(search_str, netease::SearchRequestType::Single, 0, 30)
             .await
     };
 
-    let search_str_migu = search_str.to_string();
     let handle_migu = async {
         let migu_api = migu::Api::new();
         migu_api
-            .search(&search_str_migu, migu::SearchRequestType::Song, 0, 30)
+            .search(search_str, migu::SearchRequestType::Song, 0, 30)
             .await
     };
 
-    let search_str_kugou = search_str.to_string();
     let handle_kugou = async {
         let kugou_api = kugou::Api::new();
         kugou_api
-            .search(&search_str_kugou, kugou::SearchRequestType::Song, 0, 30)
+            .search(search_str, kugou::SearchRequestType::Song, 0, 30)
             .await
     };
 
