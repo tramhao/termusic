@@ -34,7 +34,7 @@ use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedText
 use lofty::{Accessor, Picture, TagExt, TextEncoding};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Sender};
+use std::sync::mpsc::Sender;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
@@ -76,14 +76,11 @@ impl std::fmt::Display for ServiceProvider {
 // Search function of 3 servers. Run in parallel to get results faster.
 pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
-    let (tx, rx) = mpsc::channel::<Vec<SongTag>>();
 
-    let tx1 = tx.clone();
     let search_str_netease = search_str.to_string();
-    // TODO: this will execute immediately, not spawning the other threads / futures
-    let _handle_netease = async {
+    let handle_netease = async {
         let mut netease_api = netease::Api::new();
-        if let Ok(results) = netease_api
+        netease_api
             .search(
                 &search_str_netease,
                 netease::SearchRequestType::Single,
@@ -91,54 +88,43 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
                 30,
             )
             .await
-        {
-            tx1.send(results).ok();
-        }
-    }
-    .await;
+    };
 
-    let tx2 = tx.clone();
     let search_str_migu = search_str.to_string();
-    // TODO: this will execute immediately, not spawning the other threads / futures
-    let _handle_migu = async {
+    let handle_migu = async {
         let migu_api = migu::Api::new();
-        if let Ok(results) = migu_api
+        migu_api
             .search(&search_str_migu, migu::SearchRequestType::Song, 0, 30)
             .await
-        {
-            tx2.send(results).ok();
-        }
-    }
-    .await;
+    };
 
-    let kugou_api = kugou::Api::new();
     let search_str_kugou = search_str.to_string();
-    // TODO: this will execute immediately, not spawning the other threads / futures
-    let _handle_kugou = async {
-        if let Ok(results) = kugou_api
+    let handle_kugou = async {
+        let kugou_api = kugou::Api::new();
+        kugou_api
             .search(&search_str_kugou, kugou::SearchRequestType::Song, 0, 30)
             .await
-        {
-            tx.send(results).ok();
-        }
+    };
+
+    let (netease_res, migu_res, kugou_res) =
+        futures::join!(handle_netease, handle_migu, handle_kugou);
+
+    match netease_res {
+        Ok(vec) => results.extend(vec),
+        Err(err) => error!("Netease Error: {:#}", err),
     }
-    .await;
 
-    thread::spawn(move || {
-        if let Ok(result_new) = rx.try_recv() {
-            results.extend(result_new);
-        }
+    match migu_res {
+        Ok(vec) => results.extend(vec),
+        Err(err) => error!("Migu Error: {:#}", err),
+    }
 
-        if let Ok(result_new) = rx.try_recv() {
-            results.extend(result_new);
-        }
+    match kugou_res {
+        Ok(vec) => results.extend(vec),
+        Err(err) => error!("Kogou Error: {:#}", err),
+    }
 
-        if let Ok(result_new) = rx.try_recv() {
-            results.extend(result_new);
-        }
-
-        tx_tageditor.send(SearchLyricState::Finish(results)).ok();
-    });
+    tx_tageditor.send(SearchLyricState::Finish(results)).ok();
 }
 
 impl SongTag {
