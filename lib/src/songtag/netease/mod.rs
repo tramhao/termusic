@@ -20,7 +20,7 @@ lazy_static! {
     static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
 }
 
-static BASE_URL_NETEASE: &str = "https://music.163.com";
+const BASE_URL_NETEASE: &str = "https://music.163.com";
 
 const LINUX_USER_AGENT: &str =
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36";

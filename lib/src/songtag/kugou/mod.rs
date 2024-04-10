@@ -31,10 +31,10 @@ use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_u
 use reqwest::blocking::{Client, ClientBuilder};
 use std::time::Duration;
 
-static URL_SEARCH_KUGOU: &str = "http://mobilecdn.kugou.com/api/v3/search/song";
-static URL_LYRIC_SEARCH_KUGOU: &str = "http://krcs.kugou.com/search";
-static URL_LYRIC_DOWNLOAD_KUGOU: &str = "http://lyrics.kugou.com/download";
-static URL_SONG_DOWNLOAD_KUGOU: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
+const URL_SEARCH_KUGOU: &str = "http://mobilecdn.kugou.com/api/v3/search/song";
+const URL_LYRIC_SEARCH_KUGOU: &str = "http://krcs.kugou.com/search";
+const URL_LYRIC_DOWNLOAD_KUGOU: &str = "http://lyrics.kugou.com/download";
+const URL_SONG_DOWNLOAD_KUGOU: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
 
 #[derive(Debug, Clone, Copy)]
 pub enum SearchRequestType {
