@@ -80,7 +80,7 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 
     let tx1 = tx.clone();
     let search_str_netease = search_str.to_string();
-    // TODO: this will execute immediately, not spawning the other threads
+    // TODO: this will execute immediately, not spawning the other threads / futures
     let _handle_netease = async {
         let mut netease_api = netease::Api::new();
         if let Ok(results) = netease_api
@@ -99,14 +99,17 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 
     let tx2 = tx.clone();
     let search_str_migu = search_str.to_string();
-    let handle_migu = thread::spawn(move || -> Result<()> {
+    // TODO: this will execute immediately, not spawning the other threads / futures
+    let _handle_migu = async {
         let migu_api = migu::Api::new();
-        if let Ok(results) = migu_api.search(&search_str_migu, migu::SearchRequestType::Song, 0, 30)
+        if let Ok(results) = migu_api
+            .search(&search_str_migu, migu::SearchRequestType::Song, 0, 30)
+            .await
         {
             tx2.send(results).ok();
         }
-        Ok(())
-    });
+    }
+    .await;
 
     let kugou_api = kugou::Api::new();
     let search_str_kugou = search_str.to_string();
@@ -124,10 +127,8 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
             results.extend(result_new);
         }
 
-        if handle_migu.join().is_ok() {
-            if let Ok(result_new) = rx.try_recv() {
-                results.extend(result_new);
-            }
+        if let Ok(result_new) = rx.try_recv() {
+            results.extend(result_new);
         }
 
         if handle_kugou.join().is_ok() {
@@ -205,7 +206,7 @@ impl SongTag {
             Some(ServiceProvider::Migu) => {
                 let migu_api = migu::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = migu_api.song_lyric(lyric_id)?;
+                    lyric_string = migu_api.song_lyric(lyric_id).await?;
                 }
             }
             None => {}
@@ -242,7 +243,7 @@ impl SongTag {
             Some(ServiceProvider::Migu) => {
                 let migu_api = migu::Api::new();
                 if let Some(p) = &self.song_id {
-                    Ok(migu_api.pic(p)?)
+                    Ok(migu_api.pic(p).await?)
                 } else {
                     bail!("song_id is missing for migu")
                 }
