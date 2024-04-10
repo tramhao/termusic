@@ -5,7 +5,7 @@
  */
 mod model;
 
-use super::encrypt::Crypto;
+use super::{encrypt::Crypto, SongTag};
 use anyhow::{anyhow, bail, Result};
 use lazy_static::lazy_static;
 use lofty::Picture;
@@ -159,7 +159,7 @@ impl Api {
         types: u32,
         offset: u16,
         limit: u16,
-    ) -> Result<String> {
+    ) -> Result<Vec<SongTag>> {
         let path = "/weapi/search/get";
         let mut params = HashMap::new();
         let types_str = &types.to_string();
@@ -179,8 +179,7 @@ impl Api {
             1 => {
                 let songtag_vec =
                     to_song_info(&result, Parse::Search).ok_or_else(|| anyhow!("Search Error"))?;
-                let songtag_string = serde_json::to_string(&songtag_vec)?;
-                Ok(songtag_string)
+                Ok(songtag_vec)
             }
             _ => bail!("None Error"),
         }

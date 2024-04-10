@@ -83,8 +83,7 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let handle_netease = thread::spawn(move || -> Result<()> {
         let mut netease_api = netease::Api::new();
         if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
-            let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
-            tx1.send(result_new).ok();
+            tx1.send(results).ok();
         }
         Ok(())
     });
@@ -94,8 +93,7 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let handle_migu = thread::spawn(move || -> Result<()> {
         let migu_api = migu::Api::new();
         if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
-            let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
-            tx2.send(result_new).ok();
+            tx2.send(results).ok();
         }
         Ok(())
     });
@@ -103,9 +101,8 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let kugou_api = kugou::Api::new();
     let search_str_kugou = search_str.to_string();
     let handle_kugou = thread::spawn(move || -> Result<()> {
-        if let Ok(r) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
-            let result_new: Vec<SongTag> = serde_json::from_str(&r)?;
-            tx.send(result_new).ok();
+        if let Ok(results) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
+            tx.send(results).ok();
         }
         Ok(())
     });

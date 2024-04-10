@@ -23,7 +23,7 @@
  */
 mod model;
 
-use super::encrypt::Crypto;
+use super::{encrypt::Crypto, SongTag};
 use anyhow::{anyhow, bail, Result};
 use bytes::Buf;
 use lofty::Picture;
@@ -50,7 +50,13 @@ impl Api {
         Self { client }
     }
 
-    pub fn search(&self, keywords: &str, types: u32, offset: u16, limit: u16) -> Result<String> {
+    pub fn search(
+        &self,
+        keywords: &str,
+        types: u32,
+        offset: u16,
+        limit: u16,
+    ) -> Result<Vec<SongTag>> {
         let q_1 = 1.to_string();
         let q_page = offset.to_string();
         let q_pagesize = limit.to_string();
@@ -78,8 +84,7 @@ impl Api {
         match types {
             1 => {
                 let song_info = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
-                let song_info_string = serde_json::to_string(&song_info)?;
-                Ok(song_info_string)
+                Ok(song_info)
             }
             _ => bail!("None Error"),
         }

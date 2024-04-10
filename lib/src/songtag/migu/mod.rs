@@ -31,6 +31,8 @@ use model::{to_lyric, to_pic_url, to_song_info};
 use reqwest::blocking::{Client, ClientBuilder};
 use std::time::Duration;
 
+use super::SongTag;
+
 static URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";
 static URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
 static URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
@@ -49,7 +51,13 @@ impl Api {
         Self { client }
     }
 
-    pub fn search(&self, keywords: &str, types: u32, offset: u16, limit: u16) -> Result<String> {
+    pub fn search(
+        &self,
+        keywords: &str,
+        types: u32,
+        offset: u16,
+        limit: u16,
+    ) -> Result<Vec<SongTag>> {
         let q_pgc = offset.to_string();
         let q_rows = limit.to_string();
         let q_type = 2.to_string();
@@ -73,8 +81,7 @@ impl Api {
         match types {
             1 => {
                 let songtag_vec = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
-                let songtag_string = serde_json::to_string(&songtag_vec)?;
-                Ok(songtag_string)
+                Ok(songtag_vec)
             }
             _ => Err(anyhow!("None Error")),
         }
