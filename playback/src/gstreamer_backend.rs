@@ -156,6 +156,16 @@ impl PlaybinWrap {
     {
         self.0.connect("about-to-finish", false, cb);
     }
+
+    #[inline]
+    fn pause(&self) -> Result<StateChangeSuccess, StateChangeError> {
+        self.0.set_state(gst::State::Paused)
+    }
+
+    #[inline]
+    fn play(&self) -> Result<StateChangeSuccess, StateChangeError> {
+        self.0.set_state(gst::State::Playing)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -164,9 +174,6 @@ enum PlayerInternalCmd {
     AboutToFinish,
     SkipNext,
     ReloadSpeed,
-
-    Play,
-    Pause,
 }
 
 pub struct GStreamerBackend {
@@ -227,7 +234,6 @@ impl GStreamerBackend {
                             let _ = cmd_tx.send(PlayerCmd::SpeedUp);
                             let _ = cmd_tx.send(PlayerCmd::SpeedDown);
                         }
-                        PlayerInternalCmd::Pause | PlayerInternalCmd::Play => {}
                     }
                 }
                 std::thread::sleep(std::time::Duration::from_millis(100));
@@ -290,7 +296,10 @@ impl GStreamerBackend {
 
         let media_title = Arc::new(Mutex::new(String::new()));
         let media_title_internal = media_title.clone();
+        let playbin = PlaybinWrap::new(playbin);
+        let playbin_clone = playbin.clone();
         let bus_watch = playbin
+            .0
             .bus()
             .expect("Failed to get GStreamer message bus")
             .add_watch(glib::clone!(@strong main_tx=> move |_bus, msg| {
@@ -340,10 +349,12 @@ impl GStreamerBackend {
                         // let (mode,_, _, left) = buffering.buffering_stats();
                         // info!("mode is: {mode:?}, and left is: {left}");
                         let percent = buffering.percent();
+                        // according to the documentation, the application (we) need to set the playbin state according tothe buffering state
+                        // see https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#buffering
                         if percent < 100 {
-                            let _ = main_tx.send_blocking(PlayerInternalCmd::Pause);
+                            let _ = playbin_clone.pause();
                         } else {
-                            let _ = main_tx.send_blocking(PlayerInternalCmd::Play);
+                            let _ = playbin_clone.play();
                         }
                         // Left for debug
                         // let msg = buffering.message();
@@ -370,7 +381,6 @@ impl GStreamerBackend {
             })
             .expect("failed to start gstreamer mainloop thread");
 
-        let playbin = PlaybinWrap::new(playbin);
         let volume = config.player_volume;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
@@ -426,14 +436,12 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn pause(&mut self) {
-        self.playbin
-            .set_state(gst::State::Paused)
-            .expect("set gst state paused error");
+        self.playbin.pause().expect("set gst state paused error");
     }
 
     fn resume(&mut self) {
         self.playbin
-            .set_state(gst::State::Playing)
+            .play()
             .expect("set gst state playing error in resume");
     }
 
