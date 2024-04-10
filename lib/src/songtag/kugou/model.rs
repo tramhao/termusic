@@ -143,3 +143,35 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         album_id: Some(v.get("album_id")?.as_str()?.to_owned()),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: get some actual test data like migu or netease
+    #[test]
+    fn should_parse_songinfo() {
+        let sample_data = r#"{
+            "status": 1,
+            "errcode": 0,
+            "data": {
+              "timestamp": 1111111111,
+              "tab": "",
+              "forcecorrection": 0,
+              "correctiontype": 0,
+              "total": 0,
+              "istag": 0,
+              "allowerr": 0,
+              "info": [],
+              "aggregation": [],
+              "correctiontip": "",
+              "istagresult": 0
+            },
+            "error": ""
+          }"#;
+
+        let res = to_song_info(sample_data).unwrap();
+
+        assert_eq!(res.len(), 0);
+    }
+}
