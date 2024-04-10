@@ -37,6 +37,11 @@ static URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search
 static URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
 static URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
 
+#[derive(Debug, Clone, Copy)]
+pub enum SearchRequestType {
+    Song = 1,
+}
+
 pub struct Api {
     client: Client,
 }
@@ -54,7 +59,7 @@ impl Api {
     pub fn search(
         &self,
         keywords: &str,
-        types: u32,
+        types: SearchRequestType,
         offset: u16,
         limit: u16,
     ) -> Result<Vec<SongTag>> {
@@ -79,11 +84,10 @@ impl Api {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => {
+            SearchRequestType::Song => {
                 let songtag_vec = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
                 Ok(songtag_vec)
             }
-            _ => Err(anyhow!("None Error")),
         }
     }
 

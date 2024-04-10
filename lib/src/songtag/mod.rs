@@ -97,7 +97,8 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let search_str_migu = search_str.to_string();
     let handle_migu = thread::spawn(move || -> Result<()> {
         let migu_api = migu::Api::new();
-        if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
+        if let Ok(results) = migu_api.search(&search_str_migu, migu::SearchRequestType::Song, 0, 30)
+        {
             tx2.send(results).ok();
         }
         Ok(())
