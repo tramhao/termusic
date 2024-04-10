@@ -241,3 +241,159 @@ pub enum Parse {
     Search,
     Usl,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_parse_songinfo() {
+        let sample_data = r#"{
+            "result": {
+              "songs": [
+                {
+                  "id": 1000000000,
+                  "name": "Track A",
+                  "artists": [
+                    {
+                      "id": 3333333,
+                      "name": "Some Artist",
+                      "picUrl": null,
+                      "alias": [],
+                      "albumSize": 0,
+                      "picId": 0,
+                      "fansGroup": null,
+                      "img1v1Url": "https://p3.music.126.net/AAAAAAAAAAAAAAAAAAAAAAAA/0000000000000000.jpg",
+                      "img1v1": 0,
+                      "trans": null
+                    }
+                  ],
+                  "album": {
+                    "id": 100000001,
+                    "name": "Some Album 1",
+                    "artist": {
+                      "id": 0,
+                      "name": "",
+                      "picUrl": null,
+                      "alias": [],
+                      "albumSize": 0,
+                      "picId": 0,
+                      "fansGroup": null,
+                      "img1v1Url": "https://p3.music.126.net/AAAAAAAAAAAAAAAAAAAAAAAA/0000000000000000.jpg",
+                      "img1v1": 0,
+                      "trans": null
+                    },
+                    "publishTime": 1111111111111,
+                    "size": 6,
+                    "copyrightId": 1111,
+                    "status": 1,
+                    "picId": 444444444444444444,
+                    "mark": 0
+                  },
+                  "duration": 89595,
+                  "copyrightId": 1111,
+                  "status": 0,
+                  "alias": [],
+                  "rtype": 0,
+                  "ftype": 0,
+                  "mvid": 0,
+                  "fee": 1,
+                  "rUrl": null,
+                  "mark": 66666666666
+                },
+                {
+                  "id": 1111111111,
+                  "name": "Track B",
+                  "artists": [
+                    {
+                      "id": 3333333,
+                      "name": "Some Artist",
+                      "picUrl": null,
+                      "alias": [],
+                      "albumSize": 0,
+                      "picId": 0,
+                      "fansGroup": null,
+                      "img1v1Url": "https://p4.music.126.net/AAAAAAAAAAAAAAAAAAAAAAAA/0000000000000000.jpg",
+                      "img1v1": 0,
+                      "trans": null
+                    }
+                  ],
+                  "album": {
+                    "id": 11111112,
+                    "name": "Some Album 2",
+                    "artist": {
+                      "id": 0,
+                      "name": "",
+                      "picUrl": null,
+                      "alias": [],
+                      "albumSize": 0,
+                      "picId": 0,
+                      "fansGroup": null,
+                      "img1v1Url": "https://p3.music.126.net/AAAAAAAAAAAAAAAAAAAAAAAA/0000000000000000.jpg",
+                      "img1v1": 0,
+                      "trans": null
+                    },
+                    "publishTime": 2222222222222,
+                    "size": 4,
+                    "copyrightId": 1111,
+                    "status": 1,
+                    "picId": 555555555555555555,
+                    "mark": 0
+                  },
+                  "duration": 158143,
+                  "copyrightId": 1111,
+                  "status": 0,
+                  "alias": [],
+                  "rtype": 0,
+                  "ftype": 0,
+                  "mvid": 8888888,
+                  "fee": 1,
+                  "rUrl": null,
+                  "mark": 77777777777
+                }
+              ],
+              "hasMore": false,
+              "songCount": 20
+            },
+            "code": 200
+          }"#;
+
+        let res = to_song_info(sample_data, Parse::Search).unwrap();
+
+        assert_eq!(res.len(), 2);
+
+        const ARTIST: &str = "Some Artist";
+
+        assert_eq!(
+            res[0],
+            SongTag {
+                artist: Some(ARTIST.to_owned()),
+                title: Some("Track A".to_owned()),
+                album: Some("Some Album 1".to_owned()),
+                lang_ext: Some("netease".to_string()),
+                service_provider: Some(ServiceProvider::Netease),
+                song_id: Some("1000000000".to_owned()),
+                lyric_id: Some("1000000000".to_owned()),
+                url: Some("Copyright protected".to_owned()),
+                pic_id: Some("444444444444444444".to_owned()),
+                album_id: Some("444444444444444444".to_owned())
+            }
+        );
+
+        assert_eq!(
+            res[1],
+            SongTag {
+                artist: Some(ARTIST.to_owned()),
+                title: Some("Track B".to_owned()),
+                album: Some("Some Album 2".to_owned()),
+                lang_ext: Some("netease".to_string()),
+                service_provider: Some(ServiceProvider::Netease),
+                song_id: Some("1111111111".to_owned()),
+                lyric_id: Some("1111111111".to_owned()),
+                url: Some("Copyright protected".to_owned()),
+                pic_id: Some("555555555555555555".to_owned()),
+                album_id: Some("555555555555555555".to_owned())
+            }
+        );
+    }
+}
