@@ -27,8 +27,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
 use gst::bus::BusWatchGuard;
-use gst::ClockTime;
 use gst::{event::Seek, Element, SeekFlags, SeekType};
+use gst::{ClockTime, StateChangeError, StateChangeSuccess};
 use gstreamer as gst;
 use gstreamer::prelude::*;
 use parking_lot::Mutex;
@@ -53,17 +53,139 @@ impl PathToURI for Path {
     }
 }
 
+/// Wrapper for a playbin gst element with common functions and some type safety
+#[derive(Debug, Clone)]
+struct PlaybinWrap(Element);
+
+impl PlaybinWrap {
+    #[inline]
+    fn new(playbin: Element) -> Self {
+        Self(playbin)
+    }
+
+    /// Send a Seek Event that sets the speed.
+    ///
+    /// Returns `false` if sending the event failed or was not handled, otherwise `true` if handled
+    fn set_speed(&self, speed: i32) -> bool {
+        let rate = f64::from(speed) / 10.0;
+        // Obtain the current position, needed for the seek event
+        let position = self.get_position();
+
+        // Create the seek event
+        let seek_event = if rate > 0. {
+            Seek::new(
+                rate,
+                SeekFlags::FLUSH | SeekFlags::ACCURATE,
+                SeekType::Set,
+                position,
+                SeekType::None,
+                position,
+            )
+        } else {
+            Seek::new(
+                rate,
+                SeekFlags::FLUSH | SeekFlags::ACCURATE,
+                SeekType::Set,
+                position,
+                SeekType::Set,
+                position,
+            )
+        };
+
+        // If we have not done so, obtain the sink through which we will send the seek events
+        if let Some(sink) = self.0.property::<Option<Element>>("audio-sink") {
+            // Send the event
+            let send_event = sink.send_event(seek_event);
+            if !send_event {
+                warn!("Speed event was *NOT* handled!");
+            }
+            send_event
+        } else {
+            false
+        }
+    }
+
+    #[inline]
+    fn get_position(&self) -> Option<ClockTime> {
+        self.0.query_position::<ClockTime>()
+    }
+
+    #[inline]
+    fn get_duration(&self) -> Option<ClockTime> {
+        self.0.query_duration::<ClockTime>()
+    }
+
+    #[inline]
+    fn set_volume(&self, volume: f64) {
+        self.0.set_property("volume", volume);
+    }
+
+    #[inline]
+    fn set_uri(&self, url: impl Into<glib::Value>) {
+        self.0.set_property("uri", url);
+    }
+
+    // #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    // pub fn get_buffer_duration(&self) -> u32 {
+    //     self.0.property::<i64>("buffer-duration") as u32
+    // }
+
+    #[inline]
+    fn set_state(&self, state: gst::State) -> Result<StateChangeSuccess, StateChangeError> {
+        self.0.set_state(state)
+    }
+
+    #[inline]
+    fn current_state(&self) -> gst::State {
+        self.0.current_state()
+    }
+
+    #[inline]
+    fn seek_simple(
+        &self,
+        seek_flags: gst::SeekFlags,
+        seek_pos: impl FormattedValue,
+    ) -> Result<(), glib::BoolError> {
+        self.0.seek_simple(seek_flags, seek_pos)
+    }
+
+    #[inline]
+    fn connect_about_to_finish<F>(&self, cb: F)
+    where
+        F: Fn(&[glib::Value]) -> Option<glib::Value> + Send + Sync + 'static,
+    {
+        self.0.connect("about-to-finish", false, cb);
+    }
+
+    #[inline]
+    fn pause(&self) -> Result<StateChangeSuccess, StateChangeError> {
+        self.0.set_state(gst::State::Paused)
+    }
+
+    #[inline]
+    fn play(&self) -> Result<StateChangeSuccess, StateChangeError> {
+        self.0.set_state(gst::State::Playing)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum PlayerInternalCmd {
+    Eos,
+    AboutToFinish,
+    SkipNext,
+    ReloadSpeed,
+}
+
 pub struct GStreamerBackend {
-    playbin: Element,
+    playbin: PlaybinWrap,
     volume: u16,
     speed: i32,
     gapless: bool,
-    message_tx: async_channel::Sender<PlayerCmd>,
+    message_tx: async_channel::Sender<PlayerInternalCmd>,
     media_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
 
-#[allow(clippy::cast_lossless)]
 impl GStreamerBackend {
     #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
@@ -89,30 +211,29 @@ impl GStreamerBackend {
             .spawn(move || loop {
                 if let Ok(msg) = main_rx.try_recv() {
                     match msg {
-                        PlayerCmd::Eos => {
+                        PlayerInternalCmd::Eos => {
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                                 error!("error in sending Eos: {e}");
                             }
                         }
-                        PlayerCmd::AboutToFinish => {
+                        PlayerInternalCmd::AboutToFinish => {
                             info!("about to finish received by gstreamer internal !!!!!");
                             if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("error in sending AboutToFinish: {e}");
                             }
                         }
-                        PlayerCmd::SkipNext => {
+                        PlayerInternalCmd::SkipNext => {
                             // store it here, as there will be no EOS event send by gst
                             eos_watcher_clone.store(true, std::sync::atomic::Ordering::SeqCst);
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                                 error!("error in sending SkipNext: {e}");
                             }
                         }
-                        PlayerCmd::SpeedUp => {
+                        PlayerInternalCmd::ReloadSpeed => {
                             // HACK: currently gstreamer does not have any internal events to be send, and there is no global "re-apply speed property", this also means that if using max speed, it will not actually use full-speed
                             let _ = cmd_tx.send(PlayerCmd::SpeedUp);
                             let _ = cmd_tx.send(PlayerCmd::SpeedDown);
                         }
-                        _ => {}
                     }
                 }
                 std::thread::sleep(std::time::Duration::from_millis(100));
@@ -175,7 +296,10 @@ impl GStreamerBackend {
 
         let media_title = Arc::new(Mutex::new(String::new()));
         let media_title_internal = media_title.clone();
+        let playbin = PlaybinWrap::new(playbin);
+        let playbin_clone = playbin.clone();
         let bus_watch = playbin
+            .0
             .bus()
             .expect("Failed to get GStreamer message bus")
             .add_watch(glib::clone!(@strong main_tx=> move |_bus, msg| {
@@ -183,7 +307,7 @@ impl GStreamerBackend {
                     gst::MessageView::Eos(_) => {
                         // debug tracking, as gapless interferes with it
                         debug!("gstreamer message EOS");
-                        main_tx.send_blocking(PlayerCmd::Eos)
+                        main_tx.send_blocking(PlayerInternalCmd::Eos)
                             .expect("Unable to send message to main()");
                         eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
 
@@ -193,7 +317,7 @@ impl GStreamerBackend {
                     gst::MessageView::StreamStart(_e) => {
                         if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
                             trace!("Sending EOS because it was not sent since last StreamStart");
-                            main_tx.send_blocking(PlayerCmd::Eos)
+                            main_tx.send_blocking(PlayerInternalCmd::Eos)
                                 .expect("Unable to send message to main()");
                         }
 
@@ -203,7 +327,7 @@ impl GStreamerBackend {
                         media_title_internal.lock().clear();
 
                         // HACK: gstreamer does not handle seek events before some undocumented time, see other note in main_rx handler
-                        let _ = main_tx.send_blocking(PlayerCmd::SpeedUp);
+                        let _ = main_tx.send_blocking(PlayerInternalCmd::ReloadSpeed);
                     }
                     gst::MessageView::Error(e) =>
                         error!("GStreamer Error: {}", e.error()),
@@ -225,10 +349,12 @@ impl GStreamerBackend {
                         // let (mode,_, _, left) = buffering.buffering_stats();
                         // info!("mode is: {mode:?}, and left is: {left}");
                         let percent = buffering.percent();
+                        // according to the documentation, the application (we) need to set the playbin state according tothe buffering state
+                        // see https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#buffering
                         if percent < 100 {
-                            let _ = main_tx.send_blocking(PlayerCmd::Pause);
+                            let _ = playbin_clone.pause();
                         } else {
-                            let _ = main_tx.send_blocking(PlayerCmd::Play);
+                            let _ = playbin_clone.play();
                         }
                         // Left for debug
                         // let msg = buffering.message();
@@ -273,72 +399,15 @@ impl GStreamerBackend {
         // this.set_speed(speed);
 
         // Send a signal to enqueue the next media before the current finished
-        this.playbin.connect("about-to-finish", false, move |_| {
+        this.playbin.connect_about_to_finish(move |_| {
             debug!("Sending playbin AboutToFinish");
-            main_tx.send_blocking(PlayerCmd::AboutToFinish).unwrap();
+            main_tx
+                .send_blocking(PlayerInternalCmd::AboutToFinish)
+                .unwrap();
             None
         });
 
         this
-    }
-    fn set_volume_inside(&mut self, volume: f64) {
-        self.playbin.set_property("volume", volume);
-    }
-
-    fn get_position(&self) -> Option<ClockTime> {
-        self.playbin.query_position::<ClockTime>()
-    }
-
-    fn get_duration(&self) -> Option<ClockTime> {
-        self.playbin.query_duration::<ClockTime>()
-    }
-
-    fn send_seek_event_speed(&mut self, speed: i32) -> bool {
-        let rate = speed as f64 / 10.0;
-        // Obtain the current position, needed for the seek event
-        let position = self.get_position();
-
-        // Create the seek event
-        let seek_event = if rate > 0. {
-            Seek::new(
-                rate,
-                SeekFlags::FLUSH | SeekFlags::ACCURATE,
-                SeekType::Set,
-                position,
-                SeekType::None,
-                position,
-            )
-        } else {
-            Seek::new(
-                rate,
-                SeekFlags::FLUSH | SeekFlags::ACCURATE,
-                SeekType::Set,
-                position,
-                SeekType::Set,
-                position,
-            )
-        };
-
-        // If we have not done so, obtain the sink through which we will send the seek events
-        if let Some(sink) = self.playbin.property::<Option<Element>>("audio-sink") {
-            // Send the event
-            let send_event = sink.send_event(seek_event);
-            if !send_event {
-                warn!("Speed event was *NOT* handled!");
-            }
-            send_event
-        } else {
-            false
-        }
-    }
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    pub fn get_buffer_duration(&self) -> u32 {
-        self.playbin.property::<i64>("buffer-duration") as u32
-        // if let Some(duration) = self.playbin.property::<i64>("buffer-duration") {
-        //     duration as u64
-        // } else {
-        //     120_u64
-        // }
     }
 }
 
@@ -347,7 +416,7 @@ impl PlayerTrait for GStreamerBackend {
     async fn add_and_play(&mut self, track: &Track) {
         self.playbin
             .set_state(gst::State::Ready)
-            .expect("set gst state ready error.");
+            .expect("set gst state ready error");
         set_uri_from_track(&self.playbin, track);
         self.playbin
             .set_state(gst::State::Playing)
@@ -361,20 +430,18 @@ impl PlayerTrait for GStreamerBackend {
     fn set_volume(&mut self, volume: Volume) -> Volume {
         let volume = volume.min(100);
         self.volume = volume;
-        self.set_volume_inside(f64::from(volume) / 100.0);
+        self.playbin.set_volume(f64::from(volume) / 100.0);
 
         volume
     }
 
     fn pause(&mut self) {
-        self.playbin
-            .set_state(gst::State::Paused)
-            .expect("set gst state paused error");
+        self.playbin.pause().expect("set gst state paused error");
     }
 
     fn resume(&mut self) {
         self.playbin
-            .set_state(gst::State::Playing)
+            .play()
             .expect("set gst state playing error in resume");
     }
 
@@ -393,8 +460,8 @@ impl PlayerTrait for GStreamerBackend {
     #[allow(clippy::cast_sign_loss)]
     #[allow(clippy::cast_possible_wrap)]
     fn seek(&mut self, secs: i64) -> Result<()> {
-        if let Some(time_pos) = self.get_position() {
-            if let Some(duration) = self.get_duration() {
+        if let Some(time_pos) = self.playbin.get_position() {
+            if let Some(duration) = self.playbin.get_duration() {
                 let time_pos = time_pos.seconds() as i64;
                 let duration = duration.seconds() as i64;
 
@@ -422,7 +489,7 @@ impl PlayerTrait for GStreamerBackend {
         // expect should be fine here, as this function does not allow erroring and any duration more than u64::MAX is unlikely
         let seek_pos_clock =
             ClockTime::try_from(position).expect("Duration(u128) did not fit into ClockTime(u64)");
-        self.set_volume_inside(0.0);
+        self.playbin.set_volume(0.0);
         while self
             .playbin
             .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)
@@ -430,7 +497,7 @@ impl PlayerTrait for GStreamerBackend {
         {
             std::thread::sleep(Duration::from_millis(100));
         }
-        self.set_volume_inside(f64::from(self.volume) / 100.0);
+        self.playbin.set_volume(f64::from(self.volume) / 100.0);
     }
     fn speed(&self) -> Speed {
         self.speed
@@ -438,7 +505,7 @@ impl PlayerTrait for GStreamerBackend {
 
     fn set_speed(&mut self, speed: Speed) -> Speed {
         self.speed = speed;
-        self.send_seek_event_speed(speed);
+        self.playbin.set_speed(speed);
 
         self.speed
     }
@@ -450,8 +517,8 @@ impl PlayerTrait for GStreamerBackend {
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
     fn get_progress(&self) -> Option<PlayerProgress> {
-        let position = Some(self.get_position()?.into());
-        let total_duration = Some(self.get_duration()?.into());
+        let position = Some(self.playbin.get_position()?.into());
+        let total_duration = Some(self.playbin.get_duration()?.into());
         Some(PlayerProgress {
             position,
             total_duration,
@@ -467,7 +534,9 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn skip_one(&mut self) {
-        self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
+        self.message_tx
+            .send_blocking(PlayerInternalCmd::SkipNext)
+            .ok();
     }
 
     fn enqueue_next(&mut self, track: &Track) {
@@ -496,17 +565,17 @@ impl Drop for GStreamerBackend {
 }
 
 /// Helper function to consistently set the `uri` on `playbin` from a [`Track`]
-fn set_uri_from_track(playbin: &Element, track: &Track) {
+fn set_uri_from_track(playbin: &PlaybinWrap, track: &Track) {
     match track.media_type {
         MediaType::Music => {
             if let Some(file) = track.file() {
                 let path = Path::new(file);
-                playbin.set_property("uri", path.to_uri());
+                playbin.set_uri(path.to_uri());
             }
         }
         MediaType::Podcast | MediaType::LiveRadio => {
             if let Some(url) = track.file() {
-                playbin.set_property("uri", url);
+                playbin.set_uri(url);
             }
         }
     }
