@@ -2,7 +2,7 @@ pub mod buffered_source;
 pub mod read_seek_source;
 
 use super::Source;
-use std::{fmt, time::Duration};
+use std::{fmt, num::NonZeroU64, time::Duration};
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
@@ -83,6 +83,7 @@ pub struct Symphonia {
     elapsed: Duration,
     track_id: u32,
     time_base: Option<TimeBase>,
+    seek_required_ts: Option<NonZeroU64>,
 
     media_title_tx: MediaTitleTxWrap,
 }
@@ -186,6 +187,7 @@ impl Symphonia {
             &time_base,
             &mut media_title_tx,
             &mut probed.metadata,
+            &mut None,
         )?;
         // safe to unwrap because "decode_loop" ensures it will be set
         let buffer = buffer.unwrap();
@@ -202,6 +204,7 @@ impl Symphonia {
                 elapsed,
                 track_id,
                 time_base,
+                seek_required_ts: None,
 
                 media_title_tx,
             },
@@ -285,6 +288,18 @@ impl Source for Symphonia {
                 self.current_frame_offset = 0;
                 self.buffer.clear();
 
+                // Coarse seeking may seek (slightly) beyond the requested ts, so it may not actually need to be set
+                if seeked_to.required_ts > seeked_to.actual_ts {
+                    // the unwrap should never fail as "(0 > 0) == false" and "(0 > 1(or higher)) == false"
+                    self.seek_required_ts = Some(NonZeroU64::new(seeked_to.required_ts).unwrap());
+                }
+
+                // some decoders need to be reset after a seek, but not all can be reset without unexpected behavior (like mka seeking to 0 again)
+                // see https://github.com/pdeljanov/Symphonia/issues/274
+                if self.decoder.codec_params().codec == codecs::CODEC_TYPE_MP3 {
+                    self.decoder.reset();
+                }
+
                 self.time_base
                     .as_ref()
                     .map(|v| v.calc_time(seeked_to.actual_ts).into())
@@ -308,6 +323,7 @@ impl Iterator for Symphonia {
                 &self.time_base,
                 &mut self.media_title_tx,
                 &mut self.probed.metadata,
+                &mut self.seek_required_ts,
             )
             .ok()?;
 
@@ -391,6 +407,7 @@ impl std::fmt::Debug for BufferInputType<'_> {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 /// Decode until finding a valid packet and get the samples from it
 ///
 /// If [`BufferInputType::New`] is used, it is guaranteed to be [`Some`] if function result is [`Ok`].
@@ -402,6 +419,7 @@ fn decode_loop(
     time_base: &Option<TimeBase>,
     media_title_tx: &mut MediaTitleTxWrap,
     probed: &mut ProbedMetadata,
+    seek_required_ts: &mut Option<NonZeroU64>,
 ) -> Result<DecodeLoopResult, symphonia::core::errors::Error> {
     let (audio_buf, elapsed) = loop {
         let packet = format.next_packet()?;
@@ -409,6 +427,16 @@ fn decode_loop(
         // Skip all packets that are not the selected track
         if packet.track_id() != track_id {
             continue;
+        }
+
+        // seeking in symphonia can only be done to the nearest packet in the format reader
+        // so we need to also seek until the actually required_ts in the decoder
+        if let Some(dur) = seek_required_ts {
+            if packet.ts() < dur.get() {
+                continue;
+            }
+            // else, remove the value as we are now at or beyond that point
+            seek_required_ts.take();
         }
 
         match decoder.decode(&packet) {
