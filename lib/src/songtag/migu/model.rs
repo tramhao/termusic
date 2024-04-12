@@ -106,3 +106,108 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         album_id: Some(album_id),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_parse_songinfo() {
+        let sample_data = r#"{
+            "musics": [
+              {
+                "songName": "Track A",
+                "isHdCrbt": null,
+                "albumName": "Some Album 1",
+                "has24Bitqq": null,
+                "hasMv": null,
+                "artist": "Some Artist",
+                "hasHQqq": "1",
+                "albumId": "0000000000",
+                "title": "Track A",
+                "singerName": "Some Artist",
+                "cover": "https://mcontent.migu.cn/newlv2/new/album/20230810/0000000000/someRandomCode.jpg",
+                "mp3": "https://freetyst.nf.migu.cn/SomeLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "hasSQqq": null,
+                "has3Dqq": null,
+                "singerId": "0000000001",
+                "mvCopyrightId": null,
+                "copyrightId": "0000000AAAA",
+                "unuseFlag": null,
+                "auditionsFlag": null,
+                "auditionsLength": null,
+                "mvId": "",
+                "id": "0000000002",
+                "lyrics": "https://tyqk.migu.cn/files/lyric/2018-04-20/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC.lrc"
+              },
+              {
+                "songName": "Track B",
+                "isHdCrbt": null,
+                "albumName": "Some Album 2",
+                "has24Bitqq": null,
+                "hasMv": null,
+                "artist": "Some Artist",
+                "hasHQqq": "1",
+                "albumId": "1111111111",
+                "title": "Track B",
+                "singerName": "Some Artist",
+                "cover": "https://tyqk.migu.cn/files/resize/album/2023-12-19/someOtherRandomCode.jpg?200x200",
+                "mp3": "https://freetyst.nf.migu.cn/SomeOtherLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "hasSQqq": null,
+                "has3Dqq": null,
+                "singerId": "0000000001",
+                "mvCopyrightId": null,
+                "copyrightId": "1111111BBBB",
+                "unuseFlag": null,
+                "auditionsFlag": null,
+                "auditionsLength": null,
+                "mvId": "",
+                "id": "1111111112",
+                "lyrics": "https://tyqk.migu.cn/files/lyric/2018-12-22/DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD.lrc"
+              }
+            ],
+            "pgt": 100,
+            "keyword": "Some Artist Track A",
+            "pageNo": "0",
+            "success": true
+        }"#;
+
+        let res = to_song_info(sample_data).unwrap();
+
+        assert_eq!(res.len(), 2);
+
+        const ARTIST: &str = "Some Artist";
+
+        assert_eq!(
+            res[0],
+            SongTag {
+                artist: Some(ARTIST.to_owned()),
+                title: Some("Track A".to_owned()),
+                album: Some("Some Album 1".to_owned()),
+                lang_ext: Some("migu".to_string()),
+                service_provider: Some(ServiceProvider::Migu),
+                song_id: Some("0000000002".to_owned()),
+                lyric_id: Some("0000000AAAA".to_owned()),
+                url: Some("https://freetyst.nf.migu.cn/SomeLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned()),
+                pic_id: Some("https://mcontent.migu.cn/newlv2/new/album/20230810/0000000000/someRandomCode.jpg".to_owned()),
+                album_id: Some("0000000000".to_owned())
+            }
+        );
+
+        assert_eq!(
+            res[1],
+            SongTag {
+                artist: Some(ARTIST.to_owned()),
+                title: Some("Track B".to_owned()),
+                album: Some("Some Album 2".to_owned()),
+                lang_ext: Some("migu".to_string()),
+                service_provider: Some(ServiceProvider::Migu),
+                song_id: Some("1111111112".to_owned()),
+                lyric_id: Some("1111111BBBB".to_owned()),
+                url: Some("https://freetyst.nf.migu.cn/SomeOtherLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned()),
+                pic_id: Some("https://tyqk.migu.cn/files/resize/album/2023-12-19/someOtherRandomCode.jpg?200x200".to_owned()),
+                album_id: Some("1111111111".to_owned())
+            }
+        );
+    }
+}

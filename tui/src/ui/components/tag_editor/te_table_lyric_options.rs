@@ -27,6 +27,7 @@ use std::path::Path;
 use termusiclib::songtag::{search, SongTag};
 use termusiclib::types::{Id, IdTagEditor, Msg, SearchLyricState, TEMsg, TFMsg};
 use termusicplayback::SharedSettings;
+use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -248,7 +249,12 @@ impl Model {
                 }
             }
         }
-        search(&search_str, self.sender_songtag.clone());
+        // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
+        // though i am not fully sure if that is 100% the case, this avoid the panic though
+        tokio::task::block_in_place(move || {
+            // TODO: consider changing this to be a spawn, but will require "search" param changes
+            Handle::current().block_on(search(&search_str, self.sender_songtag.clone()));
+        });
     }
     pub fn te_update_lyric_options(&mut self) {
         if self
@@ -269,7 +275,12 @@ impl Model {
             .with_context(|| format!("no song_tag with index {index} found"))?;
         if let Some(song) = &self.tageditor_song {
             let file = song.file().context("no file path found")?;
-            song_tag.download(file, &self.tx_to_main)?;
+            // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
+            // though i am not fully sure if that is 100% the case, this avoid the panic though
+            let tx_to_main = &self.tx_to_main;
+            tokio::task::block_in_place(move || {
+                Handle::current().block_on(song_tag.download(file, tx_to_main))
+            })?;
         }
         Ok(())
     }
@@ -323,10 +334,18 @@ impl Model {
                 song.set_album(album);
             }
 
-            if let Ok(lyric_string) = song_tag.fetch_lyric() {
+            // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
+            // though i am not fully sure if that is 100% the case, this avoid the panic though
+            let (lyric_string, artwork) = tokio::task::block_in_place(move || {
+                Handle::current().block_on(async {
+                    tokio::join!(song_tag.fetch_lyric(), song_tag.fetch_photo())
+                })
+            });
+
+            if let Ok(lyric_string) = lyric_string {
                 song.set_lyric(&lyric_string, lang_ext);
             }
-            if let Ok(artwork) = song_tag.fetch_photo() {
+            if let Ok(artwork) = artwork {
                 song.set_photo(artwork);
             }
 

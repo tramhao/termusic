@@ -114,6 +114,7 @@ wildmatch = "2.3"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 # winit = "0.27.0"
 # windows = "0.52"
+futures = "0.3"
 
 [profile.release]
 # lto = true

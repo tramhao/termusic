@@ -28,12 +28,19 @@ use bytes::Buf;
 use lofty::Picture;
 use model::{to_lyric, to_pic_url, to_song_info};
 // use std::io::Write;
-use reqwest::blocking::{Client, ClientBuilder};
+use reqwest::{Client, ClientBuilder};
 use std::time::Duration;
 
-static URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";
-static URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
-static URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
+use super::SongTag;
+
+const URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";
+const URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
+const URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
+
+#[derive(Debug, Clone, Copy)]
+pub enum SearchRequestType {
+    Song = 1,
+}
 
 pub struct Api {
     client: Client,
@@ -49,7 +56,13 @@ impl Api {
         Self { client }
     }
 
-    pub fn search(&self, keywords: &str, types: u32, offset: u16, limit: u16) -> Result<String> {
+    pub async fn search(
+        &self,
+        keywords: &str,
+        types: SearchRequestType,
+        offset: u16,
+        limit: u16,
+    ) -> Result<Vec<SongTag>> {
         let q_pgc = offset.to_string();
         let q_rows = limit.to_string();
         let q_type = 2.to_string();
@@ -64,52 +77,56 @@ impl Api {
             .post(URL_SEARCH_MIGU)
             .header("Referer", "https://m.music.migu.cn")
             .query(&query_vec)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => {
+            SearchRequestType::Song => {
                 let songtag_vec = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
-                let songtag_string = serde_json::to_string(&songtag_vec)?;
-                Ok(songtag_string)
+                Ok(songtag_vec)
             }
-            _ => Err(anyhow!("None Error")),
         }
     }
 
     // search and download lyrics
     // music_id: 歌曲id
-    pub fn song_lyric(&self, music_id: &str) -> Result<String> {
+    pub async fn song_lyric(&self, music_id: &str) -> Result<String> {
         let result = self
             .client
             .get(URL_LYRIC_MIGU)
             .header("Referer", "https://m.music.migu.cn")
             .query(&[("copyrightId", music_id)])
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         to_lyric(&result).ok_or_else(|| anyhow!("None Error"))
     }
 
     // download picture
-    pub fn pic(&self, song_id: &str) -> Result<Picture> {
+    pub async fn pic(&self, song_id: &str) -> Result<Picture> {
         let result = self
             .client
             .get(URL_PIC_MIGU)
             .header("Referer", "https://m.music.migu.cn")
             .query(&[("songId", song_id)])
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         let pic_url = to_pic_url(&result).ok_or_else(|| anyhow!("Pic url error"))?;
         let url = format!("https:{pic_url}");
 
-        let result = self.client.get(url).send()?;
+        let result = self.client.get(url).send().await?;
 
-        let mut reader = result.bytes()?.reader();
+        let mut reader = result.bytes().await?.reader();
         let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
         // let mut bytes: Vec<u8> = Vec::new();
