@@ -298,7 +298,7 @@ impl PodcastFeed {
 pub fn check_feed(
     feed: PodcastFeed,
     max_retries: usize,
-    threadpool: &Threadpool,
+    threadpool: &TaskPool,
     tx_to_main: Sender<Msg>,
 ) {
     threadpool.execute(async move {
@@ -508,31 +508,32 @@ fn regex_to_int(re_match: Match<'_>) -> Result<i32, std::num::ParseIntError> {
 }
 
 /// Manages a taskpool of a given size of how many task to execute at once.
-pub struct Threadpool {
+///
+/// Also cancels all tasks spawned by this pool on [`Drop`]
+pub struct TaskPool {
     /// Semaphore to manage how many active tasks there at a time
     semaphore: Arc<Semaphore>,
     /// Cancel Token to stop a task on drop
     cancel_token: CancellationToken,
 }
 
-impl Threadpool {
-    /// Creates a new Threadpool of a given size.
-    pub fn new(n_threads: usize) -> Threadpool {
-        let semaphore = Arc::new(Semaphore::new(n_threads));
+impl TaskPool {
+    /// Creates a new [`TaskPool`] with a given amount of active tasks
+    pub fn new(n_tasks: usize) -> TaskPool {
+        let semaphore = Arc::new(Semaphore::new(n_tasks));
         let cancel_token = CancellationToken::new();
 
-        Threadpool {
+        TaskPool {
             semaphore,
             cancel_token,
         }
     }
 
-    /// Adds a new job to the threadpool, passing closure to first
-    /// available worker.
+    /// Adds a new task to the [`TaskPool`]
     ///
-    /// # Panics
+    /// see [`tokio::spawn`]
     ///
-    /// if sending commands to the sender fails
+    /// Provided task will be cancelled on [`TaskPool`] [`Drop`]
     pub fn execute<F, T>(&self, func: F)
     where
         F: Future<Output = T> + Send + 'static,
@@ -559,10 +560,11 @@ impl Threadpool {
     }
 }
 
-impl Drop for Threadpool {
+impl Drop for TaskPool {
     fn drop(&mut self) {
         // prevent new tasks from being added / executed
         self.semaphore.close();
+        // cancel all tasks that were spawned with this token
         self.cancel_token.cancel();
     }
 }
@@ -618,7 +620,7 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Re
 
     println!("Importing {} podcasts...", podcast_list.len());
 
-    let threadpool = Threadpool::new(config.podcast_simultanious_download);
+    let threadpool = TaskPool::new(config.podcast_simultanious_download);
     let (tx_to_main, rx_to_main) = mpsc::channel();
 
     for pod in &podcast_list {
@@ -777,7 +779,7 @@ pub fn download_list(
     episodes: Vec<EpData>,
     dest: &Path,
     max_retries: usize,
-    threadpool: &Threadpool,
+    threadpool: &TaskPool,
     tx_to_main: &Sender<Msg>,
 ) {
     // parse episode details and push to queue
