@@ -458,7 +458,7 @@ impl Model {
         crate::podcast::check_feed(
             feed,
             self.config.read().podcast_max_retries,
-            &self.threadpool,
+            &mut self.threadpool,
             self.tx_to_main.clone(),
         );
     }
@@ -720,7 +720,7 @@ impl Model {
             crate::podcast::check_feed(
                 feed,
                 self.config.read().podcast_max_retries,
-                &self.threadpool,
+                &mut self.threadpool,
                 self.tx_to_main.clone(),
             );
         }
@@ -812,7 +812,7 @@ impl Model {
                         ep_data,
                         &path,
                         self.config.read().podcast_max_retries,
-                        &self.threadpool,
+                        &mut self.threadpool,
                         &self.tx_to_main,
                     );
                 }
