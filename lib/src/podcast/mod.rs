@@ -28,7 +28,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::sync::Semaphore;
-use tokio::task::JoinSet;
+use tokio_util::sync::CancellationToken;
 
 // How many columns we need, minimum, before we display the
 // (unplayed/total) after the podcast title
@@ -298,7 +298,7 @@ impl PodcastFeed {
 pub fn check_feed(
     feed: PodcastFeed,
     max_retries: usize,
-    threadpool: &mut Threadpool,
+    threadpool: &Threadpool,
     tx_to_main: Sender<Msg>,
 ) {
     threadpool.execute(async move {
@@ -509,19 +509,21 @@ fn regex_to_int(re_match: Match<'_>) -> Result<i32, std::num::ParseIntError> {
 
 /// Manages a taskpool of a given size of how many task to execute at once.
 pub struct Threadpool {
+    /// Semaphore to manage how many active tasks there at a time
     semaphore: Arc<Semaphore>,
-    join_set: JoinSet<()>,
+    /// Cancel Token to stop a task on drop
+    cancel_token: CancellationToken,
 }
 
 impl Threadpool {
     /// Creates a new Threadpool of a given size.
     pub fn new(n_threads: usize) -> Threadpool {
         let semaphore = Arc::new(Semaphore::new(n_threads));
-        let join_set = JoinSet::new();
+        let cancel_token = CancellationToken::new();
 
         Threadpool {
             semaphore,
-            join_set,
+            cancel_token,
         }
     }
 
@@ -531,19 +533,28 @@ impl Threadpool {
     /// # Panics
     ///
     /// if sending commands to the sender fails
-    pub fn execute<F, T>(&mut self, func: F)
+    pub fn execute<F, T>(&self, func: F)
     where
         F: Future<Output = T> + Send + 'static,
         T: Send,
     {
         let semaphore = self.semaphore.clone();
-        self.join_set.spawn(async move {
-            let Ok(_permit) = semaphore.acquire().await else {
-                // ignore / cancel task if semaphore is closed
-                // just for clarity, this "return" cancels the whole spawned task and does not execute "func.await"
-                return;
+        let token = self.cancel_token.clone();
+        tokio::spawn(async move {
+            // multiple "await" points, so combine them to a single future for the select
+            let main = async {
+                let Ok(_permit) = semaphore.acquire().await else {
+                    // ignore / cancel task if semaphore is closed
+                    // just for clarity, this "return" cancels the whole spawned task and does not execute "func.await"
+                    return;
+                };
+                func.await;
             };
-            func.await;
+
+            tokio::select! {
+                () = main => {},
+                () = token.cancelled() => {}
+            }
         });
     }
 }
@@ -552,7 +563,7 @@ impl Drop for Threadpool {
     fn drop(&mut self) {
         // prevent new tasks from being added / executed
         self.semaphore.close();
-        // doing nothing else as "JoinSet" will handle cancelling all the spawned tasks on Drop
+        self.cancel_token.cancel();
     }
 }
 
@@ -607,14 +618,14 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Re
 
     println!("Importing {} podcasts...", podcast_list.len());
 
-    let mut threadpool = Threadpool::new(config.podcast_simultanious_download);
+    let threadpool = Threadpool::new(config.podcast_simultanious_download);
     let (tx_to_main, rx_to_main) = mpsc::channel();
 
     for pod in &podcast_list {
         check_feed(
             pod.clone(),
             config.podcast_max_retries,
-            &mut threadpool,
+            &threadpool,
             tx_to_main.clone(),
         );
     }
@@ -766,7 +777,7 @@ pub fn download_list(
     episodes: Vec<EpData>,
     dest: &Path,
     max_retries: usize,
-    threadpool: &mut Threadpool,
+    threadpool: &Threadpool,
     tx_to_main: &Sender<Msg>,
 ) {
     // parse episode details and push to queue
