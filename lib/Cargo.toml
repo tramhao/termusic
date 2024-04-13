@@ -68,6 +68,7 @@ wildmatch.workspace = true #   = "2"
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
 futures.workspace = true
 tokio.workspace = true
+tokio-util = { workspace = true, features = ["rt"] }
 
 
 [features]
