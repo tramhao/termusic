@@ -256,9 +256,7 @@ fn player_loop(
             }
             PlayerCmd::Tick => {
                 // info!("tick received");
-                if player.config.read().player_use_mpris {
-                    player.update_mpris();
-                }
+                player.mpris_handle_events();
                 let mut p_tick = playerstats.lock();
                 p_tick.status = player.playlist.status().as_u32();
                 // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore

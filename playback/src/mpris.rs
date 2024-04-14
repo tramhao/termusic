@@ -224,9 +224,12 @@ impl GeneralPlayer {
         }
     }
 
-    pub fn update_mpris(&mut self) {
-        if let Ok(m) = self.mpris.rx.try_recv() {
-            self.mpris_handler(m);
+    /// Handle Media-Controls events, if enabled to be used
+    pub fn mpris_handle_events(&mut self) {
+        if self.config.read().player_use_mpris {
+            if let Ok(m) = self.mpris.rx.try_recv() {
+                self.mpris_handler(m);
+            }
         }
     }
 
