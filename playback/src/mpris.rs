@@ -128,6 +128,7 @@ impl Mpris {
     /// Update the Volume reported by Media-Controls
     ///
     /// currently only does something on linux (mpris)
+    #[allow(unused_variables)] // non-linux targets will complain about unused parameters
     pub fn update_volume(&mut self, volume: Volume) {
         // currently "set_volume" only exists for "linux"(mpris)
         #[cfg(target_os = "linux")]
