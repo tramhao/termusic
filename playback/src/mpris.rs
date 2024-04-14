@@ -227,11 +227,17 @@ impl GeneralPlayer {
             self.mpris_handler(m);
         }
 
-        self.mpris.update_volume(self.volume());
-
         if let Some(progress) = self.get_progress() {
             self.mpris
                 .update_progress(progress.position, self.playlist.status());
+        }
+    }
+
+    /// Update Media-Controls reported volume, if enabled to be reporting
+    #[inline]
+    pub fn mpris_volume_update(&mut self) {
+        if self.config.read().player_use_mpris {
+            self.mpris.update_volume(self.volume());
         }
     }
 }

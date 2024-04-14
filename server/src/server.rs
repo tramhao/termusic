@@ -331,6 +331,7 @@ fn player_loop(
                 info!("after volumedown: {}", new_volume);
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
+                player.mpris_volume_update();
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
@@ -339,6 +340,7 @@ fn player_loop(
                 info!("after volumeup: {}", new_volume);
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
+                player.mpris_volume_update();
             }
             PlayerCmd::Pause => {
                 player.pause();
