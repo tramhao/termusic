@@ -226,8 +226,8 @@ impl GeneralPlayer {
 
     /// Handle Media-Controls events, if enabled to be used
     pub fn mpris_handle_events(&mut self) {
-        if self.config.read().player_use_mpris {
-            if let Ok(m) = self.mpris.rx.try_recv() {
+        if let Some(ref mut mpris) = self.mpris {
+            if let Ok(m) = mpris.rx.try_recv() {
                 self.mpris_handler(m);
             }
         }
@@ -236,17 +236,17 @@ impl GeneralPlayer {
     /// Update Media-Controls reported Position & Status, if enabled to be reporting
     #[inline]
     pub fn mpris_update_progress(&mut self, progress: &PlayerProgress) {
-        if self.config.read().player_use_mpris {
-            self.mpris
-                .update_progress(progress.position, self.playlist.status());
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.update_progress(progress.position, self.playlist.status());
         }
     }
 
     /// Update Media-Controls reported volume, if enabled to be reporting
     #[inline]
     pub fn mpris_volume_update(&mut self) {
-        if self.config.read().player_use_mpris {
-            self.mpris.update_volume(self.volume());
+        let volume = self.volume();
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.update_volume(volume);
         }
     }
 }

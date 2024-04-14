@@ -220,7 +220,7 @@ pub struct GeneralPlayer {
     pub playlist: Playlist,
     pub config: SharedSettings,
     pub current_track_updated: bool,
-    pub mpris: mpris::Mpris,
+    pub mpris: Option<mpris::Mpris>,
     pub discord: discord::Rpc,
     pub db: DataBase,
     pub db_podcast: DBPod,
@@ -249,12 +249,17 @@ impl GeneralPlayer {
 
         let config = Arc::new(RwLock::new(config));
         let playlist = Playlist::new(config.clone()).unwrap_or_default();
+        let mpris = if config.read().player_use_mpris {
+            Some(mpris::Mpris::new(cmd_tx.clone()))
+        } else {
+            None
+        };
 
         Ok(Self {
             backend,
             playlist,
             config,
-            mpris: mpris::Mpris::new(cmd_tx.clone()),
+            mpris,
             discord: discord::Rpc::default(),
             db,
             db_podcast,
@@ -278,9 +283,26 @@ impl GeneralPlayer {
     /// # Errors
     ///
     /// - if Config could not be parsed
-    pub fn reload_config(&self) -> Result<()> {
+    pub fn reload_config(&mut self) -> Result<()> {
         info!("Reloading config");
-        self.config.write().load()?;
+        let mut config = self.config.write();
+        config.load()?;
+
+        if config.player_use_mpris && self.mpris.is_none() {
+            // start mpris if new config has it enabled, but is not active yet
+            let mut mpris = mpris::Mpris::new(self.cmd_tx.clone());
+            // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
+            if let Some(track) = self.playlist.current_track() {
+                mpris.add_and_play(track);
+            }
+            // the same for volume
+            mpris.update_volume(self.volume());
+            self.mpris.replace(mpris);
+        } else if !config.player_use_mpris && self.mpris.is_some() {
+            // stop mpris if new config does not have it enabled, but is currently active
+            self.mpris.take();
+        }
+
         info!("Config Reloaded");
 
         Ok(())
@@ -346,8 +368,8 @@ impl GeneralPlayer {
     fn add_and_play_mpris_discord(&mut self) {
         if let Some(track) = self.playlist.current_track() {
             let config = self.config.read();
-            if config.player_use_mpris {
-                self.mpris.add_and_play(track);
+            if let Some(ref mut mpris) = self.mpris {
+                mpris.add_and_play(track);
             }
 
             if config.player_use_discord {
@@ -394,8 +416,8 @@ impl GeneralPlayer {
             Status::Running => {
                 self.get_player_mut().pause();
                 let config = self.config.read();
-                if config.player_use_mpris {
-                    self.mpris.pause();
+                if let Some(ref mut mpris) = self.mpris {
+                    mpris.pause();
                 }
                 if config.player_use_discord {
                     self.discord.pause();
@@ -406,8 +428,8 @@ impl GeneralPlayer {
             Status::Paused => {
                 self.get_player_mut().resume();
                 let config = self.config.read();
-                if config.player_use_mpris {
-                    self.mpris.resume();
+                if let Some(ref mut mpris) = self.mpris {
+                    mpris.resume();
                 }
                 if config.player_use_discord {
                     let time_pos = self.get_player().position();
@@ -423,8 +445,8 @@ impl GeneralPlayer {
             Status::Running => {
                 self.get_player_mut().pause();
                 let config = self.config.read();
-                if config.player_use_mpris {
-                    self.mpris.pause();
+                if let Some(ref mut mpris) = self.mpris {
+                    mpris.pause();
                 }
                 if config.player_use_discord {
                     self.discord.pause();
@@ -441,8 +463,8 @@ impl GeneralPlayer {
             Status::Paused => {
                 self.get_player_mut().resume();
                 let config = self.config.read();
-                if config.player_use_mpris {
-                    self.mpris.resume();
+                if let Some(ref mut mpris) = self.mpris {
+                    mpris.resume();
                 }
                 if config.player_use_discord {
                     let time_pos = self.get_player().position();
