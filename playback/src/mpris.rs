@@ -3,7 +3,9 @@ use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, P
 use std::sync::mpsc::{self, Receiver};
 use termusiclib::track::Track;
 
-use crate::{GeneralPlayer, PlayerCmd, PlayerTimeUnit, PlayerTrait, Status, Volume};
+use crate::{
+    GeneralPlayer, PlayerCmd, PlayerProgress, PlayerTimeUnit, PlayerTrait, Status, Volume,
+};
 
 pub struct Mpris {
     controls: MediaControls,
@@ -226,8 +228,12 @@ impl GeneralPlayer {
         if let Ok(m) = self.mpris.rx.try_recv() {
             self.mpris_handler(m);
         }
+    }
 
-        if let Some(progress) = self.get_progress() {
+    /// Update Media-Controls reported Position & Status, if enabled to be reporting
+    #[inline]
+    pub fn mpris_update_progress(&mut self, progress: &PlayerProgress) {
+        if self.config.read().player_use_mpris {
             self.mpris
                 .update_progress(progress.position, self.playlist.status());
         }

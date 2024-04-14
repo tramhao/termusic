@@ -276,7 +276,8 @@ fn player_loop(
                     continue;
                 }
                 if let Some(progress) = player.get_progress() {
-                    p_tick.progress = progress
+                    p_tick.progress = progress;
+                    player.mpris_update_progress(&p_tick.progress);
                 }
                 if player.current_track_updated {
                     p_tick.current_track_index = player.playlist.get_current_track_index() as u32;
