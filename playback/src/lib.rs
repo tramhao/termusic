@@ -273,6 +273,19 @@ impl GeneralPlayer {
         Self::new_backend(BackendSelect::Default, config, cmd_tx)
     }
 
+    /// Reload the config from file, on fail continue to use the old
+    ///
+    /// # Errors
+    ///
+    /// - if Config could not be parsed
+    pub fn reload_config(&self) -> Result<()> {
+        info!("Reloading config");
+        self.config.write().load()?;
+        info!("Config Reloaded");
+
+        Ok(())
+    }
+
     fn get_player(&self) -> &dyn PlayerTrait {
         self.backend.as_player()
     }

@@ -214,8 +214,9 @@ fn player_loop(
                 player.previous();
             }
             PlayerCmd::ReloadConfig => {
-                player.config.write().load()?;
-                info!("config reloaded");
+                if let Err(err) = player.reload_config() {
+                    error!("Reloading config failed, using old: {:#?}", err);
+                }
             }
             PlayerCmd::ReloadPlaylist => {
                 player.playlist.reload_tracks().ok();
