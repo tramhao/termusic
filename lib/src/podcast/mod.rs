@@ -7,12 +7,14 @@ use crate::config::Settings;
 use crate::types::{Msg, PCMsg};
 use crate::utils::StringUtils;
 use anyhow::{anyhow, Context, Result};
+use bytes::Buf;
 use chrono::{DateTime, Utc};
 use db::Database;
+use futures::Future;
 use lazy_static::lazy_static;
 use opml::{Body, Head, Outline, OPML};
 use regex::{Match, Regex};
-use reqwest::blocking::ClientBuilder;
+use reqwest::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
 use sanitize_filename::{sanitize_with_options, Options};
@@ -22,10 +24,11 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{
     mpsc::{self, Sender},
-    Arc, Mutex,
+    Arc,
 };
-use std::thread;
 use std::time::Duration;
+use tokio::sync::Semaphore;
+use tokio_util::sync::CancellationToken;
 
 // How many columns we need, minimum, before we display the
 // (unplayed/total) after the podcast title
@@ -295,14 +298,14 @@ impl PodcastFeed {
 pub fn check_feed(
     feed: PodcastFeed,
     max_retries: usize,
-    threadpool: &Threadpool,
+    threadpool: &TaskPool,
     tx_to_main: Sender<Msg>,
 ) {
-    threadpool.execute(move || {
+    threadpool.execute(async move {
         tx_to_main
             .send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())))
             .expect("thread messaging error in fetch start");
-        match get_feed_data(&feed.url, max_retries) {
+        match get_feed_data(&feed.url, max_retries).await {
             Ok(pod) => match feed.id {
                 Some(id) => {
                     tx_to_main
@@ -322,13 +325,13 @@ pub fn check_feed(
 
 /// Given a URL, this attempts to pull the data about a podcast and its
 /// episodes from an RSS feed.
-fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId> {
+async fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId> {
     let agent = ClientBuilder::new()
         .connect_timeout(Duration::from_secs(5))
         .build()?;
 
-    let request: Result<reqwest::blocking::Response> = loop {
-        let response = agent.get(url).send();
+    let request: Result<reqwest::Response> = loop {
+        let response = agent.get(url).send().await;
         if let Ok(resp) = response {
             break Ok(resp);
         }
@@ -339,13 +342,8 @@ fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId> {
     };
 
     match request {
-        Ok(mut resp) => {
-            // let mut reader = resp.read();
-            let mut resp_data = Vec::new();
-            // reader.read_to_end(&mut resp_data)?;
-            resp.read_to_end(&mut resp_data)?;
-
-            let channel = Channel::read_from(&resp_data[..])?;
+        Ok(resp) => {
+            let channel = Channel::read_from(resp.bytes().await?.reader())?;
             Ok(parse_feed_data(channel, url))
         }
         Err(err) => Err(err),
@@ -509,104 +507,65 @@ fn regex_to_int(re_match: Match<'_>) -> Result<i32, std::num::ParseIntError> {
     mstr.parse::<i32>()
 }
 
-// Much of the threadpool implementation here was taken directly from
-// the Rust Book: https://doc.rust-lang.org/book/ch20-02-multithreaded.html
-// and https://doc.rust-lang.org/book/ch20-03-graceful-shutdown-and-cleanup.html
-
-/// Manages a threadpool of a given size, sending jobs to workers as
-/// necessary. Implements Drop trait to allow threads to complete
-/// their current jobs before being stopped.
-pub struct Threadpool {
-    workers: Vec<Worker>,
-    sender: mpsc::Sender<JobMessage>,
+/// Manages a taskpool of a given size of how many task to execute at once.
+///
+/// Also cancels all tasks spawned by this pool on [`Drop`]
+pub struct TaskPool {
+    /// Semaphore to manage how many active tasks there at a time
+    semaphore: Arc<Semaphore>,
+    /// Cancel Token to stop a task on drop
+    cancel_token: CancellationToken,
 }
 
-impl Threadpool {
-    /// Creates a new Threadpool of a given size.
-    pub fn new(n_threads: usize) -> Threadpool {
-        let (sender, receiver) = mpsc::channel();
-        let receiver_lock = Arc::new(Mutex::new(receiver));
+impl TaskPool {
+    /// Creates a new [`TaskPool`] with a given amount of active tasks
+    pub fn new(n_tasks: usize) -> TaskPool {
+        let semaphore = Arc::new(Semaphore::new(n_tasks));
+        let cancel_token = CancellationToken::new();
 
-        let mut workers = Vec::with_capacity(n_threads);
-
-        for _ in 0..n_threads {
-            workers.push(Worker::new(Arc::clone(&receiver_lock)));
+        TaskPool {
+            semaphore,
+            cancel_token,
         }
-
-        Threadpool { workers, sender }
     }
 
-    /// Adds a new job to the threadpool, passing closure to first
-    /// available worker.
+    /// Adds a new task to the [`TaskPool`]
     ///
-    /// # Panics
+    /// see [`tokio::spawn`]
     ///
-    /// if sending commands to the sender fails
-    pub fn execute<F>(&self, func: F)
+    /// Provided task will be cancelled on [`TaskPool`] [`Drop`]
+    pub fn execute<F, T>(&self, func: F)
     where
-        F: FnOnce() + Send + 'static,
+        F: Future<Output = T> + Send + 'static,
+        T: Send,
     {
-        let job = Box::new(func);
-        self.sender
-            .send(JobMessage::NewJob(job))
-            .expect("Thread messaging error");
-    }
-}
+        let semaphore = self.semaphore.clone();
+        let token = self.cancel_token.clone();
+        tokio::spawn(async move {
+            // multiple "await" points, so combine them to a single future for the select
+            let main = async {
+                let Ok(_permit) = semaphore.acquire().await else {
+                    // ignore / cancel task if semaphore is closed
+                    // just for clarity, this "return" cancels the whole spawned task and does not execute "func.await"
+                    return;
+                };
+                func.await;
+            };
 
-impl Drop for Threadpool {
-    /// Upon going out of scope, Threadpool sends terminate message to
-    /// all workers but allows them to complete current jobs.
-    fn drop(&mut self) {
-        for _ in &self.workers {
-            self.sender
-                .send(JobMessage::Terminate)
-                .expect("Thread messaging error");
-        }
-
-        for worker in &mut self.workers {
-            if let Some(thread) = worker.thread.take() {
-                // joins to ensure threads finish job before stopping
-                thread.join().expect("Error dropping threads");
-            }
-        }
-    }
-}
-
-type Job = Box<dyn FnOnce() + Send + 'static>;
-
-/// Messages used by Threadpool to communicate with Workers.
-enum JobMessage {
-    NewJob(Job),
-    Terminate,
-}
-
-/// Used by Threadpool to complete jobs. Each Worker manages a single
-/// thread.
-struct Worker {
-    thread: Option<thread::JoinHandle<()>>,
-}
-
-impl Worker {
-    /// Creates a new Worker, which waits for Jobs to be passed by the
-    /// Threadpool.
-    #[allow(clippy::missing_panics_doc)]
-    fn new(receiver: Arc<Mutex<mpsc::Receiver<JobMessage>>>) -> Worker {
-        let thread = thread::spawn(move || loop {
-            let message = receiver
-                .lock()
-                .expect("Threadpool error")
-                .recv()
-                .expect("Thread messaging error");
-
-            match message {
-                JobMessage::NewJob(job) => job(),
-                JobMessage::Terminate => break,
+            tokio::select! {
+                () = main => {},
+                () = token.cancelled() => {}
             }
         });
+    }
+}
 
-        Worker {
-            thread: Some(thread),
-        }
+impl Drop for TaskPool {
+    fn drop(&mut self) {
+        // prevent new tasks from being added / executed
+        self.semaphore.close();
+        // cancel all tasks that were spawned with this token
+        self.cancel_token.cancel();
     }
 }
 
@@ -661,7 +620,7 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Re
 
     println!("Importing {} podcasts...", podcast_list.len());
 
-    let threadpool = Threadpool::new(config.podcast_simultanious_download);
+    let threadpool = TaskPool::new(config.podcast_simultanious_download);
     let (tx_to_main, rx_to_main) = mpsc::channel();
 
     for pod in &podcast_list {
@@ -820,25 +779,25 @@ pub fn download_list(
     episodes: Vec<EpData>,
     dest: &Path,
     max_retries: usize,
-    threadpool: &Threadpool,
+    threadpool: &TaskPool,
     tx_to_main: &Sender<Msg>,
 ) {
     // parse episode details and push to queue
     for ep in episodes {
         let tx = tx_to_main.clone();
         let dest2 = dest.to_path_buf();
-        threadpool.execute(move || download_job(&tx, ep, dest2, max_retries));
+        threadpool.execute(async move { download_job(&tx, ep, dest2, max_retries).await });
     }
 }
 
 /// # Panics
 ///
 /// if sending command via `tx_to_main` fails
-fn download_job(tx_to_main: &Sender<Msg>, ep: EpData, dest: PathBuf, max_retries: usize) {
+async fn download_job(tx_to_main: &Sender<Msg>, ep: EpData, dest: PathBuf, max_retries: usize) {
     tx_to_main
         .send(Msg::Podcast(PCMsg::DLStart(ep.clone())))
         .expect("Thread messaging error when start download");
-    let result = download_file(ep, dest, max_retries);
+    let result = download_file(ep, dest, max_retries).await;
     tx_to_main
         .send(Msg::Podcast(result))
         .expect("Thread messaging error");
@@ -847,14 +806,18 @@ fn download_job(tx_to_main: &Sender<Msg>, ep: EpData, dest: PathBuf, max_retries
 /// Downloads a file to a local filepath, returning `DownloadMsg` variant
 /// indicating success or failure.
 #[allow(clippy::single_match_else)]
-fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries: usize) -> PCMsg {
+async fn download_file(
+    mut ep_data: EpData,
+    destination_path: PathBuf,
+    mut max_retries: usize,
+) -> PCMsg {
     let agent = ClientBuilder::new()
         .connect_timeout(Duration::from_secs(10))
         .build()
         .expect("reqwest client build failed");
 
-    let request: Result<reqwest::blocking::Response, ()> = loop {
-        let response = agent.get(&ep_data.url).send();
+    let request: Result<reqwest::Response, ()> = loop {
+        let response = agent.get(&ep_data.url).send().await;
         match response {
             Ok(resp) => break Ok(resp),
             Err(_) => {
@@ -870,7 +833,7 @@ fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries
         return PCMsg::DLResponseError(ep_data);
     };
 
-    let mut response = request.unwrap();
+    let response = request.unwrap();
 
     // figure out the file type
     let mut ext = "mp3";
@@ -908,19 +871,18 @@ fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries
     let mut file_path = destination_path;
     file_path.push(format!("{file_name}.{ext}"));
 
-    let dst = File::create(&file_path);
-    if dst.is_err() {
+    let Ok(mut dst) = File::create(&file_path) else {
         return PCMsg::DLFileCreateError(ep_data);
     };
 
     ep_data.file_path = Some(file_path);
 
-    let mut resp_data = Vec::new();
-    let _drop = response.read_to_end(&mut resp_data);
+    let Ok(bytes) = response.bytes().await else {
+        return PCMsg::DLFileCreateError(ep_data);
+    };
 
-    match dst.unwrap().write_all(&resp_data) {
-        // match std::io::copy(&mut resp_data, &mut dst.unwrap()) {
-        Ok(()) => PCMsg::DLComplete(ep_data),
+    match std::io::copy(&mut bytes.reader(), &mut dst) {
+        Ok(_) => PCMsg::DLComplete(ep_data),
         Err(_) => PCMsg::DLFileWriteError(ep_data),
     }
 }

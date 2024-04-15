@@ -40,7 +40,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 use termusiclib::config::{Keys, StyleColorSymbol};
-use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
+use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, TaskPool};
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
@@ -103,7 +103,7 @@ pub struct Model {
     pub podcasts: Vec<Podcast>,
     pub podcasts_index: usize,
     pub db_podcast: DBPod,
-    pub threadpool: Threadpool,
+    pub threadpool: TaskPool,
     pub tx_to_main: Sender<Msg>,
     pub rx_to_main: Receiver<Msg>,
     pub podcast_search_vec: Option<Vec<PodcastFeed>>,
@@ -147,7 +147,7 @@ impl Model {
         let podcasts = db_podcast
             .get_podcasts()
             .expect("failed to get podcasts from db.");
-        let threadpool = Threadpool::new(config.podcast_simultanious_download);
+        let threadpool = TaskPool::new(config.podcast_simultanious_download);
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
         let config = std::sync::Arc::new(parking_lot::RwLock::new(config));
