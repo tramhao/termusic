@@ -3,7 +3,9 @@ use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, P
 use std::sync::mpsc::{self, Receiver};
 use termusiclib::track::Track;
 
-use crate::{GeneralPlayer, PlayerCmd, PlayerTimeUnit, PlayerTrait, Status};
+use crate::{
+    GeneralPlayer, PlayerCmd, PlayerProgress, PlayerTimeUnit, PlayerTrait, Status, Volume,
+};
 
 pub struct Mpris {
     controls: MediaControls,
@@ -122,6 +124,20 @@ impl Mpris {
             };
         }
     }
+
+    /// Update the Volume reported by Media-Controls
+    ///
+    /// currently only does something on linux (mpris)
+    #[allow(unused_variables, clippy::unused_self)] // non-linux targets will complain about unused parameters
+    pub fn update_volume(&mut self, volume: Volume) {
+        // currently "set_volume" only exists for "linux"(mpris)
+        #[cfg(target_os = "linux")]
+        {
+            // update the reported volume in mpris
+            let vol = f64::from(volume) / 100.0;
+            let _ = self.controls.set_volume(vol);
+        }
+    }
 }
 
 impl GeneralPlayer {
@@ -209,22 +225,29 @@ impl GeneralPlayer {
         }
     }
 
-    pub fn update_mpris(&mut self) {
-        if let Ok(m) = self.mpris.rx.try_recv() {
-            self.mpris_handler(m);
+    /// Handle Media-Controls events, if enabled to be used
+    pub fn mpris_handle_events(&mut self) {
+        if let Some(ref mut mpris) = self.mpris {
+            if let Ok(m) = mpris.rx.try_recv() {
+                self.mpris_handler(m);
+            }
         }
+    }
 
-        // currently "set_volume" only exists for "linux"(mpris)
-        #[cfg(target_os = "linux")]
-        {
-            // update the reported volume in mpris
-            let vol = f64::from(self.volume()) / 100.0;
-            self.mpris.controls.set_volume(vol).ok();
+    /// Update Media-Controls reported Position & Status, if enabled to be reporting
+    #[inline]
+    pub fn mpris_update_progress(&mut self, progress: &PlayerProgress) {
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.update_progress(progress.position, self.playlist.status());
         }
+    }
 
-        if let Some(progress) = self.get_progress() {
-            self.mpris
-                .update_progress(progress.position, self.playlist.status());
+    /// Update Media-Controls reported volume, if enabled to be reporting
+    #[inline]
+    pub fn mpris_volume_update(&mut self) {
+        let volume = self.volume();
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.update_volume(volume);
         }
     }
 }

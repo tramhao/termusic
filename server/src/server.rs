@@ -214,8 +214,9 @@ fn player_loop(
                 player.previous();
             }
             PlayerCmd::ReloadConfig => {
-                player.config.write().load()?;
-                info!("config reloaded");
+                if let Err(err) = player.reload_config() {
+                    error!("Reloading config failed, using old: {:#?}", err);
+                }
             }
             PlayerCmd::ReloadPlaylist => {
                 player.playlist.reload_tracks().ok();
@@ -256,9 +257,7 @@ fn player_loop(
             }
             PlayerCmd::Tick => {
                 // info!("tick received");
-                if player.config.read().player_use_mpris {
-                    player.update_mpris();
-                }
+                player.mpris_handle_events();
                 let mut p_tick = playerstats.lock();
                 p_tick.status = player.playlist.status().as_u32();
                 // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore
@@ -276,7 +275,8 @@ fn player_loop(
                     continue;
                 }
                 if let Some(progress) = player.get_progress() {
-                    p_tick.progress = progress
+                    p_tick.progress = progress;
+                    player.mpris_update_progress(&p_tick.progress);
                 }
                 if player.current_track_updated {
                     p_tick.current_track_index = player.playlist.get_current_track_index() as u32;
@@ -331,6 +331,7 @@ fn player_loop(
                 info!("after volumedown: {}", new_volume);
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
+                player.mpris_volume_update();
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
@@ -339,6 +340,7 @@ fn player_loop(
                 info!("after volumeup: {}", new_volume);
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
+                player.mpris_volume_update();
             }
             PlayerCmd::Pause => {
                 player.pause();
