@@ -35,6 +35,7 @@ use termusiclib::track::Track;
 use termusiclib::types::YoutubeOptions;
 use termusiclib::types::{DLMsg, Id, Msg};
 use termusiclib::utils::get_parent_folder;
+use tokio::runtime::Handle;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
 use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
@@ -58,38 +59,57 @@ impl Model {
         Ok(())
     }
 
+    /// This function requires to be run in a tokio Runtime context
     pub fn youtube_options_search(&mut self, keyword: &str) {
         let search_word = keyword.to_string();
         let tx = self.tx_to_main.clone();
-        thread::spawn(move || match Instance::new(&search_word) {
-            Ok((instance, result)) => {
-                let youtube_options = YoutubeOptions {
-                    items: result,
-                    page: 1,
-                    invidious_instance: instance,
-                };
-                tx.send(Msg::Download(DLMsg::YoutubeSearchSuccess(youtube_options)))
-                    .ok();
-            }
-            Err(e) => {
-                tx.send(Msg::Download(DLMsg::YoutubeSearchFail(e.to_string())))
-                    .ok();
+        tokio::spawn(async move {
+            match Instance::new(&search_word).await {
+                Ok((instance, result)) => {
+                    let youtube_options = YoutubeOptions {
+                        items: result,
+                        page: 1,
+                        invidious_instance: instance,
+                    };
+                    tx.send(Msg::Download(DLMsg::YoutubeSearchSuccess(youtube_options)))
+                        .ok();
+                }
+                Err(e) => {
+                    tx.send(Msg::Download(DLMsg::YoutubeSearchFail(e.to_string())))
+                        .ok();
+                }
             }
         });
     }
 
+    /// This function requires to be run in a tokio Runtime context
     pub fn youtube_options_prev_page(&mut self) {
-        match self.youtube_options.prev_page() {
-            Ok(()) => self.sync_youtube_options(),
-            Err(e) => self.mount_error_popup(e.context("youtube-dl search")),
-        }
+        // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
+        // though i am not fully sure if that is 100% the case, this avoid the panic though
+        tokio::task::block_in_place(move || {
+            Handle::current().block_on(async {
+                match self.youtube_options.prev_page().await {
+                    Ok(()) => self.sync_youtube_options(),
+                    Err(e) => self.mount_error_popup(e.context("youtube-dl search")),
+                }
+            });
+        });
     }
+
+    /// This function requires to be run in a tokio Runtime context
     pub fn youtube_options_next_page(&mut self) {
-        match self.youtube_options.next_page() {
-            Ok(()) => self.sync_youtube_options(),
-            Err(e) => self.mount_error_popup(e.context("youtube-dl search")),
-        }
+        // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
+        // though i am not fully sure if that is 100% the case, this avoid the panic though
+        tokio::task::block_in_place(move || {
+            Handle::current().block_on(async {
+                match self.youtube_options.next_page().await {
+                    Ok(()) => self.sync_youtube_options(),
+                    Err(e) => self.mount_error_popup(e.context("youtube-dl search")),
+                }
+            });
+        });
     }
+
     pub fn sync_youtube_options(&mut self) {
         if self.youtube_options.items.is_empty() {
             let table = TableBuilder::default()

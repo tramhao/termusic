@@ -26,10 +26,7 @@ use rand::seq::SliceRandom;
 use serde_json::Value;
 // left for debug
 // use std::io::Write;
-use reqwest::{
-    blocking::{Client, ClientBuilder},
-    StatusCode,
-};
+use reqwest::{Client, ClientBuilder, StatusCode};
 use std::time::Duration;
 
 const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
@@ -90,7 +87,7 @@ impl Default for Instance {
 
 #[allow(unused)]
 impl Instance {
-    pub fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
+    pub async fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
         let client = ClientBuilder::new()
             .timeout(Duration::from_secs(10))
             .build()?;
@@ -99,7 +96,7 @@ impl Instance {
         let mut domains = vec![];
 
         // prefor fetch invidious instance from website, but will provide 7 backups
-        if let Ok(domain_list) = Self::get_invidious_instance_list(&client) {
+        if let Ok(domain_list) = Self::get_invidious_instance_list(&client).await {
             domains = domain_list;
         } else {
             for item in &INVIDIOUS_INSTANCE_LIST {
@@ -119,9 +116,9 @@ impl Instance {
                 ("type", "video"),
                 ("sort_by", "relevance"),
             ];
-            if let Ok(result) = client.get(&url).query(&query_vec).send() {
+            if let Ok(result) = client.get(&url).query(&query_vec).send().await {
                 if result.status() == 200 {
-                    if let Ok(text) = result.text() {
+                    if let Ok(text) = result.text().await {
                         if let Some(vr) = Self::parse_youtube_options(&text) {
                             video_result = vr;
                             domain = v;
@@ -147,7 +144,7 @@ impl Instance {
     }
 
     // GetSearchQuery fetches query result from an Invidious instance.
-    pub fn get_search_query(&self, page: u32) -> Result<Vec<YoutubeVideo>> {
+    pub async fn get_search_query(&self, page: u32) -> Result<Vec<YoutubeVideo>> {
         if self.domain.is_none() {
             bail!("No server available");
         }
@@ -166,10 +163,11 @@ impl Instance {
             .client
             .get(url)
             .query(&[("q", query), ("page", &page.to_string())])
-            .send()?;
+            .send()
+            .await?;
 
         match result.status() {
-            StatusCode::OK => match result.text() {
+            StatusCode::OK => match result.text().await {
                 Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
@@ -179,13 +177,13 @@ impl Instance {
 
     // GetSuggestions returns video suggestions based on prefix strings. This is the
     // same result as youtube search autocomplete.
-    pub fn get_suggestions(&self, prefix: &str) -> Result<Vec<YoutubeVideo>> {
+    pub async fn get_suggestions(&self, prefix: &str) -> Result<Vec<YoutubeVideo>> {
         let url = format!(
             "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={prefix}"
         );
-        let result = self.client.get(url).send()?;
+        let result = self.client.get(url).send().await?;
         match result.status() {
-            StatusCode::OK => match result.text() {
+            StatusCode::OK => match result.text().await {
                 Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
@@ -195,7 +193,7 @@ impl Instance {
 
     // GetTrendingMusic fetch music trending based on region.
     // Region (ISO 3166 country code) can be provided in the argument.
-    pub fn get_trending_music(&self, region: &str) -> Result<Vec<YoutubeVideo>> {
+    pub async fn get_trending_music(&self, region: &str) -> Result<Vec<YoutubeVideo>> {
         if self.domain.is_none() {
             bail!("No server available");
         }
@@ -206,10 +204,10 @@ impl Instance {
                 .ok_or(anyhow!("error in domain names"))?
         );
 
-        let result = self.client.get(url).send()?;
+        let result = self.client.get(url).send().await?;
 
         match result.status() {
-            StatusCode::OK => match result.text() {
+            StatusCode::OK => match result.text().await {
                 Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 _ => bail!("Error during search"),
             },
@@ -246,8 +244,8 @@ impl Instance {
         Some((title, video_id, length_seconds))
     }
 
-    fn get_invidious_instance_list(client: &Client) -> Result<Vec<String>> {
-        let result = client.get(INVIDIOUS_DOMAINS).send()?.text()?;
+    async fn get_invidious_instance_list(client: &Client) -> Result<Vec<String>> {
+        let result = client.get(INVIDIOUS_DOMAINS).send().await?.text().await?;
         // Left here for debug
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");

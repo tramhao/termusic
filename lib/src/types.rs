@@ -656,17 +656,17 @@ impl YoutubeOptions {
         Err(anyhow!("index not found"))
     }
 
-    pub fn prev_page(&mut self) -> Result<()> {
+    pub async fn prev_page(&mut self) -> Result<()> {
         if self.page > 1 {
             self.page -= 1;
-            self.items = self.invidious_instance.get_search_query(self.page)?;
+            self.items = self.invidious_instance.get_search_query(self.page).await?;
         }
         Ok(())
     }
 
-    pub fn next_page(&mut self) -> Result<()> {
+    pub async fn next_page(&mut self) -> Result<()> {
         self.page += 1;
-        self.items = self.invidious_instance.get_search_query(self.page)?;
+        self.items = self.invidious_instance.get_search_query(self.page).await?;
         Ok(())
     }
 
