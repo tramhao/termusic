@@ -61,6 +61,7 @@ parking_lot.workspace = true
 
 [features]
 default = ["cover-viuer"]
+cover = ["cover-uberzug", "cover-viuer"]
 cover-uberzug = []
 cover-viuer = ["cover-viuer-iterm", "cover-viuer-kitty", "cover-viuer-sixel"]
 cover-viuer-iterm = []
