@@ -59,9 +59,12 @@ parking_lot.workspace = true
 
 
 [features]
-default = ["cover-viuer"]
+# enable all cover features by default that do not require system interfaces / extra dependencies
+default = ["cover-viuer-iterm", "cover-viuer-kitty"]
+# enable all terminal cover printers
 cover = ["cover-uberzug", "cover-viuer"]
 cover-uberzug = []
+# enable all viuer protocols
 cover-viuer = ["cover-viuer-iterm", "cover-viuer-kitty", "cover-viuer-sixel"]
 cover-viuer-iterm = []
 cover-viuer-kitty = []
