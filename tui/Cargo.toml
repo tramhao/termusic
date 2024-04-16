@@ -70,6 +70,7 @@ parking_lot.workspace = true
 
 
 [features]
+default = ["cover-viuer"]
 # left for debug
 # default = ["gst"]
 # default = ["mpv"]
