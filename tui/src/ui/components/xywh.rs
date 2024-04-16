@@ -122,7 +122,7 @@ impl Model {
         if self.should_not_show_photo() {
             return Ok(());
         }
-        let Some(track) = self.playlist.current_track().cloned() else {
+        let Some(track) = self.playlist.current_track() else {
             return Ok(());
         };
 
