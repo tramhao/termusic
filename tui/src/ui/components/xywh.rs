@@ -293,12 +293,6 @@ impl Model {
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
                 // sixel does not use temp-files, so no cleaning necessary
             }
-            // ViuerSupported::ITerm => {
-            //     // FIXME: This is a total clear of the whole screen. I haven't found a better way to clear
-            //     // iterm images
-            //     self.terminal.raw_mut().clear()?;
-            // }
-            // ViuerSupported::NotSupported | ViuerSupported::Sixel => {
             ViuerSupported::NotSupported => {
                 #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
                 self.ueberzug_instance.clear_cover_ueberzug()?;
