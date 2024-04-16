@@ -65,7 +65,6 @@ quick-xml = "0.31"
 rand = "0.8"
 regex = "^1.5.5"
 reqwest = { version = "0.12", features = [
-    "blocking",
     "cookies",
     "gzip",
     "json",

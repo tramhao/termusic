@@ -4,7 +4,28 @@
 - Unreleased
 - Change: enable `log-to-file` by default.
 - Change: updated MSRV to 1.75.
+- Change: on backend rusty, require `clang` and `soundtouch` as system-dependencies.
+- Change: update some dependencies.
+- Change: use more specific versions instead of just the major version (lib.rs suggestion).
+- Change: remove unused dependencies from all packages.
+- Change(tui): move version display to be the last instead of first element in the bottom-bar.
 - Feat: Add `TM_LOGTOFILE` and `TMS_LOGTOFILE` to control `--log-to-file` for tui and server respectively.
+- Fix: allow backends to be compiled in for `termusic-playback` but not in `termusic-server`.
+- Fix: on backend mpv, clear media-title on EndOfFile.
+- Fix: consistent media-title(/radio-title) handling across all backends.
+- Fix: use async-reqwest in all places (instead of `reqwest::blocking`, fixes debug builds in some areas).
+- Fix(tui): ensure the Quit-Popup always has top-most focus.
+- Fix(tui): also close a Error-Popup with global-quit(default `q`) key.
+- Fix(tui): use a common code-path for all `No/Yes`-Popups.
+- Fix(tui): change Popup titles to have consistent spacing on both sides.
+- Fix(server): on gstreamer backend, try to correctly apply the speed on track start.
+- Fix(server): on rusty backend, reset the decoder after a seek when codec is `mp3` (fixes audible noise while seeking for this codec).
+- Fix(server): on rusty backend, more accureately seek to requested position.
+- Fix(server): update Media-Controls volume on volume change instead of on tick.
+- Fix(server): update Media-Controls with *new* progress instead of last-tick progress.
+- Fix(server): dont start Media-Controls if not requested (like disabled via config).
+- Refactor: a lot less cloning and conversions where not necessary.
+- Refactor(server): on backend rusty, clean-up decoding & seeking.
 
 ### [v0.9.0]
 - Released on: March 24, 2024.
