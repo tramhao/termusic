@@ -115,7 +115,7 @@ pub struct Model {
 pub enum ViuerSupported {
     Kitty,
     ITerm,
-    // Sixel,
+    Sixel,
     NotSupported,
 }
 
@@ -131,6 +131,8 @@ impl Model {
             viuer_supported = ViuerSupported::Kitty;
         } else if viuer::is_iterm_supported() {
             viuer_supported = ViuerSupported::ITerm;
+        } else if viuer::is_sixel_supported() {
+            viuer_supported = ViuerSupported::Sixel;
         }
         let db = DataBase::new(&config);
         let db_criteria = SearchCriteria::Artist;

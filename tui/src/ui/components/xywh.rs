@@ -217,7 +217,7 @@ impl Model {
             Ok(xywh) => {
                 // error!("{:?}", self.viuer_supported);
                 match self.viuer_supported {
-                    ViuerSupported::Kitty | ViuerSupported::ITerm => {
+                    ViuerSupported::Kitty | ViuerSupported::ITerm | ViuerSupported::Sixel=> {
                         let config = viuer::Config {
                             transparent: true,
                             absolute_offset: true,
@@ -263,10 +263,11 @@ impl Model {
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
                 Self::remove_temp_files()?;
             }
-            // ViuerSupported::Sixel => {
-            //     self.clear_image_viuer_kitty()
-            //         .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
-            // }
+            ViuerSupported::Sixel => {
+                self.clear_image_viuer_kitty()
+                    .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+                // sixel does not use temp-files, so no cleaning necessary
+            }
             // ViuerSupported::ITerm => {
             //     // FIXME: This is a total clear of the whole screen. I haven't found a better way to clear
             //     // iterm images

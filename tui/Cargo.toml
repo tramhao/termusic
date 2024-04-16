@@ -45,8 +45,7 @@ tui-realm-stdlib.workspace = true #   = "1"
 tui-realm-treeview.workspace = true #   = "1"
 unicode-width.workspace = true #   = "^0.1.8"
 urlencoding.workspace = true #   = "2"
-# viuer = { version = "0.6", features = ["sixel"] }
-viuer.workspace = true #   = "0.6"
+viuer.workspace = true
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
 walkdir.workspace = true #   = "2"
 wildmatch.workspace = true #   = "2"
