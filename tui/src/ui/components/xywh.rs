@@ -142,14 +142,18 @@ impl Model {
                 }
             }
             MediaType::Podcast => {
-                let mut url = String::new();
-                if let Some(episode_photo_url) = track.album_photo() {
-                    url = episode_photo_url.to_string();
-                } else if let Some(pod_photo_url) =
-                    self.podcast_get_album_photo_by_url(track.file().unwrap_or(""))
-                {
-                    url = pod_photo_url;
-                }
+                let url = {
+                    if let Some(episode_photo_url) = track.album_photo() {
+                        episode_photo_url.to_string()
+                    } else if let Some(pod_photo_url) = track
+                        .file()
+                        .and_then(|file| self.podcast_get_album_photo_by_url(file))
+                    {
+                        pod_photo_url
+                    } else {
+                        return Ok(());
+                    }
+                };
 
                 if url.is_empty() {
                     return Ok(());
