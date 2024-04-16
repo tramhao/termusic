@@ -4045,7 +4045,6 @@ dependencies = [
  "tui-realm-treeview",
  "tuirealm",
  "unicode-width",
- "urlencoding",
  "viuer",
  "walkdir",
  "wildmatch",
