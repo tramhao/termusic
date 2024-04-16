@@ -166,7 +166,6 @@ impl Model {
                                 return;
                             }
 
-                            // let reader = BufReader::new(result.bytes().unwrap());
                             let mut reader = {
                                 let bytes = match result.bytes().await {
                                     Ok(v) => v,
@@ -181,24 +180,27 @@ impl Model {
 
                                 bytes.reader()
                             };
-                            match Picture::from_reader(&mut reader) {
-                                Ok(picture) => match image::load_from_memory(picture.data()) {
-                                    Ok(image) => {
-                                        let image_wrapper = ImageWrapper { data: image };
-                                        tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(
-                                            image_wrapper,
-                                        )))
+
+                            let picture = match Picture::from_reader(&mut reader) {
+                                Ok(v) => v,
+                                Err(e) => {
+                                    tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                        "Error in picture from_reader: {e}"
+                                    ))))
+                                    .ok();
+                                    return;
+                                }
+                            };
+
+                            match image::load_from_memory(picture.data()) {
+                                Ok(image) => {
+                                    let image_wrapper = ImageWrapper { data: image };
+                                    tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(image_wrapper)))
                                         .ok()
-                                    }
-                                    Err(e) => tx
-                                        .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                            "Error in load_from_memory: {e}"
-                                        ))))
-                                        .ok(),
-                                },
+                                }
                                 Err(e) => tx
                                     .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                        "Error in picture from_reader: {e}"
+                                        "Error in load_from_memory: {e}"
                                     ))))
                                     .ok(),
                             }
