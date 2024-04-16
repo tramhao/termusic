@@ -235,7 +235,7 @@ impl Model {
                         std::fs::create_dir_all(&cache_file)?;
                     }
                     cache_file.push("termusic_cover.jpg");
-                    img.save(cache_file.clone())?;
+                    img.save(&cache_file)?;
                     if !cache_file.exists() {
                         anyhow::bail!("cover file is not saved correctly");
                     }
