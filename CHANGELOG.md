@@ -9,6 +9,7 @@
 - Change: use more specific versions instead of just the major version (lib.rs suggestion).
 - Change: remove unused dependencies from all packages.
 - Change(tui): move version display to be the last instead of first element in the bottom-bar.
+- Change(tui): rename previous feature `cover` to `cover-uberzug`
 - Feat: Add `TM_LOGTOFILE` and `TMS_LOGTOFILE` to control `--log-to-file` for tui and server respectively.
 - Fix: allow backends to be compiled in for `termusic-playback` but not in `termusic-server`.
 - Fix: on backend mpv, clear media-title on EndOfFile.

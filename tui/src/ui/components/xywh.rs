@@ -103,7 +103,6 @@ impl Model {
     /// Requires that the current thread has a entered runtime
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
-        #[cfg(feature = "cover")]
         if self.config.read().disable_album_art_from_cli {
             return Ok(());
         }
@@ -231,7 +230,7 @@ impl Model {
                             .map_err(|e| anyhow!("viuer print error: {}", e))?;
                     }
                     ViuerSupported::NotSupported => {
-                        #[cfg(all(feature = "cover", not(target_os = "windows")))]
+                        #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
                         {
                             let mut cache_file =
                                 dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
@@ -275,7 +274,7 @@ impl Model {
             // }
             // ViuerSupported::NotSupported | ViuerSupported::Sixel => {
             ViuerSupported::NotSupported => {
-                #[cfg(all(feature = "cover", not(target_os = "windows")))]
+                #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
                 self.ueberzug_instance.clear_cover_ueberzug()?;
             }
         }

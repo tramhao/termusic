@@ -70,14 +70,13 @@ parking_lot.workspace = true
 
 
 [features]
-# default = ["cover"]
 # left for debug
 # default = ["gst"]
 # default = ["mpv"]
 # default = ["discord"]
 # mpris = ["souvlaki"]
 # cover = ["tempfile"]
-cover = []
+cover-uberzug = []
 # discord = ["discord-rich-presence"]
 
 [dev-dependencies]
