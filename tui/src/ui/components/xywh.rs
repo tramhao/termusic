@@ -22,11 +22,22 @@
  * SOFTWARE.
  */
 use crate::ui::model::{Model, ViuerSupported};
-use anyhow::{anyhow, Result};
+#[cfg(any(
+    feature = "cover-viuer-iterm",
+    feature = "cover-viuer-kitty",
+    feature = "cover-viuer-sixel"
+))]
+use anyhow::anyhow;
+use anyhow::Result;
 use bytes::Buf;
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
 use lofty::Picture;
+#[cfg(any(
+    feature = "cover-viuer-iterm",
+    feature = "cover-viuer-kitty",
+    feature = "cover-viuer-sixel"
+))]
 use std::io::Write;
 use termusiclib::track::MediaType;
 use termusiclib::types::{DLMsg, Id, IdConfigEditor, IdTagEditor, ImageWrapper, Msg};
@@ -208,27 +219,15 @@ impl Model {
         Ok(())
     }
 
-    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_possible_truncation, clippy::unnecessary_wraps)]
     pub fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
         let res = self.config.read().album_photo_xywh.update_size(img);
         match res {
             Err(e) => self.mount_error_popup(e),
+            #[allow(unused_variables)] // because argument is only used if features are enabled
             Ok(xywh) => {
                 // error!("{:?}", self.viuer_supported);
                 match self.viuer_supported {
-                    ViuerSupported::Kitty | ViuerSupported::ITerm | ViuerSupported::Sixel=> {
-                        let config = viuer::Config {
-                            transparent: true,
-                            absolute_offset: true,
-                            x: xywh.x as u16,
-                            y: xywh.y as i16,
-                            width: Some(xywh.width),
-                            height: None,
-                            ..viuer::Config::default()
-                        };
-                        viuer::print(img, &config)
-                            .map_err(|e| anyhow!("viuer print error: {}", e))?;
-                    }
                     ViuerSupported::NotSupported => {
                         #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
                         {
@@ -249,19 +248,46 @@ impl Model {
                             }
                         }
                     }
+                    #[cfg(any(
+                        feature = "cover-viuer-iterm",
+                        feature = "cover-viuer-kitty",
+                        feature = "cover-viuer-sixel"
+                    ))]
+                    _ => {
+                        let config = viuer::Config {
+                            transparent: true,
+                            absolute_offset: true,
+                            x: xywh.x as u16,
+                            y: xywh.y as i16,
+                            width: Some(xywh.width),
+                            height: None,
+                            ..viuer::Config::default()
+                        };
+                        viuer::print(img, &config)
+                            .map_err(|e| anyhow!("viuer print error: {}", e))?;
+                    }
                 };
             }
         }
         Ok(())
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn clear_photo(&mut self) -> Result<()> {
         match self.viuer_supported {
-            ViuerSupported::Kitty | ViuerSupported::ITerm => {
+            #[cfg(feature = "cover-viuer-kitty")]
+            ViuerSupported::Kitty => {
                 self.clear_image_viuer_kitty()
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
                 Self::remove_temp_files()?;
             }
+            #[cfg(feature = "cover-viuer-iterm")]
+            ViuerSupported::ITerm => {
+                self.clear_image_viuer_kitty()
+                    .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+                Self::remove_temp_files()?;
+            }
+            #[cfg(feature = "cover-viuer-sixel")]
             ViuerSupported::Sixel => {
                 self.clear_image_viuer_kitty()
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
@@ -280,6 +306,12 @@ impl Model {
         }
         Ok(())
     }
+
+    #[cfg(any(
+        feature = "cover-viuer-iterm",
+        feature = "cover-viuer-kitty",
+        feature = "cover-viuer-sixel"
+    ))]
     fn clear_image_viuer_kitty(&mut self) -> Result<()> {
         write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
         // write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
@@ -287,6 +319,7 @@ impl Model {
         Ok(())
     }
 
+    #[cfg(any(feature = "cover-viuer-iterm", feature = "cover-viuer-kitty"))]
     fn remove_temp_files() -> Result<()> {
         // Clean up temp files created by `viuer`'s kitty printer to avoid
         // possible freeze because of too many temp files in the temp folder.

@@ -77,6 +77,10 @@ parking_lot.workspace = true
 # mpris = ["souvlaki"]
 # cover = ["tempfile"]
 cover-uberzug = []
+cover-viuer = ["cover-viuer-iterm", "cover-viuer-kitty", "cover-viuer-sixel"]
+cover-viuer-iterm = []
+cover-viuer-kitty = []
+cover-viuer-sixel = ["viuer/sixel"]
 # discord = ["discord-rich-presence"]
 
 [dev-dependencies]

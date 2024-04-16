@@ -113,10 +113,30 @@ pub struct Model {
 
 #[derive(Debug)]
 pub enum ViuerSupported {
+    #[cfg(feature = "cover-viuer-kitty")]
     Kitty,
+    #[cfg(feature = "cover-viuer-iterm")]
     ITerm,
+    #[cfg(feature = "cover-viuer-sixel")]
     Sixel,
     NotSupported,
+}
+
+fn get_viuer_support() -> ViuerSupported {
+    #[cfg(feature = "cover-viuer-kitty")]
+    if viuer::KittySupport::None != viuer::get_kitty_support() {
+        return ViuerSupported::Kitty;
+    }
+    #[cfg(feature = "cover-viuer-iterm")]
+    if viuer::is_iterm_supported() {
+        return ViuerSupported::ITerm;
+    }
+    #[cfg(feature = "cover-viuer-sixel")]
+    if viuer::is_sixel_supported() {
+        return ViuerSupported::Sixel;
+    }
+
+    ViuerSupported::NotSupported
 }
 
 impl Model {
@@ -126,19 +146,10 @@ impl Model {
 
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
-        let mut viuer_supported = ViuerSupported::NotSupported;
-        if viuer::KittySupport::None != viuer::get_kitty_support() {
-            viuer_supported = ViuerSupported::Kitty;
-        } else if viuer::is_iterm_supported() {
-            viuer_supported = ViuerSupported::ITerm;
-        } else if viuer::is_sixel_supported() {
-            viuer_supported = ViuerSupported::Sixel;
-        }
+        let viuer_supported = get_viuer_support();
         let db = DataBase::new(&config);
         let db_criteria = SearchCriteria::Artist;
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
-        // let viuer_supported =
-        //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
 
         #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
         let ueberzug_instance = UeInstance::default();
