@@ -28,7 +28,7 @@ use crate::ui::model::{Model, ViuerSupported};
     feature = "cover-viuer-sixel"
 ))]
 use anyhow::anyhow;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use bytes::Buf;
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
@@ -225,54 +225,49 @@ impl Model {
 
     #[allow(clippy::cast_possible_truncation, clippy::unnecessary_wraps)]
     pub fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
-        let res = self.config.read().album_photo_xywh.update_size(img);
-        match res {
-            Err(e) => self.mount_error_popup(e),
-            #[allow(unused_variables)] // because argument is only used if features are enabled
-            Ok(xywh) => {
-                // error!("{:?}", self.viuer_supported);
-                match self.viuer_supported {
-                    ViuerSupported::NotSupported => {
-                        #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
-                        {
-                            let mut cache_file =
-                                dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
-                            cache_file.push("termusic");
-                            if !cache_file.exists() {
-                                std::fs::create_dir_all(&cache_file)?;
-                            }
-                            cache_file.push("termusic_cover.jpg");
-                            img.save(cache_file.clone())?;
-                            if !cache_file.exists() {
-                                anyhow::bail!("cover file is not saved correctly");
-                            }
-                            if let Some(file) = cache_file.as_path().to_str() {
-                                self.ueberzug_instance
-                                    .draw_cover_ueberzug(file, &xywh, false)?;
-                            }
-                        }
+        #[allow(unused_variables)]
+        let xywh = self.config.read().album_photo_xywh.update_size(img)?;
+
+        // error!("{:?}", self.viuer_supported);
+        match self.viuer_supported {
+            ViuerSupported::NotSupported => {
+                #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
+                {
+                    let mut cache_file = dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
+                    cache_file.push("termusic");
+                    if !cache_file.exists() {
+                        std::fs::create_dir_all(&cache_file)?;
                     }
-                    #[cfg(any(
-                        feature = "cover-viuer-iterm",
-                        feature = "cover-viuer-kitty",
-                        feature = "cover-viuer-sixel"
-                    ))]
-                    _ => {
-                        let config = viuer::Config {
-                            transparent: true,
-                            absolute_offset: true,
-                            x: xywh.x as u16,
-                            y: xywh.y as i16,
-                            width: Some(xywh.width),
-                            height: None,
-                            ..viuer::Config::default()
-                        };
-                        viuer::print(img, &config)
-                            .map_err(|e| anyhow!("viuer print error: {}", e))?;
+                    cache_file.push("termusic_cover.jpg");
+                    img.save(cache_file.clone())?;
+                    if !cache_file.exists() {
+                        anyhow::bail!("cover file is not saved correctly");
                     }
-                };
+                    if let Some(file) = cache_file.as_path().to_str() {
+                        self.ueberzug_instance
+                            .draw_cover_ueberzug(file, &xywh, false)?;
+                    }
+                }
             }
-        }
+            #[cfg(any(
+                feature = "cover-viuer-iterm",
+                feature = "cover-viuer-kitty",
+                feature = "cover-viuer-sixel"
+            ))]
+            _ => {
+                let config = viuer::Config {
+                    transparent: true,
+                    absolute_offset: true,
+                    x: xywh.x as u16,
+                    y: xywh.y as i16,
+                    width: Some(xywh.width),
+                    height: None,
+                    ..viuer::Config::default()
+                };
+                viuer::print(img, &config).context("viuer::print")?;
+            }
+        };
+
         Ok(())
     }
 
