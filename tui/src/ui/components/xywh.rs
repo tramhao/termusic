@@ -22,12 +22,6 @@
  * SOFTWARE.
  */
 use crate::ui::model::{Model, ViuerSupported};
-#[cfg(any(
-    feature = "cover-viuer-iterm",
-    feature = "cover-viuer-kitty",
-    feature = "cover-viuer-sixel"
-))]
-use anyhow::anyhow;
 use anyhow::{Context, Result};
 use bytes::Buf;
 use image::io::Reader as ImageReader;
@@ -277,19 +271,19 @@ impl Model {
             #[cfg(feature = "cover-viuer-kitty")]
             ViuerSupported::Kitty => {
                 self.clear_image_viuer_kitty()
-                    .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+                    .context("clear_photo kitty")?;
                 Self::remove_temp_files()?;
             }
             #[cfg(feature = "cover-viuer-iterm")]
             ViuerSupported::ITerm => {
                 self.clear_image_viuer_kitty()
-                    .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+                    .context("clear_photo iterm")?;
                 Self::remove_temp_files()?;
             }
             #[cfg(feature = "cover-viuer-sixel")]
             ViuerSupported::Sixel => {
                 self.clear_image_viuer_kitty()
-                    .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+                    .context("clear_photo sixel")?;
                 // sixel does not use temp-files, so no cleaning necessary
             }
             ViuerSupported::NotSupported => {
