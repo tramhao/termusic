@@ -227,7 +227,7 @@ impl Model {
         // error!("{:?}", self.viuer_supported);
         match self.viuer_supported {
             ViuerSupported::NotSupported => {
-                #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
+                #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
                 {
                     let mut cache_file = dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
                     cache_file.push("termusic");
@@ -289,7 +289,7 @@ impl Model {
                 // sixel does not use temp-files, so no cleaning necessary
             }
             ViuerSupported::NotSupported => {
-                #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
+                #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
                 self.ueberzug_instance.clear_cover_ueberzug()?;
             }
         }

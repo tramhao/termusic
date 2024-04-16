@@ -28,7 +28,7 @@ use crate::ui::Application;
 use termusiclib::sqlite::{DataBase, SearchCriteria};
 use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
 
-#[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
+#[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::{
     config::Settings,
@@ -83,7 +83,7 @@ pub struct Model {
     pub time_pos: Duration,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
-    #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
+    #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
     pub ueberzug_instance: UeInstance,
     pub songtag_options: Vec<SongTag>,
     pub sender_songtag: Sender<SearchLyricState>,
@@ -151,7 +151,7 @@ impl Model {
         let db_criteria = SearchCriteria::Artist;
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
 
-        #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
+        #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
         let ueberzug_instance = UeInstance::default();
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 
@@ -191,7 +191,7 @@ impl Model {
             youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)
                 .await
                 .expect("Failed to initialize YoutubeOptions in a blocking task due to a panic"),
-            #[cfg(all(feature = "cover-uberzug", not(target_os = "windows")))]
+            #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
             ueberzug_instance,
             songtag_options: vec![],
             sender_songtag: tx3,
