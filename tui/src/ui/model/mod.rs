@@ -28,7 +28,7 @@ use crate::ui::Application;
 use termusiclib::sqlite::{DataBase, SearchCriteria};
 use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
 
-#[cfg(all(feature = "cover", not(target_os = "windows")))]
+#[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::{
     config::Settings,
@@ -83,7 +83,7 @@ pub struct Model {
     pub time_pos: Duration,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
-    #[cfg(all(feature = "cover", not(target_os = "windows")))]
+    #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
     pub ueberzug_instance: UeInstance,
     pub songtag_options: Vec<SongTag>,
     pub sender_songtag: Sender<SearchLyricState>,
@@ -113,10 +113,30 @@ pub struct Model {
 
 #[derive(Debug)]
 pub enum ViuerSupported {
+    #[cfg(feature = "cover-viuer-kitty")]
     Kitty,
+    #[cfg(feature = "cover-viuer-iterm")]
     ITerm,
-    // Sixel,
+    #[cfg(feature = "cover-viuer-sixel")]
+    Sixel,
     NotSupported,
+}
+
+fn get_viuer_support() -> ViuerSupported {
+    #[cfg(feature = "cover-viuer-kitty")]
+    if viuer::KittySupport::None != viuer::get_kitty_support() {
+        return ViuerSupported::Kitty;
+    }
+    #[cfg(feature = "cover-viuer-iterm")]
+    if viuer::is_iterm_supported() {
+        return ViuerSupported::ITerm;
+    }
+    #[cfg(feature = "cover-viuer-sixel")]
+    if viuer::is_sixel_supported() {
+        return ViuerSupported::Sixel;
+    }
+
+    ViuerSupported::NotSupported
 }
 
 impl Model {
@@ -126,19 +146,12 @@ impl Model {
 
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
-        let mut viuer_supported = ViuerSupported::NotSupported;
-        if viuer::KittySupport::None != viuer::get_kitty_support() {
-            viuer_supported = ViuerSupported::Kitty;
-        } else if viuer::is_iterm_supported() {
-            viuer_supported = ViuerSupported::ITerm;
-        }
+        let viuer_supported = get_viuer_support();
         let db = DataBase::new(&config);
         let db_criteria = SearchCriteria::Artist;
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
-        // let viuer_supported =
-        //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
 
-        #[cfg(all(feature = "cover", not(target_os = "windows")))]
+        #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
         let ueberzug_instance = UeInstance::default();
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 
@@ -178,7 +191,7 @@ impl Model {
             youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)
                 .await
                 .expect("Failed to initialize YoutubeOptions in a blocking task due to a panic"),
-            #[cfg(all(feature = "cover", not(target_os = "windows")))]
+            #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
             ueberzug_instance,
             songtag_options: vec![],
             sender_songtag: tx3,

@@ -106,7 +106,6 @@ tui-realm-treeview = "~1.1"
 unicode-segmentation = "1.10"
 unicode-width = "^0.1.8"
 urlencoding = "2.1"
-# viuer = { version = "0.7", features = ["sixel"] }
 viuer = "0.7"
 walkdir = "2.5"
 wildmatch = "2.3"

@@ -9,7 +9,10 @@
 - Change: use more specific versions instead of just the major version (lib.rs suggestion).
 - Change: remove unused dependencies from all packages.
 - Change(tui): move version display to be the last instead of first element in the bottom-bar.
+- Change(tui): rename previous feature `cover` to `cover-ueberzug`
 - Feat: Add `TM_LOGTOFILE` and `TMS_LOGTOFILE` to control `--log-to-file` for tui and server respectively.
+- Feat(tui): allow Sixel to be used for covers.
+- Feat(tui): allow all cover providers to not be compiled in.
 - Fix: allow backends to be compiled in for `termusic-playback` but not in `termusic-server`.
 - Fix: on backend mpv, clear media-title on EndOfFile.
 - Fix: consistent media-title(/radio-title) handling across all backends.

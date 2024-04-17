@@ -44,42 +44,31 @@ tuirealm.workspace = true #   = { version = "1", features = ["serialize"] }
 tui-realm-stdlib.workspace = true #   = "1"
 tui-realm-treeview.workspace = true #   = "1"
 unicode-width.workspace = true #   = "^0.1.8"
-urlencoding.workspace = true #   = "2"
-# viuer = { version = "0.6", features = ["sixel"] }
-viuer.workspace = true #   = "0.6"
+viuer.workspace = true
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
 walkdir.workspace = true #   = "2"
 wildmatch.workspace = true #   = "2"
-# opml.workspace = true #   = "1"
-# chrono.workspace = true #   = "^0.4.23"
-# rss.workspace = true #   = "2"
-# rfc822_sanitizer.workspace = true #   = "0.3" 
-# ahash.workspace = true #   = "^0.8"
-# semver.workspace = true #   = "^1"
 escaper.workspace = true #   = "0.1.1"
 textwrap.workspace = true #   = "0.16"
-# bytes.workspace = true #   = "1"
-# unicode-segmentation.workspace = true #   = "1.10"
 sanitize-filename.workspace = true #   = "0.4"
 percent-encoding.workspace = true #   = "2.2"
 tonic.workspace = true
 tokio.workspace = true
 reqwest.workspace = true
-# reqwest = { version="0.11", features = ["stream"] }
-# tokio = { version = "1", features = ["full"] }
 parking_lot.workspace = true
 
 
 [features]
-# default = ["cover"]
-# left for debug
-# default = ["gst"]
-# default = ["mpv"]
-# default = ["discord"]
-# mpris = ["souvlaki"]
-# cover = ["tempfile"]
-cover = []
-# discord = ["discord-rich-presence"]
+# enable all cover features by default that do not require system interfaces / extra dependencies
+default = ["cover-viuer-iterm", "cover-viuer-kitty"]
+# enable all terminal cover printers
+cover = ["cover-ueberzug", "cover-viuer"]
+cover-ueberzug = []
+# enable all viuer protocols
+cover-viuer = ["cover-viuer-iterm", "cover-viuer-kitty", "cover-viuer-sixel"]
+cover-viuer-iterm = []
+cover-viuer-kitty = []
+cover-viuer-sixel = ["viuer/sixel"]
 
 [dev-dependencies]
 pretty_assertions.workspace = true # = "1"
