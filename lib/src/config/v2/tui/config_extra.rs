@@ -48,7 +48,13 @@ impl<'a, 'de> Deserialize<'de> for TuiConfigVersionedDefaulted<'a> {
         match TuiSettings::deserialize(deserializer).map(TuiConfigVersionedDefaulted::Unversioned) {
             Ok(val) => return Ok(val),
             // no need to check if "err_res" is empty, as this code can only be executed if the above has failed
-            Err(err) => err_res.push_str(&format!("\n{err:#}")),
+            Err(err) => {
+                let err_str = err.to_string();
+                // only add if the error is different; otherwise you get duplicated errors
+                if err_str != err_res {
+                    err_res.push_str(&format!("\n{err_str:#}"));
+                }
+            }
         }
 
         Err(<D::Error as serde::de::Error>::custom(err_res))
