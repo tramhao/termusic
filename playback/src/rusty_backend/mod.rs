@@ -498,7 +498,13 @@ async fn player_thread(
                 volume_inside.store(volume, Ordering::SeqCst);
             }
             PlayerInternalCmd::Skip => {
-                sink.skip_one();
+                // the sink can be empty, if for example nothing could be enqueued, so a "skip_one" would be a no-op and never send EOS, which is required to go to the next track
+                if sink.empty() {
+                    let _ = picmd_tx.send(PlayerInternalCmd::Eos);
+                    let _ = pcmd_tx.send(PlayerCmd::Eos);
+                } else {
+                    sink.skip_one();
+                }
                 if sink.is_paused() {
                     sink.play();
                 }
