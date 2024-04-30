@@ -294,10 +294,8 @@ impl BindingForEvent {
                 return Ok(Key::Char(char));
             }
         }
-        if str.starts_with('F') {
-            let mut chars = str.chars();
-            chars.next();
-            let my_int = u8::from_str(chars.as_str())?;
+        if let Some(str) = str.strip_prefix('F') {
+            let my_int = u8::from_str(str)?;
             if my_int > 12 {
                 bail!("Function key should be smaller than F12.");
             }
