@@ -65,6 +65,7 @@ jobs:
             brew update
             brew install protobuf
             brew install sound-touch
+            brew install libsixel
             # brew install gstreamer
             # brew install mpv
 

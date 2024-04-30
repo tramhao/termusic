@@ -79,6 +79,7 @@ jobs:
             brew update
             brew install protobuf 
             brew install sound-touch
+            brew install libsixel
   
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-windows'
