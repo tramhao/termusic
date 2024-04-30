@@ -65,25 +65,25 @@ jobs:
             brew update
             brew install protobuf
             brew install sound-touch
-            brew install libsixel
+            # brew install libsixel
             # brew install gstreamer
             # brew install mpv
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check --all --features cover
+        run: cargo check --all
         # run: cargo check --all --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test --features cover --all
+        run: cargo test --all
         # run: cargo test --features cover,all-backends --release --all
 
       - name: Run cargo fmt
         run: cargo fmt --all
 
       - name: Run cargo clippy
-        run: cargo clippy --all --features cover -- -D warnings
+        run: cargo clippy --all -- -D warnings
         # run: cargo clippy --all --features cover,all-backends -- -D warnings
 
 

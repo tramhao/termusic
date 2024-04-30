@@ -95,7 +95,7 @@ jobs:
 
       - name: Build release binary (cargo x86_64-macos)
         if: matrix.build == 'x86_64-macos'
-        run: cargo build --features cover --release --all --locked --target ${{ matrix.target }}
+        run: cargo build --release --all --locked --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-windows)
         if: matrix.build == 'x86_64-windows'
