@@ -165,21 +165,22 @@ pub fn playlist_get_vec(current_node: &str) -> Result<Vec<String>> {
 }
 
 fn playlist_get_absolute_pathbuf(item: &str, p_base: &Path) -> Result<PathBuf> {
-    let url_decoded = urlencoding::decode(item)?.into_owned();
-    let mut url = url_decoded.clone();
-    let mut pathbuf = PathBuf::from(p_base);
-    if url_decoded.starts_with("http") {
-        return Ok(PathBuf::from(url_decoded));
+    let mut url = urlencoding::decode(item)?.into_owned();
+    if url.starts_with("http") {
+        return Ok(PathBuf::from(url));
         // bail!("http not supported");
     }
-    if url_decoded.starts_with("file") {
-        url = url_decoded.replace("file://", "");
+    if url.starts_with("file") {
+        url = url.replace("file://", "");
     }
-    if Path::new(&url).is_relative() {
+    let pathbuf = if Path::new(&url).is_relative() {
+        let mut pathbuf = PathBuf::from(p_base);
         pathbuf.push(url);
+
+        pathbuf
     } else {
-        pathbuf = PathBuf::from(url);
-    }
+        PathBuf::from(url)
+    };
     Ok(pathbuf)
 }
 
