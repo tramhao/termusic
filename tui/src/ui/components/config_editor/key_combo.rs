@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 /**
  * MIT License
  *
@@ -57,9 +59,16 @@ pub enum MyModifiers {
     ControlAlt,
     ControlAltShift,
 }
-impl From<MyModifiers> for &'static str {
-    fn from(modifier: MyModifiers) -> Self {
-        match modifier {
+
+impl Display for MyModifiers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl MyModifiers {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
             MyModifiers::None => "none",
             MyModifiers::Shift => "shift",
             MyModifiers::Control => "control",
@@ -70,15 +79,7 @@ impl From<MyModifiers> for &'static str {
             MyModifiers::ControlAltShift => "ctrl_alt_shift",
         }
     }
-}
 
-impl From<MyModifiers> for String {
-    fn from(modifier: MyModifiers) -> Self {
-        <MyModifiers as Into<&'static str>>::into(modifier).to_owned()
-    }
-}
-
-impl MyModifiers {
     pub const fn modifier(&self) -> KeyModifiers {
         match self {
             Self::None => KeyModifiers::NONE,
@@ -1076,7 +1077,7 @@ impl KEModifierSelect {
         let (init_select, init_key) = Self::init_modifier_select(&id, &config_r.keys);
         let mut choices = vec![];
         for modifier in &MODIFIER_LIST {
-            choices.push(String::from(modifier.clone()));
+            choices.push(modifier.as_str());
         }
         let component = KeyCombo::default()
             .borders(
