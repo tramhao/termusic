@@ -23,7 +23,7 @@ use std::fmt::Display;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{BindingForEvent, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
+use crate::config::BindingForEvent;
 use anyhow::{bail, Result};
 use termusiclib::config::Keys;
 use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsg, Msg};
@@ -66,7 +66,39 @@ impl Display for MyModifiers {
     }
 }
 
+const CONTROL_SHIFT: KeyModifiers = KeyModifiers::CONTROL.union(KeyModifiers::SHIFT);
+const ALT_SHIFT: KeyModifiers = KeyModifiers::ALT.union(KeyModifiers::SHIFT);
+const CONTROL_ALT: KeyModifiers = KeyModifiers::CONTROL.union(KeyModifiers::ALT);
+const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::CONTROL
+    .union(KeyModifiers::ALT)
+    .union(KeyModifiers::SHIFT);
+
 impl MyModifiers {
+    pub const LIST: &'static [MyModifiers; 8] = &[
+        MyModifiers::None,
+        MyModifiers::Shift,
+        MyModifiers::Control,
+        MyModifiers::Alt,
+        MyModifiers::ControlShift,
+        MyModifiers::AltShift,
+        MyModifiers::ControlAlt,
+        MyModifiers::ControlAltShift,
+    ];
+
+    /// Get the [`MyModifiers::LIST`] index for the given [`KeyModifiers`] value
+    pub const fn from_modifier_list_index(val: KeyModifiers) -> usize {
+        match val {
+            KeyModifiers::SHIFT => 1,
+            KeyModifiers::CONTROL => 2,
+            KeyModifiers::ALT => 3,
+            CONTROL_SHIFT => 4,
+            ALT_SHIFT => 5,
+            CONTROL_ALT => 6,
+            CONTROL_ALT_SHIFT => 7,
+            _ => 0,
+        }
+    }
+
     pub const fn as_str(&self) -> &'static str {
         match self {
             MyModifiers::None => "none",
@@ -80,7 +112,7 @@ impl MyModifiers {
         }
     }
 
-    pub const fn modifier(&self) -> KeyModifiers {
+    pub const fn as_modifier(&self) -> KeyModifiers {
         match self {
             Self::None => KeyModifiers::NONE,
             Self::Shift => KeyModifiers::SHIFT,
@@ -93,16 +125,6 @@ impl MyModifiers {
         }
     }
 }
-pub const MODIFIER_LIST: [MyModifiers; 8] = [
-    MyModifiers::None,
-    MyModifiers::Shift,
-    MyModifiers::Control,
-    MyModifiers::Alt,
-    MyModifiers::ControlShift,
-    MyModifiers::AltShift,
-    MyModifiers::ControlAlt,
-    MyModifiers::ControlAltShift,
-];
 
 // -- states
 
@@ -1076,7 +1098,7 @@ impl KEModifierSelect {
         let config_r = config.read();
         let (init_select, init_key) = Self::init_modifier_select(&id, &config_r.keys);
         let mut choices = vec![];
-        for modifier in &MODIFIER_LIST {
+        for modifier in MyModifiers::LIST {
             choices.push(modifier.as_str());
         }
         let component = KeyCombo::default()
@@ -1118,8 +1140,11 @@ impl KEModifierSelect {
         }
     }
 
+    /// Get the Selected Modifier choice index for the given [`IdKey`] and the key representation as string
+    ///
+    /// Returns `(mod_list_index, key_str)`
     fn init_modifier_select(id: &IdKey, keys: &Keys) -> (usize, String) {
-        match id {
+        let mod_key = match id {
             IdKey::DatabaseAddAll => keys.database_add_all.mod_key(),
             IdKey::GlobalConfig => keys.global_config_open.mod_key(),
             IdKey::GlobalDown => keys.global_down.mod_key(),
@@ -1183,20 +1208,23 @@ impl KEModifierSelect {
             IdKey::PodcastSearchAddFeed => keys.podcast_search_add_feed.mod_key(),
             IdKey::PodcastRefreshFeed => keys.podcast_refresh_feed.mod_key(),
             IdKey::PodcastRefreshAllFeeds => keys.podcast_refresh_all_feeds.mod_key(),
-        }
+        };
+
+        (MyModifiers::from_modifier_list_index(mod_key.0), mod_key.1)
     }
 
+    /// Try to get a [`BindingForEvent`], if the input is valid
     fn key_event(&mut self) -> Result<BindingForEvent> {
-        let index = self.component.states.selected;
-        let mut modifier: KeyModifiers = KeyModifiers::NONE;
-        if let Some(m) = MODIFIER_LIST.get(index) {
-            modifier = m.modifier();
-        }
+        let mod_list_index = self.component.states.selected;
+        let modifier: KeyModifiers = MyModifiers::LIST
+            .get(mod_list_index)
+            .unwrap_or(&MyModifiers::None)
+            .as_modifier();
         self.update_key_input_by_modifier(modifier);
         if let Ok(code) = BindingForEvent::key_from_str(&self.component.states_input.get_value()) {
             return Ok(BindingForEvent { code, modifier });
         }
-        bail! {"Failed to get the key code!"}
+        bail!("Failed to get the key code!")
     }
 
     fn update_key_input_by_modifier(&mut self, modifier: KeyModifiers) {

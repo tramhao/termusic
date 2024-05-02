@@ -6,16 +6,6 @@ use std::iter::once;
 use std::str::FromStr;
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 
-pub const CONTROL_SHIFT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits());
-pub const ALT_SHIFT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::SHIFT.bits());
-pub const CONTROL_ALT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits());
-pub const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::from_bits_truncate(
-    KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits(),
-);
-
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Keys {
     pub global_esc: BindingForEvent,
@@ -227,23 +217,9 @@ impl BindingForEvent {
         }
     }
 
-    pub fn mod_key(&self) -> (usize, String) {
-        (self.modifier(), self.key())
-    }
-
-    pub const fn modifier(&self) -> usize {
-        match self.modifier {
-            // KeyModifiers::NONE => 0,
-            KeyModifiers::SHIFT => 1,
-            KeyModifiers::CONTROL => 2,
-            KeyModifiers::ALT => 3,
-            CONTROL_SHIFT => 4,
-            ALT_SHIFT => 5,
-            CONTROL_ALT => 6,
-            CONTROL_ALT_SHIFT => 7,
-            _ => 0,
-            // _ => 0,
-        }
+    /// Get the Current Modifier, and the string representation of the key
+    pub fn mod_key(&self) -> (KeyModifiers, String) {
+        (self.modifier, self.key())
     }
 
     pub fn key(&self) -> String {
@@ -331,6 +307,8 @@ impl BindingForEvent {
 impl Default for Keys {
     #[allow(clippy::too_many_lines)]
     fn default() -> Self {
+        const CONTROL_SHIFT: KeyModifiers = KeyModifiers::CONTROL.union(KeyModifiers::SHIFT);
+
         Self {
             global_esc: BindingForEvent {
                 code: Key::Esc,

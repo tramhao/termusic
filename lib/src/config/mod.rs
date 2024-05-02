@@ -32,7 +32,7 @@ use figment::{
     Figment,
 };
 use image::DynamicImage;
-pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
+pub use key::{BindingForEvent, Keys};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
