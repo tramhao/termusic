@@ -294,14 +294,16 @@ impl BindingForEvent {
                 return Ok(Key::Char(char));
             }
         }
-        if let Some(str) = str.strip_prefix('F') {
-            let my_int = u8::from_str(str)?;
-            if my_int > 12 {
-                bail!("Function key should be smaller than F12.");
-            }
-            return Ok(Key::Function(my_int));
-        }
         let str_lower_case = str.to_lowercase();
+        if str_lower_case.len() < 4 {
+            if let Some(str) = str_lower_case.strip_prefix('f') {
+                let my_int = u8::from_str(str)?;
+                if my_int > 12 {
+                    bail!("Function key should be smaller than F12.");
+                }
+                return Ok(Key::Function(my_int));
+            }
+        }
         let special_key = match str_lower_case.as_ref() {
             "backspace" => Key::Backspace,
             "enter" => Key::Enter,
@@ -318,18 +320,6 @@ impl BindingForEvent {
             "delete" => Key::Delete,
             "insert" => Key::Insert,
             "esc" => Key::Esc,
-            "f1" => Key::Function(1),
-            "f2" => Key::Function(2),
-            "f3" => Key::Function(3),
-            "f4" => Key::Function(4),
-            "f5" => Key::Function(5),
-            "f6" => Key::Function(6),
-            "f7" => Key::Function(7),
-            "f8" => Key::Function(8),
-            "f9" => Key::Function(9),
-            "f10" => Key::Function(10),
-            "f11" => Key::Function(11),
-            "f12" => Key::Function(12),
             "space" => Key::Char(' '),
             // "null" => Key::Null,
             inv_key => bail!("Provided invalid special key: {}", inv_key),
