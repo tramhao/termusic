@@ -26,11 +26,11 @@ use crate::ui::components::{
     TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
 };
 use crate::ui::model::Model;
+use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 use std::convert::TryFrom;
 use std::path::Path;
 use termusiclib::track::Track;
 use termusiclib::types::{Id, IdTagEditor};
-use termusiclib::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 use tuirealm::props::{Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;

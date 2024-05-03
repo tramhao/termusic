@@ -24,6 +24,7 @@
 pub mod components;
 pub mod model;
 mod playback;
+pub mod utils;
 
 use anyhow::Result;
 use model::{Model, TermusicLayout};

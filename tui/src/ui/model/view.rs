@@ -4,6 +4,9 @@ use crate::ui::components::{
     Playlist, Progress, Source,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
+use crate::ui::utils::{
+    draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute,
+};
 use crate::ui::Application;
 use anyhow::{bail, Result};
 use std::time::{Duration, Instant};
@@ -31,9 +34,7 @@ use std::time::{Duration, Instant};
  * SOFTWARE.
  */
 use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
-use termusiclib::utils::{
-    draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, get_parent_folder,
-};
+use termusiclib::utils::get_parent_folder;
 use termusicplayback::SharedSettings;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;

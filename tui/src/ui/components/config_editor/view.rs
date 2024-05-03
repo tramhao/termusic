@@ -53,11 +53,12 @@ use include_dir::DirEntry;
  * SOFTWARE.
  */
 use termusiclib::config::{LastPosition, SeekStep};
-use termusiclib::utils::{draw_area_in_absolute, get_app_config_path, get_pin_yin};
+use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use termusiclib::THEME_DIR;
 use termusicplayback::SharedSettings;
 
 use crate::ui::model::{ConfigEditorLayout, Model};
+use crate::ui::utils::draw_area_in_absolute;
 use crate::ui::{Application, Id, IdConfigEditor, IdKey, Msg};
 use anyhow::{bail, Result};
 use std::path::{Path, PathBuf};
