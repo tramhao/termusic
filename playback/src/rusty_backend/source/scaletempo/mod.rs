@@ -8,7 +8,7 @@ use super::Source;
 use soundtouch::{Setting, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
-pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, rate: f32) -> TempoStretch<I>
+pub fn tempo_stretch<I>(mut input: I, rate: f32) -> TempoStretch<I>
 where
     I: Source<Item = f32>,
 {
