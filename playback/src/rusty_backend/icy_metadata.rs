@@ -175,9 +175,10 @@ mod test {
 
         #[test]
         fn should_find_metadata() {
-            let interval: u8 = 64;
             const TESTING_TEXT_1: &[u8] = b"StreamTitle='Testing';";
             const TESTING_TEXT_2: &[u8] = b"StreamTitle='Hello';";
+
+            let interval: u8 = 64;
 
             // initial interval bytes
             let source: Vec<u8> = (0..interval)
@@ -227,10 +228,10 @@ mod test {
             // layout how the buffer should look
             let should_buffer = {
                 let mut should_buffer = [0u8; 128];
-                let mut idx = 0;
-                for v in &mut should_buffer[..(interval as usize)] {
-                    *v = idx;
-                    idx += 1;
+                #[allow(clippy::cast_possible_truncation)]
+                for (idx, v) in should_buffer[..(interval as usize)].iter_mut().enumerate() {
+                    // we only iterate at most u8::MAX here
+                    *v = idx as u8;
                 }
 
                 should_buffer
