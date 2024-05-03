@@ -1160,8 +1160,8 @@ impl KEModifierSelect {
             IdKey::PlaylistSearch => keys.playlist_search.mod_key(),
             IdKey::PlaylistSwapDown => keys.playlist_swap_down.mod_key(),
             IdKey::PlaylistSwapUp => keys.playlist_swap_up.mod_key(),
-            IdKey::PlaylistLqueue => keys.playlist_cmus_lqueue.mod_key(),
-            IdKey::PlaylistTqueue => keys.playlist_cmus_tqueue.mod_key(),
+            IdKey::PlaylistAddRandomAlbum => keys.playlist_add_random_album.mod_key(),
+            IdKey::PlaylistAddRandomTracks => keys.playlist_add_random_tracks.mod_key(),
             IdKey::LibrarySwitchRoot => keys.library_switch_root.mod_key(),
             IdKey::LibraryAddRoot => keys.library_add_root.mod_key(),
             IdKey::LibraryRemoveRoot => keys.library_remove_root.mod_key(),
@@ -2409,50 +2409,58 @@ impl Component<Msg, NoUserEvent> for ConfigGlobalConfig {
 }
 
 #[derive(MockComponent)]
-pub struct ConfigPlaylistLqueue {
+pub struct ConfigPlaylistAddRandomAlbum {
     component: KEModifierSelect,
 }
 
-impl ConfigPlaylistLqueue {
+impl ConfigPlaylistAddRandomAlbum {
     pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Album ",
-                IdKey::PlaylistLqueue,
+                IdKey::PlaylistAddRandomAlbum,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistLqueueBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistLqueueBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PlaylistAddRandomAlbumBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PlaylistAddRandomAlbumBlurUp,
+                )),
             ),
         }
     }
 }
 
-impl Component<Msg, NoUserEvent> for ConfigPlaylistLqueue {
+impl Component<Msg, NoUserEvent> for ConfigPlaylistAddRandomAlbum {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
 
 #[derive(MockComponent)]
-pub struct ConfigPlaylistTqueue {
+pub struct ConfigPlaylistAddRandomTracks {
     component: KEModifierSelect,
 }
 
-impl ConfigPlaylistTqueue {
+impl ConfigPlaylistAddRandomTracks {
     pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Tracks ",
-                IdKey::PlaylistTqueue,
+                IdKey::PlaylistAddRandomTracks,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistTqueueBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistTqueueBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PlaylistAddRandomTracksBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PlaylistAddRandomTracksBlurUp,
+                )),
             ),
         }
     }
 }
 
-impl Component<Msg, NoUserEvent> for ConfigPlaylistTqueue {
+impl Component<Msg, NoUserEvent> for ConfigPlaylistAddRandomTracks {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

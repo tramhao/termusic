@@ -867,11 +867,11 @@ impl Model {
                     self.mount_error_popup(e.context("playlist sync playlist"));
                 }
             }
-            PLMsg::CmusLQueue => {
-                self.playlist_add_cmus_lqueue();
+            PLMsg::AddRandomAlbum => {
+                self.playlist_add_random_album();
             }
-            PLMsg::CmusTQueue => {
-                self.playlist_add_cmus_tqueue();
+            PLMsg::AddRandomTracks => {
+                self.playlist_add_random_tracks();
             }
             PLMsg::PlaylistTableBlurUp => match self.layout {
                 TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),

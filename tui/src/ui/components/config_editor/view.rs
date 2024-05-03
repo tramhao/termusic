@@ -15,11 +15,11 @@ use crate::ui::components::{
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
     ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
-    ConfigPlaylistBackground, ConfigPlaylistBorder, ConfigPlaylistDelete, ConfigPlaylistDeleteAll,
-    ConfigPlaylistForeground, ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol,
-    ConfigPlaylistLqueue, ConfigPlaylistModeCycle, ConfigPlaylistPlaySelected,
-    ConfigPlaylistSearch, ConfigPlaylistShuffle, ConfigPlaylistSwapDown, ConfigPlaylistSwapUp,
-    ConfigPlaylistTitle, ConfigPlaylistTqueue, ConfigPodcastDeleteAllFeeds,
+    ConfigPlaylistAddRandomAlbum, ConfigPlaylistAddRandomTracks, ConfigPlaylistBackground,
+    ConfigPlaylistBorder, ConfigPlaylistDelete, ConfigPlaylistDeleteAll, ConfigPlaylistForeground,
+    ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol, ConfigPlaylistModeCycle,
+    ConfigPlaylistPlaySelected, ConfigPlaylistSearch, ConfigPlaylistShuffle,
+    ConfigPlaylistSwapDown, ConfigPlaylistSwapUp, ConfigPlaylistTitle, ConfigPodcastDeleteAllFeeds,
     ConfigPodcastDeleteFeed, ConfigPodcastEpDeleteFile, ConfigPodcastEpDownload,
     ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed, ConfigPodcastRefreshAllFeeds,
     ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed, ConfigProgressBackground,
@@ -1181,16 +1181,16 @@ impl Model {
             _ => 8,
         };
 
-        let select_playlist_lqueue_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistLqueue),
+        let select_playlist_random_album_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let tqueue_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistTqueue,
-        ))) {
+        let select_playlist_random_tracks_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::PlaylistAddRandomTracks),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
@@ -1340,7 +1340,7 @@ impl Model {
                             Constraint::Length(select_playlist_swap_down_len),
                             Constraint::Length(select_playlist_swap_up_len),
                             Constraint::Length(select_database_add_all_len),
-                            Constraint::Length(select_playlist_lqueue_len),
+                            Constraint::Length(select_playlist_random_album_len),
                             Constraint::Min(0),
                         ]
                         .as_ref(),
@@ -1352,7 +1352,7 @@ impl Model {
                     .margin(0)
                     .constraints(
                         [
-                            Constraint::Length(tqueue_len),
+                            Constraint::Length(select_playlist_random_tracks_len),
                             Constraint::Length(library_switch_root_len),
                             Constraint::Length(library_add_root_len),
                             Constraint::Length(library_remove_root_len),
@@ -1473,13 +1473,13 @@ impl Model {
                     chunks_middle_column2[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistLqueue)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
                     f,
                     chunks_middle_column2[7],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistTqueue)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomTracks)),
                     f,
                     chunks_middle_column3[0],
                 );
@@ -2263,8 +2263,8 @@ impl Model {
         assert!(self
             .app
             .remount(
-                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistLqueue)),
-                Box::new(ConfigPlaylistLqueue::new(config.clone())),
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
+                Box::new(ConfigPlaylistAddRandomAlbum::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2272,8 +2272,8 @@ impl Model {
         assert!(self
             .app
             .remount(
-                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistTqueue)),
-                Box::new(ConfigPlaylistTqueue::new(config.clone())),
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomTracks)),
+                Box::new(ConfigPlaylistAddRandomTracks::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2828,13 +2828,13 @@ impl Model {
             .ok();
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::Key(
-                IdKey::PlaylistLqueue,
+                IdKey::PlaylistAddRandomAlbum,
             )))
             .ok();
 
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::Key(
-                IdKey::PlaylistTqueue,
+                IdKey::PlaylistAddRandomTracks,
             )))
             .ok();
 

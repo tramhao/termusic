@@ -72,8 +72,10 @@ pub struct Keys {
     pub playlist_search: BindingForEvent,
     pub playlist_swap_down: BindingForEvent,
     pub playlist_swap_up: BindingForEvent,
-    pub playlist_cmus_lqueue: BindingForEvent,
-    pub playlist_cmus_tqueue: BindingForEvent,
+    #[serde(rename = "playlist_cmus_lqueue")] // backwards compat, cannot easily be changed
+    pub playlist_add_random_album: BindingForEvent,
+    #[serde(rename = "playlist_cmus_tqueue")] // backwards compat, cannot easily be changed
+    pub playlist_add_random_tracks: BindingForEvent,
     pub database_add_all: BindingForEvent,
     pub config_save: BindingForEvent,
     pub podcast_mark_played: BindingForEvent,
@@ -151,8 +153,8 @@ impl Keys {
             .chain(once(self.playlist_search))
             .chain(once(self.playlist_swap_down))
             .chain(once(self.playlist_swap_up))
-            .chain(once(self.playlist_cmus_lqueue))
-            .chain(once(self.playlist_cmus_tqueue))
+            .chain(once(self.playlist_add_random_album))
+            .chain(once(self.playlist_add_random_tracks))
     }
 
     fn iter_podcast(&self) -> impl Iterator<Item = BindingForEvent> {
@@ -493,11 +495,11 @@ impl Default for Keys {
                 code: Key::Char('K'),
                 modifier: KeyModifiers::SHIFT,
             },
-            playlist_cmus_lqueue: BindingForEvent {
+            playlist_add_random_album: BindingForEvent {
                 code: Key::Char('S'),
                 modifier: KeyModifiers::SHIFT,
             },
-            playlist_cmus_tqueue: BindingForEvent {
+            playlist_add_random_tracks: BindingForEvent {
                 code: Key::Char('s'),
                 modifier: KeyModifiers::NONE,
             },
