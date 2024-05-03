@@ -344,9 +344,9 @@ impl Model {
     }
 
     pub fn playlist_add_random_tracks(&mut self) {
-        let playlist_select_random_album_quantity =
-            self.config.read().playlist_select_random_album_quantity;
-        let vec = self.playlist_get_random_tracks(playlist_select_random_album_quantity);
+        let playlist_select_random_track_quantity =
+            self.config.read().playlist_select_random_track_quantity;
+        let vec = self.playlist_get_random_tracks(playlist_select_random_track_quantity);
         self.playlist_add_all_from_db(&vec);
     }
 
