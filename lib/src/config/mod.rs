@@ -23,6 +23,7 @@
  */
 mod key;
 mod theme;
+mod yaml_theme;
 
 use crate::utils::get_app_config_path;
 use anyhow::{bail, Result};
