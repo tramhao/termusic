@@ -1,4 +1,4 @@
-use crate::config::{load_alacritty, BindingForEvent, ColorTermusic};
+use crate::config::{Alacritty, BindingForEvent, ColorTermusic};
 /**
  * MIT License
  *
@@ -274,11 +274,12 @@ impl Model {
                     .ok();
             }
             ConfigEditorMsg::ThemeSelectLoad(index) => {
-                if let Some(t) = self.ce_themes.get(*index) {
-                    let path = PathBuf::from(t);
-                    if let Some(n) = path.file_stem() {
-                        self.config.write().theme_selected = n.to_string_lossy().to_string();
-                        if let Ok(theme) = load_alacritty(t) {
+                if let Some(theme_path_str) = self.ce_themes.get(*index) {
+                    let theme_path = PathBuf::from(theme_path_str);
+                    if let Some(theme_file_stem) = theme_path.file_stem() {
+                        self.config.write().theme_selected =
+                            theme_file_stem.to_string_lossy().to_string();
+                        if let Ok(theme) = Alacritty::from_yaml_file(&theme_path) {
                             self.ce_style_color_symbol.alacritty_theme = theme;
                         }
                     }

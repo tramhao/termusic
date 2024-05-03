@@ -3,7 +3,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
-use std::path::PathBuf;
+use std::path::Path;
 use tuirealm::props::Color;
 
 use super::yaml_theme::YAMLTheme;
@@ -275,12 +275,12 @@ impl Alacritty {
             light_white: colors.bright.white,
         }
     }
-}
 
-pub fn load_alacritty(path_str: &str) -> Result<Alacritty> {
-    let path = PathBuf::from(path_str);
-    let path = path.to_string_lossy().to_string();
-    let parsed: YAMLTheme = serde_yaml::from_reader(BufReader::new(File::open(&path)?))?;
+    /// Load a YAML Theme and then convert it to a [`Alacritty`] instance
+    pub fn from_yaml_file(path: &Path) -> Result<Self> {
+        let parsed: YAMLTheme = serde_yaml::from_reader(BufReader::new(File::open(path)?))?;
+        let path_str = path.to_string_lossy().to_string();
 
-    Ok(Alacritty::from_yaml_theme(parsed, path))
+        Ok(Self::from_yaml_theme(parsed, path_str))
+    }
 }

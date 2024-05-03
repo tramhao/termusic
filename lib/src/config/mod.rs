@@ -37,7 +37,7 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::{fs, net::IpAddr};
-pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
+pub use theme::{Alacritty, ColorTermusic, StyleColorSymbol};
 
 /// The filename of the config
 pub const FILE_NAME: &str = "config.toml";
