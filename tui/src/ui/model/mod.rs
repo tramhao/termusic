@@ -1,3 +1,4 @@
+mod download_tracker;
 /**
  * MIT License
  *
@@ -24,7 +25,9 @@
 mod update;
 mod view;
 mod youtube_options;
+
 use crate::ui::Application;
+use download_tracker::DownloadTracker;
 use termusiclib::sqlite::{DataBase, SearchCriteria};
 use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
 
@@ -43,7 +46,7 @@ use termusiclib::config::{Keys, StyleColorSymbol};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, TaskPool};
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
-use termusiclib::utils::{get_app_config_path, DownloadTracker};
+use termusiclib::utils::get_app_config_path;
 use termusicplayback::{PlayerCmd, Playlist, SharedSettings};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
