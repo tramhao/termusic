@@ -1,5 +1,5 @@
-use crate::utils::parse_hex_color;
 use anyhow::Result;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
@@ -91,6 +91,34 @@ impl ColorTermusic {
     pub const fn as_usize(self) -> usize {
         self as usize
     }
+}
+
+lazy_static::lazy_static! {
+    /**
+     * Regex matches:
+     * - group 1: Red
+     * - group 2: Green
+     * - group 3: Blue
+     */
+    static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
+}
+
+/// # Panics
+/// panics could happen when color parse failed
+pub fn parse_hex_color(color: &str) -> Option<Color> {
+    COLOR_HEX_REGEX.captures(color).map(|groups| {
+        Color::Rgb(
+            u8::from_str_radix(groups.get(1).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+            u8::from_str_radix(groups.get(2).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+            u8::from_str_radix(groups.get(3).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+        )
+    })
 }
 
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]

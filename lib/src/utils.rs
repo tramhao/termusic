@@ -1,26 +1,13 @@
 use crate::config::Settings;
 use anyhow::{anyhow, bail, Result};
-use lazy_static::lazy_static;
 use pinyin::ToPinyin;
-use regex::Regex;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::{
     ffi::OsStr,
     process::{Child, Command},
 };
-use tuirealm::props::Color;
 use unicode_segmentation::UnicodeSegmentation;
-
-lazy_static! {
-    /**
-     * Regex matches:
-     * - group 1: Red
-     * - group 2: Green
-     * - group 3: Blue
-     */
-    static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
-}
 
 pub fn get_pin_yin(input: &str) -> String {
     let mut b = String::new();
@@ -37,24 +24,6 @@ pub fn get_pin_yin(input: &str) -> String {
         }
     }
     b
-}
-
-/// # Panics
-/// panics could happen when color parse failed
-pub fn parse_hex_color(color: &str) -> Option<Color> {
-    COLOR_HEX_REGEX.captures(color).map(|groups| {
-        Color::Rgb(
-            u8::from_str_radix(groups.get(1).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-            u8::from_str_radix(groups.get(2).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-            u8::from_str_radix(groups.get(3).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-        )
-    })
 }
 
 pub fn filetype_supported(current_node: &str) -> bool {
