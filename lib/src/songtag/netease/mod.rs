@@ -109,7 +109,7 @@ impl Api {
                             // QueryParams::from_map(params).json()
                             serde_json::to_string(&params)?
                         );
-                        url = "https://music.163.com/api/linux/forward".to_owned();
+                        "https://music.163.com/api/linux/forward".clone_into(&mut url);
                         Crypto::linuxapi(&data)?
                     }
                     CryptoApi::Weapi => {
@@ -151,7 +151,7 @@ impl Api {
                                         Some(c) => c.as_str(),
                                         None => "",
                                     });
-                            self.csrf = csrf_token.to_owned();
+                            csrf_token.clone_into(&mut self.csrf);
                         }
                     }
                 }

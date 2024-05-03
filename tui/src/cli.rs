@@ -33,7 +33,7 @@ pub struct Args {
     /// Commands for podcast
     #[command(subcommand)]
     pub action: Option<Action>,
-    /// With no MUSIC_DIRECTORY, use config in `~/.config/termusic/config.toml`,
+    /// With no `MUSIC_DIRECTORY`, use config in `~/.config/termusic/config.toml`,
     /// default is ~/Music.
     pub music_directory: Option<String>,
     /// Not showing album cover. default is showing.  

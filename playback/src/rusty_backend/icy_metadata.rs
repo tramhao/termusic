@@ -181,33 +181,32 @@ mod test {
 
             // initial interval bytes
             let source: Vec<u8> = (0..interval)
-                .map(|v| v)
                 // then metadata length
                 .chain((0..1).map(|_| 3))
                 // then metadata itself
                 .chain(
                     TESTING_TEXT_1
                         .iter()
-                        .map(|v| *v)
+                        .copied()
                         .chain((0..(3 * 16 - TESTING_TEXT_1.len())).map(|_| 0)),
                 )
                 // again interval data
-                .chain((0..interval).map(|v| v))
+                .chain(0..interval)
                 // 0 metadata
                 .chain((0..1).map(|_| 0))
                 // another interval
-                .chain((0..interval).map(|v| v))
+                .chain(0..interval)
                 // then metadata length
                 .chain((0..1).map(|_| 3))
                 // then new metadata itself
                 .chain(
                     TESTING_TEXT_2
                         .iter()
-                        .map(|v| *v)
+                        .copied()
                         .chain((0..(3 * 16 - TESTING_TEXT_2.len())).map(|_| 0)),
                 )
                 // and one last interval
-                .chain((0..interval).map(|v| v))
+                .chain(0..interval)
                 .collect();
 
             let titles = Mutex::new(Vec::new());
@@ -218,7 +217,7 @@ mod test {
             let mut instance = FilterOutIcyMetadata::new(
                 Cursor::new(source),
                 cb,
-                NonZeroU16::new(interval as u16).unwrap(),
+                NonZeroU16::new(u16::from(interval)).unwrap(),
             );
 
             // make sure nothing was called yet
@@ -259,7 +258,7 @@ mod test {
                 // assert first title
                 let titles_lock = titles.lock();
                 assert_eq!(1, titles_lock.len());
-                assert_eq!(&"Testing", &titles_lock.get(0).unwrap().as_str());
+                assert_eq!(&"Testing", &titles_lock.first().unwrap().as_str());
             }
 
             // third interval, after empty metadata
@@ -285,7 +284,7 @@ mod test {
                 // assert first title
                 let titles_lock = titles.lock();
                 assert_eq!(2, titles_lock.len());
-                assert_eq!(&"Testing", &titles_lock.get(0).unwrap().as_str());
+                assert_eq!(&"Testing", &titles_lock.first().unwrap().as_str());
                 assert_eq!(&"Hello", &titles_lock.get(1).unwrap().as_str());
             }
         }
