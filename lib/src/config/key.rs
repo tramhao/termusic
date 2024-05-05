@@ -330,7 +330,7 @@ impl BindingForEvent {
             "f12" => Key::Function(12),
             "space" => Key::Char(' '),
             // "null" => Key::Null,
-            &_ => bail!("Error key configured"),
+            inv_key => bail!("Provided invalid special key: {}", inv_key),
         };
         Ok(special_key)
     }

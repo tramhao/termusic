@@ -1195,7 +1195,7 @@ impl KEModifierSelect {
         if let Ok(code) = BindingForEvent::key_from_str(&self.component.states_input.get_value()) {
             return Ok(BindingForEvent { code, modifier });
         }
-        bail! {"Error get code!"}
+        bail! {"Failed to get the key code!"}
     }
 
     fn update_key_input_by_modifier(&mut self, modifier: KeyModifiers) {

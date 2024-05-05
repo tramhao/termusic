@@ -120,19 +120,19 @@ impl DownloadTracker {
         let len = self.items.len();
         if len > 0 {
             format!(
-                " 1 of {} Download Success! {len} is still running.",
+                " 1 of {} Downloads Completed! {len} are still being processed.",
                 len + 1,
             )
         } else {
-            " All Downloads Success! ".to_string()
+            " All Downloads Successfully Completed! ".to_string()
         }
     }
     pub fn message_download_error_response(&self, title: &str) -> String {
         let len = self.items.len();
         if len > 0 {
-            format!(" 1 item {title:^.10} download error! No response from website. {len} is still running. ",)
+            format!(" Failed to download item: {title:^.10}! No response from website. {len} downloads are still running. ",)
         } else {
-            format!(" {title:^.20} download error. No response from website.")
+            format!(" Failed to download item: {title:^.20}. No response from website.")
         }
     }
     pub fn message_download_error_file_create(&self, title: &str) -> String {
@@ -140,10 +140,10 @@ impl DownloadTracker {
 
         if len > 0 {
             format!(
-                " 1 item {title:^.10} download error! Cannot create file. {len} is still running. "
+                " Failed to download item: {title:^.10}! Unable to create a file. {len} downloads are still running. "
             )
         } else {
-            format!(" {title:^.20} download error. Cannot create file")
+            format!(" Failed to download item: {title:^.20}. Unable to create a file.")
         }
     }
 
@@ -152,10 +152,10 @@ impl DownloadTracker {
 
         if len > 0 {
             format!(
-                " 1 item {title:^.10} download error! Cannot write to file. {len} is still running. "
+                " Failed to download item: {title:^.10}! Cannot write to file. {len} downloads are still running. "
             )
         } else {
-            format!(" {title:^.20} download error. Cannot write to file")
+            format!(" Failed to download: {title:^.20}. Cannot write to file")
         }
     }
 
@@ -164,10 +164,10 @@ impl DownloadTracker {
 
         if len > 0 {
             format!(
-                " 1 item {title:^.10} download error! Cannot embed data to file. {len} is still running. "
+                " Failed to download item: {title:^.10}! Cannot embed data to file. {len} downloads are still running. "
             )
         } else {
-            format!(" {title:^.20} download error. Cannot embed data to file.")
+            format!(" Failed to download: {title:^.20}. Cannot embed data to file.")
         }
     }
 }

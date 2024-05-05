@@ -895,7 +895,7 @@ impl Model {
             let podcast_selected = self
                 .podcasts
                 .get_mut(pod_index)
-                .ok_or_else(|| anyhow!("get podcast selected failed."))?;
+                .ok_or_else(|| anyhow!("failed to find the podcast selected for deletion."))?;
 
             for ep in &mut podcast_selected.episodes {
                 if ep.path.is_some() {
@@ -912,7 +912,7 @@ impl Model {
 
         self.db_podcast.remove_files(&eps_to_remove)?;
         if !success {
-            bail!("Error happend when removing local file. Please check.");
+            bail!("Error happened when deleting a file. Please verify that it is accessible.");
         }
 
         Ok(())
@@ -1042,7 +1042,7 @@ impl Model {
 
         if db_tracks.is_empty() {
             table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty tracks from podcasts db"));
+            table.add_col(TextSpan::from("empty tracks in the podcasts db"));
             table.add_col(TextSpan::from(""));
         } else {
             for record in db_tracks {
@@ -1072,7 +1072,7 @@ impl Model {
 
         if db_tracks.is_empty() {
             table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty tracks from podcasts db"));
+            table.add_col(TextSpan::from("empty tracks in the podcasts db"));
             table.add_col(TextSpan::from(""));
         } else {
             for record in db_tracks {

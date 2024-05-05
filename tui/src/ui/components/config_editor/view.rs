@@ -3024,7 +3024,7 @@ impl Model {
         if self.ke_key_config.has_unique_elements() {
             config.keys = self.ke_key_config.clone();
         } else {
-            bail!("Duplicate key config found, no changes are saved.");
+            bail!("Duplicate key found in config, changes were not saved.");
         }
         config.style_color_symbol = self.ce_style_color_symbol.clone();
         if let Ok(State::One(StateValue::String(music_dir))) =
@@ -3094,7 +3094,7 @@ impl Model {
                 if (1..101).contains(&quantity) {
                     config.podcast_simultanious_download = quantity;
                 } else {
-                    bail!(" It's not suggested to set simultanious download to bigger than 100. ");
+                    bail!(" It's not recommended to set simultanious download to more than 100. ");
                 }
             }
         }
@@ -3106,7 +3106,7 @@ impl Model {
                 if (1..11).contains(&quantity) {
                     config.podcast_max_retries = quantity;
                 } else {
-                    bail!(" It's not recommended to set max retries to bigger than 10. ");
+                    bail!(" It's not recommended to set max retries to more than 10. ");
                 }
             }
         }
@@ -3131,7 +3131,7 @@ impl Model {
                 0 => LastPosition::Auto,
                 1 => LastPosition::No,
                 2 => LastPosition::Yes,
-                _ => bail!("Remember playing position must be set to auto, yes or no."),
+                _ => bail!(" Save last position must be set to auto, yes or no."),
             };
             config.player_remember_last_played_position = save_last_position;
         }
@@ -3143,7 +3143,7 @@ impl Model {
                 0 => SeekStep::Auto,
                 1 => SeekStep::Short,
                 2 => SeekStep::Long,
-                _ => bail!("Shouldn't happend here."),
+                _ => bail!(" Unknown player step length provided."),
             };
             config.player_seek_step = seek_step;
         }
@@ -3176,7 +3176,7 @@ impl Model {
                 if (1000..u16::MAX).contains(&port) {
                     config.player_port = port;
                 } else {
-                    bail!(" It's not recommended to set player port less than 1000. ");
+                    bail!(" It's not recommended to use ports below 1000 for the player. ");
                 }
             }
         }
