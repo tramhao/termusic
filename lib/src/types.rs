@@ -91,6 +91,7 @@ pub enum ConfigEditorMsg {
     PodcastSimulDownloadBlurUp,
     PodcastMaxRetriesBlurDown,
     PodcastMaxRetriesBlurUp,
+
     AlbumPhotoAlignBlurDown,
     AlbumPhotoAlignBlurUp,
     ChangeLayout,
@@ -107,12 +108,14 @@ pub enum ConfigEditorMsg {
     KeyFocus(KFMsg),
     MusicDirBlurDown,
     MusicDirBlurUp,
+
     PlaylistDisplaySymbolBlurDown,
     PlaylistDisplaySymbolBlurUp,
     PlaylistRandomTrackBlurDown,
     PlaylistRandomTrackBlurUp,
     PlaylistRandomAlbumBlurDown,
     PlaylistRandomAlbumBlurUp,
+
     LibraryForegroundBlurDown,
     LibraryForegroundBlurUp,
     LibraryBackgroundBlurDown,
@@ -123,6 +126,7 @@ pub enum ConfigEditorMsg {
     LibraryHighlightBlurUp,
     LibraryHighlightSymbolBlurDown,
     LibraryHighlightSymbolBlurUp,
+
     PlaylistForegroundBlurDown,
     PlaylistForegroundBlurUp,
     PlaylistBackgroundBlurDown,
@@ -133,21 +137,25 @@ pub enum ConfigEditorMsg {
     PlaylistHighlightBlurUp,
     PlaylistHighlightSymbolBlurDown,
     PlaylistHighlightSymbolBlurUp,
+
     ProgressForegroundBlurDown,
     ProgressForegroundBlurUp,
     ProgressBackgroundBlurDown,
     ProgressBackgroundBlurUp,
     ProgressBorderBlurDown,
     ProgressBorderBlurUp,
+
     LyricForegroundBlurDown,
     LyricForegroundBlurUp,
     LyricBackgroundBlurDown,
     LyricBackgroundBlurUp,
     LyricBorderBlurDown,
     LyricBorderBlurUp,
+
     ThemeSelectBlurDown,
     ThemeSelectBlurUp,
     ThemeSelectLoad(usize),
+
     KeyChange(IdKey, BindingForEvent),
     SaveLastPositionBlurDown,
     SaveLastPosotionBlurUp,
@@ -155,14 +163,23 @@ pub enum ConfigEditorMsg {
     SeekStepBlurUp,
     KillDaemonBlurDown,
     KillDaemonBlurUp,
+
     PlayerUseMprisBlurDown,
     PlayerUseMprisBlurUp,
     PlayerUseDiscordBlurDown,
     PlayerUseDiscordBlurUp,
     PlayerPortBlurDown,
     PlayerPortBlurUp,
+
     CurrentlyPlayingTrackSymbolBlurDown,
     CurrentlyPlayingTrackSymbolBlurUp,
+
+    ImportantPopupForegroundBlurDown,
+    ImportantPopupForegroundBlurUp,
+    ImportantPopupBackgroundBlurDown,
+    ImportantPopupBackgroundBlurUp,
+    ImportantPopupBorderBlurDown,
+    ImportantPopupBorderBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -518,20 +535,24 @@ pub enum IdConfigEditor {
     Header,
     Key(IdKey),
     KillDamon,
+
     LibraryBackground,
     LibraryBorder,
     LibraryForeground,
     LibraryHighlight,
     LibraryHighlightSymbol,
     LibraryLabel,
+
     LyricBackground,
     LyricBorder,
     LyricForeground,
     LyricLabel,
+
     MusicDir,
     PlayerPort,
     PlayerUseDiscord,
     PlayerUseMpris,
+
     PlaylistBackground,
     PlaylistBorder,
     PlaylistDisplaySymbol,
@@ -541,16 +562,25 @@ pub enum IdConfigEditor {
     PlaylistLabel,
     PlaylistRandomAlbum,
     PlaylistRandomTrack,
+
     CurrentlyPlayingTrackSymbol,
+
     PodcastDir,
     PodcastMaxRetries,
     PodcastSimulDownload,
+
     ProgressBackground,
     ProgressBorder,
     ProgressForeground,
     ProgressLabel,
+
     SaveLastPosition,
     SeekStep,
+
+    ImportantPopupLabel,
+    ImportantPopupBackground,
+    ImportantPopupBorder,
+    ImportantPopupForeground,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

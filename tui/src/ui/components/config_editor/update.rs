@@ -176,7 +176,8 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
                     .ok();
             }
-            ConfigEditorMsg::LibraryForegroundBlurUp | ConfigEditorMsg::LyricBorderBlurDown => {
+            ConfigEditorMsg::LibraryForegroundBlurUp
+            | ConfigEditorMsg::ImportantPopupBorderBlurDown => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
                     .ok();
@@ -268,9 +269,28 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::LyricBackground))
                     .ok();
             }
-            ConfigEditorMsg::LyricBackgroundBlurDown | ConfigEditorMsg::ThemeSelectBlurUp => {
+            ConfigEditorMsg::LyricBackgroundBlurDown
+            | ConfigEditorMsg::ImportantPopupForegroundBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
+                    .ok();
+            }
+            ConfigEditorMsg::LyricBorderBlurDown
+            | ConfigEditorMsg::ImportantPopupBackgroundBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))
+                    .ok();
+            }
+            ConfigEditorMsg::ImportantPopupForegroundBlurDown
+            | ConfigEditorMsg::ImportantPopupBorderBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))
+                    .ok();
+            }
+            ConfigEditorMsg::ImportantPopupBackgroundBlurDown
+            | ConfigEditorMsg::ThemeSelectBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))
                     .ok();
             }
             ConfigEditorMsg::ThemeSelectLoad(index) => {

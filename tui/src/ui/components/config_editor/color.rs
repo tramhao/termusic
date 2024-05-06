@@ -244,16 +244,30 @@ impl CEColorSelect {
             IdConfigEditor::LibraryBackground => style_color_symbol.library_background.as_usize(),
             IdConfigEditor::LibraryBorder => style_color_symbol.library_border.as_usize(),
             IdConfigEditor::LibraryHighlight => style_color_symbol.library_highlight.as_usize(),
+
             IdConfigEditor::PlaylistForeground => style_color_symbol.playlist_foreground.as_usize(),
             IdConfigEditor::PlaylistBackground => style_color_symbol.playlist_background.as_usize(),
             IdConfigEditor::PlaylistBorder => style_color_symbol.playlist_border.as_usize(),
             IdConfigEditor::PlaylistHighlight => style_color_symbol.playlist_highlight.as_usize(),
+
             IdConfigEditor::ProgressForeground => style_color_symbol.progress_foreground.as_usize(),
             IdConfigEditor::ProgressBackground => style_color_symbol.progress_background.as_usize(),
             IdConfigEditor::ProgressBorder => style_color_symbol.progress_border.as_usize(),
+
             IdConfigEditor::LyricForeground => style_color_symbol.lyric_foreground.as_usize(),
             IdConfigEditor::LyricBackground => style_color_symbol.lyric_background.as_usize(),
             IdConfigEditor::LyricBorder => style_color_symbol.lyric_border.as_usize(),
+
+            IdConfigEditor::ImportantPopupForeground => {
+                style_color_symbol.important_popup_foreground.as_usize()
+            }
+            IdConfigEditor::ImportantPopupBackground => {
+                style_color_symbol.important_popup_background.as_usize()
+            }
+            IdConfigEditor::ImportantPopupBorder => {
+                style_color_symbol.important_popup_border.as_usize()
+            }
+
             _ => 0,
         }
     }
@@ -1147,6 +1161,120 @@ impl ConfigCurrentlyPlayingTrackSymbol {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigCurrentlyPlayingTrackSymbol {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigImportantPopupTitle {
+    component: Label,
+}
+
+impl Default for ConfigImportantPopupTitle {
+    fn default() -> Self {
+        Self {
+            component: Label::default()
+                .modifiers(TextModifiers::BOLD)
+                .text(" Important Popup style "),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigImportantPopupTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        None
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigImportantPopupForeground {
+    component: CEColorSelect,
+}
+
+impl ConfigImportantPopupForeground {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .important_popup_foreground()
+            .unwrap_or(Color::Blue);
+        Self {
+            component: CEColorSelect::new(
+                " Foreground ",
+                IdConfigEditor::ImportantPopupForeground,
+                color,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupForegroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupForegroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigImportantPopupForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigImportantPopupBackground {
+    component: CEColorSelect,
+}
+
+impl ConfigImportantPopupBackground {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .important_popup_background()
+            .unwrap_or(Color::Blue);
+        Self {
+            component: CEColorSelect::new(
+                " Background ",
+                IdConfigEditor::ImportantPopupBackground,
+                color,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBackgroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBackgroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigImportantPopupBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigImportantPopupBorder {
+    component: CEColorSelect,
+}
+
+impl ConfigImportantPopupBorder {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .important_popup_border()
+            .unwrap_or(Color::Blue);
+        Self {
+            component: CEColorSelect::new(
+                " Border ",
+                IdConfigEditor::ImportantPopupBorder,
+                color,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBorderBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBorderBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigImportantPopupBorder {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
