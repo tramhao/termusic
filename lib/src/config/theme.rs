@@ -103,17 +103,25 @@ pub struct StyleColorSymbol {
     pub library_border: ColorTermusic,
     pub library_highlight: ColorTermusic,
     pub library_highlight_symbol: String,
+
     pub playlist_foreground: ColorTermusic,
     pub playlist_background: ColorTermusic,
     pub playlist_border: ColorTermusic,
     pub playlist_highlight: ColorTermusic,
     pub playlist_highlight_symbol: String,
+
     pub progress_foreground: ColorTermusic,
     pub progress_background: ColorTermusic,
     pub progress_border: ColorTermusic,
+
     pub lyric_foreground: ColorTermusic,
     pub lyric_background: ColorTermusic,
     pub lyric_border: ColorTermusic,
+
+    pub important_popup_foreground: ColorTermusic,
+    pub important_popup_background: ColorTermusic,
+    pub important_popup_border: ColorTermusic,
+
     pub alacritty_theme: Alacritty,
     pub currently_playing_track_symbol: String,
 }
@@ -126,17 +134,25 @@ impl Default for StyleColorSymbol {
             library_border: ColorTermusic::Blue,
             library_highlight: ColorTermusic::LightYellow,
             library_highlight_symbol: "\u{1f984}".to_string(),
+
             playlist_foreground: ColorTermusic::Foreground,
             playlist_background: ColorTermusic::Reset,
             playlist_border: ColorTermusic::Blue,
             playlist_highlight: ColorTermusic::LightYellow,
             playlist_highlight_symbol: "\u{1f680}".to_string(),
+
             progress_foreground: ColorTermusic::LightBlack,
             progress_background: ColorTermusic::Reset,
             progress_border: ColorTermusic::Blue,
+
             lyric_foreground: ColorTermusic::Foreground,
             lyric_background: ColorTermusic::Reset,
             lyric_border: ColorTermusic::Blue,
+
+            important_popup_foreground: ColorTermusic::Yellow,
+            important_popup_background: ColorTermusic::Reset,
+            important_popup_border: ColorTermusic::Yellow,
+
             alacritty_theme: Alacritty::default(),
             currently_playing_track_symbol: "►".to_string(),
         }
@@ -147,7 +163,6 @@ impl StyleColorSymbol {
     pub fn library_foreground(&self) -> Option<Color> {
         self.library_foreground.color(&self.alacritty_theme)
     }
-
     pub fn library_background(&self) -> Option<Color> {
         self.library_background.color(&self.alacritty_theme)
     }
@@ -157,6 +172,7 @@ impl StyleColorSymbol {
     pub fn library_border(&self) -> Option<Color> {
         self.library_border.color(&self.alacritty_theme)
     }
+
     pub fn playlist_foreground(&self) -> Option<Color> {
         self.playlist_foreground.color(&self.alacritty_theme)
     }
@@ -169,6 +185,7 @@ impl StyleColorSymbol {
     pub fn playlist_border(&self) -> Option<Color> {
         self.playlist_border.color(&self.alacritty_theme)
     }
+
     pub fn progress_foreground(&self) -> Option<Color> {
         self.progress_foreground.color(&self.alacritty_theme)
     }
@@ -178,6 +195,7 @@ impl StyleColorSymbol {
     pub fn progress_border(&self) -> Option<Color> {
         self.progress_border.color(&self.alacritty_theme)
     }
+
     pub fn lyric_foreground(&self) -> Option<Color> {
         self.lyric_foreground.color(&self.alacritty_theme)
     }
@@ -186,6 +204,16 @@ impl StyleColorSymbol {
     }
     pub fn lyric_border(&self) -> Option<Color> {
         self.lyric_border.color(&self.alacritty_theme)
+    }
+
+    pub fn important_popup_foreground(&self) -> Option<Color> {
+        self.important_popup_foreground.color(&self.alacritty_theme)
+    }
+    pub fn important_popup_background(&self) -> Option<Color> {
+        self.important_popup_background.color(&self.alacritty_theme)
+    }
+    pub fn important_popup_border(&self) -> Option<Color> {
+        self.important_popup_border.color(&self.alacritty_theme)
     }
 }
 
