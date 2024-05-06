@@ -1,5 +1,4 @@
 use anyhow::Result;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
@@ -93,32 +92,22 @@ impl ColorTermusic {
     }
 }
 
-lazy_static::lazy_static! {
-    /**
-     * Regex matches:
-     * - group 1: Red
-     * - group 2: Green
-     * - group 3: Blue
-     */
-    static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
-}
-
-/// # Panics
-/// panics could happen when color parse failed
+/// Try to parse the string as a 7-length hex color, returning [`None`] if unable to parse
+///
+/// Example input: `#010101`
 pub fn parse_hex_color(color: &str) -> Option<Color> {
-    COLOR_HEX_REGEX.captures(color).map(|groups| {
-        Color::Rgb(
-            u8::from_str_radix(groups.get(1).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-            u8::from_str_radix(groups.get(2).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-            u8::from_str_radix(groups.get(3).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-        )
-    })
+    let without_prefix = color.trim_start_matches('#');
+
+    // not in a format we support
+    if without_prefix.len() != 6 {
+        return None;
+    }
+
+    let r = u8::from_str_radix(&without_prefix[0..=1], 16).ok()?;
+    let g = u8::from_str_radix(&without_prefix[2..=3], 16).ok()?;
+    let b = u8::from_str_radix(&without_prefix[4..=5], 16).ok()?;
+
+    Some(Color::Rgb(r, g, b))
 }
 
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
