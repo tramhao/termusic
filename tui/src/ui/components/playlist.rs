@@ -187,11 +187,11 @@ impl Component<Msg, NoUserEvent> for Playlist {
                     _ => return Some(Msg::None),
                 }
             }
-            Event::Keyboard(key) if key == keys.playlist_cmus_lqueue.key_event() => {
-                return Some(Msg::Playlist(PLMsg::CmusLQueue));
+            Event::Keyboard(key) if key == keys.playlist_add_random_album.key_event() => {
+                return Some(Msg::Playlist(PLMsg::AddRandomAlbum));
             }
-            Event::Keyboard(key) if key == keys.playlist_cmus_tqueue.key_event() => {
-                return Some(Msg::Playlist(PLMsg::CmusTQueue));
+            Event::Keyboard(key) if key == keys.playlist_add_random_tracks.key_event() => {
+                return Some(Msg::Playlist(PLMsg::AddRandomTracks));
             }
             _ => CmdResult::None,
         };
@@ -336,17 +336,17 @@ impl Model {
         self.playlist_sync();
     }
 
-    pub fn playlist_add_cmus_lqueue(&mut self) {
+    pub fn playlist_add_random_album(&mut self) {
         let playlist_select_random_album_quantity =
             self.config.read().playlist_select_random_album_quantity;
-        let vec = self.playlist_get_records_for_cmus_lqueue(playlist_select_random_album_quantity);
+        let vec = self.playlist_get_random_album_tracks(playlist_select_random_album_quantity);
         self.playlist_add_all_from_db(&vec);
     }
 
-    pub fn playlist_add_cmus_tqueue(&mut self) {
-        let playlist_select_random_album_quantity =
-            self.config.read().playlist_select_random_album_quantity;
-        let vec = self.playlist_get_records_for_cmus_tqueue(playlist_select_random_album_quantity);
+    pub fn playlist_add_random_tracks(&mut self) {
+        let playlist_select_random_track_quantity =
+            self.config.read().playlist_select_random_track_quantity;
+        let vec = self.playlist_get_random_tracks(playlist_select_random_track_quantity);
         self.playlist_add_all_from_db(&vec);
     }
 
@@ -561,7 +561,7 @@ impl Model {
             .is_ok());
     }
 
-    pub fn playlist_get_records_for_cmus_tqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
+    pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackForDB> {
         let mut result = vec![];
         if let Ok(vec) = self.db.get_all_records() {
             let mut i = 0;
@@ -583,7 +583,7 @@ impl Model {
         result
     }
 
-    pub fn playlist_get_records_for_cmus_lqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
+    pub fn playlist_get_random_album_tracks(&mut self, quantity: u32) -> Vec<TrackForDB> {
         let mut result = vec![];
         if let Ok(vec) = self.db.get_all_records() {
             loop {

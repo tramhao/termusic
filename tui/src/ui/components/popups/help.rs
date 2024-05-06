@@ -231,8 +231,8 @@ impl HelpPopup {
                         .add_col(Self::comment("Swap track down/up in playlist"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.playlist_cmus_tqueue,
-                            keys.playlist_cmus_lqueue,
+                            keys.playlist_add_random_tracks,
+                            keys.playlist_add_random_album,
                         ]))
                         .add_col(Self::comment("Select random tracks/albums to playlist"))
                         .add_row()

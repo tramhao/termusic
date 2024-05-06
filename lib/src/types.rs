@@ -249,10 +249,10 @@ pub enum KFMsg {
     PlaylistSwapDownBlurUp,
     PlaylistSwapUpBlurDown,
     PlaylistSwapUpBlurUp,
-    PlaylistLqueueBlurDown,
-    PlaylistLqueueBlurUp,
-    PlaylistTqueueBlurDown,
-    PlaylistTqueueBlurUp,
+    PlaylistAddRandomAlbumBlurDown,
+    PlaylistAddRandomAlbumBlurUp,
+    PlaylistAddRandomTracksBlurDown,
+    PlaylistAddRandomTracksBlurUp,
     LibrarySwitchRootBlurDown,
     LibrarySwitchRootBlurUp,
     LibraryAddRootBlurDown,
@@ -388,11 +388,9 @@ pub enum PLMsg {
     /// Swap a entry at INDEX with -1 (up)
     SwapUp(usize),
     /// Start choosing random albums to be added to the playlist
-    // TODO: the shortform "CmusLQueue" should also be explained
-    CmusLQueue,
+    AddRandomAlbum,
     /// Start choosing random tracks to be added to the playlist
-    // TODO: the shortform "CmusTQueue" should also be explained
-    CmusTQueue,
+    AddRandomTracks,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GSMsg {
@@ -598,8 +596,8 @@ pub enum IdKey {
     PlaylistSearch,
     PlaylistSwapDown,
     PlaylistSwapUp,
-    PlaylistLqueue,
-    PlaylistTqueue,
+    PlaylistAddRandomAlbum,
+    PlaylistAddRandomTracks,
     LibrarySwitchRoot,
     LibraryAddRoot,
     LibraryRemoveRoot,

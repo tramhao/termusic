@@ -666,7 +666,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::PlaylistSwapUpBlurDown | KFMsg::PlaylistLqueueBlurUp => {
+            KFMsg::PlaylistSwapUpBlurDown | KFMsg::PlaylistAddRandomAlbumBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::DatabaseAddAll,
@@ -674,23 +674,23 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::DatabaseAddAllBlurDown | KFMsg::PlaylistTqueueBlurUp => {
+            KFMsg::DatabaseAddAllBlurDown | KFMsg::PlaylistAddRandomTracksBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistLqueue,
+                        IdKey::PlaylistAddRandomAlbum,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistLqueueBlurDown | KFMsg::LibrarySwitchRootBlurUp => {
+            KFMsg::PlaylistAddRandomAlbumBlurDown | KFMsg::LibrarySwitchRootBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistTqueue,
+                        IdKey::PlaylistAddRandomTracks,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistTqueueBlurDown | KFMsg::LibraryAddRootBlurUp => {
+            KFMsg::PlaylistAddRandomTracksBlurDown | KFMsg::LibraryAddRootBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::LibrarySwitchRoot,
@@ -835,8 +835,12 @@ impl Model {
             IdKey::PlaylistSearch => self.ke_key_config.playlist_search = *binding,
             IdKey::PlaylistSwapDown => self.ke_key_config.playlist_swap_down = *binding,
             IdKey::PlaylistSwapUp => self.ke_key_config.playlist_swap_up = *binding,
-            IdKey::PlaylistLqueue => self.ke_key_config.playlist_cmus_lqueue = *binding,
-            IdKey::PlaylistTqueue => self.ke_key_config.playlist_cmus_tqueue = *binding,
+            IdKey::PlaylistAddRandomAlbum => {
+                self.ke_key_config.playlist_add_random_album = *binding;
+            }
+            IdKey::PlaylistAddRandomTracks => {
+                self.ke_key_config.playlist_add_random_tracks = *binding;
+            }
             IdKey::LibrarySwitchRoot => self.ke_key_config.library_switch_root = *binding,
             IdKey::LibraryAddRoot => self.ke_key_config.library_add_root = *binding,
             IdKey::LibraryRemoveRoot => self.ke_key_config.library_remove_root = *binding,
