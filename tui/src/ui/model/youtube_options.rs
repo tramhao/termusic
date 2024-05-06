@@ -53,7 +53,7 @@ impl Model {
         if let Ok(item) = self.youtube_options.get_by_index(index) {
             let url = format!("https://www.youtube.com/watch?v={}", item.video_id);
             if let Err(e) = self.youtube_dl(url.as_ref()) {
-                bail!("Error download: {e}");
+                bail!("Download error: {e}");
             }
         }
         Ok(())
@@ -113,9 +113,9 @@ impl Model {
     pub fn sync_youtube_options(&mut self) {
         if self.youtube_options.items.is_empty() {
             let table = TableBuilder::default()
-                .add_col(TextSpan::from("Empty result."))
+                .add_col(TextSpan::from("No results."))
                 .add_col(TextSpan::from(
-                    "Wait 10 seconds but no results, means all servers are down.",
+                    "Nothing was found in 10 seconds, connection issue encountered.",
                 ))
                 .build();
             self.app

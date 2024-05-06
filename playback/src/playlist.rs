@@ -367,7 +367,7 @@ impl Playlist {
     /// Error could happen when writing file to local disk.
     pub fn save_m3u(&self, filename: &str) -> Result<()> {
         if self.tracks.is_empty() {
-            bail!("No tracks in playlist, so no need to save.");
+            bail!("Unable to save since the playlist is empty.");
         }
 
         let parent_folder = get_parent_folder(filename);

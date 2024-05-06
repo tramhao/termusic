@@ -129,7 +129,7 @@ impl Instance {
             }
         }
         if domain.len() < 2 {
-            bail!("All 7 invidious servers are down? Please check your network connection first.");
+            bail!("Something is wrong with your connection or all 7 invidious servers are down.");
         }
 
         let domain = Some(domain);

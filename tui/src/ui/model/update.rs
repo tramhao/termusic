@@ -888,11 +888,11 @@ impl Model {
         if let Some(track) = self.playlist.current_track() {
             if self.layout == TermusicLayout::Podcast {
                 let title = track.title().unwrap_or("Unknown Episode");
-                self.update_show_message_timeout("Current Playing", title, None);
+                self.update_show_message_timeout("Currently Playing", title, None);
                 return;
             }
             let name = track.name().unwrap_or("Unknown Song");
-            self.update_show_message_timeout("Current Playing", name, None);
+            self.update_show_message_timeout("Currently Playing", name, None);
 
             // TODO: is there a better way to update only a single / 2 columns (prev/next) instead of re-doing the whole playist; OR a way to decide at draw-time?
             // sync playlist to update any dynamic parts added to the columns (like current playing symbol)

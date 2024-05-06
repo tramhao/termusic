@@ -248,7 +248,7 @@ impl SongTag {
         let song_id = self
             .song_id
             .as_ref()
-            .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
+            .ok_or_else(|| anyhow!("failed to download because no song id was found"))?;
         let artist = self
             .artist
             .clone()
@@ -280,7 +280,7 @@ impl SongTag {
 
         let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
         if mp3_url.starts_with("Copyright") {
-            bail!("Copyright protected, please select another item.");
+            bail!("The item is protected by copyright, please, select another one.");
         }
         let mut url = mp3_url;
 
@@ -299,7 +299,7 @@ impl SongTag {
         }
 
         if url.is_empty() {
-            bail!("url fetch failed, please try another item.");
+            bail!("failed to fetch url, please, try another item.");
         }
 
         let ytd = YoutubeDL::new(&PathBuf::from(p_parent), args, &url)?;
