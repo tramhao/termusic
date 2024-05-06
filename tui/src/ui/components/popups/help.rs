@@ -43,26 +43,26 @@ impl HelpPopup {
                     Borders::default().modifiers(BorderType::Rounded).color(
                         config
                             .style_color_symbol
-                            .library_border()
+                            .fallback_border()
                             .unwrap_or(Color::Green),
                     ),
                 )
                 .foreground(
                     config
                         .style_color_symbol
-                        .library_foreground()
+                        .fallback_foreground()
                         .unwrap_or(Color::Yellow),
                 )
                 .background(
                     config
                         .style_color_symbol
-                        .library_background()
+                        .fallback_background()
                         .unwrap_or(Color::Black),
                 )
                 .highlighted_color(
                     config
                         .style_color_symbol
-                        .library_highlight()
+                        .fallback_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)

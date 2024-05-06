@@ -1106,14 +1106,14 @@ impl KEModifierSelect {
                 Borders::default().modifiers(BorderType::Rounded).color(
                     config_r
                         .style_color_symbol
-                        .library_border()
+                        .fallback_border()
                         .unwrap_or(Color::Blue),
                 ),
             )
             .foreground(
                 config_r
                     .style_color_symbol
-                    .library_foreground()
+                    .fallback_foreground()
                     .unwrap_or(Color::Blue),
             )
             .title(name, Alignment::Left)
@@ -1121,7 +1121,7 @@ impl KEModifierSelect {
             .highlighted_color(
                 config_r
                     .style_color_symbol
-                    .library_highlight()
+                    .fallback_highlight()
                     .unwrap_or(Color::LightGreen),
             )
             .highlighted_str(">> ")

@@ -47,13 +47,13 @@ impl GSInputPopup {
                     .background(
                         config
                             .style_color_symbol
-                            .library_background()
+                            .fallback_background()
                             .unwrap_or(Color::Reset),
                     )
                     .foreground(
                         config
                             .style_color_symbol
-                            .library_foreground()
+                            .fallback_foreground()
                             .unwrap_or(Color::Magenta),
                     )
                     .borders(
@@ -61,7 +61,7 @@ impl GSInputPopup {
                             .color(
                                 config
                                     .style_color_symbol
-                                    .library_border()
+                                    .fallback_border()
                                     .unwrap_or(Color::Magenta),
                             )
                             .modifiers(BorderType::Rounded),
@@ -78,13 +78,13 @@ impl GSInputPopup {
                     .background(
                         config
                             .style_color_symbol
-                            .library_background()
+                            .fallback_background()
                             .unwrap_or(Color::Reset),
                     )
                     .foreground(
                         config
                             .style_color_symbol
-                            .library_foreground()
+                            .fallback_foreground()
                             .unwrap_or(Color::Magenta),
                     )
                     .borders(
@@ -92,7 +92,7 @@ impl GSInputPopup {
                             .color(
                                 config
                                     .style_color_symbol
-                                    .library_border()
+                                    .fallback_border()
                                     .unwrap_or(Color::Magenta),
                             )
                             .modifiers(BorderType::Rounded),
@@ -209,7 +209,7 @@ impl GSTablePopup {
                         .color(
                             config_r
                                 .style_color_symbol
-                                .library_border()
+                                .fallback_border()
                                 .unwrap_or(Color::Magenta),
                         )
                         .modifiers(BorderType::Rounded),
@@ -217,13 +217,13 @@ impl GSTablePopup {
                 .background(
                     config_r
                         .style_color_symbol
-                        .library_background()
+                        .fallback_background()
                         .unwrap_or(Color::Reset),
                 )
                 .foreground(
                     config_r
                         .style_color_symbol
-                        .library_foreground()
+                        .fallback_foreground()
                         .unwrap_or(Color::Magenta),
                 )
                 .title(title_library, Alignment::Left)
@@ -231,7 +231,7 @@ impl GSTablePopup {
                 .highlighted_color(
                     config_r
                         .style_color_symbol
-                        .library_highlight()
+                        .fallback_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
                 .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
@@ -254,7 +254,7 @@ impl GSTablePopup {
                         .color(
                             config_r
                                 .style_color_symbol
-                                .library_border()
+                                .fallback_border()
                                 .unwrap_or(Color::Magenta),
                         )
                         .modifiers(BorderType::Rounded),
@@ -262,13 +262,13 @@ impl GSTablePopup {
                 .background(
                     config_r
                         .style_color_symbol
-                        .library_background()
+                        .fallback_background()
                         .unwrap_or(Color::Reset),
                 )
                 .foreground(
                     config_r
                         .style_color_symbol
-                        .library_foreground()
+                        .fallback_foreground()
                         .unwrap_or(Color::Magenta),
                 )
                 .title(title_playlist, Alignment::Left)
@@ -276,7 +276,7 @@ impl GSTablePopup {
                 .highlighted_color(
                     config_r
                         .style_color_symbol
-                        .library_highlight()
+                        .fallback_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
                 .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
@@ -298,7 +298,7 @@ impl GSTablePopup {
                         .color(
                             config_r
                                 .style_color_symbol
-                                .library_border()
+                                .fallback_border()
                                 .unwrap_or(Color::Magenta),
                         )
                         .modifiers(BorderType::Rounded),
@@ -306,13 +306,13 @@ impl GSTablePopup {
                 .background(
                     config_r
                         .style_color_symbol
-                        .library_background()
+                        .fallback_background()
                         .unwrap_or(Color::Reset),
                 )
                 .foreground(
                     config_r
                         .style_color_symbol
-                        .library_foreground()
+                        .fallback_foreground()
                         .unwrap_or(Color::Magenta),
                 )
                 .title(title_database, Alignment::Left)
@@ -320,7 +320,7 @@ impl GSTablePopup {
                 .highlighted_color(
                     config_r
                         .style_color_symbol
-                        .library_highlight()
+                        .fallback_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
                 .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
@@ -342,7 +342,7 @@ impl GSTablePopup {
                         .color(
                             config_r
                                 .style_color_symbol
-                                .library_border()
+                                .fallback_border()
                                 .unwrap_or(Color::Magenta),
                         )
                         .modifiers(BorderType::Rounded),
@@ -350,13 +350,13 @@ impl GSTablePopup {
                 .background(
                     config_r
                         .style_color_symbol
-                        .library_background()
+                        .fallback_background()
                         .unwrap_or(Color::Reset),
                 )
                 .foreground(
                     config_r
                         .style_color_symbol
-                        .library_foreground()
+                        .fallback_foreground()
                         .unwrap_or(Color::Magenta),
                 )
                 .title(title_episode, Alignment::Left)
@@ -364,7 +364,7 @@ impl GSTablePopup {
                 .highlighted_color(
                     config_r
                         .style_color_symbol
-                        .library_highlight()
+                        .fallback_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
                 .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
@@ -386,7 +386,7 @@ impl GSTablePopup {
                         .color(
                             config_r
                                 .style_color_symbol
-                                .library_border()
+                                .fallback_border()
                                 .unwrap_or(Color::Magenta),
                         )
                         .modifiers(BorderType::Rounded),
@@ -394,13 +394,13 @@ impl GSTablePopup {
                 .background(
                     config_r
                         .style_color_symbol
-                        .library_background()
+                        .fallback_background()
                         .unwrap_or(Color::Reset),
                 )
                 .foreground(
                     config_r
                         .style_color_symbol
-                        .library_foreground()
+                        .fallback_foreground()
                         .unwrap_or(Color::Magenta),
                 )
                 .title(title_podcast, Alignment::Left)
@@ -408,7 +408,7 @@ impl GSTablePopup {
                 .highlighted_color(
                     config_r
                         .style_color_symbol
-                        .library_highlight()
+                        .fallback_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
                 .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)

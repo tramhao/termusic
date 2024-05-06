@@ -574,74 +574,74 @@ impl Model {
                         TextSpan::new(" Help: ")
                             .fg(config
                                 .style_color_symbol
-                                .library_foreground()
+                                .fallback_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_help))
                             .fg(config
                                 .style_color_symbol
-                                .library_highlight()
+                                .fallback_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Config: ")
                             .fg(config
                                 .style_color_symbol
-                                .library_foreground()
+                                .fallback_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_config_open))
                             .fg(config
                                 .style_color_symbol
-                                .library_highlight()
+                                .fallback_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Library: ")
                             .fg(config
                                 .style_color_symbol
-                                .library_foreground()
+                                .fallback_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_layout_treeview))
                             .fg(config
                                 .style_color_symbol
-                                .library_highlight()
+                                .fallback_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Database: ")
                             .fg(config
                                 .style_color_symbol
-                                .library_foreground()
+                                .fallback_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_layout_database))
                             .fg(config
                                 .style_color_symbol
-                                .library_highlight()
+                                .fallback_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Podcasts: ")
                             .fg(config
                                 .style_color_symbol
-                                .library_foreground()
+                                .fallback_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_layout_podcast))
                             .fg(config
                                 .style_color_symbol
-                                .library_highlight()
+                                .fallback_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Version: ")
                             .fg(config
                                 .style_color_symbol
-                                .library_foreground()
+                                .fallback_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
                         // maybe consider moving version into Help or Config or its own popup (like a About)
                         TextSpan::new(env!("TERMUSIC_VERSION"))
                             .fg(config
                                 .style_color_symbol
-                                .library_highlight()
+                                .fallback_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                     ],
@@ -671,20 +671,20 @@ impl Model {
                         TextSpan::new("Full name: ")
                             .fg(config
                                 .style_color_symbol
-                                .library_highlight()
+                                .fallback_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(path_string)
                             .fg(config
                                 .style_color_symbol
-                                .library_foreground()
+                                .fallback_foreground()
                                 .unwrap_or(Color::Red))
                             .bold(),
                         TextSpan::new(filename).fg(Color::Cyan).bold(),
                         TextSpan::new(".m3u")
                             .fg(config
                                 .style_color_symbol
-                                .library_foreground()
+                                .fallback_foreground()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                     ],

@@ -43,13 +43,13 @@ impl YSInputPopup {
                 .background(
                     config
                         .style_color_symbol
-                        .library_background()
+                        .fallback_background()
                         .unwrap_or(Color::Reset),
                 )
                 .foreground(
                     config
                         .style_color_symbol
-                        .library_foreground()
+                        .fallback_foreground()
                         .unwrap_or(Color::Magenta),
                 )
                 .borders(
@@ -57,7 +57,7 @@ impl YSInputPopup {
                         .color(
                             config
                                 .style_color_symbol
-                                .library_border()
+                                .fallback_border()
                                 .unwrap_or(Color::Magenta),
                         )
                         .modifiers(BorderType::Rounded),
@@ -127,13 +127,13 @@ impl YSTablePopup {
                 .background(
                     config
                         .style_color_symbol
-                        .library_background()
+                        .fallback_background()
                         .unwrap_or(Color::Reset),
                 )
                 .foreground(
                     config
                         .style_color_symbol
-                        .library_foreground()
+                        .fallback_foreground()
                         .unwrap_or(Color::Magenta),
                 )
                 .borders(
@@ -141,7 +141,7 @@ impl YSTablePopup {
                         .color(
                             config
                                 .style_color_symbol
-                                .library_border()
+                                .fallback_border()
                                 .unwrap_or(Color::Magenta),
                         )
                         .modifiers(BorderType::Rounded),
@@ -155,7 +155,7 @@ impl YSTablePopup {
                 .highlighted_color(
                     config
                         .style_color_symbol
-                        .library_highlight()
+                        .fallback_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)

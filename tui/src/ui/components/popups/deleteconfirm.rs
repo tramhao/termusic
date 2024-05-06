@@ -27,15 +27,15 @@ impl DeleteConfirmRadioPopup {
                 YNConfirmStyle {
                     foreground_color: config
                         .style_color_symbol
-                        .library_foreground()
+                        .important_popup_foreground()
                         .unwrap_or(Color::LightRed),
                     background_color: config
                         .style_color_symbol
-                        .library_background()
+                        .important_popup_background()
                         .unwrap_or(Color::Reset),
                     border_color: config
                         .style_color_symbol
-                        .library_border()
+                        .important_popup_border()
                         .unwrap_or(Color::LightRed),
                     title_alignment: Alignment::Left,
                 }
@@ -63,17 +63,21 @@ impl DeleteConfirmInputPopup {
             component: Input::default()
                 .foreground(
                     style_color_symbol
-                        .library_foreground()
+                        .important_popup_foreground()
                         .unwrap_or(Color::Yellow),
                 )
                 .background(
                     style_color_symbol
-                        .library_background()
+                        .important_popup_background()
                         .unwrap_or(Color::Reset),
                 )
                 .borders(
                     Borders::default()
-                        .color(style_color_symbol.library_border().unwrap_or(Color::Green))
+                        .color(
+                            style_color_symbol
+                                .important_popup_border()
+                                .unwrap_or(Color::Green),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))

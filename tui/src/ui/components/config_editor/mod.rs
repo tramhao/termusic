@@ -150,15 +150,15 @@ impl ConfigSavePopup {
                 YNConfirmStyle {
                     foreground_color: config
                         .style_color_symbol
-                        .library_foreground()
+                        .important_popup_foreground()
                         .unwrap_or(Color::Yellow),
                     background_color: config
                         .style_color_symbol
-                        .library_background()
+                        .important_popup_background()
                         .unwrap_or(Color::Reset),
                     border_color: config
                         .style_color_symbol
-                        .library_border()
+                        .important_popup_border()
                         .unwrap_or(Color::Yellow),
                     title_alignment: Alignment::Center,
                 }
