@@ -312,3 +312,35 @@ impl Alacritty {
         Ok(Self::from_yaml_theme(parsed, path_str))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_parse_default_colors() {
+        let def = Alacritty::default();
+        assert_eq!(
+            parse_hex_color(&def.background).unwrap(),
+            Color::Rgb(16, 20, 33)
+        );
+        assert!(parse_hex_color(&def.foreground).is_some());
+        assert!(parse_hex_color(&def.cursor).is_some());
+        assert!(parse_hex_color(&def.text).is_some());
+        assert!(parse_hex_color(&def.black).is_some());
+        assert!(parse_hex_color(&def.red).is_some());
+        assert!(parse_hex_color(&def.green).is_some());
+        assert!(parse_hex_color(&def.yellow).is_some());
+        assert!(parse_hex_color(&def.blue).is_some());
+        assert!(parse_hex_color(&def.magenta).is_some());
+        assert!(parse_hex_color(&def.cyan).is_some());
+        assert!(parse_hex_color(&def.white).is_some());
+        assert!(parse_hex_color(&def.light_black).is_some());
+        assert!(parse_hex_color(&def.light_red).is_some());
+        assert!(parse_hex_color(&def.light_green).is_some());
+        assert!(parse_hex_color(&def.light_yellow).is_some());
+        assert!(parse_hex_color(&def.light_blue).is_some());
+        assert!(parse_hex_color(&def.light_magenta).is_some());
+        assert!(parse_hex_color(&def.light_white).is_some());
+    }
+}
