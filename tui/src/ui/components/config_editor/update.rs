@@ -177,7 +177,7 @@ impl Model {
                     .ok();
             }
             ConfigEditorMsg::LibraryForegroundBlurUp
-            | ConfigEditorMsg::ImportantPopupBorderBlurDown => {
+            | ConfigEditorMsg::FallbackHighlightBlurDown => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
                     .ok();
@@ -259,6 +259,7 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))
                     .ok();
             }
+
             ConfigEditorMsg::ProgressBorderBlurDown | ConfigEditorMsg::LyricBackgroundBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::LyricForeground))
@@ -275,6 +276,7 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
                     .ok();
             }
+
             ConfigEditorMsg::LyricBorderBlurDown
             | ConfigEditorMsg::ImportantPopupBackgroundBlurUp => {
                 self.app
@@ -288,11 +290,35 @@ impl Model {
                     .ok();
             }
             ConfigEditorMsg::ImportantPopupBackgroundBlurDown
-            | ConfigEditorMsg::ThemeSelectBlurUp => {
+            | ConfigEditorMsg::FallbackForegroundBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))
                     .ok();
             }
+
+            ConfigEditorMsg::ImportantPopupBorderBlurDown
+            | ConfigEditorMsg::FallbackBackgroundBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))
+                    .ok();
+            }
+            ConfigEditorMsg::FallbackForegroundBlurDown | ConfigEditorMsg::FallbackBorderBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))
+                    .ok();
+            }
+            ConfigEditorMsg::FallbackBackgroundBlurDown
+            | ConfigEditorMsg::FallbackHighlightBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))
+                    .ok();
+            }
+            ConfigEditorMsg::FallbackBorderBlurDown | ConfigEditorMsg::ThemeSelectBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))
+                    .ok();
+            }
+
             ConfigEditorMsg::ThemeSelectLoad(index) => {
                 if let Some(theme_path_str) = self.ce_themes.get(*index) {
                     let theme_path = PathBuf::from(theme_path_str);

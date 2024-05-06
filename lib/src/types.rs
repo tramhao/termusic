@@ -180,6 +180,15 @@ pub enum ConfigEditorMsg {
     ImportantPopupBackgroundBlurUp,
     ImportantPopupBorderBlurDown,
     ImportantPopupBorderBlurUp,
+
+    FallbackForegroundBlurDown,
+    FallbackForegroundBlurUp,
+    FallbackBackgroundBlurDown,
+    FallbackBackgroundBlurUp,
+    FallbackBorderBlurDown,
+    FallbackBorderBlurUp,
+    FallbackHighlightBlurDown,
+    FallbackHighlightBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -581,6 +590,12 @@ pub enum IdConfigEditor {
     ImportantPopupBackground,
     ImportantPopupBorder,
     ImportantPopupForeground,
+
+    FallbackBackground,
+    FallbackBorder,
+    FallbackForeground,
+    FallbackHighlight,
+    FallbackLabel,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

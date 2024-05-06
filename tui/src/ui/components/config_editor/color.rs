@@ -374,6 +374,7 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
         }
     }
 }
+
 #[derive(MockComponent)]
 pub struct ConfigLibraryTitle {
     component: Label,
@@ -1275,6 +1276,151 @@ impl ConfigImportantPopupBorder {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigImportantPopupBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigFallbackTitle {
+    component: Label,
+}
+
+impl Default for ConfigFallbackTitle {
+    fn default() -> Self {
+        Self {
+            component: Label::default()
+                .modifiers(TextModifiers::BOLD)
+                .text(" Fallback style "),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigFallbackTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        None
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigFallbackForeground {
+    component: CEColorSelect,
+}
+
+impl ConfigFallbackForeground {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .library_foreground()
+            .unwrap_or(Color::Blue);
+        Self {
+            component: CEColorSelect::new(
+                " Foreground ",
+                IdConfigEditor::FallbackForeground,
+                color,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::FallbackForegroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::FallbackForegroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigFallbackForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigFallbackBackground {
+    component: CEColorSelect,
+}
+
+impl ConfigFallbackBackground {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .library_background()
+            .unwrap_or(Color::Blue);
+        Self {
+            component: CEColorSelect::new(
+                " Background ",
+                IdConfigEditor::FallbackBackground,
+                color,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::FallbackBackgroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::FallbackBackgroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigFallbackBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigFallbackBorder {
+    component: CEColorSelect,
+}
+
+impl ConfigFallbackBorder {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .library_border()
+            .unwrap_or(Color::Blue);
+        Self {
+            component: CEColorSelect::new(
+                " Border ",
+                IdConfigEditor::FallbackBorder,
+                color,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::FallbackBorderBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::FallbackBorderBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigFallbackBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigFallbackHighlight {
+    component: CEColorSelect,
+}
+
+impl ConfigFallbackHighlight {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .library_highlight()
+            .unwrap_or(Color::Blue);
+        Self {
+            component: CEColorSelect::new(
+                " Highlight ",
+                IdConfigEditor::FallbackHighlight,
+                color,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::FallbackHighlightBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::FallbackHighlightBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigFallbackHighlight {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
