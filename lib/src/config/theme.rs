@@ -122,6 +122,11 @@ pub struct StyleColorSymbol {
     pub important_popup_background: ColorTermusic,
     pub important_popup_border: ColorTermusic,
 
+    pub fallback_foreground: ColorTermusic,
+    pub fallback_background: ColorTermusic,
+    pub fallback_border: ColorTermusic,
+    pub fallback_highlight: ColorTermusic,
+
     pub alacritty_theme: Alacritty,
     pub currently_playing_track_symbol: String,
 }
@@ -152,6 +157,11 @@ impl Default for StyleColorSymbol {
             important_popup_foreground: ColorTermusic::Yellow,
             important_popup_background: ColorTermusic::Reset,
             important_popup_border: ColorTermusic::Yellow,
+
+            fallback_foreground: ColorTermusic::Foreground,
+            fallback_background: ColorTermusic::Reset,
+            fallback_border: ColorTermusic::Blue,
+            fallback_highlight: ColorTermusic::LightYellow,
 
             alacritty_theme: Alacritty::default(),
             currently_playing_track_symbol: "►".to_string(),
@@ -214,6 +224,19 @@ impl StyleColorSymbol {
     }
     pub fn important_popup_border(&self) -> Option<Color> {
         self.important_popup_border.color(&self.alacritty_theme)
+    }
+
+    pub fn fallback_foreground(&self) -> Option<Color> {
+        self.fallback_foreground.color(&self.alacritty_theme)
+    }
+    pub fn fallback_background(&self) -> Option<Color> {
+        self.fallback_background.color(&self.alacritty_theme)
+    }
+    pub fn fallback_highlight(&self) -> Option<Color> {
+        self.fallback_highlight.color(&self.alacritty_theme)
+    }
+    pub fn fallback_border(&self) -> Option<Color> {
+        self.fallback_border.color(&self.alacritty_theme)
     }
 }
 
