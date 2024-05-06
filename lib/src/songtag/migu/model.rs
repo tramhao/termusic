@@ -113,6 +113,8 @@ mod tests {
 
     #[test]
     fn should_parse_songinfo() {
+        const ARTIST: &str = "Some Artist";
+
         let sample_data = r#"{
             "musics": [
               {
@@ -175,8 +177,6 @@ mod tests {
         let res = to_song_info(sample_data).unwrap();
 
         assert_eq!(res.len(), 2);
-
-        const ARTIST: &str = "Some Artist";
 
         assert_eq!(
             res[0],

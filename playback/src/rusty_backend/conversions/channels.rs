@@ -52,7 +52,7 @@ where
     fn next(&mut self) -> Option<I::Item> {
         let result = if self.next_output_sample_pos == self.from - 1 {
             let value = self.input.next();
-            self.sample_repeat = value.clone();
+            self.sample_repeat.clone_from(&value);
             value
         } else if self.next_output_sample_pos < self.from {
             self.input.next()

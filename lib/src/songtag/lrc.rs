@@ -93,7 +93,7 @@ impl Lyric {
         let mut text = self.unsynced_captions.first()?.text.clone();
         for v in &self.unsynced_captions {
             if time >= v.time_stamp {
-                text = v.text.clone();
+                text.clone_from(&v.text);
             } else {
                 break;
             }
