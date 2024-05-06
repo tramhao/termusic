@@ -6,16 +6,6 @@ use std::iter::once;
 use std::str::FromStr;
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 
-pub const CONTROL_SHIFT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits());
-pub const ALT_SHIFT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::SHIFT.bits());
-pub const CONTROL_ALT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits());
-pub const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::from_bits_truncate(
-    KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits(),
-);
-
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Keys {
     pub global_esc: BindingForEvent,
@@ -202,18 +192,22 @@ impl std::fmt::Display for BindingForEvent {
 
         let code_string = code_string.replace("Function(", "F");
         let code_string = code_string.replace(')', "");
-        let code_string = code_string.replace(' ', "Space");
-        match self.modifier {
-            KeyModifiers::NONE => write!(f, "{code_string}"),
-            KeyModifiers::SHIFT => write!(f, "SHIFT+{}", code_string.to_uppercase()),
-            KeyModifiers::CONTROL => write!(f, "CTRL+{code_string}"),
-            KeyModifiers::ALT => write!(f, "ALT+{code_string}"),
-            CONTROL_SHIFT => write!(f, "CTRL+SHIFT+{code_string}"),
-            ALT_SHIFT => write!(f, "ALT+SHIFT+{code_string}"),
-            CONTROL_ALT => write!(f, "CTRL+ALT+{code_string}"),
-            CONTROL_ALT_SHIFT => write!(f, "CTRL+ALT+SHIFT+{code_string}"),
-            _ => write!(f, "Wrong Modifiers"),
+        let mut code_string = code_string.replace(' ', "Space");
+
+        if self.modifier.intersects(KeyModifiers::CONTROL) {
+            write!(f, "CTRL+")?;
         }
+
+        if self.modifier.intersects(KeyModifiers::ALT) {
+            write!(f, "ALT+")?;
+        }
+
+        if self.modifier.intersects(KeyModifiers::SHIFT) {
+            write!(f, "SHIFT+")?;
+            code_string = code_string.to_uppercase();
+        }
+
+        write!(f, "{code_string}")
     }
 }
 
@@ -225,23 +219,9 @@ impl BindingForEvent {
         }
     }
 
-    pub fn mod_key(&self) -> (usize, String) {
-        (self.modifier(), self.key())
-    }
-
-    pub const fn modifier(&self) -> usize {
-        match self.modifier {
-            // KeyModifiers::NONE => 0,
-            KeyModifiers::SHIFT => 1,
-            KeyModifiers::CONTROL => 2,
-            KeyModifiers::ALT => 3,
-            CONTROL_SHIFT => 4,
-            ALT_SHIFT => 5,
-            CONTROL_ALT => 6,
-            CONTROL_ALT_SHIFT => 7,
-            _ => 0,
-            // _ => 0,
-        }
+    /// Get the Current Modifier, and the string representation of the key
+    pub fn mod_key(&self) -> (KeyModifiers, String) {
+        (self.modifier, self.key())
     }
 
     pub fn key(&self) -> String {
@@ -292,16 +272,16 @@ impl BindingForEvent {
                 return Ok(Key::Char(char));
             }
         }
-        if str.starts_with('F') {
-            let mut chars = str.chars();
-            chars.next();
-            let my_int = u8::from_str(chars.as_str())?;
-            if my_int > 12 {
-                bail!("Function key should be smaller than F12.");
-            }
-            return Ok(Key::Function(my_int));
-        }
         let str_lower_case = str.to_lowercase();
+        if str_lower_case.len() < 4 {
+            if let Some(str) = str_lower_case.strip_prefix('f') {
+                let my_int = u8::from_str(str)?;
+                if my_int > 12 {
+                    bail!("Function key should be smaller than F12.");
+                }
+                return Ok(Key::Function(my_int));
+            }
+        }
         let special_key = match str_lower_case.as_ref() {
             "backspace" => Key::Backspace,
             "enter" => Key::Enter,
@@ -318,18 +298,6 @@ impl BindingForEvent {
             "delete" => Key::Delete,
             "insert" => Key::Insert,
             "esc" => Key::Esc,
-            "f1" => Key::Function(1),
-            "f2" => Key::Function(2),
-            "f3" => Key::Function(3),
-            "f4" => Key::Function(4),
-            "f5" => Key::Function(5),
-            "f6" => Key::Function(6),
-            "f7" => Key::Function(7),
-            "f8" => Key::Function(8),
-            "f9" => Key::Function(9),
-            "f10" => Key::Function(10),
-            "f11" => Key::Function(11),
-            "f12" => Key::Function(12),
             "space" => Key::Char(' '),
             // "null" => Key::Null,
             inv_key => bail!("Provided invalid special key: {}", inv_key),
@@ -341,6 +309,8 @@ impl BindingForEvent {
 impl Default for Keys {
     #[allow(clippy::too_many_lines)]
     fn default() -> Self {
+        const CONTROL_SHIFT: KeyModifiers = KeyModifiers::CONTROL.union(KeyModifiers::SHIFT);
+
         Self {
             global_esc: BindingForEvent {
                 code: Key::Esc,

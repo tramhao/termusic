@@ -1,13 +1,12 @@
-// allow "inline(always)" for the "default_" functions
-#![allow(clippy::inline_always)]
-
-use crate::utils::parse_hex_color;
 use anyhow::Result;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
-use std::path::PathBuf;
+use std::path::Path;
 use tuirealm::props::Color;
+
+use super::yaml_theme::YAMLTheme;
 
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub enum ColorTermusic {
@@ -92,6 +91,34 @@ impl ColorTermusic {
     pub const fn as_usize(self) -> usize {
         self as usize
     }
+}
+
+lazy_static::lazy_static! {
+    /**
+     * Regex matches:
+     * - group 1: Red
+     * - group 2: Green
+     * - group 3: Blue
+     */
+    static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
+}
+
+/// # Panics
+/// panics could happen when color parse failed
+pub fn parse_hex_color(color: &str) -> Option<Color> {
+    COLOR_HEX_REGEX.captures(color).map(|groups| {
+        Color::Rgb(
+            u8::from_str_radix(groups.get(1).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+            u8::from_str_radix(groups.get(2).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+            u8::from_str_radix(groups.get(3).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+        )
+    })
 }
 
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
@@ -244,24 +271,12 @@ impl Default for Alacritty {
     }
 }
 
-pub fn load_alacritty(path_str: &str) -> Result<Alacritty> {
-    let path = PathBuf::from(path_str);
-    let path = path.to_string_lossy().to_string();
-    let parsed: Theme = serde_yaml::from_reader(BufReader::new(File::open(&path)?))?;
-
-    Ok(parsed.into_alacritty(path))
-}
-
-/// A Theme parsed from a theme file
-#[derive(Debug, Deserialize, PartialEq)]
-struct Theme {
-    colors: ThemeColors,
-}
-
-impl Theme {
-    #[inline]
-    fn into_alacritty(self, path: String) -> Alacritty {
-        let colors = self.colors;
+impl Alacritty {
+    /// Convert a [`YAMLTheme`] to this type
+    ///
+    /// Cannot be a [`From`] implementation because of the additional set `path` parameter
+    pub fn from_yaml_theme(value: YAMLTheme, path: String) -> Self {
+        let colors = value.colors;
         Alacritty {
             path,
             name: colors.name,
@@ -288,211 +303,12 @@ impl Theme {
             light_white: colors.bright.white,
         }
     }
-}
 
-type ThemeColor = String;
+    /// Load a YAML Theme and then convert it to a [`Alacritty`] instance
+    pub fn from_yaml_file(path: &Path) -> Result<Self> {
+        let parsed: YAMLTheme = serde_yaml::from_reader(BufReader::new(File::open(path)?))?;
+        let path_str = path.to_string_lossy().to_string();
 
-#[derive(Debug, Deserialize, PartialEq)]
-struct ThemeColors {
-    #[serde(default = "default_name")]
-    name: String,
-    #[serde(default = "default_author")]
-    author: String,
-    #[serde(default)]
-    primary: ThemePrimary,
-    #[serde(default)]
-    cursor: ThemeCursor,
-    #[serde(default)]
-    normal: ThemeNormal,
-    #[serde(default)]
-    bright: ThemeBright,
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-struct ThemePrimary {
-    background: ThemeColor,
-    foreground: ThemeColor,
-}
-
-impl Default for ThemePrimary {
-    fn default() -> Self {
-        Self {
-            background: default_000(),
-            foreground: default_fff(),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(default)]
-struct ThemeCursor {
-    text: ThemeColor,
-    cursor: ThemeColor,
-}
-
-impl Default for ThemeCursor {
-    fn default() -> Self {
-        Self {
-            text: default_fff(),
-            cursor: default_fff(),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(default)]
-struct ThemeNormal {
-    black: ThemeColor,
-    red: ThemeColor,
-    green: ThemeColor,
-    yellow: ThemeColor,
-    blue: ThemeColor,
-    magenta: ThemeColor,
-    cyan: ThemeColor,
-    white: ThemeColor,
-}
-
-impl Default for ThemeNormal {
-    fn default() -> Self {
-        Self {
-            black: default_000(),
-            red: "#ff0000".to_string(),
-            green: "#00ff00".to_string(),
-            yellow: "#ffff00".to_string(),
-            blue: "#0000ff".to_string(),
-            magenta: "#ff00ff".to_string(),
-            cyan: "#00ffff".to_string(),
-            white: default_fff(),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(default)]
-struct ThemeBright {
-    black: ThemeColor,
-    red: ThemeColor,
-    green: ThemeColor,
-    yellow: ThemeColor,
-    blue: ThemeColor,
-    magenta: ThemeColor,
-    cyan: ThemeColor,
-    white: ThemeColor,
-}
-
-impl Default for ThemeBright {
-    fn default() -> Self {
-        Self {
-            black: "#777777".to_string(),
-            red: default_000(),
-            green: default_000(),
-            yellow: default_000(),
-            blue: default_000(),
-            magenta: default_000(),
-            cyan: default_000(),
-            white: default_000(),
-        }
-    }
-}
-
-#[inline(always)]
-fn default_name() -> String {
-    "empty name".to_string()
-}
-
-#[inline(always)]
-fn default_author() -> String {
-    "empty author".to_string()
-}
-
-#[inline(always)]
-fn default_000() -> ThemeColor {
-    "#00000".to_string()
-}
-
-#[inline(always)]
-fn default_fff() -> ThemeColor {
-    "#FFFFFF".to_string()
-}
-
-#[cfg(test)]
-mod test {
-    use std::ffi::OsStr;
-
-    use super::*;
-
-    /// First test one theme for better debugging
-    #[test]
-    fn should_parse_one_theme() {
-        let cargo_manifest_dir = env!("CARGO_MANIFEST_DIR");
-        let reader = BufReader::new(
-            File::open(format!("{cargo_manifest_dir}/themes/Afterglow.yml")).unwrap(),
-        );
-        let parsed: Theme = serde_yaml::from_reader(reader).unwrap();
-        assert_eq!(
-            parsed,
-            Theme {
-                colors: ThemeColors {
-                    name: default_name(),
-                    author: default_author(),
-                    primary: ThemePrimary {
-                        background: "#2c2c2c".to_string(),
-                        foreground: "#d6d6d6".to_string()
-                    },
-                    cursor: ThemeCursor {
-                        text: "#2c2c2c".to_string(),
-                        cursor: "#d9d9d9".to_string(),
-                    },
-                    normal: ThemeNormal {
-                        black: "#1c1c1c".to_string(),
-                        red: "#bc5653".to_string(),
-                        green: "#909d63".to_string(),
-                        yellow: "#ebc17a".to_string(),
-                        blue: "#7eaac7".to_string(),
-                        magenta: "#aa6292".to_string(),
-                        cyan: "#86d3ce".to_string(),
-                        white: "#cacaca".to_string(),
-                    },
-                    bright: ThemeBright {
-                        black: "#636363".to_string(),
-                        red: "#bc5653".to_string(),
-                        green: "#909d63".to_string(),
-                        yellow: "#ebc17a".to_string(),
-                        blue: "#7eaac7".to_string(),
-                        magenta: "#aa6292".to_string(),
-                        cyan: "#86d3ce".to_string(),
-                        white: "#f7f7f7".to_string(),
-                    },
-                },
-            }
-        );
-    }
-
-    /// Test that all themes in /lib/themes/ can be loaded
-    #[test]
-    fn should_parse_all_themes() {
-        let cargo_manifest_dir = env!("CARGO_MANIFEST_DIR");
-        let path = PathBuf::from(format!("{cargo_manifest_dir}/themes/"));
-        for entry in path.read_dir().unwrap() {
-            let entry = entry.unwrap();
-
-            if entry.path().extension() != Some(OsStr::new("yml")) {
-                continue;
-            }
-
-            println!(
-                "Theme: {}",
-                entry.path().file_name().unwrap().to_string_lossy()
-            );
-
-            let reader = BufReader::new(File::open(entry.path()).unwrap());
-            let parsed: std::result::Result<Theme, _> = serde_yaml::from_reader(reader);
-
-            if let Err(ref parsed) = parsed {
-                eprintln!("{parsed:#?}");
-            }
-
-            assert!(parsed.is_ok());
-        }
+        Ok(Self::from_yaml_theme(parsed, path_str))
     }
 }

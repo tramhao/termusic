@@ -23,6 +23,7 @@
  */
 mod key;
 mod theme;
+mod yaml_theme;
 
 use crate::utils::get_app_config_path;
 use anyhow::{bail, Result};
@@ -31,12 +32,15 @@ use figment::{
     Figment,
 };
 use image::DynamicImage;
-pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
+pub use key::{BindingForEvent, Keys};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::{fs, net::IpAddr};
-pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
+pub use theme::{Alacritty, ColorTermusic, StyleColorSymbol};
+
+/// The filename of the config
+pub const FILE_NAME: &str = "config.toml";
 
 // pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
 // pub const PODCAST_DIR: &str = "~/.cache/termusic/podcast";
@@ -352,7 +356,7 @@ impl Default for Settings {
 impl Settings {
     pub fn save(&self) -> Result<()> {
         let mut path = get_app_config_path()?;
-        path.push("config.toml");
+        path.push(FILE_NAME);
         let string = toml::to_string(self)?;
 
         fs::write(path.to_string_lossy().as_ref(), string)?;
@@ -362,7 +366,7 @@ impl Settings {
 
     pub fn load(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
-        path.push("config.toml");
+        path.push(FILE_NAME);
         if !path.exists() {
             let config = Self::default();
             config.save()?;
