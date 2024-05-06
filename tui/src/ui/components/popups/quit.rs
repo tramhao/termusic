@@ -23,10 +23,7 @@
  */
 use termusiclib::types::{Id, Msg};
 use termusicplayback::SharedSettings;
-use tuirealm::{
-    props::{Alignment, Color},
-    Component, Event, MockComponent, NoUserEvent,
-};
+use tuirealm::{props::Alignment, Component, Event, MockComponent, NoUserEvent};
 
 use crate::ui::model::Model;
 
@@ -41,18 +38,9 @@ impl QuitPopup {
     pub fn new(config: SharedSettings) -> Self {
         let component = YNConfirm::new_with_cb(config, " Are sure you want to quit? ", |config| {
             YNConfirmStyle {
-                foreground_color: config
-                    .style_color_symbol
-                    .important_popup_foreground()
-                    .unwrap_or(Color::Yellow),
-                background_color: config
-                    .style_color_symbol
-                    .important_popup_background()
-                    .unwrap_or(Color::Reset),
-                border_color: config
-                    .style_color_symbol
-                    .important_popup_border()
-                    .unwrap_or(Color::Yellow),
+                foreground_color: config.style_color_symbol.important_popup_foreground(),
+                background_color: config.style_color_symbol.important_popup_background(),
+                border_color: config.style_color_symbol.important_popup_border(),
                 title_alignment: Alignment::Center,
             }
         });

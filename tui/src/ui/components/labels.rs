@@ -28,7 +28,7 @@ use tui_realm_stdlib::{Label, Span, Spinner};
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{
-    Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextModifiers, TextSpan,
+    Alignment, AttrValue, Attribute, PropPayload, PropValue, TextModifiers, TextSpan,
 };
 use tuirealm::tui::layout::Rect;
 use tuirealm::{Component, Event, Frame, MockComponent, State};
@@ -44,18 +44,8 @@ impl LabelGeneric {
             component: Label::default()
                 .text(text)
                 .alignment(Alignment::Left)
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::Cyan),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_highlight())
                 .modifiers(TextModifiers::BOLD),
         }
     }
@@ -81,18 +71,8 @@ impl LabelSpan {
             component: Span::default()
                 .spans(span)
                 .alignment(Alignment::Left)
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::Cyan),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_highlight())
                 .modifiers(TextModifiers::BOLD),
             default_span: span.to_vec(),
             active_message_start_time: None,
@@ -160,18 +140,8 @@ impl DownloadSpinner {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: Spinner::default()
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
+                .foreground(config.style_color_symbol.library_highlight())
+                .background(config.style_color_symbol.library_background())
                 // .sequence("⣾⣽⣻⢿⡿⣟⣯⣷"),
                 // .sequence("▉▊▋▌▍▎▏▎▍▌▋▊▉"),
                 .sequence("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),

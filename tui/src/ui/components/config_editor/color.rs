@@ -68,33 +68,15 @@ impl CEThemeSelectTable {
             let config = config.read();
             Table::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .fallback_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.fallback_border()),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .fallback_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .fallback_background()
-                        .unwrap_or(Color::Reset),
-                )
+                .foreground(config.style_color_symbol.fallback_foreground())
+                .background(config.style_color_symbol.fallback_background())
                 .title(" Themes: <Enter> to preview ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .fallback_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.fallback_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(true)
                 .step(4)
@@ -274,9 +256,7 @@ impl CEColorSelect {
 
     fn update_color(&mut self, index: usize) -> Msg {
         if let Some(color_config) = COLOR_LIST.get(index) {
-            let color = color_config
-                .color(&self.config.read().style_color_symbol.alacritty_theme)
-                .unwrap_or(Color::Red);
+            let color = color_config.color(&self.config.read().style_color_symbol.alacritty_theme);
             // self.attr(Attribute::Foreground, AttrValue::Color(color));
             self.attr(Attribute::Background, AttrValue::Color(color));
             self.attr(
@@ -403,11 +383,7 @@ pub struct ConfigLibraryForeground {
 
 impl ConfigLibraryForeground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .library_foreground()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.library_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -434,11 +410,7 @@ pub struct ConfigLibraryBackground {
 
 impl ConfigLibraryBackground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .library_background()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.library_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -465,11 +437,7 @@ pub struct ConfigLibraryBorder {
 
 impl ConfigLibraryBorder {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .library_border()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.library_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -496,11 +464,7 @@ pub struct ConfigLibraryHighlight {
 
 impl ConfigLibraryHighlight {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .library_highlight()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.library_highlight();
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
@@ -548,11 +512,7 @@ pub struct ConfigPlaylistForeground {
 
 impl ConfigPlaylistForeground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .playlist_foreground()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.playlist_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -579,11 +539,7 @@ pub struct ConfigPlaylistBackground {
 
 impl ConfigPlaylistBackground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .playlist_background()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.playlist_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -610,11 +566,7 @@ pub struct ConfigPlaylistBorder {
 
 impl ConfigPlaylistBorder {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .playlist_border()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.playlist_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -641,11 +593,7 @@ pub struct ConfigPlaylistHighlight {
 
 impl ConfigPlaylistHighlight {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .playlist_highlight()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.playlist_highlight();
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
@@ -693,11 +641,7 @@ pub struct ConfigProgressForeground {
 
 impl ConfigProgressForeground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .progress_foreground()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.progress_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -724,11 +668,7 @@ pub struct ConfigProgressBackground {
 
 impl ConfigProgressBackground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .progress_background()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.progress_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -755,11 +695,7 @@ pub struct ConfigProgressBorder {
 
 impl ConfigProgressBorder {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .progress_border()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.progress_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -807,11 +743,7 @@ pub struct ConfigLyricForeground {
 
 impl ConfigLyricForeground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .lyric_foreground()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.lyric_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -838,11 +770,7 @@ pub struct ConfigLyricBackground {
 
 impl ConfigLyricBackground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .lyric_background()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.lyric_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -869,11 +797,7 @@ pub struct ConfigLyricBorder {
 
 impl ConfigLyricBorder {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .lyric_border()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.lyric_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -918,12 +842,9 @@ impl ConfigInputHighlight {
         };
         let component = Input::default()
             .borders(
-                Borders::default().modifiers(BorderType::Rounded).color(
-                    config_r
-                        .style_color_symbol
-                        .library_border()
-                        .unwrap_or(Color::Blue),
-                ),
+                Borders::default()
+                    .modifiers(BorderType::Rounded)
+                    .color(config_r.style_color_symbol.library_border()),
             )
             // .foreground(color)
             .input_type(InputType::Text)
@@ -944,12 +865,7 @@ impl ConfigInputHighlight {
     fn update_symbol(&mut self, result: CmdResult) -> Msg {
         if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
             if symbol.is_empty() {
-                let color = self
-                    .config
-                    .read()
-                    .style_color_symbol
-                    .library_border()
-                    .unwrap_or(Color::Blue);
+                let color = self.config.read().style_color_symbol.library_border();
                 self.update_symbol_after(color);
                 return Msg::None;
             }
@@ -1198,8 +1114,7 @@ impl ConfigImportantPopupForeground {
         let color = config
             .read()
             .style_color_symbol
-            .important_popup_foreground()
-            .unwrap_or(Color::Blue);
+            .important_popup_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -1229,8 +1144,7 @@ impl ConfigImportantPopupBackground {
         let color = config
             .read()
             .style_color_symbol
-            .important_popup_background()
-            .unwrap_or(Color::Blue);
+            .important_popup_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -1257,11 +1171,7 @@ pub struct ConfigImportantPopupBorder {
 
 impl ConfigImportantPopupBorder {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .important_popup_border()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.important_popup_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -1309,11 +1219,7 @@ pub struct ConfigFallbackForeground {
 
 impl ConfigFallbackForeground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .fallback_foreground()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.fallback_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -1340,11 +1246,7 @@ pub struct ConfigFallbackBackground {
 
 impl ConfigFallbackBackground {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .library_background()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.library_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -1371,11 +1273,7 @@ pub struct ConfigFallbackBorder {
 
 impl ConfigFallbackBorder {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .library_border()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.library_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -1402,11 +1300,7 @@ pub struct ConfigFallbackHighlight {
 
 impl ConfigFallbackHighlight {
     pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .library_highlight()
-            .unwrap_or(Color::Blue);
+        let color = config.read().style_color_symbol.library_highlight();
         Self {
             component: CEColorSelect::new(
                 " Highlight ",

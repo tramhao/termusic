@@ -55,20 +55,10 @@ impl MusicDir {
         let component = Input::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightGreen),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightGreen),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .input_type(InputType::Text)
             .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
             .title(
@@ -180,21 +170,11 @@ impl ExitConfirmation {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightRed),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightRed),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .rewind(true)
             .title(" Show exit confirmation? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -276,21 +256,11 @@ impl PlaylistDisplaySymbol {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightRed),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightRed),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .rewind(true)
             .title(" Display symbol in playlist title? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -325,20 +295,10 @@ impl PlaylistRandomTrack {
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
+                .foreground(config.style_color_symbol.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("20", Style::default().fg(Color::Rgb(128, 128, 128)))
@@ -375,20 +335,10 @@ impl PlaylistRandomAlbum {
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
+                .foreground(config.style_color_symbol.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
@@ -428,20 +378,10 @@ impl PodcastDir {
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
+                .foreground(config.style_color_symbol.library_highlight())
                 .input_type(InputType::Text)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -481,20 +421,10 @@ impl PodcastSimulDownload {
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
+                .foreground(config.style_color_symbol.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -534,20 +464,10 @@ impl PodcastMaxRetries {
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
+                .foreground(config.style_color_symbol.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -592,21 +512,11 @@ impl AlbumPhotoAlign {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightRed),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightRed),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .rewind(true)
             .title(" Album Photo Align: ", Alignment::Left)
             .value(align);
@@ -645,21 +555,11 @@ impl SaveLastPosition {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightRed),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Auto", "No", "Yes"])
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightRed),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .rewind(true)
             .title(" Remember last played position: ", Alignment::Left)
             .value(save_last_position);
@@ -697,21 +597,11 @@ impl ConfigSeekStep {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightRed),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Auto", "Short(5)", "Long(30)"])
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightRed),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .rewind(true)
             .title(" Seek step in seconds: ", Alignment::Left)
             .value(seek_step);
@@ -746,21 +636,11 @@ impl KillDaemon {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightRed),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightRed),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .rewind(true)
             .title(" Kill daemon when quit termusic? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -795,21 +675,11 @@ impl PlayerUseMpris {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightRed),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightRed),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .rewind(true)
             .title(" Support Mpris? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -844,21 +714,11 @@ impl PlayerUseDiscord {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(
-                        config_r
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightRed),
-                    )
+                    .color(config_r.style_color_symbol.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::LightRed),
-            )
+            .foreground(config_r.style_color_symbol.library_highlight())
             .rewind(true)
             .title(" Update discord rpc? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -893,20 +753,10 @@ impl PlayerPort {
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
+                .foreground(config.style_color_symbol.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(

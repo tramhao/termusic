@@ -206,27 +206,16 @@ impl TECounterDelete {
             let config = config.read();
             Counter::default()
                 .alignment(Alignment::Center)
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
+                .background(config.style_color_symbol.library_background())
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(
                     // config
                     //     .style_color_symbol
-                    //     .library_highlight()
-                    //     .unwrap_or(Color::Cyan),
+                    //     .library_highlight(),
                     Color::Red,
                 )
                 .modifiers(TextModifiers::BOLD)

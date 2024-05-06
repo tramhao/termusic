@@ -8,7 +8,6 @@ use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TR
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
-use tuirealm::tui::style::Color;
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
@@ -28,38 +27,18 @@ impl MusicLibrary {
         let component = {
             let config = config.read();
             TreeView::default()
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Magenta),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_foreground())
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::Magenta),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .inactive(Style::default().fg(Color::Gray))
                 .indent_size(2)
                 .scroll_step(6)
                 .title(" Library ", Alignment::Left)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::Yellow),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlight_symbol(&config.style_color_symbol.library_highlight_symbol)
                 .preserve_state(true)
                 // .highlight_symbol("🦄")

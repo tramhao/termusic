@@ -31,7 +31,7 @@ use std::convert::TryFrom;
 use std::path::Path;
 use termusiclib::track::Track;
 use termusiclib::types::{Id, IdTagEditor};
-use tuirealm::props::{Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
+use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::State;
@@ -472,50 +472,28 @@ impl Model {
                     &[
                         TextSpan::new(format!("<{}>", config.keys.config_save))
                             .bold()
-                            .fg(config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" Save tag ").fg(config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::White)),
+                            .fg(config.style_color_symbol.library_highlight()),
+                        TextSpan::new(" Save tag ")
+                            .fg(config.style_color_symbol.library_foreground()),
                         TextSpan::new(format!("<{}>", config.keys.global_esc))
                             .bold()
-                            .fg(config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" Exit ").fg(config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::White)),
-                        TextSpan::new("<Tab/ShiftTab>").bold().fg(config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" Change field ").fg(config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::White)),
-                        TextSpan::new("<ENTER>").bold().fg(config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" Search/Embed tag ").fg(config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::White)),
+                            .fg(config.style_color_symbol.library_highlight()),
+                        TextSpan::new(" Exit ").fg(config.style_color_symbol.library_foreground()),
+                        TextSpan::new("<Tab/ShiftTab>")
+                            .bold()
+                            .fg(config.style_color_symbol.library_highlight()),
+                        TextSpan::new(" Change field ")
+                            .fg(config.style_color_symbol.library_foreground()),
+                        TextSpan::new("<ENTER>")
+                            .bold()
+                            .fg(config.style_color_symbol.library_highlight()),
+                        TextSpan::new(" Search/Embed tag ")
+                            .fg(config.style_color_symbol.library_foreground()),
                         TextSpan::new(format!("<{}>", config.keys.library_search_youtube))
                             .bold()
-                            .fg(config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" download ").fg(config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::White)),
+                            .fg(config.style_color_symbol.library_highlight()),
+                        TextSpan::new(" download ")
+                            .fg(config.style_color_symbol.library_foreground()),
                     ]
                 )),
                 Vec::default(),

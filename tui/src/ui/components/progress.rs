@@ -5,7 +5,7 @@ use termusiclib::track::{MediaType, Track};
 use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue};
+use tuirealm::props::{Alignment, BorderType, Borders, PropPayload, PropValue};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
 
 #[derive(MockComponent)]
@@ -20,26 +20,11 @@ impl Progress {
             component: ProgressBar::default()
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .progress_border()
-                                .unwrap_or(Color::LightMagenta),
-                        )
+                        .color(config.style_color_symbol.progress_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .background(
-                    config
-                        .style_color_symbol
-                        .progress_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .progress_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
+                .background(config.style_color_symbol.progress_background())
+                .foreground(config.style_color_symbol.progress_foreground())
                 .label("Progress")
                 .title(
                     format!(

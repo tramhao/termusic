@@ -1103,27 +1103,14 @@ impl KEModifierSelect {
         }
         let component = KeyCombo::default()
             .borders(
-                Borders::default().modifiers(BorderType::Rounded).color(
-                    config_r
-                        .style_color_symbol
-                        .fallback_border()
-                        .unwrap_or(Color::Blue),
-                ),
+                Borders::default()
+                    .modifiers(BorderType::Rounded)
+                    .color(config_r.style_color_symbol.fallback_border()),
             )
-            .foreground(
-                config_r
-                    .style_color_symbol
-                    .fallback_foreground()
-                    .unwrap_or(Color::Blue),
-            )
+            .foreground(config_r.style_color_symbol.fallback_foreground())
             .title(name, Alignment::Left)
             .rewind(false)
-            .highlighted_color(
-                config_r
-                    .style_color_symbol
-                    .fallback_highlight()
-                    .unwrap_or(Color::LightGreen),
-            )
+            .highlighted_color(config_r.style_color_symbol.fallback_highlight())
             .highlighted_str(">> ")
             .choices(&choices)
             .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))

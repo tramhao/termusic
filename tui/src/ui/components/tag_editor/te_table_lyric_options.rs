@@ -31,7 +31,7 @@ use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
+use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
@@ -46,33 +46,15 @@ impl TETableLyricOptions {
             let config = config.read();
             Table::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.library_border()),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
+                .foreground(config.style_color_symbol.library_foreground())
+                .background(config.style_color_symbol.library_background())
                 .title(" Search Results ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlighted_str("\u{1f680}")
                 // .highlighted_str("🚀")
                 .rewind(false)

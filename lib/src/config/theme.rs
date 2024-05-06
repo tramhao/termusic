@@ -66,9 +66,8 @@ impl From<ColorTermusic> for String {
 }
 
 impl ColorTermusic {
-    pub fn color(self, alacritty_theme: &Alacritty) -> Option<Color> {
-        // TODO: change return type
-        Some(match self {
+    pub fn color(self, alacritty_theme: &Alacritty) -> Color {
+        match self {
             Self::Foreground => alacritty_theme.foreground.into(),
             Self::Background => alacritty_theme.background.into(),
             Self::Black => alacritty_theme.black.into(),
@@ -88,7 +87,7 @@ impl ColorTermusic {
             Self::LightCyan => alacritty_theme.light_cyan.into(),
             Self::LightWhite => alacritty_theme.light_white.into(),
             Self::Reset => Color::Reset,
-        })
+        }
     }
 
     pub const fn as_usize(self) -> usize {
@@ -170,72 +169,72 @@ impl Default for StyleColorSymbol {
 }
 
 impl StyleColorSymbol {
-    pub fn library_foreground(&self) -> Option<Color> {
+    pub fn library_foreground(&self) -> Color {
         self.library_foreground.color(&self.alacritty_theme)
     }
-    pub fn library_background(&self) -> Option<Color> {
+    pub fn library_background(&self) -> Color {
         self.library_background.color(&self.alacritty_theme)
     }
-    pub fn library_highlight(&self) -> Option<Color> {
+    pub fn library_highlight(&self) -> Color {
         self.library_highlight.color(&self.alacritty_theme)
     }
-    pub fn library_border(&self) -> Option<Color> {
+    pub fn library_border(&self) -> Color {
         self.library_border.color(&self.alacritty_theme)
     }
 
-    pub fn playlist_foreground(&self) -> Option<Color> {
+    pub fn playlist_foreground(&self) -> Color {
         self.playlist_foreground.color(&self.alacritty_theme)
     }
-    pub fn playlist_background(&self) -> Option<Color> {
+    pub fn playlist_background(&self) -> Color {
         self.playlist_background.color(&self.alacritty_theme)
     }
-    pub fn playlist_highlight(&self) -> Option<Color> {
+    pub fn playlist_highlight(&self) -> Color {
         self.playlist_highlight.color(&self.alacritty_theme)
     }
-    pub fn playlist_border(&self) -> Option<Color> {
+    pub fn playlist_border(&self) -> Color {
         self.playlist_border.color(&self.alacritty_theme)
     }
 
-    pub fn progress_foreground(&self) -> Option<Color> {
+    pub fn progress_foreground(&self) -> Color {
         self.progress_foreground.color(&self.alacritty_theme)
     }
-    pub fn progress_background(&self) -> Option<Color> {
+    pub fn progress_background(&self) -> Color {
         self.progress_background.color(&self.alacritty_theme)
     }
-    pub fn progress_border(&self) -> Option<Color> {
+    pub fn progress_border(&self) -> Color {
         self.progress_border.color(&self.alacritty_theme)
     }
 
-    pub fn lyric_foreground(&self) -> Option<Color> {
+    pub fn lyric_foreground(&self) -> Color {
         self.lyric_foreground.color(&self.alacritty_theme)
     }
-    pub fn lyric_background(&self) -> Option<Color> {
+    pub fn lyric_background(&self) -> Color {
         self.lyric_background.color(&self.alacritty_theme)
     }
-    pub fn lyric_border(&self) -> Option<Color> {
+    pub fn lyric_border(&self) -> Color {
         self.lyric_border.color(&self.alacritty_theme)
     }
 
-    pub fn important_popup_foreground(&self) -> Option<Color> {
+    pub fn important_popup_foreground(&self) -> Color {
         self.important_popup_foreground.color(&self.alacritty_theme)
     }
-    pub fn important_popup_background(&self) -> Option<Color> {
+    pub fn important_popup_background(&self) -> Color {
         self.important_popup_background.color(&self.alacritty_theme)
     }
-    pub fn important_popup_border(&self) -> Option<Color> {
+    pub fn important_popup_border(&self) -> Color {
         self.important_popup_border.color(&self.alacritty_theme)
     }
 
-    pub fn fallback_foreground(&self) -> Option<Color> {
+    pub fn fallback_foreground(&self) -> Color {
         self.fallback_foreground.color(&self.alacritty_theme)
     }
-    pub fn fallback_background(&self) -> Option<Color> {
+    pub fn fallback_background(&self) -> Color {
         self.fallback_background.color(&self.alacritty_theme)
     }
-    pub fn fallback_highlight(&self) -> Option<Color> {
+    pub fn fallback_highlight(&self) -> Color {
         self.fallback_highlight.color(&self.alacritty_theme)
     }
-    pub fn fallback_border(&self) -> Option<Color> {
+    pub fn fallback_border(&self) -> Color {
         self.fallback_border.color(&self.alacritty_theme)
     }
 }

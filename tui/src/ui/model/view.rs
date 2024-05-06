@@ -572,77 +572,41 @@ impl Model {
                     &config,
                     &[
                         TextSpan::new(" Help: ")
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_foreground()
-                                .unwrap_or(Color::Blue))
+                            .fg(config.style_color_symbol.fallback_foreground())
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_help))
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_highlight()
-                                .unwrap_or(Color::Cyan))
+                            .fg(config.style_color_symbol.fallback_highlight())
                             .bold(),
                         TextSpan::new(" Config: ")
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_foreground()
-                                .unwrap_or(Color::Blue))
+                            .fg(config.style_color_symbol.fallback_foreground())
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_config_open))
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_highlight()
-                                .unwrap_or(Color::Cyan))
+                            .fg(config.style_color_symbol.fallback_highlight())
                             .bold(),
                         TextSpan::new(" Library: ")
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_foreground()
-                                .unwrap_or(Color::Blue))
+                            .fg(config.style_color_symbol.fallback_foreground())
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_layout_treeview))
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_highlight()
-                                .unwrap_or(Color::Cyan))
+                            .fg(config.style_color_symbol.fallback_highlight())
                             .bold(),
                         TextSpan::new(" Database: ")
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_foreground()
-                                .unwrap_or(Color::Blue))
+                            .fg(config.style_color_symbol.fallback_foreground())
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_layout_database))
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_highlight()
-                                .unwrap_or(Color::Cyan))
+                            .fg(config.style_color_symbol.fallback_highlight())
                             .bold(),
                         TextSpan::new(" Podcasts: ")
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_foreground()
-                                .unwrap_or(Color::Blue))
+                            .fg(config.style_color_symbol.fallback_foreground())
                             .bold(),
                         TextSpan::new(format!("<{}>", config.keys.global_layout_podcast))
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_highlight()
-                                .unwrap_or(Color::Cyan))
+                            .fg(config.style_color_symbol.fallback_highlight())
                             .bold(),
                         TextSpan::new(" Version: ")
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_foreground()
-                                .unwrap_or(Color::Blue))
+                            .fg(config.style_color_symbol.fallback_foreground())
                             .bold(),
                         // maybe consider moving version into Help or Config or its own popup (like a About)
                         TextSpan::new(env!("TERMUSIC_VERSION"))
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_highlight()
-                                .unwrap_or(Color::Cyan))
+                            .fg(config.style_color_symbol.fallback_highlight())
                             .bold(),
                     ],
                 )),
@@ -669,23 +633,14 @@ impl Model {
                     &config,
                     &[
                         TextSpan::new("Full name: ")
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_highlight()
-                                .unwrap_or(Color::Cyan))
+                            .fg(config.style_color_symbol.fallback_highlight())
                             .bold(),
                         TextSpan::new(path_string)
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_foreground()
-                                .unwrap_or(Color::Red))
+                            .fg(config.style_color_symbol.fallback_foreground())
                             .bold(),
                         TextSpan::new(filename).fg(Color::Cyan).bold(),
                         TextSpan::new(".m3u")
-                            .fg(config
-                                .style_color_symbol
-                                .fallback_foreground()
-                                .unwrap_or(Color::Cyan))
+                            .fg(config.style_color_symbol.fallback_foreground())
                             .bold(),
                     ],
                 )),
@@ -704,19 +659,9 @@ impl Model {
     ) {
         let config = self.config.read();
         let textspan = &[TextSpan::new(active_msg)
-            .fg(foreground.unwrap_or_else(|| {
-                config
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::Cyan)
-            }))
+            .fg(foreground.unwrap_or_else(|| config.style_color_symbol.library_highlight()))
             .bold()
-            .bg(background.unwrap_or_else(|| {
-                config
-                    .style_color_symbol
-                    .library_background()
-                    .unwrap_or(Color::Reset)
-            }))];
+            .bg(background.unwrap_or_else(|| config.style_color_symbol.library_background()))];
         self.app
             .attr(
                 &Id::Label,

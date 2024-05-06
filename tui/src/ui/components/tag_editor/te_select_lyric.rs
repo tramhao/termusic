@@ -26,7 +26,7 @@ use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
-use tuirealm::props::{Alignment, BorderType, Borders, Color};
+use tuirealm::props::{Alignment, BorderType, Borders};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
@@ -41,27 +41,14 @@ impl TESelectLyric {
             let config = config.read();
             Select::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.library_border()),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::LightRed),
-                )
+                .foreground(config.style_color_symbol.library_foreground())
                 .title(" Select a lyric ", Alignment::Center)
                 .rewind(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightGreen),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .choices(&["No Lyric"])
         };
