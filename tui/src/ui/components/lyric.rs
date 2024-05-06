@@ -157,7 +157,7 @@ impl Model {
                     'outer: for pod in &self.podcasts {
                         for ep in &pod.episodes {
                             if ep.url == file {
-                                pod_title = pod.title.clone();
+                                pod_title.clone_from(&pod.title);
                                 ep_for_lyric = ep.clone();
                                 need_update = true;
                                 break 'outer;

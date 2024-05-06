@@ -426,7 +426,7 @@ mod test {
     fn should_parse_one_theme() {
         let cargo_manifest_dir = env!("CARGO_MANIFEST_DIR");
         let reader = BufReader::new(
-            File::open(format!("{}/themes/Afterglow.yml", cargo_manifest_dir)).unwrap(),
+            File::open(format!("{cargo_manifest_dir}/themes/Afterglow.yml")).unwrap(),
         );
         let parsed: Theme = serde_yaml::from_reader(reader).unwrap();
         assert_eq!(
@@ -472,11 +472,11 @@ mod test {
     #[test]
     fn should_parse_all_themes() {
         let cargo_manifest_dir = env!("CARGO_MANIFEST_DIR");
-        let path = PathBuf::from(format!("{}/themes/", cargo_manifest_dir));
+        let path = PathBuf::from(format!("{cargo_manifest_dir}/themes/"));
         for entry in path.read_dir().unwrap() {
             let entry = entry.unwrap();
 
-            if entry.path().extension() != Some(&OsStr::new("yml")) {
+            if entry.path().extension() != Some(OsStr::new("yml")) {
                 continue;
             }
 
@@ -489,7 +489,7 @@ mod test {
             let parsed: std::result::Result<Theme, _> = serde_yaml::from_reader(reader);
 
             if let Err(ref parsed) = parsed {
-                eprintln!("{:#?}", parsed);
+                eprintln!("{parsed:#?}");
             }
 
             assert!(parsed.is_ok());

@@ -536,7 +536,7 @@ impl Model {
                     }
                 }
                 _ => {
-                    display_name = record.clone();
+                    display_name.clone_from(record);
                 }
             };
             if !display_name.is_empty() {
@@ -679,7 +679,7 @@ impl Model {
         let search = format!("*{}*", input.to_lowercase());
         let mut db_tracks = vec![];
         if let Ok(tracks) = self.db.get_all_records() {
-            db_tracks = tracks.clone();
+            db_tracks.clone_from(&tracks);
             for record in tracks {
                 if wildmatch::WildMatch::new(&search).matches(&record.artist.to_lowercase())
                     | wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase())

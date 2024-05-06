@@ -247,7 +247,10 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn should_parse_songinfo() {
+        const ARTIST: &str = "Some Artist";
+
         let sample_data = r#"{
             "result": {
               "songs": [
@@ -361,8 +364,6 @@ mod tests {
         let res = to_song_info(sample_data, Parse::Search).unwrap();
 
         assert_eq!(res.len(), 2);
-
-        const ARTIST: &str = "Some Artist";
 
         assert_eq!(
             res[0],
