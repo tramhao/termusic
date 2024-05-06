@@ -17,6 +17,7 @@
 - Fix: on backend mpv, clear media-title on EndOfFile.
 - Fix: consistent media-title(/radio-title) handling across all backends.
 - Fix: use async-reqwest in all places (instead of `reqwest::blocking`, fixes debug builds in some areas).
+- Fix: colors from the config & yaml theme are now parsed at time of load, instead of on-demand.
 - Fix(tui): ensure the Quit-Popup always has top-most focus.
 - Fix(tui): also close a Error-Popup with global-quit(default `q`) key.
 - Fix(tui): use a common code-path for all `No/Yes`-Popups.
