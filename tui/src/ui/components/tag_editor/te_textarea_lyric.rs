@@ -28,7 +28,7 @@ use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TextSpan};
+use tuirealm::props::{Alignment, BorderType, Borders, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
 
 #[derive(MockComponent)]
@@ -43,19 +43,11 @@ impl TETextareaLyric {
             let config = config.read();
             Textarea::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::LightMagenta),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.library_border()),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Green),
-                )
+                .foreground(config.style_color_symbol.library_foreground())
                 .title(" Lyrics ", Alignment::Left)
                 .step(4)
                 .highlighted_str("\u{1f3b5}")

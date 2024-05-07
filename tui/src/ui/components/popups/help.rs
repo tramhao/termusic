@@ -40,31 +40,13 @@ impl HelpPopup {
             let keys = &config.keys;
             Table::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Green),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.fallback_border()),
                 )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Black),
-                )
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .foreground(config.style_color_symbol.fallback_foreground())
+                .background(config.style_color_symbol.fallback_background())
+                .highlighted_color(config.style_color_symbol.fallback_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .scroll(true)
                 .title(" Help: Esc or Enter to exit ", Alignment::Center)

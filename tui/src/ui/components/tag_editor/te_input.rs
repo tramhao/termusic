@@ -26,7 +26,7 @@ use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType};
+use tuirealm::props::{Alignment, BorderType, Borders, InputType};
 use tuirealm::{Component, Event, MockComponent};
 
 /// Common Field Properties and event handling
@@ -42,26 +42,11 @@ impl EditField {
         let component = {
             let config = config.read();
             Input::default()
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Cyan),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Black),
-                )
+                .foreground(config.style_color_symbol.library_foreground())
+                .background(config.style_color_symbol.library_background())
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightYellow),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 .input_type(InputType::Text)

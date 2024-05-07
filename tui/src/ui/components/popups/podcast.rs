@@ -7,7 +7,7 @@ use tui_realm_stdlib::{Input, Table};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, Color, InputType, TableBuilder, TextSpan},
+    props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan},
     Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
 
@@ -24,19 +24,11 @@ impl PodcastAddPopup {
     pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: Input::default()
-                .foreground(
-                    style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
-                .background(
-                    style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
+                .foreground(style_color_symbol.library_foreground())
+                .background(style_color_symbol.library_background())
                 .borders(
                     Borders::default()
-                        .color(style_color_symbol.library_border().unwrap_or(Color::Green))
+                        .color(style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -107,18 +99,9 @@ impl FeedDeleteConfirmRadioPopup {
         let component =
             YNConfirm::new_with_cb(config, " Are sure you to delete the feed? ", |config| {
                 YNConfirmStyle {
-                    foreground_color: config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::LightRed),
-                    background_color: config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                    border_color: config
-                        .style_color_symbol
-                        .library_border()
-                        .unwrap_or(Color::LightRed),
+                    foreground_color: config.style_color_symbol.library_foreground(),
+                    background_color: config.style_color_symbol.library_background(),
+                    border_color: config.style_color_symbol.library_border(),
                     title_alignment: Alignment::Left,
                 }
             });
@@ -146,19 +129,11 @@ impl FeedDeleteConfirmInputPopup {
     pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: Input::default()
-                .foreground(
-                    style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
-                .background(
-                    style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
+                .foreground(style_color_symbol.library_foreground())
+                .background(style_color_symbol.library_background())
                 .borders(
                     Borders::default()
-                        .color(style_color_symbol.library_border().unwrap_or(Color::Green))
+                        .color(style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -234,37 +209,17 @@ impl PodcastSearchTablePopup {
         let component = {
             let config = config.read();
             Table::default()
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Magenta),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_foreground())
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::Magenta),
-                        )
+                        .color(config.style_color_symbol.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .foreground(Color::Yellow)
                 .title(" Enter to add feed: ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 // .highlighted_str("🚀")
                 .rewind(false)

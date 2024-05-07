@@ -6,8 +6,8 @@ use termusiclib::utils::{is_playlist, playlist_get_vec};
 use termusicplayback::SharedSettings;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
+use tuirealm::props::Borders;
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
-use tuirealm::props::{Borders, Color};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
@@ -27,33 +27,15 @@ impl DBListCriteria {
             let config = config.read();
             List::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.library_border()),
                 )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_foreground())
                 .title(" DataBase ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)
@@ -181,33 +163,15 @@ impl DBListSearchResult {
             let config = config.read();
             List::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.library_border()),
                 )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_foreground())
                 .title(" Result ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)
@@ -340,33 +304,15 @@ impl DBListSearchTracks {
             let config = config.read();
             List::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.library_border()),
                 )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_foreground())
                 .title(" Tracks ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)

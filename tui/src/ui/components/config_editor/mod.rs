@@ -36,7 +36,7 @@ pub use key_combo::*;
 
 use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Radio, Span};
-use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, Style, TextSpan};
+use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Style, TextSpan};
 use tuirealm::{event::NoUserEvent, Component, Event, MockComponent};
 
 use super::popups::{YNConfirm, YNConfirmStyle};
@@ -61,18 +61,8 @@ impl CEHeader {
                     "Keys Global",
                     "Keys Other",
                 ])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::Yellow),
-                )
-                .inactive(
-                    Style::default().fg(config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::Red)),
-                )
+                .foreground(config.style_color_symbol.library_highlight())
+                .inactive(Style::default().fg(config.style_color_symbol.library_highlight()))
                 .value(match layout {
                     ConfigEditorLayout::General => 0,
                     ConfigEditorLayout::Color => 1,
@@ -100,32 +90,23 @@ impl Footer {
             component: Span::default().spans(&[
                 TextSpan::new(format!("<{}>", config.keys.config_save))
                     .bold()
-                    .fg(config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::Cyan)),
+                    .fg(config.style_color_symbol.library_highlight()),
                 TextSpan::new(" Save parameters ").bold(),
                 TextSpan::new(format!("<{}>", config.keys.global_esc))
                     .bold()
-                    .fg(config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::Cyan)),
+                    .fg(config.style_color_symbol.library_highlight()),
                 TextSpan::new(" Exit ").bold(),
-                TextSpan::new("<TAB>").bold().fg(config
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::Cyan)),
+                TextSpan::new("<TAB>")
+                    .bold()
+                    .fg(config.style_color_symbol.library_highlight()),
                 TextSpan::new(" Change panel ").bold(),
-                TextSpan::new("<UP/DOWN>").bold().fg(config
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::Cyan)),
+                TextSpan::new("<UP/DOWN>")
+                    .bold()
+                    .fg(config.style_color_symbol.library_highlight()),
                 TextSpan::new(" Change field ").bold(),
-                TextSpan::new("<ENTER>").bold().fg(config
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::Cyan)),
+                TextSpan::new("<ENTER>")
+                    .bold()
+                    .fg(config.style_color_symbol.library_highlight()),
                 TextSpan::new(" Select theme/Preview symbol ").bold(),
             ]),
         }
@@ -148,18 +129,9 @@ impl ConfigSavePopup {
         let component =
             YNConfirm::new_with_cb(config, " Config changed. Do you want to save? ", |config| {
                 YNConfirmStyle {
-                    foreground_color: config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                    background_color: config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                    border_color: config
-                        .style_color_symbol
-                        .library_border()
-                        .unwrap_or(Color::Yellow),
+                    foreground_color: config.style_color_symbol.important_popup_foreground(),
+                    background_color: config.style_color_symbol.important_popup_background(),
+                    border_color: config.style_color_symbol.important_popup_border(),
                     title_alignment: Alignment::Center,
                 }
             });

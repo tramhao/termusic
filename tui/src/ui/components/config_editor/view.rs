@@ -1,15 +1,18 @@
 use crate::ui::components::{
     AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
-    ConfigDatabaseAddAll, ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom,
-    ConfigGlobalGotoTop, ConfigGlobalHelp, ConfigGlobalLayoutDatabase, ConfigGlobalLayoutPodcast,
-    ConfigGlobalLayoutTreeview, ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward,
-    ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle, ConfigGlobalPlayerNext,
-    ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward,
-    ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless,
-    ConfigGlobalPlayerTogglePause, ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist,
-    ConfigGlobalUp, ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigGlobalXywhHide,
-    ConfigGlobalXywhMoveDown, ConfigGlobalXywhMoveLeft, ConfigGlobalXywhMoveRight,
-    ConfigGlobalXywhMoveUp, ConfigGlobalXywhZoomIn, ConfigGlobalXywhZoomOut, ConfigLibraryAddRoot,
+    ConfigDatabaseAddAll, ConfigFallbackBackground, ConfigFallbackBorder, ConfigFallbackForeground,
+    ConfigFallbackHighlight, ConfigFallbackTitle, ConfigGlobalConfig, ConfigGlobalDown,
+    ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp, ConfigGlobalLayoutDatabase,
+    ConfigGlobalLayoutPodcast, ConfigGlobalLayoutTreeview, ConfigGlobalLeft,
+    ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle,
+    ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward,
+    ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp,
+    ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause, ConfigGlobalQuit,
+    ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp, ConfigGlobalVolumeDown,
+    ConfigGlobalVolumeUp, ConfigGlobalXywhHide, ConfigGlobalXywhMoveDown, ConfigGlobalXywhMoveLeft,
+    ConfigGlobalXywhMoveRight, ConfigGlobalXywhMoveUp, ConfigGlobalXywhZoomIn,
+    ConfigGlobalXywhZoomOut, ConfigImportantPopupBackground, ConfigImportantPopupBorder,
+    ConfigImportantPopupForeground, ConfigImportantPopupTitle, ConfigLibraryAddRoot,
     ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryDelete, ConfigLibraryForeground,
     ConfigLibraryHighlight, ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
@@ -270,6 +273,7 @@ impl Model {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
+
         let select_playlist_foreground_len = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistForeground))
@@ -320,6 +324,7 @@ impl Model {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
+
         let select_lyric_foreground_len = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LyricForeground))
@@ -341,6 +346,58 @@ impl Model {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
+
+        let select_important_popup_foreground_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_important_popup_background_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_important_popup_border_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let select_fallback_foreground_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_fallback_background_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_fallback_border_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_fallback_highlight_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         self.terminal
             .raw_mut()
             .draw(|f| {
@@ -349,9 +406,9 @@ impl Model {
                     .margin(0)
                     .constraints(
                         [
-                            Constraint::Length(3),
+                            Constraint::Length(3), // config header
                             Constraint::Min(3),
-                            Constraint::Length(1),
+                            Constraint::Length(1), // config footer
                         ]
                         .as_ref(),
                     )
@@ -363,19 +420,40 @@ impl Model {
                     .constraints([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)].as_ref())
                     .split(chunks_main[1]);
 
-                let chunks_middle_right = Layout::default()
+                let chunks_style = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                    .split(chunks_middle[1]);
+
+                let chunks_style_top = Layout::default()
                     .direction(Direction::Horizontal)
                     .margin(0)
                     .constraints(
                         [
-                            Constraint::Ratio(1, 4),
-                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(1, 4), // library
+                            Constraint::Ratio(1, 4), // playlist
+                            Constraint::Ratio(1, 4), // progress
+                            Constraint::Ratio(1, 4), // lyric
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_style[0]);
+
+                let chunks_style_bottom = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Ratio(1, 4), // important popup
+                            Constraint::Ratio(1, 4), // unused...
                             Constraint::Ratio(1, 4),
                             Constraint::Ratio(1, 4),
                         ]
                         .as_ref(),
                     )
-                    .split(chunks_middle[1]);
+                    .split(chunks_style[1]);
+
                 let chunks_library = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
@@ -391,7 +469,7 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(chunks_middle_right[0]);
+                    .split(chunks_style_top[0]);
 
                 let chunks_playlist = Layout::default()
                     .direction(Direction::Vertical)
@@ -409,7 +487,7 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(chunks_middle_right[1]);
+                    .split(chunks_style_top[1]);
 
                 let chunks_progress = Layout::default()
                     .direction(Direction::Vertical)
@@ -424,7 +502,7 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(chunks_middle_right[2]);
+                    .split(chunks_style_top[2]);
 
                 let chunks_lyric = Layout::default()
                     .direction(Direction::Vertical)
@@ -439,7 +517,38 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(chunks_middle_right[3]);
+                    .split(chunks_style_top[3]);
+
+                let chunks_important_popup = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(1),
+                            Constraint::Length(select_important_popup_foreground_len),
+                            Constraint::Length(select_important_popup_background_len),
+                            Constraint::Length(select_important_popup_border_len),
+                            Constraint::Min(3),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_style_bottom[0]);
+
+                let chunks_fallback = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(1),
+                            Constraint::Length(select_fallback_foreground_len),
+                            Constraint::Length(select_fallback_background_len),
+                            Constraint::Length(select_fallback_border_len),
+                            Constraint::Length(select_fallback_highlight_len),
+                            Constraint::Min(3),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_style_bottom[1]);
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
@@ -451,6 +560,7 @@ impl Model {
                 );
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
+
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::LibraryLabel),
                     f,
@@ -461,7 +571,6 @@ impl Model {
                     f,
                     chunks_library[1],
                 );
-
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::LibraryBackground),
                     f,
@@ -482,6 +591,7 @@ impl Model {
                     f,
                     chunks_library[5],
                 );
+
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
                     f,
@@ -513,11 +623,13 @@ impl Model {
                     f,
                     chunks_playlist[5],
                 );
+
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
                     f,
                     chunks_playlist[6],
                 );
+
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::ProgressLabel),
                     f,
@@ -539,6 +651,7 @@ impl Model {
                     f,
                     chunks_progress[3],
                 );
+
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::LyricLabel),
                     f,
@@ -560,6 +673,55 @@ impl Model {
                     f,
                     chunks_lyric[3],
                 );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel),
+                    f,
+                    chunks_important_popup[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground),
+                    f,
+                    chunks_important_popup[1],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground),
+                    f,
+                    chunks_important_popup[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder),
+                    f,
+                    chunks_important_popup[3],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::FallbackLabel),
+                    f,
+                    chunks_fallback[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::FallbackForeground),
+                    f,
+                    chunks_fallback[1],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::FallbackBackground),
+                    f,
+                    chunks_fallback[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::FallbackBorder),
+                    f,
+                    chunks_fallback[3],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::FallbackHighlight),
+                    f,
+                    chunks_fallback[4],
+                );
+
                 Self::view_config_editor_commons(f, &mut self.app);
             })
             .expect("Expected to draw without error");
@@ -1739,6 +1901,7 @@ impl Model {
                 vec![]
             )
             .is_ok());
+
         assert!(self
             .app
             .remount(
@@ -1747,7 +1910,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-
         assert!(self
             .app
             .remount(
@@ -1756,7 +1918,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-
         assert!(self
             .app
             .remount(
@@ -1765,7 +1926,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-
         assert!(self
             .app
             .remount(
@@ -1774,7 +1934,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-
         assert!(self
             .app
             .remount(
@@ -1873,7 +2032,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-
         assert!(self
             .app
             .remount(
@@ -1882,7 +2040,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-
         assert!(self
             .app
             .remount(
@@ -1891,12 +2048,85 @@ impl Model {
                 vec![]
             )
             .is_ok());
-
         assert!(self
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LyricBorder),
                 Box::new(ConfigLyricBorder::new(config.clone())),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel),
+                Box::<ConfigImportantPopupTitle>::default(),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground),
+                Box::new(ConfigImportantPopupForeground::new(config.clone())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground),
+                Box::new(ConfigImportantPopupBackground::new(config.clone())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder),
+                Box::new(ConfigImportantPopupBorder::new(config.clone())),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::FallbackLabel),
+                Box::<ConfigFallbackTitle>::default(),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::FallbackForeground),
+                Box::new(ConfigFallbackForeground::new(config.clone())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::FallbackBackground),
+                Box::new(ConfigFallbackBackground::new(config.clone())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::FallbackBorder),
+                Box::new(ConfigFallbackBorder::new(config.clone())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::FallbackHighlight),
+                Box::new(ConfigFallbackHighlight::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -2554,7 +2784,6 @@ impl Model {
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::LibraryLabel))
             .is_ok());
-
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
@@ -2604,7 +2833,6 @@ impl Model {
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))
             .is_ok());
-
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::ProgressBackground))
@@ -2613,16 +2841,15 @@ impl Model {
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))
             .is_ok());
+
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::LyricLabel))
             .is_ok());
-
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::LyricForeground))
             .is_ok());
-
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::LyricBackground))
@@ -2631,6 +2858,46 @@ impl Model {
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
             .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackLabel))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))
+            .is_ok());
+
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol))

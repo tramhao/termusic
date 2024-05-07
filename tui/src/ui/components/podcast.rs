@@ -13,7 +13,7 @@ use tokio::runtime::Handle;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
-use tuirealm::props::{Borders, Color, PropPayload, PropValue};
+use tuirealm::props::{Borders, PropPayload, PropValue};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
@@ -35,33 +35,15 @@ impl FeedsList {
             let config = config.read();
             List::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.library_border()),
                 )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_foreground())
                 .title(" Podcast Feeds: ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)
@@ -213,33 +195,15 @@ impl EpisodeList {
             let config = config.read();
             List::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.library_border()),
                 )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
+                .background(config.style_color_symbol.library_background())
+                .foreground(config.style_color_symbol.library_foreground())
                 .title(" Episodes: ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.library_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)

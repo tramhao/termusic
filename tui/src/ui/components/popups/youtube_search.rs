@@ -28,7 +28,7 @@ use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, TableBuilder, TextSpan};
+use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
@@ -40,26 +40,11 @@ impl YSInputPopup {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: Input::default()
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Magenta),
-                )
+                .background(config.style_color_symbol.fallback_background())
+                .foreground(config.style_color_symbol.fallback_foreground())
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::Magenta),
-                        )
+                        .color(config.style_color_symbol.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -124,26 +109,11 @@ impl YSTablePopup {
         let component = {
             let config = config.read();
             Table::default()
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Magenta),
-                )
+                .background(config.style_color_symbol.fallback_background())
+                .foreground(config.style_color_symbol.fallback_foreground())
                 .borders(
                     Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::Magenta),
-                        )
+                        .color(config.style_color_symbol.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .foreground(Color::Yellow)
@@ -152,12 +122,7 @@ impl YSTablePopup {
                     Alignment::Left,
                 )
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.fallback_highlight())
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 // .highlighted_str("🚀")
                 .rewind(false)

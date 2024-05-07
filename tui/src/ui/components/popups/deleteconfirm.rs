@@ -7,7 +7,7 @@ use tui_realm_stdlib::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, Color, InputType},
+    props::{Alignment, BorderType, Borders, InputType},
     Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
 
@@ -25,18 +25,9 @@ impl DeleteConfirmRadioPopup {
         let component =
             YNConfirm::new_with_cb(config, " Are sure you want to delete? ", |config| {
                 YNConfirmStyle {
-                    foreground_color: config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::LightRed),
-                    background_color: config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                    border_color: config
-                        .style_color_symbol
-                        .library_border()
-                        .unwrap_or(Color::LightRed),
+                    foreground_color: config.style_color_symbol.important_popup_foreground(),
+                    background_color: config.style_color_symbol.important_popup_background(),
+                    border_color: config.style_color_symbol.important_popup_border(),
                     title_alignment: Alignment::Left,
                 }
             });
@@ -61,19 +52,11 @@ impl DeleteConfirmInputPopup {
     pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: Input::default()
-                .foreground(
-                    style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
-                .background(
-                    style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
+                .foreground(style_color_symbol.important_popup_foreground())
+                .background(style_color_symbol.important_popup_background())
                 .borders(
                     Borders::default()
-                        .color(style_color_symbol.library_border().unwrap_or(Color::Green))
+                        .color(style_color_symbol.important_popup_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))

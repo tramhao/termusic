@@ -13,8 +13,8 @@ use termusicplayback::PlayerCmd;
 use termusicplayback::SharedSettings;
 
 use tui_realm_stdlib::Table;
+use tuirealm::props::Borders;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
-use tuirealm::props::{Borders, Color};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::KeyModifiers,
@@ -36,33 +36,15 @@ impl Playlist {
             let config = config.read();
             Table::default()
                 .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .playlist_border()
-                            .unwrap_or(Color::Blue),
-                    ),
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(config.style_color_symbol.playlist_border()),
                 )
-                .background(
-                    config
-                        .style_color_symbol
-                        .playlist_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .playlist_foreground()
-                        .unwrap_or(Color::Yellow),
-                )
+                .background(config.style_color_symbol.playlist_background())
+                .foreground(config.style_color_symbol.playlist_foreground())
                 .title(" Playlist ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .playlist_highlight()
-                        .unwrap_or(Color::LightBlue),
-                )
+                .highlighted_color(config.style_color_symbol.playlist_highlight())
                 .highlighted_str(&config.style_color_symbol.playlist_highlight_symbol)
                 .rewind(false)
                 .step(4)
