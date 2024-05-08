@@ -8,7 +8,7 @@ use std::num::ParseIntError;
 use std::path::Path;
 use tuirealm::props::Color;
 
-use super::yaml_theme::YAMLTheme;
+use crate::config::yaml_theme::YAMLTheme;
 
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub enum ColorTermusic {
