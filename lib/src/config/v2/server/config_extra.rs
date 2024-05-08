@@ -131,6 +131,13 @@ impl<'a> ServerConfigVersionedDefaulted<'a> {
         Ok(())
     }
 
+    /// Save the given config to the default set app-path
+    pub fn save_config_path(config: &ApplicationType) -> Result<()> {
+        let server_config_path = get_app_config_path()?.join(FILE_NAME);
+
+        Self::save_file(server_config_path, config)
+    }
+
     /// Convert Into the type used by the application, instead of what is parsed
     ///
     /// Will convert any version into the latest
