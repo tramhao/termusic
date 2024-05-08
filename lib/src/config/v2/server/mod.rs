@@ -22,7 +22,7 @@ pub struct ServerSettings {
     pub podcast: PodcastSettings,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct PodcastSettings {
     /// Max Concurrent Downloads for Podcasts
@@ -57,7 +57,7 @@ impl Default for PodcastSettings {
 }
 
 // note that regardless of options, loops should never happen and also should never go outside of the root music_dir
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum ScanDepth {
     /// Only go X deep
@@ -141,7 +141,7 @@ const DEFAULT_YES_TIME_BEFORE_SAVE_MUSIC: u64 = 3;
 const DEFAULT_YES_TIME_BEFORE_SAVE_PODCAST: u64 = 10;
 
 // this exists because "serde(rename_all)" and "serde(untagged)" dont work well together
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum PositionYesNo {
     /// Simple wrapper to workaround the `"serde(rename_all)" and "serde(untagged)"` problem
@@ -175,7 +175,7 @@ impl PositionYesNo {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum RememberLastPosition {
     /// Apply a single value to all media types
@@ -226,7 +226,7 @@ impl Default for RememberLastPosition {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct PlayerSettings {
     /// Music Directories
@@ -294,7 +294,7 @@ impl Default for PlayerSettings {
 }
 
 /// Playlist loop modes
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, Default)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum LoopMode {
     /// Loop one track
@@ -307,7 +307,7 @@ pub enum LoopMode {
 }
 
 /// Settings for the gRPC server (and potentially future ways to communicate)
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 // for now, require that both port and ip are specified at once
 // #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ComSettings {
@@ -322,6 +322,228 @@ impl Default for ComSettings {
         Self {
             port: 50101,
             address: "::".parse().unwrap(),
+        }
+    }
+}
+
+mod v1_interop {
+    use std::{error::Error, fmt::Display, num::TryFromIntError};
+
+    use super::{
+        ComSettings, LoopMode, NonZeroI16, NonZeroU32, NonZeroU8, PlayerSettings, PodcastSettings,
+        PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
+        ServerSettings,
+    };
+    use crate::config::v1;
+
+    impl From<v1::Loop> for LoopMode {
+        fn from(value: v1::Loop) -> Self {
+            match value {
+                v1::Loop::Single => Self::Single,
+                v1::Loop::Playlist => Self::Playlist,
+                v1::Loop::Random => Self::Random,
+            }
+        }
+    }
+
+    impl From<v1::SeekStep> for SeekStep {
+        fn from(value: v1::SeekStep) -> Self {
+            match value {
+                v1::SeekStep::Short => Self::Both(NonZeroU32::new(5).unwrap()),
+                v1::SeekStep::Long => Self::Both(NonZeroU32::new(30).unwrap()),
+                v1::SeekStep::Auto => Self::Depends {
+                    short_tracks: NonZeroU32::new(5).unwrap(),
+                    long_tracks: NonZeroU32::new(30).unwrap(),
+                },
+            }
+        }
+    }
+
+    impl From<v1::LastPosition> for RememberLastPosition {
+        fn from(value: v1::LastPosition) -> Self {
+            match value {
+                v1::LastPosition::Yes => Self::All(PositionYesNo::Simple(PositionYesNoLower::Yes)),
+                v1::LastPosition::No => Self::All(PositionYesNo::Simple(PositionYesNoLower::No)),
+                // "Yes" is already automatic based on MediaType, using this here so that it will get serialized differently than the normal "All-Yes"
+                v1::LastPosition::Auto => Self::Depends {
+                    music: PositionYesNo::Simple(PositionYesNoLower::No),
+                    podcast: PositionYesNo::Simple(PositionYesNoLower::Yes),
+                },
+            }
+        }
+    }
+
+    // TODO: consider upgrading this with "thiserror"
+    /// Error for when [`ServerSettings`] convertion fails
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum ServerSettingsConvertError {
+        /// Recieved a zero value expecting a non-zero value
+        ///
+        /// (old key, new key, error)
+        ZeroValue(&'static str, &'static str, TryFromIntError),
+    }
+
+    impl Display for ServerSettingsConvertError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            // let alternate = f.alternate();
+            write!(
+                f,
+                "Failed to convert from v1 to v2 config because of {}",
+                match self {
+                    Self::ZeroValue(old_key, new_key, err) => format!("zero value where expecting a non-zero value, old-config key: '{old_key}', new-config key: '{new_key}', error: {err:#}")
+                }
+            )
+        }
+    }
+
+    impl Error for ServerSettingsConvertError {}
+
+    impl TryFrom<v1::Settings> for ServerSettings {
+        type Error = ServerSettingsConvertError;
+
+        #[allow(clippy::cast_possible_truncation)] // checked casts
+        fn try_from(value: v1::Settings) -> Result<Self, Self::Error> {
+            let com_settings = ComSettings {
+                port: value.player_port,
+                address: value.player_interface,
+            };
+
+            let podcast_settings = PodcastSettings {
+                concurrent_downloads_max: NonZeroU8::try_from(
+                    value
+                        .podcast_simultanious_download
+                        .clamp(0, u8::MAX as usize) as u8,
+                )
+                .map_err(|err| {
+                    ServerSettingsConvertError::ZeroValue(
+                        "podcast_simultanious_download",
+                        "podcast.concurrent_downloads_max",
+                        err,
+                    )
+                })?,
+                max_download_retries: value.podcast_max_retries.clamp(0, u8::MAX as usize) as u8,
+                download_dir: value.podcast_dir,
+            };
+
+            let player_settings = PlayerSettings {
+                music_dirs: value.music_dir.into_iter().map(Into::into).collect(),
+                // not converting old scan_depth as that is not stored in the config, but set via CLI, using default instead
+                // library_scan_depth: ScanDepth::Limited(value.max_depth_cli),
+                library_scan_depth: ScanDepth::Limited(10),
+                remember_position: value.player_remember_last_played_position.into(),
+                loop_mode: value.player_loop_mode.into(),
+                volume: value.player_volume,
+                speed: NonZeroI16::try_from(
+                    value
+                        .player_speed
+                        .clamp(i32::from(i16::MIN), i32::from(i16::MAX)) as i16,
+                )
+                .map_err(|err| {
+                    ServerSettingsConvertError::ZeroValue("player_speed", "player.speed", err)
+                })?,
+                gapless: value.player_gapless,
+                seek_step: value.player_seek_step.into(),
+
+                use_mediacontrols: value.player_use_mpris,
+                set_discord_status: value.player_use_discord,
+
+                random_track_quantity: NonZeroU32::try_from(
+                    value.playlist_select_random_track_quantity,
+                )
+                .map_err(|err| {
+                    ServerSettingsConvertError::ZeroValue(
+                        "playlist_select_random_track_quantity",
+                        "player.random_track_quantity",
+                        err,
+                    )
+                })?,
+                random_album_min_quantity: NonZeroU32::try_from(
+                    value.playlist_select_random_album_quantity,
+                )
+                .map_err(|err| {
+                    ServerSettingsConvertError::ZeroValue(
+                        "playlist_select_random_album_quantity",
+                        "player.random_album_min_quantity",
+                        err,
+                    )
+                })?,
+            };
+
+            Ok(Self {
+                com: com_settings,
+                player: player_settings,
+                podcast: podcast_settings,
+            })
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use pretty_assertions::assert_eq;
+        use std::path::PathBuf;
+
+        use super::*;
+
+        #[test]
+        fn should_convert_default_without_error() {
+            let converted: ServerSettings = v1::Settings::default().try_into().unwrap();
+            assert!(converted.podcast.download_dir.components().count() > 0);
+            let podcast_settings = {
+                let mut set = converted.podcast;
+                // ignore this while comparing
+                set.download_dir = PathBuf::new();
+                set
+            };
+
+            assert_eq!(
+                podcast_settings,
+                PodcastSettings {
+                    concurrent_downloads_max: NonZeroU8::new(3).unwrap(),
+                    max_download_retries: 3,
+                    download_dir: PathBuf::new()
+                }
+            );
+
+            assert_eq!(
+                converted.com,
+                ComSettings {
+                    port: 50101,
+                    address: "::".parse().unwrap()
+                }
+            );
+
+            assert!(!converted.player.music_dirs.is_empty());
+
+            let player_settings = {
+                let mut set = converted.player;
+                // ignore this while comparing
+                set.music_dirs.clear();
+                set
+            };
+
+            assert_eq!(
+                player_settings,
+                PlayerSettings {
+                    music_dirs: Vec::new(),
+                    library_scan_depth: ScanDepth::Limited(10),
+                    remember_position: RememberLastPosition::Depends {
+                        music: PositionYesNo::Simple(PositionYesNoLower::No),
+                        podcast: PositionYesNo::Simple(PositionYesNoLower::Yes),
+                    },
+                    loop_mode: LoopMode::Random,
+                    volume: 70,
+                    speed: NonZeroI16::new(10).unwrap(),
+                    gapless: true,
+                    seek_step: SeekStep::Depends {
+                        short_tracks: NonZeroU32::new(5).unwrap(),
+                        long_tracks: NonZeroU32::new(30).unwrap(),
+                    },
+                    use_mediacontrols: true,
+                    set_discord_status: true,
+                    random_track_quantity: NonZeroU32::new(20).unwrap(),
+                    random_album_min_quantity: NonZeroU32::new(5).unwrap(),
+                }
+            );
         }
     }
 }
