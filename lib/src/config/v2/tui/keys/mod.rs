@@ -1552,6 +1552,9 @@ mod const_keys {
         NULL "null",
         /// https://en.wikipedia.org/wiki/Menu_key
         MENU "menu",
+
+        // aliases
+        SPACE "space"
     }
 
     const_str! {
@@ -1616,6 +1619,9 @@ impl TryFrom<&str> for KeyWrap {
             const_keys::NULL => Self(TKey::Null),
             const_keys::MENU => Self(TKey::Menu),
 
+            // aliases
+            const_keys::SPACE => Self(TKey::Char(' ')),
+
             v => return Err(KeyWrapParseError::UnknownKey(v.to_owned())),
         };
 
@@ -1654,7 +1660,13 @@ impl Display for KeyWrap {
             tuievents::Key::Menu => const_keys::MENU.fmt(f),
 
             tuievents::Key::Function(v) => write!(f, "f{v}"),
-            tuievents::Key::Char(v) => v.fmt(f),
+            tuievents::Key::Char(v) => {
+                if v == ' ' {
+                    write!(f, "{}", const_keys::SPACE)
+                } else {
+                    v.fmt(f)
+                }
+            }
 
             // not supporting media keys as those are handled by the mpris implementation
             tuievents::Key::Media(_) => unimplemented!(),
@@ -2280,6 +2292,12 @@ mod test {
                 KeyWrap(tuievents::Key::Char('@')),
                 KeyWrap::try_from("@").unwrap()
             );
+
+            // space alias
+            assert_eq!(
+                KeyWrap(tuievents::Key::Char(' ')),
+                KeyWrap::try_from("space").unwrap()
+            );
         }
 
         #[test]
@@ -2295,6 +2313,9 @@ mod test {
             assert_eq!(&"w", &KeyWrap(tuievents::Key::Char('w')).to_string());
             assert_eq!(&".", &KeyWrap(tuievents::Key::Char('.')).to_string());
             assert_eq!(&"@", &KeyWrap(tuievents::Key::Char('@')).to_string());
+
+            // space
+            assert_eq!(&"space", &KeyWrap(tuievents::Key::Char(' ')).to_string());
         }
     }
 
