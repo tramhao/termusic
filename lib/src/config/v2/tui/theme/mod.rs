@@ -10,16 +10,20 @@ use crate::config::{
     yaml_theme::{YAMLTheme, YAMLThemeBright, YAMLThemeCursor, YAMLThemeNormal, YAMLThemePrimary},
 };
 
+use styles::ColorTermusic;
+
+pub mod styles;
+
 // TODO: combine Theme & Color?
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
-pub struct ThemeColorWrap {
-    pub colors: Colors,
+pub struct ThemeWrap {
+    pub style: styles::Styles,
     pub theme: ThemeColors,
 }
 
-impl ThemeColorWrap {
+impl ThemeWrap {
     fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
         match color {
             ColorTermusic::Reset => Color::Reset,
@@ -46,251 +50,107 @@ impl ThemeColorWrap {
 
     #[inline]
     pub fn library_foreground(&self) -> Color {
-        self.get_color_from_theme(self.colors.library_foreground)
+        self.get_color_from_theme(self.style.library.foreground)
     }
 
     #[inline]
     pub fn library_background(&self) -> Color {
-        self.get_color_from_theme(self.colors.library_background)
+        self.get_color_from_theme(self.style.library.background)
     }
 
     #[inline]
     pub fn library_highlight(&self) -> Color {
-        self.get_color_from_theme(self.colors.library_highlight)
+        self.get_color_from_theme(self.style.library.highlight)
     }
 
     #[inline]
     pub fn library_border(&self) -> Color {
-        self.get_color_from_theme(self.colors.library_border)
+        self.get_color_from_theme(self.style.library.border)
     }
 
     #[inline]
     pub fn playlist_foreground(&self) -> Color {
-        self.get_color_from_theme(self.colors.playlist_foreground)
+        self.get_color_from_theme(self.style.playlist.foreground)
     }
 
     #[inline]
     pub fn playlist_background(&self) -> Color {
-        self.get_color_from_theme(self.colors.playlist_background)
+        self.get_color_from_theme(self.style.playlist.background)
     }
 
     #[inline]
     pub fn playlist_highlight(&self) -> Color {
-        self.get_color_from_theme(self.colors.playlist_highlight)
+        self.get_color_from_theme(self.style.playlist.highlight)
     }
 
     #[inline]
     pub fn playlist_border(&self) -> Color {
-        self.get_color_from_theme(self.colors.playlist_border)
+        self.get_color_from_theme(self.style.playlist.border)
     }
 
     #[inline]
     pub fn progress_foreground(&self) -> Color {
-        self.get_color_from_theme(self.colors.progress_foreground)
+        self.get_color_from_theme(self.style.progress.foreground)
     }
 
     #[inline]
     pub fn progress_background(&self) -> Color {
-        self.get_color_from_theme(self.colors.progress_background)
+        self.get_color_from_theme(self.style.progress.background)
     }
 
     #[inline]
     pub fn progress_border(&self) -> Color {
-        self.get_color_from_theme(self.colors.progress_border)
+        self.get_color_from_theme(self.style.progress.border)
     }
 
     #[inline]
     pub fn lyric_foreground(&self) -> Color {
-        self.get_color_from_theme(self.colors.lyric_foreground)
+        self.get_color_from_theme(self.style.lyric.foreground)
     }
 
     #[inline]
     pub fn lyric_background(&self) -> Color {
-        self.get_color_from_theme(self.colors.lyric_background)
+        self.get_color_from_theme(self.style.lyric.background)
     }
 
     #[inline]
     pub fn lyric_border(&self) -> Color {
-        self.get_color_from_theme(self.colors.lyric_border)
+        self.get_color_from_theme(self.style.lyric.border)
     }
 
     #[inline]
     pub fn important_popup_foreground(&self) -> Color {
-        self.get_color_from_theme(self.colors.important_popup_foreground)
+        self.get_color_from_theme(self.style.important_popup.foreground)
     }
 
     #[inline]
     pub fn important_popup_background(&self) -> Color {
-        self.get_color_from_theme(self.colors.important_popup_background)
+        self.get_color_from_theme(self.style.important_popup.background)
     }
 
     #[inline]
     pub fn important_popup_border(&self) -> Color {
-        self.get_color_from_theme(self.colors.important_popup_border)
+        self.get_color_from_theme(self.style.important_popup.border)
     }
 
     #[inline]
     pub fn fallback_foreground(&self) -> Color {
-        self.get_color_from_theme(self.colors.fallback_foreground)
+        self.get_color_from_theme(self.style.fallback.foreground)
     }
 
     #[inline]
     pub fn fallback_background(&self) -> Color {
-        self.get_color_from_theme(self.colors.fallback_background)
+        self.get_color_from_theme(self.style.fallback.background)
     }
 
     #[inline]
     pub fn fallback_highlight(&self) -> Color {
-        self.get_color_from_theme(self.colors.fallback_highlight)
+        self.get_color_from_theme(self.style.fallback.highlight)
     }
 
     #[inline]
     pub fn fallback_border(&self) -> Color {
-        self.get_color_from_theme(self.colors.fallback_border)
-    }
-}
-
-/// All values correspond to the Theme's selected color for that
-#[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
-pub enum ColorTermusic {
-    /// Reset to Terminal default (resulting color will depend on what context it is set)
-    Reset = 0,
-    Foreground = 1,
-    Background = 2,
-    Black = 3,
-    Red = 4,
-    Green = 5,
-    Yellow = 6,
-    Blue = 7,
-    Magenta = 8,
-    Cyan = 9,
-    White = 10,
-    LightBlack = 11,
-    LightRed = 12,
-    LightGreen = 13,
-    LightYellow = 14,
-    LightBlue = 15,
-    LightMagenta = 16,
-    LightCyan = 17,
-    LightWhite = 18,
-}
-
-impl AsRef<str> for ColorTermusic {
-    fn as_ref(&self) -> &str {
-        match self {
-            ColorTermusic::Reset => "reset",
-            ColorTermusic::Foreground => "foreground",
-            ColorTermusic::Background => "background",
-            ColorTermusic::Black => "black",
-            ColorTermusic::Red => "red",
-            ColorTermusic::Green => "green",
-            ColorTermusic::Yellow => "yellow",
-            ColorTermusic::Blue => "blue",
-            ColorTermusic::Magenta => "magenta",
-            ColorTermusic::Cyan => "cyan",
-            ColorTermusic::White => "white",
-            ColorTermusic::LightBlack => "bright_black",
-            ColorTermusic::LightRed => "bright_red",
-            ColorTermusic::LightGreen => "bright_green",
-            ColorTermusic::LightYellow => "bright_yellow",
-            ColorTermusic::LightBlue => "bright_blue",
-            ColorTermusic::LightMagenta => "bright_magenta",
-            ColorTermusic::LightCyan => "bright_cyan",
-            ColorTermusic::LightWhite => "bright_white",
-        }
-    }
-}
-
-impl ColorTermusic {
-    pub const fn as_usize(self) -> usize {
-        self as usize
-    }
-}
-
-// TODO: refactor this to be a "style" type, instead of just colors, see https://github.com/tramhao/termusic/discussions/302#discussioncomment-9329214
-/// What color to use for specific things, will use the colors from the specified Theme
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct Colors {
-    /// Music Library foreground color (text)
-    pub library_foreground: ColorTermusic,
-    /// Music Library background color (background)
-    pub library_background: ColorTermusic,
-    /// Music Library border color (when focused)
-    pub library_border: ColorTermusic,
-    /// Music Library selected node highlight color
-    pub library_highlight: ColorTermusic,
-
-    /// Playlist foreground color (text)
-    pub playlist_foreground: ColorTermusic,
-    /// Playlist background color (text)
-    pub playlist_background: ColorTermusic,
-    /// Playlist border color (when focused)
-    pub playlist_border: ColorTermusic,
-    /// Playlist selected node highlight color
-    pub playlist_highlight: ColorTermusic,
-
-    /// Lyrics foreground color (text)
-    pub lyric_foreground: ColorTermusic,
-    /// Lyrics background color (background)
-    pub lyric_background: ColorTermusic,
-    /// Lyrics border color (when focused)
-    pub lyric_border: ColorTermusic,
-
-    /// Track Progressbar foreground color (text)
-    pub progress_foreground: ColorTermusic,
-    /// Track Progressbar background color (background)
-    pub progress_background: ColorTermusic,
-    /// Track Progressbar border (always)
-    pub progress_border: ColorTermusic,
-
-    /// Important Popup (like Error or Delete) foreground color (text)
-    pub important_popup_foreground: ColorTermusic,
-    /// Important Popup (like Error or Delete) background color (background)
-    pub important_popup_background: ColorTermusic,
-    /// Important Popup (like Error or Delete) border color (always)
-    pub important_popup_border: ColorTermusic,
-
-    // Generic is when there is no specific config entry for it, like the "AskQuit" popup
-    /// Generic foreground color (text)
-    pub fallback_foreground: ColorTermusic,
-    /// Generic background color (background)
-    pub fallback_background: ColorTermusic,
-    /// Generic border color (always)
-    pub fallback_border: ColorTermusic,
-    /// Generic Highlight color
-    pub fallback_highlight: ColorTermusic,
-}
-
-impl Default for Colors {
-    fn default() -> Self {
-        Self {
-            library_foreground: ColorTermusic::Foreground,
-            library_background: ColorTermusic::Reset,
-            library_border: ColorTermusic::Blue,
-            library_highlight: ColorTermusic::LightYellow,
-
-            playlist_foreground: ColorTermusic::Foreground,
-            playlist_background: ColorTermusic::Reset,
-            playlist_border: ColorTermusic::Blue,
-            playlist_highlight: ColorTermusic::LightYellow,
-
-            lyric_foreground: ColorTermusic::Foreground,
-            lyric_background: ColorTermusic::Reset,
-            lyric_border: ColorTermusic::Blue,
-
-            progress_foreground: ColorTermusic::LightBlack,
-            progress_background: ColorTermusic::Reset,
-            progress_border: ColorTermusic::Blue,
-
-            important_popup_foreground: ColorTermusic::Red,
-            important_popup_background: ColorTermusic::Reset,
-            important_popup_border: ColorTermusic::Red,
-
-            fallback_foreground: ColorTermusic::Foreground,
-            fallback_background: ColorTermusic::Reset,
-            fallback_border: ColorTermusic::Blue,
-            fallback_highlight: ColorTermusic::LightYellow,
-        }
+        self.get_color_from_theme(self.style.fallback.border)
     }
 }
 
@@ -631,76 +491,14 @@ fn default_fff() -> ThemeColor {
 }
 
 mod v1_interop {
-    use super::{
-        ColorTermusic, Colors, ThemeBright, ThemeColorWrap, ThemeColors, ThemeCursor, ThemeNormal,
-        ThemePrimary,
-    };
+    use super::{ThemeBright, ThemeColors, ThemeCursor, ThemeNormal, ThemePrimary, ThemeWrap};
     use crate::config::v1;
 
-    impl From<v1::ColorTermusic> for ColorTermusic {
-        fn from(value: v1::ColorTermusic) -> Self {
-            match value {
-                v1::ColorTermusic::Reset => Self::Reset,
-                v1::ColorTermusic::Foreground => Self::Foreground,
-                v1::ColorTermusic::Background => Self::Background,
-                v1::ColorTermusic::Black => Self::Black,
-                v1::ColorTermusic::Red => Self::Red,
-                v1::ColorTermusic::Green => Self::Green,
-                v1::ColorTermusic::Yellow => Self::Yellow,
-                v1::ColorTermusic::Blue => Self::Blue,
-                v1::ColorTermusic::Magenta => Self::Magenta,
-                v1::ColorTermusic::Cyan => Self::Cyan,
-                v1::ColorTermusic::White => Self::White,
-                v1::ColorTermusic::LightBlack => Self::LightBlack,
-                v1::ColorTermusic::LightRed => Self::LightRed,
-                v1::ColorTermusic::LightGreen => Self::LightGreen,
-                v1::ColorTermusic::LightYellow => Self::LightYellow,
-                v1::ColorTermusic::LightBlue => Self::LightBlue,
-                v1::ColorTermusic::LightMagenta => Self::LightMagenta,
-                v1::ColorTermusic::LightCyan => Self::LightCyan,
-                v1::ColorTermusic::LightWhite => Self::LightWhite,
-            }
-        }
-    }
-
-    impl From<v1::StyleColorSymbol> for Colors {
-        fn from(value: v1::StyleColorSymbol) -> Self {
+    impl From<&v1::Alacritty> for ThemeColors {
+        fn from(value: &v1::Alacritty) -> Self {
             Self {
-                library_foreground: value.library_foreground.into(),
-                library_background: value.library_background.into(),
-                library_border: value.library_border.into(),
-                library_highlight: value.library_highlight.into(),
-
-                playlist_foreground: value.playlist_foreground.into(),
-                playlist_background: value.playlist_background.into(),
-                playlist_border: value.playlist_border.into(),
-                playlist_highlight: value.playlist_highlight.into(),
-
-                lyric_foreground: value.lyric_foreground.into(),
-                lyric_background: value.lyric_background.into(),
-                lyric_border: value.lyric_border.into(),
-
-                progress_foreground: value.progress_foreground.into(),
-                progress_background: value.progress_background.into(),
-                progress_border: value.progress_border.into(),
-
-                important_popup_foreground: value.important_popup_foreground.into(),
-                important_popup_background: value.important_popup_background.into(),
-                important_popup_border: value.important_popup_border.into(),
-
-                fallback_foreground: value.fallback_foreground.into(),
-                fallback_background: value.fallback_background.into(),
-                fallback_border: value.fallback_border.into(),
-                fallback_highlight: value.fallback_highlight.into(),
-            }
-        }
-    }
-
-    impl From<v1::Alacritty> for ThemeColors {
-        fn from(value: v1::Alacritty) -> Self {
-            Self {
-                name: value.name,
-                author: value.author,
+                name: value.name.clone(),
+                author: value.author.clone(),
                 primary: ThemePrimary {
                     background: value.background.into(),
                     foreground: value.foreground.into(),
@@ -733,11 +531,11 @@ mod v1_interop {
         }
     }
 
-    impl From<v1::StyleColorSymbol> for ThemeColorWrap {
-        fn from(value: v1::StyleColorSymbol) -> Self {
+    impl From<&v1::Settings> for ThemeWrap {
+        fn from(value: &v1::Settings) -> Self {
             Self {
-                theme: value.alacritty_theme.clone().into(),
-                colors: value.into(),
+                theme: (&value.style_color_symbol.alacritty_theme).into(),
+                style: value.into(),
             }
         }
     }
@@ -748,39 +546,10 @@ mod v1_interop {
 
         #[test]
         fn should_convert_default_without_error() {
-            let converted: ThemeColorWrap = v1::StyleColorSymbol::default().into();
+            let converted: ThemeColors = (&v1::StyleColorSymbol::default().alacritty_theme).into();
 
             assert_eq!(
-                converted.colors,
-                Colors {
-                    library_foreground: ColorTermusic::Foreground,
-                    library_background: ColorTermusic::Reset,
-                    library_border: ColorTermusic::Blue,
-                    library_highlight: ColorTermusic::LightYellow,
-                    playlist_foreground: ColorTermusic::Foreground,
-                    playlist_background: ColorTermusic::Reset,
-                    playlist_border: ColorTermusic::Blue,
-                    playlist_highlight: ColorTermusic::LightYellow,
-                    lyric_foreground: ColorTermusic::Foreground,
-                    lyric_background: ColorTermusic::Reset,
-                    lyric_border: ColorTermusic::Blue,
-                    progress_foreground: ColorTermusic::LightBlack,
-                    progress_background: ColorTermusic::Reset,
-                    progress_border: ColorTermusic::Blue,
-
-                    important_popup_foreground: ColorTermusic::Yellow,
-                    important_popup_background: ColorTermusic::Reset,
-                    important_popup_border: ColorTermusic::Yellow,
-
-                    fallback_foreground: ColorTermusic::Foreground,
-                    fallback_background: ColorTermusic::Reset,
-                    fallback_border: ColorTermusic::Blue,
-                    fallback_highlight: ColorTermusic::LightYellow
-                }
-            );
-
-            assert_eq!(
-                converted.theme,
+                converted,
                 ThemeColors {
                     name: "default".into(),
                     author: "Larry Hao".into(),

@@ -19,9 +19,8 @@ pub struct TuiSettings {
     pub com_resolved: Option<ComSettings>,
     pub behavior: BehaviorSettings,
     pub coverart: CoverArtPosition,
-    pub symbols: Symbols,
     #[serde(flatten)]
-    pub theme: theme::ThemeColorWrap,
+    pub theme: theme::ThemeWrap,
     pub keys: keys::Keys,
 }
 
@@ -112,53 +111,9 @@ pub enum Alignment {
     BottomLeft,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct Symbols {
-    /// Music Library selected node highlight symbol
-    pub library_highlight: String,
-    /// Playlist selected track highlight symbol
-    pub playlist_highlight: String,
-    /// Playlist current playing track symbol
-    pub playlist_current_track: String,
-
-    /// If enabled use a symbol for the Loop-Mode, otherwise use text
-    ///
-    /// Example: true -> "Mode: 🔁"; false -> "Mode: playlist"
-    pub playlist_loop_mode_symbol: bool,
-}
-
-impl Default for Symbols {
-    fn default() -> Self {
-        Self {
-            library_highlight: "🦄".into(),
-            playlist_highlight: "🚀".into(),
-            playlist_current_track: "►".into(),
-
-            playlist_loop_mode_symbol: true,
-        }
-    }
-}
-
 mod v1_interop {
-    use super::{
-        Alignment, BehaviorSettings, CoverArtPosition, MaybeComSettings, Symbols, TuiSettings,
-    };
+    use super::{Alignment, BehaviorSettings, CoverArtPosition, MaybeComSettings, TuiSettings};
     use crate::config::v1;
-
-    impl From<v1::Settings> for Symbols {
-        fn from(value: v1::Settings) -> Self {
-            let playlist_loop_mode_symbol = value.playlist_display_symbol;
-            let value = value.style_color_symbol;
-
-            Self {
-                library_highlight: value.library_highlight_symbol,
-                playlist_highlight: value.playlist_highlight_symbol,
-                playlist_current_track: value.currently_playing_track_symbol,
-
-                playlist_loop_mode_symbol,
-            }
-        }
-    }
 
     impl From<v1::Alignment> for Alignment {
         fn from(value: v1::Alignment) -> Self {
@@ -184,7 +139,7 @@ mod v1_interop {
 
     impl From<v1::Settings> for TuiSettings {
         fn from(value: v1::Settings) -> Self {
-            let settings_clone = value.clone();
+            let theme = (&value).into();
             Self {
                 // using "same" as the previous config version was a combined config and so only really working for local interop
                 com: MaybeComSettings::Same,
@@ -194,8 +149,7 @@ mod v1_interop {
                     confirm_quit: value.enable_exit_confirmation,
                 },
                 coverart: value.album_photo_xywh.into(),
-                symbols: settings_clone.into(),
-                theme: value.style_color_symbol.into(),
+                theme,
                 keys: value.keys.into(),
             }
         }
@@ -215,17 +169,6 @@ mod v1_interop {
                 BehaviorSettings {
                     quit_server_on_exit: true,
                     confirm_quit: true
-                }
-            );
-
-            assert_eq!(
-                converted.symbols,
-                Symbols {
-                    library_highlight: "\u{1f984}".into(),
-                    playlist_highlight: "\u{1f680}".into(),
-                    playlist_current_track: "►".into(),
-
-                    playlist_loop_mode_symbol: true
                 }
             );
 
