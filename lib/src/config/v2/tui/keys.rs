@@ -421,12 +421,14 @@ impl Default for KeysPodcast {
             )
             .into(),
             download_episode: tuievents::Key::Char('d').into(),
-            delete_local_episode: tuievents::Key::Char('x').into(),
-            // TODO: consider using a different key-binding than "download"
-            delete_feed: tuievents::Key::Char('d').into(),
-            // TODO: consider using a different key-binding than "download"
-            delete_all_feeds: tuievents::KeyEvent::new(
+            delete_local_episode: tuievents::KeyEvent::new(
                 tuievents::Key::Char('d'),
+                tuievents::KeyModifiers::SHIFT,
+            )
+            .into(),
+            delete_feed: tuievents::Key::Char('x').into(),
+            delete_all_feeds: tuievents::KeyEvent::new(
+                tuievents::Key::Char('x'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
