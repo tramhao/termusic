@@ -1,4 +1,5 @@
 use crate::config::Xywh;
+use anyhow::Context;
 use anyhow::{bail, Result};
 use std::ffi::OsStr;
 use std::io::Read as _;
@@ -89,7 +90,9 @@ impl UeInstance {
 
     pub fn clear_cover_ueberzug(&mut self) -> Result<()> {
         let cmd = "{\"action\": \"remove\", \"identifier\": \"cover\"}\n";
-        self.run_ueberzug_cmd(cmd).map_err(map_err)?;
+        self.run_ueberzug_cmd(cmd)
+            .map_err(map_err)
+            .context("clear_cover")?;
         Ok(())
     }
 
@@ -101,7 +104,9 @@ impl UeInstance {
         };
 
         let stdin = ueberzug.stdin.as_mut().unwrap();
-        stdin.write_all(cmd.as_bytes())?;
+        stdin
+            .write_all(cmd.as_bytes())
+            .context("ueberzug command writing")?;
 
         Ok(())
     }
@@ -120,7 +125,9 @@ impl UeInstance {
         };
 
         let stdin = ueberzug.stdin.as_mut().unwrap();
-        stdin.write_all(cmd.as_bytes())?;
+        stdin
+            .write_all(cmd.as_bytes())
+            .context("ueberzug command writing")?;
 
         Ok(())
     }
