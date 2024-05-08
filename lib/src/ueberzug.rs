@@ -1,5 +1,6 @@
 use crate::config::Xywh;
 use anyhow::{bail, Result};
+use std::ffi::OsStr;
 use std::io::Write;
 use std::process::Child;
 use std::process::Command;
@@ -94,12 +95,7 @@ impl UeInstance {
         // error!("using x11 output for ueberzugpp");
 
         let ueberzug = match self.ueberzug {
-            UeInstanceState::New => self.spawn_cmd(
-                Command::new("ueberzug")
-                    .args(["layer", "--silent"])
-                    .stdin(Stdio::piped())
-                    .stdout(Stdio::piped()),
-            )?,
+            UeInstanceState::New => self.spawn_cmd(["layer", "--silent"])?,
             UeInstanceState::Child(ref mut v) => v,
             UeInstanceState::Error => return on_error(),
         };
@@ -116,13 +112,10 @@ impl UeInstance {
         let ueberzug = match self.ueberzug {
             UeInstanceState::New => {
                 self.spawn_cmd(
-                    Command::new("ueberzug")
-                        .args(["layer", "--silent"])
-                        // .args(["layer", "--silent", "--no-cache", "--output", "sixel"])
-                        // .args(["layer", "--sixel"])
-                        // .args(["--sixel"])
-                        .stdin(Stdio::piped())
-                        .stdout(Stdio::piped()),
+                    ["layer", "--silent"],
+                    // ["layer", "--silent", "--no-cache", "--output", "sixel"]
+                    // ["layer", "--sixel"]
+                    // ["--sixel"]
                 )?
             }
             UeInstanceState::Child(ref mut v) => v,
@@ -138,7 +131,17 @@ impl UeInstance {
     /// Spawn the given `cmd`, and set `self.ueberzug` and return a reference to the child for direct use
     ///
     /// On fail, also set `set.ueberzug` to [`UeInstanceState::Error`]
-    fn spawn_cmd(&mut self, cmd: &mut Command) -> Result<&mut Child> {
+    fn spawn_cmd<I, S>(&mut self, args: I) -> Result<&mut Child>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let mut cmd = Command::new("ueberzug");
+        cmd.args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null()) // ueberzug does not output to stdout
+            .stderr(Stdio::piped());
+
         match cmd.spawn() {
             Ok(child) => {
                 self.ueberzug = UeInstanceState::Child(child);
