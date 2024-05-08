@@ -1079,6 +1079,379 @@ impl From<SupportedModifiers> for tuievents::KeyModifiers {
     }
 }
 
+mod v1_interop {
+    use super::{
+        tuievents, KeyBinding, Keys, KeysConfigEditor, KeysDatabase, KeysLibrary, KeysLyric,
+        KeysMoveCoverArt, KeysNavigation, KeysPlayer, KeysPlaylist, KeysPodcast, KeysSelectView,
+    };
+    use crate::config::v1;
+
+    impl From<v1::BindingForEvent> for KeyBinding {
+        fn from(value: v1::BindingForEvent) -> Self {
+            let code = if let tuievents::Key::Char(char) = value.code {
+                // lowercasing this as the current key implementation is like this, though it is unsure if this is the it will be used later
+                tuievents::Key::Char(char.to_ascii_lowercase())
+            } else {
+                value.code
+            };
+            Self::from(tuievents::KeyEvent {
+                code,
+                modifiers: value.modifier,
+            })
+        }
+    }
+
+    impl From<v1::Keys> for Keys {
+        fn from(value: v1::Keys) -> Self {
+            Self {
+                escape: value.global_esc.into(),
+                quit: value.global_quit.into(),
+                select_view_keys: KeysSelectView {
+                    view_library: value.global_layout_treeview.into(),
+                    view_database: value.global_layout_database.into(),
+                    view_podcasts: value.global_layout_podcast.into(),
+                    open_config: value.global_config_open.into(),
+                    open_help: value.global_help.into(),
+                },
+                navigation_keys: KeysNavigation {
+                    up: value.global_up.into(),
+                    down: value.global_down.into(),
+                    left: value.global_left.into(),
+                    right: value.global_right.into(),
+                    goto_top: value.global_goto_top.into(),
+                    goto_bottom: value.global_goto_bottom.into(),
+                },
+                player_keys: KeysPlayer {
+                    toggle_pause: value.global_player_toggle_pause.into(),
+                    next_track: value.global_player_next.into(),
+                    previous_track: value.global_player_previous.into(),
+                    volume_up: value.global_player_volume_plus_1.into(),
+                    volume_down: value.global_player_volume_minus_1.into(),
+                    seek_forward: value.global_player_seek_forward.into(),
+                    seek_backward: value.global_player_seek_backward.into(),
+                    speed_up: value.global_player_speed_up.into(),
+                    speed_down: value.global_player_speed_down.into(),
+                    toggle_prefetch: value.global_player_toggle_gapless.into(),
+                    save_playlist: value.global_save_playlist.into(),
+                },
+                lyric_keys: KeysLyric {
+                    adjust_offset_forwards: value.global_lyric_adjust_forward.into(),
+                    adjust_offset_backwards: value.global_lyric_adjust_backward.into(),
+                    cycle_frames: value.global_lyric_cycle.into(),
+                },
+                library_keys: KeysLibrary {
+                    load_dir: value.library_load_dir.into(),
+                    delete: value.library_delete.into(),
+                    yank: value.library_yank.into(),
+                    paste: value.library_paste.into(),
+                    cycle_root: value.library_switch_root.into(),
+                    add_root: value.library_add_root.into(),
+                    remove_root: value.library_remove_root.into(),
+                    search: value.library_search.into(),
+                    youtube_search: value.library_search_youtube.into(),
+                    open_tag_editor: value.library_tag_editor_open.into(),
+                },
+                playlist_keys: KeysPlaylist {
+                    delete: value.playlist_delete.into(),
+                    delete_all: value.playlist_delete_all.into(),
+                    shuffle: value.playlist_shuffle.into(),
+                    cycle_loop_mode: value.playlist_mode_cycle.into(),
+                    play_selected: value.playlist_play_selected.into(),
+                    search: value.playlist_search.into(),
+                    swap_up: value.playlist_swap_up.into(),
+                    swap_down: value.playlist_swap_down.into(),
+                    add_random_songs: value.playlist_add_random_tracks.into(),
+                    add_random_album: value.playlist_add_random_album.into(),
+                },
+                database_keys: KeysDatabase {
+                    add_all: value.database_add_all.into(),
+                },
+                podcast_keys: KeysPodcast {
+                    search: value.podcast_search_add_feed.into(),
+                    mark_played: value.podcast_mark_played.into(),
+                    mark_all_played: value.podcast_mark_all_played.into(),
+                    refresh_feed: value.podcast_refresh_feed.into(),
+                    refresh_all_feeds: value.podcast_refresh_all_feeds.into(),
+                    download_episode: value.podcast_episode_download.into(),
+                    delete_local_episode: value.podcast_episode_delete_file.into(),
+                    delete_feed: value.podcast_delete_feed.into(),
+                    delete_all_feeds: value.podcast_delete_all_feeds.into(),
+                },
+                move_cover_art_keys: KeysMoveCoverArt {
+                    move_left: value.global_xywh_move_left.into(),
+                    move_right: value.global_xywh_move_right.into(),
+                    move_up: value.global_xywh_move_up.into(),
+                    move_down: value.global_xywh_move_down.into(),
+                    increase_size: value.global_xywh_zoom_in.into(),
+                    decrease_size: value.global_xywh_zoom_out.into(),
+                    toggle_hide: value.global_xywh_hide.into(),
+                },
+                config_keys: KeysConfigEditor {
+                    save: value.config_save.into(),
+                },
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod test {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn should_convert_default_without_error() {
+            let converted: Keys = v1::Keys::default().into();
+
+            // this is all checked by themself (and then fully) so that if there is a error, you actually get a better error than a bunch of long text
+            let expected_select_view_keys = KeysSelectView {
+                view_library: tuievents::Key::Char('1').into(),
+                view_database: tuievents::Key::Char('2').into(),
+                view_podcasts: tuievents::Key::Char('3').into(),
+                open_config: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('c'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                open_help: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('h'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+            };
+            assert_eq!(converted.select_view_keys, expected_select_view_keys);
+
+            let expected_navigation_keys = KeysNavigation {
+                up: tuievents::Key::Char('k').into(),
+                down: tuievents::Key::Char('j').into(),
+                left: tuievents::Key::Char('h').into(),
+                right: tuievents::Key::Char('l').into(),
+                goto_top: tuievents::Key::Char('g').into(),
+                goto_bottom: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('g'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+            };
+            assert_eq!(converted.navigation_keys, expected_navigation_keys);
+
+            let expected_player_keys = KeysPlayer {
+                toggle_pause: tuievents::Key::Char(' ').into(),
+                next_track: tuievents::Key::Char('n').into(),
+                previous_track: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('n'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                // volume_up and volume_down have different default key-bindings in v2
+                volume_up: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('+'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                volume_down: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('_'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                seek_forward: tuievents::Key::Char('f').into(),
+                seek_backward: tuievents::Key::Char('b').into(),
+                speed_up: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('f'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+                speed_down: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('b'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+                toggle_prefetch: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('g'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+                save_playlist: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('s'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+            };
+            assert_eq!(converted.player_keys, expected_player_keys);
+
+            let expected_lyric_keys = KeysLyric {
+                adjust_offset_forwards: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('f'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                adjust_offset_backwards: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('b'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                cycle_frames: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('t'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+            };
+            assert_eq!(converted.lyric_keys, expected_lyric_keys);
+
+            let expected_library_keys = KeysLibrary {
+                load_dir: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('l'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                delete: tuievents::Key::Char('d').into(),
+                yank: tuievents::Key::Char('y').into(),
+                paste: tuievents::Key::Char('p').into(),
+                cycle_root: tuievents::Key::Char('o').into(),
+                add_root: tuievents::Key::Char('a').into(),
+                remove_root: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('a'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                search: tuievents::Key::Char('/').into(),
+                youtube_search: tuievents::Key::Char('s').into(),
+                open_tag_editor: tuievents::Key::Char('t').into(),
+            };
+            assert_eq!(converted.library_keys, expected_library_keys);
+
+            let expected_playlist_keys = KeysPlaylist {
+                delete: tuievents::Key::Char('d').into(),
+                delete_all: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('d'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                shuffle: tuievents::Key::Char('r').into(),
+                cycle_loop_mode: tuievents::Key::Char('m').into(),
+                play_selected: tuievents::Key::Char('l').into(),
+                search: tuievents::Key::Char('/').into(),
+                swap_up: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('k'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                swap_down: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('j'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                add_random_songs: tuievents::Key::Char('s').into(),
+                add_random_album: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('s'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+            };
+            assert_eq!(converted.playlist_keys, expected_playlist_keys);
+
+            let expected_database_keys = KeysDatabase {
+                add_all: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('l'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+            };
+            assert_eq!(converted.database_keys, expected_database_keys);
+
+            let expected_podcast_keys = KeysPodcast {
+                search: tuievents::Key::Char('s').into(),
+                mark_played: tuievents::Key::Char('m').into(),
+                mark_all_played: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('m'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                refresh_feed: tuievents::Key::Char('r').into(),
+                refresh_all_feeds: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('r'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                download_episode: tuievents::Key::Char('d').into(),
+                delete_local_episode: tuievents::Key::Char('x').into(),
+                delete_feed: tuievents::Key::Char('d').into(),
+                delete_all_feeds: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('d'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+            };
+            assert_eq!(converted.podcast_keys, expected_podcast_keys);
+
+            let expected_move_cover_art_keys = KeysMoveCoverArt {
+                move_left: tuievents::KeyEvent::new(
+                    tuievents::Key::Left,
+                    tuievents::KeyModifiers::CONTROL | tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                move_right: tuievents::KeyEvent::new(
+                    tuievents::Key::Right,
+                    tuievents::KeyModifiers::CONTROL | tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                move_up: tuievents::KeyEvent::new(
+                    tuievents::Key::Up,
+                    tuievents::KeyModifiers::CONTROL | tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                move_down: tuievents::KeyEvent::new(
+                    tuievents::Key::Down,
+                    tuievents::KeyModifiers::CONTROL | tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                increase_size: tuievents::KeyEvent::new(
+                    tuievents::Key::PageUp,
+                    tuievents::KeyModifiers::CONTROL | tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                decrease_size: tuievents::KeyEvent::new(
+                    tuievents::Key::PageDown,
+                    tuievents::KeyModifiers::CONTROL | tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                toggle_hide: tuievents::KeyEvent::new(
+                    tuievents::Key::End,
+                    tuievents::KeyModifiers::CONTROL | tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+            };
+            assert_eq!(converted.move_cover_art_keys, expected_move_cover_art_keys);
+
+            let expected_config_editor_keys = KeysConfigEditor {
+                save: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('s'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+            };
+            assert_eq!(converted.config_keys, expected_config_editor_keys);
+
+            assert_eq!(
+                converted,
+                Keys {
+                    escape: tuievents::Key::Esc.into(),
+                    quit: tuievents::Key::Char('q').into(),
+                    select_view_keys: expected_select_view_keys,
+                    navigation_keys: expected_navigation_keys,
+                    player_keys: expected_player_keys,
+                    lyric_keys: expected_lyric_keys,
+                    library_keys: expected_library_keys,
+                    playlist_keys: expected_playlist_keys,
+                    database_keys: expected_database_keys,
+                    podcast_keys: expected_podcast_keys,
+                    move_cover_art_keys: expected_move_cover_art_keys,
+                    config_keys: expected_config_editor_keys
+                }
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
