@@ -7,6 +7,8 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::utils::get_app_config_path;
+
 use super::TuiSettings;
 
 /// The filename of the tui config
@@ -94,6 +96,13 @@ impl<'a> TuiConfigVersionedDefaulted<'a> {
         }
 
         Ok(data)
+    }
+
+    /// Read a config file from the default set app-path
+    pub fn from_config_path() -> Result<Self> {
+        let tui_config_path = get_app_config_path()?.join(FILE_NAME);
+
+        Self::from_file(tui_config_path)
     }
 
     /// Load the old settings, then transform them into the new settings (both server & TUI)

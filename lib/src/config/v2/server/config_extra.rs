@@ -7,6 +7,8 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::utils::get_app_config_path;
+
 use super::ServerSettings;
 
 /// The filename of the server config
@@ -85,6 +87,13 @@ impl<'a> ServerConfigVersionedDefaulted<'a> {
         let data: Self = Figment::new().merge(Toml::file(path)).extract()?;
 
         Ok(data)
+    }
+
+    /// Read a config file from the default set app-path
+    pub fn from_config_path() -> Result<Self> {
+        let server_config_path = get_app_config_path()?.join(FILE_NAME);
+
+        Self::from_file(server_config_path)
     }
 
     /// Load the old settings, then transform them into the new settings
