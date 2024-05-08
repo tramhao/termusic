@@ -1,6 +1,6 @@
 use std::{borrow::Cow, path::Path};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use figment::{
     providers::{Format, Toml},
     Figment,
@@ -70,17 +70,53 @@ impl<'a, 'de> Deserialize<'de> for ServerConfigVersionedDefaulted<'a> {
 impl<'a> ServerConfigVersionedDefaulted<'a> {
     /// Read a config file, needs to be toml formatted
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let path = path.as_ref();
+        {
+            let v1_config_path = path
+                .parent()
+                .context("expected server config path to have a parent")?
+                .join(super::super::super::v1::FILE_NAME);
+            if !path.exists() && v1_config_path.exists() {
+                info!("New config file does not exist, but old one does exist.");
+                return Self::migrate_from_v1(&v1_config_path, path);
+            }
+        }
+
         let data: Self = Figment::new().merge(Toml::file(path)).extract()?;
 
         Ok(data)
     }
 
+    /// Load the old settings, then transform them into the new settings
+    // public in config_v2 module so that the TUI can migrate the server config before itself
+    pub(in super::super) fn migrate_from_v1(_v1_path: &Path, v2_path: &Path) -> Result<Self> {
+        use super::super::super::v1::Settings;
+
+        info!("Migrating server config from v1 format to v2");
+
+        let old_settings = {
+            let mut settings = Settings::default();
+            settings.load()?;
+
+            settings
+        };
+
+        let new_settings = ServerSettings::try_from(old_settings)?;
+
+        // save the file directly to not have to re-do the convertion again, even if config does not change
+        Self::save_file(v2_path, &new_settings)?;
+
+        Ok(Self::Unversioned(new_settings))
+    }
+
     /// Save type used by the application as a config file
     ///
     /// Will only save the latest version
-    pub fn save_file<P: AsRef<Path>>(path: P, config: &'a ApplicationType) -> Result<()> {
+    pub fn save_file<'b, P: AsRef<Path>>(path: P, config: &'b ApplicationType) -> Result<()> {
         // wrap the data in the latest version for saving
-        let data = Self::Versioned(ServerConfigVersioned::V2(Cow::Borrowed(config)));
+        let data = ServerConfigVersionedDefaulted::<'b>::Versioned(ServerConfigVersioned::V2(
+            Cow::Borrowed(config),
+        ));
         std::fs::write(path, toml::to_string(&data)?)?;
 
         Ok(())
