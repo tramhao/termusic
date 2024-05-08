@@ -257,7 +257,7 @@ impl Default for ComSettings {
 }
 
 pub fn test_save() {
-    let path = Path::new("/tmp/termusic_config_save.toml");
+    let path = Path::new("/tmp/termusic_config_server_save.toml");
 
     let data = ServerSettings::default();
 
@@ -265,7 +265,7 @@ pub fn test_save() {
 }
 
 pub fn test_load() {
-    let path = Path::new("/tmp/termusic_config_load.toml");
+    let path = Path::new("/tmp/termusic_config_server_load.toml");
 
     let data = config_extra::ServerConfigVersionedDefaulted::from_file(path);
 
