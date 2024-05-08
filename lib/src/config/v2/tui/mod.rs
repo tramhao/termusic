@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 use super::server::ComSettings;
@@ -8,18 +9,57 @@ pub mod config_extra;
 pub mod keys;
 pub mod theme;
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Default)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 #[allow(clippy::module_name_repetitions)]
-#[derive(Default)]
 pub struct TuiSettings {
     pub com: MaybeComSettings,
+    /// Field that holds the resolved `com` data, in case `same` was used
+    #[serde(skip)]
+    pub com_resolved: Option<ComSettings>,
     pub behavior: BehaviorSettings,
     pub coverart: CoverArtPosition,
     pub symbols: Symbols,
     #[serde(flatten)]
     pub theme: theme::ThemeColorWrap,
     pub keys: keys::Keys,
+}
+
+impl TuiSettings {
+    /// Resolve the [`ComSettings`] or directly get them.
+    ///
+    /// If result is [`Ok`], then `com_resolved` is set and [`Self::get_com`] will always return [`Some`]
+    pub fn resolve_com(&mut self, tui_path: &Path) -> Result<()> {
+        if self.com_resolved.is_some() {
+            return Ok(());
+        }
+
+        match self.com {
+            MaybeComSettings::ComSettings(ref v) => {
+                // this could likely be avoided, but for simplicity this is set
+                self.com_resolved = Some(v.clone());
+                return Ok(());
+            }
+            MaybeComSettings::Same => (),
+        }
+
+        let server_path = tui_path
+            .parent()
+            .context("tui_path should have a parent directory")?
+            .join(super::server::config_extra::FILE_NAME);
+
+        let server_settings =
+            super::server::config_extra::ServerConfigVersionedDefaulted::from_file(server_path)
+                .context("parsing server config")?;
+        self.com_resolved = Some(server_settings.into_settings().com);
+
+        Ok(())
+    }
+
+    /// Get the resolved com-settings, if resolved
+    pub fn get_com(&self) -> &Option<ComSettings> {
+        &self.com_resolved
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -148,6 +188,7 @@ mod v1_interop {
             Self {
                 // using "same" as the previous config version was a combined config and so only really working for local interop
                 com: MaybeComSettings::Same,
+                com_resolved: None,
                 behavior: BehaviorSettings {
                     quit_server_on_exit: value.kill_daemon_when_quit,
                     confirm_quit: value.enable_exit_confirmation,

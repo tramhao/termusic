@@ -9,6 +9,9 @@ use serde::{Deserialize, Serialize};
 
 use super::TuiSettings;
 
+/// The filename of the tui config
+pub const FILE_NAME: &str = "tui.toml";
+
 /// The type used by the application / the latest config version
 ///
 /// This type exists so that it is easier to differentiate when the explicit type is meant, or later meant to be changed as a whole
@@ -65,7 +68,13 @@ impl<'a, 'de> Deserialize<'de> for TuiConfigVersionedDefaulted<'a> {
 impl<'a> TuiConfigVersionedDefaulted<'a> {
     /// Read a config file, needs to be toml formatted
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let data: Self = Figment::new().merge(Toml::file(path)).extract()?;
+        let path = path.as_ref();
+        let mut data: Self = Figment::new().merge(Toml::file(path)).extract()?;
+
+        match data {
+            TuiConfigVersionedDefaulted::Versioned(ref mut v) => v.resolve_com(path)?,
+            TuiConfigVersionedDefaulted::Unversioned(ref mut v) => v.resolve_com(path)?,
+        }
 
         Ok(data)
     }
@@ -111,6 +120,13 @@ impl TuiConfigVersioned<'_> {
     pub fn into_settings(self) -> ApplicationType {
         match self {
             TuiConfigVersioned::V2(v) => v.into_owned(),
+        }
+    }
+
+    /// Resolve the TUI's `com` Settings, depending on version
+    fn resolve_com(&mut self, tui_path: &Path) -> Result<()> {
+        match self {
+            TuiConfigVersioned::V2(v) => v.to_mut().resolve_com(tui_path),
         }
     }
 }

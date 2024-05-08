@@ -9,6 +9,9 @@ use serde::{Deserialize, Serialize};
 
 use super::ServerSettings;
 
+/// The filename of the server config
+pub const FILE_NAME: &str = "server.toml";
+
 /// The type used by the application / the latest config version
 ///
 /// This type exists so that it is easier to differentiate when the explicit type is meant, or later meant to be changed as a whole
