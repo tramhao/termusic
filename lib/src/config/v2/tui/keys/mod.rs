@@ -609,6 +609,8 @@ impl CheckConflict for KeysNavigation {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct KeysLibrary {
+    /// Key to load the currently selected track (only if on a file node)
+    pub load_track: KeyBinding,
     /// Key to load the whole directory (only if on a directory node)
     pub load_dir: KeyBinding,
     /// Key to delete the currently selected node (which can be both a track or a directory)
@@ -635,6 +637,7 @@ pub struct KeysLibrary {
 impl Default for KeysLibrary {
     fn default() -> Self {
         Self {
+            load_track: tuievents::Key::Char('l').into(),
             load_dir: tuievents::KeyEvent::new(
                 tuievents::Key::Char('l'),
                 tuievents::KeyModifiers::SHIFT,
@@ -660,6 +663,7 @@ impl Default for KeysLibrary {
 impl CheckConflict for KeysLibrary {
     fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
         once_chain! {
+            (&self.load_track, "load_track"),
             (&self.load_dir, "load_dir"),
             (&self.delete, "delete"),
             (&self.yank, "yank"),
@@ -1131,6 +1135,8 @@ impl CheckConflict for KeysConfigEditor {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct KeysDatabase {
+    /// Add the currently selected track to the playlist
+    pub add_selected: KeyBinding,
     /// Add all tracks in the Database view "Tracks" section
     pub add_all: KeyBinding,
 }
@@ -1138,6 +1144,7 @@ pub struct KeysDatabase {
 impl Default for KeysDatabase {
     fn default() -> Self {
         Self {
+            add_selected: tuievents::Key::Char('l').into(),
             add_all: tuievents::KeyEvent::new(
                 tuievents::Key::Char('l'),
                 tuievents::KeyModifiers::SHIFT,
@@ -1830,6 +1837,8 @@ mod v1_interop {
                     cycle_frames: value.global_lyric_cycle.into(),
                 },
                 library_keys: KeysLibrary {
+                    // this is weird, but the previous implementation used "global_right" as the loading key to not conflict
+                    load_track: value.global_right.into(),
                     load_dir: value.library_load_dir.into(),
                     delete: value.library_delete.into(),
                     yank: value.library_yank.into(),
@@ -1854,6 +1863,8 @@ mod v1_interop {
                     add_random_album: value.playlist_add_random_album.into(),
                 },
                 database_keys: KeysDatabase {
+                    // this is weird, but the previous implementation used "global_right" as the loading key to not conflict
+                    add_selected: value.global_right.into(),
                     add_all: value.database_add_all.into(),
                 },
                 podcast_keys: KeysPodcast {
@@ -1988,6 +1999,7 @@ mod v1_interop {
             assert_eq!(converted.lyric_keys, expected_lyric_keys);
 
             let expected_library_keys = KeysLibrary {
+                load_track: tuievents::Key::Char('l').into(),
                 load_dir: tuievents::KeyEvent::new(
                     tuievents::Key::Char('l'),
                     tuievents::KeyModifiers::SHIFT,
@@ -2040,6 +2052,7 @@ mod v1_interop {
             assert_eq!(converted.playlist_keys, expected_playlist_keys);
 
             let expected_database_keys = KeysDatabase {
+                add_selected: tuievents::Key::Char('l').into(),
                 add_all: tuievents::KeyEvent::new(
                     tuievents::Key::Char('l'),
                     tuievents::KeyModifiers::SHIFT,
