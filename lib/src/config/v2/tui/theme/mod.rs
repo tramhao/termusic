@@ -207,6 +207,7 @@ impl ColorTermusic {
     }
 }
 
+// TODO: refactor this to be a "style" type, instead of just colors, see https://github.com/tramhao/termusic/discussions/302#discussioncomment-9329214
 /// What color to use for specific things, will use the colors from the specified Theme
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Colors {
