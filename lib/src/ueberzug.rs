@@ -1,7 +1,9 @@
 use crate::config::Xywh;
 use anyhow::{bail, Result};
 use std::ffi::OsStr;
+use std::io::Read as _;
 use std::io::Write;
+use std::os::unix::process::ExitStatusExt as _;
 use std::process::Child;
 use std::process::Command;
 use std::process::Stdio;
@@ -94,10 +96,8 @@ impl UeInstance {
     fn run_ueberzug_cmd(&mut self, cmd: &str) -> Result<()> {
         // error!("using x11 output for ueberzugpp");
 
-        let ueberzug = match self.ueberzug {
-            UeInstanceState::New => self.spawn_cmd(["layer", "--silent"])?,
-            UeInstanceState::Child(ref mut v) => v,
-            UeInstanceState::Error => return on_error(),
+        let Some(ueberzug) = self.try_wait_spawn(["layer"])? else {
+            return Ok(());
         };
 
         let stdin = ueberzug.stdin.as_mut().unwrap();
@@ -109,17 +109,14 @@ impl UeInstance {
     fn run_ueberzug_cmd_sixel(&mut self, cmd: &str) -> Result<()> {
         // error!("using sixel output for ueberzugpp");
 
-        let ueberzug = match self.ueberzug {
-            UeInstanceState::New => {
-                self.spawn_cmd(
-                    ["layer", "--silent"],
-                    // ["layer", "--silent", "--no-cache", "--output", "sixel"]
-                    // ["layer", "--sixel"]
-                    // ["--sixel"]
-                )?
-            }
-            UeInstanceState::Child(ref mut v) => v,
-            UeInstanceState::Error => return on_error(),
+        let Some(ueberzug) = self.try_wait_spawn(
+            ["layer"],
+            // ["layer", "--silent", "--no-cache", "--output", "sixel"]
+            // ["layer", "--sixel"]
+            // ["--sixel"]
+        )?
+        else {
+            return Ok(());
         };
 
         let stdin = ueberzug.stdin.as_mut().unwrap();
@@ -154,6 +151,47 @@ impl UeInstance {
                 bail!(err)
             }
         }
+    }
+
+    /// If ueberzug instance does not exist, create it. Otherwise take the existing one
+    ///
+    /// Do a [`Child::try_wait`] on the existing instance and return a error if the instance has exited
+    fn try_wait_spawn<I, S>(&mut self, args: I) -> Result<Option<&mut Child>>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let child = match self.ueberzug {
+            UeInstanceState::New => self.spawn_cmd(args)?,
+            UeInstanceState::Child(ref mut v) => v,
+            UeInstanceState::Error => return on_error().map(|()| None),
+        };
+
+        if let Some(exit_status) = child.try_wait()? {
+            let mut stderr_buf = String::new();
+            child
+                .stderr
+                .as_mut()
+                .map(|v| v.read_to_string(&mut stderr_buf));
+
+            // using a permanent-Error because it is likely the error will happen again on restart (like being on wayland instead of x11)
+            self.ueberzug = UeInstanceState::Error;
+
+            if stderr_buf.is_empty() {
+                stderr_buf.push_str("<empty>");
+            }
+
+            bail!(
+                "ueberzug command closed unexpectedly, (code {:?}, signal {:?}), stderr:\n{}",
+                exit_status.code(),
+                exit_status.signal(),
+                stderr_buf
+            );
+        }
+
+        // out of some reason local variable "child" cannot be returned here because it is modified in the "try_wait" branch
+        // even though that branch never reaches here
+        Ok(Some(self.ueberzug.unwrap_child_mut()))
     }
 }
 
