@@ -4,7 +4,6 @@ use anyhow::{bail, Result};
 use std::ffi::OsStr;
 use std::io::Read as _;
 use std::io::Write;
-use std::os::unix::process::ExitStatusExt as _;
 use std::process::Child;
 use std::process::Command;
 use std::process::Stdio;
@@ -188,12 +187,25 @@ impl UeInstance {
                 stderr_buf.push_str("<empty>");
             }
 
-            bail!(
-                "ueberzug command closed unexpectedly, (code {:?}, signal {:?}), stderr:\n{}",
-                exit_status.code(),
-                exit_status.signal(),
-                stderr_buf
-            );
+            // special handling for unix as that only contains the ".signal" extension, which is important there
+            #[cfg(not(target_family = "unix"))]
+            {
+                bail!(
+                    "ueberzug command closed unexpectedly, (code {:?}), stderr:\n{}",
+                    exit_status.code(),
+                    stderr_buf
+                );
+            }
+            #[cfg(target_family = "unix")]
+            {
+                use std::os::unix::process::ExitStatusExt as _;
+                bail!(
+                    "ueberzug command closed unexpectedly, (code {:?}, signal {:?}), stderr:\n{}",
+                    exit_status.code(),
+                    exit_status.signal(),
+                    stderr_buf
+                );
+            }
         }
 
         // out of some reason local variable "child" cannot be returned here because it is modified in the "try_wait" branch
