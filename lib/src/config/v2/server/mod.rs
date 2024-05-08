@@ -67,16 +67,20 @@ pub enum ScanDepth {
     Unlimited,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+/// What determines a long track length in seconds, 10 minutes
+const LONG_TRACK_TIME: u64 = 600; // 60 * 10
+
+/// Seek amount maybe depending on track length
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum SeekStep {
     /// Only have one seek-step value
     Both(NonZeroU32),
     /// Have different values depending on track type
     Depends {
-        /// Music
+        /// tracks < 10 minutes (like Music)
         short_tracks: NonZeroU32,
-        /// Podcasts
+        /// tracks =>10 minutes (like Podcasts)
         long_tracks: NonZeroU32,
     },
 }
@@ -92,6 +96,25 @@ impl SeekStep {
         Self::Depends {
             short_tracks: NonZeroU32::new(5).unwrap(),
             long_tracks: NonZeroU32::new(30).unwrap(),
+        }
+    }
+
+    /// Get Seek Step, depending on track-length
+    ///
+    /// directly returns a i64, though the value is never negative returned from here
+    pub fn get_step(&self, track_len: u64) -> i64 {
+        match self {
+            SeekStep::Both(v) => v.get().into(),
+            SeekStep::Depends {
+                short_tracks,
+                long_tracks,
+            } => {
+                if track_len >= LONG_TRACK_TIME {
+                    long_tracks.get().into()
+                } else {
+                    short_tracks.get().into()
+                }
+            }
         }
     }
 }
