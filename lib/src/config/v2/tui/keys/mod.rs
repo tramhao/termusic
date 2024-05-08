@@ -4,10 +4,15 @@ use std::str::CharIndices;
 use std::string::ToString;
 use std::{fmt::Display, iter::Peekable};
 
+use ahash::HashMapExt;
 use serde::{Deserialize, Serialize};
 use tuirealm::event as tuievents;
 
-// TODO: validate that there is no double assignment of a key (within reason)
+mod conflict;
+pub use conflict::KeyConflictError;
+use conflict::{CheckConflict, KeyHashMap, KeyHashMapOwned, KeyPath};
+
+use crate::once_chain;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
@@ -45,6 +50,16 @@ pub struct Keys {
     pub config_keys: KeysConfigEditor,
 }
 
+impl Keys {
+    /// Check all the keys if they conflict with each-other
+    pub fn check_keys(&self) -> Result<(), Vec<KeyConflictError>> {
+        let mut key_path = KeyPath::new_with_toplevel("keys");
+        let mut global_keys = KeyHashMapOwned::new();
+
+        self.check_conflict(&mut key_path, &mut global_keys)
+    }
+}
+
 impl Default for Keys {
     fn default() -> Self {
         Self {
@@ -61,6 +76,121 @@ impl Default for Keys {
             move_cover_art_keys: KeysMoveCoverArt::default(),
             config_keys: KeysConfigEditor::default(),
         }
+    }
+}
+
+impl CheckConflict for Keys {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.escape, "escape"),
+            (&self.quit, "quit"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        // add & check direct keys, that are global everywhere
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            global_keys.insert(key.clone(), key_path.join_with_field(path));
+            current_keys.insert(key, path);
+        }
+
+        // -------------
+        // lets do all the views first that dont rely on global player keys
+        let init_len = global_keys.len(); // sanity check
+        key_path.push("config");
+        if let Err(new) = self.config_keys.check_conflict(key_path, global_keys) {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+        // key_path.push("tag_editor");
+        // if let Err(new) = self.tag_editor.check_conflict(key_path, global_keys) {
+        //     conflicts.extend(new);
+        // }
+        // key_path.pop();
+
+        assert_eq!(global_keys.len(), init_len); // sanity check, the above should not have added global_keys
+
+        // -------------
+        // now lets do all the ones that add global player keys
+        key_path.push("view");
+        if let Err(new) = self.select_view_keys.check_conflict(key_path, global_keys) {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+        key_path.push("global_player");
+        if let Err(new) = self.player_keys.check_conflict(key_path, global_keys) {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+        key_path.push("global_lyric");
+        if let Err(new) = self.lyric_keys.check_conflict(key_path, global_keys) {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+        key_path.push("adjust_cover_art");
+        if let Err(new) = self
+            .move_cover_art_keys
+            .check_conflict(key_path, global_keys)
+        {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+
+        // -------------
+        // now lets do all the ones that do not add any global player keys, but need to be checked against those
+        key_path.push("navigation");
+        if let Err(new) = self.navigation_keys.check_conflict(key_path, global_keys) {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+        key_path.push("library");
+        if let Err(new) = self.library_keys.check_conflict(key_path, global_keys) {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+        key_path.push("playlist");
+        if let Err(new) = self.playlist_keys.check_conflict(key_path, global_keys) {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+        key_path.push("podcast");
+        if let Err(new) = self.podcast_keys.check_conflict(key_path, global_keys) {
+            conflicts.extend(new);
+        }
+        key_path.pop();
+
+        // -------------
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
     }
 }
 
@@ -98,6 +228,58 @@ impl Default for KeysSelectView {
             )
             .into(),
         }
+    }
+}
+
+impl CheckConflict for KeysSelectView {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.view_library, "view_library"),
+            (&self.view_database, "view_database"),
+            (&self.view_podcasts, "view_podcasts"),
+
+            (&self.open_config, "open_config"),
+            (&self.open_help, "open_help")
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            global_keys.insert(key.clone(), key_path.join_with_field(path));
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
     }
 }
 
@@ -189,6 +371,64 @@ impl Default for KeysPlayer {
     }
 }
 
+impl CheckConflict for KeysPlayer {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.toggle_pause, "toggle_pause"),
+            (&self.next_track, "next_track"),
+            (&self.previous_track, "previous_track"),
+            (&self.volume_up, "volume_up"),
+            (&self.volume_down, "volume_down"),
+            (&self.seek_forward, "seek_forward"),
+            (&self.seek_backward, "seek_backward"),
+            (&self.speed_up, "speed_up"),
+            (&self.speed_down, "speed_down"),
+            (&self.toggle_prefetch, "toggle_prefetch"),
+
+            (&self.save_playlist, "save_playlist"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            global_keys.insert(key.clone(), key_path.join_with_field(path));
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
+    }
+}
+
 /// Global Lyric adjustment keys
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
@@ -229,6 +469,55 @@ impl Default for KeysLyric {
     }
 }
 
+impl CheckConflict for KeysLyric {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.adjust_offset_forwards, "adjust_offset_forwards"),
+            (&self.adjust_offset_backwards, "adjust_offset_backwards"),
+            (&self.cycle_frames, "cycle_frames"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            global_keys.insert(key.clone(), key_path.join_with_field(path));
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
+    }
+}
+
 /// Extra navigation keys (like vim keylayout)
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
@@ -263,6 +552,57 @@ impl Default for KeysNavigation {
             )
             .into(),
         }
+    }
+}
+
+impl CheckConflict for KeysNavigation {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.up, "up"),
+            (&self.down, "down"),
+            (&self.left, "left"),
+            (&self.right, "right"),
+            (&self.goto_top, "goto_top"),
+            (&self.goto_bottom, "goto_bottom"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
     }
 }
 
@@ -314,6 +654,62 @@ impl Default for KeysLibrary {
             youtube_search: tuievents::Key::Char('s').into(),
             open_tag_editor: tuievents::Key::Char('t').into(),
         }
+    }
+}
+
+impl CheckConflict for KeysLibrary {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.load_dir, "load_dir"),
+            (&self.delete, "delete"),
+            (&self.yank, "yank"),
+            (&self.paste, "paste"),
+            (&self.cycle_root, "cycle_root"),
+            (&self.add_root, "add_root"),
+            (&self.remove_root, "remove_root"),
+
+            (&self.search, "search"),
+            (&self.youtube_search, "youtube_search"),
+            (&self.open_tag_editor, "open_tag_editor"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
     }
 }
 
@@ -381,6 +777,62 @@ impl Default for KeysPlaylist {
     }
 }
 
+impl CheckConflict for KeysPlaylist {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.delete, "delete"),
+            (&self.delete_all, "delete_all"),
+            (&self.shuffle, "shuffle"),
+            (&self.cycle_loop_mode, "cycle_loop_mode"),
+            (&self.play_selected, "play_selected"),
+            (&self.search, "search"),
+            (&self.swap_up, "swap_up"),
+            (&self.swap_down, "swap_down"),
+
+            (&self.add_random_songs, "add_random_songs"),
+            (&self.add_random_album, "add_random_album"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct KeysPodcast {
@@ -433,6 +885,60 @@ impl Default for KeysPodcast {
             )
             .into(),
         }
+    }
+}
+
+impl CheckConflict for KeysPodcast {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.search, "search"),
+            (&self.mark_played, "mark_played"),
+            (&self.mark_all_played, "mark_all_played"),
+            (&self.refresh_feed, "refresh_feed"),
+            (&self.refresh_all_feeds, "refresh_all_feeds"),
+            (&self.download_episode, "download_episode"),
+            (&self.delete_local_episode, "delete_local_episode"),
+            (&self.delete_feed, "delete_feed"),
+            (&self.delete_all_feeds, "delete_all_feeds"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
     }
 }
 
@@ -500,6 +1006,61 @@ impl Default for KeysMoveCoverArt {
     }
 }
 
+impl CheckConflict for KeysMoveCoverArt {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.move_left, "move_left"),
+            (&self.move_right, "move_right"),
+            (&self.move_up, "move_up"),
+            (&self.move_down, "move_down"),
+
+            (&self.increase_size, "increase_size"),
+            (&self.decrease_size, "decrease_size"),
+
+            (&self.toggle_hide, "toggle_hide"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            global_keys.insert(key.clone(), key_path.join_with_field(path));
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
+    }
+}
+
 /// Keys for the config editor
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
@@ -520,6 +1081,52 @@ impl Default for KeysConfigEditor {
     }
 }
 
+impl CheckConflict for KeysConfigEditor {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.save, "save"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
+    }
+}
+
 /// Keys for the database view
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
@@ -537,6 +1144,52 @@ impl Default for KeysDatabase {
             )
             .into(),
         }
+    }
+}
+
+impl CheckConflict for KeysDatabase {
+    fn iter(&self) -> impl Iterator<Item = (&KeyBinding, &'static str)> {
+        once_chain! {
+            (&self.add_all, "add_all"),
+        }
+    }
+
+    fn check_conflict(
+        &self,
+        key_path: &mut KeyPath,
+        global_keys: &mut KeyHashMapOwned,
+    ) -> Result<(), Vec<KeyConflictError>> {
+        let mut conflicts: Vec<KeyConflictError> = Vec::new();
+        let mut current_keys = KeyHashMap::new();
+
+        for (key, path) in self.iter() {
+            // check global first
+            if let Some(existing_path) = global_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: existing_path.to_string(),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            if let Some(existing_path) = current_keys.get(key) {
+                conflicts.push(KeyConflictError {
+                    key_path_first: key_path.join_with_field(existing_path),
+                    key_path_second: key_path.join_with_field(path),
+                    key: key.clone(),
+                });
+                continue;
+            }
+
+            current_keys.insert(key, path);
+        }
+
+        if !conflicts.is_empty() {
+            return Err(conflicts);
+        }
+
+        Ok(())
     }
 }
 
@@ -688,7 +1341,7 @@ impl<'a> Iterator for SplitAtPlus<'a> {
 }
 
 /// Wrapper around the stored Key-Event to use custom de- and serialization
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Hash)]
 #[serde(try_from = "String")]
 #[serde(into = "String")]
 pub struct KeyBinding {
@@ -1104,7 +1757,42 @@ mod v1_interop {
     }
 
     impl From<v1::Keys> for Keys {
+        #[allow(clippy::too_many_lines)]
         fn from(value: v1::Keys) -> Self {
+            // extra case because the v1 defaults have conflicting keys
+            let podcast_delete_feed_key =
+                if value.podcast_episode_download == value.podcast_delete_feed {
+                    KeysPodcast::default().delete_feed
+                } else {
+                    value.podcast_delete_feed.into()
+                };
+            let podcast_delete_delete_all_eq = match (
+                value.podcast_delete_all_feeds.code,
+                value.podcast_delete_feed.code,
+            ) {
+                // the old impl had lowercase and uppercase characters, need to compare them equally
+                (tuievents::Key::Char(left), tuievents::Key::Char(right)) => {
+                    left.to_ascii_lowercase() == right.to_ascii_lowercase()
+                }
+                (left, right) => left == right,
+            };
+            let podcast_delete_all_feeds_key = if value.podcast_episode_download
+                == value.podcast_delete_feed
+                && podcast_delete_delete_all_eq
+            {
+                KeysPodcast::default().delete_all_feeds
+            } else {
+                value.podcast_delete_all_feeds.into()
+            };
+            // need to change it here too because the v1 default is "x", which had been changed to "d+shift" to be a upgrade over "download"
+            let podcast_delete_episode_key = if podcast_delete_feed_key
+                == value.podcast_episode_delete_file.key_event().into()
+            {
+                KeysPodcast::default().delete_local_episode
+            } else {
+                value.podcast_episode_delete_file.into()
+            };
+
             Self {
                 escape: value.global_esc.into(),
                 quit: value.global_quit.into(),
@@ -1175,9 +1863,9 @@ mod v1_interop {
                     refresh_feed: value.podcast_refresh_feed.into(),
                     refresh_all_feeds: value.podcast_refresh_all_feeds.into(),
                     download_episode: value.podcast_episode_download.into(),
-                    delete_local_episode: value.podcast_episode_delete_file.into(),
-                    delete_feed: value.podcast_delete_feed.into(),
-                    delete_all_feeds: value.podcast_delete_all_feeds.into(),
+                    delete_local_episode: podcast_delete_episode_key,
+                    delete_feed: podcast_delete_feed_key,
+                    delete_all_feeds: podcast_delete_all_feeds_key,
                 },
                 move_cover_art_keys: KeysMoveCoverArt {
                     move_left: value.global_xywh_move_left.into(),
@@ -1375,10 +2063,14 @@ mod v1_interop {
                 )
                 .into(),
                 download_episode: tuievents::Key::Char('d').into(),
-                delete_local_episode: tuievents::Key::Char('x').into(),
-                delete_feed: tuievents::Key::Char('d').into(),
-                delete_all_feeds: tuievents::KeyEvent::new(
+                delete_local_episode: tuievents::KeyEvent::new(
                     tuievents::Key::Char('d'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                delete_feed: tuievents::Key::Char('x').into(),
+                delete_all_feeds: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('x'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -1433,23 +2125,24 @@ mod v1_interop {
             };
             assert_eq!(converted.config_keys, expected_config_editor_keys);
 
-            assert_eq!(
-                converted,
-                Keys {
-                    escape: tuievents::Key::Esc.into(),
-                    quit: tuievents::Key::Char('q').into(),
-                    select_view_keys: expected_select_view_keys,
-                    navigation_keys: expected_navigation_keys,
-                    player_keys: expected_player_keys,
-                    lyric_keys: expected_lyric_keys,
-                    library_keys: expected_library_keys,
-                    playlist_keys: expected_playlist_keys,
-                    database_keys: expected_database_keys,
-                    podcast_keys: expected_podcast_keys,
-                    move_cover_art_keys: expected_move_cover_art_keys,
-                    config_keys: expected_config_editor_keys
-                }
-            );
+            let expected_keys = Keys {
+                escape: tuievents::Key::Esc.into(),
+                quit: tuievents::Key::Char('q').into(),
+                select_view_keys: expected_select_view_keys,
+                navigation_keys: expected_navigation_keys,
+                player_keys: expected_player_keys,
+                lyric_keys: expected_lyric_keys,
+                library_keys: expected_library_keys,
+                playlist_keys: expected_playlist_keys,
+                database_keys: expected_database_keys,
+                podcast_keys: expected_podcast_keys,
+                move_cover_art_keys: expected_move_cover_art_keys,
+                config_keys: expected_config_editor_keys,
+            };
+
+            assert_eq!(converted, expected_keys);
+
+            assert_eq!(Ok(()), expected_keys.check_keys());
         }
     }
 }
@@ -1770,6 +2463,38 @@ mod test {
                 .unwrap();
 
             assert_eq!(Keys::default(), parsed);
+        }
+
+        #[test]
+        fn should_not_conflict_on_default() {
+            assert_eq!(Ok(()), Keys::default().check_keys());
+        }
+
+        #[test]
+        fn should_not_conflict_on_different_view() {
+            // check that views that would not conflict do not conflict
+            let mut keys = Keys::default();
+            keys.library_keys.delete = tuievents::Key::Delete.into();
+            keys.podcast_keys.delete_feed = tuievents::Key::Delete.into();
+
+            assert_eq!(Ok(()), keys.check_keys());
+        }
+
+        #[test]
+        fn should_err_on_global_key_conflict() {
+            // check that views that would not conflict do not conflict
+            let mut keys = Keys::default();
+            keys.select_view_keys.view_podcasts = tuievents::Key::Delete.into();
+            keys.podcast_keys.delete_feed = tuievents::Key::Delete.into();
+
+            assert_eq!(
+                Err(vec![KeyConflictError {
+                    key_path_first: "keys.view.view_podcasts".into(),
+                    key_path_second: "keys.podcast.delete_feed".into(),
+                    key: tuievents::Key::Delete.into()
+                }]),
+                keys.check_keys()
+            );
         }
     }
 }
