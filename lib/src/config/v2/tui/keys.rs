@@ -640,7 +640,7 @@ impl<'a> Iterator for SplitAtPlus<'a> {
 }
 
 /// Wrapper around the stored Key-Event to use custom de- and serialization
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(try_from = "String")]
 #[serde(into = "String")]
 pub struct KeyBinding {
@@ -695,6 +695,12 @@ impl KeyBinding {
         Ok(Self {
             key_event: tuievents::KeyEvent::new(code, modifiers),
         })
+    }
+
+    /// Get the inner key
+    #[inline]
+    pub fn get(&self) -> tuievents::KeyEvent {
+        self.key_event
     }
 }
 
