@@ -307,7 +307,7 @@ pub enum LoopMode {
 }
 
 /// Settings for the gRPC server (and potentially future ways to communicate)
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 // for now, require that both port and ip are specified at once
 // #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ComSettings {

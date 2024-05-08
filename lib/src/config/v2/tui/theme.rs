@@ -12,7 +12,7 @@ use crate::config::{
 
 // TODO: combine Theme & Color?
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeColorWrap {
     pub colors: Colors,
