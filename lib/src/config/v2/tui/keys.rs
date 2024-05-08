@@ -39,6 +39,8 @@ pub struct Keys {
     pub podcast_keys: KeysPodcast,
     #[serde(rename = "adjust_cover_art")]
     pub move_cover_art_keys: KeysMoveCoverArt,
+    #[serde(rename = "config")]
+    pub config_keys: KeysConfigEditor,
 }
 
 impl Default for Keys {
@@ -54,6 +56,7 @@ impl Default for Keys {
             playlist_keys: KeysPlaylist::default(),
             podcast_keys: KeysPodcast::default(),
             move_cover_art_keys: KeysMoveCoverArt::default(),
+            config_keys: KeysConfigEditor::default(),
         }
     }
 }
@@ -486,6 +489,26 @@ impl Default for KeysMoveCoverArt {
             toggle_hide: tuievents::KeyEvent::new(
                 tuievents::Key::End,
                 tuievents::KeyModifiers::CONTROL | tuievents::KeyModifiers::SHIFT,
+            )
+            .into(),
+        }
+    }
+}
+
+/// Keys for the config editor
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
+pub struct KeysConfigEditor {
+    /// Save the config to disk
+    pub save: KeyBinding,
+}
+
+impl Default for KeysConfigEditor {
+    fn default() -> Self {
+        Self {
+            save: tuievents::KeyEvent::new(
+                tuievents::Key::Char('s'),
+                tuievents::KeyModifiers::CONTROL,
             )
             .into(),
         }
