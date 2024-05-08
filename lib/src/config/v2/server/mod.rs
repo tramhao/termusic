@@ -6,6 +6,8 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
+use crate::track::MediaType;
+
 /// Extra things necessary for a config file, like wrappers for versioning
 pub mod config_extra;
 
@@ -109,8 +111,11 @@ pub enum PositionYesNoLower {
     No,
 }
 
-/// Default for [`PositionYesNoLower::Yes`]
-const DEFAULT_YES_TIME_BEFORE_SAVE: u64 = 3;
+/// Default for [`PositionYesNoLower::Yes`] for [`MediaType::Music`]
+const DEFAULT_YES_TIME_BEFORE_SAVE_MUSIC: u64 = 3;
+
+/// Default for [`PositionYesNoLower::Yes`] for [`MediaType::Podcast`]
+const DEFAULT_YES_TIME_BEFORE_SAVE_PODCAST: u64 = 10;
 
 // this exists because "serde(rename_all)" and "serde(untagged)" dont work well together
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -124,10 +129,14 @@ pub enum PositionYesNo {
 
 impl PositionYesNo {
     /// Get the time before saving the track position, if enabled
-    pub fn get_time(&self) -> Option<u64> {
+    pub fn get_time(&self, media_type: MediaType) -> Option<u64> {
         match self {
             PositionYesNo::Simple(v) => match v {
-                PositionYesNoLower::Yes => Some(DEFAULT_YES_TIME_BEFORE_SAVE),
+                PositionYesNoLower::Yes => match media_type {
+                    MediaType::Music => Some(DEFAULT_YES_TIME_BEFORE_SAVE_MUSIC),
+                    MediaType::Podcast => Some(DEFAULT_YES_TIME_BEFORE_SAVE_PODCAST),
+                    MediaType::LiveRadio => None,
+                },
                 PositionYesNoLower::No => None,
             },
             PositionYesNo::YesTime(v) => Some(*v),
@@ -145,6 +154,20 @@ pub enum RememberLastPosition {
         music: PositionYesNo,
         podcast: PositionYesNo,
     },
+}
+
+impl RememberLastPosition {
+    /// Get the time before saving the track position, if enabled
+    pub fn get_time(&self, media_type: MediaType) -> Option<u64> {
+        match self {
+            RememberLastPosition::All(v) => v.get_time(media_type),
+            RememberLastPosition::Depends { music, podcast } => match media_type {
+                MediaType::Music => music.get_time(media_type),
+                MediaType::Podcast => podcast.get_time(media_type),
+                MediaType::LiveRadio => None,
+            },
+        }
+    }
 }
 
 impl Default for RememberLastPosition {
