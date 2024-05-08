@@ -50,107 +50,107 @@ impl ThemeWrap {
 
     #[inline]
     pub fn library_foreground(&self) -> Color {
-        self.get_color_from_theme(self.style.library.foreground)
+        self.get_color_from_theme(self.style.library.foreground_color)
     }
 
     #[inline]
     pub fn library_background(&self) -> Color {
-        self.get_color_from_theme(self.style.library.background)
+        self.get_color_from_theme(self.style.library.background_color)
     }
 
     #[inline]
     pub fn library_highlight(&self) -> Color {
-        self.get_color_from_theme(self.style.library.highlight)
+        self.get_color_from_theme(self.style.library.highlight_color)
     }
 
     #[inline]
     pub fn library_border(&self) -> Color {
-        self.get_color_from_theme(self.style.library.border)
+        self.get_color_from_theme(self.style.library.border_color)
     }
 
     #[inline]
     pub fn playlist_foreground(&self) -> Color {
-        self.get_color_from_theme(self.style.playlist.foreground)
+        self.get_color_from_theme(self.style.playlist.foreground_color)
     }
 
     #[inline]
     pub fn playlist_background(&self) -> Color {
-        self.get_color_from_theme(self.style.playlist.background)
+        self.get_color_from_theme(self.style.playlist.background_color)
     }
 
     #[inline]
     pub fn playlist_highlight(&self) -> Color {
-        self.get_color_from_theme(self.style.playlist.highlight)
+        self.get_color_from_theme(self.style.playlist.highlight_color)
     }
 
     #[inline]
     pub fn playlist_border(&self) -> Color {
-        self.get_color_from_theme(self.style.playlist.border)
+        self.get_color_from_theme(self.style.playlist.border_color)
     }
 
     #[inline]
     pub fn progress_foreground(&self) -> Color {
-        self.get_color_from_theme(self.style.progress.foreground)
+        self.get_color_from_theme(self.style.progress.foreground_color)
     }
 
     #[inline]
     pub fn progress_background(&self) -> Color {
-        self.get_color_from_theme(self.style.progress.background)
+        self.get_color_from_theme(self.style.progress.background_color)
     }
 
     #[inline]
     pub fn progress_border(&self) -> Color {
-        self.get_color_from_theme(self.style.progress.border)
+        self.get_color_from_theme(self.style.progress.border_color)
     }
 
     #[inline]
     pub fn lyric_foreground(&self) -> Color {
-        self.get_color_from_theme(self.style.lyric.foreground)
+        self.get_color_from_theme(self.style.lyric.foreground_color)
     }
 
     #[inline]
     pub fn lyric_background(&self) -> Color {
-        self.get_color_from_theme(self.style.lyric.background)
+        self.get_color_from_theme(self.style.lyric.background_color)
     }
 
     #[inline]
     pub fn lyric_border(&self) -> Color {
-        self.get_color_from_theme(self.style.lyric.border)
+        self.get_color_from_theme(self.style.lyric.border_color)
     }
 
     #[inline]
     pub fn important_popup_foreground(&self) -> Color {
-        self.get_color_from_theme(self.style.important_popup.foreground)
+        self.get_color_from_theme(self.style.important_popup.foreground_color)
     }
 
     #[inline]
     pub fn important_popup_background(&self) -> Color {
-        self.get_color_from_theme(self.style.important_popup.background)
+        self.get_color_from_theme(self.style.important_popup.background_color)
     }
 
     #[inline]
     pub fn important_popup_border(&self) -> Color {
-        self.get_color_from_theme(self.style.important_popup.border)
+        self.get_color_from_theme(self.style.important_popup.border_color)
     }
 
     #[inline]
     pub fn fallback_foreground(&self) -> Color {
-        self.get_color_from_theme(self.style.fallback.foreground)
+        self.get_color_from_theme(self.style.fallback.foreground_color)
     }
 
     #[inline]
     pub fn fallback_background(&self) -> Color {
-        self.get_color_from_theme(self.style.fallback.background)
+        self.get_color_from_theme(self.style.fallback.background_color)
     }
 
     #[inline]
     pub fn fallback_highlight(&self) -> Color {
-        self.get_color_from_theme(self.style.fallback.highlight)
+        self.get_color_from_theme(self.style.fallback.highlight_color)
     }
 
     #[inline]
     pub fn fallback_border(&self) -> Color {
-        self.get_color_from_theme(self.style.fallback.border)
+        self.get_color_from_theme(self.style.fallback.border_color)
     }
 }
 

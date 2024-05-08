@@ -74,13 +74,13 @@ pub struct Styles {
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct StyleLibrary {
     /// Music Library foreground color (text)
-    pub foreground: ColorTermusic,
+    pub foreground_color: ColorTermusic,
     /// Music Library background color (background)
-    pub background: ColorTermusic,
+    pub background_color: ColorTermusic,
     /// Music Library border color (when focused)
-    pub border: ColorTermusic,
+    pub border_color: ColorTermusic,
     /// Music Library selected node highlight color
-    pub highlight: ColorTermusic,
+    pub highlight_color: ColorTermusic,
 
     /// Music Library selected node highlight symbol
     pub highlight_symbol: String,
@@ -89,10 +89,10 @@ pub struct StyleLibrary {
 impl Default for StyleLibrary {
     fn default() -> Self {
         Self {
-            foreground: ColorTermusic::Foreground,
-            background: ColorTermusic::Reset,
-            border: ColorTermusic::Blue,
-            highlight: ColorTermusic::LightYellow,
+            foreground_color: ColorTermusic::Foreground,
+            background_color: ColorTermusic::Reset,
+            border_color: ColorTermusic::Blue,
+            highlight_color: ColorTermusic::LightYellow,
 
             highlight_symbol: "🦄".into(),
         }
@@ -104,13 +104,13 @@ impl Default for StyleLibrary {
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct StylePlaylist {
     /// Playlist foreground color (text)
-    pub foreground: ColorTermusic,
+    pub foreground_color: ColorTermusic,
     /// Playlist background color (text)
-    pub background: ColorTermusic,
+    pub background_color: ColorTermusic,
     /// Playlist border color (when focused)
-    pub border: ColorTermusic,
+    pub border_color: ColorTermusic,
     /// Playlist selected node highlight color
-    pub highlight: ColorTermusic,
+    pub highlight_color: ColorTermusic,
 
     /// Playlist selected track highlight symbol
     pub highlight_symbol: String,
@@ -126,10 +126,10 @@ pub struct StylePlaylist {
 impl Default for StylePlaylist {
     fn default() -> Self {
         Self {
-            foreground: ColorTermusic::Foreground,
-            background: ColorTermusic::Reset,
-            border: ColorTermusic::Blue,
-            highlight: ColorTermusic::LightYellow,
+            foreground_color: ColorTermusic::Foreground,
+            background_color: ColorTermusic::Reset,
+            border_color: ColorTermusic::Blue,
+            highlight_color: ColorTermusic::LightYellow,
 
             highlight_symbol: "🚀".into(),
             current_track_symbol: "►".into(),
@@ -144,19 +144,19 @@ impl Default for StylePlaylist {
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct StyleLyric {
     /// Lyrics foreground color (text)
-    pub foreground: ColorTermusic,
+    pub foreground_color: ColorTermusic,
     /// Lyrics background color (background)
-    pub background: ColorTermusic,
+    pub background_color: ColorTermusic,
     /// Lyrics border color (when focused)
-    pub border: ColorTermusic,
+    pub border_color: ColorTermusic,
 }
 
 impl Default for StyleLyric {
     fn default() -> Self {
         Self {
-            foreground: ColorTermusic::Foreground,
-            background: ColorTermusic::Reset,
-            border: ColorTermusic::Blue,
+            foreground_color: ColorTermusic::Foreground,
+            background_color: ColorTermusic::Reset,
+            border_color: ColorTermusic::Blue,
         }
     }
 }
@@ -166,19 +166,19 @@ impl Default for StyleLyric {
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct StyleProgress {
     /// Track Progressbar foreground color (text)
-    pub foreground: ColorTermusic,
+    pub foreground_color: ColorTermusic,
     /// Track Progressbar background color (background)
-    pub background: ColorTermusic,
+    pub background_color: ColorTermusic,
     /// Track Progressbar border (always)
-    pub border: ColorTermusic,
+    pub border_color: ColorTermusic,
 }
 
 impl Default for StyleProgress {
     fn default() -> Self {
         Self {
-            foreground: ColorTermusic::LightBlack,
-            background: ColorTermusic::Reset,
-            border: ColorTermusic::Blue,
+            foreground_color: ColorTermusic::LightBlack,
+            background_color: ColorTermusic::Reset,
+            border_color: ColorTermusic::Blue,
         }
     }
 }
@@ -188,19 +188,19 @@ impl Default for StyleProgress {
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct StyleImportantPopup {
     /// Important Popup (like Error or Delete) foreground color (text)
-    pub foreground: ColorTermusic,
+    pub foreground_color: ColorTermusic,
     /// Important Popup (like Error or Delete) background color (background)
-    pub background: ColorTermusic,
+    pub background_color: ColorTermusic,
     /// Important Popup (like Error or Delete) border color (always)
-    pub border: ColorTermusic,
+    pub border_color: ColorTermusic,
 }
 
 impl Default for StyleImportantPopup {
     fn default() -> Self {
         Self {
-            foreground: ColorTermusic::Yellow,
-            background: ColorTermusic::Reset,
-            border: ColorTermusic::Yellow,
+            foreground_color: ColorTermusic::Yellow,
+            background_color: ColorTermusic::Reset,
+            border_color: ColorTermusic::Yellow,
         }
     }
 }
@@ -210,22 +210,22 @@ impl Default for StyleImportantPopup {
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct StyleFallback {
     /// Generic foreground color (text)
-    pub foreground: ColorTermusic,
+    pub foreground_color: ColorTermusic,
     /// Generic background color (background)
-    pub background: ColorTermusic,
+    pub background_color: ColorTermusic,
     /// Generic border color (always)
-    pub border: ColorTermusic,
+    pub border_color: ColorTermusic,
     /// Generic Highlight color
-    pub highlight: ColorTermusic,
+    pub highlight_color: ColorTermusic,
 }
 
 impl Default for StyleFallback {
     fn default() -> Self {
         Self {
-            foreground: ColorTermusic::Foreground,
-            background: ColorTermusic::Reset,
-            border: ColorTermusic::Blue,
-            highlight: ColorTermusic::LightYellow,
+            foreground_color: ColorTermusic::Foreground,
+            background_color: ColorTermusic::Reset,
+            border_color: ColorTermusic::Blue,
+            highlight_color: ColorTermusic::LightYellow,
         }
     }
 }
@@ -266,10 +266,10 @@ mod v1_interop {
     impl From<&v1::StyleColorSymbol> for StyleLibrary {
         fn from(value: &v1::StyleColorSymbol) -> Self {
             Self {
-                foreground: value.library_foreground.into(),
-                background: value.library_background.into(),
-                border: value.library_border.into(),
-                highlight: value.library_highlight.into(),
+                foreground_color: value.library_foreground.into(),
+                background_color: value.library_background.into(),
+                border_color: value.library_border.into(),
+                highlight_color: value.library_highlight.into(),
 
                 highlight_symbol: value.library_highlight_symbol.clone(),
             }
@@ -281,10 +281,10 @@ mod v1_interop {
             let use_loop_mode_symbol = value.playlist_display_symbol;
             let value = &value.style_color_symbol;
             Self {
-                foreground: value.playlist_foreground.into(),
-                background: value.playlist_background.into(),
-                border: value.playlist_border.into(),
-                highlight: value.playlist_highlight.into(),
+                foreground_color: value.playlist_foreground.into(),
+                background_color: value.playlist_background.into(),
+                border_color: value.playlist_border.into(),
+                highlight_color: value.playlist_highlight.into(),
                 highlight_symbol: value.playlist_highlight_symbol.clone(),
                 current_track_symbol: value.currently_playing_track_symbol.clone(),
                 use_loop_mode_symbol,
@@ -295,9 +295,9 @@ mod v1_interop {
     impl From<&v1::StyleColorSymbol> for StyleLyric {
         fn from(value: &v1::StyleColorSymbol) -> Self {
             Self {
-                foreground: value.lyric_foreground.into(),
-                background: value.lyric_background.into(),
-                border: value.lyric_border.into(),
+                foreground_color: value.lyric_foreground.into(),
+                background_color: value.lyric_background.into(),
+                border_color: value.lyric_border.into(),
             }
         }
     }
@@ -305,9 +305,9 @@ mod v1_interop {
     impl From<&v1::StyleColorSymbol> for StyleProgress {
         fn from(value: &v1::StyleColorSymbol) -> Self {
             Self {
-                foreground: value.progress_foreground.into(),
-                background: value.progress_background.into(),
-                border: value.progress_border.into(),
+                foreground_color: value.progress_foreground.into(),
+                background_color: value.progress_background.into(),
+                border_color: value.progress_border.into(),
             }
         }
     }
@@ -315,9 +315,9 @@ mod v1_interop {
     impl From<&v1::StyleColorSymbol> for StyleImportantPopup {
         fn from(value: &v1::StyleColorSymbol) -> Self {
             Self {
-                foreground: value.important_popup_foreground.into(),
-                background: value.important_popup_background.into(),
-                border: value.important_popup_border.into(),
+                foreground_color: value.important_popup_foreground.into(),
+                background_color: value.important_popup_background.into(),
+                border_color: value.important_popup_border.into(),
             }
         }
     }
@@ -325,10 +325,10 @@ mod v1_interop {
     impl From<&v1::StyleColorSymbol> for StyleFallback {
         fn from(value: &v1::StyleColorSymbol) -> Self {
             Self {
-                foreground: value.fallback_foreground.into(),
-                background: value.fallback_background.into(),
-                border: value.fallback_border.into(),
-                highlight: value.fallback_highlight.into(),
+                foreground_color: value.fallback_foreground.into(),
+                background_color: value.fallback_background.into(),
+                border_color: value.fallback_border.into(),
+                highlight_color: value.fallback_highlight.into(),
             }
         }
     }
@@ -357,20 +357,20 @@ mod v1_interop {
             let converted: Styles = (&v1::Settings::default()).into();
 
             let expected_library = StyleLibrary {
-                foreground: ColorTermusic::Foreground,
-                background: ColorTermusic::Reset,
-                border: ColorTermusic::Blue,
-                highlight: ColorTermusic::LightYellow,
+                foreground_color: ColorTermusic::Foreground,
+                background_color: ColorTermusic::Reset,
+                border_color: ColorTermusic::Blue,
+                highlight_color: ColorTermusic::LightYellow,
 
                 highlight_symbol: "🦄".into(),
             };
             assert_eq!(converted.library, expected_library);
 
             let expected_playlist = StylePlaylist {
-                foreground: ColorTermusic::Foreground,
-                background: ColorTermusic::Reset,
-                border: ColorTermusic::Blue,
-                highlight: ColorTermusic::LightYellow,
+                foreground_color: ColorTermusic::Foreground,
+                background_color: ColorTermusic::Reset,
+                border_color: ColorTermusic::Blue,
+                highlight_color: ColorTermusic::LightYellow,
 
                 highlight_symbol: "🚀".into(),
                 current_track_symbol: "►".into(),
@@ -379,31 +379,31 @@ mod v1_interop {
             assert_eq!(converted.playlist, expected_playlist);
 
             let expected_lyric = StyleLyric {
-                foreground: ColorTermusic::Foreground,
-                background: ColorTermusic::Reset,
-                border: ColorTermusic::Blue,
+                foreground_color: ColorTermusic::Foreground,
+                background_color: ColorTermusic::Reset,
+                border_color: ColorTermusic::Blue,
             };
             assert_eq!(converted.lyric, expected_lyric);
 
             let expected_progress = StyleProgress {
-                foreground: ColorTermusic::LightBlack,
-                background: ColorTermusic::Reset,
-                border: ColorTermusic::Blue,
+                foreground_color: ColorTermusic::LightBlack,
+                background_color: ColorTermusic::Reset,
+                border_color: ColorTermusic::Blue,
             };
             assert_eq!(converted.progress, expected_progress);
 
             let expected_important_popup = StyleImportantPopup {
-                foreground: ColorTermusic::Yellow,
-                background: ColorTermusic::Reset,
-                border: ColorTermusic::Yellow,
+                foreground_color: ColorTermusic::Yellow,
+                background_color: ColorTermusic::Reset,
+                border_color: ColorTermusic::Yellow,
             };
             assert_eq!(converted.important_popup, expected_important_popup);
 
             let expected_fallback = StyleFallback {
-                foreground: ColorTermusic::Foreground,
-                background: ColorTermusic::Reset,
-                border: ColorTermusic::Blue,
-                highlight: ColorTermusic::LightYellow,
+                foreground_color: ColorTermusic::Foreground,
+                background_color: ColorTermusic::Reset,
+                border_color: ColorTermusic::Blue,
+                highlight_color: ColorTermusic::LightYellow,
             };
             assert_eq!(converted.fallback, expected_fallback);
 
