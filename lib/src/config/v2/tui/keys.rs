@@ -35,6 +35,8 @@ pub struct Keys {
     pub library_keys: KeysLibrary,
     #[serde(rename = "playlist")]
     pub playlist_keys: KeysPlaylist,
+    #[serde(rename = "database")]
+    pub database_keys: KeysDatabase,
     #[serde(rename = "podcast")]
     pub podcast_keys: KeysPodcast,
     #[serde(rename = "adjust_cover_art")]
@@ -54,6 +56,7 @@ impl Default for Keys {
             lyric_keys: KeysLyric::default(),
             library_keys: KeysLibrary::default(),
             playlist_keys: KeysPlaylist::default(),
+            database_keys: KeysDatabase::default(),
             podcast_keys: KeysPodcast::default(),
             move_cover_art_keys: KeysMoveCoverArt::default(),
             config_keys: KeysConfigEditor::default(),
@@ -509,6 +512,26 @@ impl Default for KeysConfigEditor {
             save: tuievents::KeyEvent::new(
                 tuievents::Key::Char('s'),
                 tuievents::KeyModifiers::CONTROL,
+            )
+            .into(),
+        }
+    }
+}
+
+/// Keys for the database view
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
+pub struct KeysDatabase {
+    /// Add all tracks in the Database view "Tracks" section
+    pub add_all: KeyBinding,
+}
+
+impl Default for KeysDatabase {
+    fn default() -> Self {
+        Self {
+            add_all: tuievents::KeyEvent::new(
+                tuievents::Key::Char('l'),
+                tuievents::KeyModifiers::SHIFT,
             )
             .into(),
         }
