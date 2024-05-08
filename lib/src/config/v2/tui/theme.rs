@@ -5,8 +5,9 @@ use std::{fmt::Display, num::ParseIntError};
 use serde::{Deserialize, Serialize};
 use tuirealm::props::Color;
 
-use crate::config::yaml_theme::{
-    YAMLTheme, YAMLThemeBright, YAMLThemeCursor, YAMLThemeNormal, YAMLThemePrimary,
+use crate::config::{
+    v1::AlacrittyColor,
+    yaml_theme::{YAMLTheme, YAMLThemeBright, YAMLThemeCursor, YAMLThemeNormal, YAMLThemePrimary},
 };
 
 // TODO: combine Theme & Color?
@@ -207,7 +208,7 @@ impl ColorTermusic {
 }
 
 /// What color to use for specific things, will use the colors from the specified Theme
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Colors {
     /// Music Library foreground color (text)
     pub library_foreground: ColorTermusic,
@@ -364,6 +365,24 @@ impl TryFrom<String> for ThemeColor {
     }
 }
 
+impl TryFrom<&str> for ThemeColor {
+    type Error = ThemeColorParseError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_hex(value)
+    }
+}
+
+impl From<AlacrittyColor> for ThemeColor {
+    fn from(value: AlacrittyColor) -> Self {
+        Self {
+            r: value.r,
+            g: value.g,
+            b: value.b,
+        }
+    }
+}
+
 impl From<ThemeColor> for String {
     fn from(val: ThemeColor) -> Self {
         ThemeColor::to_hex(&val)
@@ -376,7 +395,7 @@ impl From<ThemeColor> for Color {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeColors {
     pub name: String,
@@ -447,7 +466,7 @@ impl TryFrom<YAMLTheme> for ThemeColors {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ThemePrimary {
     pub background: ThemeColor,
     pub foreground: ThemeColor,
@@ -473,7 +492,7 @@ impl TryFrom<YAMLThemePrimary> for ThemePrimary {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeCursor {
     pub text: ThemeColor,
@@ -500,7 +519,7 @@ impl TryFrom<YAMLThemeCursor> for ThemeCursor {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeNormal {
     pub black: ThemeColor,
@@ -545,7 +564,7 @@ impl TryFrom<YAMLThemeNormal> for ThemeNormal {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeBright {
     pub black: ThemeColor,
@@ -608,4 +627,192 @@ fn default_000() -> ThemeColor {
 #[inline]
 fn default_fff() -> ThemeColor {
     ThemeColor::from_hex("#FFFFFF").unwrap()
+}
+
+mod v1_interop {
+    use super::{
+        ColorTermusic, Colors, ThemeBright, ThemeColorWrap, ThemeColors, ThemeCursor, ThemeNormal,
+        ThemePrimary,
+    };
+    use crate::config::v1;
+
+    impl From<v1::ColorTermusic> for ColorTermusic {
+        fn from(value: v1::ColorTermusic) -> Self {
+            match value {
+                v1::ColorTermusic::Reset => Self::Reset,
+                v1::ColorTermusic::Foreground => Self::Foreground,
+                v1::ColorTermusic::Background => Self::Background,
+                v1::ColorTermusic::Black => Self::Black,
+                v1::ColorTermusic::Red => Self::Red,
+                v1::ColorTermusic::Green => Self::Green,
+                v1::ColorTermusic::Yellow => Self::Yellow,
+                v1::ColorTermusic::Blue => Self::Blue,
+                v1::ColorTermusic::Magenta => Self::Magenta,
+                v1::ColorTermusic::Cyan => Self::Cyan,
+                v1::ColorTermusic::White => Self::White,
+                v1::ColorTermusic::LightBlack => Self::LightBlack,
+                v1::ColorTermusic::LightRed => Self::LightRed,
+                v1::ColorTermusic::LightGreen => Self::LightGreen,
+                v1::ColorTermusic::LightYellow => Self::LightYellow,
+                v1::ColorTermusic::LightBlue => Self::LightBlue,
+                v1::ColorTermusic::LightMagenta => Self::LightMagenta,
+                v1::ColorTermusic::LightCyan => Self::LightCyan,
+                v1::ColorTermusic::LightWhite => Self::LightWhite,
+            }
+        }
+    }
+
+    impl From<v1::StyleColorSymbol> for Colors {
+        fn from(value: v1::StyleColorSymbol) -> Self {
+            Self {
+                library_foreground: value.library_foreground.into(),
+                library_background: value.library_background.into(),
+                library_border: value.library_border.into(),
+                library_highlight: value.library_highlight.into(),
+
+                playlist_foreground: value.playlist_foreground.into(),
+                playlist_background: value.playlist_background.into(),
+                playlist_border: value.playlist_border.into(),
+                playlist_highlight: value.playlist_highlight.into(),
+
+                lyric_foreground: value.lyric_foreground.into(),
+                lyric_background: value.lyric_background.into(),
+                lyric_border: value.lyric_border.into(),
+
+                progress_foreground: value.progress_foreground.into(),
+                progress_background: value.progress_background.into(),
+                progress_border: value.progress_border.into(),
+
+                important_popup_foreground: value.important_popup_foreground.into(),
+                important_popup_background: value.important_popup_background.into(),
+                important_popup_border: value.important_popup_border.into(),
+
+                fallback_foreground: value.fallback_foreground.into(),
+                fallback_background: value.fallback_background.into(),
+                fallback_border: value.fallback_border.into(),
+                fallback_highlight: value.fallback_highlight.into(),
+            }
+        }
+    }
+
+    impl From<v1::Alacritty> for ThemeColors {
+        fn from(value: v1::Alacritty) -> Self {
+            Self {
+                name: value.name,
+                author: value.author,
+                primary: ThemePrimary {
+                    background: value.background.into(),
+                    foreground: value.foreground.into(),
+                },
+                cursor: ThemeCursor {
+                    text: value.text.into(),
+                    cursor: value.cursor.into(),
+                },
+                normal: ThemeNormal {
+                    black: value.black.into(),
+                    red: value.red.into(),
+                    green: value.green.into(),
+                    yellow: value.yellow.into(),
+                    blue: value.blue.into(),
+                    magenta: value.magenta.into(),
+                    cyan: value.cyan.into(),
+                    white: value.white.into(),
+                },
+                bright: ThemeBright {
+                    black: value.light_black.into(),
+                    red: value.light_red.into(),
+                    green: value.light_green.into(),
+                    yellow: value.light_yellow.into(),
+                    blue: value.light_blue.into(),
+                    magenta: value.light_magenta.into(),
+                    cyan: value.light_cyan.into(),
+                    white: value.light_white.into(),
+                },
+            }
+        }
+    }
+
+    impl From<v1::StyleColorSymbol> for ThemeColorWrap {
+        fn from(value: v1::StyleColorSymbol) -> Self {
+            Self {
+                theme: value.alacritty_theme.clone().into(),
+                colors: value.into(),
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn should_convert_default_without_error() {
+            let converted: ThemeColorWrap = v1::StyleColorSymbol::default().into();
+
+            assert_eq!(
+                converted.colors,
+                Colors {
+                    library_foreground: ColorTermusic::Foreground,
+                    library_background: ColorTermusic::Reset,
+                    library_border: ColorTermusic::Blue,
+                    library_highlight: ColorTermusic::LightYellow,
+                    playlist_foreground: ColorTermusic::Foreground,
+                    playlist_background: ColorTermusic::Reset,
+                    playlist_border: ColorTermusic::Blue,
+                    playlist_highlight: ColorTermusic::LightYellow,
+                    lyric_foreground: ColorTermusic::Foreground,
+                    lyric_background: ColorTermusic::Reset,
+                    lyric_border: ColorTermusic::Blue,
+                    progress_foreground: ColorTermusic::LightBlack,
+                    progress_background: ColorTermusic::Reset,
+                    progress_border: ColorTermusic::Blue,
+
+                    important_popup_foreground: ColorTermusic::Yellow,
+                    important_popup_background: ColorTermusic::Reset,
+                    important_popup_border: ColorTermusic::Yellow,
+
+                    fallback_foreground: ColorTermusic::Foreground,
+                    fallback_background: ColorTermusic::Reset,
+                    fallback_border: ColorTermusic::Blue,
+                    fallback_highlight: ColorTermusic::LightYellow
+                }
+            );
+
+            assert_eq!(
+                converted.theme,
+                ThemeColors {
+                    name: "default".into(),
+                    author: "Larry Hao".into(),
+                    primary: ThemePrimary {
+                        background: "#101421".try_into().unwrap(),
+                        foreground: "#fffbf6".try_into().unwrap()
+                    },
+                    cursor: ThemeCursor {
+                        text: "#1E1E1E".try_into().unwrap(),
+                        cursor: "#FFFFFF".try_into().unwrap()
+                    },
+                    normal: ThemeNormal {
+                        black: "#2e2e2e".try_into().unwrap(),
+                        red: "#eb4129".try_into().unwrap(),
+                        green: "#abe047".try_into().unwrap(),
+                        yellow: "#f6c744".try_into().unwrap(),
+                        blue: "#47a0f3".try_into().unwrap(),
+                        magenta: "#7b5cb0".try_into().unwrap(),
+                        cyan: "#64dbed".try_into().unwrap(),
+                        white: "#e5e9f0".try_into().unwrap()
+                    },
+                    bright: ThemeBright {
+                        black: "#565656".try_into().unwrap(),
+                        red: "#ec5357".try_into().unwrap(),
+                        green: "#c0e17d".try_into().unwrap(),
+                        yellow: "#f9da6a".try_into().unwrap(),
+                        blue: "#49a4f8".try_into().unwrap(),
+                        magenta: "#a47de9".try_into().unwrap(),
+                        cyan: "#99faf2".try_into().unwrap(),
+                        white: "#ffffff".try_into().unwrap()
+                    }
+                }
+            );
+        }
+    }
 }
