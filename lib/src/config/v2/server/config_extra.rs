@@ -14,18 +14,47 @@ use super::ServerSettings;
 /// This type exists so that it is easier to differentiate when the explicit type is meant, or later meant to be changed as a whole
 type ApplicationType = ServerSettings;
 
-// TODO: implement a custom deserializer instead of "serde(untagged)" because of VERY bad errors, see https://github.com/serde-rs/serde/pull/1544
-
 /// Top-Level struct that wraps [`ServerConfigVersioned`] and a default version thereof if no `version` field exists.
 ///
 /// This is required as serde does not have a concept of `default_tag` yet, see <https://github.com/serde-rs/serde/issues/2231>
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum ServerConfigVersionedDefaulted<'a> {
     /// Case if config contains a `version` field
     Versioned(ServerConfigVersioned<'a>),
     /// Case if the config does not contain a `version` field, assume type of [`ServerConfigVersioned::V2`]
     Unversioned(ServerSettings),
+}
+
+// Manual implementation because deserialize "serde(untagged)" error are *really* bad
+impl<'a, 'de> Deserialize<'de> for ServerConfigVersionedDefaulted<'a> {
+    fn deserialize<D>(deserializer: D) -> std::prelude::v1::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        // Note that those are marked "private", but are used in the derives, and there is no to me known public way, but saves some implementation complexity
+        let content =
+            <serde::__private::de::Content<'_> as serde::Deserialize>::deserialize(deserializer)?;
+        let deserializer = serde::__private::de::ContentRefDeserializer::<D::Error>::new(&content);
+
+        let mut err_res = String::new();
+
+        match <ServerConfigVersioned<'a>>::deserialize(deserializer)
+            .map(ServerConfigVersionedDefaulted::Versioned)
+        {
+            Ok(val) => return Ok(val),
+            Err(err) => err_res.push_str(&format!("{err:#}")),
+        }
+        match ServerSettings::deserialize(deserializer)
+            .map(ServerConfigVersionedDefaulted::Unversioned)
+        {
+            Ok(val) => return Ok(val),
+            // no need to check if "err_res" is empty, as this code can only be executed if the above has failed
+            Err(err) => err_res.push_str(&format!("\n{err:#}")),
+        }
+
+        Err(<D::Error as serde::de::Error>::custom(err_res))
+    }
 }
 
 // Note: for saving, see
