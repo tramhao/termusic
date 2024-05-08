@@ -102,7 +102,7 @@ impl Default for SeekStep {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum PositionYesNoLower {
     /// Remember position, automatically decide after how much time
@@ -142,6 +142,14 @@ impl PositionYesNo {
             PositionYesNo::YesTime(v) => Some(*v),
         }
     }
+
+    /// Get if the current value means "it is enabled"
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            PositionYesNo::Simple(v) => *v == PositionYesNoLower::Yes,
+            PositionYesNo::YesTime(_) => true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -165,6 +173,22 @@ impl RememberLastPosition {
                 MediaType::Music => music.get_time(media_type),
                 MediaType::Podcast => podcast.get_time(media_type),
                 MediaType::LiveRadio => None,
+            },
+        }
+    }
+
+    /// Get if remembering for the given [`MediaType`] is enabled or not
+    ///
+    /// use case is in the restore of the last position
+    #[allow(clippy::needless_pass_by_value)] // "MediaType" is a 1-byte copy
+    pub fn is_enabled_for(&self, media_type: MediaType) -> bool {
+        match self {
+            RememberLastPosition::All(v) => v.is_enabled(),
+            RememberLastPosition::Depends { music, podcast } => match media_type {
+                MediaType::Music => music.is_enabled(),
+                MediaType::Podcast => podcast.is_enabled(),
+                // liveradio cannot store a position
+                MediaType::LiveRadio => false,
             },
         }
     }
