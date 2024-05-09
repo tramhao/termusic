@@ -48,16 +48,16 @@ pub const FILE_NAME: &str = "config.toml";
 lazy_static! {
     static ref MUSIC_DIR: Vec<String> = {
         let mut vec = Vec::new();
-        let mut path = dirs::audio_dir()
-            .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
+        let mut path =
+            dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
         vec.push(path.as_path().to_string_lossy().to_string());
         path.push("mp3");
         vec.push(path.as_path().to_string_lossy().to_string());
         vec
     };
     static ref PODCAST_DIR: String = {
-        let mut path = dirs::audio_dir()
-            .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
+        let mut path =
+            dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
         path.push(Path::new("podcast"));
         path.as_path().to_string_lossy().to_string()
     };
