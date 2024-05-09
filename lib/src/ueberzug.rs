@@ -1,5 +1,8 @@
 use crate::config::Xywh;
+use anyhow::Context;
 use anyhow::{bail, Result};
+use std::ffi::OsStr;
+use std::io::Read as _;
 use std::io::Write;
 use std::process::Child;
 use std::process::Command;
@@ -86,26 +89,23 @@ impl UeInstance {
 
     pub fn clear_cover_ueberzug(&mut self) -> Result<()> {
         let cmd = "{\"action\": \"remove\", \"identifier\": \"cover\"}\n";
-        self.run_ueberzug_cmd(cmd).map_err(map_err)?;
+        self.run_ueberzug_cmd(cmd)
+            .map_err(map_err)
+            .context("clear_cover")?;
         Ok(())
     }
 
     fn run_ueberzug_cmd(&mut self, cmd: &str) -> Result<()> {
         // error!("using x11 output for ueberzugpp");
 
-        let ueberzug = match self.ueberzug {
-            UeInstanceState::New => self.spawn_cmd(
-                Command::new("ueberzug")
-                    .args(["layer", "--silent"])
-                    .stdin(Stdio::piped())
-                    .stdout(Stdio::piped()),
-            )?,
-            UeInstanceState::Child(ref mut v) => v,
-            UeInstanceState::Error => return on_error(),
+        let Some(ueberzug) = self.try_wait_spawn(["layer"])? else {
+            return Ok(());
         };
 
         let stdin = ueberzug.stdin.as_mut().unwrap();
-        stdin.write_all(cmd.as_bytes())?;
+        stdin
+            .write_all(cmd.as_bytes())
+            .context("ueberzug command writing")?;
 
         Ok(())
     }
@@ -113,24 +113,20 @@ impl UeInstance {
     fn run_ueberzug_cmd_sixel(&mut self, cmd: &str) -> Result<()> {
         // error!("using sixel output for ueberzugpp");
 
-        let ueberzug = match self.ueberzug {
-            UeInstanceState::New => {
-                self.spawn_cmd(
-                    Command::new("ueberzug")
-                        .args(["layer", "--silent"])
-                        // .args(["layer", "--silent", "--no-cache", "--output", "sixel"])
-                        // .args(["layer", "--sixel"])
-                        // .args(["--sixel"])
-                        .stdin(Stdio::piped())
-                        .stdout(Stdio::piped()),
-                )?
-            }
-            UeInstanceState::Child(ref mut v) => v,
-            UeInstanceState::Error => return on_error(),
+        let Some(ueberzug) = self.try_wait_spawn(
+            ["layer"],
+            // ["layer", "--silent", "--no-cache", "--output", "sixel"]
+            // ["layer", "--sixel"]
+            // ["--sixel"]
+        )?
+        else {
+            return Ok(());
         };
 
         let stdin = ueberzug.stdin.as_mut().unwrap();
-        stdin.write_all(cmd.as_bytes())?;
+        stdin
+            .write_all(cmd.as_bytes())
+            .context("ueberzug command writing")?;
 
         Ok(())
     }
@@ -138,7 +134,17 @@ impl UeInstance {
     /// Spawn the given `cmd`, and set `self.ueberzug` and return a reference to the child for direct use
     ///
     /// On fail, also set `set.ueberzug` to [`UeInstanceState::Error`]
-    fn spawn_cmd(&mut self, cmd: &mut Command) -> Result<&mut Child> {
+    fn spawn_cmd<I, S>(&mut self, args: I) -> Result<&mut Child>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let mut cmd = Command::new("ueberzug");
+        cmd.args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null()) // ueberzug does not output to stdout
+            .stderr(Stdio::piped());
+
         match cmd.spawn() {
             Ok(child) => {
                 self.ueberzug = UeInstanceState::Child(child);
@@ -151,6 +157,60 @@ impl UeInstance {
                 bail!(err)
             }
         }
+    }
+
+    /// If ueberzug instance does not exist, create it. Otherwise take the existing one
+    ///
+    /// Do a [`Child::try_wait`] on the existing instance and return a error if the instance has exited
+    fn try_wait_spawn<I, S>(&mut self, args: I) -> Result<Option<&mut Child>>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let child = match self.ueberzug {
+            UeInstanceState::New => self.spawn_cmd(args)?,
+            UeInstanceState::Child(ref mut v) => v,
+            UeInstanceState::Error => return on_error().map(|()| None),
+        };
+
+        if let Some(exit_status) = child.try_wait()? {
+            let mut stderr_buf = String::new();
+            child
+                .stderr
+                .as_mut()
+                .map(|v| v.read_to_string(&mut stderr_buf));
+
+            // using a permanent-Error because it is likely the error will happen again on restart (like being on wayland instead of x11)
+            self.ueberzug = UeInstanceState::Error;
+
+            if stderr_buf.is_empty() {
+                stderr_buf.push_str("<empty>");
+            }
+
+            // special handling for unix as that only contains the ".signal" extension, which is important there
+            #[cfg(not(target_family = "unix"))]
+            {
+                bail!(
+                    "ueberzug command closed unexpectedly, (code {:?}), stderr:\n{}",
+                    exit_status.code(),
+                    stderr_buf
+                );
+            }
+            #[cfg(target_family = "unix")]
+            {
+                use std::os::unix::process::ExitStatusExt as _;
+                bail!(
+                    "ueberzug command closed unexpectedly, (code {:?}, signal {:?}), stderr:\n{}",
+                    exit_status.code(),
+                    exit_status.signal(),
+                    stderr_buf
+                );
+            }
+        }
+
+        // out of some reason local variable "child" cannot be returned here because it is modified in the "try_wait" branch
+        // even though that branch never reaches here
+        Ok(Some(self.ueberzug.unwrap_child_mut()))
     }
 }
 
