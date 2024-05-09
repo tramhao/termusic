@@ -30,13 +30,12 @@ mod cli;
 mod logger;
 mod ui;
 
-use anyhow::Result;
+use anyhow::{bail, Context, Result};
 use clap::Parser;
 use config::Settings;
 use flexi_logger::LogSpecification;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::process;
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
 use termusicplayback::player::music_player_client::MusicPlayerClient;
@@ -67,9 +66,7 @@ async fn actual_main() -> Result<()> {
     let config = get_config(&args)?;
 
     if let Some(action) = args.action {
-        execute_action(action, &config);
-
-        return Ok(());
+        return execute_action(action, &config);
     }
 
     // launch the daemon if it isn't already
@@ -224,7 +221,7 @@ fn get_config(args: &cli::Args) -> Result<Settings> {
     config.disable_discord_rpc_from_cli = args.disable_discord;
 
     if let Some(dir) = &args.music_directory {
-        config.music_dir_from_cli = get_path(dir);
+        config.music_dir_from_cli = Some(get_path(dir).context("resolving cli music-dir")?);
     }
 
     config.max_depth_cli = match args.max_depth {
@@ -235,8 +232,7 @@ fn get_config(args: &cli::Args) -> Result<Settings> {
     Ok(config)
 }
 
-fn get_path(dir: &str) -> Option<String> {
-    let music_dir: Option<String>;
+fn get_path(dir: &str) -> Result<String> {
     let mut path = Path::new(&dir).to_path_buf();
 
     if path.exists() {
@@ -250,45 +246,35 @@ fn get_path(dir: &str) -> Option<String> {
             path = p_canonical;
         }
 
-        music_dir = Some(path.to_string_lossy().to_string());
-    } else {
-        error!("Error: unknown directory '{dir}'");
-        process::exit(0);
+        return Ok(path.to_string_lossy().to_string());
     }
-    music_dir
+
+    bail!("Error: non-existing directory '{dir}'");
 }
 
-fn execute_action(action: cli::Action, config: &Settings) {
+fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
     match action {
         cli::Action::Import { file } => {
             println!("need to import from file {file}");
 
-            let path_string = get_path(&file);
-            let db_path = utils::get_app_config_path();
+            let path_string = get_path(&file).context("import cli file-path")?;
+            let config_dir_path =
+                utils::get_app_config_path().context("getting app-config-path")?;
 
-            if let (Some(path_string), Ok(db_path)) = (path_string, db_path) {
-                if let Err(e) = podcast::import_from_opml(
-                    db_path.as_path(),
-                    config,
-                    &PathBuf::from(path_string),
-                ) {
-                    error!("Error when import file {file}: {e}");
-                }
-            }
+            podcast::import_from_opml(&config_dir_path, config, &PathBuf::from(path_string))
+                .context("import opml")?;
         }
         cli::Action::Export { file } => {
             println!("need to export to file {file}");
             let path_string = get_path_export(&file);
-            if let Ok(db_path) = utils::get_app_config_path() {
-                println!("export to {path_string}");
-                if let Err(e) =
-                    podcast::export_to_opml(db_path.as_path(), &PathBuf::from(path_string))
-                {
-                    error!("Error when export file {file}: {e}");
-                }
-            }
+            let config_dir_path =
+                utils::get_app_config_path().context("getting app-config-path")?;
+            podcast::export_to_opml(&config_dir_path, &PathBuf::from(path_string))
+                .context("export opml")?;
         }
     };
+
+    Ok(())
 }
 
 fn get_path_export(dir: &str) -> String {
