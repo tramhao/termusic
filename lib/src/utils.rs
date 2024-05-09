@@ -1,5 +1,5 @@
 use crate::config::Settings;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Context, Result};
 use pinyin::ToPinyin;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -96,26 +96,22 @@ pub fn get_app_config_path() -> Result<PathBuf> {
     Ok(path)
 }
 
+/// Get the podcast directoy resolved and created
 fn get_podcast_save_path(config: &Settings) -> Result<PathBuf> {
-    let full_path = shellexpand::tilde(&config.podcast_dir).to_string();
-    let full_path_pathbuf = PathBuf::from(full_path);
-    if !full_path_pathbuf.exists() {
-        std::fs::create_dir_all(&full_path_pathbuf)?;
+    let full_path = shellexpand::path::tilde(&config.podcast_dir);
+    if !full_path.exists() {
+        std::fs::create_dir_all(&full_path)?;
     }
-    Ok(full_path_pathbuf)
+    Ok(full_path.into_owned())
 }
 
+/// Get the download directory for the provided `pod_title` and create it if not existing
 pub fn create_podcast_dir(config: &Settings, pod_title: String) -> Result<PathBuf> {
-    match get_podcast_save_path(config) {
-        Ok(mut download_path) => {
-            download_path.push(pod_title);
-            match std::fs::create_dir_all(&download_path) {
-                Ok(()) => Ok(download_path),
-                Err(e) => bail!("Error in creating podcast feeds download dir: {e}"),
-            }
-        }
-        Err(e) => bail!("Error in creating podcast download dir: {e}"),
-    }
+    let mut download_path = get_podcast_save_path(config).context("get podcast directory")?;
+    download_path.push(pod_title);
+    std::fs::create_dir_all(&download_path).context("creating podcast download directory")?;
+
+    Ok(download_path)
 }
 
 pub fn playlist_get_vec(current_node: &str) -> Result<Vec<String>> {
