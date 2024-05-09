@@ -232,8 +232,8 @@ fn get_config(args: &cli::Args) -> Result<Settings> {
     Ok(config)
 }
 
-fn get_path(dir: &str) -> Result<String> {
-    let mut path = Path::new(&dir).to_path_buf();
+fn get_path(dir: &Path) -> Result<PathBuf> {
+    let mut path = dir.to_path_buf();
 
     if path.exists() {
         if !path.has_root() {
@@ -246,39 +246,37 @@ fn get_path(dir: &str) -> Result<String> {
             path = p_canonical;
         }
 
-        return Ok(path.to_string_lossy().to_string());
+        return Ok(path);
     }
 
-    bail!("Error: non-existing directory '{dir}'");
+    bail!("Error: non-existing directory '{}'", dir.display());
 }
 
 fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
     match action {
         cli::Action::Import { file } => {
-            println!("need to import from file {file}");
+            println!("need to import from file {}", file.display());
 
-            let path_string = get_path(&file).context("import cli file-path")?;
+            let path = get_path(&file).context("import cli file-path")?;
             let config_dir_path =
                 utils::get_app_config_path().context("getting app-config-path")?;
 
-            podcast::import_from_opml(&config_dir_path, config, &PathBuf::from(path_string))
-                .context("import opml")?;
+            podcast::import_from_opml(&config_dir_path, config, &path).context("import opml")?;
         }
         cli::Action::Export { file } => {
-            println!("need to export to file {file}");
-            let path_string = get_path_export(&file);
+            println!("need to export to file {}", file.display());
+            let path = get_path_export(&file);
             let config_dir_path =
                 utils::get_app_config_path().context("getting app-config-path")?;
-            podcast::export_to_opml(&config_dir_path, &PathBuf::from(path_string))
-                .context("export opml")?;
+            podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
         }
     };
 
     Ok(())
 }
 
-fn get_path_export(dir: &str) -> String {
-    let mut path = Path::new(&dir).to_path_buf();
+fn get_path_export(dir: &Path) -> PathBuf {
+    let mut path = dir.to_path_buf();
 
     if !path.has_root() {
         if let Ok(p_base) = std::env::current_dir() {
@@ -290,5 +288,5 @@ fn get_path_export(dir: &str) -> String {
         path = p_canonical;
     }
 
-    path.to_string_lossy().to_string()
+    path
 }

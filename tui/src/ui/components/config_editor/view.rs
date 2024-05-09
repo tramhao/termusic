@@ -64,7 +64,7 @@ use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::utils::draw_area_in_absolute;
 use crate::ui::{Application, Id, IdConfigEditor, IdKey, Msg};
 use anyhow::{bail, Result};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use termusiclib::config::Alignment as XywhAlign;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
@@ -3302,11 +3302,10 @@ impl Model {
             // let mut vec = Vec::new();
             let vec = music_dir
                 .split(';')
-                .map(std::string::ToString::to_string)
+                .map(PathBuf::from)
                 .filter(|p| {
-                    let absolute_dir = shellexpand::tilde(p).to_string();
-                    let path = Path::new(&absolute_dir);
-                    path.exists()
+                    let absolute_dir = shellexpand::path::tilde(p);
+                    absolute_dir.exists()
                 })
                 .collect();
             config.music_dir = vec;
@@ -3348,10 +3347,9 @@ impl Model {
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
         {
-            let absolute_dir = shellexpand::tilde(&podcast_dir).to_string();
-            let path = Path::new(&absolute_dir);
-            if path.exists() {
-                config.podcast_dir = absolute_dir;
+            let absolute_dir = shellexpand::path::tilde(&podcast_dir);
+            if absolute_dir.exists() {
+                config.podcast_dir = absolute_dir.into_owned();
             }
         }
         if let Ok(State::One(StateValue::String(podcast_simul_download))) = self

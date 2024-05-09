@@ -2,7 +2,7 @@ mod cli;
 mod logger;
 mod music_player_service;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 #[cfg(any(feature = "gst", feature = "rusty"))]
 use std::time::Duration;
@@ -386,8 +386,8 @@ fn get_config(args: &cli::Args) -> Result<Settings> {
     Ok(config)
 }
 
-fn get_path(dir: &str) -> Result<String> {
-    let mut path = Path::new(&dir).to_path_buf();
+fn get_path(dir: &Path) -> Result<PathBuf> {
+    let mut path = dir.to_path_buf();
 
     if path.exists() {
         if !path.has_root() {
@@ -400,8 +400,8 @@ fn get_path(dir: &str) -> Result<String> {
             path = p_canonical;
         }
 
-        return Ok(path.to_string_lossy().to_string());
+        return Ok(path);
     }
 
-    bail!("Error: non-existing directory '{dir}'");
+    bail!("Error: non-existing directory '{}'", dir.display());
 }

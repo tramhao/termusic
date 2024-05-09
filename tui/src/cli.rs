@@ -35,7 +35,7 @@ pub struct Args {
     pub action: Option<Action>,
     /// With no `MUSIC_DIRECTORY`, use config in `~/.config/termusic/config.toml`,
     /// default is ~/Music.
-    pub music_directory: Option<String>,
+    pub music_directory: Option<PathBuf>,
     /// Not showing album cover. default is showing.  
     #[arg(short = 'c', long)]
     pub disable_cover: bool,
@@ -87,12 +87,12 @@ pub enum Action {
     /// Import feeds from opml file.
     Export {
         #[arg(value_name = "FILE")]
-        file: String,
+        file: PathBuf,
     },
     /// Export feeds to opml file.
     Import {
         #[arg(value_name = "FILE")]
-        file: String,
+        file: PathBuf,
     },
 }
 

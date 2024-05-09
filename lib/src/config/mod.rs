@@ -282,9 +282,9 @@ impl std::fmt::Display for LastPosition {
 #[derive(Clone, Deserialize, Serialize, Debug)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
-    pub music_dir: Vec<String>,
+    pub music_dir: Vec<PathBuf>,
     #[serde(skip)]
-    pub music_dir_from_cli: Option<String>,
+    pub music_dir_from_cli: Option<PathBuf>,
     #[serde(skip)]
     pub disable_album_art_from_cli: bool,
     #[serde(skip)]
@@ -299,7 +299,7 @@ pub struct Settings {
     pub player_gapless: bool,
     pub podcast_simultanious_download: usize,
     pub podcast_max_retries: usize,
-    pub podcast_dir: String,
+    pub podcast_dir: PathBuf,
     pub player_seek_step: SeekStep,
     pub player_remember_last_played_position: LastPosition,
     pub enable_exit_confirmation: bool,
@@ -322,7 +322,7 @@ impl Default for Settings {
         // if path.exists() {
         // }
         Self {
-            music_dir: MUSIC_DIR.to_vec(),
+            music_dir: MUSIC_DIR.iter().map(PathBuf::from).collect(),
             music_dir_from_cli: None,
             player_loop_mode: Loop::Random,
             player_volume: 70,
@@ -341,7 +341,7 @@ impl Default for Settings {
             disable_discord_rpc_from_cli: false,
             max_depth_cli: 4,
             podcast_simultanious_download: 3,
-            podcast_dir: PODCAST_DIR.to_string(),
+            podcast_dir: PathBuf::from(PODCAST_DIR.as_str()),
             podcast_max_retries: 3,
             player_seek_step: SeekStep::Auto,
             kill_daemon_when_quit: true,
