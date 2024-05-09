@@ -572,13 +572,13 @@ impl Drop for TaskPool {
 /// Imports a list of podcasts from OPML format, either reading from a
 /// file or from stdin. If the `replace` flag is set, this replaces all
 /// existing data in the database.
-pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Result<()> {
+pub fn import_from_opml(db_path: &Path, config: &Settings, file: &Path) -> Result<()> {
     // read from file or from stdin
-    let mut f =
-        File::open(filepath).with_context(|| format!("Could not open OPML file: {filepath}"))?;
+    let mut f = File::open(file)
+        .with_context(|| format!("Could not open OPML file: {}", file.display()))?;
     let mut contents = String::new();
     f.read_to_string(&mut contents)
-        .with_context(|| format!("Failed to read from OPML file: {filepath}"))?;
+        .with_context(|| format!("Failed to read from OPML file: {}", file.display()))?;
     let xml = contents;
 
     let mut podcast_list = import_opml_feeds(&xml).with_context(|| {
@@ -682,7 +682,7 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Re
 
 /// Exports all podcasts to OPML format, either printing to stdout or
 /// exporting to a file.
-pub fn export_to_opml(db_path: &Path, file: &str) -> Result<()> {
+pub fn export_to_opml(db_path: &Path, file: &Path) -> Result<()> {
     let db_inst = Database::connect(db_path)?;
     let podcast_list = db_inst.get_podcasts()?;
     let opml = export_opml_feeds(&podcast_list);
@@ -692,10 +692,14 @@ pub fn export_to_opml(db_path: &Path, file: &str) -> Result<()> {
         .map_err(|err| anyhow!(err))
         .with_context(|| "Could not create OPML format")?;
 
-    let mut dst =
-        File::create(file).with_context(|| format!("Could not create output file: {file}"))?;
-    dst.write_all(xml.as_bytes())
-        .with_context(|| format!("Could not copy OPML data to output file: {file}"))?;
+    let mut dst = File::create(file)
+        .with_context(|| format!("Could not create output file: {}", file.display()))?;
+    dst.write_all(xml.as_bytes()).with_context(|| {
+        format!(
+            "Could not copy OPML data to output file: {}",
+            file.display()
+        )
+    })?;
     Ok(())
 }
 

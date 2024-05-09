@@ -35,6 +35,7 @@ use clap::Parser;
 use config::Settings;
 use flexi_logger::LogSpecification;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::process;
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
@@ -262,11 +263,15 @@ fn execute_action(action: cli::Action, config: &Settings) {
         cli::Action::Import { file } => {
             println!("need to import from file {file}");
 
-            let path_str = get_path(&file);
+            let path_string = get_path(&file);
             let db_path = utils::get_app_config_path();
 
-            if let (Some(path_str), Ok(db_path)) = (path_str, db_path) {
-                if let Err(e) = podcast::import_from_opml(db_path.as_path(), config, &path_str) {
+            if let (Some(path_string), Ok(db_path)) = (path_string, db_path) {
+                if let Err(e) = podcast::import_from_opml(
+                    db_path.as_path(),
+                    config,
+                    &PathBuf::from(path_string),
+                ) {
                     error!("Error when import file {file}: {e}");
                 }
             }
@@ -276,7 +281,9 @@ fn execute_action(action: cli::Action, config: &Settings) {
             let path_string = get_path_export(&file);
             if let Ok(db_path) = utils::get_app_config_path() {
                 println!("export to {path_string}");
-                if let Err(e) = podcast::export_to_opml(db_path.as_path(), &path_string) {
+                if let Err(e) =
+                    podcast::export_to_opml(db_path.as_path(), &PathBuf::from(path_string))
+                {
                     error!("Error when export file {file}: {e}");
                 }
             }
