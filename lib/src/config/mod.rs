@@ -359,7 +359,7 @@ impl Settings {
         path.push(FILE_NAME);
         let string = toml::to_string(self)?;
 
-        fs::write(path.to_string_lossy().as_ref(), string)?;
+        fs::write(path, string)?;
 
         Ok(())
     }
