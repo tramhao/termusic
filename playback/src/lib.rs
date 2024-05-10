@@ -64,7 +64,8 @@ use async_trait::async_trait;
 pub use playlist::{Playlist, Status};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use termusiclib::config::{new_shared_settings, LastPosition, SeekStep, Settings, SharedSettings};
+use termusiclib::config::v2::server::RememberLastPosition;
+use termusiclib::config::{new_shared_settings, SeekStep, Settings, SharedSettings};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
@@ -514,94 +515,65 @@ impl GeneralPlayer {
 
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
-        match self.config.read().player_remember_last_played_position {
-            LastPosition::Yes => {
-                if let Some(track) = self.playlist.current_track() {
-                    // let time_pos = self.player.position.lock().unwrap();
-                    let time_pos = self.get_player().position();
-                    match track.media_type {
-                        MediaType::Music => self
-                            .db
-                            .set_last_position(track, time_pos.unwrap_or_default()),
-                        MediaType::Podcast => {
-                            self.db_podcast
-                                .set_last_position(track, time_pos.unwrap_or_default());
-                        }
-                        MediaType::LiveRadio => {}
-                    }
-                }
+        let Some(track) = self.playlist.current_track() else {
+            info!("Not saving Last position as there is no current track");
+            return;
+        };
+        let Some(position) = self.get_player().position() else {
+            info!("Not saving Last position as there is no position");
+            return;
+        };
+
+        let Some(time_before_save) =
+            RememberLastPosition::from(self.config.read().player_remember_last_played_position)
+                .get_time(track.media_type)
+        else {
+            info!("Not saving Last position Remembering last position is not enabled");
+            return;
+        };
+
+        if time_before_save < position.as_secs() {
+            match track.media_type {
+                MediaType::Music => self.db.set_last_position(track, position),
+                MediaType::Podcast => self.db_podcast.set_last_position(track, position),
+                MediaType::LiveRadio => (),
             }
-            LastPosition::No => {}
-            LastPosition::Auto => {
-                if let Some(track) = self.playlist.current_track() {
-                    // 10 minutes
-                    if track.duration().as_secs() >= 600 {
-                        // let time_pos = self.player.position.lock().unwrap();
-                        let time_pos = self.get_player().position();
-                        match track.media_type {
-                            MediaType::Music => self
-                                .db
-                                .set_last_position(track, time_pos.unwrap_or_default()),
-                            MediaType::Podcast => {
-                                self.db_podcast
-                                    .set_last_position(track, time_pos.unwrap_or_default());
-                            }
-                            MediaType::LiveRadio => {}
-                        }
-                    }
-                }
-            }
+        } else {
+            info!("Not saving Last position as the position is lower than time_before_save");
         }
     }
 
     pub fn player_restore_last_position(&mut self) {
+        let Some(track) = self.playlist.current_track() else {
+            info!("Not restoring Last position as there is no current track");
+            return;
+        };
+
         let mut restored = false;
-        let last_pos = self.config.read().player_remember_last_played_position;
-        match last_pos {
-            LastPosition::Yes => {
-                if let Some(track) = self.playlist.current_track() {
-                    match track.media_type {
-                        MediaType::Music => {
-                            if let Ok(last_pos) = self.db.get_last_position(track) {
-                                self.get_player_mut().seek_to(last_pos);
-                                restored = true;
-                            }
-                        }
 
-                        MediaType::Podcast => {
-                            if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                                self.get_player_mut().seek_to(last_pos);
-                                restored = true;
-                            }
-                        }
-                        MediaType::LiveRadio => {}
+        if RememberLastPosition::from(self.config.read().player_remember_last_played_position)
+            .is_enabled_for(track.media_type)
+        {
+            match track.media_type {
+                MediaType::Music => {
+                    if let Ok(last_pos) = self.db.get_last_position(track) {
+                        self.get_player_mut().seek_to(last_pos);
+                        restored = true;
                     }
                 }
-            }
-            LastPosition::No => {}
-            LastPosition::Auto => {
-                if let Some(track) = self.playlist.current_track() {
-                    // 10 minutes
-                    if track.duration().as_secs() >= 600 {
-                        match track.media_type {
-                            MediaType::Music => {
-                                if let Ok(last_pos) = self.db.get_last_position(track) {
-                                    self.get_player_mut().seek_to(last_pos);
-                                    restored = true;
-                                }
-                            }
-
-                            MediaType::Podcast => {
-                                if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                                    self.get_player_mut().seek_to(last_pos);
-                                    restored = true;
-                                }
-                            }
-                            MediaType::LiveRadio => {}
-                        }
+                MediaType::Podcast => {
+                    if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
+                        self.get_player_mut().seek_to(last_pos);
+                        restored = true;
                     }
                 }
+                MediaType::LiveRadio => (),
             }
+        } else {
+            info!(
+                "Not restoring Last position as it is not enabled for {:#?}",
+                track.media_type
+            );
         }
 
         if restored {
