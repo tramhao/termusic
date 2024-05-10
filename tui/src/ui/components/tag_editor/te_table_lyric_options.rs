@@ -1,6 +1,7 @@
 use crate::ui::Model;
 use anyhow::{anyhow, Context, Result};
 use std::path::Path;
+use termusiclib::config::SharedSettings;
 /**
  * MIT License
  *
@@ -26,7 +27,6 @@ use std::path::Path;
  */
 use termusiclib::songtag::{search, SongTag};
 use termusiclib::types::{Id, IdTagEditor, Msg, SearchLyricState, TEMsg, TFMsg};
-use termusicplayback::SharedSettings;
 use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};

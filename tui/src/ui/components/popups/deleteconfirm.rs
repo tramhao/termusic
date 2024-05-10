@@ -1,8 +1,8 @@
+use termusiclib::config::SharedSettings;
 use termusiclib::{
     config::StyleColorSymbol,
     types::{Id, Msg},
 };
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},

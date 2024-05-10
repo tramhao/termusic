@@ -23,9 +23,8 @@ use crate::config::{Alacritty, BindingForEvent, ColorTermusic};
  * SOFTWARE.
  */
 use crate::ui::Model;
-use parking_lot::RwLock;
 use std::path::PathBuf;
-use std::sync::Arc;
+use termusiclib::config::new_shared_settings;
 use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
 use termusicplayback::PlayerCmd;
 
@@ -334,7 +333,7 @@ impl Model {
                 let mut config = self.config.read().clone();
                 // This is for preview the theme colors
                 config.style_color_symbol = self.ce_style_color_symbol.clone();
-                let config = Arc::new(RwLock::new(config));
+                let config = new_shared_settings(config);
                 self.remount_config_color(&config);
             }
             ConfigEditorMsg::ColorChanged(id, color_config) => {

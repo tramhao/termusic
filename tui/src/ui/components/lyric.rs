@@ -6,9 +6,8 @@ use termusiclib::types::{Id, LyricMsg, Msg};
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
 use regex::Regex;
-use termusicplayback::SharedSettings;
+use termusiclib::config::SharedSettings;
 use tui_realm_stdlib::Textarea;
-// use tui_realm_textarea::TextArea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{

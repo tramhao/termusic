@@ -10,6 +10,7 @@ use crate::ui::utils::{
 use crate::ui::Application;
 use anyhow::{bail, Result};
 use std::time::{Duration, Instant};
+use termusiclib::config::SharedSettings;
 /**
  * MIT License
  *
@@ -35,7 +36,6 @@ use std::time::{Duration, Instant};
  */
 use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
 use termusiclib::utils::get_parent_folder;
-use termusicplayback::SharedSettings;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};

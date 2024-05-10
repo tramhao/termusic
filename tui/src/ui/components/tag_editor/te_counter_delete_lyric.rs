@@ -21,8 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// use crate::utils::get_block;
-use termusicplayback::SharedSettings;
+use termusiclib::config::SharedSettings;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

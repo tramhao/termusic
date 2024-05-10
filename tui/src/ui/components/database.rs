@@ -1,9 +1,9 @@
 use crate::ui::Model;
 use std::path::Path;
+use termusiclib::config::SharedSettings;
 use termusiclib::sqlite::SearchCriteria;
 use termusiclib::types::{DBMsg, Id, Msg};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::Borders;

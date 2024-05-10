@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use crate::ui::{Msg, TEMsg, TFMsg};
-use termusicplayback::SharedSettings;
+use termusiclib::config::SharedSettings;
 use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

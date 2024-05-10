@@ -34,7 +34,7 @@ pub use color::*;
 pub use general::*;
 pub use key_combo::*;
 
-use termusicplayback::SharedSettings;
+use termusiclib::config::SharedSettings;
 use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Style, TextSpan};
 use tuirealm::{event::NoUserEvent, Component, Event, MockComponent};

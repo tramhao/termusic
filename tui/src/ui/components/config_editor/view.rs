@@ -32,6 +32,7 @@ use crate::ui::components::{
     PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
 };
 use include_dir::DirEntry;
+use termusiclib::config::SharedSettings;
 /**
  * MIT License
  *
@@ -58,7 +59,6 @@ use include_dir::DirEntry;
 use termusiclib::config::{LastPosition, SeekStep};
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use termusiclib::THEME_DIR;
-use termusicplayback::SharedSettings;
 
 use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::utils::draw_area_in_absolute;

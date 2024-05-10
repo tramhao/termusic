@@ -24,8 +24,8 @@
 use crate::config::Settings;
 use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
+use termusiclib::config::SharedSettings;
 use termusiclib::types::{GSMsg, Id, Msg};
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Table};
 use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};

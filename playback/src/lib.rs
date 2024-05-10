@@ -61,12 +61,10 @@ pub mod playlist;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use parking_lot::RwLock;
 pub use playlist::{Playlist, Status};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use std::time::Duration;
-use termusiclib::config::{LastPosition, SeekStep, Settings};
+use termusiclib::config::{new_shared_settings, LastPosition, SeekStep, Settings, SharedSettings};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
@@ -212,8 +210,6 @@ pub enum PlayerCmd {
     VolumeUp,
 }
 
-pub type SharedSettings = Arc<RwLock<Settings>>;
-
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     pub backend: Backend,
@@ -247,7 +243,7 @@ impl GeneralPlayer {
             DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
         let db = DataBase::new(&config);
 
-        let config = Arc::new(RwLock::new(config));
+        let config = new_shared_settings(config);
         let playlist = Playlist::new(config.clone()).unwrap_or_default();
         let mpris = if config.read().player_use_mpris {
             Some(mpris::Mpris::new(cmd_tx.clone()))
