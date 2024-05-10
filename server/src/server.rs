@@ -189,7 +189,7 @@ fn player_loop(
                 std::process::exit(0);
             }
             PlayerCmd::CycleLoop => {
-                player.config.write().player_loop_mode = player.playlist.cycle_loop_mode();
+                player.config.write().player_loop_mode = player.playlist.cycle_loop_mode().into();
             }
             PlayerCmd::Eos => {
                 info!("Eos received");

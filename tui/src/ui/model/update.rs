@@ -838,7 +838,7 @@ impl Model {
             }
             PLMsg::LoopModeCycle => {
                 self.command(&PlayerCmd::CycleLoop);
-                self.config.write().player_loop_mode = self.playlist.cycle_loop_mode();
+                self.config.write().player_loop_mode = self.playlist.cycle_loop_mode().into();
                 self.playlist_update_title();
             }
             PLMsg::PlaylistTableBlurDown => match self.layout {

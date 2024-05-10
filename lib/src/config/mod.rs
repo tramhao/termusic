@@ -9,8 +9,8 @@ use parking_lot::RwLock;
 use std::sync::Arc;
 
 pub use v1::{
-    Alacritty, Alignment, BindingForEvent, ColorTermusic, Keys, LastPosition, Loop, SeekStep,
-    Settings, StyleColorSymbol, Xywh,
+    Alacritty, Alignment, BindingForEvent, ColorTermusic, Keys, LastPosition, SeekStep, Settings,
+    StyleColorSymbol, Xywh,
 };
 
 pub use server_overlay::ServerOverlay;
