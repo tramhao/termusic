@@ -13,7 +13,7 @@ pub mod config_extra;
 
 pub type MusicDirsOwned = Vec<PathBuf>;
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Default)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 #[allow(clippy::module_name_repetitions)]
 pub struct ServerSettings {
@@ -57,7 +57,7 @@ impl Default for PodcastSettings {
 }
 
 // note that regardless of options, loops should never happen and also should never go outside of the root music_dir
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum ScanDepth {
     /// Only go X deep
