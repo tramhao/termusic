@@ -56,8 +56,8 @@ impl TuiSettings {
     }
 
     /// Get the resolved com-settings, if resolved
-    pub fn get_com(&self) -> &Option<ComSettings> {
-        &self.com_resolved
+    pub fn get_com(&self) -> Option<&ComSettings> {
+        self.com_resolved.as_ref()
     }
 }
 
@@ -98,7 +98,7 @@ pub struct CoverArtPosition {
     pub size_scale: i8,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Default, PartialEq, Eq)]
 pub enum Alignment {
     #[serde(rename = "top right")]
     TopRight,
