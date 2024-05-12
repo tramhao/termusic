@@ -1,5 +1,5 @@
 use std::{
-    net::IpAddr,
+    net::{IpAddr, SocketAddr},
     num::{NonZeroU32, NonZeroU8},
     path::{Path, PathBuf},
 };
@@ -325,7 +325,7 @@ impl LoopMode {
 }
 
 /// Settings for the gRPC server (and potentially future ways to communicate)
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 // for now, require that both port and ip are specified at once
 // #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ComSettings {
@@ -341,6 +341,12 @@ impl Default for ComSettings {
             port: 50101,
             address: "::".parse().unwrap(),
         }
+    }
+}
+
+impl From<ComSettings> for SocketAddr {
+    fn from(value: ComSettings) -> Self {
+        Self::new(value.address, value.port)
     }
 }
 
