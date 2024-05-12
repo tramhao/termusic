@@ -1445,6 +1445,15 @@ impl KeyBinding {
     pub fn get(&self) -> tuievents::KeyEvent {
         self.key_event
     }
+
+    /// Get the Current Modifier, and the string representation of the key
+    #[inline]
+    pub fn mod_key(&self) -> (tuievents::KeyModifiers, String) {
+        (
+            self.key_event.modifiers,
+            KeyWrap::from(self.key_event.code).to_string(),
+        )
+    }
 }
 
 impl Display for KeyBinding {
