@@ -1,5 +1,6 @@
 #![allow(clippy::module_name_repetitions)]
 
+use std::error::Error;
 use std::str::CharIndices;
 use std::string::ToString;
 use std::{fmt::Display, iter::Peekable};
@@ -13,6 +14,37 @@ pub use conflict::KeyConflictError;
 use conflict::{CheckConflict, KeyHashMap, KeyHashMapOwned, KeyPath};
 
 use crate::once_chain;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct KeysCheckError {
+    pub errored_keys: Vec<KeyConflictError>,
+}
+
+impl Display for KeysCheckError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "There are {} Key Conflict Errors: [",
+            self.errored_keys.len()
+        )?;
+
+        for err in &self.errored_keys {
+            writeln!(f, "  {err},")?;
+        }
+
+        write!(f, "]")
+    }
+}
+
+impl Error for KeysCheckError {}
+
+impl From<Vec<KeyConflictError>> for KeysCheckError {
+    fn from(value: Vec<KeyConflictError>) -> Self {
+        Self {
+            errored_keys: value,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
@@ -52,11 +84,12 @@ pub struct Keys {
 
 impl Keys {
     /// Check all the keys if they conflict with each-other
-    pub fn check_keys(&self) -> Result<(), Vec<KeyConflictError>> {
+    pub fn check_keys(&self) -> Result<(), KeysCheckError> {
         let mut key_path = KeyPath::new_with_toplevel("keys");
         let mut global_keys = KeyHashMapOwned::new();
 
         self.check_conflict(&mut key_path, &mut global_keys)
+            .map_err(KeysCheckError::from)
     }
 }
 
@@ -1245,6 +1278,8 @@ impl Display for KeyParseError {
         )
     }
 }
+
+impl Error for KeyParseError {}
 
 // Note: this could likely be optimized / improved when the std patters becomes available (to match "".split('')), see https://github.com/rust-lang/rust/issues/27721
 /// A [`str::split`] replacement that works similar to `str::split(_, '+')`, but can also return the delimiter if directly followed
@@ -2522,11 +2557,13 @@ mod test {
             keys.podcast_keys.delete_feed = tuievents::Key::Delete.into();
 
             assert_eq!(
-                Err(vec![KeyConflictError {
-                    key_path_first: "keys.view.view_podcasts".into(),
-                    key_path_second: "keys.podcast.delete_feed".into(),
-                    key: tuievents::Key::Delete.into()
-                }]),
+                Err(KeysCheckError {
+                    errored_keys: vec![KeyConflictError {
+                        key_path_first: "keys.view.view_podcasts".into(),
+                        key_path_second: "keys.podcast.delete_feed".into(),
+                        key: tuievents::Key::Delete.into()
+                    }]
+                }),
                 keys.check_keys()
             );
         }
