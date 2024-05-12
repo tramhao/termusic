@@ -1,6 +1,6 @@
 use std::{
     net::IpAddr,
-    num::{NonZeroI16, NonZeroU32, NonZeroU8},
+    num::{NonZeroU32, NonZeroU8},
     path::{Path, PathBuf},
 };
 
@@ -246,7 +246,7 @@ pub struct PlayerSettings {
     ///
     /// speed / 10 = actual speed (float but not floats)
     // the number should never be 0, because that would effectively be paused forever
-    pub speed: NonZeroI16,
+    pub speed: i32,
     /// Enable gapless decoding & prefetching the next track
     pub gapless: bool,
     /// How much to seek on a seek event
@@ -280,7 +280,7 @@ impl Default for PlayerSettings {
             loop_mode: LoopMode::default(),
             // rather use a lower value than a high so that ears dont get blown off
             volume: 30,
-            speed: NonZeroI16::new(10).unwrap(),
+            speed: 10,
             gapless: true,
             seek_step: SeekStep::default(),
 
@@ -330,7 +330,7 @@ mod v1_interop {
     use std::{error::Error, fmt::Display, num::TryFromIntError};
 
     use super::{
-        ComSettings, LoopMode, NonZeroI16, NonZeroU32, NonZeroU8, PlayerSettings, PodcastSettings,
+        ComSettings, LoopMode, NonZeroU32, NonZeroU8, PlayerSettings, PodcastSettings,
         PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
         ServerSettings,
     };
@@ -433,14 +433,7 @@ mod v1_interop {
                 remember_position: value.player_remember_last_played_position.into(),
                 loop_mode: value.player_loop_mode.into(),
                 volume: value.player_volume,
-                speed: NonZeroI16::try_from(
-                    value
-                        .player_speed
-                        .clamp(i32::from(i16::MIN), i32::from(i16::MAX)) as i16,
-                )
-                .map_err(|err| {
-                    ServerSettingsConvertError::ZeroValue("player_speed", "player.speed", err)
-                })?,
+                speed: value.player_speed,
                 gapless: value.player_gapless,
                 seek_step: value.player_seek_step.into(),
 
@@ -532,7 +525,7 @@ mod v1_interop {
                     },
                     loop_mode: LoopMode::Random,
                     volume: 70,
-                    speed: NonZeroI16::new(10).unwrap(),
+                    speed: 10,
                     gapless: true,
                     seek_step: SeekStep::Depends {
                         short_tracks: NonZeroU32::new(5).unwrap(),
