@@ -306,6 +306,24 @@ pub enum LoopMode {
     Random,
 }
 
+impl LoopMode {
+    pub fn display(self, display_symbol: bool) -> &'static str {
+        if display_symbol {
+            match self {
+                Self::Single => "🔂",
+                Self::Playlist => "🔁",
+                Self::Random => "🔀",
+            }
+        } else {
+            match self {
+                Self::Single => "single",
+                Self::Playlist => "playlist",
+                Self::Random => "random",
+            }
+        }
+    }
+}
+
 /// Settings for the gRPC server (and potentially future ways to communicate)
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 // for now, require that both port and ip are specified at once
