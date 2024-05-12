@@ -1,6 +1,6 @@
 #![allow(clippy::module_name_repetitions)]
 
-use std::{fmt::Display, num::ParseIntError};
+use std::{error::Error, fmt::Display, fs::File, io::BufReader, num::ParseIntError, path::Path};
 
 use serde::{Deserialize, Serialize};
 use tuirealm::props::Color;
@@ -24,7 +24,7 @@ pub struct ThemeWrap {
 }
 
 impl ThemeWrap {
-    fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
+    pub fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
         match color {
             ColorTermusic::Reset => Color::Reset,
             ColorTermusic::Foreground => self.theme.primary.foreground.into(),
@@ -181,6 +181,8 @@ impl Display for ThemeColorParseError {
     }
 }
 
+impl Error for ThemeColorParseError {}
+
 /// The rgb colors
 #[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(try_from = "String")]
@@ -305,6 +307,8 @@ impl Display for ThemeColorsParseError {
     }
 }
 
+impl Error for ThemeColorsParseError {}
+
 impl From<ThemeColorParseError> for ThemeColorsParseError {
     fn from(value: ThemeColorParseError) -> Self {
         Self::ThemeColor(value)
@@ -324,6 +328,15 @@ impl TryFrom<YAMLTheme> for ThemeColors {
             normal: colors.normal.try_into()?,
             bright: colors.bright.try_into()?,
         })
+    }
+}
+
+impl ThemeColors {
+    /// Load a YAML Theme and then convert it to a [`Alacritty`] instance
+    pub fn from_yaml_file(path: &Path) -> anyhow::Result<Self> {
+        let parsed: YAMLTheme = serde_yaml::from_reader(BufReader::new(File::open(path)?))?;
+
+        Ok(Self::try_from(parsed)?)
     }
 }
 
