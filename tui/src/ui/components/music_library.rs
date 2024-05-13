@@ -462,11 +462,11 @@ impl Model {
         let mut vec = Vec::new();
         let config = self.config.read();
         for dir in &config.music_dir {
-            let absolute_dir = shellexpand::tilde(dir).to_string();
+            let absolute_dir = shellexpand::path::tilde(dir).into_owned();
             vec.push(absolute_dir);
         }
         if let Some(dir) = &config.music_dir_from_cli {
-            let absolute_dir = shellexpand::tilde(&dir).to_string();
+            let absolute_dir = shellexpand::path::tilde(dir).into_owned();
             vec.push(absolute_dir);
         }
         if vec.is_empty() {
@@ -475,9 +475,9 @@ impl Model {
         drop(config);
 
         let mut index = 0;
-        let current_path_str = self.path.to_string_lossy().to_string();
+        let current_path = self.path.as_path();
         for (idx, dir) in vec.iter().enumerate() {
-            if current_path_str == *dir {
+            if current_path == *dir {
                 index = idx + 1;
                 break;
             }
@@ -493,17 +493,17 @@ impl Model {
     }
 
     pub fn library_add_root(&mut self) -> Result<()> {
-        let current_path_string = self.path.to_string_lossy().to_string();
+        let current_path = self.path.as_path();
 
         let mut config = self.config.write();
 
         for dir in &config.music_dir {
-            let absolute_dir = shellexpand::tilde(dir).to_string();
-            if absolute_dir == current_path_string {
+            let absolute_dir = shellexpand::path::tilde(dir);
+            if absolute_dir == current_path {
                 bail!("Add root failed, same root already exists");
             }
         }
-        config.music_dir.push(current_path_string);
+        config.music_dir.push(current_path.to_path_buf());
         let res = config.save();
         drop(config);
         match res {
@@ -518,13 +518,13 @@ impl Model {
     }
 
     pub fn library_remove_root(&mut self) -> Result<()> {
-        let current_path_string = self.path.to_string_lossy().to_string();
+        let current_path = self.path.as_path();
         let mut config = self.config.write();
 
         let mut vec = Vec::new();
         for dir in &config.music_dir {
-            let absolute_dir = shellexpand::tilde(dir).to_string();
-            if absolute_dir == current_path_string {
+            let absolute_dir = shellexpand::path::tilde(dir);
+            if absolute_dir == current_path {
                 continue;
             }
             vec.push(dir.clone());

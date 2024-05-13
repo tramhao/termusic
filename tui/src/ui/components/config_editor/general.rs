@@ -45,7 +45,8 @@ impl MusicDir {
         let config_r = config.read();
         let mut music_dir = String::new();
         for m in &config_r.music_dir {
-            music_dir.push_str(m.as_str());
+            // this may be a problem in some slight cases
+            music_dir.push_str(&m.to_string_lossy());
             music_dir.push(';');
         }
         // remove the last ";"
@@ -389,7 +390,7 @@ impl PodcastDir {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Podcast Download Directory: ", Alignment::Left)
-                .value(&config.podcast_dir)
+                .value(config.podcast_dir.to_string_lossy())
         };
 
         Self { component, config }

@@ -78,7 +78,7 @@ semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
-shellexpand = "3.1"
+shellexpand = { version = "3.1", features = ["path"] }
 soundtouch = "0.4"
 souvlaki = "0.7.2"
 stream-download = { version = "0.5.2", features = ["reqwest-rustls"] }

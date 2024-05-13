@@ -2,12 +2,12 @@ mod cli;
 mod logger;
 mod music_player_service;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 #[cfg(any(feature = "gst", feature = "rusty"))]
 use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
@@ -375,7 +375,7 @@ fn get_config(args: &cli::Args) -> Result<Settings> {
     config.disable_discord_rpc_from_cli = args.disable_discord;
 
     if let Some(dir) = &args.music_directory {
-        config.music_dir_from_cli = get_path(dir);
+        config.music_dir_from_cli = Some(get_path(dir).context("cli provided music-dir")?);
     }
 
     config.max_depth_cli = match args.max_depth {
@@ -386,9 +386,8 @@ fn get_config(args: &cli::Args) -> Result<Settings> {
     Ok(config)
 }
 
-fn get_path(dir: &str) -> Option<String> {
-    let music_dir: Option<String>;
-    let mut path = Path::new(&dir).to_path_buf();
+fn get_path(dir: &Path) -> Result<PathBuf> {
+    let mut path = dir.to_path_buf();
 
     if path.exists() {
         if !path.has_root() {
@@ -401,10 +400,8 @@ fn get_path(dir: &str) -> Option<String> {
             path = p_canonical;
         }
 
-        music_dir = Some(path.to_string_lossy().to_string());
-    } else {
-        error!("Error: unknown directory '{dir}'");
-        std::process::exit(0);
+        return Ok(path);
     }
-    music_dir
+
+    bail!("Error: non-existing directory '{}'", dir.display());
 }

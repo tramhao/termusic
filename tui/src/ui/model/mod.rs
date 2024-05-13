@@ -224,16 +224,19 @@ impl Model {
         }
     }
 
+    /// Get the first music directory or the cli provided music dir resolved
     pub fn get_full_path_from_config(config: &Settings) -> PathBuf {
-        let mut full_path = String::new();
+        if let Some(music_dir) = &config.music_dir_from_cli {
+            return shellexpand::path::tilde(music_dir).into_owned();
+        };
+
         if let Some(dir) = config.music_dir.first() {
-            full_path = shellexpand::tilde(dir).to_string();
+            return shellexpand::path::tilde(dir).into_owned();
         }
 
-        if let Some(music_dir) = &config.music_dir_from_cli {
-            full_path = shellexpand::tilde(music_dir).to_string();
-        };
-        PathBuf::from(full_path)
+        warn!("No Music directory found!");
+
+        PathBuf::new()
     }
 
     pub fn init_config(&mut self) {

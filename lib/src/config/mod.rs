@@ -35,31 +35,28 @@ use image::DynamicImage;
 pub use key::{BindingForEvent, Keys};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::{fs, net::IpAddr};
 pub use theme::{Alacritty, ColorTermusic, StyleColorSymbol};
 
 /// The filename of the config
 pub const FILE_NAME: &str = "config.toml";
 
-// pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
-// pub const PODCAST_DIR: &str = "~/.cache/termusic/podcast";
-
 lazy_static! {
-    static ref MUSIC_DIR: Vec<String> = {
+    static ref MUSIC_DIR: Vec<PathBuf> = {
         let mut vec = Vec::new();
-        let mut path = dirs::audio_dir()
-            .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
-        vec.push(path.as_path().to_string_lossy().to_string());
+        let mut path =
+            dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
+        vec.push(path.clone());
         path.push("mp3");
-        vec.push(path.as_path().to_string_lossy().to_string());
+        vec.push(path);
         vec
     };
-    static ref PODCAST_DIR: String = {
-        let mut path = dirs::audio_dir()
-            .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
-        path.push(Path::new("podcast"));
-        path.as_path().to_string_lossy().to_string()
+    static ref PODCAST_DIR: PathBuf = {
+        let mut path =
+            dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
+        path.push("podcast");
+        path
     };
 }
 
@@ -282,9 +279,9 @@ impl std::fmt::Display for LastPosition {
 #[derive(Clone, Deserialize, Serialize, Debug)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
-    pub music_dir: Vec<String>,
+    pub music_dir: Vec<PathBuf>,
     #[serde(skip)]
-    pub music_dir_from_cli: Option<String>,
+    pub music_dir_from_cli: Option<PathBuf>,
     #[serde(skip)]
     pub disable_album_art_from_cli: bool,
     #[serde(skip)]
@@ -299,7 +296,7 @@ pub struct Settings {
     pub player_gapless: bool,
     pub podcast_simultanious_download: usize,
     pub podcast_max_retries: usize,
-    pub podcast_dir: String,
+    pub podcast_dir: PathBuf,
     pub player_seek_step: SeekStep,
     pub player_remember_last_played_position: LastPosition,
     pub enable_exit_confirmation: bool,
@@ -317,12 +314,8 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        // let absolute_dir = shellexpand::tilde(&MUSIC_DIR).to_string();
-        // let path = Path::new(&dir);
-        // if path.exists() {
-        // }
         Self {
-            music_dir: MUSIC_DIR.to_vec(),
+            music_dir: MUSIC_DIR.clone(),
             music_dir_from_cli: None,
             player_loop_mode: Loop::Random,
             player_volume: 70,
@@ -341,7 +334,7 @@ impl Default for Settings {
             disable_discord_rpc_from_cli: false,
             max_depth_cli: 4,
             podcast_simultanious_download: 3,
-            podcast_dir: PODCAST_DIR.to_string(),
+            podcast_dir: PODCAST_DIR.clone(),
             podcast_max_retries: 3,
             player_seek_step: SeekStep::Auto,
             kill_daemon_when_quit: true,
@@ -359,7 +352,7 @@ impl Settings {
         path.push(FILE_NAME);
         let string = toml::to_string(self)?;
 
-        fs::write(path.to_string_lossy().as_ref(), string)?;
+        fs::write(path, string)?;
 
         Ok(())
     }
