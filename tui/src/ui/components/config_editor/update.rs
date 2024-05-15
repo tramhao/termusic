@@ -339,7 +339,7 @@ impl Model {
             }
             ConfigEditorMsg::ColorChanged(id, color_config) => {
                 self.config_changed = true;
-                self.update_config_editor_color_changed(id, *color_config);
+                self.update_config_editor_color_changed(*id, *color_config);
             }
             ConfigEditorMsg::SymbolChanged(id, symbol) => {
                 self.config_changed = true;
@@ -359,14 +359,14 @@ impl Model {
                 };
             }
 
-            ConfigEditorMsg::KeyChange(id, binding) => self.update_key(id, binding),
-            ConfigEditorMsg::KeyFocus(msg) => self.update_key_focus(msg),
+            ConfigEditorMsg::KeyChange(id, binding) => self.update_key(*id, binding),
+            ConfigEditorMsg::KeyFocus(msg) => self.update_key_focus(*msg),
         }
         None
     }
 
     #[allow(clippy::too_many_lines)]
-    fn update_key_focus(&mut self, msg: &KFMsg) {
+    fn update_key_focus(&mut self, msg: KFMsg) {
         match msg {
             // Focus of key global page
             KFMsg::GlobalXywhHideBlurDown | KFMsg::GlobalLeftBlurUp => {
@@ -826,7 +826,7 @@ impl Model {
         }
     }
 
-    fn update_key(&mut self, id: &IdKey, binding: &BindingForEvent) {
+    fn update_key(&mut self, id: IdKey, binding: &BindingForEvent) {
         self.config_changed = true;
         match id {
             IdKey::DatabaseAddAll => self.ke_key_config.database_add_all = *binding,
@@ -915,7 +915,7 @@ impl Model {
 
     fn update_config_editor_color_changed(
         &mut self,
-        id: &IdConfigEditor,
+        id: IdConfigEditor,
         color_config: ColorTermusic,
     ) {
         match id {

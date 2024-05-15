@@ -168,9 +168,9 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::Podcast(m) => self.update_podcast(&m),
-                Msg::LyricMessage(m) => self.update_lyric_textarea(&m),
+                Msg::LyricMessage(m) => self.update_lyric_textarea(m),
                 Msg::Download(m) => self.update_download_msg(&m),
-                Msg::Xywh(m) => self.update_xywh_msg(&m),
+                Msg::Xywh(m) => self.update_xywh_msg(m),
             }
         } else {
             None
@@ -188,7 +188,7 @@ impl Model {
         }
     }
 
-    fn update_xywh_msg(&mut self, msg: &XYWHMsg) -> Option<Msg> {
+    fn update_xywh_msg(&mut self, msg: XYWHMsg) -> Option<Msg> {
         match msg {
             XYWHMsg::MoveLeft => self.xywh_move_left(),
             XYWHMsg::MoveRight => self.xywh_move_right(),
@@ -203,7 +203,7 @@ impl Model {
         None
     }
 
-    fn update_lyric_textarea(&mut self, msg: &LyricMsg) -> Option<Msg> {
+    fn update_lyric_textarea(&mut self, msg: LyricMsg) -> Option<Msg> {
         match msg {
             LyricMsg::LyricTextAreaBlurUp => self.app.active(&Id::Playlist).ok(),
             LyricMsg::LyricTextAreaBlurDown => match self.layout {

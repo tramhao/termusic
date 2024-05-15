@@ -189,7 +189,7 @@ impl CEColorSelect {
         on_key_shift: Msg,
         on_key_backshift: Msg,
     ) -> Self {
-        let init_value = Self::init_color_select(&id, &config.read().style_color_symbol);
+        let init_value = Self::init_color_select(id, &config.read().style_color_symbol);
         let mut choices = vec![];
         for color in &COLOR_LIST {
             choices.push(String::from(*color));
@@ -217,11 +217,8 @@ impl CEColorSelect {
         }
     }
 
-    const fn init_color_select(
-        id: &IdConfigEditor,
-        style_color_symbol: &StyleColorSymbol,
-    ) -> usize {
-        match *id {
+    const fn init_color_select(id: IdConfigEditor, style_color_symbol: &StyleColorSymbol) -> usize {
+        match id {
             IdConfigEditor::LibraryForeground => style_color_symbol.library_foreground.as_usize(),
             IdConfigEditor::LibraryBackground => style_color_symbol.library_background.as_usize(),
             IdConfigEditor::LibraryBorder => style_color_symbol.library_border.as_usize(),
@@ -271,10 +268,7 @@ impl CEColorSelect {
                 Attribute::FocusStyle,
                 AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(color)),
             );
-            Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(
-                self.id.clone(),
-                *color_config,
-            ))
+            Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(self.id, *color_config))
         } else {
             self.attr(Attribute::Background, AttrValue::Color(Color::Red));
             self.attr(
@@ -872,10 +866,7 @@ impl ConfigInputHighlight {
             if let Some(s) = Self::string_to_unicode_char(&symbol) {
                 // success getting a unicode letter
                 self.update_symbol_after(Color::Green);
-                return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(
-                    self.id.clone(),
-                    s.to_string(),
-                ));
+                return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
             }
             // fail to get a unicode letter
             self.update_symbol_after(Color::Red);
@@ -886,10 +877,7 @@ impl ConfigInputHighlight {
             if let Some(s) = Self::string_to_unicode_char(&symbol) {
                 self.attr(Attribute::Value, AttrValue::String(s.to_string()));
                 self.update_symbol_after(Color::Green);
-                return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(
-                    self.id.clone(),
-                    s.to_string(),
-                ));
+                return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
             }
         }
         Msg::None
