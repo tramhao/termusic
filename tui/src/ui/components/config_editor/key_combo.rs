@@ -48,7 +48,7 @@ pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
 pub const INPUT_PLACEHOLDER_STYLE: &str = "placeholder-style";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MyModifiers {
     None,
     Shift,
@@ -99,7 +99,7 @@ impl MyModifiers {
         }
     }
 
-    pub const fn as_str(&self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
             MyModifiers::None => "none",
             MyModifiers::Shift => "shift",
@@ -112,7 +112,7 @@ impl MyModifiers {
         }
     }
 
-    pub const fn as_modifier(&self) -> KeyModifiers {
+    pub const fn as_modifier(self) -> KeyModifiers {
         match self {
             Self::None => KeyModifiers::NONE,
             Self::Shift => KeyModifiers::SHIFT,

@@ -47,7 +47,7 @@ pub struct CEHeader {
 }
 
 impl CEHeader {
-    pub fn new(layout: &ConfigEditorLayout, config: &Settings) -> Self {
+    pub fn new(layout: ConfigEditorLayout, config: &Settings) -> Self {
         Self {
             component: Radio::default()
                 .borders(

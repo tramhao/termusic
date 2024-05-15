@@ -53,14 +53,14 @@ use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TermusicLayout {
     TreeView,
     DataBase,
     Podcast,
 }
 
-#[derive(PartialEq, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq)]
 pub enum ConfigEditorLayout {
     General,
     Color,
@@ -114,7 +114,7 @@ pub struct Model {
     pub cmd_tx: UnboundedSender<PlayerCmd>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ViuerSupported {
     #[cfg(feature = "cover-viuer-kitty")]
     Kitty,

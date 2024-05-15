@@ -1718,13 +1718,12 @@ impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn mount_config_editor(&mut self) {
         self.config_layout = ConfigEditorLayout::General;
-        let layout = self.config_layout.clone();
 
         assert!(self
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(&layout, &self.config.read())),
+                Box::new(CEHeader::new(self.config_layout, &self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -3239,12 +3238,11 @@ impl Model {
             ConfigEditorLayout::Key2 => self.config_layout = ConfigEditorLayout::General,
         }
 
-        let layout = self.config_layout.clone();
         assert!(self
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(&layout, &self.config.read())),
+                Box::new(CEHeader::new(self.config_layout, &self.config.read())),
                 vec![]
             )
             .is_ok());
