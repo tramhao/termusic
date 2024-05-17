@@ -51,7 +51,7 @@ pub enum Msg {
     None,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum XYWHMsg {
     Hide,
     MoveLeft,
@@ -77,7 +77,7 @@ pub enum DLMsg {
     FetchPhotoErr(String),
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LyricMsg {
     LyricTextAreaBlurUp,
     LyricTextAreaBlurDown,
@@ -191,7 +191,7 @@ pub enum ConfigEditorMsg {
     FallbackHighlightBlurUp,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KFMsg {
     DatabaseAddAllBlurDown,
     DatabaseAddAllBlurUp,
@@ -333,7 +333,7 @@ pub enum LIMsg {
     RemoveRoot,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DBMsg {
     AddAllToPlaylist,
     AddPlaylist(usize),
@@ -466,7 +466,7 @@ pub enum TEMsg {
     TESelectLyricOk(usize),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TFMsg {
     CounterDeleteBlurDown,
     CounterDeleteBlurUp,
@@ -486,7 +486,7 @@ pub enum TFMsg {
     TextareaLyricBlurUp,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum Id {
     ConfigEditor(IdConfigEditor),
     DBListCriteria,
@@ -521,7 +521,7 @@ pub enum Id {
     YoutubeSearchTablePopup,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdTagEditor {
     CounterDelete,
     LabelHint,
@@ -534,7 +534,7 @@ pub enum IdTagEditor {
     TextareaLyric,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdConfigEditor {
     AlbumPhotoAlign,
     CEThemeSelect,
@@ -598,7 +598,7 @@ pub enum IdConfigEditor {
     FallbackLabel,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdKey {
     DatabaseAddAll,
     GlobalConfig,

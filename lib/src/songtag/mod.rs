@@ -54,7 +54,7 @@ pub struct SongTag {
     // genre: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Copy)]
 pub enum ServiceProvider {
     Netease,
     Kugou,

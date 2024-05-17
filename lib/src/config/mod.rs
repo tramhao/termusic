@@ -103,7 +103,7 @@ pub struct Xywh {
     pub align: Alignment,
 }
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(Clone, Copy, Deserialize, Serialize, Debug)]
 pub enum Alignment {
     BottomRight,
     BottomLeft,
@@ -112,13 +112,13 @@ pub enum Alignment {
 }
 
 impl Alignment {
-    const fn x(&self, absolute_x: u32, width: u32) -> u32 {
+    const fn x(self, absolute_x: u32, width: u32) -> u32 {
         match self {
             Self::BottomRight | Self::TopRight => Self::get_size_substract(absolute_x, width),
             Self::BottomLeft | Self::TopLeft => absolute_x,
         }
     }
-    const fn y(&self, absolute_y: u32, height: u32) -> u32 {
+    const fn y(self, absolute_y: u32, height: u32) -> u32 {
         match self {
             Self::BottomRight | Self::BottomLeft => {
                 Self::get_size_substract(absolute_y, height / 2)
@@ -194,7 +194,7 @@ impl Xywh {
             y,
             width,
             height,
-            align: self.align.clone(),
+            align: self.align,
         })
     }
     fn calculate_xywh(
@@ -240,7 +240,7 @@ impl Xywh {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum SeekStep {
     Short,
     Long,
@@ -258,7 +258,7 @@ impl std::fmt::Display for SeekStep {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum LastPosition {
     Yes,
     No,

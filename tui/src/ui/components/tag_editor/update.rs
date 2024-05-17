@@ -63,11 +63,11 @@ impl Model {
                     self.mount_error_popup(e.context("rename song by tag"));
                 }
             }
-            TEMsg::TEFocus(m) => self.update_tag_editor_focus(m),
+            TEMsg::TEFocus(m) => self.update_tag_editor_focus(*m),
         }
     }
 
-    fn update_tag_editor_focus(&mut self, msg: &TFMsg) {
+    fn update_tag_editor_focus(&mut self, msg: TFMsg) {
         match msg {
             TFMsg::TextareaLyricBlurDown | TFMsg::InputTitleBlurUp => {
                 self.app

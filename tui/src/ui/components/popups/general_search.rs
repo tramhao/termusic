@@ -143,6 +143,8 @@ pub struct GSTablePopup {
     source: Source,
     config: SharedSettings,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Source {
     Library,
     Playlist,

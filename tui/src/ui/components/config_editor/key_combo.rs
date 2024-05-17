@@ -48,7 +48,7 @@ pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
 pub const INPUT_PLACEHOLDER_STYLE: &str = "placeholder-style";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MyModifiers {
     None,
     Shift,
@@ -99,7 +99,7 @@ impl MyModifiers {
         }
     }
 
-    pub const fn as_str(&self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
             MyModifiers::None => "none",
             MyModifiers::Shift => "shift",
@@ -112,7 +112,7 @@ impl MyModifiers {
         }
     }
 
-    pub const fn as_modifier(&self) -> KeyModifiers {
+    pub const fn as_modifier(self) -> KeyModifiers {
         match self {
             Self::None => KeyModifiers::NONE,
             Self::Shift => KeyModifiers::SHIFT,
@@ -1096,7 +1096,7 @@ impl KEModifierSelect {
         on_key_backtab: Msg,
     ) -> Self {
         let config_r = config.read();
-        let (init_select, init_key) = Self::init_modifier_select(&id, &config_r.keys);
+        let (init_select, init_key) = Self::init_modifier_select(id, &config_r.keys);
         let mut choices = vec![];
         for modifier in MyModifiers::LIST {
             choices.push(modifier.as_str());
@@ -1130,7 +1130,7 @@ impl KEModifierSelect {
     /// Get the Selected Modifier choice index for the given [`IdKey`] and the key representation as string
     ///
     /// Returns `(mod_list_index, key_str)`
-    fn init_modifier_select(id: &IdKey, keys: &Keys) -> (usize, String) {
+    fn init_modifier_select(id: IdKey, keys: &Keys) -> (usize, String) {
         let mod_key = match id {
             IdKey::DatabaseAddAll => keys.database_add_all.mod_key(),
             IdKey::GlobalConfig => keys.global_config_open.mod_key(),
@@ -1274,8 +1274,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                             self.perform(Cmd::Type(ch));
                             if let Ok(binding) = self.key_event() {
                                 return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                    self.id.clone(),
-                                    binding,
+                                    self.id, binding,
                                 )));
                             };
                         }
@@ -1294,8 +1293,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
 
                             if let Ok(binding) = self.key_event() {
                                 return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                    self.id.clone(),
-                                    binding,
+                                    self.id, binding,
                                 )));
                             };
                         }
@@ -1313,8 +1311,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
 
                             if let Ok(binding) = self.key_event() {
                                 return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                    self.id.clone(),
-                                    binding,
+                                    self.id, binding,
                                 )));
                             };
                         }
@@ -1358,8 +1355,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                     State::One(_) => {
                         if let Ok(binding) = self.key_event() {
                             return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                self.id.clone(),
-                                binding,
+                                self.id, binding,
                             )));
                         }
                         CmdResult::None
@@ -1377,8 +1373,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                 // Some(Msg::None)
                 if let Ok(binding) = self.key_event() {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                        self.id.clone(),
-                        binding,
+                        self.id, binding,
                     )));
                 }
                 Some(Msg::None)
