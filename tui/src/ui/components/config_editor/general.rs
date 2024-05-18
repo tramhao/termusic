@@ -605,28 +605,38 @@ pub struct SaveLastPosition {
 }
 
 impl SaveLastPosition {
-    pub fn new(_config: CombinedSettings) -> Self {
-        todo!();
-        // let config_tui = config.tui.read();
-        // let save_last_position = match config.server.read().settings.player.remember_position {
-        //     LastPosition::Auto => 0,
-        //     LastPosition::No => 1,
-        //     LastPosition::Yes => 2,
-        // };
-        // let component = Radio::default()
-        //     .borders(
-        //         Borders::default()
-        //             .color(config_tui.settings.theme.library_border())
-        //             .modifiers(BorderType::Rounded),
-        //     )
-        //     .choices(&["Auto", "No", "Yes"])
-        //     .foreground(config_tui.settings.theme.library_highlight())
-        //     .rewind(true)
-        //     .title(" Remember last played position: ", Alignment::Left)
-        //     .value(save_last_position);
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
+        // 0 == unsupported, dont save value
+        let save_last_position = match config.server.read().settings.player.remember_position {
+            termusiclib::config::v2::server::RememberLastPosition::All(
+                termusiclib::config::v2::server::PositionYesNo::Simple(ref v),
+            ) => match v {
+                termusiclib::config::v2::server::PositionYesNoLower::Yes => 2,
+                termusiclib::config::v2::server::PositionYesNoLower::No => 1,
+            },
+            _ => 0,
+            // LastPosition::Auto => 0,
+            // LastPosition::No => 1,
+            // LastPosition::Yes => 2,
+        };
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(config_tui.settings.theme.library_border())
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Unspported", "No", "Yes"])
+            .foreground(config_tui.settings.theme.library_highlight())
+            .rewind(true)
+            .title(" Remember last played position: ", Alignment::Left)
+            .value(save_last_position);
 
-        // drop(config_tui);
-        // Self { component, config: config.tui }
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -648,28 +658,31 @@ pub struct ConfigSeekStep {
 }
 
 impl ConfigSeekStep {
-    pub fn new(_config: CombinedSettings) -> Self {
-        todo!();
-        // let config_tui = config.tui.read();
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
         // let seek_step = match config.server.read().settings.player.seek_step {
         //     SeekStep::Auto => 0,
         //     SeekStep::Short => 1,
         //     SeekStep::Long => 2,
         // };
-        // let component = Radio::default()
-        //     .borders(
-        //         Borders::default()
-        //             .color(config_tui.settings.theme.library_border())
-        //             .modifiers(BorderType::Rounded),
-        //     )
-        //     .choices(&["Auto", "Short(5)", "Long(30)"])
-        //     .foreground(config_tui.settings.theme.library_highlight())
-        //     .rewind(true)
-        //     .title(" Seek step in seconds: ", Alignment::Left)
-        //     .value(seek_step);
+        let seek_step = 0;
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(config_tui.settings.theme.library_border())
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Unsupported"])
+            .foreground(config_tui.settings.theme.library_highlight())
+            .rewind(true)
+            .title(" Seek step in seconds: ", Alignment::Left)
+            .value(seek_step);
 
-        // drop(config_tui);
-        // Self { component, config: config.tui }
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 

@@ -32,6 +32,7 @@ use crate::ui::components::{
     PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
 };
 use include_dir::DirEntry;
+use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
 use termusiclib::config::SharedTuiSettings;
 /**
  * MIT License
@@ -3394,7 +3395,18 @@ impl Model {
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
         {
-            todo!();
+            // NOTE: value "0" means to not save the value
+            if save_last_position != 0 {
+                let new_val = match save_last_position {
+                    1 => RememberLastPosition::All(PositionYesNo::Simple(PositionYesNoLower::No)),
+                    2 => RememberLastPosition::All(PositionYesNo::Simple(PositionYesNoLower::Yes)),
+                    // only 0,1,2 exist here
+                    _ => unreachable!(),
+                };
+
+                config_server.settings.player.remember_position = new_val;
+            }
+
             // let save_last_position = match save_last_position {
             //     0 => LastPosition::Auto,
             //     1 => LastPosition::No,
@@ -3407,7 +3419,9 @@ impl Model {
         if let Ok(State::One(StateValue::Usize(seek_step))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::SeekStep))
         {
-            todo!();
+            // NOTE: seek_step is currently unsupported to be set
+            let _ = seek_step;
+
             // let seek_step = match seek_step {
             //     0 => SeekStep::Auto,
             //     1 => SeekStep::Short,
