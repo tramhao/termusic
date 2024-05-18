@@ -36,7 +36,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use std::time::Duration;
-use termusiclib::config::Settings;
+use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaType, Track};
 
 /// This trait allows for easy conversion of a path to a URI
@@ -188,7 +188,7 @@ pub struct GStreamerBackend {
 
 impl GStreamerBackend {
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
+    pub fn new(config: &ServerOverlay, cmd_tx: crate::PlayerCmdSender) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let ctx = glib::MainContext::default();
         let _guard = ctx.acquire();
@@ -381,9 +381,9 @@ impl GStreamerBackend {
             })
             .expect("failed to start gstreamer mainloop thread");
 
-        let volume = config.player_volume;
-        let speed = config.player_speed;
-        let gapless = config.player_gapless;
+        let volume = config.settings.player.volume;
+        let speed = config.settings.player.speed;
+        let gapless = config.settings.player.gapless;
 
         let mut this = Self {
             playbin,

@@ -1,9 +1,6 @@
 use anyhow::Result;
-use termusiclib::config::SharedSettings;
-use termusiclib::{
-    config::StyleColorSymbol,
-    types::{Id, Msg},
-};
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
+use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
@@ -22,14 +19,15 @@ pub struct SavePlaylistPopup {
 }
 
 impl SavePlaylistPopup {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &TuiOverlay) -> Self {
+        let settings = &config.settings;
         Self {
             component: Input::default()
-                .foreground(style_color_symbol.fallback_foreground())
-                .background(style_color_symbol.fallback_background())
+                .foreground(settings.theme.fallback_foreground())
+                .background(settings.theme.fallback_background())
                 .borders(
                     Borders::default()
-                        .color(style_color_symbol.fallback_border())
+                        .color(settings.theme.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -100,12 +98,12 @@ pub struct SavePlaylistConfirmPopup {
 }
 
 impl SavePlaylistConfirmPopup {
-    pub fn new(config: SharedSettings, filename: &str) -> Self {
+    pub fn new(config: SharedTuiSettings, filename: &str) -> Self {
         let component = YNConfirm::new_with_cb(config, " Playlist exists. Overwrite? ", |config| {
             YNConfirmStyle {
-                foreground_color: config.style_color_symbol.important_popup_foreground(),
-                background_color: config.style_color_symbol.important_popup_background(),
-                border_color: config.style_color_symbol.important_popup_border(),
+                foreground_color: config.settings.theme.important_popup_foreground(),
+                background_color: config.settings.theme.important_popup_background(),
+                border_color: config.settings.theme.important_popup_border(),
                 title_alignment: Alignment::Center,
             }
         });
@@ -133,9 +131,7 @@ impl Model {
             .app
             .remount(
                 Id::SavePlaylistPopup,
-                Box::new(SavePlaylistPopup::new(
-                    &self.config.read().style_color_symbol
-                )),
+                Box::new(SavePlaylistPopup::new(&self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -157,7 +153,10 @@ impl Model {
             .app
             .remount(
                 Id::SavePlaylistConfirm,
-                Box::new(SavePlaylistConfirmPopup::new(self.config.clone(), filename)),
+                Box::new(SavePlaylistConfirmPopup::new(
+                    self.config_tui.clone(),
+                    filename
+                )),
                 vec![]
             )
             .is_ok());

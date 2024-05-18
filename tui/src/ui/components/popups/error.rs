@@ -1,4 +1,4 @@
-use termusiclib::config::SharedSettings;
+use termusiclib::config::SharedTuiSettings;
 /**
  * MIT License
  *
@@ -35,11 +35,11 @@ use crate::ui::model::Model;
 #[derive(MockComponent)]
 pub struct ErrorPopup {
     component: Paragraph,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl ErrorPopup {
-    pub fn new<E: Into<anyhow::Error>>(config: SharedSettings, msg: E) -> Self {
+    pub fn new<E: Into<anyhow::Error>>(config: SharedTuiSettings, msg: E) -> Self {
         let msg = msg.into();
         error!("Displaying error popup: {msg:?}");
         // TODO: Consider changing to ":?" to output "Caused By" (and possibly backtrace) OR do a custom printing (copied from anyhow) once more than 4 lines can be displayed in height
@@ -65,18 +65,14 @@ impl ErrorPopup {
 impl Component<Msg, NoUserEvent> for ErrorPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,
                 ..
             }) => Some(Msg::ErrorPopupClose),
-            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
-                Some(Msg::ErrorPopupClose)
-            }
-            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
-                Some(Msg::ErrorPopupClose)
-            }
+            Event::Keyboard(key) if key == keys.quit.get() => Some(Msg::ErrorPopupClose),
+            Event::Keyboard(key) if key == keys.escape.get() => Some(Msg::ErrorPopupClose),
             _ => None,
         }
     }
@@ -90,7 +86,7 @@ impl Model {
             .app
             .remount(
                 Id::ErrorPopup,
-                Box::new(ErrorPopup::new(self.config.clone(), err)),
+                Box::new(ErrorPopup::new(self.config_tui.clone(), err)),
                 vec![]
             )
             .is_ok());

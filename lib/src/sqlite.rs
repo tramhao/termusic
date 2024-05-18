@@ -1,3 +1,4 @@
+use crate::config::v2::server::ScanDepth;
 /**
  * MIT License
  *
@@ -22,7 +23,7 @@
  * SOFTWARE.
  */
 // database
-use crate::config::Settings;
+use crate::config::ServerOverlay;
 use crate::track::Track;
 use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
 use parking_lot::Mutex;
@@ -35,7 +36,7 @@ const DB_VERSION: u32 = 2;
 
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
-    max_depth: usize,
+    max_depth: ScanDepth,
 }
 
 #[derive(Clone, Debug)]
@@ -93,7 +94,7 @@ impl DataBase {
     ///
     /// - if app config path creation fails
     /// - if any required database operation fails
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: &ServerOverlay) -> Self {
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");
@@ -128,7 +129,7 @@ impl DataBase {
         )
         .expect("create table tracks failed");
 
-        let max_depth = config.max_depth_cli;
+        let max_depth = config.get_library_scan_depth();
 
         let conn = Arc::new(Mutex::new(conn));
         Self { conn, max_depth }
@@ -227,9 +228,15 @@ impl DataBase {
         // add updated records
         let conn = self.conn.clone();
         let mut track_vec: Vec<Track> = vec![];
-        let all_items = walkdir::WalkDir::new(path)
-            .follow_links(true)
-            .max_depth(self.max_depth);
+        let all_items = {
+            let mut walker = walkdir::WalkDir::new(path).follow_links(true);
+
+            if let ScanDepth::Limited(limit) = self.max_depth {
+                walker = walker.max_depth(usize::try_from(limit).unwrap_or(usize::MAX));
+            }
+
+            walker
+        };
 
         std::thread::spawn(move || -> Result<()> {
             for record in all_items

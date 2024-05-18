@@ -35,7 +35,7 @@ use std::cmp;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
-use termusiclib::config::Settings;
+use termusiclib::config::ServerOverlay;
 use termusiclib::track::Track;
 
 pub struct MpvBackend {
@@ -67,12 +67,12 @@ enum PlayerInternalCmd {
 
 impl MpvBackend {
     #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
-    pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
+    pub fn new(config: &ServerOverlay, cmd_tx: crate::PlayerCmdSender) -> Self {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
-        let volume = config.player_volume;
-        let speed = config.player_speed;
-        let gapless = config.player_gapless;
+        let volume = config.settings.player.volume;
+        let speed = config.settings.player.speed;
+        let gapless = config.settings.player.gapless;
         let position = Arc::new(Mutex::new(Duration::default()));
         let duration = Arc::new(Mutex::new(Duration::default()));
         let media_title = Arc::new(Mutex::new(String::new()));

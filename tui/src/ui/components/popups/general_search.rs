@@ -21,10 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::Settings;
 use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
-use termusiclib::config::SharedSettings;
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::types::{GSMsg, Id, Msg};
 use tui_realm_stdlib::{Input, Table};
 use tui_realm_treeview::TREE_INITIAL_NODE;
@@ -40,15 +39,15 @@ pub struct GSInputPopup {
 }
 
 impl GSInputPopup {
-    pub fn new(source: Source, config: &Settings) -> Self {
+    pub fn new(source: Source, config: &TuiOverlay) -> Self {
         match source {
             Source::Episode => Self {
                 component: Input::default()
-                    .background(config.style_color_symbol.fallback_background())
-                    .foreground(config.style_color_symbol.fallback_foreground())
+                    .background(config.settings.theme.fallback_background())
+                    .foreground(config.settings.theme.fallback_foreground())
                     .borders(
                         Borders::default()
-                            .color(config.style_color_symbol.fallback_border())
+                            .color(config.settings.theme.fallback_border())
                             .modifiers(BorderType::Rounded),
                     )
                     .input_type(InputType::Text)
@@ -60,11 +59,11 @@ impl GSInputPopup {
             },
             _ => Self {
                 component: Input::default()
-                    .background(config.style_color_symbol.fallback_background())
-                    .foreground(config.style_color_symbol.fallback_foreground())
+                    .background(config.settings.theme.fallback_background())
+                    .foreground(config.settings.theme.fallback_foreground())
                     .borders(
                         Borders::default()
-                            .color(config.style_color_symbol.fallback_border())
+                            .color(config.settings.theme.fallback_border())
                             .modifiers(BorderType::Rounded),
                     )
                     .input_type(InputType::Text)
@@ -141,7 +140,7 @@ impl Component<Msg, NoUserEvent> for GSInputPopup {
 pub struct GSTablePopup {
     component: Table,
     source: Source,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -154,23 +153,24 @@ pub enum Source {
 }
 impl GSTablePopup {
     #[allow(clippy::too_many_lines)]
-    pub fn new(source: Source, config: SharedSettings) -> Self {
+    pub fn new(source: Source, config: SharedTuiSettings) -> Self {
         let config_r = config.read();
+        // TODO: fix this up to be the proper keys
         let title_library = format!(
             " Results: (Enter: locate/{}: load to playlist) ",
-            config_r.keys.global_right
+            config_r.settings.keys.navigation_keys.right
         );
         let title_playlist = format!(
             " Results: (Enter: locate/{}: play selected) ",
-            config_r.keys.global_right
+            config_r.settings.keys.navigation_keys.right
         );
         let title_database = format!(
             " Results: ({}: load to playlist) ",
-            config_r.keys.global_right
+            config_r.settings.keys.navigation_keys.right
         );
         let title_episode = format!(
             " Results: (Enter: locate/{}: load to playlist) ",
-            config_r.keys.global_right
+            config_r.settings.keys.navigation_keys.right
         );
 
         let title_podcast = " Results: (Enter: locate) ";
@@ -178,15 +178,15 @@ impl GSTablePopup {
             Source::Library => Table::default()
                 .borders(
                     Borders::default()
-                        .color(config_r.style_color_symbol.fallback_border())
+                        .color(config_r.settings.theme.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .background(config_r.style_color_symbol.fallback_background())
-                .foreground(config_r.style_color_symbol.fallback_foreground())
+                .background(config_r.settings.theme.fallback_background())
+                .foreground(config_r.settings.theme.fallback_foreground())
                 .title(title_library, Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config_r.style_color_symbol.fallback_highlight())
-                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config_r.settings.theme.fallback_highlight())
+                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -203,15 +203,15 @@ impl GSTablePopup {
             Source::Playlist => Table::default()
                 .borders(
                     Borders::default()
-                        .color(config_r.style_color_symbol.fallback_border())
+                        .color(config_r.settings.theme.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .background(config_r.style_color_symbol.fallback_background())
-                .foreground(config_r.style_color_symbol.fallback_foreground())
+                .background(config_r.settings.theme.fallback_background())
+                .foreground(config_r.settings.theme.fallback_foreground())
                 .title(title_playlist, Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config_r.style_color_symbol.fallback_highlight())
-                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config_r.settings.theme.fallback_highlight())
+                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -227,15 +227,15 @@ impl GSTablePopup {
             Source::Database => Table::default()
                 .borders(
                     Borders::default()
-                        .color(config_r.style_color_symbol.fallback_border())
+                        .color(config_r.settings.theme.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .background(config_r.style_color_symbol.fallback_background())
-                .foreground(config_r.style_color_symbol.fallback_foreground())
+                .background(config_r.settings.theme.fallback_background())
+                .foreground(config_r.settings.theme.fallback_foreground())
                 .title(title_database, Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config_r.style_color_symbol.fallback_highlight())
-                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config_r.settings.theme.fallback_highlight())
+                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -251,15 +251,15 @@ impl GSTablePopup {
             Source::Episode => Table::default()
                 .borders(
                     Borders::default()
-                        .color(config_r.style_color_symbol.fallback_border())
+                        .color(config_r.settings.theme.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .background(config_r.style_color_symbol.fallback_background())
-                .foreground(config_r.style_color_symbol.fallback_foreground())
+                .background(config_r.settings.theme.fallback_background())
+                .foreground(config_r.settings.theme.fallback_foreground())
                 .title(title_episode, Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config_r.style_color_symbol.fallback_highlight())
-                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config_r.settings.theme.fallback_highlight())
+                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -275,15 +275,15 @@ impl GSTablePopup {
             Source::Podcast => Table::default()
                 .borders(
                     Borders::default()
-                        .color(config_r.style_color_symbol.fallback_border())
+                        .color(config_r.settings.theme.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .background(config_r.style_color_symbol.fallback_background())
-                .foreground(config_r.style_color_symbol.fallback_foreground())
+                .background(config_r.settings.theme.fallback_background())
+                .foreground(config_r.settings.theme.fallback_foreground())
                 .title(title_podcast, Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config_r.style_color_symbol.fallback_highlight())
-                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config_r.settings.theme.fallback_highlight())
+                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -310,12 +310,12 @@ impl GSTablePopup {
 impl Component<Msg, NoUserEvent> for GSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
 
@@ -326,11 +326,11 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -340,10 +340,10 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
@@ -353,7 +353,7 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                 return Some(Msg::GeneralSearch(GSMsg::TableBlur))
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_right.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
                 match self.source {
                     Source::Library => {
                         return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist))

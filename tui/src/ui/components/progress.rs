@@ -1,6 +1,6 @@
 use crate::ui::Model;
 use std::time::Duration;
-use termusiclib::config::Settings;
+use termusiclib::config::TuiOverlay;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::ProgressBar;
@@ -15,23 +15,19 @@ pub struct Progress {
 
 impl Progress {
     #[allow(clippy::cast_precision_loss)]
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: &TuiOverlay) -> Self {
         Self {
             component: ProgressBar::default()
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.progress_border())
+                        .color(config.settings.theme.progress_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .background(config.style_color_symbol.progress_background())
-                .foreground(config.style_color_symbol.progress_foreground())
+                .background(config.settings.theme.progress_background())
+                .foreground(config.settings.theme.progress_foreground())
                 .label("Progress")
                 .title(
-                    format!(
-                        " Status: Stopped | Volume: {} | Speed: {:^.1} ",
-                        config.player_volume,
-                        config.player_speed as f32 / 10.0,
-                    ),
+                    " Status: Stopped | Volume: ?? | Speed: ??.? ",
                     Alignment::Center,
                 )
                 .progress(0.0),
@@ -51,7 +47,7 @@ impl Model {
             .app
             .remount(
                 Id::Progress,
-                Box::new(Progress::new(&self.config.read())),
+                Box::new(Progress::new(&self.config_tui.read())),
                 Vec::new()
             )
             .is_ok());
@@ -60,8 +56,8 @@ impl Model {
 
     #[allow(clippy::cast_precision_loss)]
     pub fn progress_update_title(&mut self) {
-        let config = self.config.read();
-        let gapless = if config.player_gapless {
+        let config_server = self.config_server.read();
+        let gapless = if config_server.settings.player.gapless {
             "True"
         } else {
             "False"
@@ -73,8 +69,8 @@ impl Model {
                     progress_title = format!(
                         " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playlist.status(),
-                        config.player_volume,
-                        config.player_speed as f32 / 10.0,
+                        config_server.settings.player.volume,
+                        config_server.settings.player.speed as f32 / 10.0,
                         gapless,
                     );
                 }
@@ -83,15 +79,15 @@ impl Model {
                         " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playlist.status(),
                         track.title().unwrap_or("Unknown title"),
-                        config.player_volume,
-                        config.player_speed as f32 / 10.0,
+                        config_server.settings.player.volume,
+                        config_server.settings.player.speed as f32 / 10.0,
                         gapless,
                     );
                 }
             }
         }
 
-        drop(config);
+        drop(config_server);
         self.app
             .attr(
                 &Id::Progress,

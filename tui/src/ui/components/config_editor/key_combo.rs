@@ -23,10 +23,9 @@ use std::fmt::Display;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::BindingForEvent;
 use anyhow::{bail, Result};
-use termusiclib::config::Keys;
-use termusiclib::config::SharedSettings;
+use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
+use termusiclib::config::SharedTuiSettings;
 use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsg, Msg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -360,7 +359,7 @@ impl KeyCombo {
     /// Checks whether current input is valid
     fn is_valid(&self) -> bool {
         let value = self.states_input.get_value();
-        BindingForEvent::key_from_str(value.as_str()).is_ok()
+        KeyBinding::try_from_str(&value).is_ok()
     }
     pub fn foreground(mut self, fg: Color) -> Self {
         self.attr(Attribute::Foreground, AttrValue::Color(fg));
@@ -1082,7 +1081,7 @@ mod test {
 struct KEModifierSelect {
     component: KeyCombo,
     id: IdKey,
-    config: SharedSettings,
+    config: SharedTuiSettings,
     on_key_tab: Msg,
     on_key_backtab: Msg,
 }
@@ -1091,12 +1090,12 @@ impl KEModifierSelect {
     pub fn new(
         name: &str,
         id: IdKey,
-        config: SharedSettings,
+        config: SharedTuiSettings,
         on_key_tab: Msg,
         on_key_backtab: Msg,
     ) -> Self {
         let config_r = config.read();
-        let (init_select, init_key) = Self::init_modifier_select(id, &config_r.keys);
+        let (init_select, init_key) = Self::init_modifier_select(id, &config_r.settings.keys);
         let mut choices = vec![];
         for modifier in MyModifiers::LIST {
             choices.push(modifier.as_str());
@@ -1105,12 +1104,12 @@ impl KEModifierSelect {
             .borders(
                 Borders::default()
                     .modifiers(BorderType::Rounded)
-                    .color(config_r.style_color_symbol.fallback_border()),
+                    .color(config_r.settings.theme.fallback_border()),
             )
-            .foreground(config_r.style_color_symbol.fallback_foreground())
+            .foreground(config_r.settings.theme.fallback_foreground())
             .title(name, Alignment::Left)
             .rewind(false)
-            .highlighted_color(config_r.style_color_symbol.fallback_highlight())
+            .highlighted_color(config_r.settings.theme.fallback_highlight())
             .highlighted_str(">> ")
             .choices(&choices)
             .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
@@ -1132,91 +1131,98 @@ impl KEModifierSelect {
     /// Returns `(mod_list_index, key_str)`
     fn init_modifier_select(id: IdKey, keys: &Keys) -> (usize, String) {
         let mod_key = match id {
-            IdKey::DatabaseAddAll => keys.database_add_all.mod_key(),
-            IdKey::GlobalConfig => keys.global_config_open.mod_key(),
-            IdKey::GlobalDown => keys.global_down.mod_key(),
-            IdKey::GlobalGotoBottom => keys.global_goto_bottom.mod_key(),
-            IdKey::GlobalGotoTop => keys.global_goto_top.mod_key(),
-            IdKey::GlobalHelp => keys.global_help.mod_key(),
-            IdKey::GlobalLayoutTreeview => keys.global_layout_treeview.mod_key(),
-            IdKey::GlobalLayoutDatabase => keys.global_layout_database.mod_key(),
-            IdKey::GlobalLeft => keys.global_left.mod_key(),
-            IdKey::GlobalLyricAdjustForward => keys.global_lyric_adjust_forward.mod_key(),
-            IdKey::GlobalLyricAdjustBackward => keys.global_lyric_adjust_backward.mod_key(),
-            IdKey::GlobalLyricCycle => keys.global_lyric_cycle.mod_key(),
-            IdKey::GlobalPlayerToggleGapless => keys.global_player_toggle_gapless.mod_key(),
-            IdKey::GlobalPlayerTogglePause => keys.global_player_toggle_pause.mod_key(),
-            IdKey::GlobalPlayerNext => keys.global_player_next.mod_key(),
-            IdKey::GlobalPlayerPrevious => keys.global_player_previous.mod_key(),
-            IdKey::GlobalPlayerSeekForward => keys.global_player_seek_forward.mod_key(),
-            IdKey::GlobalPlayerSeekBackward => keys.global_player_seek_backward.mod_key(),
-            IdKey::GlobalPlayerSpeedUp => keys.global_player_speed_up.mod_key(),
-            IdKey::GlobalPlayerSpeedDown => keys.global_player_speed_down.mod_key(),
-            IdKey::GlobalQuit => keys.global_quit.mod_key(),
-            IdKey::GlobalRight => keys.global_right.mod_key(),
-            IdKey::GlobalUp => keys.global_up.mod_key(),
-            IdKey::GlobalVolumeDown => keys.global_player_volume_minus_2.mod_key(),
-            IdKey::GlobalVolumeUp => keys.global_player_volume_plus_2.mod_key(),
-            IdKey::GlobalSavePlaylist => keys.global_save_playlist.mod_key(),
-            IdKey::LibraryDelete => keys.library_delete.mod_key(),
-            IdKey::LibraryLoadDir => keys.library_load_dir.mod_key(),
-            IdKey::LibraryPaste => keys.library_paste.mod_key(),
-            IdKey::LibrarySearch => keys.library_search.mod_key(),
-            IdKey::LibrarySearchYoutube => keys.library_search_youtube.mod_key(),
-            IdKey::LibraryTagEditor => keys.library_tag_editor_open.mod_key(),
-            IdKey::LibraryYank => keys.library_yank.mod_key(),
-            IdKey::PlaylistDelete => keys.playlist_delete.mod_key(),
-            IdKey::PlaylistDeleteAll => keys.playlist_delete_all.mod_key(),
-            IdKey::PlaylistShuffle => keys.playlist_shuffle.mod_key(),
-            IdKey::PlaylistModeCycle => keys.playlist_mode_cycle.mod_key(),
-            IdKey::PlaylistPlaySelected => keys.playlist_play_selected.mod_key(),
-            IdKey::PlaylistSearch => keys.playlist_search.mod_key(),
-            IdKey::PlaylistSwapDown => keys.playlist_swap_down.mod_key(),
-            IdKey::PlaylistSwapUp => keys.playlist_swap_up.mod_key(),
-            IdKey::PlaylistAddRandomAlbum => keys.playlist_add_random_album.mod_key(),
-            IdKey::PlaylistAddRandomTracks => keys.playlist_add_random_tracks.mod_key(),
-            IdKey::LibrarySwitchRoot => keys.library_switch_root.mod_key(),
-            IdKey::LibraryAddRoot => keys.library_add_root.mod_key(),
-            IdKey::LibraryRemoveRoot => keys.library_remove_root.mod_key(),
-            IdKey::GlobalLayoutPodcast => keys.global_layout_podcast.mod_key(),
-            IdKey::GlobalXywhMoveLeft => keys.global_xywh_move_left.mod_key(),
-            IdKey::GlobalXywhMoveRight => keys.global_xywh_move_right.mod_key(),
-            IdKey::GlobalXywhMoveUp => keys.global_xywh_move_up.mod_key(),
-            IdKey::GlobalXywhMoveDown => keys.global_xywh_move_down.mod_key(),
-            IdKey::GlobalXywhZoomIn => keys.global_xywh_zoom_in.mod_key(),
-            IdKey::GlobalXywhZoomOut => keys.global_xywh_zoom_out.mod_key(),
-            IdKey::GlobalXywhHide => keys.global_xywh_hide.mod_key(),
-            IdKey::PodcastMarkPlayed => keys.podcast_mark_played.mod_key(),
-            IdKey::PodcastMarkAllPlayed => keys.podcast_mark_all_played.mod_key(),
-            IdKey::PodcastEpDownload => keys.podcast_episode_download.mod_key(),
-            IdKey::PodcastEpDeleteFile => keys.podcast_episode_delete_file.mod_key(),
-            IdKey::PodcastDeleteFeed => keys.podcast_delete_feed.mod_key(),
-            IdKey::PodcastDeleteAllFeeds => keys.podcast_delete_all_feeds.mod_key(),
-            IdKey::PodcastSearchAddFeed => keys.podcast_search_add_feed.mod_key(),
-            IdKey::PodcastRefreshFeed => keys.podcast_refresh_feed.mod_key(),
-            IdKey::PodcastRefreshAllFeeds => keys.podcast_refresh_all_feeds.mod_key(),
+            // TODO: add DatabaseAddSelected
+            IdKey::DatabaseAddAll => keys.database_keys.add_all.mod_key(),
+            IdKey::GlobalConfig => keys.select_view_keys.open_config.mod_key(),
+            IdKey::GlobalDown => keys.navigation_keys.down.mod_key(),
+            IdKey::GlobalGotoBottom => keys.navigation_keys.goto_bottom.mod_key(),
+            IdKey::GlobalGotoTop => keys.navigation_keys.goto_top.mod_key(),
+            IdKey::GlobalHelp => keys.select_view_keys.open_help.mod_key(),
+            IdKey::GlobalLayoutTreeview => keys.select_view_keys.view_library.mod_key(),
+            IdKey::GlobalLayoutDatabase => keys.select_view_keys.view_database.mod_key(),
+            IdKey::GlobalLeft => keys.navigation_keys.left.mod_key(),
+            IdKey::GlobalLyricAdjustForward => keys.lyric_keys.adjust_offset_forwards.mod_key(),
+            IdKey::GlobalLyricAdjustBackward => keys.lyric_keys.adjust_offset_backwards.mod_key(),
+            IdKey::GlobalLyricCycle => keys.lyric_keys.cycle_frames.mod_key(),
+            IdKey::GlobalPlayerToggleGapless => keys.player_keys.toggle_prefetch.mod_key(),
+            IdKey::GlobalPlayerTogglePause => keys.player_keys.toggle_pause.mod_key(),
+            IdKey::GlobalPlayerNext => keys.player_keys.next_track.mod_key(),
+            IdKey::GlobalPlayerPrevious => keys.player_keys.previous_track.mod_key(),
+            IdKey::GlobalPlayerSeekForward => keys.player_keys.seek_forward.mod_key(),
+            IdKey::GlobalPlayerSeekBackward => keys.player_keys.seek_backward.mod_key(),
+            IdKey::GlobalPlayerSpeedUp => keys.player_keys.speed_up.mod_key(),
+            IdKey::GlobalPlayerSpeedDown => keys.player_keys.speed_down.mod_key(),
+            IdKey::GlobalQuit => keys.quit.mod_key(),
+            IdKey::GlobalRight => keys.navigation_keys.right.mod_key(),
+            IdKey::GlobalUp => keys.navigation_keys.up.mod_key(),
+            IdKey::GlobalVolumeDown => keys.player_keys.volume_down.mod_key(),
+            IdKey::GlobalVolumeUp => keys.player_keys.volume_up.mod_key(),
+            IdKey::GlobalSavePlaylist => keys.player_keys.save_playlist.mod_key(),
+            IdKey::LibraryDelete => keys.library_keys.delete.mod_key(),
+            IdKey::LibraryLoadDir => keys.library_keys.load_dir.mod_key(),
+            IdKey::LibraryPaste => keys.library_keys.paste.mod_key(),
+            IdKey::LibrarySearch => keys.library_keys.search.mod_key(),
+            IdKey::LibrarySearchYoutube => keys.library_keys.youtube_search.mod_key(),
+            IdKey::LibraryTagEditor => keys.library_keys.open_tag_editor.mod_key(),
+            IdKey::LibraryYank => keys.library_keys.yank.mod_key(),
+            IdKey::PlaylistDelete => keys.playlist_keys.delete.mod_key(),
+            IdKey::PlaylistDeleteAll => keys.playlist_keys.delete_all.mod_key(),
+            IdKey::PlaylistShuffle => keys.playlist_keys.shuffle.mod_key(),
+            IdKey::PlaylistModeCycle => keys.playlist_keys.cycle_loop_mode.mod_key(),
+            IdKey::PlaylistPlaySelected => keys.playlist_keys.play_selected.mod_key(),
+            IdKey::PlaylistSearch => keys.playlist_keys.search.mod_key(),
+            IdKey::PlaylistSwapDown => keys.playlist_keys.swap_down.mod_key(),
+            IdKey::PlaylistSwapUp => keys.playlist_keys.swap_up.mod_key(),
+            IdKey::PlaylistAddRandomAlbum => keys.playlist_keys.add_random_album.mod_key(),
+            IdKey::PlaylistAddRandomTracks => keys.playlist_keys.add_random_songs.mod_key(),
+            IdKey::LibrarySwitchRoot => keys.library_keys.cycle_root.mod_key(),
+            IdKey::LibraryAddRoot => keys.library_keys.add_root.mod_key(),
+            IdKey::LibraryRemoveRoot => keys.library_keys.remove_root.mod_key(),
+            IdKey::GlobalLayoutPodcast => keys.select_view_keys.view_podcasts.mod_key(),
+            IdKey::GlobalXywhMoveLeft => keys.move_cover_art_keys.move_left.mod_key(),
+            IdKey::GlobalXywhMoveRight => keys.move_cover_art_keys.move_right.mod_key(),
+            IdKey::GlobalXywhMoveUp => keys.move_cover_art_keys.move_up.mod_key(),
+            IdKey::GlobalXywhMoveDown => keys.move_cover_art_keys.move_down.mod_key(),
+            IdKey::GlobalXywhZoomIn => keys.move_cover_art_keys.increase_size.mod_key(),
+            IdKey::GlobalXywhZoomOut => keys.move_cover_art_keys.decrease_size.mod_key(),
+            IdKey::GlobalXywhHide => keys.move_cover_art_keys.toggle_hide.mod_key(),
+            IdKey::PodcastMarkPlayed => keys.podcast_keys.mark_played.mod_key(),
+            IdKey::PodcastMarkAllPlayed => keys.podcast_keys.mark_all_played.mod_key(),
+            IdKey::PodcastEpDownload => keys.podcast_keys.download_episode.mod_key(),
+            IdKey::PodcastEpDeleteFile => keys.podcast_keys.delete_local_episode.mod_key(),
+            IdKey::PodcastDeleteFeed => keys.podcast_keys.delete_feed.mod_key(),
+            IdKey::PodcastDeleteAllFeeds => keys.podcast_keys.delete_all_feeds.mod_key(),
+            IdKey::PodcastSearchAddFeed => keys.podcast_keys.search.mod_key(),
+            IdKey::PodcastRefreshFeed => keys.podcast_keys.refresh_feed.mod_key(),
+            IdKey::PodcastRefreshAllFeeds => keys.podcast_keys.refresh_all_feeds.mod_key(),
         };
 
         (MyModifiers::from_modifier_list_index(mod_key.0), mod_key.1)
     }
 
-    /// Try to get a [`BindingForEvent`], if the input is valid
-    fn key_event(&mut self) -> Result<BindingForEvent> {
+    /// Try to get a [`KeyBinding`], if the input is valid
+    fn key_event(&mut self) -> Result<KeyBinding> {
         let mod_list_index = self.component.states.selected;
         let modifier: KeyModifiers = MyModifiers::LIST
             .get(mod_list_index)
             .unwrap_or(&MyModifiers::None)
             .as_modifier();
         self.update_key_input_by_modifier(modifier);
-        if let Ok(code) = BindingForEvent::key_from_str(&self.component.states_input.get_value()) {
-            return Ok(BindingForEvent { code, modifier });
-        }
-        bail!("Failed to get the key code!")
+
+        let code = match KeyBinding::try_from_str(&self.component.states_input.get_value()) {
+            Ok(v) => v.key_event.code,
+            Err(err) => bail!(err),
+        };
+
+        Ok(KeyBinding::from(KeyEvent {
+            code,
+            modifiers: modifier,
+        }))
     }
 
     fn update_key_input_by_modifier(&mut self, modifier: KeyModifiers) {
         let codes = self.component.states_input.get_value();
-        if BindingForEvent::key_from_str(&codes).is_err() {
+        if KeyBinding::try_from_str(&codes).is_err() {
             return;
         }
 
@@ -1240,10 +1246,10 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let cmd_result = match ev {
             // Global Hotkey
-            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent {
@@ -1260,32 +1266,28 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
             }
             // Local Hotkey
-            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
-                    _ => self.perform(Cmd::Cancel),
-                }
-            }
+            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => match self.state() {
+                State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+                _ => self.perform(Cmd::Cancel),
+            },
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
-                match self.state() {
-                    State::One(_) => {
-                        if let Key::Char(ch) = keyevent.code {
-                            self.perform(Cmd::Type(ch));
-                            if let Ok(binding) = self.key_event() {
-                                return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                    self.id, binding,
-                                )));
-                            };
-                        }
-                        CmdResult::None
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => match self.state() {
+                State::One(_) => {
+                    if let Key::Char(ch) = keyevent.code {
+                        self.perform(Cmd::Type(ch));
+                        if let Ok(binding) = self.key_event() {
+                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                                self.id, binding,
+                            )));
+                        };
                     }
-
-                    _ => self.perform(Cmd::Cancel),
+                    CmdResult::None
                 }
-            }
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
+                _ => self.perform(Cmd::Cancel),
+            },
+
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 match self.state() {
                     State::One(_) => {
                         if let Key::Char(ch) = keyevent.code {
@@ -1303,7 +1305,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                     _ => self.perform(Cmd::Move(Direction::Up)),
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
                 match self.state() {
                     State::One(_) => {
                         if let Key::Char(ch) = keyevent.code {
@@ -1363,7 +1365,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                     _ => CmdResult::None,
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
             }
             _ => CmdResult::None,
@@ -1389,7 +1391,7 @@ pub struct ConfigGlobalQuit {
 }
 
 impl ConfigGlobalQuit {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Quit ",
@@ -1414,7 +1416,7 @@ pub struct ConfigGlobalLeft {
 }
 
 impl ConfigGlobalLeft {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Left ",
@@ -1439,7 +1441,7 @@ pub struct ConfigGlobalDown {
 }
 
 impl ConfigGlobalDown {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Down ",
@@ -1463,7 +1465,7 @@ pub struct ConfigGlobalRight {
 }
 
 impl ConfigGlobalRight {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Right ",
@@ -1487,7 +1489,7 @@ pub struct ConfigGlobalUp {
 }
 
 impl ConfigGlobalUp {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Up ",
@@ -1512,7 +1514,7 @@ pub struct ConfigGlobalGotoTop {
 }
 
 impl ConfigGlobalGotoTop {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Goto Top ",
@@ -1537,7 +1539,7 @@ pub struct ConfigGlobalGotoBottom {
 }
 
 impl ConfigGlobalGotoBottom {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Goto Bottom ",
@@ -1562,7 +1564,7 @@ pub struct ConfigGlobalPlayerTogglePause {
 }
 
 impl ConfigGlobalPlayerTogglePause {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Pause Toggle ",
@@ -1591,7 +1593,7 @@ pub struct ConfigGlobalPlayerNext {
 }
 
 impl ConfigGlobalPlayerNext {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Next Song ",
@@ -1616,7 +1618,7 @@ pub struct ConfigGlobalPlayerPrevious {
 }
 
 impl ConfigGlobalPlayerPrevious {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Previous Song ",
@@ -1643,7 +1645,7 @@ pub struct ConfigGlobalHelp {
 }
 
 impl ConfigGlobalHelp {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Help ",
@@ -1667,7 +1669,7 @@ pub struct ConfigGlobalVolumeUp {
 }
 
 impl ConfigGlobalVolumeUp {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Volume + ",
@@ -1692,7 +1694,7 @@ pub struct ConfigGlobalVolumeDown {
 }
 
 impl ConfigGlobalVolumeDown {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Volume - ",
@@ -1717,7 +1719,7 @@ pub struct ConfigGlobalPlayerSeekForward {
 }
 
 impl ConfigGlobalPlayerSeekForward {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Seek Forward ",
@@ -1746,7 +1748,7 @@ pub struct ConfigGlobalPlayerSeekBackward {
 }
 
 impl ConfigGlobalPlayerSeekBackward {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Seek Backward ",
@@ -1775,7 +1777,7 @@ pub struct ConfigGlobalPlayerSpeedUp {
 }
 
 impl ConfigGlobalPlayerSpeedUp {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Speed Up ",
@@ -1802,7 +1804,7 @@ pub struct ConfigGlobalPlayerSpeedDown {
 }
 
 impl ConfigGlobalPlayerSpeedDown {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Speed Down ",
@@ -1831,7 +1833,7 @@ pub struct ConfigGlobalLyricAdjustForward {
 }
 
 impl ConfigGlobalLyricAdjustForward {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Forward ",
@@ -1860,7 +1862,7 @@ pub struct ConfigGlobalLyricAdjustBackward {
 }
 
 impl ConfigGlobalLyricAdjustBackward {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Backward ",
@@ -1889,7 +1891,7 @@ pub struct ConfigGlobalLyricCycle {
 }
 
 impl ConfigGlobalLyricCycle {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Cycle ",
@@ -1914,7 +1916,7 @@ pub struct ConfigGlobalLayoutTreeview {
 }
 
 impl ConfigGlobalLayoutTreeview {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Layout Tree ",
@@ -1941,7 +1943,7 @@ pub struct ConfigGlobalLayoutDatabase {
 }
 
 impl ConfigGlobalLayoutDatabase {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Layout DataBase ",
@@ -1968,7 +1970,7 @@ pub struct ConfigGlobalPlayerToggleGapless {
 }
 
 impl ConfigGlobalPlayerToggleGapless {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Gapless Toggle ",
@@ -1997,7 +1999,7 @@ pub struct ConfigLibraryDelete {
 }
 
 impl ConfigLibraryDelete {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Delete ",
@@ -2022,7 +2024,7 @@ pub struct ConfigLibraryLoadDir {
 }
 
 impl ConfigLibraryLoadDir {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Load Dir ",
@@ -2047,7 +2049,7 @@ pub struct ConfigLibraryYank {
 }
 
 impl ConfigLibraryYank {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Yank ",
@@ -2072,7 +2074,7 @@ pub struct ConfigLibraryPaste {
 }
 
 impl ConfigLibraryPaste {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Paste ",
@@ -2097,7 +2099,7 @@ pub struct ConfigLibrarySearch {
 }
 
 impl ConfigLibrarySearch {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Search ",
@@ -2122,7 +2124,7 @@ pub struct ConfigLibrarySearchYoutube {
 }
 
 impl ConfigLibrarySearchYoutube {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Search Youtube ",
@@ -2149,7 +2151,7 @@ pub struct ConfigLibraryTagEditor {
 }
 
 impl ConfigLibraryTagEditor {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Tag Editor ",
@@ -2174,7 +2176,7 @@ pub struct ConfigPlaylistDelete {
 }
 
 impl ConfigPlaylistDelete {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Delete ",
@@ -2199,7 +2201,7 @@ pub struct ConfigPlaylistDeleteAll {
 }
 
 impl ConfigPlaylistDeleteAll {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Delete All ",
@@ -2224,7 +2226,7 @@ pub struct ConfigPlaylistShuffle {
 }
 
 impl ConfigPlaylistShuffle {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Shuffle ",
@@ -2249,7 +2251,7 @@ pub struct ConfigPlaylistModeCycle {
 }
 
 impl ConfigPlaylistModeCycle {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Mode Cycle ",
@@ -2274,7 +2276,7 @@ pub struct ConfigPlaylistPlaySelected {
 }
 
 impl ConfigPlaylistPlaySelected {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Play Selected ",
@@ -2301,7 +2303,7 @@ pub struct ConfigPlaylistSearch {
 }
 
 impl ConfigPlaylistSearch {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Search ",
@@ -2326,7 +2328,7 @@ pub struct ConfigPlaylistSwapDown {
 }
 
 impl ConfigPlaylistSwapDown {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Swap Down ",
@@ -2351,7 +2353,7 @@ pub struct ConfigPlaylistSwapUp {
 }
 
 impl ConfigPlaylistSwapUp {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Swap Up ",
@@ -2375,7 +2377,7 @@ pub struct ConfigDatabaseAddAll {
 }
 
 impl ConfigDatabaseAddAll {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Database Add All ",
@@ -2400,7 +2402,7 @@ pub struct ConfigGlobalConfig {
 }
 
 impl ConfigGlobalConfig {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Config Editor ",
@@ -2425,7 +2427,7 @@ pub struct ConfigPlaylistAddRandomAlbum {
 }
 
 impl ConfigPlaylistAddRandomAlbum {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Album ",
@@ -2454,7 +2456,7 @@ pub struct ConfigPlaylistAddRandomTracks {
 }
 
 impl ConfigPlaylistAddRandomTracks {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Tracks ",
@@ -2483,7 +2485,7 @@ pub struct ConfigLibrarySwitchRoot {
 }
 
 impl ConfigLibrarySwitchRoot {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Switch Root ",
@@ -2508,7 +2510,7 @@ pub struct ConfigLibraryAddRoot {
 }
 
 impl ConfigLibraryAddRoot {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Add Root ",
@@ -2533,7 +2535,7 @@ pub struct ConfigLibraryRemoveRoot {
 }
 
 impl ConfigLibraryRemoveRoot {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Remove Root ",
@@ -2558,7 +2560,7 @@ pub struct ConfigGlobalSavePlaylist {
 }
 
 impl ConfigGlobalSavePlaylist {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Global Save Playlist ",
@@ -2583,7 +2585,7 @@ pub struct ConfigGlobalLayoutPodcast {
 }
 
 impl ConfigGlobalLayoutPodcast {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Layout Podcast ",
@@ -2610,7 +2612,7 @@ pub struct ConfigGlobalXywhMoveLeft {
 }
 
 impl ConfigGlobalXywhMoveLeft {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo move left ",
@@ -2635,7 +2637,7 @@ pub struct ConfigGlobalXywhMoveRight {
 }
 
 impl ConfigGlobalXywhMoveRight {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo move right ",
@@ -2661,7 +2663,7 @@ pub struct ConfigGlobalXywhMoveUp {
 }
 
 impl ConfigGlobalXywhMoveUp {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo move up ",
@@ -2685,7 +2687,7 @@ pub struct ConfigGlobalXywhMoveDown {
 }
 
 impl ConfigGlobalXywhMoveDown {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo move down ",
@@ -2710,7 +2712,7 @@ pub struct ConfigGlobalXywhZoomIn {
 }
 
 impl ConfigGlobalXywhZoomIn {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo zoom in ",
@@ -2734,7 +2736,7 @@ pub struct ConfigGlobalXywhZoomOut {
 }
 
 impl ConfigGlobalXywhZoomOut {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo zoom out ",
@@ -2759,7 +2761,7 @@ pub struct ConfigGlobalXywhHide {
 }
 
 impl ConfigGlobalXywhHide {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo hide ",
@@ -2784,7 +2786,7 @@ pub struct ConfigPodcastMarkPlayed {
 }
 
 impl ConfigPodcastMarkPlayed {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Episode Mark Played",
@@ -2809,7 +2811,7 @@ pub struct ConfigPodcastMarkAllPlayed {
 }
 
 impl ConfigPodcastMarkAllPlayed {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Episode mark all played ",
@@ -2836,7 +2838,7 @@ pub struct ConfigPodcastEpDownload {
 }
 
 impl ConfigPodcastEpDownload {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Episode download",
@@ -2861,7 +2863,7 @@ pub struct ConfigPodcastEpDeleteFile {
 }
 
 impl ConfigPodcastEpDeleteFile {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Episode delete file ",
@@ -2888,7 +2890,7 @@ pub struct ConfigPodcastDeleteFeed {
 }
 
 impl ConfigPodcastDeleteFeed {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Podcast delete feed ",
@@ -2913,7 +2915,7 @@ pub struct ConfigPodcastDeleteAllFeeds {
 }
 
 impl ConfigPodcastDeleteAllFeeds {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Delete all feeds ",
@@ -2942,7 +2944,7 @@ pub struct ConfigPodcastSearchAddFeed {
 }
 
 impl ConfigPodcastSearchAddFeed {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Podcast search add feed ",
@@ -2969,7 +2971,7 @@ pub struct ConfigPodcastRefreshFeed {
 }
 
 impl ConfigPodcastRefreshFeed {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Refresh feed ",
@@ -2994,7 +2996,7 @@ pub struct ConfigPodcastRefreshAllFeeds {
 }
 
 impl ConfigPodcastRefreshAllFeeds {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Refresh all feeds ",

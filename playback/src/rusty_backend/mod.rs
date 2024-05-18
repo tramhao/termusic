@@ -20,6 +20,7 @@ pub use sink::Sink;
 pub use source::Source;
 use std::num::{NonZeroU16, NonZeroUsize};
 pub use stream::OutputStream;
+use termusiclib::config::ServerOverlay;
 use tokio::runtime::Handle;
 
 use crate::{MediaInfo, Speed, Volume};
@@ -53,7 +54,6 @@ use stream_download::{Settings as StreamSettings, StreamDownload};
 use symphonia::core::io::{
     MediaSource, MediaSourceStream, MediaSourceStreamOptions, ReadOnlySource,
 };
-use termusiclib::config::Settings;
 use termusiclib::track::{MediaType, Track};
 
 pub type TotalDuration = Option<Duration>;
@@ -100,14 +100,14 @@ pub struct RustyBackend {
 impl RustyBackend {
     #[allow(clippy::similar_names)]
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
+    pub fn new(config: &ServerOverlay, cmd_tx: crate::PlayerCmdSender) -> Self {
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let picmd_tx_local = picmd_tx.clone();
-        let volume = Arc::new(AtomicU16::from(config.player_volume));
+        let volume = Arc::new(AtomicU16::from(config.settings.player.volume));
         let volume_local = volume.clone();
-        let speed = config.player_speed;
-        let gapless = config.player_gapless;
+        let speed = config.settings.player.speed;
+        let gapless = config.settings.player.gapless;
         let position = Arc::new(Mutex::new(Duration::default()));
         let total_duration = Arc::new(Mutex::new(None));
         let total_duration_local = total_duration.clone();

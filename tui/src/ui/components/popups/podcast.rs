@@ -1,8 +1,5 @@
-use termusiclib::config::SharedSettings;
-use termusiclib::{
-    config::StyleColorSymbol,
-    types::{Id, Msg, PCMsg},
-};
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
+use termusiclib::types::{Id, Msg, PCMsg};
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
@@ -21,14 +18,15 @@ pub struct PodcastAddPopup {
 }
 
 impl PodcastAddPopup {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &TuiOverlay) -> Self {
+        let config = &config.settings;
         Self {
             component: Input::default()
-                .foreground(style_color_symbol.library_foreground())
-                .background(style_color_symbol.library_background())
+                .foreground(config.theme.library_foreground())
+                .background(config.theme.library_background())
                 .borders(
                     Borders::default()
-                        .color(style_color_symbol.library_border())
+                        .color(config.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -95,13 +93,13 @@ pub struct FeedDeleteConfirmRadioPopup {
 }
 
 impl FeedDeleteConfirmRadioPopup {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component =
             YNConfirm::new_with_cb(config, " Are sure you to delete the feed? ", |config| {
                 YNConfirmStyle {
-                    foreground_color: config.style_color_symbol.library_foreground(),
-                    background_color: config.style_color_symbol.library_background(),
-                    border_color: config.style_color_symbol.library_border(),
+                    foreground_color: config.settings.theme.library_foreground(),
+                    background_color: config.settings.theme.library_background(),
+                    border_color: config.settings.theme.library_border(),
                     title_alignment: Alignment::Left,
                 }
             });
@@ -126,14 +124,15 @@ pub struct FeedDeleteConfirmInputPopup {
 }
 
 impl FeedDeleteConfirmInputPopup {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &TuiOverlay) -> Self {
+        let config = &config.settings;
         Self {
             component: Input::default()
-                .foreground(style_color_symbol.library_foreground())
-                .background(style_color_symbol.library_background())
+                .foreground(config.theme.library_foreground())
+                .background(config.theme.library_background())
                 .borders(
                     Borders::default()
-                        .color(style_color_symbol.library_border())
+                        .color(config.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -201,26 +200,26 @@ impl Component<Msg, NoUserEvent> for FeedDeleteConfirmInputPopup {
 #[derive(MockComponent)]
 pub struct PodcastSearchTablePopup {
     component: Table,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PodcastSearchTablePopup {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Table::default()
-                .background(config.style_color_symbol.library_background())
-                .foreground(config.style_color_symbol.library_foreground())
+                .background(config.settings.theme.library_background())
+                .foreground(config.settings.theme.library_foreground())
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .foreground(Color::Yellow)
                 .title(" Enter to add feed: ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config.style_color_symbol.library_highlight())
-                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config.settings.theme.library_highlight())
+                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
                 // .highlighted_str("🚀")
                 .rewind(false)
                 .step(4)
@@ -243,12 +242,12 @@ impl PodcastSearchTablePopup {
 impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
                 return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
             }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
@@ -258,11 +257,11 @@ impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -272,10 +271,10 @@ impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             // Event::Keyboard(KeyEvent {
@@ -306,7 +305,7 @@ impl Model {
             .app
             .remount(
                 Id::FeedDeleteConfirmRadioPopup,
-                Box::new(FeedDeleteConfirmRadioPopup::new(self.config.clone())),
+                Box::new(FeedDeleteConfirmRadioPopup::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -323,9 +322,7 @@ impl Model {
             .app
             .remount(
                 Id::FeedDeleteConfirmInputPopup,
-                Box::new(FeedDeleteConfirmInputPopup::new(
-                    &self.config.read().style_color_symbol
-                )),
+                Box::new(FeedDeleteConfirmInputPopup::new(&self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -342,7 +339,7 @@ impl Model {
             .app
             .remount(
                 Id::PodcastSearchTablePopup,
-                Box::new(PodcastSearchTablePopup::new(self.config.clone())),
+                Box::new(PodcastSearchTablePopup::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -402,7 +399,7 @@ impl Model {
             .app
             .remount(
                 Id::PodcastAddPopup,
-                Box::new(PodcastAddPopup::new(&self.config.read().style_color_symbol)),
+                Box::new(PodcastAddPopup::new(&self.config_tui.read())),
                 vec![]
             )
             .is_ok());

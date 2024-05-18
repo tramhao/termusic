@@ -8,14 +8,13 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use termusiclib::config::v2::server::LoopMode;
+use termusiclib::config::SharedServerSettings;
 use termusiclib::podcast::{db::Database as DBPod, Episode};
 use termusiclib::track::MediaType;
 use termusiclib::{
     track::Track,
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
-
-use crate::SharedSettings;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum Status {
@@ -65,17 +64,17 @@ pub struct Playlist {
     next_track: Option<Track>,
     status: Status,
     loop_mode: LoopMode,
-    config: SharedSettings,
+    config: SharedServerSettings,
     need_proceed_to_next: bool,
 }
 
 impl Playlist {
     /// # Errors
     /// errors could happen when reading files
-    pub fn new(config: SharedSettings) -> Result<Self> {
+    pub fn new(config: SharedServerSettings) -> Result<Self> {
         let (current_track_index, tracks) = Self::load()?;
         // TODO: shouldnt "loop_mode" be combined with the config ones?
-        let loop_mode = config.read().player_loop_mode;
+        let loop_mode = config.read().settings.player.loop_mode;
         let current_track = None;
 
         Ok(Self {
@@ -83,7 +82,7 @@ impl Playlist {
             next_track: None,
             // index: Some(0),
             status: Status::Stopped,
-            loop_mode: loop_mode.into(),
+            loop_mode,
             current_track_index,
             current_track,
             played_index: Vec::new(),
@@ -206,7 +205,7 @@ impl Playlist {
 
     pub fn next(&mut self) {
         self.played_index.push(self.current_track_index);
-        if self.config.read().player_gapless && self.has_next_track() {
+        if self.config.read().settings.player.gapless && self.has_next_track() {
             self.current_track_index = self.next_track_index;
             return;
         }

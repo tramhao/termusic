@@ -1,4 +1,4 @@
-use termusiclib::config::SharedSettings;
+use termusiclib::config::SharedTuiSettings;
 /**
  * MIT License
  *
@@ -35,12 +35,12 @@ pub struct QuitPopup {
 }
 
 impl QuitPopup {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component = YNConfirm::new_with_cb(config, " Are sure you want to quit? ", |config| {
             YNConfirmStyle {
-                foreground_color: config.style_color_symbol.important_popup_foreground(),
-                background_color: config.style_color_symbol.important_popup_background(),
-                border_color: config.style_color_symbol.important_popup_border(),
+                foreground_color: config.settings.theme.important_popup_foreground(),
+                background_color: config.settings.theme.important_popup_background(),
+                border_color: config.settings.theme.important_popup_border(),
                 title_alignment: Alignment::Center,
             }
         });
@@ -63,7 +63,7 @@ impl Model {
             .app
             .remount(
                 Id::QuitPopup,
-                Box::new(QuitPopup::new(self.config.clone())),
+                Box::new(QuitPopup::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());

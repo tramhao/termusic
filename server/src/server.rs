@@ -11,7 +11,9 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
-use termusiclib::config::Settings;
+use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
+use termusiclib::config::v2::server::ScanDepth;
+use termusiclib::config::ServerOverlay;
 use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
 use termusicplayback::player::music_player_server::MusicPlayerServer;
@@ -116,7 +118,7 @@ async fn actual_main() -> Result<()> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let addr = std::net::SocketAddr::new(config.player_interface, config.player_port);
+    let addr = std::net::SocketAddr::from(config.settings.com);
 
     // workaround to print address once sever "actually" is started and address is known
     // see https://github.com/hyperium/tonic/issues/351
@@ -161,7 +163,7 @@ fn player_loop(
     backend: BackendSelect,
     cmd_tx: PlayerCmdSender,
     mut cmd_rx: PlayerCmdReciever,
-    config: Settings,
+    config: ServerOverlay,
     playerstats: Arc<Mutex<PlayerStats>>,
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx)?;
@@ -172,7 +174,7 @@ fn player_loop(
                 info!("about to finish signal received");
                 if !player.playlist.is_empty()
                     && !player.playlist.has_next_track()
-                    && player.config.read().player_gapless
+                    && player.config.read().settings.player.gapless
                 {
                     player.enqueue_next_from_playlist();
                 }
@@ -183,13 +185,15 @@ fn player_loop(
                 if let Err(e) = player.playlist.save() {
                     error!("error when saving playlist: {e}");
                 };
-                if let Err(e) = player.config.read().save() {
+                if let Err(e) =
+                    ServerConfigVersionedDefaulted::save_config_path(&player.config.read().settings)
+                {
                     error!("error when saving config: {e}");
                 };
                 std::process::exit(0);
             }
             PlayerCmd::CycleLoop => {
-                player.config.write().player_loop_mode = player.playlist.cycle_loop_mode().into();
+                player.config.write().settings.player.loop_mode = player.playlist.cycle_loop_mode();
             }
             PlayerCmd::Eos => {
                 info!("Eos received");
@@ -250,7 +254,7 @@ fn player_loop(
             PlayerCmd::SpeedDown => {
                 let new_speed = player.add_speed(-SPEED_STEP);
                 info!("after speed down: {}", new_speed);
-                player.config.write().player_speed = new_speed;
+                player.config.write().settings.player.speed = new_speed;
                 let mut p_tick = playerstats.lock();
                 p_tick.speed = new_speed;
             }
@@ -258,7 +262,7 @@ fn player_loop(
             PlayerCmd::SpeedUp => {
                 let new_speed = player.add_speed(SPEED_STEP);
                 info!("after speed up: {}", new_speed);
-                player.config.write().player_speed = new_speed;
+                player.config.write().settings.player.speed = new_speed;
                 let mut p_tick = playerstats.lock();
                 p_tick.speed = new_speed;
             }
@@ -334,7 +338,7 @@ fn player_loop(
             PlayerCmd::VolumeDown => {
                 info!("before volumedown: {}", player.volume());
                 let new_volume = player.add_volume(-VOLUME_STEP);
-                player.config.write().player_volume = new_volume;
+                player.config.write().settings.player.volume = new_volume;
                 info!("after volumedown: {}", new_volume);
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
@@ -343,7 +347,7 @@ fn player_loop(
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
                 let new_volume = player.add_volume(VOLUME_STEP);
-                player.config.write().player_volume = new_volume;
+                player.config.write().settings.player.volume = new_volume;
                 info!("after volumeup: {}", new_volume);
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
@@ -374,23 +378,25 @@ fn ticker_thread(cmd_tx: PlayerCmdSender) -> Result<()> {
     Ok(())
 }
 
-fn get_config(args: &cli::Args) -> Result<Settings> {
-    let mut config = Settings::default();
-    config.load()?;
+fn get_config(args: &cli::Args) -> Result<ServerOverlay> {
+    let config = ServerConfigVersionedDefaulted::from_config_path()?.into_settings();
 
-    // config.disable_album_art_from_cli = args.disable_cover;
-    config.disable_discord_rpc_from_cli = args.disable_discord;
+    let max_depth = args.max_depth.map(ScanDepth::Limited);
 
-    if let Some(dir) = &args.music_directory {
-        config.music_dir_from_cli = Some(get_path(dir).context("cli provided music-dir")?);
-    }
-
-    config.max_depth_cli = match args.max_depth {
-        Some(d) => d,
-        None => MAX_DEPTH,
+    let music_dir = if let Some(ref dir) = args.music_directory {
+        Some(get_path(dir).context("cli provided music-dir")?)
+    } else {
+        None
     };
 
-    Ok(config)
+    let overlay = ServerOverlay {
+        settings: config,
+        music_dir_overwrite: music_dir,
+        disable_discord_status: args.disable_discord,
+        library_scan_depth: max_depth,
+    };
+
+    Ok(overlay)
 }
 
 fn get_path(dir: &Path) -> Result<PathBuf> {
@@ -413,7 +419,7 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
     bail!("Error: non-existing directory '{}'", dir.display());
 }
 
-fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
+fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<()> {
     match action {
         cli::Action::Import { file } => {
             println!("need to import from file {}", file.display());
@@ -422,7 +428,8 @@ fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
             let config_dir_path =
                 utils::get_app_config_path().context("getting app-config-path")?;
 
-            podcast::import_from_opml(&config_dir_path, config, &path).context("import opml")?;
+            podcast::import_from_opml(&config_dir_path, &config.settings.podcast, &path)
+                .context("import opml")?;
         }
         cli::Action::Export { file } => {
             println!("need to export to file {}", file.display());

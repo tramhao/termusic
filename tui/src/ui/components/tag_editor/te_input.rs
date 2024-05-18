@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use crate::ui::{Msg, TEMsg, TFMsg};
-use termusiclib::config::SharedSettings;
+use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -33,20 +33,20 @@ use tuirealm::{Component, Event, MockComponent};
 #[derive(MockComponent)]
 struct EditField {
     component: Input,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl EditField {
     #[inline]
-    pub fn new(config: SharedSettings, title: &'static str) -> Self {
+    pub fn new(config: SharedTuiSettings, title: &'static str) -> Self {
         let component = {
             let config = config.read();
             Input::default()
-                .foreground(config.style_color_symbol.library_foreground())
-                .background(config.style_color_symbol.library_background())
+                .foreground(config.settings.theme.library_foreground())
+                .background(config.settings.theme.library_background())
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 .input_type(InputType::Text)
@@ -60,10 +60,10 @@ impl EditField {
     #[allow(clippy::needless_pass_by_value)]
     pub fn on(&mut self, ev: Event<NoUserEvent>, on_key_down: Msg, on_key_up: Msg) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 Some(Msg::TagEditor(TEMsg::TERename))
             }
             Event::Keyboard(KeyEvent {
@@ -77,7 +77,7 @@ impl EditField {
                     modifiers: KeyModifiers::SHIFT,
                 },
             ) => Some(on_key_up),
-            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
                 Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
 
@@ -140,7 +140,7 @@ pub struct TEInputArtist {
 }
 
 impl TEInputArtist {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: EditField::new(config, " Search artist "),
         }
@@ -163,7 +163,7 @@ pub struct TEInputTitle {
 }
 
 impl TEInputTitle {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: EditField::new(config, " Search track name "),
         }
@@ -186,7 +186,7 @@ pub struct TEInputAlbum {
 }
 
 impl TEInputAlbum {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: EditField::new(config, " Album "),
         }
@@ -209,7 +209,7 @@ pub struct TEInputGenre {
 }
 
 impl TEInputGenre {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: EditField::new(config, " Genre "),
         }

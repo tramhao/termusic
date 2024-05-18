@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{LastPosition, SeekStep};
 use crate::ui::{ConfigEditorMsg, Msg};
+use crate::CombinedSettings;
 
-use termusiclib::config::SharedSettings;
-use termusiclib::config::{Alignment as XywhAlign, Keys};
+use termusiclib::config::v2::tui::{keys::Keys, Alignment as XywhAlign};
+use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::{Input, Radio};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{
@@ -37,39 +37,41 @@ use tuirealm::{
 #[derive(MockComponent)]
 pub struct MusicDir {
     component: Input,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl MusicDir {
-    pub fn new(config: SharedSettings) -> Self {
-        let config_r = config.read();
-        let mut music_dir = String::new();
-        for m in &config_r.music_dir {
-            // this may be a problem in some slight cases
-            music_dir.push_str(&m.to_string_lossy());
-            music_dir.push(';');
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
+        let mut music_dir_input = String::new();
+        for music_dir in &config.server.read().settings.player.music_dirs {
+            music_dir_input.push_str(&music_dir.to_string_lossy());
+            music_dir_input.push(';');
         }
         // remove the last ";"
-        if !music_dir.is_empty() {
-            music_dir.remove(music_dir.len() - 1);
+        if !music_dir_input.is_empty() {
+            music_dir_input.remove(music_dir_input.len() - 1);
         }
         let component = Input::default()
             .borders(
                 Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
+                    .color(config_tui.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .foreground(config_r.style_color_symbol.library_highlight())
+            .foreground(config_tui.settings.theme.library_highlight())
             .input_type(InputType::Text)
             .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
             .title(
                 " Root Music Directory:(use ; to separate) ",
                 Alignment::Left,
             )
-            .value(music_dir);
+            .value(music_dir_input);
 
-        drop(config_r);
-        Self { component, config }
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -78,7 +80,7 @@ impl Component<Msg, NoUserEvent> for MusicDir {
         handle_input_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurUp),
         )
@@ -95,7 +97,7 @@ fn handle_input_ev(
 ) -> Option<Msg> {
     match ev {
         // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
         }
         Event::Keyboard(KeyEvent {
@@ -105,7 +107,7 @@ fn handle_input_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
-        Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
@@ -161,21 +163,21 @@ fn handle_input_ev(
 #[derive(MockComponent)]
 pub struct ExitConfirmation {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl ExitConfirmation {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let config_r = config.read();
-        let enabled = config_r.enable_exit_confirmation;
+        let enabled = config_r.settings.behavior.confirm_quit;
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
+                    .color(config_r.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(config_r.style_color_symbol.library_highlight())
+            .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
             .title(" Show exit confirmation? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -190,7 +192,7 @@ impl Component<Msg, NoUserEvent> for ExitConfirmation {
         handle_radio_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurUp),
         )
@@ -207,7 +209,7 @@ fn handle_radio_ev(
 ) -> Option<Msg> {
     match ev {
         // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
         }
         Event::Keyboard(KeyEvent {
@@ -217,12 +219,14 @@ fn handle_radio_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
-        Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => Some(on_key_down),
-        Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => Some(on_key_up),
-        Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
+            Some(on_key_down)
+        }
+        Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => Some(on_key_up),
+        Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
-        Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
@@ -247,21 +251,21 @@ fn handle_radio_ev(
 #[derive(MockComponent)]
 pub struct PlaylistDisplaySymbol {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PlaylistDisplaySymbol {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let config_r = config.read();
-        let enabled = config_r.playlist_display_symbol;
+        let enabled = config_r.settings.theme.style.playlist.use_loop_mode_symbol;
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
+                    .color(config_r.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(config_r.style_color_symbol.library_highlight())
+            .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
             .title(" Display symbol in playlist title? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -276,7 +280,7 @@ impl Component<Msg, NoUserEvent> for PlaylistDisplaySymbol {
         handle_radio_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurUp),
         )
@@ -286,28 +290,39 @@ impl Component<Msg, NoUserEvent> for PlaylistDisplaySymbol {
 #[derive(MockComponent)]
 pub struct PlaylistRandomTrack {
     component: Input,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PlaylistRandomTrack {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: CombinedSettings) -> Self {
         let component = {
-            let config = config.read();
+            let config_tui = config.tui.read();
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config_tui.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(config.style_color_symbol.library_highlight())
+                .foreground(config_tui.settings.theme.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("20", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(" Playlist Select Random Track Quantity: ", Alignment::Left)
-                .value(config.playlist_select_random_track_quantity.to_string())
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .player
+                        .random_track_quantity
+                        .to_string(),
+                )
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -316,7 +331,7 @@ impl Component<Msg, NoUserEvent> for PlaylistRandomTrack {
         handle_input_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurUp),
         )
@@ -326,20 +341,20 @@ impl Component<Msg, NoUserEvent> for PlaylistRandomTrack {
 #[derive(MockComponent)]
 pub struct PlaylistRandomAlbum {
     component: Input,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PlaylistRandomAlbum {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: CombinedSettings) -> Self {
         let component = {
-            let config = config.read();
+            let config_tui = config.tui.read();
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config_tui.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(config.style_color_symbol.library_highlight())
+                .foreground(config_tui.settings.theme.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
@@ -347,10 +362,21 @@ impl PlaylistRandomAlbum {
                     " Playlist Select Random Album with tracks no less than: ",
                     Alignment::Left,
                 )
-                .value(config.playlist_select_random_album_quantity.to_string())
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .player
+                        .random_album_min_quantity
+                        .to_string(),
+                )
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -359,7 +385,7 @@ impl Component<Msg, NoUserEvent> for PlaylistRandomAlbum {
         handle_input_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurUp),
         )
@@ -369,20 +395,20 @@ impl Component<Msg, NoUserEvent> for PlaylistRandomAlbum {
 #[derive(MockComponent)]
 pub struct PodcastDir {
     component: Input,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PodcastDir {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: CombinedSettings) -> Self {
         let component = {
-            let config = config.read();
+            let config_tui = config.tui.read();
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config_tui.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(config.style_color_symbol.library_highlight())
+                .foreground(config_tui.settings.theme.library_highlight())
                 .input_type(InputType::Text)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -390,10 +416,21 @@ impl PodcastDir {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Podcast Download Directory: ", Alignment::Left)
-                .value(config.podcast_dir.to_string_lossy())
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .podcast
+                        .download_dir
+                        .to_string_lossy(),
+                )
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -402,7 +439,7 @@ impl Component<Msg, NoUserEvent> for PodcastDir {
         handle_input_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurUp),
         )
@@ -412,20 +449,20 @@ impl Component<Msg, NoUserEvent> for PodcastDir {
 #[derive(MockComponent)]
 pub struct PodcastSimulDownload {
     component: Input,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PodcastSimulDownload {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: CombinedSettings) -> Self {
         let component = {
-            let config = config.read();
+            let config_tui = config.tui.read();
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config_tui.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(config.style_color_symbol.library_highlight())
+                .foreground(config_tui.settings.theme.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -433,10 +470,21 @@ impl PodcastSimulDownload {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Podcast Simultanious Download: ", Alignment::Left)
-                .value(format!("{}", config.podcast_simultanious_download))
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .podcast
+                        .concurrent_downloads_max
+                        .to_string(),
+                )
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -445,7 +493,7 @@ impl Component<Msg, NoUserEvent> for PodcastSimulDownload {
         handle_input_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurUp),
         )
@@ -455,20 +503,20 @@ impl Component<Msg, NoUserEvent> for PodcastSimulDownload {
 #[derive(MockComponent)]
 pub struct PodcastMaxRetries {
     component: Input,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PodcastMaxRetries {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: CombinedSettings) -> Self {
         let component = {
-            let config = config.read();
+            let config_tui = config.tui.read();
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config_tui.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(config.style_color_symbol.library_highlight())
+                .foreground(config_tui.settings.theme.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -476,10 +524,21 @@ impl PodcastMaxRetries {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Podcast Download Max Retries: ", Alignment::Left)
-                .value(format!("{}", config.podcast_max_retries))
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .podcast
+                        .max_download_retries
+                        .to_string(),
+                )
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -488,7 +547,7 @@ impl Component<Msg, NoUserEvent> for PodcastMaxRetries {
         handle_input_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurUp),
         )
@@ -498,13 +557,13 @@ impl Component<Msg, NoUserEvent> for PodcastMaxRetries {
 #[derive(MockComponent)]
 pub struct AlbumPhotoAlign {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl AlbumPhotoAlign {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let config_r = config.read();
-        let align = match config_r.album_photo_xywh.align {
+        let align = match config_r.settings.coverart.align {
             XywhAlign::BottomRight => 0,
             XywhAlign::BottomLeft => 1,
             XywhAlign::TopRight => 2,
@@ -513,11 +572,11 @@ impl AlbumPhotoAlign {
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
+                    .color(config_r.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
-            .foreground(config_r.style_color_symbol.library_highlight())
+            .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
             .title(" Album Photo Align: ", Alignment::Left)
             .value(align);
@@ -532,7 +591,7 @@ impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
         handle_radio_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurUp),
         )
@@ -542,31 +601,32 @@ impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
 #[derive(MockComponent)]
 pub struct SaveLastPosition {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl SaveLastPosition {
-    pub fn new(config: SharedSettings) -> Self {
-        let config_r = config.read();
-        let save_last_position = match config_r.player_remember_last_played_position {
-            LastPosition::Auto => 0,
-            LastPosition::No => 1,
-            LastPosition::Yes => 2,
-        };
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
-            .choices(&["Auto", "No", "Yes"])
-            .foreground(config_r.style_color_symbol.library_highlight())
-            .rewind(true)
-            .title(" Remember last played position: ", Alignment::Left)
-            .value(save_last_position);
+    pub fn new(_config: CombinedSettings) -> Self {
+        todo!();
+        // let config_tui = config.tui.read();
+        // let save_last_position = match config.server.read().settings.player.remember_position {
+        //     LastPosition::Auto => 0,
+        //     LastPosition::No => 1,
+        //     LastPosition::Yes => 2,
+        // };
+        // let component = Radio::default()
+        //     .borders(
+        //         Borders::default()
+        //             .color(config_tui.settings.theme.library_border())
+        //             .modifiers(BorderType::Rounded),
+        //     )
+        //     .choices(&["Auto", "No", "Yes"])
+        //     .foreground(config_tui.settings.theme.library_highlight())
+        //     .rewind(true)
+        //     .title(" Remember last played position: ", Alignment::Left)
+        //     .value(save_last_position);
 
-        drop(config_r);
-        Self { component, config }
+        // drop(config_tui);
+        // Self { component, config: config.tui }
     }
 }
 
@@ -575,7 +635,7 @@ impl Component<Msg, NoUserEvent> for SaveLastPosition {
         handle_radio_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPositionBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPosotionBlurUp),
         )
@@ -584,31 +644,32 @@ impl Component<Msg, NoUserEvent> for SaveLastPosition {
 #[derive(MockComponent)]
 pub struct ConfigSeekStep {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl ConfigSeekStep {
-    pub fn new(config: SharedSettings) -> Self {
-        let config_r = config.read();
-        let seek_step = match config_r.player_seek_step {
-            SeekStep::Auto => 0,
-            SeekStep::Short => 1,
-            SeekStep::Long => 2,
-        };
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
-            .choices(&["Auto", "Short(5)", "Long(30)"])
-            .foreground(config_r.style_color_symbol.library_highlight())
-            .rewind(true)
-            .title(" Seek step in seconds: ", Alignment::Left)
-            .value(seek_step);
+    pub fn new(_config: CombinedSettings) -> Self {
+        todo!();
+        // let config_tui = config.tui.read();
+        // let seek_step = match config.server.read().settings.player.seek_step {
+        //     SeekStep::Auto => 0,
+        //     SeekStep::Short => 1,
+        //     SeekStep::Long => 2,
+        // };
+        // let component = Radio::default()
+        //     .borders(
+        //         Borders::default()
+        //             .color(config_tui.settings.theme.library_border())
+        //             .modifiers(BorderType::Rounded),
+        //     )
+        //     .choices(&["Auto", "Short(5)", "Long(30)"])
+        //     .foreground(config_tui.settings.theme.library_highlight())
+        //     .rewind(true)
+        //     .title(" Seek step in seconds: ", Alignment::Left)
+        //     .value(seek_step);
 
-        drop(config_r);
-        Self { component, config }
+        // drop(config_tui);
+        // Self { component, config: config.tui }
     }
 }
 
@@ -617,7 +678,7 @@ impl Component<Msg, NoUserEvent> for ConfigSeekStep {
         handle_radio_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurUp),
         )
@@ -627,21 +688,21 @@ impl Component<Msg, NoUserEvent> for ConfigSeekStep {
 #[derive(MockComponent)]
 pub struct KillDaemon {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl KillDaemon {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let config_r = config.read();
-        let enabled = config_r.kill_daemon_when_quit;
+        let enabled = config_r.settings.behavior.quit_server_on_exit;
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
+                    .color(config_r.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(config_r.style_color_symbol.library_highlight())
+            .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
             .title(" Kill daemon when quit termusic? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -656,7 +717,7 @@ impl Component<Msg, NoUserEvent> for KillDaemon {
         handle_radio_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurUp),
         )
@@ -666,27 +727,30 @@ impl Component<Msg, NoUserEvent> for KillDaemon {
 #[derive(MockComponent)]
 pub struct PlayerUseMpris {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PlayerUseMpris {
-    pub fn new(config: SharedSettings) -> Self {
-        let config_r = config.read();
-        let enabled = config_r.player_use_mpris;
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
+        let enabled = config.server.read().settings.player.use_mediacontrols;
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
+                    .color(config_tui.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(config_r.style_color_symbol.library_highlight())
+            .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
             .title(" Support Mpris? ", Alignment::Left)
             .value(usize::from(!enabled));
 
-        drop(config_r);
-        Self { component, config }
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -695,7 +759,7 @@ impl Component<Msg, NoUserEvent> for PlayerUseMpris {
         handle_radio_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurUp),
         )
@@ -705,27 +769,30 @@ impl Component<Msg, NoUserEvent> for PlayerUseMpris {
 #[derive(MockComponent)]
 pub struct PlayerUseDiscord {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PlayerUseDiscord {
-    pub fn new(config: SharedSettings) -> Self {
-        let config_r = config.read();
-        let enabled = config_r.player_use_discord;
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
+        let enabled = config.server.read().settings.player.set_discord_status;
         let component = Radio::default()
             .borders(
                 Borders::default()
-                    .color(config_r.style_color_symbol.library_border())
+                    .color(config_tui.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
             .choices(&["Yes", "No"])
-            .foreground(config_r.style_color_symbol.library_highlight())
+            .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
             .title(" Update discord rpc? ", Alignment::Left)
             .value(usize::from(!enabled));
 
-        drop(config_r);
-        Self { component, config }
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -734,7 +801,7 @@ impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
         handle_radio_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurUp),
         )
@@ -744,20 +811,21 @@ impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
 #[derive(MockComponent)]
 pub struct PlayerPort {
     component: Input,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl PlayerPort {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: CombinedSettings) -> Self {
+        // TODO: this should likely also cover the MaybeCom settings from the TUI
         let component = {
-            let config = config.read();
+            let config_tui = config.tui.read();
             Input::default()
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config_tui.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(config.style_color_symbol.library_highlight())
+                .foreground(config_tui.settings.theme.library_highlight())
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -765,10 +833,13 @@ impl PlayerPort {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Player Port: ", Alignment::Left)
-                .value(format!("{}", config.player_port))
+                .value(config.server.read().settings.com.port.to_string())
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config: config.tui,
+        }
     }
 }
 
@@ -777,7 +848,7 @@ impl Component<Msg, NoUserEvent> for PlayerPort {
         handle_input_ev(
             &mut self.component,
             ev,
-            &self.config.read().keys,
+            &self.config.read().settings.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
         )

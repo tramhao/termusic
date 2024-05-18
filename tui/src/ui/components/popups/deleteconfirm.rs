@@ -1,8 +1,5 @@
-use termusiclib::config::SharedSettings;
-use termusiclib::{
-    config::StyleColorSymbol,
-    types::{Id, Msg},
-};
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
+use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
@@ -21,13 +18,13 @@ pub struct DeleteConfirmRadioPopup {
 }
 
 impl DeleteConfirmRadioPopup {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component =
             YNConfirm::new_with_cb(config, " Are sure you want to delete? ", |config| {
                 YNConfirmStyle {
-                    foreground_color: config.style_color_symbol.important_popup_foreground(),
-                    background_color: config.style_color_symbol.important_popup_background(),
-                    border_color: config.style_color_symbol.important_popup_border(),
+                    foreground_color: config.settings.theme.important_popup_foreground(),
+                    background_color: config.settings.theme.important_popup_background(),
+                    border_color: config.settings.theme.important_popup_border(),
                     title_alignment: Alignment::Left,
                 }
             });
@@ -49,14 +46,15 @@ pub struct DeleteConfirmInputPopup {
 }
 
 impl DeleteConfirmInputPopup {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &TuiOverlay) -> Self {
+        let config = &config.settings;
         Self {
             component: Input::default()
-                .foreground(style_color_symbol.important_popup_foreground())
-                .background(style_color_symbol.important_popup_background())
+                .foreground(config.theme.important_popup_foreground())
+                .background(config.theme.important_popup_background())
                 .borders(
                     Borders::default()
-                        .color(style_color_symbol.important_popup_border())
+                        .color(config.theme.important_popup_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -124,7 +122,7 @@ impl Model {
             .app
             .remount(
                 Id::DeleteConfirmRadioPopup,
-                Box::new(DeleteConfirmRadioPopup::new(self.config.clone())),
+                Box::new(DeleteConfirmRadioPopup::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -136,9 +134,7 @@ impl Model {
             .app
             .remount(
                 Id::DeleteConfirmInputPopup,
-                Box::new(DeleteConfirmInputPopup::new(
-                    &self.config.read().style_color_symbol
-                )),
+                Box::new(DeleteConfirmInputPopup::new(&self.config_tui.read())),
                 vec![]
             )
             .is_ok());

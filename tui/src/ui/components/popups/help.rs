@@ -1,8 +1,6 @@
-use termusiclib::config::SharedSettings;
-use termusiclib::{
-    config::BindingForEvent,
-    types::{Id, Msg},
-};
+use termusiclib::config::v2::tui::keys::KeyBinding;
+use termusiclib::config::SharedTuiSettings;
+use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::Table;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},
@@ -16,11 +14,11 @@ use crate::ui::model::Model;
 #[derive(MockComponent)]
 pub struct HelpPopup {
     component: Table,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl HelpPopup {
-    fn key(keys: &[BindingForEvent]) -> TextSpan {
+    fn key(keys: &[&KeyBinding]) -> TextSpan {
         let mut text = String::new();
         for (idx, key) in keys.iter().enumerate() {
             if idx > 0 {
@@ -34,20 +32,20 @@ impl HelpPopup {
         TextSpan::new(text)
     }
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
-            let keys = &config.keys;
+            let keys = &config.settings.keys;
             Table::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(config.style_color_symbol.fallback_border()),
+                        .color(config.settings.theme.fallback_border()),
                 )
-                .foreground(config.style_color_symbol.fallback_foreground())
-                .background(config.style_color_symbol.fallback_background())
-                .highlighted_color(config.style_color_symbol.fallback_highlight())
-                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .foreground(config.settings.theme.fallback_foreground())
+                .background(config.settings.theme.fallback_background())
+                .highlighted_color(config.settings.theme.fallback_highlight())
+                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
                 .scroll(true)
                 .title(" Help: Esc or Enter to exit ", Alignment::Center)
                 .rewind(false)
@@ -60,118 +58,124 @@ impl HelpPopup {
                     TableBuilder::default()
                         .add_col(TextSpan::new("Global").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_esc, keys.global_quit]))
+                        .add_col(Self::key(&[&keys.escape, &keys.quit]))
                         .add_col(Self::comment("Exit"))
                         .add_row()
                         .add_col(TextSpan::new("<TAB>, <SHIFT+TAB>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Switch focus"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_left,
-                            keys.global_right,
-                            keys.global_up,
-                            keys.global_down,
-                            keys.global_goto_top,
-                            keys.global_goto_bottom,
+                            &keys.navigation_keys.left,
+                            &keys.navigation_keys.right,
+                            &keys.navigation_keys.up,
+                            &keys.navigation_keys.down,
+                            &keys.navigation_keys.goto_top,
+                            &keys.navigation_keys.goto_bottom,
                         ]))
                         .add_col(Self::comment("Move cursor(vim style by default)"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_player_seek_forward,
-                            keys.global_player_seek_backward,
+                            &keys.player_keys.seek_forward,
+                            &keys.player_keys.seek_backward,
                         ]))
                         .add_col(Self::comment("Seek forward/backward 5 seconds"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_lyric_adjust_forward,
-                            keys.global_lyric_adjust_backward,
+                            &keys.lyric_keys.adjust_offset_forwards,
+                            &keys.lyric_keys.adjust_offset_backwards,
                         ]))
                         .add_col(Self::comment("Seek forward/backward 1 second for lyrics"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_player_speed_up,
-                            keys.global_player_speed_down,
+                            &keys.player_keys.speed_up,
+                            &keys.player_keys.speed_down,
                         ]))
                         .add_col(Self::comment("Playback speed up/down 10 percent"))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_player_toggle_gapless]))
+                        .add_col(Self::key(&[&keys.player_keys.toggle_prefetch]))
                         .add_col(Self::comment("Toggle gapless playback"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_lyric_adjust_forward,
-                            keys.global_lyric_adjust_backward,
+                            &keys.lyric_keys.adjust_offset_forwards,
+                            &keys.lyric_keys.adjust_offset_backwards,
                         ]))
                         .add_col(Self::comment("Before 10 seconds,adjust offset of lyrics"))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_lyric_cycle]))
+                        .add_col(Self::key(&[&keys.lyric_keys.cycle_frames]))
                         .add_col(Self::comment("Switch lyrics if more than 1 available"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_player_next,
-                            keys.global_player_previous,
-                            keys.global_player_toggle_pause,
+                            &keys.player_keys.next_track,
+                            &keys.player_keys.previous_track,
+                            &keys.player_keys.toggle_pause,
                         ]))
                         .add_col(Self::comment("Next/Previous/Pause current track"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_player_volume_plus_1,
-                            keys.global_player_volume_plus_2,
-                            keys.global_player_volume_minus_1,
-                            keys.global_player_volume_minus_2,
+                            &keys.player_keys.volume_up,
+                            // &keys.player_keys.volume_plus_2,
+                            &keys.player_keys.volume_down,
+                            // &keys.player_keys.volume_minus_2,
                         ]))
                         .add_col(Self::comment("Increase/Decrease volume"))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_config_open]))
+                        .add_col(Self::key(&[&keys.select_view_keys.open_config]))
                         .add_col(Self::comment("Open Config Editor(all configuration)"))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_save_playlist]))
+                        .add_col(Self::key(&[&keys.player_keys.save_playlist]))
                         .add_col(Self::comment("Save Playlist to m3u"))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_layout_treeview]))
+                        .add_col(Self::key(&[&keys.select_view_keys.view_library]))
                         .add_col(Self::comment("Switch layout to treeview"))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_layout_database]))
+                        .add_col(Self::key(&[&keys.select_view_keys.view_database]))
                         .add_col(Self::comment("Switch layout to database"))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_layout_podcast]))
+                        .add_col(Self::key(&[&keys.select_view_keys.view_podcasts]))
                         .add_col(Self::comment("Switch layout to podcast"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_xywh_move_left,
-                            keys.global_xywh_move_right,
+                            &keys.move_cover_art_keys.move_left,
+                            &keys.move_cover_art_keys.move_right,
                         ]))
                         .add_col(Self::comment("Move album cover left/right"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_xywh_move_up,
-                            keys.global_xywh_move_down,
+                            &keys.move_cover_art_keys.move_up,
+                            &keys.move_cover_art_keys.move_down,
                         ]))
                         .add_col(Self::comment("Move album cover up/down"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.global_xywh_zoom_in,
-                            keys.global_xywh_zoom_out,
+                            &keys.move_cover_art_keys.increase_size,
+                            &keys.move_cover_art_keys.decrease_size,
                         ]))
                         .add_col(Self::comment("Zoom in/out album cover"))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_xywh_hide]))
+                        .add_col(Self::key(&[&keys.move_cover_art_keys.toggle_hide]))
                         .add_col(Self::comment("Hide/Show album cover"))
                         .add_row()
                         .add_col(TextSpan::new("Library").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_right, keys.library_load_dir]))
+                        .add_col(Self::key(&[
+                            &keys.library_keys.load_track,
+                            &keys.library_keys.load_dir,
+                        ]))
                         .add_col(Self::comment("Add one/all tracks to playlist"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_delete]))
+                        .add_col(Self::key(&[&keys.library_keys.delete]))
                         .add_col(Self::comment("Delete track or folder"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_search_youtube]))
+                        .add_col(Self::key(&[&keys.library_keys.youtube_search]))
                         .add_col(Self::comment("Search or download track from youtube"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_tag_editor_open]))
+                        .add_col(Self::key(&[&keys.library_keys.open_tag_editor]))
                         .add_col(Self::comment("Open tag editor for tag and lyric download"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_yank, keys.library_paste]))
+                        .add_col(Self::key(&[
+                            &keys.library_keys.yank,
+                            &keys.library_keys.paste,
+                        ]))
                         .add_col(Self::comment("Yank and Paste files"))
                         .add_row()
                         .add_col(TextSpan::new("<Enter>").bold().fg(Color::Cyan))
@@ -180,79 +184,89 @@ impl HelpPopup {
                         .add_col(TextSpan::new("<Backspace>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Go back to parent directory"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_search]))
+                        .add_col(Self::key(&[&keys.library_keys.search]))
                         .add_col(Self::comment("Search in library"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_switch_root]))
+                        .add_col(Self::key(&[&keys.library_keys.cycle_root]))
                         .add_col(Self::comment("Switch among several root folders"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_add_root]))
+                        .add_col(Self::key(&[&keys.library_keys.add_root]))
                         .add_col(Self::comment("Add new root folder"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_remove_root]))
+                        .add_col(Self::key(&[&keys.library_keys.remove_root]))
                         .add_col(Self::comment("Remove current root from root folder list"))
                         .add_row()
                         .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(Self::key(&[keys.playlist_delete, keys.playlist_delete_all]))
+                        .add_col(Self::key(&[
+                            &keys.playlist_keys.delete,
+                            &keys.playlist_keys.delete_all,
+                        ]))
                         .add_col(Self::comment("Delete one/all tracks from playlist"))
                         .add_row()
-                        .add_col(Self::key(&[keys.playlist_play_selected]))
+                        .add_col(Self::key(&[&keys.playlist_keys.play_selected]))
                         .add_col(Self::comment("Play selected"))
                         .add_row()
-                        .add_col(Self::key(&[keys.playlist_shuffle]))
+                        .add_col(Self::key(&[&keys.playlist_keys.shuffle]))
                         .add_col(Self::comment("Randomize playlist"))
                         .add_row()
-                        .add_col(Self::key(&[keys.playlist_mode_cycle]))
+                        .add_col(Self::key(&[&keys.playlist_keys.cycle_loop_mode]))
                         .add_col(Self::comment("Loop mode cycle"))
                         .add_row()
-                        .add_col(Self::key(&[keys.playlist_search]))
+                        .add_col(Self::key(&[&keys.playlist_keys.search]))
                         .add_col(Self::comment("Search in playlist"))
                         .add_row()
-                        .add_col(Self::key(&[keys.playlist_swap_down, keys.playlist_swap_up]))
+                        .add_col(Self::key(&[
+                            &keys.playlist_keys.swap_down,
+                            &keys.playlist_keys.swap_up,
+                        ]))
                         .add_col(Self::comment("Swap track down/up in playlist"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.playlist_add_random_tracks,
-                            keys.playlist_add_random_album,
+                            &keys.playlist_keys.add_random_songs,
+                            &keys.playlist_keys.add_random_album,
                         ]))
                         .add_col(Self::comment("Select random tracks/albums to playlist"))
                         .add_row()
                         .add_col(TextSpan::new("Database").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(Self::key(&[keys.global_right, keys.database_add_all]))
+                        .add_col(Self::key(&[
+                            &keys.database_keys.add_selected,
+                            &keys.database_keys.add_all,
+                        ]))
                         .add_col(Self::comment("Add one/all track(s) to playlist"))
                         .add_row()
-                        .add_col(Self::key(&[keys.library_search]))
+                        // TODO: add search key to database
+                        .add_col(Self::key(&[&keys.library_keys.search]))
                         .add_col(Self::comment("Search in database"))
                         .add_row()
                         .add_col(TextSpan::new("Podcast").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(Self::key(&[keys.podcast_search_add_feed]))
+                        .add_col(Self::key(&[&keys.podcast_keys.search]))
                         .add_col(Self::comment("Feeds: search or add feed"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.podcast_delete_feed,
-                            keys.podcast_delete_all_feeds,
+                            &keys.podcast_keys.delete_feed,
+                            &keys.podcast_keys.delete_all_feeds,
                         ]))
                         .add_col(Self::comment("Feeds : delete one/all feeds"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.podcast_refresh_feed,
-                            keys.podcast_refresh_all_feeds,
+                            &keys.podcast_keys.refresh_feed,
+                            &keys.podcast_keys.refresh_all_feeds,
                         ]))
                         .add_col(Self::comment("Feeds : refresh one/all feeds"))
                         .add_row()
                         .add_col(Self::key(&[
-                            keys.podcast_mark_played,
-                            keys.podcast_mark_all_played,
+                            &keys.podcast_keys.mark_played,
+                            &keys.podcast_keys.mark_all_played,
                         ]))
                         .add_col(Self::comment("Episode: Mark one/all episodes played"))
                         .add_row()
-                        .add_col(Self::key(&[keys.podcast_episode_download]))
+                        .add_col(Self::key(&[&keys.podcast_keys.download_episode]))
                         .add_col(Self::comment("Episode: Download episode"))
                         .add_row()
-                        .add_col(Self::key(&[keys.podcast_episode_delete_file]))
+                        .add_col(Self::key(&[&keys.podcast_keys.delete_local_episode]))
                         .add_col(Self::comment("Episode: delete episode local file"))
                         .build(),
                 )
@@ -265,24 +279,20 @@ impl HelpPopup {
 impl Component<Msg, NoUserEvent> for HelpPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::HelpPopupClose),
 
-            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
-                return Some(Msg::HelpPopupClose)
-            }
-            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
-                return Some(Msg::HelpPopupClose)
-            }
+            Event::Keyboard(key) if key == keys.quit.get() => return Some(Msg::HelpPopupClose),
+            Event::Keyboard(key) if key == keys.escape.get() => return Some(Msg::HelpPopupClose),
 
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -307,7 +317,7 @@ impl Model {
             .app
             .remount(
                 Id::HelpPopup,
-                Box::new(HelpPopup::new(self.config.clone())),
+                Box::new(HelpPopup::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
