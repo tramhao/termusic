@@ -251,7 +251,7 @@ impl Default for KeysSelectView {
             view_database: tuievents::Key::Char('2').into(),
             view_podcasts: tuievents::Key::Char('3').into(),
             open_config: tuievents::KeyEvent::new(
-                tuievents::Key::Char('c'),
+                tuievents::Key::Char('C'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -372,7 +372,7 @@ impl Default for KeysPlayer {
             toggle_pause: tuievents::Key::Char(' ').into(),
             next_track: tuievents::Key::Char('n').into(),
             previous_track: tuievents::KeyEvent::new(
-                tuievents::Key::Char('n'),
+                tuievents::Key::Char('N'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -484,17 +484,17 @@ impl Default for KeysLyric {
     fn default() -> Self {
         Self {
             adjust_offset_forwards: tuievents::KeyEvent::new(
-                tuievents::Key::Char('f'),
+                tuievents::Key::Char('F'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
             adjust_offset_backwards: tuievents::KeyEvent::new(
-                tuievents::Key::Char('b'),
+                tuievents::Key::Char('B'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
             cycle_frames: tuievents::KeyEvent::new(
-                tuievents::Key::Char('t'),
+                tuievents::Key::Char('T'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -580,7 +580,7 @@ impl Default for KeysNavigation {
             right: tuievents::Key::Char('l').into(),
             goto_top: tuievents::Key::Char('g').into(),
             goto_bottom: tuievents::KeyEvent::new(
-                tuievents::Key::Char('g'),
+                tuievents::Key::Char('G'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -672,7 +672,7 @@ impl Default for KeysLibrary {
         Self {
             load_track: tuievents::Key::Char('l').into(),
             load_dir: tuievents::KeyEvent::new(
-                tuievents::Key::Char('l'),
+                tuievents::Key::Char('L'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -682,7 +682,7 @@ impl Default for KeysLibrary {
             cycle_root: tuievents::Key::Char('o').into(),
             add_root: tuievents::Key::Char('a').into(),
             remove_root: tuievents::KeyEvent::new(
-                tuievents::Key::Char('a'),
+                tuievents::Key::Char('A'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -786,7 +786,7 @@ impl Default for KeysPlaylist {
         Self {
             delete: tuievents::Key::Char('d').into(),
             delete_all: tuievents::KeyEvent::new(
-                tuievents::Key::Char('d'),
+                tuievents::Key::Char('D'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -795,17 +795,17 @@ impl Default for KeysPlaylist {
             play_selected: tuievents::Key::Char('l').into(),
             search: tuievents::Key::Char('/').into(),
             swap_up: tuievents::KeyEvent::new(
-                tuievents::Key::Char('k'),
+                tuievents::Key::Char('K'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
             swap_down: tuievents::KeyEvent::new(
-                tuievents::Key::Char('j'),
+                tuievents::Key::Char('J'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
             add_random_songs: tuievents::KeyEvent::new(
-                tuievents::Key::Char('s'),
+                tuievents::Key::Char('S'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -899,25 +899,25 @@ impl Default for KeysPodcast {
             search: tuievents::Key::Char('s').into(),
             mark_played: tuievents::Key::Char('m').into(),
             mark_all_played: tuievents::KeyEvent::new(
-                tuievents::Key::Char('m'),
+                tuievents::Key::Char('M'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
             refresh_feed: tuievents::Key::Char('r').into(),
             refresh_all_feeds: tuievents::KeyEvent::new(
-                tuievents::Key::Char('r'),
+                tuievents::Key::Char('R'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
             download_episode: tuievents::Key::Char('d').into(),
             delete_local_episode: tuievents::KeyEvent::new(
-                tuievents::Key::Char('d'),
+                tuievents::Key::Char('D'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
             delete_feed: tuievents::Key::Char('x').into(),
             delete_all_feeds: tuievents::KeyEvent::new(
-                tuievents::Key::Char('x'),
+                tuievents::Key::Char('X'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -1179,7 +1179,7 @@ impl Default for KeysDatabase {
         Self {
             add_selected: tuievents::Key::Char('l').into(),
             add_all: tuievents::KeyEvent::new(
-                tuievents::Key::Char('l'),
+                tuievents::Key::Char('L'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
@@ -1431,9 +1431,16 @@ impl KeyBinding {
             return Err(KeyParseError::UnknownKey(val.into()));
         }
 
-        let Some(code) = key_opt else {
+        let Some(mut code) = key_opt else {
             return Err(KeyParseError::NoKeyFound(input.clone()));
         };
+
+        // transform the key to be upper-case if "Shift" is enabled, as that is what tuirealm will provide (and we cannot modify that)
+        if modifiers.intersects(tuievents::KeyModifiers::SHIFT) {
+            if let tuievents::Key::Char(v) = code {
+                code = tuievents::Key::Char(v.to_ascii_uppercase());
+            }
+        }
 
         Ok(Self {
             key_event: tuievents::KeyEvent::new(code, modifiers),
@@ -1807,8 +1814,12 @@ mod v1_interop {
     impl From<v1::BindingForEvent> for KeyBinding {
         fn from(value: v1::BindingForEvent) -> Self {
             let code = if let tuievents::Key::Char(char) = value.code {
-                // lowercasing this as the current key implementation is like this, though it is unsure if this is the it will be used later
-                tuievents::Key::Char(char.to_ascii_lowercase())
+                // transform the key to be upper-case if "Shift" is enabled, as that is what tuirealm will provide (and we cannot modify that)
+                if value.modifier.intersects(tuievents::KeyModifiers::SHIFT) {
+                    tuievents::Key::Char(char.to_ascii_uppercase())
+                } else {
+                    tuievents::Key::Char(char.to_ascii_lowercase())
+                }
             } else {
                 value.code
             };
@@ -1965,7 +1976,7 @@ mod v1_interop {
                 view_database: tuievents::Key::Char('2').into(),
                 view_podcasts: tuievents::Key::Char('3').into(),
                 open_config: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('c'),
+                    tuievents::Key::Char('C'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -1984,7 +1995,7 @@ mod v1_interop {
                 right: tuievents::Key::Char('l').into(),
                 goto_top: tuievents::Key::Char('g').into(),
                 goto_bottom: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('g'),
+                    tuievents::Key::Char('G'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -1995,7 +2006,7 @@ mod v1_interop {
                 toggle_pause: tuievents::Key::Char(' ').into(),
                 next_track: tuievents::Key::Char('n').into(),
                 previous_track: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('n'),
+                    tuievents::Key::Char('N'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -2037,17 +2048,17 @@ mod v1_interop {
 
             let expected_lyric_keys = KeysLyric {
                 adjust_offset_forwards: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('f'),
+                    tuievents::Key::Char('F'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
                 adjust_offset_backwards: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('b'),
+                    tuievents::Key::Char('B'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
                 cycle_frames: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('t'),
+                    tuievents::Key::Char('T'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -2057,7 +2068,7 @@ mod v1_interop {
             let expected_library_keys = KeysLibrary {
                 load_track: tuievents::Key::Char('l').into(),
                 load_dir: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('l'),
+                    tuievents::Key::Char('L'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -2067,7 +2078,7 @@ mod v1_interop {
                 cycle_root: tuievents::Key::Char('o').into(),
                 add_root: tuievents::Key::Char('a').into(),
                 remove_root: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('a'),
+                    tuievents::Key::Char('A'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -2080,7 +2091,7 @@ mod v1_interop {
             let expected_playlist_keys = KeysPlaylist {
                 delete: tuievents::Key::Char('d').into(),
                 delete_all: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('d'),
+                    tuievents::Key::Char('D'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -2089,18 +2100,18 @@ mod v1_interop {
                 play_selected: tuievents::Key::Char('l').into(),
                 search: tuievents::Key::Char('/').into(),
                 swap_up: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('k'),
+                    tuievents::Key::Char('K'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
                 swap_down: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('j'),
+                    tuievents::Key::Char('J'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
                 add_random_songs: tuievents::Key::Char('s').into(),
                 add_random_album: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('s'),
+                    tuievents::Key::Char('S'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -2110,7 +2121,7 @@ mod v1_interop {
             let expected_database_keys = KeysDatabase {
                 add_selected: tuievents::Key::Char('l').into(),
                 add_all: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('l'),
+                    tuievents::Key::Char('L'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -2121,25 +2132,25 @@ mod v1_interop {
                 search: tuievents::Key::Char('s').into(),
                 mark_played: tuievents::Key::Char('m').into(),
                 mark_all_played: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('m'),
+                    tuievents::Key::Char('M'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
                 refresh_feed: tuievents::Key::Char('r').into(),
                 refresh_all_feeds: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('r'),
+                    tuievents::Key::Char('R'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
                 download_episode: tuievents::Key::Char('d').into(),
                 delete_local_episode: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('d'),
+                    tuievents::Key::Char('D'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
                 delete_feed: tuievents::Key::Char('x').into(),
                 delete_all_feeds: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('x'),
+                    tuievents::Key::Char('X'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
@@ -2222,6 +2233,7 @@ mod test {
 
     mod split_at_plus {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn should_do_nothing_at_empty() {
@@ -2301,6 +2313,7 @@ mod test {
 
     mod key_wrap {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn should_parse_function_keys() {
@@ -2365,13 +2378,14 @@ mod test {
 
     mod key_binding {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn should_parse_keys_simple() {
             // all modifiers
             assert_eq!(
                 KeyBinding::from(tuievents::KeyEvent::new(
-                    tuievents::Key::Char('q'),
+                    tuievents::Key::Char('Q'),
                     tuievents::KeyModifiers::all()
                 )),
                 KeyBinding::try_from("CONTROL+ALT+SHIFT+Q").unwrap()
@@ -2528,6 +2542,7 @@ mod test {
             providers::{Format, Toml},
             Figment,
         };
+        use pretty_assertions::assert_eq;
 
         use super::*;
 
