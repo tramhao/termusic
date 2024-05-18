@@ -186,19 +186,3 @@ mod v1_interop {
         }
     }
 }
-
-pub fn test_save() {
-    let path = Path::new("/tmp/termusic_config_tui_save.toml");
-
-    let data = TuiSettings::default();
-
-    config_extra::TuiConfigVersionedDefaulted::save_file(path, &data).unwrap();
-}
-
-pub fn test_load() {
-    let path = Path::new("/tmp/termusic_config_tui_load.toml");
-
-    let data = config_extra::TuiConfigVersionedDefaulted::from_file(path);
-
-    error!("TEST {:#?}", data);
-}
