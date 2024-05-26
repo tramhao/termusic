@@ -31,7 +31,7 @@ use termusicplayback::BackendSelect;
 // #[clap(next_line_help = true)]
 // #[clap(propagate_version = true)]
 pub struct Args {
-    /// Commands for podcast
+    /// Subcommands, overwriting the default action of starting the server
     #[command(subcommand)]
     pub action: Option<Action>,
     /// With no MUSIC_DIRECTORY, use config in `~/.config/termusic/config.toml`,
@@ -103,14 +103,15 @@ impl std::fmt::Display for Backend {
     }
 }
 
+/// Subcommands for the binary
 #[derive(Subcommand, Debug)]
 pub enum Action {
-    /// Import feeds from opml file.
+    /// Import Podcast feeds from a opml file.
     Export {
         #[arg(value_name = "FILE")]
         file: PathBuf,
     },
-    /// Export feeds to opml file.
+    /// Export Podcast feeds to a opml file.
     Import {
         #[arg(value_name = "FILE")]
         file: PathBuf,
