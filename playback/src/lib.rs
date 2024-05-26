@@ -221,7 +221,7 @@ pub struct GeneralPlayer {
     pub config: SharedSettings,
     pub current_track_updated: bool,
     pub mpris: Option<mpris::Mpris>,
-    pub discord: discord::Rpc,
+    pub discord: Option<discord::Rpc>,
     pub db: DataBase,
     pub db_podcast: DBPod,
     pub cmd_tx: PlayerCmdSender,
@@ -254,13 +254,18 @@ impl GeneralPlayer {
         } else {
             None
         };
+        let discord = if config.read().player_use_discord {
+            Some(discord::Rpc::default())
+        } else {
+            None
+        };
 
         Ok(Self {
             backend,
             playlist,
             config,
             mpris,
-            discord: discord::Rpc::default(),
+            discord,
             db,
             db_podcast,
             cmd_tx,
@@ -301,6 +306,21 @@ impl GeneralPlayer {
         } else if !config.player_use_mpris && self.mpris.is_some() {
             // stop mpris if new config does not have it enabled, but is currently active
             self.mpris.take();
+        }
+
+        if config.player_use_discord && self.discord.is_none() {
+            // start discord ipc if new config has it enabled, but is not active yet
+            let mut discord = discord::Rpc::default();
+
+            // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
+            if let Some(track) = self.playlist.current_track() {
+                discord.update(track);
+            }
+
+            self.discord.replace(discord);
+        } else if !config.player_use_discord && self.discord.is_some() {
+            // stop discord ipc if new config does not have it enabled, but is currently active
+            self.discord.take();
         }
 
         info!("Config Reloaded");
@@ -367,13 +387,12 @@ impl GeneralPlayer {
 
     fn add_and_play_mpris_discord(&mut self) {
         if let Some(track) = self.playlist.current_track() {
-            let config = self.config.read();
             if let Some(ref mut mpris) = self.mpris {
                 mpris.add_and_play(track);
             }
 
-            if config.player_use_discord {
-                self.discord.update(track);
+            if let Some(ref mut discord) = self.discord {
+                discord.update(track);
             }
         }
     }
@@ -415,25 +434,23 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.get_player_mut().pause();
-                let config = self.config.read();
                 if let Some(ref mut mpris) = self.mpris {
                     mpris.pause();
                 }
-                if config.player_use_discord {
-                    self.discord.pause();
+                if let Some(ref mut discord) = self.discord {
+                    discord.pause();
                 }
                 self.playlist.set_status(Status::Paused);
             }
             Status::Stopped => {}
             Status::Paused => {
                 self.get_player_mut().resume();
-                let config = self.config.read();
                 if let Some(ref mut mpris) = self.mpris {
                     mpris.resume();
                 }
-                if config.player_use_discord {
-                    let time_pos = self.get_player().position();
-                    self.discord.resume(time_pos);
+                let time_pos = self.get_player().position();
+                if let Some(ref mut discord) = self.discord {
+                    discord.resume(time_pos);
                 }
                 self.playlist.set_status(Status::Running);
             }
@@ -444,12 +461,11 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.get_player_mut().pause();
-                let config = self.config.read();
                 if let Some(ref mut mpris) = self.mpris {
                     mpris.pause();
                 }
-                if config.player_use_discord {
-                    self.discord.pause();
+                if let Some(ref mut discord) = self.discord {
+                    discord.pause();
                 }
                 self.playlist.set_status(Status::Paused);
             }
@@ -462,13 +478,12 @@ impl GeneralPlayer {
             Status::Running | Status::Stopped => {}
             Status::Paused => {
                 self.get_player_mut().resume();
-                let config = self.config.read();
                 if let Some(ref mut mpris) = self.mpris {
                     mpris.resume();
                 }
-                if config.player_use_discord {
-                    let time_pos = self.get_player().position();
-                    self.discord.resume(time_pos);
+                let time_pos = self.get_player().position();
+                if let Some(ref mut discord) = self.discord {
+                    discord.resume(time_pos);
                 }
                 self.playlist.set_status(Status::Running);
             }
