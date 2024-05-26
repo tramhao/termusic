@@ -1,6 +1,6 @@
 use crate::PlayerTimeUnit;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use termusiclib::track::Track;
@@ -28,8 +28,17 @@ impl Default for Rpc {
         std::thread::Builder::new()
             .name("discord rpc loop".into())
             .spawn(move || loop {
-                match rx.try_recv() {
-                    Ok(RpcCommand::Update(artist_cmd, title_cmd)) => {
+                let msg = match rx.try_recv() {
+                    Err(TryRecvError::Empty) => {
+                        sleep(Duration::from_secs(1));
+                        continue;
+                    }
+                    Err(_) => break,
+                    Ok(v) => v,
+                };
+
+                match msg {
+                    RpcCommand::Update(artist_cmd, title_cmd) => {
                         let assets = activity::Assets::new()
                             .large_image("termusic")
                             .large_text("terminal music player written in Rust");
@@ -62,7 +71,7 @@ impl Default for Rpc {
                             )
                             .ok();
                     }
-                    Ok(RpcCommand::Pause) => {
+                    RpcCommand::Pause => {
                         loop {
                             if client.connect().is_ok() {
                                 break;
@@ -83,7 +92,7 @@ impl Default for Rpc {
                             )
                             .ok();
                     }
-                    Ok(RpcCommand::Resume(time_pos)) => {
+                    RpcCommand::Resume(time_pos) => {
                         let assets = activity::Assets::new()
                             .large_image("termusic")
                             .large_text("terminal music player written in Rust");
@@ -111,9 +120,7 @@ impl Default for Rpc {
                             )
                             .ok();
                     }
-                    Err(_) => {}
                 }
-                sleep(Duration::from_secs(1));
             })
             .expect("failed to start discord rpc loop thread");
 
@@ -141,11 +148,3 @@ impl Rpc {
         }
     }
 }
-
-// impl Drop for Rpc {
-//     fn drop(&mut self) {
-//         if self.connected {
-//             self.client.close().ok();
-//         }
-//     }
-// }
