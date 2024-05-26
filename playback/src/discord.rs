@@ -18,7 +18,6 @@ enum RpcCommand {
 }
 
 impl Default for Rpc {
-    #[allow(clippy::cast_possible_wrap)]
     fn default() -> Self {
         let mut client = DiscordIpcClient::new(APP_ID).unwrap();
         let (tx, rx): (Sender<RpcCommand>, Receiver<RpcCommand>) = mpsc::channel();
@@ -51,10 +50,15 @@ impl Default for Rpc {
                             .large_text("terminal music player written in Rust");
                         // .small_image(smol_image)
                         // .small_text(state);
-                        let time = SystemTime::now()
+                        let time = if let Ok(v) = i64::try_from(SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .unwrap()
-                            .as_secs() as i64;
+                            .as_secs()) {
+                                v
+                            } else {
+                                warn!("SystemTime to i64 failed, discord interface cant handle this number");
+                                0
+                            };
                         let timestamp = activity::Timestamps::new().start(time);
                         // .end(self.time + self.duration);
 
@@ -90,10 +94,15 @@ impl Default for Rpc {
                             .large_image("termusic")
                             .large_text("terminal music player written in Rust");
 
-                        let time = SystemTime::now()
+                        let time = if let Ok(v) = i64::try_from(SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .unwrap()
-                            .as_secs() as i64;
+                            .as_secs()) {
+                                v
+                            } else {
+                                warn!("SystemTime to i64 failed, discord interface cant handle this number");
+                                0
+                            };
                         let timestamp = activity::Timestamps::new().start(time - time_pos);
 
                         client
