@@ -28,8 +28,6 @@ use termusicplayback::BackendSelect;
 #[derive(Parser, Debug)]
 // mostly read from `Cargo.toml`
 #[clap(name = "Termusic-server", author, version = env!("TERMUSIC_VERSION"), about, long_about=None)]
-// #[clap(next_line_help = true)]
-// #[clap(propagate_version = true)]
 pub struct Args {
     /// Subcommands, overwriting the default action of starting the server
     #[command(subcommand)]

@@ -27,8 +27,6 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 // mostly read from `Cargo.toml`
 #[clap(name = "Termusic", author, version = env!("TERMUSIC_VERSION"), about, long_about=None)]
-// #[clap(next_line_help = true)]
-// #[clap(propagate_version = true)]
 pub struct Args {
     /// Subcommands, overwriting default action of starting the TUI
     #[command(subcommand)]
