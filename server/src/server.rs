@@ -378,7 +378,7 @@ fn get_config(args: &cli::Args) -> Result<Settings> {
     let mut config = Settings::default();
     config.load()?;
 
-    config.disable_album_art_from_cli = args.disable_cover;
+    // config.disable_album_art_from_cli = args.disable_cover;
     config.disable_discord_rpc_from_cli = args.disable_discord;
 
     if let Some(dir) = &args.music_directory {
