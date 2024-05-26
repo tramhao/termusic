@@ -93,12 +93,12 @@ fn main() -> Result<()> {
 async fn actual_main() -> Result<()> {
     let args = cli::Args::parse();
     let _ = logger::setup(&args);
-    info!("background thread start");
+    let config = get_config(&args)?;
 
+    info!("Server starting...");
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
     let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
-    let config = get_config(&args)?;
     let playerstats = music_player_service.player_stats.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
@@ -139,6 +139,8 @@ async fn actual_main() -> Result<()> {
             .add_service(MusicPlayerServer::new(music_player_service))
             .serve_with_incoming(tcp_stream),
     );
+
+    info!("Server started and listening on {}", addr);
 
     // await the oneshot completing in a async fashion
     player_handle_os_rx.await??;
