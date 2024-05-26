@@ -43,6 +43,7 @@ use termusicplayback::player::music_player_client::MusicPlayerClient;
 use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
+
 #[macro_use]
 extern crate log;
 
@@ -265,7 +266,7 @@ fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
         }
         cli::Action::Export { file } => {
             println!("need to export to file {}", file.display());
-            let path = get_path_export(&file);
+            let path = utils::absolute_path(&file)?;
             let config_dir_path =
                 utils::get_app_config_path().context("getting app-config-path")?;
             podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
@@ -273,20 +274,4 @@ fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
     };
 
     Ok(())
-}
-
-fn get_path_export(dir: &Path) -> PathBuf {
-    let mut path = dir.to_path_buf();
-
-    if !path.has_root() {
-        if let Ok(p_base) = std::env::current_dir() {
-            path = p_base.join(path);
-        }
-    }
-
-    if let Ok(p_canonical) = path.canonicalize() {
-        path = p_canonical;
-    }
-
-    path
 }
