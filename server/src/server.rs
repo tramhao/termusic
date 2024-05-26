@@ -13,6 +13,7 @@ use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
+use termusiclib::{podcast, utils};
 use termusicplayback::player::music_player_server::MusicPlayerServer;
 use termusicplayback::player::{GetProgressResponse, PlayerTime};
 use termusicplayback::{
@@ -94,6 +95,10 @@ async fn actual_main() -> Result<()> {
     let args = cli::Args::parse();
     let _ = logger::setup(&args);
     let config = get_config(&args)?;
+
+    if let Some(action) = args.action {
+        return execute_action(action, &config);
+    }
 
     info!("Server starting...");
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -406,4 +411,27 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
     }
 
     bail!("Error: non-existing directory '{}'", dir.display());
+}
+
+fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
+    match action {
+        cli::Action::Import { file } => {
+            println!("need to import from file {}", file.display());
+
+            let path = get_path(&file).context("import cli file-path")?;
+            let config_dir_path =
+                utils::get_app_config_path().context("getting app-config-path")?;
+
+            podcast::import_from_opml(&config_dir_path, config, &path).context("import opml")?;
+        }
+        cli::Action::Export { file } => {
+            println!("need to export to file {}", file.display());
+            let path = utils::absolute_path(&file)?;
+            let config_dir_path =
+                utils::get_app_config_path().context("getting app-config-path")?;
+            podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
+        }
+    };
+
+    Ok(())
 }

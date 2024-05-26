@@ -30,6 +30,7 @@
 - Fix(server): update Media-Controls volume on volume change instead of on tick.
 - Fix(server): update Media-Controls with *new* progress instead of last-tick progress.
 - Fix(server): dont start Media-Controls if not requested (like disabled via config).
+- Fix(server): allow podcast feed import/export, and not just say so in the help.
 - Refactor: a lot less cloning and conversions where not necessary.
 - Refactor(server): on backend rusty, clean-up decoding & seeking.
 
