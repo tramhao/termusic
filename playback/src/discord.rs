@@ -37,6 +37,13 @@ impl Default for Rpc {
                     Ok(v) => v,
                 };
 
+                if !reconnect(&mut client) {
+                    // if connecting to the discord rpc fails, ignore the current command
+
+                    // likely for better status we should keep a state and try to reconnect, but also still handle all the commands send here
+                    continue;
+                }
+
                 match msg {
                     RpcCommand::Update(artist_cmd, title_cmd) => {
                         let assets = activity::Assets::new()
@@ -50,13 +57,6 @@ impl Default for Rpc {
                             .as_secs() as i64;
                         let timestamp = activity::Timestamps::new().start(time);
                         // .end(self.time + self.duration);
-
-                        loop {
-                            if client.connect().is_ok() {
-                                break;
-                            }
-                            sleep(Duration::from_secs(2));
-                        }
 
                         artist = artist_cmd;
                         title = title_cmd;
@@ -72,13 +72,6 @@ impl Default for Rpc {
                             .ok();
                     }
                     RpcCommand::Pause => {
-                        loop {
-                            if client.connect().is_ok() {
-                                break;
-                            }
-                            sleep(Duration::from_secs(2));
-                        }
-
                         let assets = activity::Assets::new()
                             .large_image("termusic")
                             .large_text("terminal music player written in Rust");
@@ -102,13 +95,6 @@ impl Default for Rpc {
                             .unwrap()
                             .as_secs() as i64;
                         let timestamp = activity::Timestamps::new().start(time - time_pos);
-
-                        loop {
-                            if client.connect().is_ok() {
-                                break;
-                            }
-                            sleep(Duration::from_secs(2));
-                        }
 
                         client
                             .set_activity(
@@ -147,4 +133,23 @@ impl Rpc {
                 .ok();
         }
     }
+}
+
+const RETRIES: u8 = 3;
+
+/// Try to connect the given client, with [`RETRIES`] amount of retries.
+///
+/// Returns `true` if connected, `false` otherwise
+fn reconnect(client: &mut DiscordIpcClient) -> bool {
+    let mut tries = 0;
+
+    while tries < RETRIES {
+        tries += 1;
+        if client.connect().is_ok() {
+            return true;
+        }
+        sleep(Duration::from_secs(2));
+    }
+
+    false
 }
