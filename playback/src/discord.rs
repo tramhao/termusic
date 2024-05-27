@@ -1,6 +1,6 @@
 use crate::PlayerTimeUnit;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use termusiclib::track::Track;
@@ -18,7 +18,6 @@ enum RpcCommand {
 }
 
 impl Default for Rpc {
-    #[allow(clippy::cast_possible_wrap)]
     fn default() -> Self {
         let mut client = DiscordIpcClient::new(APP_ID).unwrap();
         let (tx, rx): (Sender<RpcCommand>, Receiver<RpcCommand>) = mpsc::channel();
@@ -28,26 +27,40 @@ impl Default for Rpc {
         std::thread::Builder::new()
             .name("discord rpc loop".into())
             .spawn(move || loop {
-                match rx.try_recv() {
-                    Ok(RpcCommand::Update(artist_cmd, title_cmd)) => {
+                let msg = match rx.try_recv() {
+                    Err(TryRecvError::Empty) => {
+                        sleep(Duration::from_secs(1));
+                        continue;
+                    }
+                    Err(_) => break,
+                    Ok(v) => v,
+                };
+
+                if !reconnect(&mut client) {
+                    // if connecting to the discord rpc fails, ignore the current command
+
+                    // likely for better status we should keep a state and try to reconnect, but also still handle all the commands send here
+                    continue;
+                }
+
+                match msg {
+                    RpcCommand::Update(artist_cmd, title_cmd) => {
                         let assets = activity::Assets::new()
                             .large_image("termusic")
                             .large_text("terminal music player written in Rust");
                         // .small_image(smol_image)
                         // .small_text(state);
-                        let time = SystemTime::now()
+                        let time = if let Ok(v) = i64::try_from(SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .unwrap()
-                            .as_secs() as i64;
+                            .as_secs()) {
+                                v
+                            } else {
+                                warn!("SystemTime to i64 failed, discord interface cant handle this number");
+                                0
+                            };
                         let timestamp = activity::Timestamps::new().start(time);
                         // .end(self.time + self.duration);
-
-                        loop {
-                            if client.connect().is_ok() {
-                                break;
-                            }
-                            sleep(Duration::from_secs(2));
-                        }
 
                         artist = artist_cmd;
                         title = title_cmd;
@@ -62,14 +75,7 @@ impl Default for Rpc {
                             )
                             .ok();
                     }
-                    Ok(RpcCommand::Pause) => {
-                        loop {
-                            if client.connect().is_ok() {
-                                break;
-                            }
-                            sleep(Duration::from_secs(2));
-                        }
-
+                    RpcCommand::Pause => {
                         let assets = activity::Assets::new()
                             .large_image("termusic")
                             .large_text("terminal music player written in Rust");
@@ -83,23 +89,21 @@ impl Default for Rpc {
                             )
                             .ok();
                     }
-                    Ok(RpcCommand::Resume(time_pos)) => {
+                    RpcCommand::Resume(time_pos) => {
                         let assets = activity::Assets::new()
                             .large_image("termusic")
                             .large_text("terminal music player written in Rust");
 
-                        let time = SystemTime::now()
+                        let time = if let Ok(v) = i64::try_from(SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .unwrap()
-                            .as_secs() as i64;
+                            .as_secs()) {
+                                v
+                            } else {
+                                warn!("SystemTime to i64 failed, discord interface cant handle this number");
+                                0
+                            };
                         let timestamp = activity::Timestamps::new().start(time - time_pos);
-
-                        loop {
-                            if client.connect().is_ok() {
-                                break;
-                            }
-                            sleep(Duration::from_secs(2));
-                        }
 
                         client
                             .set_activity(
@@ -111,9 +115,7 @@ impl Default for Rpc {
                             )
                             .ok();
                     }
-                    Err(_) => {}
                 }
-                sleep(Duration::from_secs(1));
             })
             .expect("failed to start discord rpc loop thread");
 
@@ -142,10 +144,21 @@ impl Rpc {
     }
 }
 
-// impl Drop for Rpc {
-//     fn drop(&mut self) {
-//         if self.connected {
-//             self.client.close().ok();
-//         }
-//     }
-// }
+const RETRIES: u8 = 3;
+
+/// Try to connect the given client, with [`RETRIES`] amount of retries.
+///
+/// Returns `true` if connected, `false` otherwise
+fn reconnect(client: &mut DiscordIpcClient) -> bool {
+    let mut tries = 0;
+
+    while tries < RETRIES {
+        tries += 1;
+        if client.connect().is_ok() {
+            return true;
+        }
+        sleep(Duration::from_secs(2));
+    }
+
+    false
+}
