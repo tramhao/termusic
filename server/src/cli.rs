@@ -28,18 +28,16 @@ use termusicplayback::BackendSelect;
 #[derive(Parser, Debug)]
 // mostly read from `Cargo.toml`
 #[clap(name = "Termusic-server", author, version = env!("TERMUSIC_VERSION"), about, long_about=None)]
-// #[clap(next_line_help = true)]
-// #[clap(propagate_version = true)]
 pub struct Args {
-    /// Commands for podcast
+    /// Subcommands, overwriting the default action of starting the server
     #[command(subcommand)]
     pub action: Option<Action>,
     /// With no MUSIC_DIRECTORY, use config in `~/.config/termusic/config.toml`,
     /// default is ~/Music.
     pub music_directory: Option<PathBuf>,
-    /// Not showing album cover. default is showing.  
-    #[arg(short = 'c', long)]
-    pub disable_cover: bool,
+    // /// Not showing album cover. default is showing.
+    // #[arg(short = 'c', long)]
+    // pub disable_cover: bool,
     /// Not showing discord representation. default is showing.
     #[arg(short, long)]
     pub disable_discord: bool,
@@ -103,14 +101,15 @@ impl std::fmt::Display for Backend {
     }
 }
 
+/// Subcommands for the binary
 #[derive(Subcommand, Debug)]
 pub enum Action {
-    /// Import feeds from opml file.
+    /// Import Podcast feeds from a opml file.
     Export {
         #[arg(value_name = "FILE")]
         file: PathBuf,
     },
-    /// Export feeds to opml file.
+    /// Export Podcast feeds to a opml file.
     Import {
         #[arg(value_name = "FILE")]
         file: PathBuf,

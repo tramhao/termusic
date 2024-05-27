@@ -1,6 +1,7 @@
 use crate::config::Settings;
 use anyhow::{anyhow, Context, Result};
 use pinyin::ToPinyin;
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::{
@@ -196,6 +197,23 @@ pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
 
     cmd.args(args);
     cmd.spawn()
+}
+
+/// Absolutize a given path with the current working directory.
+///
+/// This function, unlike [`std::fs::canonicalize`] does *not* hit the filesystem and so does not require the input path to exist yet.
+///
+/// Examples:
+/// `./somewhere` -> `/absolute/./somewhere`
+/// `.\somewhere` -> `C:\somewhere`
+///
+/// in the future consider replacing with [`std::path::absolute`] once stable
+pub fn absolute_path(path: &Path) -> std::io::Result<Cow<'_, Path>> {
+    if path.is_absolute() {
+        Ok(Cow::Borrowed(path))
+    } else {
+        Ok(Cow::Owned(std::env::current_dir()?.join(path)))
+    }
 }
 
 #[cfg(test)]
