@@ -15,6 +15,7 @@
 - Feat: Add `TM_LOGTOFILE` and `TMS_LOGTOFILE` to control `--log-to-file` for tui and server respectively.
 - Feat(tui): allow Sixel to be used for covers.
 - Feat(tui): allow all cover providers to not be compiled in.
+- Fix: update the build scripts to check that the repository is actually the `termusic` repository before using the git version.
 - Fix: allow backends to be compiled in for `termusic-playback` but not in `termusic-server`.
 - Fix: on backend mpv, clear media-title on EndOfFile.
 - Fix: consistent media-title(/radio-title) handling across all backends.
@@ -31,6 +32,7 @@
 - Fix(server): update Media-Controls with *new* progress instead of last-tick progress.
 - Fix(server): dont start Media-Controls if not requested (like disabled via config).
 - Fix(server): dont start Discord IPC if not requested (like disabled via config).
+- Fix(server): allow podcast feed import/export, and not just say so in the help.
 - Refactor: a lot less cloning and conversions where not necessary.
 - Refactor(server): on backend rusty, clean-up decoding & seeking.
 
