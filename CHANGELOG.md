@@ -15,6 +15,7 @@
 - Feat: Add `TM_LOGTOFILE` and `TMS_LOGTOFILE` to control `--log-to-file` for tui and server respectively.
 - Feat(tui): allow Sixel to be used for covers.
 - Feat(tui): allow all cover providers to not be compiled in.
+- Fix: update the build scripts to check that the repository is actually the `termusic` repository before using the git version.
 - Fix: allow backends to be compiled in for `termusic-playback` but not in `termusic-server`.
 - Fix: on backend mpv, clear media-title on EndOfFile.
 - Fix: consistent media-title(/radio-title) handling across all backends.
