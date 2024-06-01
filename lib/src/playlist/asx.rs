@@ -90,3 +90,32 @@ pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
 
     Ok(list)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn asx() {
+        let s = r#"<asx version="3.0">
+  <title>Test-Liste</title>
+  <entry>
+    <title>title1</title>
+    <ref href="ref1"/>
+  </entry>
+  <entry>
+    <title>title2</title>
+    <ref href="ref2"/>
+  </entry>
+</asx>"#;
+        let items = decode(s);
+        assert!(items.is_ok());
+        let items = items.unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].url, "ref1");
+        assert_eq!(items[0].title, "title1");
+        assert_eq!(items[1].url, "ref2");
+        assert_eq!(items[1].title, "title2");
+    }
+}

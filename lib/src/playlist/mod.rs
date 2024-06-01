@@ -107,27 +107,4 @@ mod tests {
         assert!(items[1].title == "Title2");
         assert!(items[1].identifier == "Identifier2");
     }
-
-    #[test]
-    fn asx() {
-        let s = r#"<asx version="3.0">
-  <title>Test-Liste</title>
-  <entry>
-    <title>title1</title>
-    <ref href="ref1"/>
-  </entry>
-  <entry>
-    <title>title2</title>
-    <ref href="ref2"/>
-  </entry>
-</asx>"#;
-        let items = crate::playlist::asx::decode(s);
-        assert!(items.is_ok());
-        let items = items.unwrap();
-        assert!(items.len() == 2);
-        assert!(items[0].url == "ref1");
-        assert!(items[0].title == "title1");
-        assert!(items[1].url == "ref2");
-        assert!(items[1].title == "title2");
-    }
 }
