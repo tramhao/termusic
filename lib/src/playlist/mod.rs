@@ -67,17 +67,6 @@ pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
     Ok(set)
 }
 
-#[allow(unused)]
-pub fn is_content_hls(content: &str) -> bool {
-    if content.contains("EXT-X-STREAM-INF") {
-        return true;
-    }
-    if content.contains("EXT-X-TARGETDURATION") {
-        return true;
-    }
-    false
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
