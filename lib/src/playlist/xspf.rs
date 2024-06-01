@@ -90,3 +90,38 @@ pub fn decode(content: &str) -> Result<Vec<XSPFItem>, Box<dyn Error>> {
 
     Ok(list)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn xspf() {
+        let s = r#"<?xml version="1.0" encoding="UTF-8"?>
+<playlist version="1" xmlns="http://xspf.org/ns/0/">
+    <trackList>
+    <track>
+        <title>Title</title>
+        <identifier>Identifier</identifier>
+        <location>http://this.is.an.example</location>
+    </track>
+    <track>
+        <title>Title2</title>
+        <identifier>Identifier2</identifier>
+        <location>http://this.is.an.example2</location>
+    </track>
+    </trackList>
+</playlist>"#;
+        let items = decode(s);
+        assert!(items.is_ok());
+        let items = items.unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].url, "http://this.is.an.example");
+        assert_eq!(items[0].title, "Title");
+        assert_eq!(items[0].identifier, "Identifier");
+        assert_eq!(items[1].url, "http://this.is.an.example2");
+        assert_eq!(items[1].title, "Title2");
+        assert_eq!(items[1].identifier, "Identifier2");
+    }
+}
