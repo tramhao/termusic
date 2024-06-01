@@ -10,7 +10,13 @@ mod xspf;
 use std::error::Error;
 
 /// Decode playlist content string. It checks for M3U, PLS, XSPF and ASX content in the string.
+///
+/// Returns the parsed entries from the playlist, in playlist order.
+///
+/// NOTE: currently there is a mix of url and other things in this list
+///
 /// # Example
+///
 /// ```rust
 /// let list = playlist_decoder::decode(r##"<?xml version="1.0" encoding="UTF-8"?>
 ///    <playlist version="1" xmlns="http://xspf.org/ns/0/">
@@ -32,12 +38,10 @@ use std::error::Error;
 ///     println!("{:?}", item);
 /// }
 /// ```
-/// # Arguments
-/// * `content` - A string slice containing a playlist
-#[allow(clippy::single_match_else)]
 pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let mut set: Vec<String> = vec![];
     let content_small = content.to_lowercase();
+
     if content_small.contains("<playlist") {
         let xspf_items = xspf::decode(content)?;
         for item in xspf_items {
@@ -64,6 +68,7 @@ pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
             set.push(item.url);
         }
     }
+
     Ok(set)
 }
 
