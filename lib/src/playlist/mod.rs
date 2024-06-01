@@ -38,40 +38,31 @@ use std::error::Error;
 pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let mut set = vec![];
     let content_small = content.to_lowercase();
-    match content_small.find("<playlist") {
-        Some(_) => {
-            let xspf_items = xspf::decode(content)?;
-            for item in xspf_items {
-                if !item.url.is_empty() {
-                    set.push(item.url);
-                }
-                if !item.identifier.is_empty() {
-                    set.push(item.identifier);
-                }
+    if content_small.contains("<playlist") {
+        let xspf_items = xspf::decode(content)?;
+        for item in xspf_items {
+            if !item.url.is_empty() {
+                set.push(item.url);
+            }
+            if !item.identifier.is_empty() {
+                set.push(item.identifier);
             }
         }
-        None => match content_small.find("<asx") {
-            Some(_) => {
-                let pls_items = asx::decode(content)?;
-                for item in pls_items {
-                    set.push(item.url);
-                }
-            }
-            None => match content_small.find("[playlist]") {
-                Some(_) => {
-                    let pls_items = pls::decode(content);
-                    for item in pls_items {
-                        set.push(item.url);
-                    }
-                }
-                None => {
-                    let m3u_items = m3u::decode(content);
-                    for item in m3u_items {
-                        set.push(item.url);
-                    }
-                }
-            },
-        },
+    } else if content_small.contains("<asx") {
+        let pls_items = asx::decode(content)?;
+        for item in pls_items {
+            set.push(item.url);
+        }
+    } else if content_small.contains("[playlist]") {
+        let pls_items = pls::decode(content);
+        for item in pls_items {
+            set.push(item.url);
+        }
+    } else {
+        let m3u_items = m3u::decode(content);
+        for item in m3u_items {
+            set.push(item.url);
+        }
     }
     let v: Vec<String> = set.into_iter().collect();
     Ok(v)
