@@ -3,15 +3,15 @@ use quick_xml::events::Event;
 use quick_xml::Reader;
 use std::error::Error;
 
-#[derive(Clone)]
-pub struct PlaylistItem {
+#[derive(Debug, Clone, PartialEq)]
+pub struct ASXItem {
     pub title: String,
     pub url: String,
 }
 
-pub fn decode(content: &str) -> Result<Vec<PlaylistItem>, Box<dyn Error>> {
+pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
     let mut list = vec![];
-    let mut item = PlaylistItem {
+    let mut item = ASXItem {
         title: String::new(),
         url: String::new(),
     };

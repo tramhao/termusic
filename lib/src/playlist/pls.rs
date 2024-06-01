@@ -2,12 +2,13 @@
 
 use std::collections::HashMap;
 
-pub struct PlaylistItem {
+#[derive(Debug, Clone, PartialEq)]
+pub struct PLSItem {
     pub title: String,
     pub url: String,
 }
 
-pub fn decode(content: &str) -> Vec<PlaylistItem> {
+pub fn decode(content: &str) -> Vec<PLSItem> {
     let lines = content.lines();
     let mut list = vec![];
     let mut found_pls = false;
@@ -49,7 +50,7 @@ pub fn decode(content: &str) -> Vec<PlaylistItem> {
 
     for (key, value) in map_urls {
         let title = map_title.get(&key).unwrap_or(&default_title);
-        list.push(PlaylistItem {
+        list.push(PLSItem {
             title: String::from(*title),
             url: String::from(value),
         });
