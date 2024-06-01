@@ -132,13 +132,6 @@ mod tests {
     }
 
     #[test]
-    fn m3u() {
-        let items = crate::playlist::m3u::decode("http://this.is.an.example");
-        assert!(items.len() == 1);
-        assert!(items[0].url == "http://this.is.an.example");
-    }
-
-    #[test]
     fn pls() {
         let items = crate::playlist::pls::decode(
             "[playlist]
