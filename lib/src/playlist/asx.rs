@@ -18,7 +18,7 @@ pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
 
     let mut reader = Reader::from_str(content);
     reader.trim_text(true);
-    let mut xml_stack = vec![];
+    let mut xml_stack = Vec::with_capacity(3);
     let mut buf = Vec::new();
     let decoder = reader.decoder();
     loop {
