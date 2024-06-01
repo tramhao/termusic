@@ -9,6 +9,10 @@ pub struct ASXItem {
     pub url: String,
 }
 
+/// ASX or "Advanced Stream Redirector" is a standard made by microsoft for windows media player, XML based.
+///
+/// <https://en.wikipedia.org/wiki/Advanced_Stream_Redirector>
+/// <https://learn.microsoft.com/en-us/windows/win32/wmp/asx-element>
 pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
     let mut list = vec![];
     let mut item = ASXItem {

@@ -10,6 +10,9 @@ pub struct XSPFItem {
     pub identifier: String,
 }
 
+/// XSPF or "XML Shareable Playlist Format", based on XML (as the name implies).
+///
+/// <https://www.xspf.org/spec>
 pub fn decode(content: &str) -> Result<Vec<XSPFItem>, Box<dyn Error>> {
     let mut list = vec![];
     let mut item = XSPFItem {
