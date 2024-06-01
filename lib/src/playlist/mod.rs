@@ -66,6 +66,7 @@ pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
     }
     Ok(set)
 }
+
 #[allow(unused)]
 pub fn is_content_hls(content: &str) -> bool {
     if content.contains("EXT-X-STREAM-INF") {
@@ -78,4 +79,62 @@ pub fn is_content_hls(content: &str) -> bool {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn should_parse_xspf() {
+        let s = r#"<?xml version="1.0" encoding="UTF-8"?>
+        <playlist version="1" xmlns="http://xspf.org/ns/0/">
+            <trackList>
+            <track>
+                <title>Title</title>
+                <identifier>Identifier</identifier>
+                <location>http://this.is.an.example</location>
+            </track>
+            </trackList>
+        </playlist>"#;
+        let items = decode(s).unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0], "http://this.is.an.example");
+        // this is weird
+        assert_eq!(items[1], "Identifier");
+    }
+
+    #[test]
+    fn should_parse_asx() {
+        let s = r#"<asx version="3.0">
+  <title>Test-Liste</title>
+  <entry>
+    <title>title1</title>
+    <ref href="ref1"/>
+  </entry>
+</asx>"#;
+        let items = decode(s).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], "ref1");
+    }
+
+    #[test]
+    fn should_parse_pls() {
+        let items = decode(
+            "[playlist]
+File1=http://this.is.an.example
+Title1=mytitle
+        ",
+        )
+        .unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], "http://this.is.an.example");
+    }
+
+    #[test]
+    fn should_parse_m3u() {
+        let playlist = "/some/absolute/unix/path.mp3";
+
+        let results = decode(&playlist).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], "/some/absolute/unix/path.mp3");
+    }
+}
