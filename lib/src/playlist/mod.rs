@@ -36,7 +36,7 @@ use std::error::Error;
 /// * `content` - A string slice containing a playlist
 #[allow(clippy::single_match_else)]
 pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
-    let mut set = vec![];
+    let mut set: Vec<String> = vec![];
     let content_small = content.to_lowercase();
     if content_small.contains("<playlist") {
         let xspf_items = xspf::decode(content)?;
@@ -64,8 +64,7 @@ pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
             set.push(item.url);
         }
     }
-    let v: Vec<String> = set.into_iter().collect();
-    Ok(v)
+    Ok(set)
 }
 #[allow(unused)]
 pub fn is_content_hls(content: &str) -> bool {
