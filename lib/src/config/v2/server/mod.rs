@@ -370,16 +370,6 @@ mod v1_interop {
         }
     }
 
-    impl From<LoopMode> for v1::Loop {
-        fn from(value: LoopMode) -> Self {
-            match value {
-                LoopMode::Single => v1::Loop::Single,
-                LoopMode::Playlist => v1::Loop::Playlist,
-                LoopMode::Random => v1::Loop::Random,
-            }
-        }
-    }
-
     impl From<v1::SeekStep> for SeekStep {
         fn from(value: v1::SeekStep) -> Self {
             match value {
