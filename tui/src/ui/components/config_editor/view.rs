@@ -1,20 +1,21 @@
 use crate::ui::components::{
     AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
-    ConfigDatabaseAddAll, ConfigFallbackBackground, ConfigFallbackBorder, ConfigFallbackForeground,
-    ConfigFallbackHighlight, ConfigFallbackTitle, ConfigGlobalConfig, ConfigGlobalDown,
-    ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp, ConfigGlobalLayoutDatabase,
-    ConfigGlobalLayoutPodcast, ConfigGlobalLayoutTreeview, ConfigGlobalLeft,
-    ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle,
-    ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward,
-    ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp,
-    ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause, ConfigGlobalQuit,
-    ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp, ConfigGlobalVolumeDown,
-    ConfigGlobalVolumeUp, ConfigGlobalXywhHide, ConfigGlobalXywhMoveDown, ConfigGlobalXywhMoveLeft,
-    ConfigGlobalXywhMoveRight, ConfigGlobalXywhMoveUp, ConfigGlobalXywhZoomIn,
-    ConfigGlobalXywhZoomOut, ConfigImportantPopupBackground, ConfigImportantPopupBorder,
-    ConfigImportantPopupForeground, ConfigImportantPopupTitle, ConfigLibraryAddRoot,
-    ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryDelete, ConfigLibraryForeground,
-    ConfigLibraryHighlight, ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
+    ConfigDatabaseAddAll, ConfigDatabaseAddSelected, ConfigFallbackBackground,
+    ConfigFallbackBorder, ConfigFallbackForeground, ConfigFallbackHighlight, ConfigFallbackTitle,
+    ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop,
+    ConfigGlobalHelp, ConfigGlobalLayoutDatabase, ConfigGlobalLayoutPodcast,
+    ConfigGlobalLayoutTreeview, ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward,
+    ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle, ConfigGlobalPlayerNext,
+    ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward,
+    ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless,
+    ConfigGlobalPlayerTogglePause, ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist,
+    ConfigGlobalUp, ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigGlobalXywhHide,
+    ConfigGlobalXywhMoveDown, ConfigGlobalXywhMoveLeft, ConfigGlobalXywhMoveRight,
+    ConfigGlobalXywhMoveUp, ConfigGlobalXywhZoomIn, ConfigGlobalXywhZoomOut,
+    ConfigImportantPopupBackground, ConfigImportantPopupBorder, ConfigImportantPopupForeground,
+    ConfigImportantPopupTitle, ConfigLibraryAddRoot, ConfigLibraryBackground, ConfigLibraryBorder,
+    ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
+    ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
     ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
@@ -1345,6 +1346,13 @@ impl Model {
             _ => 8,
         };
 
+        let select_database_add_selected_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::DatabaseAddSelected),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         let select_playlist_random_album_len = match self.app.state(&Id::ConfigEditor(
             IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum),
         )) {
@@ -1504,6 +1512,7 @@ impl Model {
                             Constraint::Length(select_playlist_swap_down_len),
                             Constraint::Length(select_playlist_swap_up_len),
                             Constraint::Length(select_database_add_all_len),
+                            Constraint::Length(select_database_add_selected_len),
                             Constraint::Length(select_playlist_random_album_len),
                             Constraint::Min(0),
                         ]
@@ -1637,9 +1646,14 @@ impl Model {
                     chunks_middle_column2[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddSelected)),
                     f,
                     chunks_middle_column2[7],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
+                    f,
+                    chunks_middle_column2[8],
                 );
 
                 self.app.view(
@@ -2478,6 +2492,15 @@ impl Model {
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
                 Box::new(ConfigDatabaseAddAll::new(config.clone())),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddSelected)),
+                Box::new(ConfigDatabaseAddSelected::new(config.clone())),
                 vec![],
             )
             .is_ok());

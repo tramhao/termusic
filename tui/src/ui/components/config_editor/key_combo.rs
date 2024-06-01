@@ -1131,8 +1131,8 @@ impl KEModifierSelect {
     /// Returns `(mod_list_index, key_str)`
     fn init_modifier_select(id: IdKey, keys: &Keys) -> (usize, String) {
         let mod_key = match id {
-            // TODO: add DatabaseAddSelected
             IdKey::DatabaseAddAll => keys.database_keys.add_all.mod_key(),
+            IdKey::DatabaseAddSelected => keys.database_keys.add_selected.mod_key(),
             IdKey::GlobalConfig => keys.select_view_keys.open_config.mod_key(),
             IdKey::GlobalDown => keys.navigation_keys.down.mod_key(),
             IdKey::GlobalGotoBottom => keys.navigation_keys.goto_bottom.mod_key(),
@@ -2371,6 +2371,7 @@ impl Component<Msg, NoUserEvent> for ConfigPlaylistSwapUp {
         self.component.on(ev)
     }
 }
+
 #[derive(MockComponent)]
 pub struct ConfigDatabaseAddAll {
     component: KEModifierSelect,
@@ -2391,6 +2392,33 @@ impl ConfigDatabaseAddAll {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigDatabaseAddAll {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigDatabaseAddSelected {
+    component: KEModifierSelect,
+}
+
+impl ConfigDatabaseAddSelected {
+    pub fn new(config: SharedTuiSettings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Database Add Selected ",
+                IdKey::DatabaseAddSelected,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::DatabaseAddSelectedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddSelectedBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigDatabaseAddSelected {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

@@ -731,7 +731,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::PlaylistSwapUpBlurDown | KFMsg::PlaylistAddRandomAlbumBlurUp => {
+            KFMsg::PlaylistSwapUpBlurDown | KFMsg::DatabaseAddSelectedBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::DatabaseAddAll,
@@ -739,7 +739,15 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::DatabaseAddAllBlurDown | KFMsg::PlaylistAddRandomTracksBlurUp => {
+            KFMsg::DatabaseAddAllBlurDown | KFMsg::PlaylistAddRandomAlbumBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::DatabaseAddSelected,
+                    )))
+                    .ok();
+            }
+
+            KFMsg::DatabaseAddSelectedBlurDown | KFMsg::PlaylistAddRandomTracksBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::PlaylistAddRandomAlbum,
@@ -850,6 +858,7 @@ impl Model {
         self.config_changed = true;
         match id {
             IdKey::DatabaseAddAll => self.ke_key_config.database_keys.add_all = binding,
+            IdKey::DatabaseAddSelected => self.ke_key_config.database_keys.add_selected = binding,
             IdKey::GlobalConfig => self.ke_key_config.select_view_keys.open_config = binding,
             IdKey::GlobalDown => self.ke_key_config.navigation_keys.down = binding,
             IdKey::GlobalGotoBottom => self.ke_key_config.navigation_keys.goto_bottom = binding,

@@ -195,6 +195,8 @@ pub enum ConfigEditorMsg {
 pub enum KFMsg {
     DatabaseAddAllBlurDown,
     DatabaseAddAllBlurUp,
+    DatabaseAddSelectedBlurDown,
+    DatabaseAddSelectedBlurUp,
     GlobalConfigBlurDown,
     GlobalConfigBlurUp,
     GlobalDownBlurDown,
@@ -601,6 +603,7 @@ pub enum IdConfigEditor {
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdKey {
     DatabaseAddAll,
+    DatabaseAddSelected,
     GlobalConfig,
     GlobalDown,
     GlobalGotoBottom,
