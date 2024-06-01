@@ -24,8 +24,8 @@
 use crate::config::{LastPosition, SeekStep};
 use crate::ui::{ConfigEditorMsg, Msg};
 
+use termusiclib::config::SharedSettings;
 use termusiclib::config::{Alignment as XywhAlign, Keys};
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Radio};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{

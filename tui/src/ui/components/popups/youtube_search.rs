@@ -23,8 +23,8 @@
  */
 use crate::config::Settings;
 use crate::ui::model::Model;
+use termusiclib::config::SharedSettings;
 use termusiclib::types::{Id, Msg, YSMsg};
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

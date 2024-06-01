@@ -42,12 +42,12 @@ use anyhow::{anyhow, Result};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
-use termusiclib::config::{Keys, StyleColorSymbol};
+use termusiclib::config::{new_shared_settings, Keys, SharedSettings, StyleColorSymbol};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, TaskPool};
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::get_app_config_path;
-use termusicplayback::{PlayerCmd, Playlist, SharedSettings};
+use termusicplayback::{PlayerCmd, Playlist};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -166,7 +166,7 @@ impl Model {
         let threadpool = TaskPool::new(config.podcast_simultanious_download);
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        let config = std::sync::Arc::new(parking_lot::RwLock::new(config));
+        let config = new_shared_settings(config);
 
         let playlist = Playlist::new(config.clone()).unwrap_or_default();
         let app = Self::init_app(&tree, &config);

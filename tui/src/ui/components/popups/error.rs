@@ -1,3 +1,4 @@
+use termusiclib::config::SharedSettings;
 /**
  * MIT License
  *
@@ -22,7 +23,6 @@
  * SOFTWARE.
  */
 use termusiclib::types::{Id, Msg};
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     event::{Key, KeyEvent},

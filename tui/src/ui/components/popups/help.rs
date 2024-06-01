@@ -1,8 +1,8 @@
+use termusiclib::config::SharedSettings;
 use termusiclib::{
     config::BindingForEvent,
     types::{Id, Msg},
 };
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Table;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},

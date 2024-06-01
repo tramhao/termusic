@@ -1,5 +1,5 @@
+use termusiclib::config::SharedSettings;
 use termusiclib::{config::Settings, types::Msg};
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Radio;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},

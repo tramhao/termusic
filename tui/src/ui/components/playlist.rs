@@ -4,13 +4,13 @@ use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use std::borrow::Cow;
 use std::path::Path;
+use termusiclib::config::SharedSettings;
 use termusiclib::sqlite::SearchCriteria;
 use termusiclib::sqlite::TrackForDB;
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 use termusicplayback::PlayerCmd;
-use termusicplayback::SharedSettings;
 
 use tui_realm_stdlib::Table;
 use tuirealm::props::Borders;

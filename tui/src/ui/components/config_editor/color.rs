@@ -23,8 +23,8 @@
  */
 use crate::config::{ColorTermusic, StyleColorSymbol};
 use std::convert::From;
+use termusiclib::config::SharedSettings;
 use termusiclib::types::{ConfigEditorMsg, IdConfigEditor, Msg};
-use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Label, Select, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

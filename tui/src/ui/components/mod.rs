@@ -52,7 +52,7 @@ pub use podcast::{EpisodeList, FeedsList};
 pub use popups::general_search::{GSInputPopup, GSTablePopup, Source};
 pub use progress::Progress;
 pub use tag_editor::*;
-use termusicplayback::SharedSettings;
+use termusiclib::config::SharedSettings;
 
 use crate::config::Keys;
 use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg};
