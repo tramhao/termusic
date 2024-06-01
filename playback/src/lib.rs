@@ -533,7 +533,10 @@ impl GeneralPlayer {
             .remember_position
             .get_time(track.media_type)
         else {
-            info!("Not saving Last position Remembering last position is not enabled");
+            info!(
+                "Not saving Last position as \"Remember last position\" is not enabled for {:#?}",
+                track.media_type
+            );
             return;
         };
 
