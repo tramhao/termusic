@@ -130,43 +130,4 @@ mod tests {
         assert!(items[1].url == "ref2");
         assert!(items[1].title == "title2");
     }
-
-    #[test]
-    fn pls() {
-        let items = crate::playlist::pls::decode(
-            "[playlist]
-File1=http://this.is.an.example
-Title1=mytitle
-        ",
-        );
-        assert!(items.len() == 1);
-        assert!(items[0].url == "http://this.is.an.example");
-        assert!(items[0].title == "mytitle");
-    }
-
-    #[test]
-    fn pls2() {
-        let items = crate::playlist::pls::decode(
-            "[playlist]
-File1=http://this.is.an.example
-Title=mytitle
-        ",
-        );
-        assert!(items.len() == 1);
-        assert!(items[0].url == "http://this.is.an.example");
-        assert!(items[0].title == "mytitle");
-    }
-
-    #[test]
-    fn pls3() {
-        let items = crate::playlist::pls::decode(
-            "[Playlist]
-File1=http://this.is.an.example
-Title=mytitle
-        ",
-        );
-        assert!(items.len() == 1);
-        assert!(items[0].url == "http://this.is.an.example");
-        assert!(items[0].title == "mytitle");
-    }
 }
