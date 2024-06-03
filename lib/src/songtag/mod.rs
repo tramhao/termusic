@@ -30,8 +30,11 @@ mod netease;
 use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
+use lofty::config::WriteOptions;
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedTextFrame};
-use lofty::{Accessor, Picture, TagExt, TextEncoding};
+use lofty::picture::Picture;
+use lofty::prelude::{Accessor, TagExt};
+use lofty::TextEncoding;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
@@ -345,7 +348,7 @@ impl SongTag {
 
                     let file = p_full.as_str();
 
-                    if tag.save_to_path(file).is_ok() {
+                    if tag.save_to_path(file, WriteOptions::new()).is_ok() {
                         sleep(Duration::from_secs(10));
                         tx.send(Msg::Download(DLMsg::DownloadCompleted(
                             url.clone(),

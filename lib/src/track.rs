@@ -26,11 +26,12 @@ use crate::songtag::lrc::Lyric;
 use crate::utils::get_parent_folder;
 use anyhow::{bail, Context, Result};
 use id3::frame::Lyrics;
+use lofty::config::{ParseOptions, WriteOptions};
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedTextFrame};
-use lofty::{
-    mpeg::MpegFile, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType,
-    TagExt, TagItem, TaggedFileExt, TextEncoding,
-};
+use lofty::picture::{Picture, PictureType};
+use lofty::prelude::{Accessor, AudioFile, ItemKey, TagExt, TaggedFileExt};
+use lofty::tag::{ItemValue, Tag as LoftyTag, TagItem};
+use lofty::{file::FileType, mpeg::MpegFile, probe::Probe, TextEncoding};
 use std::convert::From;
 use std::ffi::OsStr;
 use std::fs::rename;
@@ -129,7 +130,7 @@ impl Track {
     pub fn read_from_path<P: AsRef<Path>>(path: P, for_db: bool) -> Result<Self> {
         let path = path.as_ref();
 
-        let probe = lofty::Probe::open(path)?;
+        let probe = Probe::open(path)?;
         let file_type = probe.file_type();
 
         let mut song = Self::new(path);
@@ -161,7 +162,7 @@ impl Track {
                     Some(FileType::Mpeg) => {
                         let mut reader = BufReader::new(File::open(path)?);
                         // let file = MPEGFile::read_from(&mut reader, false)?;
-                        let file = MpegFile::read_from(&mut reader, lofty::ParseOptions::new())?;
+                        let file = MpegFile::read_from(&mut reader, ParseOptions::new())?;
 
                         if let Some(id3v2_tag) = file.id3v2() {
                             for lyrics_frame in id3v2_tag.unsync_text() {
@@ -464,7 +465,7 @@ impl Track {
                         tag.insert_picture(any_picture);
                     }
 
-                    tag.save_to_path(file_path)?;
+                    tag.save_to_path(file_path, WriteOptions::new())?;
                 }
             }
 
@@ -475,7 +476,7 @@ impl Track {
                         None => return Ok(()),
                     };
 
-                    let mut tag = lofty::Tag::new(tag_type);
+                    let mut tag = LoftyTag::new(tag_type);
                     self.update_tag(&mut tag);
 
                     if !self.lyric_frames_is_empty() {
@@ -490,7 +491,7 @@ impl Track {
                         tag.push_picture(any_picture);
                     }
 
-                    tag.save_to_path(file_path)?;
+                    tag.save_to_path(file_path, WriteOptions::new())?;
                 }
             }
         }
@@ -566,7 +567,7 @@ impl Track {
     }
 }
 
-fn create_lyrics(tag: &mut lofty::Tag, lyric_frames: &mut Vec<Lyrics>) {
+fn create_lyrics(tag: &mut LoftyTag, lyric_frames: &mut Vec<Lyrics>) {
     let lyrics = tag.take(&ItemKey::Lyrics);
     for lyric in lyrics {
         if let ItemValue::Text(lyrics_text) = lyric.value() {
