@@ -5,8 +5,53 @@ use std::error::Error;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ASXItem {
+    /// According to the spec, a `entry` SHOULD contain exactly one `title` (all after the first are ignored)
     pub title: String,
+    /// According to the spec, a `entry` SHOULD contain exactly one `ref` (all after the first are ignored for our purposes)
     pub url: String,
+}
+
+/// A temporary storage to build a [`ASXItem`] while still being in a element and not having all values
+#[derive(Debug, Clone, PartialEq, Default)]
+struct PrivateItem {
+    pub title: Option<String>,
+    pub ref_href: Option<String>,
+}
+
+impl PrivateItem {
+    /// Try to transform the current item into a [`ASXItem`], on fail reset to default values for next loop
+    fn try_into_xspf_item_and_reset(&mut self) -> Option<ASXItem> {
+        if self.check_required_values() {
+            return Some(ASXItem {
+                // SAFETY: unwrap is safe here because it is checked by `check_required_values` to be `Some`
+                title: self.title.take().unwrap(),
+                url: self.ref_href.take().unwrap(),
+            });
+        }
+
+        self.reset();
+
+        None
+    }
+
+    /// Check that all required values are [`Some`] and issue warnings, returns `true` if that is the case, `false` otherwise
+    fn check_required_values(&self) -> bool {
+        if self.ref_href.is_none() {
+            error!("ASX Entry had no \"ref href\", ignoring!");
+            return false;
+        } else if self.title.is_none() {
+            error!("ASX Entry had no \"title\", ignoring!");
+            return false;
+        }
+
+        true
+    }
+
+    /// Reset a self reference to be all the default value for the next loop
+    #[inline]
+    fn reset(&mut self) {
+        *self = Self::default();
+    }
 }
 
 /// ASX or "Advanced Stream Redirector" is a standard made by microsoft for windows media player, XML based.
@@ -14,11 +59,8 @@ pub struct ASXItem {
 /// <https://en.wikipedia.org/wiki/Advanced_Stream_Redirector>
 /// <https://learn.microsoft.com/en-us/windows/win32/wmp/asx-element>
 pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
-    let mut list = vec![];
-    let mut item = ASXItem {
-        title: String::new(),
-        url: String::new(),
-    };
+    let mut list: Vec<ASXItem> = vec![];
+    let mut item = PrivateItem::default();
 
     let mut reader = Reader::from_str(content);
     reader.trim_text(true);
@@ -35,11 +77,9 @@ pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
                 for a in e.attributes() {
                     let a = a?;
                     let key = decoder.decode(a.key.as_ref())?.to_lowercase();
-                    // let key = reader.decode(a.key)?.to_lowercase();
                     let value = decoder.decode(&a.value)?;
-                    // let value = reader.decode(&a.value)?;
-                    if path == "asx/entry/ref" && key == "href" {
-                        item.url = value.to_string();
+                    if path == "asx/entry/ref" && key == "href" && item.ref_href.is_none() {
+                        item.ref_href.replace(value.to_string());
                     }
                 }
 
@@ -47,39 +87,33 @@ pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
             }
             Ok(Event::Start(ref e)) => {
                 xml_stack.push(decoder.decode(e.name().as_ref())?.to_lowercase());
-                // xml_stack.push(reader.decode(e.name())?.to_lowercase());
 
                 let path = xml_stack.join("/");
                 for a in e.attributes() {
                     let a = a?;
                     let key = decoder.decode(a.key.as_ref())?.to_lowercase();
-                    // let key = reader.decode(a.key)?.to_lowercase();
                     let value = decoder.decode(&a.value)?;
-                    // let value = reader.decode(&a.value)?;
-                    if path == "asx/entry/ref" && key == "href" {
-                        item.url = value.to_string();
+                    if path == "asx/entry/ref" && key == "href" && item.ref_href.is_none() {
+                        item.ref_href.replace(value.to_string());
                     }
                 }
             }
             Ok(Event::End(_)) => {
                 let path = xml_stack.join("/");
                 if path == "asx/entry" {
-                    list.push(item.clone());
-                    item.title = String::new();
-                    item.url = String::new();
+                    if let Some(transformed) = item.try_into_xspf_item_and_reset() {
+                        list.push(transformed);
+                    }
+                    // no else case, as log errors have already been issued
                 }
                 xml_stack.pop();
             }
             Ok(Event::Text(e)) => {
                 let path = xml_stack.join("/");
 
-                //unescape(&decoder.decode(&e).unwrap())
-                if path == "asx/entry/title" {
-                    // item.title = e
-                    //     .unescaped_and_decode(&reader)
-                    //     .unwrap_or_else(|_| String::from(""))
-                    //     .clone();
-                    item.title = unescape(&decoder.decode(&e)?)?.to_string();
+                if path == "asx/entry/title" && item.title.is_none() {
+                    item.title
+                        .replace(unescape(&decoder.decode(&e)?)?.to_string());
                 }
             }
             Ok(Event::Eof) => break,
@@ -121,5 +155,22 @@ mod tests {
         assert_eq!(items[0].title, "title1");
         assert_eq!(items[1].url, "ref2");
         assert_eq!(items[1].title, "title2");
+    }
+
+    #[test]
+    fn should_refuse_missing_elements() {
+        let s = r#"<asx version="3.0">
+  <title>Test-Liste</title>
+  <entry>
+    <title>title1</title>
+    <!--Missing ref-->
+  </entry>
+  <entry>
+    <!--Missing title-->
+    <ref href="ref2"/>
+  </entry>
+</asx>"#;
+        let items = decode(s).unwrap();
+        assert_eq!(items.len(), 0);
     }
 }
