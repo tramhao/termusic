@@ -28,33 +28,9 @@ pub fn decode(content: &str) -> Result<Vec<XSPFItem>, Box<dyn Error>> {
     let decoder = reader.decoder();
     loop {
         match reader.read_event_into(&mut buf) {
-            Ok(Event::Empty(ref e)) => {
-                xml_stack.push(decoder.decode(e.name().as_ref())?.to_lowercase());
-
-                let path = xml_stack.join("/");
-                for a in e.attributes() {
-                    let a = a?;
-                    let key = decoder.decode(a.key.as_ref())?.to_lowercase();
-                    let value = decoder.decode(&a.value)?;
-                    if path == "asx/entry/ref" && key == "href" {
-                        item.url = value.to_string();
-                    }
-                }
-
-                xml_stack.pop();
-            }
+            // Ok(Event::Empty(ref e)) => {}
             Ok(Event::Start(ref e)) => {
                 xml_stack.push(decoder.decode(e.name().as_ref())?.to_lowercase());
-
-                let path = xml_stack.join("/");
-                for a in e.attributes() {
-                    let a = a?;
-                    let key = decoder.decode(a.key.as_ref())?.to_lowercase();
-                    let value = decoder.decode(&a.value)?;
-                    if path == "asx/entry/ref" && key == "href" {
-                        item.url = value.to_string();
-                    }
-                }
             }
             Ok(Event::End(_)) => {
                 let path = xml_stack.join("/");
