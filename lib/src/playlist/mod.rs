@@ -48,8 +48,8 @@ pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
             if !item.url.is_empty() {
                 set.push(item.url);
             }
-            if !item.identifier.is_empty() {
-                set.push(item.identifier);
+            if let Some(identifier) = item.identifier {
+                set.push(identifier);
             }
         }
     } else if content_small.contains("<asx") {
