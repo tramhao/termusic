@@ -25,7 +25,7 @@ mod model;
 
 use anyhow::{anyhow, Result};
 use bytes::Buf;
-use lofty::Picture;
+use lofty::picture::Picture;
 use model::{to_lyric, to_pic_url, to_song_info};
 // use std::io::Write;
 use reqwest::{Client, ClientBuilder};

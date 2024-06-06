@@ -26,7 +26,7 @@ use anyhow::{Context, Result};
 use bytes::Buf;
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
-use lofty::Picture;
+use lofty::picture::Picture;
 #[cfg(any(
     feature = "cover-viuer-iterm",
     feature = "cover-viuer-kitty",

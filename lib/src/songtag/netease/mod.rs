@@ -8,7 +8,7 @@ mod model;
 use super::{encrypt::Crypto, SongTag};
 use anyhow::{anyhow, bail, Result};
 use lazy_static::lazy_static;
-use lofty::Picture;
+use lofty::picture::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
 use reqwest::{Client, ClientBuilder};
