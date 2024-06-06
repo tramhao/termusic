@@ -176,9 +176,263 @@ impl Keys {
     }
 }
 
+/// Custom Serialize / Deserialize for [`Key`] so that library updates mess with the config layout
+mod key_serde_code {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use tuirealm::event::{Key, MediaKeyCode};
+
+    /// Copied from tuirealm 1.8.0
+    #[derive(Debug, Eq, PartialEq, Copy, Clone, Serialize, Deserialize)]
+    #[serde(tag = "type", content = "args")]
+    pub enum MediaKeyCodeSerde {
+        /// Play media key.
+        Play,
+        /// Pause media key.
+        Pause,
+        /// Play/Pause media key.
+        PlayPause,
+        /// Reverse media key.
+        Reverse,
+        /// Stop media key.
+        Stop,
+        /// Fast-forward media key.
+        FastForward,
+        /// Rewind media key.
+        Rewind,
+        /// Next-track media key.
+        TrackNext,
+        /// Previous-track media key.
+        TrackPrevious,
+        /// Record media key.
+        Record,
+        /// Lower-volume media key.
+        LowerVolume,
+        /// Raise-volume media key.
+        RaiseVolume,
+        /// Mute media key.
+        MuteVolume,
+    }
+
+    impl From<&MediaKeyCode> for MediaKeyCodeSerde {
+        fn from(value: &MediaKeyCode) -> Self {
+            match value {
+                MediaKeyCode::Play => MediaKeyCodeSerde::Play,
+                MediaKeyCode::Pause => MediaKeyCodeSerde::Pause,
+                MediaKeyCode::PlayPause => MediaKeyCodeSerde::PlayPause,
+                MediaKeyCode::Reverse => MediaKeyCodeSerde::Reverse,
+                MediaKeyCode::Stop => MediaKeyCodeSerde::Stop,
+                MediaKeyCode::FastForward => MediaKeyCodeSerde::FastForward,
+                MediaKeyCode::Rewind => MediaKeyCodeSerde::Rewind,
+                MediaKeyCode::TrackNext => MediaKeyCodeSerde::TrackNext,
+                MediaKeyCode::TrackPrevious => MediaKeyCodeSerde::TrackPrevious,
+                MediaKeyCode::Record => MediaKeyCodeSerde::Record,
+                MediaKeyCode::LowerVolume => MediaKeyCodeSerde::LowerVolume,
+                MediaKeyCode::RaiseVolume => MediaKeyCodeSerde::RaiseVolume,
+                MediaKeyCode::MuteVolume => MediaKeyCodeSerde::MuteVolume,
+            }
+        }
+    }
+
+    impl From<MediaKeyCodeSerde> for MediaKeyCode {
+        fn from(value: MediaKeyCodeSerde) -> Self {
+            match value {
+                MediaKeyCodeSerde::Play => MediaKeyCode::Play,
+                MediaKeyCodeSerde::Pause => MediaKeyCode::Pause,
+                MediaKeyCodeSerde::PlayPause => MediaKeyCode::PlayPause,
+                MediaKeyCodeSerde::Reverse => MediaKeyCode::Reverse,
+                MediaKeyCodeSerde::Stop => MediaKeyCode::Stop,
+                MediaKeyCodeSerde::FastForward => MediaKeyCode::FastForward,
+                MediaKeyCodeSerde::Rewind => MediaKeyCode::Rewind,
+                MediaKeyCodeSerde::TrackNext => MediaKeyCode::TrackNext,
+                MediaKeyCodeSerde::TrackPrevious => MediaKeyCode::TrackPrevious,
+                MediaKeyCodeSerde::Record => MediaKeyCode::Record,
+                MediaKeyCodeSerde::LowerVolume => MediaKeyCode::LowerVolume,
+                MediaKeyCodeSerde::RaiseVolume => MediaKeyCode::RaiseVolume,
+                MediaKeyCodeSerde::MuteVolume => MediaKeyCode::MuteVolume,
+            }
+        }
+    }
+
+    /// Copied from tuirealm 1.8.0
+    #[derive(Debug, Eq, PartialEq, Copy, Clone, Serialize, Deserialize)]
+    #[serde(tag = "type", content = "args")]
+    pub enum KeySerde {
+        /// Backspace key.
+        Backspace,
+        /// Enter key.
+        Enter,
+        /// Left arrow key.
+        Left,
+        /// Right arrow key.
+        Right,
+        /// Up arrow key.
+        Up,
+        /// Down arrow key.
+        Down,
+        /// Home key.
+        Home,
+        /// End key.
+        End,
+        /// Page up key.
+        PageUp,
+        /// Page dow key.
+        PageDown,
+        /// Tab key.
+        Tab,
+        /// Shift + Tab key. (sugar)
+        BackTab,
+        /// Delete key.
+        Delete,
+        /// Insert key.
+        Insert,
+        /// Function key followed by index (F1 => `Key::Function(1)`)
+        Function(u8),
+        /// A character.
+        ///
+        /// `KeyCode::Char('c')` represents `c` character, etc.
+        Char(char),
+        /// Null.
+        Null,
+        /// Caps lock pressed
+        CapsLock,
+        /// Scroll lock pressed
+        ScrollLock,
+        /// Num lock pressed
+        NumLock,
+        /// Print screen key
+        PrintScreen,
+        /// Pause key
+        Pause,
+        /// Menu key
+        Menu,
+        /// keypad begin
+        KeypadBegin,
+        /// Media key
+        Media(MediaKeyCodeSerde),
+        /// Escape key.
+        Esc,
+    }
+
+    impl From<&Key> for KeySerde {
+        fn from(value: &Key) -> Self {
+            match value {
+                Key::Backspace => KeySerde::Backspace,
+                Key::Enter => KeySerde::Enter,
+                Key::Left => KeySerde::Left,
+                Key::Right => KeySerde::Right,
+                Key::Up => KeySerde::Up,
+                Key::Down => KeySerde::Down,
+                Key::Home => KeySerde::Home,
+                Key::End => KeySerde::End,
+                Key::PageUp => KeySerde::PageUp,
+                Key::PageDown => KeySerde::PageDown,
+                Key::Tab => KeySerde::Tab,
+                Key::BackTab => KeySerde::BackTab,
+                Key::Delete => KeySerde::Delete,
+                Key::Insert => KeySerde::Insert,
+                Key::Function(v) => KeySerde::Function(*v),
+                Key::Char(v) => KeySerde::Char(*v),
+                Key::Null => KeySerde::Null,
+                Key::CapsLock => KeySerde::CapsLock,
+                Key::ScrollLock => KeySerde::ScrollLock,
+                Key::NumLock => KeySerde::NumLock,
+                Key::PrintScreen => KeySerde::PrintScreen,
+                Key::Pause => KeySerde::Pause,
+                Key::Menu => KeySerde::Menu,
+                Key::KeypadBegin => KeySerde::KeypadBegin,
+                Key::Media(v) => KeySerde::Media(v.into()),
+                Key::Esc => KeySerde::Esc,
+            }
+        }
+    }
+
+    impl From<KeySerde> for Key {
+        fn from(value: KeySerde) -> Self {
+            match value {
+                KeySerde::Backspace => Key::Backspace,
+                KeySerde::Enter => Key::Enter,
+                KeySerde::Left => Key::Left,
+                KeySerde::Right => Key::Right,
+                KeySerde::Up => Key::Up,
+                KeySerde::Down => Key::Down,
+                KeySerde::Home => Key::Home,
+                KeySerde::End => Key::End,
+                KeySerde::PageUp => Key::PageUp,
+                KeySerde::PageDown => Key::PageDown,
+                KeySerde::Tab => Key::Tab,
+                KeySerde::BackTab => Key::BackTab,
+                KeySerde::Delete => Key::Delete,
+                KeySerde::Insert => Key::Insert,
+                KeySerde::Function(v) => Key::Function(v),
+                KeySerde::Char(v) => Key::Char(v),
+                KeySerde::Null => Key::Null,
+                KeySerde::CapsLock => Key::CapsLock,
+                KeySerde::ScrollLock => Key::ScrollLock,
+                KeySerde::NumLock => Key::NumLock,
+                KeySerde::PrintScreen => Key::PrintScreen,
+                KeySerde::Pause => Key::Pause,
+                KeySerde::Menu => Key::Menu,
+                KeySerde::KeypadBegin => Key::KeypadBegin,
+                KeySerde::Media(v) => Key::Media(v.into()),
+                KeySerde::Esc => Key::Esc,
+            }
+        }
+    }
+
+    #[allow(clippy::trivially_copy_pass_by_ref)] // serde wants to give a reference
+    pub fn serialize<S>(val: &Key, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        KeySerde::from(val).serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(des: D) -> Result<Key, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let key = KeySerde::deserialize(des)?;
+
+        Ok(key.into())
+    }
+}
+
+/// Custom Serialize / Deserialize for [`KeyModifiers`] so that library updates mess with the config layout
+mod key_serde_modifier {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use tuirealm::event::KeyModifiers;
+
+    /// Emulate bitflags 1.x layout
+    #[derive(Debug, Eq, PartialEq, Copy, Clone, Serialize, Deserialize)]
+    #[serde(tag = "type", rename = "KeyModifiers")]
+    struct Wrapper {
+        bits: u8,
+    }
+
+    #[allow(clippy::trivially_copy_pass_by_ref)] // serde wants to give a reference
+    pub fn serialize<S>(val: &KeyModifiers, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Wrapper { bits: val.bits() }.serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(des: D) -> Result<KeyModifiers, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let wrapper = Wrapper::deserialize(des)?;
+        let key_modifiers = KeyModifiers::from_bits_truncate(wrapper.bits);
+
+        Ok(key_modifiers)
+    }
+}
+
 #[derive(Clone, Deserialize, Copy, Eq, PartialEq, Hash, Serialize, Debug)]
 pub struct BindingForEvent {
+    #[serde(with = "key_serde_code")]
     pub code: Key,
+    #[serde(with = "key_serde_modifier")]
     pub modifier: KeyModifiers,
 }
 
@@ -581,6 +835,103 @@ impl Default for Keys {
                 code: Key::End,
                 modifier: CONTROL_SHIFT,
             },
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    mod keys {
+        use super::*;
+
+        #[test]
+        fn should_serialize_deserialize_default() {
+            let buffer = toml::to_string(&Keys::default()).unwrap();
+            let _: Keys = toml::from_str(&buffer).unwrap();
+        }
+    }
+
+    mod bindings_serde {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn helper_tostring<T: Serialize>(val: T) -> String {
+            toml::to_string(&val).unwrap()
+        }
+
+        fn helper_fromstring(buf: &str) -> BindingForEvent {
+            toml::from_str(buf).unwrap()
+        }
+
+        #[test]
+        fn should_consistently_serialize() {
+            let val = BindingForEvent {
+                code: Key::Esc,
+                modifier: KeyModifiers::NONE,
+            };
+            assert_eq!(
+                "[code]\ntype = \"Esc\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 0\n",
+                &helper_tostring(val)
+            );
+
+            let val = BindingForEvent {
+                code: Key::Char('a'),
+                modifier: KeyModifiers::SHIFT,
+            };
+            assert_eq!("[code]\ntype = \"Char\"\nargs = \"a\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 1\n", &helper_tostring(val));
+
+            let val = BindingForEvent {
+                code: Key::Char('x'),
+                modifier: KeyModifiers::SHIFT | KeyModifiers::CONTROL | KeyModifiers::ALT,
+            };
+            assert_eq!("[code]\ntype = \"Char\"\nargs = \"x\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 7\n", &helper_tostring(val));
+
+            let val = BindingForEvent {
+                code: Key::Char('s'),
+                modifier: KeyModifiers::SHIFT | KeyModifiers::ALT,
+            };
+            assert_eq!("[code]\ntype = \"Char\"\nargs = \"s\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 5\n", &helper_tostring(val));
+        }
+
+        #[test]
+        fn should_consistently_deserialize() {
+            let val = "[code]\ntype = \"Esc\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 0\n";
+            assert_eq!(
+                BindingForEvent {
+                    code: Key::Esc,
+                    modifier: KeyModifiers::NONE,
+                },
+                helper_fromstring(val)
+            );
+
+            let val = "[code]\ntype = \"Char\"\nargs = \"a\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 1\n";
+            assert_eq!(
+                BindingForEvent {
+                    code: Key::Char('a'),
+                    modifier: KeyModifiers::SHIFT,
+                },
+                helper_fromstring(val)
+            );
+
+            let val = "[code]\ntype = \"Char\"\nargs = \"x\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 7\n";
+            assert_eq!(
+                BindingForEvent {
+                    code: Key::Char('x'),
+                    modifier: KeyModifiers::SHIFT | KeyModifiers::CONTROL | KeyModifiers::ALT,
+                },
+                helper_fromstring(val)
+            );
+
+            let val = "[code]\ntype = \"Char\"\nargs = \"s\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 5\n";
+            assert_eq!(
+                BindingForEvent {
+                    code: Key::Char('s'),
+                    modifier: KeyModifiers::SHIFT | KeyModifiers::ALT,
+                },
+                helper_fromstring(val)
+            );
         }
     }
 }
