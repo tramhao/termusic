@@ -7,7 +7,7 @@ mod m3u;
 mod pls;
 mod xspf;
 
-use std::error::Error;
+use anyhow::Result;
 
 /// Decode playlist content string. It checks for M3U, PLS, XSPF and ASX content in the string.
 ///
@@ -38,7 +38,7 @@ use std::error::Error;
 ///     println!("{:?}", item);
 /// }
 /// ```
-pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
+pub fn decode(content: &str) -> Result<Vec<String>> {
     let mut set: Vec<String> = vec![];
     let content_small = content.to_lowercase();
 
@@ -47,9 +47,6 @@ pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
         for item in xspf_items {
             if !item.url.is_empty() {
                 set.push(item.url);
-            }
-            if let Some(identifier) = item.identifier {
-                set.push(identifier);
             }
         }
     } else if content_small.contains("<asx") {
@@ -90,10 +87,8 @@ mod tests {
             </trackList>
         </playlist>"#;
         let items = decode(s).unwrap();
-        assert_eq!(items.len(), 2);
+        assert_eq!(items.len(), 1);
         assert_eq!(items[0], "http://this.is.an.example");
-        // this is weird
-        assert_eq!(items[1], "Identifier");
     }
 
     #[test]

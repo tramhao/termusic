@@ -1,7 +1,7 @@
+use anyhow::Result;
 use quick_xml::escape::unescape;
 use quick_xml::events::Event;
 use quick_xml::Reader;
-use std::error::Error;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct XSPFItem {
@@ -47,7 +47,7 @@ impl PrivateItem {
 /// XSPF or "XML Shareable Playlist Format", based on XML (as the name implies).
 ///
 /// <https://www.xspf.org/spec>
-pub fn decode(content: &str) -> Result<Vec<XSPFItem>, Box<dyn Error>> {
+pub fn decode(content: &str) -> Result<Vec<XSPFItem>> {
     let mut list: Vec<XSPFItem> = vec![];
     let mut current_item = PrivateItem::default();
 

@@ -1,7 +1,7 @@
+use anyhow::Result;
 use quick_xml::escape::unescape;
 use quick_xml::events::Event;
 use quick_xml::Reader;
-use std::error::Error;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ASXItem {
@@ -58,7 +58,7 @@ impl PrivateItem {
 ///
 /// <https://en.wikipedia.org/wiki/Advanced_Stream_Redirector>
 /// <https://learn.microsoft.com/en-us/windows/win32/wmp/asx-element>
-pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
+pub fn decode(content: &str) -> Result<Vec<ASXItem>> {
     let mut list: Vec<ASXItem> = vec![];
     let mut item = PrivateItem::default();
 
