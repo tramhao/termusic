@@ -27,7 +27,7 @@ use crate::utils::get_parent_folder;
 use anyhow::{bail, Context, Result};
 use id3::frame::Lyrics;
 use lofty::config::{ParseOptions, WriteOptions};
-use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedTextFrame};
+use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::{Picture, PictureType};
 use lofty::prelude::{Accessor, AudioFile, ItemKey, TagExt, TaggedFileExt};
 use lofty::tag::{ItemValue, Tag as LoftyTag, TagItem};
@@ -443,20 +443,16 @@ impl Track {
                     if !self.lyric_frames_is_empty() {
                         if let Some(lyric_frames) = self.lyric_frames() {
                             for l in lyric_frames {
-                                if let Ok(l_frame) = Frame::new(
-                                    "USLT",
-                                    FrameValue::UnsynchronizedText(UnsynchronizedTextFrame {
-                                        encoding: TextEncoding::UTF8,
-                                        language: l.lang.as_bytes()[0..3]
+                                let l_frame =
+                                    Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
+                                        TextEncoding::UTF8,
+                                        l.lang.as_bytes()[0..3]
                                             .try_into()
                                             .with_context(|| "wrong length of language")?,
-                                        description: l.description,
-                                        content: l.text,
-                                    }),
-                                    FrameFlags::default(),
-                                ) {
-                                    tag.insert(l_frame);
-                                }
+                                        l.description,
+                                        l.text,
+                                    ));
+                                tag.insert(l_frame);
                             }
                         }
                     }
