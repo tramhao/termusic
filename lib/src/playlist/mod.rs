@@ -43,25 +43,29 @@ pub fn decode(content: &str) -> Result<Vec<String>> {
     let content_small = content.to_lowercase();
 
     if content_small.contains("<playlist") {
-        let xspf_items = xspf::decode(content)?;
-        for item in xspf_items {
+        let items = xspf::decode(content)?;
+        set.reserve(items.len());
+        for item in items {
             if !item.url.is_empty() {
                 set.push(item.url);
             }
         }
     } else if content_small.contains("<asx") {
-        let pls_items = asx::decode(content)?;
-        for item in pls_items {
+        let items = asx::decode(content)?;
+        set.reserve(items.len());
+        for item in items {
             set.push(item.url);
         }
     } else if content_small.contains("[playlist]") {
-        let pls_items = pls::decode(content);
-        for item in pls_items {
+        let items = pls::decode(content);
+        set.reserve(items.len());
+        for item in items {
             set.push(item.url);
         }
     } else {
-        let m3u_items = m3u::decode(content);
-        for item in m3u_items {
+        let items = m3u::decode(content);
+        set.reserve(items.len());
+        for item in items {
             set.push(item.url);
         }
     }
