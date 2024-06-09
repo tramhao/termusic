@@ -332,8 +332,8 @@ impl SongTag {
                     if let Ok(l) = lyric {
                         let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
                             TextEncoding::UTF8,
-                            *b"chi",
-                            String::from("saved by termusic."),
+                            *b"eng",
+                            String::from("saved by termusic"),
                             l,
                         ));
                         tag.insert(frame);
