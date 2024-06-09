@@ -2,9 +2,11 @@
 
 // TODO: resolve relative paths
 
+use super::PlaylistValue;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct M3UItem {
-    pub url: String,
+    pub url: PlaylistValue,
 }
 
 /// M3U(8) is a de-facto standart (meaning there is no formal standard), where each line that does not start with `#` is a entry, separated by newlines
@@ -22,9 +24,22 @@ pub fn decode(content: &str) -> Vec<M3UItem> {
             continue;
         }
 
-        list.push(M3UItem {
-            url: String::from(line),
-        });
+        let mut p_value = match PlaylistValue::try_from_str(line) {
+            Ok(v) => v,
+            Err(err) => {
+                warn!("Failed to parse url / path, ignoring! Error: {:#?}", err);
+                continue;
+            }
+        };
+        if let Err(err) = p_value.file_url_to_path() {
+            warn!(
+                "Failed to convert file:// url to path, ignoring! Error: {:#?}",
+                err
+            );
+            continue;
+        }
+
+        list.push(M3UItem { url: p_value });
     }
     list
 }
@@ -33,6 +48,7 @@ pub fn decode(content: &str) -> Vec<M3UItem> {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use reqwest::Url;
 
     #[test]
     fn should_parse() {
@@ -44,8 +60,14 @@ https://somewhere.url/path"#;
 
         let results = decode(&playlist);
         assert_eq!(results.len(), 3);
-        assert_eq!(&results[0].url, "/some/absolute/unix/path.mp3");
-        assert_eq!(&results[1].url, "relative.mp3");
-        assert_eq!(&results[2].url, "https://somewhere.url/path");
+        assert_eq!(
+            results[0].url,
+            PlaylistValue::Path("/some/absolute/unix/path.mp3".into())
+        );
+        assert_eq!(results[1].url, PlaylistValue::Path("relative.mp3".into()));
+        assert_eq!(
+            results[2].url,
+            PlaylistValue::Url(Url::parse("https://somewhere.url/path").unwrap())
+        );
     }
 }

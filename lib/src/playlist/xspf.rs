@@ -3,12 +3,14 @@ use quick_xml::escape::unescape;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 
+use super::PlaylistValue;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct XSPFItem {
     /// According to the spec, a `track` MAY contain exactly one `title`
     pub title: Option<String>,
     /// According to the spec, a `track` MAY contain exactly one `location`, though we require one, otherwise the track is ignored
-    pub url: String,
+    pub location: PlaylistValue,
     /// According to the spec, a `track` MAY contain zero or more `identifier` (only last will be used here though)
     pub identifier: Option<String>,
 }
@@ -17,7 +19,7 @@ pub struct XSPFItem {
 #[derive(Debug, Clone, PartialEq, Default)]
 struct PrivateItem {
     pub title: Option<String>,
-    pub location: Option<String>,
+    pub location: Option<PlaylistValue>,
     pub identifier: Option<String>,
 }
 
@@ -27,7 +29,7 @@ impl PrivateItem {
         if let Some(location) = self.location.take() {
             return Some(XSPFItem {
                 title: self.title.take(),
-                url: location,
+                location,
                 identifier: self.identifier.take(),
             });
         }
@@ -81,9 +83,10 @@ pub fn decode(content: &str) -> Result<Vec<XSPFItem>> {
                         .replace(unescape(&decoder.decode(&e)?)?.to_string());
                 }
                 if path == "playlist/tracklist/track/location" {
-                    current_item
-                        .location
-                        .replace(unescape(&decoder.decode(&e)?)?.to_string());
+                    let mut p_value =
+                        PlaylistValue::try_from_str(&unescape(&decoder.decode(&e)?)?)?;
+                    p_value.file_url_to_path()?;
+                    current_item.location.replace(p_value);
                 }
                 if path == "playlist/tracklist/track/identifier" {
                     current_item
@@ -108,6 +111,7 @@ pub fn decode(content: &str) -> Result<Vec<XSPFItem>> {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use reqwest::Url;
 
     #[test]
     fn xspf() {
@@ -130,10 +134,16 @@ mod tests {
         assert!(items.is_ok());
         let items = items.unwrap();
         assert_eq!(items.len(), 2);
-        assert_eq!(items[0].url, "http://this.is.an.example");
+        assert_eq!(
+            items[0].location,
+            PlaylistValue::Url(Url::parse("http://this.is.an.example").unwrap())
+        );
         assert_eq!(items[0].title, Some("Title".to_string()));
         assert_eq!(items[0].identifier, Some("Identifier".to_string()));
-        assert_eq!(items[1].url, "http://this.is.an.example2");
+        assert_eq!(
+            items[1].location,
+            PlaylistValue::Url(Url::parse("http://this.is.an.example2").unwrap())
+        );
         assert_eq!(items[1].title, Some("Title2".to_string()));
         assert_eq!(items[1].identifier, Some("Identifier2".to_string()));
     }

@@ -2,22 +2,25 @@
 
 use std::collections::{hash_map::Entry, HashMap};
 
+use super::PlaylistValue;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct PLSItem {
     pub title: Option<String>,
-    pub url: String,
+    pub url: PlaylistValue,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
 struct PrivateItem {
     pub title: Option<String>,
-    pub url: Option<String>,
+    pub url: Option<PlaylistValue>,
 }
 
 /// PLS is a file format similar in style to INI (but does not have a official standard).
 /// Each entry is numbered in the key like `File1`, only `File` is required for a entry.
 ///
 /// <https://en.wikipedia.org/wiki/PLS_(file_format)>
+#[allow(clippy::too_many_lines)]
 pub fn decode(content: &str) -> Vec<PLSItem> {
     let mut lines = content.lines();
     let mut list: HashMap<u16, PrivateItem> = HashMap::with_capacity(1);
@@ -47,17 +50,32 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
                 continue;
             };
 
+            let mut p_value = match PlaylistValue::try_from_str(url) {
+                Ok(v) => v,
+                Err(err) => {
+                    warn!("Failed to parse url / path, ignoring! Error: {:#?}", err);
+                    continue;
+                }
+            };
+            if let Err(err) = p_value.file_url_to_path() {
+                warn!(
+                    "Failed to convert file:// url to path, ignoring! Error: {:#?}",
+                    err
+                );
+                continue;
+            }
+
             match list.entry(num) {
                 Entry::Occupied(mut o) => {
                     let val = o.get_mut();
                     if val.url.is_some() {
                         warn!("Entry {} already had a URL set, overwriting!", num);
                     }
-                    val.url.replace(url.to_string());
+                    val.url.replace(p_value);
                 }
                 Entry::Vacant(v) => {
                     v.insert(PrivateItem {
-                        url: Some(url.to_string()),
+                        url: Some(p_value),
                         ..Default::default()
                     });
                 }
@@ -192,6 +210,7 @@ fn is_comment(val: &str) -> bool {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use reqwest::Url;
 
     #[test]
     fn one_file() {
@@ -202,7 +221,10 @@ Title1=mytitle
         ",
         );
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0].url, "http://this.is.an.example");
+        assert_eq!(
+            items[0].url,
+            PlaylistValue::Url(Url::parse("http://this.is.an.example").unwrap())
+        );
         assert_eq!(items[0].title, Some("mytitle".to_string()));
     }
 
@@ -215,9 +237,12 @@ File2=~/b.mp3
 File3=http://c.mp3",
         );
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0].url, "/a.mp3");
-        assert_eq!(items[1].url, "~/b.mp3");
-        assert_eq!(items[2].url, "http://c.mp3");
+        assert_eq!(items[0].url, PlaylistValue::Path("/a.mp3".into()));
+        assert_eq!(items[1].url, PlaylistValue::Path("~/b.mp3".into()));
+        assert_eq!(
+            items[2].url,
+            PlaylistValue::Url(Url::parse("http://c.mp3").unwrap())
+        );
     }
 
     #[test]
@@ -229,7 +254,10 @@ Title1=mytitle
         ",
         );
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0].url, "http://this.is.an.example");
+        assert_eq!(
+            items[0].url,
+            PlaylistValue::Url(Url::parse("http://this.is.an.example").unwrap())
+        );
         assert_eq!(items[0].title, Some("mytitle".to_string()));
     }
 }
