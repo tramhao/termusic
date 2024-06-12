@@ -1,6 +1,6 @@
 use crate::ui::Model;
 use std::path::Path;
-use termusiclib::config::SharedSettings;
+use termusiclib::config::SharedTuiSettings;
 use termusiclib::sqlite::SearchCriteria;
 use termusiclib::types::{DBMsg, Id, Msg};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
@@ -18,25 +18,25 @@ pub struct DBListCriteria {
     component: List,
     on_key_tab: Msg,
     on_key_backtab: Msg,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl DBListCriteria {
-    pub fn new(config: SharedSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
+    pub fn new(config: SharedTuiSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         let component = {
             let config = config.read();
             List::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(config.style_color_symbol.library_border()),
+                        .color(config.settings.theme.library_border()),
                 )
-                .background(config.style_color_symbol.library_background())
-                .foreground(config.style_color_symbol.library_foreground())
+                .background(config.settings.theme.library_background())
+                .foreground(config.settings.theme.library_foreground())
                 .title(" DataBase ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config.style_color_symbol.library_highlight())
-                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config.settings.theme.library_highlight())
+                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .scroll(true)
@@ -67,7 +67,7 @@ impl DBListCriteria {
 impl Component<Msg, NoUserEvent> for DBListCriteria {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -86,7 +86,7 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 code: Key::Up,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
                     if let State::One(StateValue::Usize(index)) = self.state() {
                         if index >= t.len() - 1 {
@@ -96,7 +96,7 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 }
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -107,10 +107,10 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
@@ -140,7 +140,7 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(keyevent) if keyevent == keys.library_search.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
             }
             _ => CmdResult::None,
@@ -154,25 +154,25 @@ pub struct DBListSearchResult {
     component: List,
     on_key_tab: Msg,
     on_key_backtab: Msg,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl DBListSearchResult {
-    pub fn new(config: SharedSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
+    pub fn new(config: SharedTuiSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         let component = {
             let config = config.read();
             List::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(config.style_color_symbol.library_border()),
+                        .color(config.settings.theme.library_border()),
                 )
-                .background(config.style_color_symbol.library_background())
-                .foreground(config.style_color_symbol.library_foreground())
+                .background(config.settings.theme.library_background())
+                .foreground(config.settings.theme.library_foreground())
                 .title(" Result ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config.style_color_symbol.library_highlight())
-                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config.settings.theme.library_highlight())
+                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .scroll(true)
@@ -195,7 +195,7 @@ impl DBListSearchResult {
 impl Component<Msg, NoUserEvent> for DBListSearchResult {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -221,7 +221,7 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 }
                 self.perform(Cmd::Move(Direction::Up))
             }
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
                     if let State::One(StateValue::Usize(index)) = self.state() {
                         if index >= t.len() - 1 {
@@ -231,7 +231,7 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 }
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     if index == 0 {
                         return Some(self.on_key_backtab.clone());
@@ -247,10 +247,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
@@ -280,7 +280,7 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(keyevent) if keyevent == keys.library_search.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
             }
 
@@ -295,25 +295,25 @@ pub struct DBListSearchTracks {
     component: List,
     on_key_tab: Msg,
     on_key_backtab: Msg,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl DBListSearchTracks {
-    pub fn new(config: SharedSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
+    pub fn new(config: SharedTuiSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         let component = {
             let config = config.read();
             List::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(config.style_color_symbol.library_border()),
+                        .color(config.settings.theme.library_border()),
                 )
-                .background(config.style_color_symbol.library_background())
-                .foreground(config.style_color_symbol.library_foreground())
+                .background(config.settings.theme.library_background())
+                .foreground(config.settings.theme.library_foreground())
                 .title(" Tracks ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config.style_color_symbol.library_highlight())
-                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config.settings.theme.library_highlight())
+                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .scroll(true)
@@ -336,7 +336,7 @@ impl DBListSearchTracks {
 impl Component<Msg, NoUserEvent> for DBListSearchTracks {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -353,10 +353,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
                 }
                 self.perform(Cmd::Move(Direction::Up))
             }
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     if index == 0 {
                         return Some(self.on_key_backtab.clone());
@@ -372,10 +372,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
@@ -396,17 +396,17 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_right.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_selected.get() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::DataBase(DBMsg::AddPlaylist(index)));
                 }
                 CmdResult::None
             }
-            Event::Keyboard(keyevent) if keyevent == keys.database_add_all.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_all.get() => {
                 return Some(Msg::DataBase(DBMsg::AddAllToPlaylist))
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.library_search.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
             }
 
@@ -580,7 +580,7 @@ impl Model {
             .remount(
                 Id::DBListCriteria,
                 Box::new(DBListCriteria::new(
-                    self.config.clone(),
+                    self.config_tui.clone(),
                     Msg::DataBase(DBMsg::CriteriaBlurDown),
                     Msg::DataBase(DBMsg::CriteriaBlurUp)
                 )),
@@ -593,7 +593,7 @@ impl Model {
             .remount(
                 Id::DBListSearchResult,
                 Box::new(DBListSearchResult::new(
-                    self.config.clone(),
+                    self.config_tui.clone(),
                     Msg::DataBase(DBMsg::SearchResultBlurDown),
                     Msg::DataBase(DBMsg::SearchResultBlurUp)
                 )),
@@ -605,7 +605,7 @@ impl Model {
             .remount(
                 Id::DBListSearchTracks,
                 Box::new(DBListSearchTracks::new(
-                    self.config.clone(),
+                    self.config_tui.clone(),
                     Msg::DataBase(DBMsg::SearchTracksBlurDown),
                     Msg::DataBase(DBMsg::SearchTracksBlurUp)
                 )),

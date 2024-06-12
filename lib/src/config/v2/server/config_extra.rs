@@ -155,6 +155,7 @@ impl<'a> ServerConfigVersionedDefaulted<'a> {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "version")]
 pub enum ServerConfigVersioned<'a> {
+    /// V2 is considered stable / non-backwards breaking changes allowed after b0daaddf58ec7f46b364fcf999c50d3aa043308f
     // Cow data so that we can use a reference for saving instead of cloning
     // Starting at Version 2 as the old format is referred as v1, but lives in a different config file name
     #[serde(rename = "2")]

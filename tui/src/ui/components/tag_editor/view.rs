@@ -187,7 +187,7 @@ impl Model {
                     .remount(
                         Id::TagEditor(IdTagEditor::LabelHint),
                         Box::new(LabelGeneric::new(
-                            &self.config.read(),
+                            &self.config_tui.read(),
                             "Press <ENTER> to search:"
                         )),
                         vec![]
@@ -197,7 +197,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputArtist),
-                        Box::new(TEInputArtist::new(self.config.clone())),
+                        Box::new(TEInputArtist::new(self.config_tui.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -205,7 +205,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputTitle),
-                        Box::new(TEInputTitle::new(self.config.clone())),
+                        Box::new(TEInputTitle::new(self.config_tui.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -213,7 +213,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputAlbum),
-                        Box::new(TEInputAlbum::new(self.config.clone())),
+                        Box::new(TEInputAlbum::new(self.config_tui.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -221,7 +221,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputGenre),
-                        Box::new(TEInputGenre::new(self.config.clone())),
+                        Box::new(TEInputGenre::new(self.config_tui.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -229,7 +229,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::TableLyricOptions),
-                        Box::new(TETableLyricOptions::new(self.config.clone())),
+                        Box::new(TETableLyricOptions::new(self.config_tui.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -237,7 +237,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::SelectLyric),
-                        Box::new(TESelectLyric::new(self.config.clone())),
+                        Box::new(TESelectLyric::new(self.config_tui.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -245,7 +245,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::CounterDelete),
-                        Box::new(TECounterDelete::new(5, self.config.clone())),
+                        Box::new(TECounterDelete::new(5, self.config_tui.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -253,7 +253,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::TextareaLyric),
-                        Box::new(TETextareaLyric::new(self.config.clone())),
+                        Box::new(TETextareaLyric::new(self.config_tui.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -462,7 +462,7 @@ impl Model {
     }
 
     pub fn remount_tag_editor_label_help(&mut self) {
-        let config = self.config.read();
+        let config = self.config_tui.read();
         assert!(self
             .app
             .remount(
@@ -470,30 +470,31 @@ impl Model {
                 Box::new(LabelSpan::new(
                     &config,
                     &[
-                        TextSpan::new(format!("<{}>", config.keys.config_save))
+                        TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
                             .bold()
-                            .fg(config.style_color_symbol.library_highlight()),
-                        TextSpan::new(" Save tag ")
-                            .fg(config.style_color_symbol.library_foreground()),
-                        TextSpan::new(format!("<{}>", config.keys.global_esc))
+                            .fg(config.settings.theme.library_highlight()),
+                        TextSpan::new(" Save tag ").fg(config.settings.theme.library_foreground()),
+                        TextSpan::new(format!("<{}>", config.settings.keys.escape))
                             .bold()
-                            .fg(config.style_color_symbol.library_highlight()),
-                        TextSpan::new(" Exit ").fg(config.style_color_symbol.library_foreground()),
+                            .fg(config.settings.theme.library_highlight()),
+                        TextSpan::new(" Exit ").fg(config.settings.theme.library_foreground()),
                         TextSpan::new("<Tab/ShiftTab>")
                             .bold()
-                            .fg(config.style_color_symbol.library_highlight()),
+                            .fg(config.settings.theme.library_highlight()),
                         TextSpan::new(" Change field ")
-                            .fg(config.style_color_symbol.library_foreground()),
+                            .fg(config.settings.theme.library_foreground()),
                         TextSpan::new("<ENTER>")
                             .bold()
-                            .fg(config.style_color_symbol.library_highlight()),
+                            .fg(config.settings.theme.library_highlight()),
                         TextSpan::new(" Search/Embed tag ")
-                            .fg(config.style_color_symbol.library_foreground()),
-                        TextSpan::new(format!("<{}>", config.keys.library_search_youtube))
-                            .bold()
-                            .fg(config.style_color_symbol.library_highlight()),
-                        TextSpan::new(" download ")
-                            .fg(config.style_color_symbol.library_foreground()),
+                            .fg(config.settings.theme.library_foreground()),
+                        TextSpan::new(format!(
+                            "<{}>",
+                            config.settings.keys.library_keys.youtube_search
+                        ))
+                        .bold()
+                        .fg(config.settings.theme.library_highlight()),
+                        TextSpan::new(" download ").fg(config.settings.theme.library_foreground()),
                     ]
                 )),
                 Vec::default(),

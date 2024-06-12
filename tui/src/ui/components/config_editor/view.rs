@@ -1,20 +1,21 @@
 use crate::ui::components::{
     AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
-    ConfigDatabaseAddAll, ConfigFallbackBackground, ConfigFallbackBorder, ConfigFallbackForeground,
-    ConfigFallbackHighlight, ConfigFallbackTitle, ConfigGlobalConfig, ConfigGlobalDown,
-    ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp, ConfigGlobalLayoutDatabase,
-    ConfigGlobalLayoutPodcast, ConfigGlobalLayoutTreeview, ConfigGlobalLeft,
-    ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle,
-    ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward,
-    ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp,
-    ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause, ConfigGlobalQuit,
-    ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp, ConfigGlobalVolumeDown,
-    ConfigGlobalVolumeUp, ConfigGlobalXywhHide, ConfigGlobalXywhMoveDown, ConfigGlobalXywhMoveLeft,
-    ConfigGlobalXywhMoveRight, ConfigGlobalXywhMoveUp, ConfigGlobalXywhZoomIn,
-    ConfigGlobalXywhZoomOut, ConfigImportantPopupBackground, ConfigImportantPopupBorder,
-    ConfigImportantPopupForeground, ConfigImportantPopupTitle, ConfigLibraryAddRoot,
-    ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryDelete, ConfigLibraryForeground,
-    ConfigLibraryHighlight, ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
+    ConfigDatabaseAddAll, ConfigDatabaseAddSelected, ConfigFallbackBackground,
+    ConfigFallbackBorder, ConfigFallbackForeground, ConfigFallbackHighlight, ConfigFallbackTitle,
+    ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop,
+    ConfigGlobalHelp, ConfigGlobalLayoutDatabase, ConfigGlobalLayoutPodcast,
+    ConfigGlobalLayoutTreeview, ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward,
+    ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle, ConfigGlobalPlayerNext,
+    ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward,
+    ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless,
+    ConfigGlobalPlayerTogglePause, ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist,
+    ConfigGlobalUp, ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigGlobalXywhHide,
+    ConfigGlobalXywhMoveDown, ConfigGlobalXywhMoveLeft, ConfigGlobalXywhMoveRight,
+    ConfigGlobalXywhMoveUp, ConfigGlobalXywhZoomIn, ConfigGlobalXywhZoomOut,
+    ConfigImportantPopupBackground, ConfigImportantPopupBorder, ConfigImportantPopupForeground,
+    ConfigImportantPopupTitle, ConfigLibraryAddRoot, ConfigLibraryBackground, ConfigLibraryBorder,
+    ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
+    ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
     ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
@@ -32,7 +33,8 @@ use crate::ui::components::{
     PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
 };
 use include_dir::DirEntry;
-use termusiclib::config::SharedSettings;
+use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
+use termusiclib::config::SharedTuiSettings;
 /**
  * MIT License
  *
@@ -56,7 +58,6 @@ use termusiclib::config::SharedSettings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::config::{LastPosition, SeekStep};
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use termusiclib::THEME_DIR;
 
@@ -64,8 +65,9 @@ use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::utils::draw_area_in_absolute;
 use crate::ui::{Application, Id, IdConfigEditor, IdKey, Msg};
 use anyhow::{bail, Result};
+use std::num::{NonZeroU32, NonZeroU8};
 use std::path::PathBuf;
-use termusiclib::config::Alignment as XywhAlign;
+use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
@@ -1344,6 +1346,13 @@ impl Model {
             _ => 8,
         };
 
+        let select_database_add_selected_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::DatabaseAddSelected),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         let select_playlist_random_album_len = match self.app.state(&Id::ConfigEditor(
             IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum),
         )) {
@@ -1503,6 +1512,7 @@ impl Model {
                             Constraint::Length(select_playlist_swap_down_len),
                             Constraint::Length(select_playlist_swap_up_len),
                             Constraint::Length(select_database_add_all_len),
+                            Constraint::Length(select_database_add_selected_len),
                             Constraint::Length(select_playlist_random_album_len),
                             Constraint::Min(0),
                         ]
@@ -1636,9 +1646,14 @@ impl Model {
                     chunks_middle_column2[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddSelected)),
                     f,
                     chunks_middle_column2[7],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
+                    f,
+                    chunks_middle_column2[8],
                 );
 
                 self.app.view(
@@ -1723,7 +1738,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(self.config_layout, &self.config.read())),
+                Box::new(CEHeader::new(self.config_layout, &self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -1731,7 +1746,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Footer),
-                Box::new(Footer::new(&self.config.read())),
+                Box::new(Footer::new(&self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -1741,7 +1756,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::MusicDir),
-                Box::new(MusicDir::new(self.config.clone())),
+                Box::new(MusicDir::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1750,7 +1765,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
-                Box::new(ExitConfirmation::new(self.config.clone())),
+                Box::new(ExitConfirmation::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -1759,7 +1774,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
-                Box::new(PlaylistDisplaySymbol::new(self.config.clone())),
+                Box::new(PlaylistDisplaySymbol::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -1768,7 +1783,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
-                Box::new(PlaylistRandomTrack::new(self.config.clone())),
+                Box::new(PlaylistRandomTrack::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1777,7 +1792,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
-                Box::new(PlaylistRandomAlbum::new(self.config.clone())),
+                Box::new(PlaylistRandomAlbum::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1786,7 +1801,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PodcastDir),
-                Box::new(PodcastDir::new(self.config.clone())),
+                Box::new(PodcastDir::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1795,7 +1810,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
-                Box::new(PodcastSimulDownload::new(self.config.clone())),
+                Box::new(PodcastSimulDownload::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1804,7 +1819,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
-                Box::new(PodcastMaxRetries::new(self.config.clone())),
+                Box::new(PodcastMaxRetries::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1813,7 +1828,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
-                Box::new(AlbumPhotoAlign::new(self.config.clone())),
+                Box::new(AlbumPhotoAlign::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -1822,7 +1837,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
-                Box::new(SaveLastPosition::new(self.config.clone())),
+                Box::new(SaveLastPosition::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1831,7 +1846,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::SeekStep),
-                Box::new(ConfigSeekStep::new(self.config.clone())),
+                Box::new(ConfigSeekStep::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1840,7 +1855,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::KillDamon),
-                Box::new(KillDaemon::new(self.config.clone())),
+                Box::new(KillDaemon::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -1849,7 +1864,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
-                Box::new(PlayerUseMpris::new(self.config.clone())),
+                Box::new(PlayerUseMpris::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1858,7 +1873,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
-                Box::new(PlayerUseDiscord::new(self.config.clone())),
+                Box::new(PlayerUseDiscord::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
@@ -1867,11 +1882,11 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlayerPort),
-                Box::new(PlayerPort::new(self.config.clone())),
+                Box::new(PlayerPort::new(self.get_combined_settings())),
                 vec![]
             )
             .is_ok());
-        let config = self.config.clone();
+        let config = self.config_tui.clone();
         self.remount_config_color(&config);
 
         // Active Config Editor
@@ -1890,7 +1905,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn remount_config_color(&mut self, config: &SharedSettings) {
+    pub fn remount_config_color(&mut self, config: &SharedTuiSettings) {
         // Mount color page
         assert!(self
             .app
@@ -2477,6 +2492,15 @@ impl Model {
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
                 Box::new(ConfigDatabaseAddAll::new(config.clone())),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddSelected)),
+                Box::new(ConfigDatabaseAddSelected::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -3219,8 +3243,8 @@ impl Model {
             .app
             .remount(
                 Id::GlobalListener,
-                Box::new(GlobalListener::new(self.config.clone())),
-                Self::subscribe(&self.config.read().keys),
+                Box::new(GlobalListener::new(self.config_tui.clone())),
+                Self::subscribe(&self.config_tui.read().settings.keys),
             )
             .is_ok());
 
@@ -3242,7 +3266,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(self.config_layout, &self.config.read())),
+                Box::new(CEHeader::new(self.config_layout, &self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -3274,7 +3298,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::ConfigSavePopup),
-                Box::new(ConfigSavePopup::new(self.config.clone())),
+                Box::new(ConfigSavePopup::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -3286,13 +3310,15 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     pub fn collect_config_data(&mut self) -> Result<()> {
-        let mut config = self.config.write();
-        if self.ke_key_config.has_unique_elements() {
-            config.keys = self.ke_key_config.clone();
-        } else {
-            bail!("Duplicate key found in config, changes were not saved.");
+        let mut config_tui = self.config_tui.write();
+        match self.ke_key_config.check_keys() {
+            Ok(()) => config_tui.settings.keys = self.ke_key_config.clone(),
+            Err(err) => bail!(err),
         }
-        config.style_color_symbol = self.ce_style_color_symbol.clone();
+        config_tui.settings.theme = self.ce_theme.clone();
+
+        let mut config_server = self.config_server.write();
+
         if let Ok(State::One(StateValue::String(music_dir))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::MusicDir))
         {
@@ -3306,29 +3332,34 @@ impl Model {
                     absolute_dir.exists()
                 })
                 .collect();
-            config.music_dir = vec;
+            config_server.settings.player.music_dirs = vec;
         }
 
         if let Ok(State::One(StateValue::Usize(exit_confirmation))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
         {
-            config.enable_exit_confirmation = matches!(exit_confirmation, 0);
+            config_tui.settings.behavior.confirm_quit = matches!(exit_confirmation, 0);
         }
 
         if let Ok(State::One(StateValue::Usize(display_symbol))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
         {
-            config.playlist_display_symbol = matches!(display_symbol, 0);
+            config_tui
+                .settings
+                .theme
+                .style
+                .playlist
+                .use_loop_mode_symbol = matches!(display_symbol, 0);
         }
 
         if let Ok(State::One(StateValue::String(random_track_quantity_str))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
         {
-            if let Ok(quantity) = random_track_quantity_str.parse::<u32>() {
-                config.playlist_select_random_track_quantity = quantity;
+            if let Ok(quantity) = random_track_quantity_str.parse::<NonZeroU32>() {
+                config_server.settings.player.random_track_quantity = quantity;
             }
         }
 
@@ -3336,8 +3367,8 @@ impl Model {
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
         {
-            if let Ok(quantity) = random_album_quantity_str.parse::<u32>() {
-                config.playlist_select_random_album_quantity = quantity;
+            if let Ok(quantity) = random_album_quantity_str.parse::<NonZeroU32>() {
+                config_server.settings.player.random_album_min_quantity = quantity;
             }
         }
 
@@ -3347,28 +3378,24 @@ impl Model {
         {
             let absolute_dir = shellexpand::path::tilde(&podcast_dir);
             if absolute_dir.exists() {
-                config.podcast_dir = absolute_dir.into_owned();
+                config_server.settings.podcast.download_dir = absolute_dir.into_owned();
             }
         }
         if let Ok(State::One(StateValue::String(podcast_simul_download))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
         {
-            if let Ok(quantity) = podcast_simul_download.parse::<usize>() {
-                if (1..101).contains(&quantity) {
-                    config.podcast_simultanious_download = quantity;
-                } else {
-                    bail!(" It's not recommended to set simultanious download to more than 100. ");
-                }
+            if let Ok(quantity) = podcast_simul_download.parse::<NonZeroU8>() {
+                config_server.settings.podcast.concurrent_downloads_max = quantity;
             }
         }
         if let Ok(State::One(StateValue::String(podcast_max_retries))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
         {
-            if let Ok(quantity) = podcast_max_retries.parse::<usize>() {
+            if let Ok(quantity) = podcast_max_retries.parse::<u8>() {
                 if (1..11).contains(&quantity) {
-                    config.podcast_max_retries = quantity;
+                    config_server.settings.podcast.max_download_retries = quantity;
                 } else {
                     bail!(" It's not recommended to set max retries to more than 10. ");
                 }
@@ -3384,52 +3411,67 @@ impl Model {
                 2 => XywhAlign::TopRight,
                 _ => XywhAlign::TopLeft,
             };
-            config.album_photo_xywh.align = align;
+            config_tui.settings.coverart.align = align;
         }
 
         if let Ok(State::One(StateValue::Usize(save_last_position))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
         {
-            let save_last_position = match save_last_position {
-                0 => LastPosition::Auto,
-                1 => LastPosition::No,
-                2 => LastPosition::Yes,
-                _ => bail!(" Save last position must be set to auto, yes or no."),
-            };
-            config.player_remember_last_played_position = save_last_position;
+            // NOTE: value "0" means to not save the value
+            if save_last_position != 0 {
+                let new_val = match save_last_position {
+                    1 => RememberLastPosition::All(PositionYesNo::Simple(PositionYesNoLower::No)),
+                    2 => RememberLastPosition::All(PositionYesNo::Simple(PositionYesNoLower::Yes)),
+                    // only 0,1,2 exist here
+                    _ => unreachable!(),
+                };
+
+                config_server.settings.player.remember_position = new_val;
+            }
+
+            // let save_last_position = match save_last_position {
+            //     0 => LastPosition::Auto,
+            //     1 => LastPosition::No,
+            //     2 => LastPosition::Yes,
+            //     _ => bail!(" Save last position must be set to auto, yes or no."),
+            // };
+            // config_server.settings.player.remember_position = save_last_position;
         }
 
         if let Ok(State::One(StateValue::Usize(seek_step))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::SeekStep))
         {
-            let seek_step = match seek_step {
-                0 => SeekStep::Auto,
-                1 => SeekStep::Short,
-                2 => SeekStep::Long,
-                _ => bail!(" Unknown player step length provided."),
-            };
-            config.player_seek_step = seek_step;
+            // NOTE: seek_step is currently unsupported to be set
+            let _ = seek_step;
+
+            // let seek_step = match seek_step {
+            //     0 => SeekStep::Auto,
+            //     1 => SeekStep::Short,
+            //     2 => SeekStep::Long,
+            //     _ => bail!(" Unknown player step length provided."),
+            // };
+            // config_server.settings.player.seek_step = seek_step;
         }
 
         if let Ok(State::One(StateValue::Usize(kill_daemon))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::KillDamon))
         {
-            config.kill_daemon_when_quit = matches!(kill_daemon, 0);
+            config_tui.settings.behavior.quit_server_on_exit = matches!(kill_daemon, 0);
         }
 
         if let Ok(State::One(StateValue::Usize(player_use_mpris))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
         {
-            config.player_use_mpris = matches!(player_use_mpris, 0);
+            config_server.settings.player.use_mediacontrols = matches!(player_use_mpris, 0);
         }
 
         if let Ok(State::One(StateValue::Usize(player_use_discord))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
         {
-            config.player_use_discord = matches!(player_use_discord, 0);
+            config_server.settings.player.set_discord_status = matches!(player_use_discord, 0);
         }
 
         if let Ok(State::One(StateValue::String(player_port))) = self
@@ -3437,10 +3479,10 @@ impl Model {
             .state(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
         {
             if let Ok(port) = player_port.parse::<u16>() {
-                if (1000..u16::MAX).contains(&port) {
-                    config.player_port = port;
+                if (1024..u16::MAX).contains(&port) {
+                    config_server.settings.com.port = port;
                 } else {
-                    bail!(" It's not recommended to use ports below 1000 for the player. ");
+                    bail!(" It's not recommended to use ports below 1024 for the player. ");
                 }
             }
         }
@@ -3480,8 +3522,15 @@ impl Model {
             let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
             paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
-            for p in paths {
-                self.ce_themes.push(p.path().to_string_lossy().to_string());
+            for entry in paths {
+                let path = entry.path();
+                let Some(stem) = path.file_stem() else {
+                    warn!("Theme {:#?} does not have a filestem!", path.display());
+
+                    continue;
+                };
+
+                self.ce_themes.push(stem.to_string_lossy().to_string());
             }
         }
 
@@ -3496,14 +3545,9 @@ impl Model {
                 table.add_row();
             }
 
-            let path = PathBuf::from(record);
-            let name = path.file_stem();
-
-            if let Some(n) = name {
-                table
-                    .add_col(TextSpan::new(idx.to_string()))
-                    .add_col(TextSpan::new(n.to_string_lossy()));
-            }
+            table
+                .add_col(TextSpan::new(idx.to_string()))
+                .add_col(TextSpan::new(record));
         }
         if self.ce_themes.is_empty() {
             table.add_col(TextSpan::from("0"));
@@ -3520,8 +3564,8 @@ impl Model {
             .ok();
         // select theme currently used
         let mut index = 0;
-        for (idx, v) in self.ce_themes.iter().enumerate() {
-            if *v == self.ce_style_color_symbol.alacritty_theme.path {
+        for (idx, name) in self.ce_themes.iter().enumerate() {
+            if name == &self.ce_theme.theme.name {
                 index = idx;
                 break;
             }

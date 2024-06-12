@@ -1,4 +1,3 @@
-use crate::config::Settings;
 use anyhow::{anyhow, Context, Result};
 use pinyin::ToPinyin;
 use std::borrow::Cow;
@@ -9,6 +8,8 @@ use std::{
     process::{Child, Command},
 };
 use unicode_segmentation::UnicodeSegmentation;
+
+use crate::config::ServerOverlay;
 
 pub fn get_pin_yin(input: &str) -> String {
     let mut b = String::new();
@@ -98,8 +99,8 @@ pub fn get_app_config_path() -> Result<PathBuf> {
 }
 
 /// Get the podcast directoy resolved and created
-fn get_podcast_save_path(config: &Settings) -> Result<PathBuf> {
-    let full_path = shellexpand::path::tilde(&config.podcast_dir);
+fn get_podcast_save_path(config: &ServerOverlay) -> Result<PathBuf> {
+    let full_path = shellexpand::path::tilde(&config.settings.podcast.download_dir);
     if !full_path.exists() {
         std::fs::create_dir_all(&full_path)?;
     }
@@ -107,7 +108,7 @@ fn get_podcast_save_path(config: &Settings) -> Result<PathBuf> {
 }
 
 /// Get the download directory for the provided `pod_title` and create it if not existing
-pub fn create_podcast_dir(config: &Settings, pod_title: String) -> Result<PathBuf> {
+pub fn create_podcast_dir(config: &ServerOverlay, pod_title: String) -> Result<PathBuf> {
     let mut download_path = get_podcast_save_path(config).context("get podcast directory")?;
     download_path.push(pod_title);
     std::fs::create_dir_all(&download_path).context("creating podcast download directory")?;

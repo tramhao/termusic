@@ -6,7 +6,7 @@ use termusiclib::types::{Id, LyricMsg, Msg};
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
 use regex::Regex;
-use termusiclib::config::SharedSettings;
+use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -30,25 +30,25 @@ lazy_static! {
 #[derive(MockComponent)]
 pub struct Lyric {
     component: Textarea,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl Lyric {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Textarea::default()
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.lyric_border())
+                        .color(config.settings.theme.lyric_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .background(config.style_color_symbol.lyric_background())
-                .foreground(config.style_color_symbol.lyric_foreground())
+                .background(config.settings.theme.lyric_background())
+                .foreground(config.settings.theme.lyric_foreground())
                 .title(" Lyrics ", Alignment::Left)
                 // .wrap(true)
                 .step(4)
-                .highlighted_str(&config.style_color_symbol.playlist_highlight_symbol)
+                .highlighted_str(&config.settings.theme.style.playlist.highlight_symbol)
                 .text_rows(&[TextSpan::new(format!(
                     "{}.",
                     termusicplayback::Status::Stopped
@@ -62,7 +62,7 @@ impl Lyric {
 impl Component<Msg, NoUserEvent> for Lyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _drop = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -97,17 +97,17 @@ impl Component<Msg, NoUserEvent> for Lyric {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurUp)),
 
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
 
-            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             _ => CmdResult::None,
@@ -122,7 +122,7 @@ impl Model {
             .app
             .remount(
                 Id::Lyric,
-                Box::new(Lyric::new(self.config.clone())),
+                Box::new(Lyric::new(self.config_tui.clone())),
                 Vec::new()
             )
             .is_ok());

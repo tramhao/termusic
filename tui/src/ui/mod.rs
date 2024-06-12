@@ -31,7 +31,6 @@ use model::{Model, TermusicLayout};
 use playback::Playback;
 use std::time::Duration;
 use sysinfo::System;
-use termusiclib::config::Settings;
 pub use termusiclib::types::*;
 use termusicplayback::player::music_player_client::MusicPlayerClient;
 use termusicplayback::{PlayerCmd, PlayerProgress, Status};
@@ -39,6 +38,8 @@ use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
+
+use crate::CombinedSettings;
 // -- internal
 
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
@@ -62,7 +63,7 @@ impl UI {
         // }
     }
     /// Instantiates a new Ui
-    pub async fn new(config: Settings, client: MusicPlayerClient<Channel>) -> Result<Self> {
+    pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx).await;
         model.init_config();
@@ -141,7 +142,14 @@ impl UI {
         // if let Err(e) = self.model.config.save() {
         //     error!("error when saving config: {e}");
         // };
-        if self.model.config.read().kill_daemon_when_quit {
+        if self
+            .model
+            .config_tui
+            .read()
+            .settings
+            .behavior
+            .quit_server_on_exit
+        {
             let mut system = System::new();
             system.refresh_all();
             for proc in system.processes().values() {
@@ -270,26 +278,28 @@ impl UI {
                     self.model.force_redraw();
                 }
                 PlayerCmd::SpeedDown => {
-                    self.model.config.write().player_speed = self.playback.speed_down().await?;
+                    self.model.config_server.write().settings.player.speed =
+                        self.playback.speed_down().await?;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::SpeedUp => {
-                    self.model.config.write().player_speed = self.playback.speed_up().await?;
+                    self.model.config_server.write().settings.player.speed =
+                        self.playback.speed_up().await?;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::ToggleGapless => {
-                    self.model.config.write().player_gapless =
+                    self.model.config_server.write().settings.player.gapless =
                         self.playback.toggle_gapless().await?;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::VolumeDown => {
                     let volume = self.playback.volume_down().await?;
-                    self.model.config.write().player_volume = volume;
+                    self.model.config_server.write().settings.player.volume = volume;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::VolumeUp => {
                     let volume = self.playback.volume_up().await?;
-                    self.model.config.write().player_volume = volume;
+                    self.model.config_server.write().settings.player.volume = volume;
                     self.model.progress_update_title();
                 }
                 _ => {}

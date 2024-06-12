@@ -1,5 +1,5 @@
-use termusiclib::config::SharedSettings;
-use termusiclib::{config::Settings, types::Msg};
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
+use termusiclib::types::Msg;
 use tui_realm_stdlib::Radio;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},
@@ -21,13 +21,13 @@ pub struct YNConfirmStyle {
 #[derive(MockComponent)]
 pub struct YNConfirm {
     component: Radio,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl YNConfirm {
     /// Create a new instance with custom colors
-    pub fn new_with_cb<F: FnOnce(&Settings) -> YNConfirmStyle>(
-        config: SharedSettings,
+    pub fn new_with_cb<F: FnOnce(&TuiOverlay) -> YNConfirmStyle>(
+        config: SharedTuiSettings,
         title: &'static str,
         cb: F,
     ) -> Self {
@@ -57,7 +57,7 @@ impl YNConfirm {
     #[allow(clippy::needless_pass_by_value)]
     pub fn on(&mut self, ev: Event<NoUserEvent>, on_y: Msg, on_n: Msg) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -66,20 +66,20 @@ impl YNConfirm {
                 code: Key::Right, ..
             }) => self.perform(Cmd::Move(Direction::Right)),
 
-            Event::Keyboard(key) if key == keys.global_left.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.left.get() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == keys.global_right.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.right.get() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == keys.global_quit.key_event() => return Some(on_n),
-            Event::Keyboard(key) if key == keys.global_esc.key_event() => return Some(on_n),
+            Event::Keyboard(key) if key == keys.quit.get() => return Some(on_n),
+            Event::Keyboard(key) if key == keys.escape.get() => return Some(on_n),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('y'),
                 ..

@@ -3,7 +3,7 @@
 #[allow(unused)]
 pub mod db;
 
-use crate::config::Settings;
+use crate::config::v2::server::PodcastSettings;
 use crate::types::{Msg, PCMsg};
 use crate::utils::StringUtils;
 use anyhow::{anyhow, Context, Result};
@@ -572,7 +572,7 @@ impl Drop for TaskPool {
 /// Imports a list of podcasts from OPML format, either reading from a
 /// file or from stdin. If the `replace` flag is set, this replaces all
 /// existing data in the database.
-pub fn import_from_opml(db_path: &Path, config: &Settings, file: &Path) -> Result<()> {
+pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -> Result<()> {
     // read from file or from stdin
     let mut f = File::open(file)
         .with_context(|| format!("Could not open OPML file: {}", file.display()))?;
@@ -620,13 +620,13 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, file: &Path) -> Resul
 
     println!("Importing {} podcasts...", podcast_list.len());
 
-    let threadpool = TaskPool::new(config.podcast_simultanious_download);
+    let threadpool = TaskPool::new(usize::from(config.concurrent_downloads_max.get()));
     let (tx_to_main, rx_to_main) = mpsc::channel();
 
     for pod in &podcast_list {
         check_feed(
             pod.clone(),
-            config.podcast_max_retries,
+            usize::from(config.max_download_retries),
             &threadpool,
             tx_to_main.clone(),
         );

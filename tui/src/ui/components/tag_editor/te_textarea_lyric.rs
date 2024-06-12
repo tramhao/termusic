@@ -24,7 +24,7 @@
 
 use crate::ui::{Msg, TEMsg, TFMsg};
 
-use termusiclib::config::SharedSettings;
+use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -34,20 +34,20 @@ use tuirealm::{Component, Event, MockComponent};
 #[derive(MockComponent)]
 pub struct TETextareaLyric {
     component: Textarea,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl TETextareaLyric {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Textarea::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(config.style_color_symbol.library_border()),
+                        .color(config.settings.theme.library_border()),
                 )
-                .foreground(config.style_color_symbol.library_foreground())
+                .foreground(config.settings.theme.library_foreground())
                 .title(" Lyrics ", Alignment::Left)
                 .step(4)
                 .highlighted_str("\u{1f3b5}")
@@ -61,9 +61,9 @@ impl TETextareaLyric {
 impl Component<Msg, NoUserEvent> for TETextareaLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
-            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 return Some(Msg::TagEditor(TEMsg::TERename))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
@@ -73,10 +73,10 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurUp))),
-            Event::Keyboard(k) if k == keys.global_quit.key_event() => {
+            Event::Keyboard(k) if k == keys.quit.get() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(k) if k == keys.global_esc.key_event() => {
+            Event::Keyboard(k) if k == keys.escape.get() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
             Event::Keyboard(KeyEvent {
@@ -85,10 +85,10 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
             }
-            Event::Keyboard(k) if k == keys.global_down.key_event() => {
+            Event::Keyboard(k) if k == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(k) if k == keys.global_up.key_event() => {
+            Event::Keyboard(k) if k == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -102,7 +102,7 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 code: Key::Home, ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
 
-            Event::Keyboard(k) if k == keys.global_goto_top.key_event() => {
+            Event::Keyboard(k) if k == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
 
@@ -110,7 +110,7 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 self.perform(Cmd::GoTo(Position::End))
             }
 
-            Event::Keyboard(k) if k == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(k) if k == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             _ => CmdResult::None,

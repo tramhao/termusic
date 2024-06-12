@@ -1,4 +1,4 @@
-use crate::config::Xywh;
+use crate::xywh::Xywh;
 use anyhow::Context;
 use anyhow::{bail, Result};
 use std::ffi::OsStr;

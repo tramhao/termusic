@@ -10,7 +10,7 @@ use crate::ui::utils::{
 use crate::ui::Application;
 use anyhow::{bail, Result};
 use std::time::{Duration, Instant};
-use termusiclib::config::SharedSettings;
+use termusiclib::config::SharedTuiSettings;
 /**
  * MIT License
  *
@@ -46,7 +46,7 @@ use tuirealm::{Frame, State, StateValue};
 
 impl Model {
     #[allow(clippy::too_many_lines)]
-    pub fn init_app(tree: &Tree, config: &SharedSettings) -> Application<Id, Msg, NoUserEvent> {
+    pub fn init_app(tree: &Tree, config: &SharedTuiSettings) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
@@ -153,7 +153,7 @@ impl Model {
             .mount(
                 Id::GlobalListener,
                 Box::new(GlobalListener::new(config.clone())),
-                Self::subscribe(&config.read().keys),
+                Self::subscribe(&config.read().settings.keys),
             )
             .is_ok());
         // Active library
@@ -450,7 +450,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Library, &self.config.read())),
+                Box::new(GSInputPopup::new(Source::Library, &self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -458,7 +458,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Library, self.config.clone())),
+                Box::new(GSTablePopup::new(Source::Library, self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -474,7 +474,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Playlist, &self.config.read())),
+                Box::new(GSInputPopup::new(Source::Playlist, &self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -482,7 +482,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Playlist, self.config.clone())),
+                Box::new(GSTablePopup::new(Source::Playlist, self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -497,7 +497,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Database, &self.config.read())),
+                Box::new(GSInputPopup::new(Source::Database, &self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -505,7 +505,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Database, self.config.clone())),
+                Box::new(GSTablePopup::new(Source::Database, self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -520,7 +520,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Episode, &self.config.read())),
+                Box::new(GSInputPopup::new(Source::Episode, &self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -528,7 +528,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Episode, self.config.clone())),
+                Box::new(GSTablePopup::new(Source::Episode, self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -544,7 +544,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Podcast, &self.config.read())),
+                Box::new(GSInputPopup::new(Source::Podcast, &self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -552,7 +552,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Podcast, self.config.clone())),
+                Box::new(GSTablePopup::new(Source::Podcast, self.config_tui.clone())),
                 vec![]
             )
             .is_ok());
@@ -564,7 +564,7 @@ impl Model {
     }
 
     pub fn mount_label_help(&mut self) {
-        let config = self.config.read();
+        let config = self.config_tui.read();
         self.app
             .remount(
                 Id::Label,
@@ -572,41 +572,56 @@ impl Model {
                     &config,
                     &[
                         TextSpan::new(" Help: ")
-                            .fg(config.style_color_symbol.fallback_foreground())
+                            .fg(config.settings.theme.fallback_foreground())
                             .bold(),
-                        TextSpan::new(format!("<{}>", config.keys.global_help))
-                            .fg(config.style_color_symbol.fallback_highlight())
-                            .bold(),
+                        TextSpan::new(format!(
+                            "<{}>",
+                            config.settings.keys.select_view_keys.open_help
+                        ))
+                        .fg(config.settings.theme.fallback_highlight())
+                        .bold(),
                         TextSpan::new(" Config: ")
-                            .fg(config.style_color_symbol.fallback_foreground())
+                            .fg(config.settings.theme.fallback_foreground())
                             .bold(),
-                        TextSpan::new(format!("<{}>", config.keys.global_config_open))
-                            .fg(config.style_color_symbol.fallback_highlight())
-                            .bold(),
+                        TextSpan::new(format!(
+                            "<{}>",
+                            config.settings.keys.select_view_keys.open_config
+                        ))
+                        .fg(config.settings.theme.fallback_highlight())
+                        .bold(),
                         TextSpan::new(" Library: ")
-                            .fg(config.style_color_symbol.fallback_foreground())
+                            .fg(config.settings.theme.fallback_foreground())
                             .bold(),
-                        TextSpan::new(format!("<{}>", config.keys.global_layout_treeview))
-                            .fg(config.style_color_symbol.fallback_highlight())
-                            .bold(),
+                        TextSpan::new(format!(
+                            "<{}>",
+                            config.settings.keys.select_view_keys.view_library
+                        ))
+                        .fg(config.settings.theme.fallback_highlight())
+                        .bold(),
                         TextSpan::new(" Database: ")
-                            .fg(config.style_color_symbol.fallback_foreground())
+                            .fg(config.settings.theme.fallback_foreground())
                             .bold(),
-                        TextSpan::new(format!("<{}>", config.keys.global_layout_database))
-                            .fg(config.style_color_symbol.fallback_highlight())
-                            .bold(),
+                        TextSpan::new(format!(
+                            "<{}>",
+                            config.settings.keys.select_view_keys.view_database
+                        ))
+                        .fg(config.settings.theme.fallback_highlight())
+                        .bold(),
                         TextSpan::new(" Podcasts: ")
-                            .fg(config.style_color_symbol.fallback_foreground())
+                            .fg(config.settings.theme.fallback_foreground())
                             .bold(),
-                        TextSpan::new(format!("<{}>", config.keys.global_layout_podcast))
-                            .fg(config.style_color_symbol.fallback_highlight())
-                            .bold(),
+                        TextSpan::new(format!(
+                            "<{}>",
+                            config.settings.keys.select_view_keys.view_podcasts
+                        ))
+                        .fg(config.settings.theme.fallback_highlight())
+                        .bold(),
                         TextSpan::new(" Version: ")
-                            .fg(config.style_color_symbol.fallback_foreground())
+                            .fg(config.settings.theme.fallback_foreground())
                             .bold(),
                         // maybe consider moving version into Help or Config or its own popup (like a About)
                         TextSpan::new(env!("TERMUSIC_VERSION"))
-                            .fg(config.style_color_symbol.fallback_highlight())
+                            .fg(config.settings.theme.fallback_highlight())
                             .bold(),
                     ],
                 )),
@@ -624,7 +639,7 @@ impl Model {
         let mut path_string = get_parent_folder(&current_node);
         path_string.push('/');
 
-        let config = self.config.read();
+        let config = self.config_tui.read();
 
         self.app
             .remount(
@@ -633,14 +648,14 @@ impl Model {
                     &config,
                     &[
                         TextSpan::new("Full name: ")
-                            .fg(config.style_color_symbol.fallback_highlight())
+                            .fg(config.settings.theme.fallback_highlight())
                             .bold(),
                         TextSpan::new(path_string)
-                            .fg(config.style_color_symbol.fallback_foreground())
+                            .fg(config.settings.theme.fallback_foreground())
                             .bold(),
                         TextSpan::new(filename).fg(Color::Cyan).bold(),
                         TextSpan::new(".m3u")
-                            .fg(config.style_color_symbol.fallback_foreground())
+                            .fg(config.settings.theme.fallback_foreground())
                             .bold(),
                     ],
                 )),
@@ -657,11 +672,11 @@ impl Model {
         background: Option<Color>,
         timeout: Option<isize>,
     ) {
-        let config = self.config.read();
+        let config = self.config_tui.read();
         let textspan = &[TextSpan::new(active_msg)
-            .fg(foreground.unwrap_or_else(|| config.style_color_symbol.library_highlight()))
+            .fg(foreground.unwrap_or_else(|| config.settings.theme.library_highlight()))
             .bold()
-            .bg(background.unwrap_or_else(|| config.style_color_symbol.library_background()))];
+            .bg(background.unwrap_or_else(|| config.settings.theme.library_background()))];
         self.app
             .attr(
                 &Id::Label,

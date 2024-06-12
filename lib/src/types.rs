@@ -1,4 +1,4 @@
-use crate::config::{BindingForEvent, ColorTermusic};
+use crate::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
 use crate::invidious::{Instance, YoutubeVideo};
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
@@ -156,7 +156,7 @@ pub enum ConfigEditorMsg {
     ThemeSelectBlurUp,
     ThemeSelectLoad(usize),
 
-    KeyChange(IdKey, BindingForEvent),
+    KeyChange(IdKey, KeyBinding),
     SaveLastPositionBlurDown,
     SaveLastPosotionBlurUp,
     SeekStepBlurDown,
@@ -195,6 +195,8 @@ pub enum ConfigEditorMsg {
 pub enum KFMsg {
     DatabaseAddAllBlurDown,
     DatabaseAddAllBlurUp,
+    DatabaseAddSelectedBlurDown,
+    DatabaseAddSelectedBlurUp,
     GlobalConfigBlurDown,
     GlobalConfigBlurUp,
     GlobalDownBlurDown,
@@ -601,6 +603,7 @@ pub enum IdConfigEditor {
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdKey {
     DatabaseAddAll,
+    DatabaseAddSelected,
     GlobalConfig,
     GlobalDown,
     GlobalGotoBottom,

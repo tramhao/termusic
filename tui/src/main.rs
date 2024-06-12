@@ -32,22 +32,37 @@ mod ui;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-use config::Settings;
 use flexi_logger::LogSpecification;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
+use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
+use termusiclib::config::v2::server::ScanDepth;
+use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
+use termusiclib::config::{
+    new_shared_server_settings, new_shared_tui_settings, ServerOverlay, SharedServerSettings,
+    SharedTuiSettings, TuiOverlay,
+};
 use termusicplayback::player::music_player_client::MusicPlayerClient;
 
 use sysinfo::{Pid, ProcessStatus, System};
-use termusiclib::{config, podcast, utils};
+use termusiclib::{podcast, utils};
 use ui::UI;
 
 #[macro_use]
 extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
+
+/// Combined Shared Settings, because the TUI needs access to both configs
+///
+/// also this exists instead of a unnamed tuple
+#[derive(Debug, Clone)]
+pub struct CombinedSettings {
+    pub server: SharedServerSettings,
+    pub tui: SharedTuiSettings,
+}
 
 fn main() -> Result<()> {
     // print error to the log and then throw it
@@ -136,11 +151,17 @@ async fn actual_main() -> Result<()> {
     }
 
     info!("Waiting until connected");
-    let client = wait_till_connected(
-        SocketAddr::new(config.player_interface, config.player_port),
-        pid,
-    )
-    .await?;
+
+    let client = {
+        let addr = {
+            let config_read = config.tui.read();
+            SocketAddr::from(*config_read.settings.get_com().ok_or(anyhow::anyhow!(
+                "Expected tui-com settings to be resolved at this point"
+            ))?)
+        };
+
+        wait_till_connected(addr, pid).await?
+    };
     info!("Connected!");
 
     let mut ui = UI::new(config, client).await?;
@@ -214,23 +235,35 @@ fn find_source<E: Error + 'static>(err: &dyn Error) -> Option<&E> {
     None
 }
 
-fn get_config(args: &cli::Args) -> Result<Settings> {
-    let mut config = Settings::default();
-    config.load()?;
+fn get_config(args: &cli::Args) -> Result<CombinedSettings> {
+    let config_server = ServerConfigVersionedDefaulted::from_config_path()?.into_settings();
 
-    config.disable_album_art_from_cli = args.disable_cover;
-    config.disable_discord_rpc_from_cli = args.disable_discord;
+    let max_depth = args.max_depth.map(ScanDepth::Limited);
 
-    if let Some(dir) = &args.music_directory {
-        config.music_dir_from_cli = Some(get_path(dir).context("resolving cli music-dir")?);
-    }
-
-    config.max_depth_cli = match args.max_depth {
-        Some(d) => d,
-        None => MAX_DEPTH,
+    let music_dir = if let Some(ref dir) = args.music_directory {
+        Some(get_path(dir).context("resolving cli music-dir")?)
+    } else {
+        None
     };
 
-    Ok(config)
+    let overlay_server = ServerOverlay {
+        settings: config_server,
+        music_dir_overwrite: music_dir,
+        disable_discord_status: args.disable_discord,
+        library_scan_depth: max_depth,
+    };
+
+    let config_tui = TuiConfigVersionedDefaulted::from_config_path()?.into_settings();
+
+    let overlay_tui = TuiOverlay {
+        settings: config_tui,
+        disable_tui_images: args.disable_cover,
+    };
+
+    Ok(CombinedSettings {
+        server: new_shared_server_settings(overlay_server),
+        tui: new_shared_tui_settings(overlay_tui),
+    })
 }
 
 fn get_path(dir: &Path) -> Result<PathBuf> {
@@ -253,7 +286,7 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
     bail!("Error: non-existing directory '{}'", dir.display());
 }
 
-fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
+fn execute_action(action: cli::Action, config: &CombinedSettings) -> Result<()> {
     match action {
         cli::Action::Import { file } => {
             println!("need to import from file {}", file.display());
@@ -262,7 +295,12 @@ fn execute_action(action: cli::Action, config: &Settings) -> Result<()> {
             let config_dir_path =
                 utils::get_app_config_path().context("getting app-config-path")?;
 
-            podcast::import_from_opml(&config_dir_path, config, &path).context("import opml")?;
+            podcast::import_from_opml(
+                &config_dir_path,
+                &config.server.read().settings.podcast,
+                &path,
+            )
+            .context("import opml")?;
         }
         cli::Action::Export { file } => {
             println!("need to export to file {}", file.display());

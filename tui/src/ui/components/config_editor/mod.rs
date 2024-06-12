@@ -27,14 +27,13 @@ mod key_combo;
 mod update;
 mod view;
 
-use crate::config::Settings;
 use crate::ui::model::ConfigEditorLayout;
 use crate::ui::{ConfigEditorMsg, Msg};
 pub use color::*;
 pub use general::*;
 pub use key_combo::*;
 
-use termusiclib::config::SharedSettings;
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Style, TextSpan};
 use tuirealm::{event::NoUserEvent, Component, Event, MockComponent};
@@ -47,7 +46,7 @@ pub struct CEHeader {
 }
 
 impl CEHeader {
-    pub fn new(layout: ConfigEditorLayout, config: &Settings) -> Self {
+    pub fn new(layout: ConfigEditorLayout, config: &TuiOverlay) -> Self {
         Self {
             component: Radio::default()
                 .borders(
@@ -61,8 +60,8 @@ impl CEHeader {
                     "Keys Global",
                     "Keys Other",
                 ])
-                .foreground(config.style_color_symbol.library_highlight())
-                .inactive(Style::default().fg(config.style_color_symbol.library_highlight()))
+                .foreground(config.settings.theme.library_highlight())
+                .inactive(Style::default().fg(config.settings.theme.library_highlight()))
                 .value(match layout {
                     ConfigEditorLayout::General => 0,
                     ConfigEditorLayout::Color => 1,
@@ -85,28 +84,28 @@ pub struct Footer {
 }
 
 impl Footer {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: &TuiOverlay) -> Self {
         Self {
             component: Span::default().spans(&[
-                TextSpan::new(format!("<{}>", config.keys.config_save))
+                TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
                     .bold()
-                    .fg(config.style_color_symbol.library_highlight()),
+                    .fg(config.settings.theme.library_highlight()),
                 TextSpan::new(" Save parameters ").bold(),
-                TextSpan::new(format!("<{}>", config.keys.global_esc))
+                TextSpan::new(format!("<{}>", config.settings.keys.escape))
                     .bold()
-                    .fg(config.style_color_symbol.library_highlight()),
+                    .fg(config.settings.theme.library_highlight()),
                 TextSpan::new(" Exit ").bold(),
                 TextSpan::new("<TAB>")
                     .bold()
-                    .fg(config.style_color_symbol.library_highlight()),
+                    .fg(config.settings.theme.library_highlight()),
                 TextSpan::new(" Change panel ").bold(),
                 TextSpan::new("<UP/DOWN>")
                     .bold()
-                    .fg(config.style_color_symbol.library_highlight()),
+                    .fg(config.settings.theme.library_highlight()),
                 TextSpan::new(" Change field ").bold(),
                 TextSpan::new("<ENTER>")
                     .bold()
-                    .fg(config.style_color_symbol.library_highlight()),
+                    .fg(config.settings.theme.library_highlight()),
                 TextSpan::new(" Select theme/Preview symbol ").bold(),
             ]),
         }
@@ -125,13 +124,13 @@ pub struct ConfigSavePopup {
 }
 
 impl ConfigSavePopup {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component =
             YNConfirm::new_with_cb(config, " Config changed. Do you want to save? ", |config| {
                 YNConfirmStyle {
-                    foreground_color: config.style_color_symbol.important_popup_foreground(),
-                    background_color: config.style_color_symbol.important_popup_background(),
-                    border_color: config.style_color_symbol.important_popup_border(),
+                    foreground_color: config.settings.theme.important_popup_foreground(),
+                    background_color: config.settings.theme.important_popup_background(),
+                    border_color: config.settings.theme.important_popup_border(),
                     title_alignment: Alignment::Center,
                 }
             });

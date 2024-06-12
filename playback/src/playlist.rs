@@ -7,15 +7,14 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
+use termusiclib::config::v2::server::LoopMode;
+use termusiclib::config::SharedServerSettings;
 use termusiclib::podcast::{db::Database as DBPod, Episode};
 use termusiclib::track::MediaType;
 use termusiclib::{
-    config::Loop,
     track::Track,
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
-
-use crate::SharedSettings;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum Status {
@@ -64,18 +63,18 @@ pub struct Playlist {
     current_track: Option<Track>,
     next_track: Option<Track>,
     status: Status,
-    loop_mode: Loop,
-    config: SharedSettings,
+    loop_mode: LoopMode,
+    config: SharedServerSettings,
     need_proceed_to_next: bool,
 }
 
 impl Playlist {
     /// # Errors
     /// errors could happen when reading files
-    pub fn new(config: SharedSettings) -> Result<Self> {
+    pub fn new(config: SharedServerSettings) -> Result<Self> {
         let (current_track_index, tracks) = Self::load()?;
         // TODO: shouldnt "loop_mode" be combined with the config ones?
-        let loop_mode = config.read().player_loop_mode;
+        let loop_mode = config.read().settings.player.loop_mode;
         let current_track = None;
 
         Ok(Self {
@@ -206,7 +205,7 @@ impl Playlist {
 
     pub fn next(&mut self) {
         self.played_index.push(self.current_track_index);
-        if self.config.read().player_gapless && self.has_next_track() {
+        if self.config.read().settings.player.gapless && self.has_next_track() {
             self.current_track_index = self.next_track_index;
             return;
         }
@@ -216,15 +215,15 @@ impl Playlist {
     fn get_next_track_index(&self) -> usize {
         let mut next_track_index = self.current_track_index;
         match self.loop_mode {
-            Loop::Single => {}
+            LoopMode::Single => {}
 
-            Loop::Playlist => {
+            LoopMode::Playlist => {
                 next_track_index += 1;
                 if next_track_index >= self.len() {
                     next_track_index = 0;
                 }
             }
-            Loop::Random => {
+            LoopMode::Random => {
                 next_track_index = self.get_random_index();
             }
         }
@@ -239,15 +238,15 @@ impl Playlist {
             }
         }
         match self.loop_mode {
-            Loop::Single => {}
-            Loop::Playlist => {
+            LoopMode::Single => {}
+            LoopMode::Playlist => {
                 if self.current_track_index == 0 {
                     self.current_track_index = self.len() - 1;
                 } else {
                     self.current_track_index -= 1;
                 }
             }
-            Loop::Random => {
+            LoopMode::Random => {
                 self.current_track_index = self.get_random_index();
             }
         }
@@ -341,19 +340,19 @@ impl Playlist {
     /// Cycle through the loop modes and return the new mode
     ///
     /// order:
-    /// [Random](Loop::Random) -> [Playlist](Loop::Playlist)
-    /// [Playlist](Loop::Playlist) -> [Single](Loop::Single)
-    /// [Single](Loop::Single) -> [Random](Loop::Random)
-    pub fn cycle_loop_mode(&mut self) -> Loop {
+    /// [Random](LoopMode::Random) -> [Playlist](LoopMode::Playlist)
+    /// [Playlist](LoopMode::Playlist) -> [Single](LoopMode::Single)
+    /// [Single](LoopMode::Single) -> [Random](LoopMode::Random)
+    pub fn cycle_loop_mode(&mut self) -> LoopMode {
         match self.loop_mode {
-            Loop::Random => {
-                self.loop_mode = Loop::Playlist;
+            LoopMode::Random => {
+                self.loop_mode = LoopMode::Playlist;
             }
-            Loop::Playlist => {
-                self.loop_mode = Loop::Single;
+            LoopMode::Playlist => {
+                self.loop_mode = LoopMode::Single;
             }
-            Loop::Single => {
-                self.loop_mode = Loop::Random;
+            LoopMode::Single => {
+                self.loop_mode = LoopMode::Random;
             }
         };
         self.loop_mode

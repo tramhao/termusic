@@ -21,9 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::Settings;
 use crate::ui::model::Model;
-use termusiclib::config::SharedSettings;
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::types::{Id, Msg, YSMsg};
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -37,14 +36,15 @@ pub struct YSInputPopup {
 }
 
 impl YSInputPopup {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: &TuiOverlay) -> Self {
+        let settings = &config.settings;
         Self {
             component: Input::default()
-                .background(config.style_color_symbol.fallback_background())
-                .foreground(config.style_color_symbol.fallback_foreground())
+                .background(settings.theme.fallback_background())
+                .foreground(settings.theme.fallback_foreground())
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.fallback_border())
+                        .color(settings.theme.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -101,19 +101,19 @@ impl Component<Msg, NoUserEvent> for YSInputPopup {
 #[derive(MockComponent)]
 pub struct YSTablePopup {
     component: Table,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl YSTablePopup {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Table::default()
-                .background(config.style_color_symbol.fallback_background())
-                .foreground(config.style_color_symbol.fallback_foreground())
+                .background(config.settings.theme.fallback_background())
+                .foreground(config.settings.theme.fallback_foreground())
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.fallback_border())
+                        .color(config.settings.theme.fallback_border())
                         .modifiers(BorderType::Rounded),
                 )
                 // .foreground(Color::Yellow)
@@ -122,8 +122,8 @@ impl YSTablePopup {
                     Alignment::Left,
                 )
                 .scroll(true)
-                .highlighted_color(config.style_color_symbol.fallback_highlight())
-                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config.settings.theme.fallback_highlight())
+                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
                 // .highlighted_str("🚀")
                 .rewind(false)
                 .step(4)
@@ -146,12 +146,12 @@ impl YSTablePopup {
 impl Component<Msg, NoUserEvent> for YSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
                 return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
             }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
@@ -161,11 +161,11 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -175,10 +175,10 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
@@ -209,7 +209,7 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchInputPopup,
-                Box::new(YSInputPopup::new(&self.config.read())),
+                Box::new(YSInputPopup::new(&self.config_tui.read())),
                 vec![]
             )
             .is_ok());
@@ -221,7 +221,7 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchTablePopup,
-                Box::new(YSTablePopup::new(self.config.clone())),
+                Box::new(YSTablePopup::new(self.config_tui.clone())),
                 vec![]
             )
             .is_ok());

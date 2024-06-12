@@ -1,7 +1,7 @@
 use crate::ui::Model;
 use anyhow::{anyhow, Context, Result};
 use std::path::Path;
-use termusiclib::config::SharedSettings;
+use termusiclib::config::SharedTuiSettings;
 /**
  * MIT License
  *
@@ -37,24 +37,24 @@ use tuirealm::{Component, Event, MockComponent, State, StateValue};
 #[derive(MockComponent)]
 pub struct TETableLyricOptions {
     component: Table,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl TETableLyricOptions {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Table::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(config.style_color_symbol.library_border()),
+                        .color(config.settings.theme.library_border()),
                 )
-                .foreground(config.style_color_symbol.library_foreground())
-                .background(config.style_color_symbol.library_background())
+                .foreground(config.settings.theme.library_foreground())
+                .background(config.settings.theme.library_background())
                 .title(" Search Results ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config.style_color_symbol.library_highlight())
+                .highlighted_color(config.settings.theme.library_highlight())
                 .highlighted_str("\u{1f680}")
                 // .highlighted_str("🚀")
                 .rewind(false)
@@ -79,7 +79,7 @@ impl TETableLyricOptions {
 impl Component<Msg, NoUserEvent> for TETableLyricOptions {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(
@@ -95,14 +95,14 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                 )))
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 return Some(Msg::TagEditor(TEMsg::TERename))
             }
 
-            Event::Keyboard(k) if k == keys.global_quit.key_event() => {
+            Event::Keyboard(k) if k == keys.quit.get() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(k) if k == keys.global_esc.key_event() => {
+            Event::Keyboard(k) if k == keys.escape.get() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
             Event::Keyboard(KeyEvent {
@@ -111,10 +111,10 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
             }
-            Event::Keyboard(k) if k == keys.global_down.key_event() => {
+            Event::Keyboard(k) if k == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(k) if k == keys.global_up.key_event() => {
+            Event::Keyboard(k) if k == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -131,14 +131,14 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                 self.perform(Cmd::GoTo(Position::End))
             }
 
-            Event::Keyboard(k) if k == keys.global_goto_top.key_event() => {
+            Event::Keyboard(k) if k == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
 
-            Event::Keyboard(k) if k == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(k) if k == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            Event::Keyboard(k) if k == keys.library_search_youtube.key_event() => {
+            Event::Keyboard(k) if k == keys.library_keys.youtube_search.get() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::TagEditor(TEMsg::TEDownload(index)));
                 }

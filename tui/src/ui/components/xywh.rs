@@ -39,37 +39,37 @@ use tokio::runtime::Handle;
 
 impl Model {
     pub fn xywh_move_left(&mut self) {
-        self.config.write().album_photo_xywh.move_left();
+        self.xywh.move_left();
         self.update_photo().ok();
     }
 
     pub fn xywh_move_right(&mut self) {
-        self.config.write().album_photo_xywh.move_right();
+        self.xywh.move_right();
         self.update_photo().ok();
     }
 
     pub fn xywh_move_up(&mut self) {
-        self.config.write().album_photo_xywh.move_up();
+        self.xywh.move_up();
         self.update_photo().ok();
     }
 
     pub fn xywh_move_down(&mut self) {
-        self.config.write().album_photo_xywh.move_down();
+        self.xywh.move_down();
         self.update_photo().ok();
     }
     pub fn xywh_zoom_in(&mut self) {
-        self.config.write().album_photo_xywh.zoom_in();
+        self.xywh.zoom_in();
         self.update_photo().ok();
     }
     pub fn xywh_zoom_out(&mut self) {
-        self.config.write().album_photo_xywh.zoom_out();
+        self.xywh.zoom_out();
         self.update_photo().ok();
     }
     pub fn xywh_toggle_hide(&mut self) {
         self.clear_photo().ok();
-        let mut config = self.config.write();
-        config.disable_album_art_from_cli = !config.disable_album_art_from_cli;
-        drop(config);
+        let mut config_tui = self.config_tui.write();
+        config_tui.disable_tui_images = !config_tui.disable_tui_images;
+        drop(config_tui);
         self.update_photo().ok();
     }
     fn should_not_show_photo(&self) -> bool {
@@ -108,7 +108,7 @@ impl Model {
     /// Requires that the current thread has a entered runtime
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
-        if self.config.read().disable_album_art_from_cli {
+        if self.config_tui.read().disable_tui_images {
             return Ok(());
         }
         self.clear_photo()?;
@@ -222,7 +222,7 @@ impl Model {
     #[allow(clippy::cast_possible_truncation, clippy::unnecessary_wraps)]
     pub fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
         #[allow(unused_variables)]
-        let xywh = self.config.read().album_photo_xywh.update_size(img)?;
+        let xywh = self.xywh.update_size(img)?;
 
         // error!("{:?}", self.viuer_supported);
         match self.viuer_supported {

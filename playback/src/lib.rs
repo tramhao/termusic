@@ -64,7 +64,8 @@ use async_trait::async_trait;
 pub use playlist::{Playlist, Status};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use termusiclib::config::{new_shared_settings, LastPosition, SeekStep, Settings, SharedSettings};
+use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
+use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
@@ -110,7 +111,7 @@ pub type PlayerCmdSender = UnboundedSender<PlayerCmd>;
 
 impl Backend {
     /// Create a new Backend based on `backend`([`BackendSelect`])
-    fn new_select(backend: BackendSelect, config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
+    fn new_select(backend: BackendSelect, config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
         match backend {
             #[cfg(feature = "mpv")]
             BackendSelect::Mpv => Self::new_mpv(config, cmd_tx),
@@ -126,7 +127,7 @@ impl Backend {
     ///
     /// For the order see [`BackendSelect::Default`]
     #[allow(unreachable_code)]
-    fn new_default(config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
+    fn new_default(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
         #[cfg(feature = "rusty")]
         return Self::new_rusty(config, cmd_tx);
         #[cfg(feature = "gst")]
@@ -140,21 +141,21 @@ impl Backend {
 
     /// Explicitly choose Backend [`RustyBackend`](rusty_backend::RustyBackend)
     #[cfg(feature = "rusty")]
-    fn new_rusty(config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
+    fn new_rusty(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
         info!("Using Backend \"rusty\"");
         Self::Rusty(rusty_backend::RustyBackend::new(config, cmd_tx))
     }
 
     /// Explicitly choose Backend [`GstreamerBackend`](gstreamer_backend::GStreamerBackend)
     #[cfg(feature = "gst")]
-    fn new_gstreamer(config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
+    fn new_gstreamer(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
         info!("Using Backend \"GStreamer\"");
         Self::GStreamer(gstreamer_backend::GStreamerBackend::new(config, cmd_tx))
     }
 
     /// Explicitly choose Backend [`MpvBackend`](mpv_backend::MpvBackend)
     #[cfg(feature = "mpv")]
-    fn new_mpv(config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
+    fn new_mpv(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
         info!("Using Backend \"mpv\"");
         Self::Mpv(mpv_backend::MpvBackend::new(config, cmd_tx))
     }
@@ -214,7 +215,7 @@ pub enum PlayerCmd {
 pub struct GeneralPlayer {
     pub backend: Backend,
     pub playlist: Playlist,
-    pub config: SharedSettings,
+    pub config: SharedServerSettings,
     pub current_track_updated: bool,
     pub mpris: Option<mpris::Mpris>,
     pub discord: Option<discord::Rpc>,
@@ -232,7 +233,7 @@ impl GeneralPlayer {
     /// - if config path creation fails
     pub fn new_backend(
         backend: BackendSelect,
-        config: Settings,
+        config: ServerOverlay,
         cmd_tx: PlayerCmdSender,
     ) -> Result<Self> {
         let backend = Backend::new_select(backend, &config, cmd_tx.clone());
@@ -243,14 +244,14 @@ impl GeneralPlayer {
             DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
         let db = DataBase::new(&config);
 
-        let config = new_shared_settings(config);
+        let config = new_shared_server_settings(config);
         let playlist = Playlist::new(config.clone()).unwrap_or_default();
-        let mpris = if config.read().player_use_mpris {
+        let mpris = if config.read().settings.player.use_mediacontrols {
             Some(mpris::Mpris::new(cmd_tx.clone()))
         } else {
             None
         };
-        let discord = if config.read().player_use_discord {
+        let discord = if config.read().get_discord_status_enable() {
             Some(discord::Rpc::default())
         } else {
             None
@@ -275,7 +276,7 @@ impl GeneralPlayer {
     ///
     /// - if connecting to the database fails
     /// - if config path creation fails
-    pub fn new(config: Settings, cmd_tx: PlayerCmdSender) -> Result<Self> {
+    pub fn new(config: ServerOverlay, cmd_tx: PlayerCmdSender) -> Result<Self> {
         Self::new_backend(BackendSelect::Default, config, cmd_tx)
     }
 
@@ -287,9 +288,10 @@ impl GeneralPlayer {
     pub fn reload_config(&mut self) -> Result<()> {
         info!("Reloading config");
         let mut config = self.config.write();
-        config.load()?;
+        let parsed = ServerConfigVersionedDefaulted::from_config_path()?.into_settings();
+        config.settings = parsed;
 
-        if config.player_use_mpris && self.mpris.is_none() {
+        if config.settings.player.use_mediacontrols && self.mpris.is_none() {
             // start mpris if new config has it enabled, but is not active yet
             let mut mpris = mpris::Mpris::new(self.cmd_tx.clone());
             // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
@@ -299,12 +301,12 @@ impl GeneralPlayer {
             // the same for volume
             mpris.update_volume(self.volume());
             self.mpris.replace(mpris);
-        } else if !config.player_use_mpris && self.mpris.is_some() {
+        } else if !config.settings.player.use_mediacontrols && self.mpris.is_some() {
             // stop mpris if new config does not have it enabled, but is currently active
             self.mpris.take();
         }
 
-        if config.player_use_discord && self.discord.is_none() {
+        if config.get_discord_status_enable() && self.discord.is_none() {
             // start discord ipc if new config has it enabled, but is not active yet
             let mut discord = discord::Rpc::default();
 
@@ -314,7 +316,7 @@ impl GeneralPlayer {
             }
 
             self.discord.replace(discord);
-        } else if !config.player_use_discord && self.discord.is_some() {
+        } else if !config.get_discord_status_enable() && self.discord.is_some() {
             // stop discord ipc if new config does not have it enabled, but is currently active
             self.discord.take();
         }
@@ -335,7 +337,7 @@ impl GeneralPlayer {
     pub fn toggle_gapless(&mut self) -> bool {
         let new_gapless = !self.backend.as_player().gapless();
         self.backend.as_player_mut().set_gapless(new_gapless);
-        self.config.write().player_gapless = new_gapless;
+        self.config.write().settings.player.gapless = new_gapless;
         new_gapless
     }
 
@@ -489,22 +491,22 @@ impl GeneralPlayer {
     ///
     /// if the underlying "seek" returns a error (which current never happens)
     pub fn seek_relative(&mut self, forward: bool) {
-        let mut offset = match self.config.read().player_seek_step {
-            SeekStep::Short => -5_i64,
-            SeekStep::Long => -30,
-            SeekStep::Auto => {
-                if let Some(track) = self.playlist.current_track() {
-                    if track.duration().as_secs() >= 600 {
-                        -30
-                    } else {
-                        -5
-                    }
-                } else {
-                    -5
-                }
-            }
+        let track_len = if let Some(track) = self.playlist.current_track() {
+            track.duration().as_secs()
+        } else {
+            // fallback to 5 instead of not seeking at all
+            5
         };
-        if forward {
+
+        let mut offset = self
+            .config
+            .read()
+            .settings
+            .player
+            .seek_step
+            .get_step(track_len);
+
+        if !forward {
             offset = -offset;
         }
         self.get_player_mut()
@@ -514,94 +516,77 @@ impl GeneralPlayer {
 
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
-        match self.config.read().player_remember_last_played_position {
-            LastPosition::Yes => {
-                if let Some(track) = self.playlist.current_track() {
-                    // let time_pos = self.player.position.lock().unwrap();
-                    let time_pos = self.get_player().position();
-                    match track.media_type {
-                        MediaType::Music => self
-                            .db
-                            .set_last_position(track, time_pos.unwrap_or_default()),
-                        MediaType::Podcast => {
-                            self.db_podcast
-                                .set_last_position(track, time_pos.unwrap_or_default());
-                        }
-                        MediaType::LiveRadio => {}
-                    }
-                }
+        let Some(track) = self.playlist.current_track() else {
+            info!("Not saving Last position as there is no current track");
+            return;
+        };
+        let Some(position) = self.get_player().position() else {
+            info!("Not saving Last position as there is no position");
+            return;
+        };
+
+        let Some(time_before_save) = self
+            .config
+            .read()
+            .settings
+            .player
+            .remember_position
+            .get_time(track.media_type)
+        else {
+            info!(
+                "Not saving Last position as \"Remember last position\" is not enabled for {:#?}",
+                track.media_type
+            );
+            return;
+        };
+
+        if time_before_save < position.as_secs() {
+            match track.media_type {
+                MediaType::Music => self.db.set_last_position(track, position),
+                MediaType::Podcast => self.db_podcast.set_last_position(track, position),
+                MediaType::LiveRadio => (),
             }
-            LastPosition::No => {}
-            LastPosition::Auto => {
-                if let Some(track) = self.playlist.current_track() {
-                    // 10 minutes
-                    if track.duration().as_secs() >= 600 {
-                        // let time_pos = self.player.position.lock().unwrap();
-                        let time_pos = self.get_player().position();
-                        match track.media_type {
-                            MediaType::Music => self
-                                .db
-                                .set_last_position(track, time_pos.unwrap_or_default()),
-                            MediaType::Podcast => {
-                                self.db_podcast
-                                    .set_last_position(track, time_pos.unwrap_or_default());
-                            }
-                            MediaType::LiveRadio => {}
-                        }
-                    }
-                }
-            }
+        } else {
+            info!("Not saving Last position as the position is lower than time_before_save");
         }
     }
 
     pub fn player_restore_last_position(&mut self) {
+        let Some(track) = self.playlist.current_track() else {
+            info!("Not restoring Last position as there is no current track");
+            return;
+        };
+
         let mut restored = false;
-        let last_pos = self.config.read().player_remember_last_played_position;
-        match last_pos {
-            LastPosition::Yes => {
-                if let Some(track) = self.playlist.current_track() {
-                    match track.media_type {
-                        MediaType::Music => {
-                            if let Ok(last_pos) = self.db.get_last_position(track) {
-                                self.get_player_mut().seek_to(last_pos);
-                                restored = true;
-                            }
-                        }
 
-                        MediaType::Podcast => {
-                            if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                                self.get_player_mut().seek_to(last_pos);
-                                restored = true;
-                            }
-                        }
-                        MediaType::LiveRadio => {}
+        if self
+            .config
+            .read()
+            .settings
+            .player
+            .remember_position
+            .is_enabled_for(track.media_type)
+        {
+            match track.media_type {
+                MediaType::Music => {
+                    if let Ok(last_pos) = self.db.get_last_position(track) {
+                        self.get_player_mut().seek_to(last_pos);
+                        restored = true;
                     }
                 }
-            }
-            LastPosition::No => {}
-            LastPosition::Auto => {
-                if let Some(track) = self.playlist.current_track() {
-                    // 10 minutes
-                    if track.duration().as_secs() >= 600 {
-                        match track.media_type {
-                            MediaType::Music => {
-                                if let Ok(last_pos) = self.db.get_last_position(track) {
-                                    self.get_player_mut().seek_to(last_pos);
-                                    restored = true;
-                                }
-                            }
-
-                            MediaType::Podcast => {
-                                if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                                    self.get_player_mut().seek_to(last_pos);
-                                    restored = true;
-                                }
-                            }
-                            MediaType::LiveRadio => {}
-                        }
+                MediaType::Podcast => {
+                    if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
+                        self.get_player_mut().seek_to(last_pos);
+                        restored = true;
                     }
                 }
+                MediaType::LiveRadio => (),
             }
+        } else {
+            info!(
+                "Not restoring Last position as it is not enabled for {:#?}",
+                track.media_type
+            );
         }
 
         if restored {

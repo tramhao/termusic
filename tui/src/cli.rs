@@ -42,7 +42,7 @@ pub struct Args {
     pub disable_discord: bool,
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
-    pub max_depth: Option<usize>,
+    pub max_depth: Option<u32>,
     #[arg(short, long, default_value_t = Backend::Default, env = "TMS_BACKEND")]
     pub backend: Backend,
     #[clap(flatten)]

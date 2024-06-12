@@ -1,3 +1,4 @@
+use termusiclib::config::SharedTuiSettings;
 /*
  * MIT License
  *
@@ -21,7 +22,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::config::SharedSettings;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -196,24 +196,24 @@ impl OwnStates {
 #[derive(MockComponent)]
 pub struct TECounterDelete {
     component: Counter,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl TECounterDelete {
-    pub fn new(initial_value: isize, config: SharedSettings) -> Self {
+    pub fn new(initial_value: isize, config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Counter::default()
                 .alignment(Alignment::Center)
-                .background(config.style_color_symbol.library_background())
+                .background(config.settings.theme.library_background())
                 .borders(
                     Borders::default()
-                        .color(config.style_color_symbol.library_border())
+                        .color(config.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(
                     // config
-                    //     .style_color_symbol
+                    //     .settings.theme
                     //     .library_highlight(),
                     Color::Red,
                 )
@@ -227,10 +227,10 @@ impl TECounterDelete {
 
 impl Component<Msg, NoUserEvent> for TECounterDelete {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = &self.config.read().keys;
+        let keys = &self.config.read().settings.keys;
         // Get command
         let _cmd = match ev {
-            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 return Some(Msg::TagEditor(TEMsg::TERename))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
@@ -247,17 +247,17 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)))
             }
 

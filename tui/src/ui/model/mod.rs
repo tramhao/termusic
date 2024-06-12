@@ -27,22 +27,23 @@ mod view;
 mod youtube_options;
 
 use crate::ui::Application;
+use crate::CombinedSettings;
 use download_tracker::DownloadTracker;
+use termusiclib::config::v2::tui::keys::Keys;
+use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::sqlite::{DataBase, SearchCriteria};
 use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
+use termusiclib::xywh;
 
+use termusiclib::track::{MediaType, Track};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
-use termusiclib::{
-    config::Settings,
-    track::{MediaType, Track},
-};
 
 use anyhow::{anyhow, Result};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
-use termusiclib::config::{new_shared_settings, Keys, SharedSettings, StyleColorSymbol};
+use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, TaskPool};
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
@@ -79,7 +80,8 @@ pub struct Model {
     pub terminal: TerminalBridge,
     pub path: PathBuf,
     pub tree: Tree,
-    pub config: SharedSettings,
+    pub config_tui: SharedTuiSettings,
+    pub config_server: SharedServerSettings,
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
@@ -93,7 +95,7 @@ pub struct Model {
     pub receiver_songtag: Receiver<SearchLyricState>,
     pub viuer_supported: ViuerSupported,
     pub ce_themes: Vec<String>,
-    pub ce_style_color_symbol: StyleColorSymbol,
+    pub ce_theme: ThemeWrap,
     pub ke_key_config: Keys,
     pub db: DataBase,
     pub db_criteria: SearchCriteria,
@@ -112,6 +114,7 @@ pub struct Model {
     pub podcast_search_vec: Option<Vec<PodcastFeed>>,
     pub playlist: Playlist,
     pub cmd_tx: UnboundedSender<PlayerCmd>,
+    pub xywh: xywh::Xywh,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -143,14 +146,21 @@ fn get_viuer_support() -> ViuerSupported {
 }
 
 impl Model {
-    pub async fn new(config: Settings, cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
-        let path = Self::get_full_path_from_config(&config);
-        let tree = Tree::new(Self::library_dir_tree(&path, config.max_depth_cli));
+    pub async fn new(config: CombinedSettings, cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
+        let CombinedSettings {
+            server: config_server,
+            tui: config_tui,
+        } = config;
+        let path = Self::get_full_path_from_config(&config_server.read());
+        let tree = Tree::new(Self::library_dir_tree(
+            &path,
+            config_server.read().get_library_scan_depth(),
+        ));
 
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         let viuer_supported = get_viuer_support();
-        let db = DataBase::new(&config);
+        let db = DataBase::new(&config_server.read());
         let db_criteria = SearchCriteria::Artist;
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
 
@@ -163,16 +173,24 @@ impl Model {
         let podcasts = db_podcast
             .get_podcasts()
             .expect("failed to get podcasts from db.");
-        let threadpool = TaskPool::new(config.podcast_simultanious_download);
+        let threadpool = TaskPool::new(usize::from(
+            config_server
+                .read()
+                .settings
+                .podcast
+                .concurrent_downloads_max
+                .get(),
+        ));
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        let config = new_shared_settings(config);
-
-        let playlist = Playlist::new(config.clone()).unwrap_or_default();
-        let app = Self::init_app(&tree, &config);
+        let playlist = Playlist::new(config_server.clone()).unwrap_or_default();
+        let app = Self::init_app(&tree, &config_tui);
 
         // This line is required, in order to show the playing message for the first track
         // playlist.set_current_track_index(0);
+
+        let ce_theme = config_tui.read().settings.theme.clone();
+        let xywh = xywh::Xywh::from(&config_tui.read().settings.coverart);
 
         Self {
             app,
@@ -182,7 +200,8 @@ impl Model {
             tree,
             path,
             terminal,
-            config,
+            config_server,
+            config_tui,
             yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,
@@ -201,7 +220,7 @@ impl Model {
             receiver_songtag: rx3,
             viuer_supported,
             ce_themes: vec![],
-            ce_style_color_symbol: StyleColorSymbol::default(),
+            ce_theme,
             ke_key_config: Keys::default(),
             db,
             layout: TermusicLayout::TreeView,
@@ -221,22 +240,29 @@ impl Model {
             playlist,
             cmd_tx,
             current_song: None,
+            xywh,
+        }
+    }
+
+    #[inline]
+    pub fn get_combined_settings(&self) -> CombinedSettings {
+        CombinedSettings {
+            server: self.config_server.clone(),
+            tui: self.config_tui.clone(),
         }
     }
 
     /// Get the first music directory or the cli provided music dir resolved
-    pub fn get_full_path_from_config(config: &Settings) -> PathBuf {
-        if let Some(music_dir) = &config.music_dir_from_cli {
-            return shellexpand::path::tilde(music_dir).into_owned();
-        };
+    pub fn get_full_path_from_config(config: &ServerOverlay) -> PathBuf {
+        let mut full_path = String::new();
 
-        if let Some(dir) = config.music_dir.first() {
-            return shellexpand::path::tilde(dir).into_owned();
+        if let Some(first_music_dir) = config.get_first_music_dir() {
+            full_path = shellexpand::path::tilde(first_music_dir)
+                .to_string_lossy()
+                .to_string();
         }
 
-        warn!("No Music directory found!");
-
-        PathBuf::new()
+        PathBuf::from(full_path)
     }
 
     pub fn init_config(&mut self) {

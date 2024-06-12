@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{ColorTermusic, StyleColorSymbol};
 use std::convert::From;
-use termusiclib::config::SharedSettings;
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
+use termusiclib::config::v2::tui::theme::ThemeWrap;
+use termusiclib::config::SharedTuiSettings;
 use termusiclib::types::{ConfigEditorMsg, IdConfigEditor, Msg};
 use tui_realm_stdlib::{Input, Label, Select, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -59,25 +60,25 @@ const COLOR_LIST: [ColorTermusic; 19] = [
 #[derive(MockComponent)]
 pub struct CEThemeSelectTable {
     component: Table,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl CEThemeSelectTable {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Table::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(config.style_color_symbol.fallback_border()),
+                        .color(config.settings.theme.fallback_border()),
                 )
-                .foreground(config.style_color_symbol.fallback_foreground())
-                .background(config.style_color_symbol.fallback_background())
+                .foreground(config.settings.theme.fallback_foreground())
+                .background(config.settings.theme.fallback_background())
                 .title(" Themes: <Enter> to preview ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(config.style_color_symbol.fallback_highlight())
-                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .highlighted_color(config.settings.theme.fallback_highlight())
+                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
                 .rewind(true)
                 .step(4)
                 .row_height(1)
@@ -100,16 +101,16 @@ impl CEThemeSelectTable {
 impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
             }
 
@@ -117,14 +118,14 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -135,11 +136,11 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
 
@@ -175,7 +176,7 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
 pub struct CEColorSelect {
     component: Select,
     id: IdConfigEditor,
-    config: SharedSettings,
+    config: SharedTuiSettings,
     on_key_shift: Msg,
     on_key_backshift: Msg,
 }
@@ -185,14 +186,14 @@ impl CEColorSelect {
         name: &str,
         id: IdConfigEditor,
         color: Color,
-        config: SharedSettings,
+        config: SharedTuiSettings,
         on_key_shift: Msg,
         on_key_backshift: Msg,
     ) -> Self {
-        let init_value = Self::init_color_select(id, &config.read().style_color_symbol);
+        let init_value = Self::init_color_select(id, &config.read().settings.theme);
         let mut choices = vec![];
         for color in &COLOR_LIST {
-            choices.push(String::from(*color));
+            choices.push(color.as_ref());
         }
         Self {
             component: Select::default()
@@ -217,43 +218,49 @@ impl CEColorSelect {
         }
     }
 
-    const fn init_color_select(id: IdConfigEditor, style_color_symbol: &StyleColorSymbol) -> usize {
+    const fn init_color_select(id: IdConfigEditor, theme: &ThemeWrap) -> usize {
         match id {
-            IdConfigEditor::LibraryForeground => style_color_symbol.library_foreground.as_usize(),
-            IdConfigEditor::LibraryBackground => style_color_symbol.library_background.as_usize(),
-            IdConfigEditor::LibraryBorder => style_color_symbol.library_border.as_usize(),
-            IdConfigEditor::LibraryHighlight => style_color_symbol.library_highlight.as_usize(),
+            IdConfigEditor::LibraryForeground => theme.style.library.foreground_color.as_usize(),
+            IdConfigEditor::LibraryBackground => theme.style.library.background_color.as_usize(),
+            IdConfigEditor::LibraryBorder => theme.style.library.border_color.as_usize(),
+            IdConfigEditor::LibraryHighlight => theme.style.library.highlight_color.as_usize(),
 
-            IdConfigEditor::PlaylistForeground => style_color_symbol.playlist_foreground.as_usize(),
-            IdConfigEditor::PlaylistBackground => style_color_symbol.playlist_background.as_usize(),
-            IdConfigEditor::PlaylistBorder => style_color_symbol.playlist_border.as_usize(),
-            IdConfigEditor::PlaylistHighlight => style_color_symbol.playlist_highlight.as_usize(),
+            IdConfigEditor::PlaylistForeground => theme.style.playlist.foreground_color.as_usize(),
+            IdConfigEditor::PlaylistBackground => theme.style.playlist.background_color.as_usize(),
+            IdConfigEditor::PlaylistBorder => theme.style.playlist.border_color.as_usize(),
+            IdConfigEditor::PlaylistHighlight => theme.style.playlist.highlight_color.as_usize(),
 
-            IdConfigEditor::ProgressForeground => style_color_symbol.progress_foreground.as_usize(),
-            IdConfigEditor::ProgressBackground => style_color_symbol.progress_background.as_usize(),
-            IdConfigEditor::ProgressBorder => style_color_symbol.progress_border.as_usize(),
+            IdConfigEditor::ProgressForeground => theme.style.progress.foreground_color.as_usize(),
+            IdConfigEditor::ProgressBackground => theme.style.progress.background_color.as_usize(),
+            IdConfigEditor::ProgressBorder => theme.style.progress.border_color.as_usize(),
 
-            IdConfigEditor::LyricForeground => style_color_symbol.lyric_foreground.as_usize(),
-            IdConfigEditor::LyricBackground => style_color_symbol.lyric_background.as_usize(),
-            IdConfigEditor::LyricBorder => style_color_symbol.lyric_border.as_usize(),
+            IdConfigEditor::LyricForeground => theme.style.lyric.foreground_color.as_usize(),
+            IdConfigEditor::LyricBackground => theme.style.lyric.background_color.as_usize(),
+            IdConfigEditor::LyricBorder => theme.style.lyric.border_color.as_usize(),
 
             IdConfigEditor::ImportantPopupForeground => {
-                style_color_symbol.important_popup_foreground.as_usize()
+                theme.style.important_popup.foreground_color.as_usize()
             }
             IdConfigEditor::ImportantPopupBackground => {
-                style_color_symbol.important_popup_background.as_usize()
+                theme.style.important_popup.background_color.as_usize()
             }
             IdConfigEditor::ImportantPopupBorder => {
-                style_color_symbol.important_popup_border.as_usize()
+                theme.style.important_popup.border_color.as_usize()
             }
 
+            // TODO: add fallback colors
             _ => 0,
         }
     }
 
     fn update_color(&mut self, index: usize) -> Msg {
         if let Some(color_config) = COLOR_LIST.get(index) {
-            let color = color_config.color(&self.config.read().style_color_symbol.alacritty_theme);
+            let color = self
+                .config
+                .read()
+                .settings
+                .theme
+                .get_color_from_theme(*color_config);
             // self.attr(Attribute::Foreground, AttrValue::Color(color));
             self.attr(Attribute::Background, AttrValue::Color(color));
             self.attr(
@@ -292,33 +299,31 @@ impl CEColorSelect {
 impl Component<Msg, NoUserEvent> for CEColorSelect {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         let cmd_result = match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
             }
 
-            Event::Keyboard(key) if key == keys.global_esc.key_event() => match self.state() {
+            Event::Keyboard(key) if key == keys.escape.get() => match self.state() {
                 State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                 _ => self.perform(Cmd::Cancel),
             },
-            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
-                    _ => self.perform(Cmd::Cancel),
-                }
-            }
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => match self.state() {
+                State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+                _ => self.perform(Cmd::Cancel),
+            },
 
-            Event::Keyboard(key) if key == keys.global_up.key_event() => match self.state() {
+            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => match self.state() {
                 State::One(_) => return Some(self.on_key_backshift.clone()),
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
 
-            Event::Keyboard(key) if key == keys.global_down.key_event() => match self.state() {
+            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => match self.state() {
                 State::One(_) => return Some(self.on_key_shift.clone()),
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
@@ -376,8 +381,8 @@ pub struct ConfigLibraryForeground {
 }
 
 impl ConfigLibraryForeground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.library_foreground();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.library_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -403,8 +408,8 @@ pub struct ConfigLibraryBackground {
 }
 
 impl ConfigLibraryBackground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.library_background();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.library_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -430,8 +435,8 @@ pub struct ConfigLibraryBorder {
 }
 
 impl ConfigLibraryBorder {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.library_border();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.library_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -457,8 +462,8 @@ pub struct ConfigLibraryHighlight {
 }
 
 impl ConfigLibraryHighlight {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.library_highlight();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.library_highlight();
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
@@ -505,8 +510,8 @@ pub struct ConfigPlaylistForeground {
 }
 
 impl ConfigPlaylistForeground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.playlist_foreground();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.playlist_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -532,8 +537,8 @@ pub struct ConfigPlaylistBackground {
 }
 
 impl ConfigPlaylistBackground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.playlist_background();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.playlist_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -559,8 +564,8 @@ pub struct ConfigPlaylistBorder {
 }
 
 impl ConfigPlaylistBorder {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.playlist_border();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.playlist_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -586,8 +591,8 @@ pub struct ConfigPlaylistHighlight {
 }
 
 impl ConfigPlaylistHighlight {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.playlist_highlight();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.playlist_highlight();
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
@@ -634,8 +639,8 @@ pub struct ConfigProgressForeground {
 }
 
 impl ConfigProgressForeground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.progress_foreground();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.progress_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -661,8 +666,8 @@ pub struct ConfigProgressBackground {
 }
 
 impl ConfigProgressBackground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.progress_background();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.progress_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -688,8 +693,8 @@ pub struct ConfigProgressBorder {
 }
 
 impl ConfigProgressBorder {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.progress_border();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.progress_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -736,8 +741,8 @@ pub struct ConfigLyricForeground {
 }
 
 impl ConfigLyricForeground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.lyric_foreground();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.lyric_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -763,8 +768,8 @@ pub struct ConfigLyricBackground {
 }
 
 impl ConfigLyricBackground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.lyric_background();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.lyric_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -790,8 +795,8 @@ pub struct ConfigLyricBorder {
 }
 
 impl ConfigLyricBorder {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.lyric_border();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.lyric_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -815,22 +820,22 @@ impl Component<Msg, NoUserEvent> for ConfigLyricBorder {
 pub struct ConfigInputHighlight {
     component: Input,
     id: IdConfigEditor,
-    config: SharedSettings,
+    config: SharedTuiSettings,
 }
 
 impl ConfigInputHighlight {
-    pub fn new(name: &str, id: IdConfigEditor, config: SharedSettings) -> Self {
+    pub fn new(name: &str, id: IdConfigEditor, config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         // TODO: this should likely not be here, because it is a runtime error if it is unhandled
         let highlight_str = match id {
             IdConfigEditor::LibraryHighlightSymbol => {
-                &config_r.style_color_symbol.library_highlight_symbol
+                &config_r.settings.theme.style.library.highlight_symbol
             }
             IdConfigEditor::PlaylistHighlightSymbol => {
-                &config_r.style_color_symbol.playlist_highlight_symbol
+                &config_r.settings.theme.style.playlist.highlight_symbol
             }
             IdConfigEditor::CurrentlyPlayingTrackSymbol => {
-                &config_r.style_color_symbol.currently_playing_track_symbol
+                &config_r.settings.theme.style.playlist.current_track_symbol
             }
             _ => todo!("Unhandled IdConfigEditor Variant: {:#?}", id),
         };
@@ -838,7 +843,7 @@ impl ConfigInputHighlight {
             .borders(
                 Borders::default()
                     .modifiers(BorderType::Rounded)
-                    .color(config_r.style_color_symbol.library_border()),
+                    .color(config_r.settings.theme.library_border()),
             )
             // .foreground(color)
             .input_type(InputType::Text)
@@ -859,7 +864,7 @@ impl ConfigInputHighlight {
     fn update_symbol(&mut self, result: CmdResult) -> Msg {
         if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
             if symbol.is_empty() {
-                let color = self.config.read().style_color_symbol.library_border();
+                let color = self.config.read().settings.theme.library_border();
                 self.update_symbol_after(color);
                 return Msg::None;
             }
@@ -906,19 +911,19 @@ impl ConfigInputHighlight {
 impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        let keys = &config.read().keys;
+        let keys = &config.read().settings.keys;
         match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
             }
-            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             }
-            // Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
+            // Event::Keyboard(keyevent) if keyevent == keys.global_quit.get() => {
             //     Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             // }
             Event::Keyboard(KeyEvent {
@@ -1008,7 +1013,7 @@ pub struct ConfigLibraryHighlightSymbol {
 }
 
 impl ConfigLibraryHighlightSymbol {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: ConfigInputHighlight::new(
                 " Highlight Symbol ",
@@ -1031,7 +1036,7 @@ pub struct ConfigPlaylistHighlightSymbol {
 }
 
 impl ConfigPlaylistHighlightSymbol {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: ConfigInputHighlight::new(
                 " Highlight Symbol ",
@@ -1054,7 +1059,7 @@ pub struct ConfigCurrentlyPlayingTrackSymbol {
 }
 
 impl ConfigCurrentlyPlayingTrackSymbol {
-    pub fn new(config: SharedSettings) -> Self {
+    pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: ConfigInputHighlight::new(
                 " Current Track Symbol ",
@@ -1098,11 +1103,8 @@ pub struct ConfigImportantPopupForeground {
 }
 
 impl ConfigImportantPopupForeground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .important_popup_foreground();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.important_popup_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -1128,11 +1130,8 @@ pub struct ConfigImportantPopupBackground {
 }
 
 impl ConfigImportantPopupBackground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config
-            .read()
-            .style_color_symbol
-            .important_popup_background();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.important_popup_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -1158,8 +1157,8 @@ pub struct ConfigImportantPopupBorder {
 }
 
 impl ConfigImportantPopupBorder {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.important_popup_border();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.important_popup_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -1206,8 +1205,8 @@ pub struct ConfigFallbackForeground {
 }
 
 impl ConfigFallbackForeground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.fallback_foreground();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.fallback_foreground();
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
@@ -1233,8 +1232,8 @@ pub struct ConfigFallbackBackground {
 }
 
 impl ConfigFallbackBackground {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.library_background();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.library_background();
         Self {
             component: CEColorSelect::new(
                 " Background ",
@@ -1260,8 +1259,8 @@ pub struct ConfigFallbackBorder {
 }
 
 impl ConfigFallbackBorder {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.library_border();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.library_border();
         Self {
             component: CEColorSelect::new(
                 " Border ",
@@ -1287,8 +1286,8 @@ pub struct ConfigFallbackHighlight {
 }
 
 impl ConfigFallbackHighlight {
-    pub fn new(config: SharedSettings) -> Self {
-        let color = config.read().style_color_symbol.library_highlight();
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let color = config.read().settings.theme.library_highlight();
         Self {
             component: CEColorSelect::new(
                 " Highlight ",

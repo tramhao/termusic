@@ -13,6 +13,7 @@
 - Change(tui): move version display to be the last instead of first element in the bottom-bar.
 - Change(tui): rename previous feature `cover` to `cover-ueberzug`
 - Feat: Add `TM_LOGTOFILE` and `TMS_LOGTOFILE` to control `--log-to-file` for tui and server respectively.
+- Feat: Add new V2 Config Layout, old v1 config is automatically migrated to v2.
 - Feat(tui): allow Sixel to be used for covers.
 - Feat(tui): allow all cover providers to not be compiled in.
 - Fix: update the build scripts to check that the repository is actually the `termusic` repository before using the git version.

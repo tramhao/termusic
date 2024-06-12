@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 use super::Msg;
-use crate::config::Settings;
 use std::time::Instant;
+use termusiclib::config::TuiOverlay;
 use tui_realm_stdlib::{Label, Span, Spinner};
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::NoUserEvent;
@@ -39,13 +39,13 @@ pub struct LabelGeneric {
 }
 
 impl LabelGeneric {
-    pub fn new(config: &Settings, text: &str) -> Self {
+    pub fn new(config: &TuiOverlay, text: &str) -> Self {
         Self {
             component: Label::default()
                 .text(text)
                 .alignment(Alignment::Left)
-                .background(config.style_color_symbol.library_background())
-                .foreground(config.style_color_symbol.library_highlight())
+                .background(config.settings.theme.library_background())
+                .foreground(config.settings.theme.library_highlight())
                 .modifiers(TextModifiers::BOLD),
         }
     }
@@ -66,13 +66,13 @@ pub struct LabelSpan {
 }
 
 impl LabelSpan {
-    pub fn new(config: &Settings, span: &[TextSpan]) -> Self {
+    pub fn new(config: &TuiOverlay, span: &[TextSpan]) -> Self {
         Self {
             component: Span::default()
                 .spans(span)
                 .alignment(Alignment::Left)
-                .background(config.style_color_symbol.library_background())
-                .foreground(config.style_color_symbol.library_highlight())
+                .background(config.settings.theme.library_background())
+                .foreground(config.settings.theme.library_highlight())
                 .modifiers(TextModifiers::BOLD),
             default_span: span.to_vec(),
             active_message_start_time: None,
@@ -137,11 +137,11 @@ pub struct DownloadSpinner {
 }
 
 impl DownloadSpinner {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: &TuiOverlay) -> Self {
         Self {
             component: Spinner::default()
-                .foreground(config.style_color_symbol.library_highlight())
-                .background(config.style_color_symbol.library_background())
+                .foreground(config.settings.theme.library_highlight())
+                .background(config.settings.theme.library_background())
                 // .sequence("⣾⣽⣻⢿⡿⣟⣯⣷"),
                 // .sequence("▉▊▋▌▍▎▏▎▍▌▋▊▉"),
                 .sequence("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
