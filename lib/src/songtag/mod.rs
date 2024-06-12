@@ -31,7 +31,7 @@ use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
 use lofty::config::WriteOptions;
-use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedTextFrame};
+use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use lofty::TextEncoding;
@@ -330,16 +330,13 @@ impl SongTag {
 
                     // safe to unwrap these frames, since the ID is valid
                     if let Ok(l) = lyric {
-                        tag.insert(Frame::new(
-                            "USLT",
-                            FrameValue::UnsynchronizedText(UnsynchronizedTextFrame {
-                                encoding: TextEncoding::UTF8,
-                                language: *b"chi",
-                                description: String::from("saved by termusic."),
-                                content: l,
-                            }),
-                            FrameFlags::default(),
-                        )?);
+                        let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
+                            TextEncoding::UTF8,
+                            *b"eng",
+                            String::from("saved by termusic"),
+                            l,
+                        ));
+                        tag.insert(frame);
                     }
 
                     if let Ok(picture) = photo {
