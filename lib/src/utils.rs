@@ -118,37 +118,18 @@ pub fn create_podcast_dir(config: &ServerOverlay, pod_title: String) -> Result<P
 
 pub fn playlist_get_vec(current_node: &str) -> Result<Vec<String>> {
     let p = Path::new(current_node);
-    let p_base = p.parent().ok_or_else(|| anyhow!("cannot find path root"))?;
+    let p_base = absolute_path(p.parent().ok_or_else(|| anyhow!("cannot find path root"))?)?;
     let str = std::fs::read_to_string(p)?;
     let items =
         crate::playlist::decode(&str).map_err(|e| anyhow!("playlist decode error: {}", e))?;
     let mut vec = vec![];
-    for item in items {
-        if let Ok(pathbuf) = playlist_get_absolute_pathbuf(&item, p_base) {
-            vec.push(pathbuf.to_string_lossy().to_string());
-        }
+    for mut item in items {
+        item.absoluteize(&p_base);
+
+        // TODO: refactor to return better values
+        vec.push(item.to_string());
     }
     Ok(vec)
-}
-
-fn playlist_get_absolute_pathbuf(item: &str, p_base: &Path) -> Result<PathBuf> {
-    let mut url = urlencoding::decode(item)?.into_owned();
-    if url.starts_with("http") {
-        return Ok(PathBuf::from(url));
-        // bail!("http not supported");
-    }
-    if url.starts_with("file") {
-        url = url.replace("file://", "");
-    }
-    let pathbuf = if Path::new(&url).is_relative() {
-        let mut pathbuf = PathBuf::from(p_base);
-        pathbuf.push(url);
-
-        pathbuf
-    } else {
-        PathBuf::from(url)
-    };
-    Ok(pathbuf)
 }
 
 /// Some helper functions for dealing with Unicode strings.
@@ -214,6 +195,25 @@ pub fn absolute_path(path: &Path) -> std::io::Result<Cow<'_, Path>> {
         Ok(Cow::Borrowed(path))
     } else {
         Ok(Cow::Owned(std::env::current_dir()?.join(path)))
+    }
+}
+
+/// Absolutize a given path with the given base.
+///
+/// `base` is expected to be absoulte!
+///
+/// This function, unlike [`std::fs::canonicalize`] does *not* hit the filesystem and so does not require the input path to exist yet.
+///
+/// Examples:
+/// `./somewhere` -> `/absolute/./somewhere`
+/// `.\somewhere` -> `C:\somewhere`
+///
+/// in the future consider replacing with [`std::path::absolute`] once stable
+pub fn absolute_path_base<'a>(path: &'a Path, base: &Path) -> Cow<'a, Path> {
+    if path.is_absolute() {
+        Cow::Borrowed(path)
+    } else {
+        Cow::Owned(base.join(path))
     }
 }
 

@@ -1,21 +1,23 @@
+use anyhow::Result;
 use quick_xml::escape::unescape;
 use quick_xml::events::Event;
 use quick_xml::Reader;
-use std::error::Error;
+
+use super::PlaylistValue;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ASXItem {
     /// According to the spec, a `entry` SHOULD contain exactly one `title` (all after the first are ignored)
     pub title: String,
     /// According to the spec, a `entry` SHOULD contain exactly one `ref` (all after the first are ignored for our purposes)
-    pub url: String,
+    pub location: PlaylistValue,
 }
 
 /// A temporary storage to build a [`ASXItem`] while still being in a element and not having all values
 #[derive(Debug, Clone, PartialEq, Default)]
 struct PrivateItem {
     pub title: Option<String>,
-    pub ref_href: Option<String>,
+    pub ref_href: Option<PlaylistValue>,
 }
 
 impl PrivateItem {
@@ -25,7 +27,7 @@ impl PrivateItem {
             return Some(ASXItem {
                 // SAFETY: unwrap is safe here because it is checked by `check_required_values` to be `Some`
                 title: self.title.take().unwrap(),
-                url: self.ref_href.take().unwrap(),
+                location: self.ref_href.take().unwrap(),
             });
         }
 
@@ -58,7 +60,7 @@ impl PrivateItem {
 ///
 /// <https://en.wikipedia.org/wiki/Advanced_Stream_Redirector>
 /// <https://learn.microsoft.com/en-us/windows/win32/wmp/asx-element>
-pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
+pub fn decode(content: &str) -> Result<Vec<ASXItem>> {
     let mut list: Vec<ASXItem> = vec![];
     let mut item = PrivateItem::default();
 
@@ -79,7 +81,9 @@ pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
                     let key = decoder.decode(a.key.as_ref())?.to_lowercase();
                     let value = decoder.decode(&a.value)?;
                     if path == "asx/entry/ref" && key == "href" && item.ref_href.is_none() {
-                        item.ref_href.replace(value.to_string());
+                        let mut p_value = PlaylistValue::try_from_str(&value)?;
+                        p_value.file_url_to_path()?;
+                        item.ref_href.replace(p_value);
                     }
                 }
 
@@ -94,7 +98,9 @@ pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
                     let key = decoder.decode(a.key.as_ref())?.to_lowercase();
                     let value = decoder.decode(&a.value)?;
                     if path == "asx/entry/ref" && key == "href" && item.ref_href.is_none() {
-                        item.ref_href.replace(value.to_string());
+                        let mut p_value = PlaylistValue::try_from_str(&value)?;
+                        p_value.file_url_to_path()?;
+                        item.ref_href.replace(p_value);
                     }
                 }
             }
@@ -131,6 +137,8 @@ pub fn decode(content: &str) -> Result<Vec<ASXItem>, Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use pretty_assertions::assert_eq;
 
@@ -151,9 +159,15 @@ mod tests {
         assert!(items.is_ok());
         let items = items.unwrap();
         assert_eq!(items.len(), 2);
-        assert_eq!(items[0].url, "ref1");
+        assert_eq!(
+            items[0].location,
+            PlaylistValue::Path(PathBuf::from("ref1"))
+        );
         assert_eq!(items[0].title, "title1");
-        assert_eq!(items[1].url, "ref2");
+        assert_eq!(
+            items[1].location,
+            PlaylistValue::Path(PathBuf::from("ref2"))
+        );
         assert_eq!(items[1].title, "title2");
     }
 

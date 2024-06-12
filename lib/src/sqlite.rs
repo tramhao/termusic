@@ -59,6 +59,8 @@ pub struct TrackForDB {
 pub enum SearchCriteria {
     Artist,
     Album,
+
+    // TODO: the values below are current unused
     Genre,
     Directory,
     Playlist,
@@ -71,8 +73,7 @@ impl From<usize> for SearchCriteria {
             2 => Self::Genre,
             3 => Self::Directory,
             4 => Self::Playlist,
-            _ => Self::Artist,
-            // 0 | _ => Self::Artist,
+            /* 0 | */ _ => Self::Artist,
         }
     }
 }
