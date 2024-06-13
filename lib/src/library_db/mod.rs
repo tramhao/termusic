@@ -32,27 +32,15 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
 
+mod track_db;
+
+pub use track_db::TrackDB;
+
 const DB_VERSION: u32 = 2;
 
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
     max_depth: ScanDepth,
-}
-
-#[derive(Clone, Debug)]
-pub struct TrackDB {
-    pub id: u64,
-    pub artist: String,
-    pub title: String,
-    pub album: String,
-    pub genre: String,
-    pub file: String,
-    pub duration: Duration,
-    pub name: String,
-    pub ext: String,
-    pub directory: String,
-    pub last_modified: String,
-    pub last_position: Duration,
 }
 
 #[derive(PartialEq, Eq)]
@@ -318,24 +306,9 @@ impl DataBase {
         Ok(vec_records)
     }
 
+    // TODO: remove this function
     fn track_db(row: &Row<'_>) -> TrackDB {
-        let d_u64: u64 = row.get(6).unwrap();
-        let last_position_u64: u64 = row.get(11).unwrap();
-        TrackDB {
-            // id: row.get(0).unwrap(),
-            id: row.get_unwrap(0),
-            artist: row.get_unwrap(1),
-            title: row.get_unwrap(2),
-            album: row.get(3).unwrap(),
-            genre: row.get(4).unwrap(),
-            file: row.get(5).unwrap(),
-            duration: Duration::from_secs(d_u64),
-            name: row.get(7).unwrap(),
-            ext: row.get(8).unwrap(),
-            directory: row.get(9).unwrap(),
-            last_modified: row.get(10).unwrap(),
-            last_position: Duration::from_secs(last_position_u64),
-        }
+        TrackDB::try_from_row(row).unwrap()
     }
 
     /// # Panics
