@@ -1553,6 +1553,7 @@ mod const_keys {
     ///     NAME2 "STRING",
     /// }
     /// ```
+    #[macro_export]
     macro_rules! const_str {
         (
             $(#[$outer:meta])*
