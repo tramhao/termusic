@@ -40,7 +40,7 @@ pub struct DataBase {
 }
 
 #[derive(Clone, Debug)]
-pub struct TrackForDB {
+pub struct TrackDB {
     pub id: u64,
     pub artist: String,
     pub title: String,
@@ -199,7 +199,7 @@ impl DataBase {
         let conn = conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let mut track_vec: Vec<String> = vec![];
-        let vec: Vec<TrackForDB> = stmt
+        let vec: Vec<TrackDB> = stmt
             .query_map([], |row| Ok(Self::track_db(row)))?
             .flatten()
             .collect();
@@ -282,10 +282,10 @@ impl DataBase {
     /// # Panics
     ///
     /// if the connection is unavailable
-    pub fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
+    pub fn get_all_records(&mut self) -> Result<Vec<TrackDB>> {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
-        let vec: Vec<TrackForDB> = stmt
+        let vec: Vec<TrackDB> = stmt
             .query_map([], |row| Ok(Self::track_db(row)))?
             .flatten()
             .collect();
@@ -299,12 +299,12 @@ impl DataBase {
         &mut self,
         str: &str,
         cri: &SearchCriteria,
-    ) -> Result<Vec<TrackForDB>> {
+    ) -> Result<Vec<TrackDB>> {
         let search_str = format!("SELECT * FROM tracks WHERE {cri} = ?");
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
-        let mut vec_records: Vec<TrackForDB> = stmt
+        let mut vec_records: Vec<TrackDB> = stmt
             .query_map([str], |row| Ok(Self::track_db(row)))?
             .flatten()
             .collect();
@@ -318,10 +318,10 @@ impl DataBase {
         Ok(vec_records)
     }
 
-    fn track_db(row: &Row<'_>) -> TrackForDB {
+    fn track_db(row: &Row<'_>) -> TrackDB {
         let d_u64: u64 = row.get(6).unwrap();
         let last_position_u64: u64 = row.get(11).unwrap();
-        TrackForDB {
+        TrackDB {
             // id: row.get(0).unwrap(),
             id: row.get_unwrap(0),
             artist: row.get_unwrap(1),
@@ -401,12 +401,12 @@ impl DataBase {
     /// # Panics
     ///
     /// if the connection is unavailable
-    pub fn get_record_by_path(&mut self, str: &str) -> Result<TrackForDB> {
+    pub fn get_record_by_path(&mut self, str: &str) -> Result<TrackDB> {
         let search_str = "SELECT * FROM tracks WHERE file = ?";
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(search_str)?;
 
-        let vec_records: Vec<TrackForDB> = stmt
+        let vec_records: Vec<TrackDB> = stmt
             .query_map([str], |row| Ok(Self::track_db(row)))?
             .flatten()
             .collect();

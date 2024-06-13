@@ -5,8 +5,8 @@ use rand::seq::SliceRandom;
 use std::borrow::Cow;
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::sqlite::SearchCriteria;
-use termusiclib::sqlite::TrackForDB;
+use termusiclib::library_db::SearchCriteria;
+use termusiclib::library_db::TrackDB;
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
@@ -307,7 +307,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn playlist_add_all_from_db(&mut self, vec: &[TrackForDB]) {
+    pub fn playlist_add_all_from_db(&mut self, vec: &[TrackDB]) {
         let vec2: Vec<&str> = vec.iter().map(|f| f.file.as_str()).collect();
         if let Err(e) = self.playlist.add_playlist(&vec2) {
             self.mount_error_popup(e.context("add all to playlist from database"));
@@ -573,7 +573,7 @@ impl Model {
             .is_ok());
     }
 
-    pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackForDB> {
+    pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackDB> {
         let mut result = vec![];
         if let Ok(vec) = self.db.get_all_records() {
             let mut i = 0;
@@ -595,7 +595,7 @@ impl Model {
         result
     }
 
-    pub fn playlist_get_random_album_tracks(&mut self, quantity: u32) -> Vec<TrackForDB> {
+    pub fn playlist_get_random_album_tracks(&mut self, quantity: u32) -> Vec<TrackDB> {
         let mut result = vec![];
         if let Ok(vec) = self.db.get_all_records() {
             loop {

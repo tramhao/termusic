@@ -31,7 +31,7 @@ use crate::CombinedSettings;
 use download_tracker::DownloadTracker;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
-use termusiclib::sqlite::{DataBase, SearchCriteria};
+use termusiclib::library_db::{DataBase, SearchCriteria};
 use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
 use termusiclib::xywh;
 
@@ -44,9 +44,9 @@ use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
+use termusiclib::library_db::TrackDB;
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, TaskPool};
 use termusiclib::songtag::SongTag;
-use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::get_app_config_path;
 use termusicplayback::{PlayerCmd, Playlist};
 use tokio::sync::mpsc::UnboundedSender;
@@ -100,7 +100,7 @@ pub struct Model {
     pub db: DataBase,
     pub db_criteria: SearchCriteria,
     pub db_search_results: Vec<String>,
-    pub db_search_tracks: Vec<TrackForDB>,
+    pub db_search_tracks: Vec<TrackDB>,
     pub layout: TermusicLayout,
     pub config_layout: ConfigEditorLayout,
     pub config_changed: bool,
