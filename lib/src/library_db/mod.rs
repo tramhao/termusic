@@ -127,7 +127,7 @@ impl DataBase {
             .file_name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
             .to_string_lossy();
-        let mut stmt = conn.prepare("SELECT last_modified FROM tracks WHERE name = ? ")?;
+        let mut stmt = conn.prepare("SELECT last_modified FROM tracks WHERE name = ?")?;
         let rows = stmt.query_map([filename], |row| {
             let last_modified: String = row.get(0)?;
 
@@ -151,7 +151,7 @@ impl DataBase {
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let mut track_vec: Vec<String> = vec![];
         let vec: Vec<TrackDB> = stmt
-            .query_map([], TrackDB::try_from_row)?
+            .query_map([], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
         for record in vec {
@@ -237,7 +237,7 @@ impl DataBase {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let vec: Vec<TrackDB> = stmt
-            .query_map([], TrackDB::try_from_row)?
+            .query_map([], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
         Ok(vec)
@@ -256,7 +256,7 @@ impl DataBase {
         let mut stmt = conn.prepare(&search_str)?;
 
         let mut vec_records: Vec<TrackDB> = stmt
-            .query_map([str], TrackDB::try_from_row)?
+            .query_map([str], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
 
@@ -338,7 +338,7 @@ impl DataBase {
         let mut stmt = conn.prepare(search_str)?;
 
         let vec_records: Vec<TrackDB> = stmt
-            .query_map([str], TrackDB::try_from_row)?
+            .query_map([str], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
 

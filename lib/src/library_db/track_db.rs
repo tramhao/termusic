@@ -1,6 +1,6 @@
 use std::time::{Duration, UNIX_EPOCH};
 
-use rusqlite::{params, Connection, Row};
+use rusqlite::{named_params, Connection, Row};
 
 use crate::{const_str, track::Track};
 
@@ -22,8 +22,10 @@ pub struct TrackDB {
 }
 
 impl TrackDB {
-    /// Try to convert a given row to a [`TrackDB`] instance, expecting correct row order
-    pub fn try_from_row(row: &Row<'_>) -> Result<Self, rusqlite::Error> {
+    /// Try to convert a given row to a [`TrackDB`] instance, expecting correct row order.
+    ///
+    /// Use [`Self::try_from_row_named`] if possible.
+    pub fn try_from_row_id(row: &Row<'_>) -> Result<Self, rusqlite::Error> {
         let d_u64: u64 = row.get(6)?;
         let last_position_u64: u64 = row.get(11)?;
         Ok(TrackDB {
@@ -38,6 +40,27 @@ impl TrackDB {
             ext: row.get(8)?,
             directory: row.get(9)?,
             last_modified: row.get(10)?,
+            last_position: Duration::from_secs(last_position_u64),
+        })
+    }
+
+    /// Try to convert a given row to a [`TrackDB`] instance, using column names to resolve the values
+    pub fn try_from_row_named(row: &Row<'_>) -> Result<Self, rusqlite::Error> {
+        // NOTE: all the names in "get" below are the *column names* as defined in migrations/002.sql#table_tracks (pseudo link)
+        let d_u64: u64 = row.get("duration")?;
+        let last_position_u64: u64 = row.get("last_position")?;
+        Ok(TrackDB {
+            id: row.get("id")?,
+            artist: row.get("artist")?,
+            title: row.get("title")?,
+            album: row.get("album")?,
+            genre: row.get("genre")?,
+            file: row.get("file")?,
+            duration: Duration::from_secs(d_u64),
+            name: row.get("name")?,
+            ext: row.get("ext")?,
+            directory: row.get("directory")?,
+            last_modified: row.get("last_modified")?,
             last_position: Duration::from_secs(last_position_u64),
         })
     }
@@ -99,20 +122,20 @@ impl TrackDBInsertable<'_> {
     #[inline]
     pub fn insert_track(&self, con: &Connection) -> Result<usize, rusqlite::Error> {
         con.execute(
-            "INSERT INTO tracks (artist, title, album, genre,  file, duration, name, ext, directory, last_modified, last_position) 
-            values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-            params![
-                &self.artist,
-                &self.title,
-                &self.album,
-                &self.genre,
-                &self.file,
-                &self.duration.as_secs(),
-                &self.name,
-                &self.ext,
-                &self.directory,
-                &self.last_modified,
-                &self.last_position.as_secs().to_string(),
+            "INSERT INTO tracks (artist, title, album, genre, file, duration, name, ext, directory, last_modified, last_position) 
+            values (:artist, :title, :album, :genre, :file, :duration, :name, :ext, :directory, :last_modified, :last_position)",
+            named_params![
+                ":artist": &self.artist,
+                ":title": &self.title,
+                ":album": &self.album,
+                ":genre": &self.genre,
+                ":file": &self.file,
+                ":duration": &self.duration.as_secs(),
+                ":name": &self.name,
+                ":ext": &self.ext,
+                ":directory": &self.directory,
+                ":last_modified": &self.last_modified,
+                ":last_position": &self.last_position.as_secs().to_string(),
             ],
         )
     }
