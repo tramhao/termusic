@@ -31,6 +31,7 @@ use rusqlite::{params, Connection, Error, Result};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
+use track_db::TrackDBInsertable;
 
 mod track_db;
 
@@ -113,29 +114,7 @@ impl DataBase {
         let tx = conn.transaction()?;
 
         for track in tracks {
-            tx.execute(
-            "INSERT INTO tracks (artist, title, album, genre,  file, duration, name, ext, directory, last_modified, last_position) 
-            values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-            params![
-                track.artist().unwrap_or("Unknown Artist").to_string(),
-                track.title().unwrap_or("Unknown Title").to_string(),
-                track.album().unwrap_or("empty").to_string(),
-                track.genre().unwrap_or("no type").to_string(),
-                track.file().unwrap_or("Unknown File").to_string(),
-                track.duration().as_secs(),
-                track.name().unwrap_or_default().to_string(),
-                track.ext().unwrap_or_default().to_string(),
-                track.directory().unwrap_or_default().to_string(),
-                track
-                    .last_modified
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_secs()
-                    .to_string(),
-                0,
-
-            ],
-        )?;
+            TrackDBInsertable::from(&track).insert_track(&tx)?;
         }
 
         tx.commit()?;
