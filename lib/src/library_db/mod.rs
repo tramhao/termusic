@@ -27,7 +27,7 @@ use crate::config::ServerOverlay;
 use crate::track::Track;
 use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
 use parking_lot::Mutex;
-use rusqlite::{params, Connection, Error, Result, Row};
+use rusqlite::{params, Connection, Error, Result};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -188,7 +188,7 @@ impl DataBase {
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let mut track_vec: Vec<String> = vec![];
         let vec: Vec<TrackDB> = stmt
-            .query_map([], |row| Ok(Self::track_db(row)))?
+            .query_map([], TrackDB::try_from_row)?
             .flatten()
             .collect();
         for record in vec {
@@ -274,7 +274,7 @@ impl DataBase {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let vec: Vec<TrackDB> = stmt
-            .query_map([], |row| Ok(Self::track_db(row)))?
+            .query_map([], TrackDB::try_from_row)?
             .flatten()
             .collect();
         Ok(vec)
@@ -293,7 +293,7 @@ impl DataBase {
         let mut stmt = conn.prepare(&search_str)?;
 
         let mut vec_records: Vec<TrackDB> = stmt
-            .query_map([str], |row| Ok(Self::track_db(row)))?
+            .query_map([str], TrackDB::try_from_row)?
             .flatten()
             .collect();
 
@@ -304,11 +304,6 @@ impl DataBase {
 
         vec_records.sort_by_cached_key(|k| get_pin_yin(&k.name));
         Ok(vec_records)
-    }
-
-    // TODO: remove this function
-    fn track_db(row: &Row<'_>) -> TrackDB {
-        TrackDB::try_from_row(row).unwrap()
     }
 
     /// # Panics
@@ -380,7 +375,7 @@ impl DataBase {
         let mut stmt = conn.prepare(search_str)?;
 
         let vec_records: Vec<TrackDB> = stmt
-            .query_map([str], |row| Ok(Self::track_db(row)))?
+            .query_map([str], TrackDB::try_from_row)?
             .flatten()
             .collect();
 

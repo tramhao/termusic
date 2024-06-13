@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use anyhow::Result;
 use rusqlite::Row;
 
 /// A struct representing a [`Track`](crate::track::Track) in the database
@@ -22,7 +21,7 @@ pub struct TrackDB {
 
 impl TrackDB {
     /// Try to convert a given row to a [`TrackDB`] instance, expecting correct row order
-    pub fn try_from_row(row: &Row<'_>) -> Result<Self> {
+    pub fn try_from_row(row: &Row<'_>) -> Result<Self, rusqlite::Error> {
         let d_u64: u64 = row.get(6)?;
         let last_position_u64: u64 = row.get(11)?;
         Ok(TrackDB {
