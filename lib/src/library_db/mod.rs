@@ -33,11 +33,10 @@ use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
 use track_db::TrackDBInsertable;
 
+mod migration;
 mod track_db;
 
 pub use track_db::TrackDB;
-
-const DB_VERSION: u32 = 2;
 
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
@@ -89,19 +88,7 @@ impl DataBase {
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");
 
-        let user_version: u32 = conn
-            .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
-                r.get(0)
-            })
-            .expect("get user_version error");
-        if DB_VERSION != user_version {
-            conn.execute("DROP TABLE tracks", []).ok();
-            conn.pragma_update(None, "user_version", DB_VERSION)
-                .expect("update user_version error");
-        }
-
-        conn.execute(include_str!("./migrations/002.sql"), [])
-            .expect("Database version 2 could not be created");
+        migration::migrate(&conn).expect("Database creation / migration");
 
         let max_depth = config.get_library_scan_depth();
 
@@ -350,5 +337,15 @@ impl DataBase {
         }
 
         Err(Error::QueryReturnedNoRows)
+    }
+}
+
+#[cfg(test)]
+mod test_utils {
+    use rusqlite::Connection;
+
+    /// Open a new In-Memory sqlite database
+    pub fn gen_database() -> Connection {
+        Connection::open_in_memory().expect("open db failed")
     }
 }
