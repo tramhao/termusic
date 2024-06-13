@@ -99,24 +99,8 @@ impl DataBase {
                 .expect("update user_version error");
         }
 
-        conn.execute(
-            "create table if not exists tracks(
-             id integer primary key,
-             artist TEXT,
-             title TEXT,
-             album TEXT,
-             genre TEXT,
-             file TEXT NOT NULL,
-             duration INTERGER,
-             name TEXT,
-             ext TEXT,
-             directory TEXT,
-             last_modified TEXT,
-             last_position INTERGER
-            )",
-            [],
-        )
-        .expect("create table tracks failed");
+        conn.execute(include_str!("./migrations/002.sql"), [])
+            .expect("Database version 2 could not be created");
 
         let max_depth = config.get_library_scan_depth();
 
