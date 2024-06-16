@@ -286,7 +286,7 @@ impl DataBase {
         let conn = self.conn.lock();
         conn.query_row(
             query,
-            params![track.name().unwrap_or("Unknown File").to_string(),],
+            params![track.name().unwrap_or(track_db::UNKNOWN_FILE).to_string(),],
             |row| {
                 let last_position_u64: u64 = row.get(0)?;
                 // error!("last_position_u64 is {last_position_u64}");
@@ -306,7 +306,7 @@ impl DataBase {
             query,
             params![
                 last_position.as_secs(),
-                track.name().unwrap_or("Unknown File Name").to_string(),
+                track.name().unwrap_or(track_db::UNKNOWN_FILE).to_string(),
             ],
         )?;
         // error!("set last position as {}", last_position.as_secs());
