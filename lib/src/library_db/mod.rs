@@ -280,35 +280,31 @@ impl DataBase {
 
     /// Get the stored `last_position` of a given track
     pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
+        let filename = track
+            .name()
+            .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?;
         let query = "SELECT last_position FROM tracks WHERE name = ?1";
 
         let mut last_position: Duration = Duration::from_secs(0);
         let conn = self.conn.lock();
-        conn.query_row(
-            query,
-            params![track.name().unwrap_or(track_db::UNKNOWN_FILE).to_string(),],
-            |row| {
-                let last_position_u64: u64 = row.get(0)?;
-                // error!("last_position_u64 is {last_position_u64}");
-                last_position = Duration::from_secs(last_position_u64);
-                Ok(last_position)
-            },
-        )?;
+        conn.query_row(query, params![filename], |row| {
+            let last_position_u64: u64 = row.get(0)?;
+            // error!("last_position_u64 is {last_position_u64}");
+            last_position = Duration::from_secs(last_position_u64);
+            Ok(last_position)
+        })?;
         // error!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
 
     /// Set the stored `last_position` of a given track
     pub fn set_last_position(&mut self, track: &Track, last_position: Duration) -> Result<()> {
+        let filename = track
+            .name()
+            .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?;
         let query = "UPDATE tracks SET last_position = ?1 WHERE name = ?2";
         let conn = self.conn.lock();
-        conn.execute(
-            query,
-            params![
-                last_position.as_secs(),
-                track.name().unwrap_or(track_db::UNKNOWN_FILE).to_string(),
-            ],
-        )?;
+        conn.execute(query, params![last_position.as_secs(), filename,])?;
         // error!("set last position as {}", last_position.as_secs());
         Ok(())
     }
