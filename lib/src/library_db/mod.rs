@@ -139,18 +139,20 @@ impl DataBase {
     fn need_delete(conn: &Arc<Mutex<Connection>>) -> Result<Vec<String>> {
         let conn = conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
-        let mut track_vec: Vec<String> = vec![];
-        let vec: Vec<TrackDB> = stmt
+
+        let track_vec: Vec<String> = stmt
             .query_map([], TrackDB::try_from_row_named)?
             .flatten()
+            .filter_map(|record| {
+                let path = Path::new(&record.file);
+                if path.exists() {
+                    None
+                } else {
+                    Some(record.file)
+                }
+            })
             .collect();
-        for record in vec {
-            let path = Path::new(&record.file);
-            if path.exists() {
-                continue;
-            }
-            track_vec.push(record.file.clone());
-        }
+
         Ok(track_vec)
     }
 
