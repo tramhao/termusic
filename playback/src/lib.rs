@@ -242,7 +242,7 @@ impl GeneralPlayer {
 
         let db_podcast =
             DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
-        let db = DataBase::new(&config);
+        let db = DataBase::new(&config)?;
 
         let config = new_shared_server_settings(config);
         let playlist = Playlist::new(config.clone()).unwrap_or_default();

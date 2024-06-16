@@ -160,7 +160,7 @@ impl Model {
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         let viuer_supported = get_viuer_support();
-        let db = DataBase::new(&config_server.read());
+        let db = DataBase::new(&config_server.read()).expect("Open Library Database");
         let db_criteria = SearchCriteria::Artist;
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
 

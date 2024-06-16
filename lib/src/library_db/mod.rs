@@ -22,10 +22,10 @@ use crate::config::v2::server::ScanDepth;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// database
 use crate::config::ServerOverlay;
 use crate::track::Track;
 use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
+use anyhow::Context;
 use parking_lot::Mutex;
 use rusqlite::{params, Connection, Error, Result};
 use std::path::Path;
@@ -83,17 +83,17 @@ impl DataBase {
     ///
     /// - if app config path creation fails
     /// - if any required database operation fails
-    pub fn new(config: &ServerOverlay) -> Self {
-        let mut db_path = get_app_config_path().expect("failed to get app configuration path");
+    pub fn new(config: &ServerOverlay) -> anyhow::Result<Self> {
+        let mut db_path = get_app_config_path().context("failed to get app configuration path")?;
         db_path.push("library.db");
-        let conn = Connection::open(db_path).expect("open db failed");
+        let conn = Connection::open(db_path).context("open/create database")?;
 
-        migration::migrate(&conn).expect("Database creation / migration");
+        migration::migrate(&conn).context("Database creation / migration")?;
 
         let max_depth = config.get_library_scan_depth();
 
         let conn = Arc::new(Mutex::new(conn));
-        Self { conn, max_depth }
+        Ok(Self { conn, max_depth })
     }
 
     fn add_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<Track>) -> Result<()> {
