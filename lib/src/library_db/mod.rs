@@ -96,6 +96,7 @@ impl DataBase {
         Ok(Self { conn, max_depth })
     }
 
+    /// Insert multiple tracks into the database
     fn add_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<Track>) -> Result<()> {
         let mut conn = conn.lock();
         let tx = conn.transaction()?;
@@ -108,6 +109,7 @@ impl DataBase {
         Ok(())
     }
 
+    /// Check if the given path's track needs to be updated in the database by comparing `last_modified` times
     fn need_update(conn: &Arc<Mutex<Connection>>, path: &Path) -> Result<bool> {
         let conn = conn.lock();
         let filename = path
@@ -133,6 +135,7 @@ impl DataBase {
         Ok(true)
     }
 
+    /// Get all Track Paths from the database which dont exist on disk anymore
     fn need_delete(conn: &Arc<Mutex<Connection>>) -> Result<Vec<String>> {
         let conn = conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
@@ -151,6 +154,7 @@ impl DataBase {
         Ok(track_vec)
     }
 
+    /// Delete Tracks from the database by the full file path
     fn delete_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<String>) -> Result<()> {
         let mut conn = conn.lock();
         let tx = conn.transaction()?;
@@ -163,10 +167,10 @@ impl DataBase {
         Ok(())
     }
 
+    /// Synchronize the database with the on-disk paths (insert, update, remove), limited to `path` root
     pub fn sync_database(&mut self, path: &Path) {
         // add updated records
         let conn = self.conn.clone();
-        let mut track_vec: Vec<Track> = vec![];
         let all_items = {
             let mut walker = walkdir::WalkDir::new(path).follow_links(true);
 
@@ -178,6 +182,8 @@ impl DataBase {
         };
 
         std::thread::spawn(move || -> Result<()> {
+            let mut need_updates: Vec<Track> = vec![];
+
             for record in all_items
                 .into_iter()
                 .filter_map(std::result::Result::ok)
@@ -187,7 +193,7 @@ impl DataBase {
                 match Self::need_update(&conn, record.path()) {
                     Ok(true) => {
                         if let Ok(track) = Track::read_from_path(record.path(), true) {
-                            track_vec.push(track);
+                            need_updates.push(track);
                         }
                     }
                     Ok(false) => {}
@@ -196,8 +202,8 @@ impl DataBase {
                     }
                 }
             }
-            if !track_vec.is_empty() {
-                Self::add_records(&conn, track_vec)?;
+            if !need_updates.is_empty() {
+                Self::add_records(&conn, need_updates)?;
             }
 
             // delete records where local file are missing
@@ -217,9 +223,7 @@ impl DataBase {
         });
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
+    /// Get all Tracks in the database at once
     pub fn get_all_records(&mut self) -> Result<Vec<TrackDB>> {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
@@ -230,37 +234,33 @@ impl DataBase {
         Ok(vec)
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
+    /// Get Tracks by [`SearchCriteria`]
     pub fn get_record_by_criteria(
         &mut self,
-        str: &str,
-        cri: &SearchCriteria,
+        criteria_val: &str,
+        criteria: &SearchCriteria,
     ) -> Result<Vec<TrackDB>> {
-        let search_str = format!("SELECT * FROM tracks WHERE {cri} = ?");
+        let search_str = format!("SELECT * FROM tracks WHERE {criteria} = ?");
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
         let mut vec_records: Vec<TrackDB> = stmt
-            .query_map([str], TrackDB::try_from_row_named)?
+            .query_map([criteria_val], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
 
         // Left for debug
-        // error!("str: {}", str);
-        // error!("cri: {}", cri);
+        // error!("criteria_val: {}", criteria_val);
+        // error!("criteria: {}", criteria);
         // error!("vec: {:?}", vec_records);
 
         vec_records.sort_by_cached_key(|k| get_pin_yin(&k.name));
         Ok(vec_records)
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
-    pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Result<Vec<String>> {
-        let search_str = format!("SELECT DISTINCT {cri} FROM tracks");
+    /// Get a list of available distinct [`SearchCriteria`] (ie get Artist names deduplicated)
+    pub fn get_criterias(&mut self, criteria: &SearchCriteria) -> Result<Vec<String>> {
+        let search_str = format!("SELECT DISTINCT {criteria} FROM tracks");
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
@@ -276,9 +276,7 @@ impl DataBase {
         Ok(vec)
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
+    /// Get the stored `last_position` of a given track
     pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
         let query = "SELECT last_position FROM tracks WHERE name = ?1";
 
@@ -294,14 +292,11 @@ impl DataBase {
                 Ok(last_position)
             },
         )?;
-        // .expect("get last position failed.");
         // error!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
+    /// Set the stored `last_position` of a given track
     pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
         let query = "UPDATE tracks SET last_position = ?1 WHERE name = ?2";
         let conn = self.conn.lock();
@@ -316,22 +311,17 @@ impl DataBase {
         // error!("set last position as {}", last_position.as_secs());
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
-    pub fn get_record_by_path(&mut self, str: &str) -> Result<TrackDB> {
+    /// Get a Track by the given full file path
+    pub fn get_record_by_path(&mut self, file_path: &str) -> Result<TrackDB> {
         let search_str = "SELECT * FROM tracks WHERE file = ?";
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(search_str)?;
 
         let vec_records: Vec<TrackDB> = stmt
-            .query_map([str], TrackDB::try_from_row_named)?
+            .query_map([file_path], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
 
-        // Left for debug
-        // error!("str: {}", str);
-        // error!("cri: {}", cri);
         if let Some(record) = vec_records.first() {
             return Ok(record.clone());
         }
