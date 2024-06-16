@@ -297,7 +297,7 @@ impl DataBase {
     }
 
     /// Set the stored `last_position` of a given track
-    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
+    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) -> Result<()> {
         let query = "UPDATE tracks SET last_position = ?1 WHERE name = ?2";
         let conn = self.conn.lock();
         conn.execute(
@@ -306,9 +306,9 @@ impl DataBase {
                 last_position.as_secs(),
                 track.name().unwrap_or("Unknown File Name").to_string(),
             ],
-        )
-        .expect("update last position failed.");
+        )?;
         // error!("set last position as {}", last_position.as_secs());
+        Ok(())
     }
 
     /// Get a Track by the given full file path

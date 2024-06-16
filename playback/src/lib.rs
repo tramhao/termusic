@@ -542,7 +542,11 @@ impl GeneralPlayer {
 
         if time_before_save < position.as_secs() {
             match track.media_type {
-                MediaType::Music => self.db.set_last_position(track, position),
+                MediaType::Music => {
+                    if let Err(err) = self.db.set_last_position(track, position) {
+                        error!("Saving last_position for music failed, Error: {:#?}", err);
+                    }
+                }
                 MediaType::Podcast => self.db_podcast.set_last_position(track, position),
                 MediaType::LiveRadio => (),
             }
@@ -591,7 +595,9 @@ impl GeneralPlayer {
 
         if restored {
             if let Some(track) = self.playlist.current_track() {
-                self.db.set_last_position(track, Duration::from_secs(0));
+                if let Err(err) = self.db.set_last_position(track, Duration::from_secs(0)) {
+                    error!("Resetting last_position failed, Error: {:#?}", err);
+                }
             }
         }
     }
