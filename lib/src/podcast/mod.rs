@@ -338,14 +338,14 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
 
     println!("Importing {} podcasts...", podcast_list.len());
 
-    let threadpool = TaskPool::new(usize::from(config.concurrent_downloads_max.get()));
+    let taskpool = TaskPool::new(usize::from(config.concurrent_downloads_max.get()));
     let (tx_to_main, rx_to_main) = mpsc::channel();
 
     for pod in &podcast_list {
         check_feed(
             pod.clone(),
             usize::from(config.max_download_retries),
-            &threadpool,
+            &taskpool,
             tx_to_main.clone(),
         );
     }
@@ -481,7 +481,7 @@ fn export_opml_feeds(podcasts: &[Podcast]) -> OPML {
     opml
 }
 
-/// Enum used to communicate relevant data to the threadpool.
+/// Enum used to communicate relevant data to the taskpool.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct EpData {
     pub id: i64,
@@ -492,23 +492,23 @@ pub struct EpData {
     pub file_path: Option<PathBuf>,
 }
 
-/// This is the function the main controller uses to indicate new
-/// files to download. It uses the threadpool to start jobs
-/// for every episode to be downloaded. New jobs can be requested
-/// by the user while there are still ongoing jobs.
+/// This is the function the main controller uses to indicate new files to download.
+///
+/// It uses the taskpool to start jobs for every episode to be downloaded.
+/// New jobs can be requested by the user while there are still ongoing jobs.
 #[allow(clippy::missing_panics_doc)]
 pub fn download_list(
     episodes: Vec<EpData>,
     dest: &Path,
     max_retries: usize,
-    threadpool: &TaskPool,
+    tp: &TaskPool,
     tx_to_main: &Sender<Msg>,
 ) {
     // parse episode details and push to queue
     for ep in episodes {
         let tx = tx_to_main.clone();
         let dest2 = dest.to_path_buf();
-        threadpool.execute(async move { download_job(&tx, ep, dest2, max_retries).await });
+        tp.execute(async move { download_job(&tx, ep, dest2, max_retries).await });
     }
 }
 
