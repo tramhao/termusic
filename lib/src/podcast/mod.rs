@@ -4,12 +4,16 @@
 pub mod db;
 #[allow(clippy::module_name_repetitions)]
 pub mod episode;
+// repetetive name, but will do for now
+#[allow(clippy::module_inception)]
+mod podcast;
 
 use crate::config::v2::server::PodcastSettings;
 use crate::taskpool::TaskPool;
 use crate::types::{Msg, PCMsg};
-use crate::utils::StringUtils;
 use episode::{Episode, EpisodeNoId, NewEpisode};
+#[allow(clippy::module_name_repetitions)]
+pub use podcast::{Podcast, PodcastNoId};
 
 use anyhow::{anyhow, Context, Result};
 use bytes::Buf;
@@ -22,9 +26,8 @@ use reqwest::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
 use sanitize_filename::{sanitize_with_options, Options};
-use std::cmp::Ordering;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{Read as _, Write as _};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Sender};
 use std::time::Duration;
@@ -49,7 +52,6 @@ lazy_static! {
     /// Regex for removing "A", "An", and "The" from the beginning of
     /// podcast titles
     static ref RE_ARTICLES: Regex = Regex::new(r"^(a|an|the) ").expect("Regex error");
-
 }
 
 /// Defines interface used for both podcasts and episodes, to be
@@ -58,99 +60,6 @@ pub trait Menuable {
     fn get_id(&self) -> i64;
     fn get_title(&self, length: usize) -> String;
     fn is_played(&self) -> bool;
-}
-
-/// Struct holding data about an individual podcast feed. This includes a
-/// (possibly empty) vector of episodes.
-#[derive(Debug, Clone)]
-pub struct Podcast {
-    pub id: i64,
-    pub title: String,
-    pub sort_title: String,
-    pub url: String,
-    pub description: Option<String>,
-    pub author: Option<String>,
-    pub explicit: Option<bool>,
-    pub last_checked: DateTime<Utc>,
-    pub episodes: Vec<Episode>,
-    pub image_url: Option<String>,
-}
-
-impl Podcast {
-    // Counts and returns the number of unplayed episodes in the podcast.
-    pub fn num_unplayed(&self) -> usize {
-        self.episodes
-            .iter()
-            .map(|ep| usize::from(!ep.is_played()))
-            .sum()
-    }
-}
-
-impl Menuable for Podcast {
-    /// Returns the database ID for the podcast.
-    fn get_id(&self) -> i64 {
-        self.id
-    }
-
-    /// Returns the title for the podcast, up to length characters.
-    fn get_title(&self, length: usize) -> String {
-        let mut title_length = length;
-
-        // if the size available is big enough, we add the unplayed data
-        // to the end
-        if length > PODCAST_UNPLAYED_TOTALS_LENGTH {
-            let meta_str = format!("({}/{})", self.num_unplayed(), self.episodes.len());
-            title_length = length - meta_str.chars().count() - 3;
-
-            let out = self.title.substr(0, title_length);
-
-            format!(
-                " {out} {meta_str:>width$} ",
-                width = length - out.grapheme_len() - 3
-            ) // this pads spaces between title and totals
-        } else {
-            format!(" {} ", self.title.substr(0, title_length - 2))
-        }
-    }
-
-    fn is_played(&self) -> bool {
-        self.num_unplayed() == 0
-    }
-}
-
-impl PartialEq for Podcast {
-    fn eq(&self, other: &Self) -> bool {
-        self.sort_title == other.sort_title
-    }
-}
-impl Eq for Podcast {}
-
-impl PartialOrd for Podcast {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Podcast {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.sort_title.cmp(&other.sort_title)
-    }
-}
-
-/// Struct holding data about an individual podcast feed, before it has
-/// been inserted into the database. This includes a
-/// (possibly empty) vector of episodes.
-#[derive(Debug, Clone, Eq, PartialEq)]
-#[allow(clippy::module_name_repetitions)]
-pub struct PodcastNoId {
-    pub title: String,
-    pub url: String,
-    pub description: Option<String>,
-    pub author: Option<String>,
-    pub explicit: Option<bool>,
-    pub last_checked: DateTime<Utc>,
-    pub episodes: Vec<EpisodeNoId>,
-    pub image_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
