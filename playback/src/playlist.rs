@@ -9,7 +9,7 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
-use termusiclib::podcast::{db::Database as DBPod, Episode};
+use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::MediaType;
 use termusiclib::{
     track::Track,
