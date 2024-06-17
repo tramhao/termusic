@@ -103,9 +103,9 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
-      - name: Install dependencies
-        run: choco install protoc && choco install llvm --version=18.1.2 --allow-downgrade 
 
+      - name: Install dependencies
+        run: choco install protoc
 
       - uses: Swatinem/rust-cache@v2
 
