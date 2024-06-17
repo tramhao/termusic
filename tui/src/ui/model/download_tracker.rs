@@ -1,17 +1,17 @@
-use std::{collections::HashSet, time::Instant};
+use std::collections::HashSet;
 
 pub struct DownloadTracker {
     items: HashSet<String>,
-    pub time_stamp_for_cache: Instant,
+    // pub time_stamp_for_cache: Instant,
 }
 
 impl Default for DownloadTracker {
     fn default() -> Self {
         let items = HashSet::new();
-        let time_stamp_for_cache = Instant::now();
+        // let time_stamp_for_cache = Instant::now();
         Self {
             items,
-            time_stamp_for_cache,
+            // time_stamp_for_cache,
         }
     }
 }

@@ -277,9 +277,7 @@ impl CpalDeviceExt for cpal::Device {
                 &format.config(),
                 move |data, _| {
                     for d in data.iter_mut() {
-                        *d = mixer_rx
-                            .next()
-                            .map_or(u8::max_value() / 2, Sample::from_sample);
+                        *d = mixer_rx.next().map_or(u8::MAX / 2, Sample::from_sample);
                     }
                 },
                 error_callback,
@@ -289,9 +287,7 @@ impl CpalDeviceExt for cpal::Device {
                 &format.config(),
                 move |data, _| {
                     for d in data.iter_mut() {
-                        *d = mixer_rx
-                            .next()
-                            .map_or(u16::max_value() / 2, Sample::from_sample);
+                        *d = mixer_rx.next().map_or(u16::MAX / 2, Sample::from_sample);
                     }
                 },
                 error_callback,
@@ -301,9 +297,7 @@ impl CpalDeviceExt for cpal::Device {
                 &format.config(),
                 move |data, _| {
                     for d in data.iter_mut() {
-                        *d = mixer_rx
-                            .next()
-                            .map_or(u32::max_value() / 2, Sample::from_sample);
+                        *d = mixer_rx.next().map_or(u32::MAX / 2, Sample::from_sample);
                     }
                 },
                 error_callback,
@@ -313,9 +307,7 @@ impl CpalDeviceExt for cpal::Device {
                 &format.config(),
                 move |data, _| {
                     for d in data.iter_mut() {
-                        *d = mixer_rx
-                            .next()
-                            .map_or(u64::max_value() / 2, Sample::from_sample);
+                        *d = mixer_rx.next().map_or(u64::MAX / 2, Sample::from_sample);
                     }
                 },
                 error_callback,
