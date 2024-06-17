@@ -230,4 +230,21 @@ mod tests {
         assert_eq!(get_pin_yin("乐队Gala乐队"), "leduiGALAledui".to_string());
         assert_eq!(get_pin_yin("Annett Louisan"), "ANNETT LOUISAN".to_string());
     }
+
+    #[test]
+    fn test_substr() {
+        // 0 length fallback
+        assert_eq!(&"abcde".to_string().substr(0, 0), "");
+
+        assert_eq!(&"abcde".to_string().substr(0, 1), "a");
+        assert_eq!(&"abcde".to_string().substr(4, 1), "e");
+
+        // something starting beyond the current string
+        assert_eq!(&"abcde".to_string().substr(100, 1), "");
+        // requesting more length that is available
+        assert_eq!(&"abcde".to_string().substr(3, 3), "de");
+
+        assert_eq!(&"陈一发儿".to_string().substr(0, 1), "陈");
+        assert_eq!(&"陈一发儿".to_string().substr(3, 1), "儿");
+    }
 }
