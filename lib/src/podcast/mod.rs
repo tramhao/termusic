@@ -80,35 +80,25 @@ impl PodcastFeed {
     }
 }
 
-/// Spawns a new thread to check a feed and retrieve podcast data.
+/// Spawns a new task to check a feed and retrieve podcast data.
 ///
-/// # Panics
-///
-/// if sending commands to `tx_to_main` fails
-pub fn check_feed(
-    feed: PodcastFeed,
-    max_retries: usize,
-    threadpool: &TaskPool,
-    tx_to_main: Sender<Msg>,
-) {
-    threadpool.execute(async move {
-        tx_to_main
-            .send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())))
-            .expect("thread messaging error in fetch start");
+/// If `tx_to_main` is closed, no errors will be throws and the task will continue
+pub fn check_feed(feed: PodcastFeed, max_retries: usize, tp: &TaskPool, tx_to_main: Sender<Msg>) {
+    tp.execute(async move {
+        let _ = tx_to_main.send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())));
         match get_feed_data(&feed.url, max_retries).await {
             Ok(pod) => match feed.id {
                 Some(id) => {
-                    tx_to_main
-                        .send(Msg::Podcast(PCMsg::SyncData((id, pod))))
-                        .expect("Thread messaging error when sync old");
+                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::SyncData((id, pod))));
                 }
-                None => tx_to_main
-                    .send(Msg::Podcast(PCMsg::NewData(pod)))
-                    .expect("Thread messaging error when add new"),
+                None => {
+                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::NewData(pod)));
+                }
             },
-            Err(_err) => tx_to_main
-                .send(Msg::Podcast(PCMsg::Error(feed.url.to_string(), feed)))
-                .expect("Thread messaging error when get feed"),
+            Err(err) => {
+                error!("get_feed_data had a Error: {:#?}", err);
+                let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed.url.to_string(), feed)));
+            }
         }
     });
 }
