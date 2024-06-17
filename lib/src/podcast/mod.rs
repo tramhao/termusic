@@ -6,6 +6,7 @@ pub mod db;
 pub mod episode;
 
 use crate::config::v2::server::PodcastSettings;
+use crate::taskpool::TaskPool;
 use crate::types::{Msg, PCMsg};
 use crate::utils::StringUtils;
 use episode::{Episode, EpisodeNoId, NewEpisode};
@@ -14,7 +15,6 @@ use anyhow::{anyhow, Context, Result};
 use bytes::Buf;
 use chrono::{DateTime, Utc};
 use db::Database;
-use futures::Future;
 use lazy_static::lazy_static;
 use opml::{Body, Head, Outline, OPML};
 use regex::{Match, Regex};
@@ -26,13 +26,8 @@ use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::{
-    mpsc::{self, Sender},
-    Arc,
-};
+use std::sync::mpsc::{self, Sender};
 use std::time::Duration;
-use tokio::sync::Semaphore;
-use tokio_util::sync::CancellationToken;
 
 // How many columns we need, minimum, before we display the
 // (unplayed/total) after the podcast title
@@ -391,68 +386,6 @@ fn duration_to_int(duration: Option<&str>) -> Option<i32> {
 fn regex_to_int(re_match: Match<'_>) -> Result<i32, std::num::ParseIntError> {
     let mstr = re_match.as_str();
     mstr.parse::<i32>()
-}
-
-/// Manages a taskpool of a given size of how many task to execute at once.
-///
-/// Also cancels all tasks spawned by this pool on [`Drop`]
-pub struct TaskPool {
-    /// Semaphore to manage how many active tasks there at a time
-    semaphore: Arc<Semaphore>,
-    /// Cancel Token to stop a task on drop
-    cancel_token: CancellationToken,
-}
-
-impl TaskPool {
-    /// Creates a new [`TaskPool`] with a given amount of active tasks
-    pub fn new(n_tasks: usize) -> TaskPool {
-        let semaphore = Arc::new(Semaphore::new(n_tasks));
-        let cancel_token = CancellationToken::new();
-
-        TaskPool {
-            semaphore,
-            cancel_token,
-        }
-    }
-
-    /// Adds a new task to the [`TaskPool`]
-    ///
-    /// see [`tokio::spawn`]
-    ///
-    /// Provided task will be cancelled on [`TaskPool`] [`Drop`]
-    pub fn execute<F, T>(&self, func: F)
-    where
-        F: Future<Output = T> + Send + 'static,
-        T: Send,
-    {
-        let semaphore = self.semaphore.clone();
-        let token = self.cancel_token.clone();
-        tokio::spawn(async move {
-            // multiple "await" points, so combine them to a single future for the select
-            let main = async {
-                let Ok(_permit) = semaphore.acquire().await else {
-                    // ignore / cancel task if semaphore is closed
-                    // just for clarity, this "return" cancels the whole spawned task and does not execute "func.await"
-                    return;
-                };
-                func.await;
-            };
-
-            tokio::select! {
-                () = main => {},
-                () = token.cancelled() => {}
-            }
-        });
-    }
-}
-
-impl Drop for TaskPool {
-    fn drop(&mut self) {
-        // prevent new tasks from being added / executed
-        self.semaphore.close();
-        // cancel all tasks that were spawned with this token
-        self.cancel_token.cancel();
-    }
 }
 
 /// Imports a list of podcasts from OPML format, either reading from a

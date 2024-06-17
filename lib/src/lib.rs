@@ -11,6 +11,7 @@ pub mod library_db;
 pub mod playlist;
 pub mod podcast;
 pub mod songtag;
+pub mod taskpool;
 pub mod track;
 pub mod types;
 pub mod ueberzug;
