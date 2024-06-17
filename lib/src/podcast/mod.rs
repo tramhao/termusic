@@ -188,7 +188,7 @@ impl Menuable for Episode {
                 let title = self.title.substr(0, length - 4);
                 format!("[D] {title}")
             }
-            None => self.title.substr(0, length),
+            None => self.title.substr(0, length).to_string(),
         };
         if length > EPISODE_PUBDATE_LENGTH {
             let dur = self.format_duration();
