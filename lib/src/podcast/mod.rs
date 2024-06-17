@@ -496,6 +496,8 @@ pub struct EpData {
 ///
 /// It uses the taskpool to start jobs for every episode to be downloaded.
 /// New jobs can be requested by the user while there are still ongoing jobs.
+///
+/// If `tx_to_main` is closed, no errors will be throws and the task will continue
 #[allow(clippy::missing_panics_doc)]
 pub fn download_list(
     episodes: Vec<EpData>,
@@ -508,21 +510,12 @@ pub fn download_list(
     for ep in episodes {
         let tx = tx_to_main.clone();
         let dest2 = dest.to_path_buf();
-        tp.execute(async move { download_job(&tx, ep, dest2, max_retries).await });
+        tp.execute(async move {
+            let _ = tx.send(Msg::Podcast(PCMsg::DLStart(ep.clone())));
+            let result = download_file(ep, dest2, max_retries).await;
+            let _ = tx.send(Msg::Podcast(result));
+        });
     }
-}
-
-/// # Panics
-///
-/// if sending command via `tx_to_main` fails
-async fn download_job(tx_to_main: &Sender<Msg>, ep: EpData, dest: PathBuf, max_retries: usize) {
-    tx_to_main
-        .send(Msg::Podcast(PCMsg::DLStart(ep.clone())))
-        .expect("Thread messaging error when start download");
-    let result = download_file(ep, dest, max_retries).await;
-    tx_to_main
-        .send(Msg::Podcast(result))
-        .expect("Thread messaging error");
 }
 
 /// Downloads a file to a local filepath, returning `DownloadMsg` variant
