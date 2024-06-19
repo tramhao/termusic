@@ -547,7 +547,11 @@ impl GeneralPlayer {
                         error!("Saving last_position for music failed, Error: {:#?}", err);
                     }
                 }
-                MediaType::Podcast => self.db_podcast.set_last_position(track, position),
+                MediaType::Podcast => {
+                    if let Err(err) = self.db_podcast.set_last_position(track, position) {
+                        error!("Saving last_position for podcast failed, Error: {:#?}", err);
+                    }
+                }
                 MediaType::LiveRadio => (),
             }
         } else {

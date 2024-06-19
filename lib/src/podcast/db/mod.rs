@@ -35,8 +35,11 @@ pub struct Database {
 impl Database {
     /// Creates a new connection to the database (and creates database if
     /// it does not already exist).
-    /// # Panics
-    /// if database cannot be accessed.
+    ///
+    /// # Errors
+    ///
+    /// - if creating / opening the database fails
+    /// - if migration fails
     pub fn connect(path: &Path) -> Result<Database> {
         let mut db_path = path.to_path_buf();
         std::fs::create_dir_all(&db_path).context("Unable to create subdirectory for database.")?;
@@ -90,7 +93,7 @@ impl Database {
     }
 
     /// Creates the necessary database tables, if they do not already
-    /// exist. Panics if database cannot be accessed, or if tables cannot
+    /// exist. Errors are returned if database cannot be accessed, or if tables cannot
     /// be created.
     pub fn create(&self) -> Result<()> {
         let conn = self
@@ -582,20 +585,20 @@ impl Database {
                 Ok(last_position)
             },
         )?;
-        // .expect("get last position failed.");
         // error!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
 
-    /// # Panics
+    /// # Errors
     ///
-    /// if the connection is unavailable
-    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
+    /// - if the connection is unavailable
+    /// - if the query fails
+    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) -> Result<()> {
         let query = "UPDATE episodes SET last_position = ?1 WHERE url = ?2";
         let conn = self
             .conn
             .as_ref()
-            .expect("conn is not available for set last position.");
+            .context("conn is not available for set last position.")?;
         conn.execute(
             query,
             params![
@@ -603,8 +606,10 @@ impl Database {
                 track.file().unwrap_or("Unknown File Name").to_string(),
             ],
         )
-        .expect("update last position failed.");
+        .context("update last position failed.")?;
         // error!("set last position as {}", last_position.as_secs());
+
+        Ok(())
     }
 }
 
