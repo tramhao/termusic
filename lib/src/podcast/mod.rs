@@ -555,10 +555,14 @@ async fn download_file(
         .and_then(|v| v.to_str().ok())
     {
         ext = match content_type {
-            "audio/x-m4a" => "m4a",
+            "audio/x-m4a" | "audio/mp4" => "m4a",
+            "audio/x-matroska" => "mka",
+            "audio/flac" => "flac",
             "video/quicktime" => "mov",
             "video/mp4" => "mp4",
             "video/x-m4v" => "m4v",
+            "video/x-matroska" => "mkv",
+            "video/webm" => "webm",
             // "audio/mpeg" => "mp3",
             // fallback
             _ => "mp3",
