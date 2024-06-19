@@ -92,7 +92,6 @@ impl Database {
     /// Creates the necessary database tables, if they do not already
     /// exist. Panics if database cannot be accessed, or if tables cannot
     /// be created.
-    #[allow(clippy::missing_panics_doc)]
     pub fn create(&self) -> Result<()> {
         let conn = self
             .conn
@@ -131,7 +130,6 @@ impl Database {
 
     /// Inserts a new podcast and list of podcast episodes into the
     /// database.
-    #[allow(clippy::missing_panics_doc)]
     pub fn insert_podcast(&self, podcast: &PodcastNoId) -> Result<SyncResult> {
         let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
@@ -208,7 +206,6 @@ impl Database {
     }
 
     /// Inserts a filepath to a downloaded episode.
-    #[allow(clippy::missing_panics_doc)]
     pub fn insert_file(&self, episode_id: i64, path: &Path) -> Result<()> {
         let conn = self
             .conn
@@ -219,13 +216,12 @@ impl Database {
             "INSERT INTO files (episode_id, path)
                 VALUES (?, ?);",
         )?;
-        stmt.execute(params![episode_id, path.to_str(),])?;
+        stmt.execute(params![episode_id, path.to_str()])?;
         Ok(())
     }
 
     /// Removes a file listing for an episode from the database when the
     /// user has chosen to delete the file.
-    #[allow(clippy::missing_panics_doc)]
     pub fn remove_file(&self, episode_id: i64) -> Result<()> {
         let conn = self
             .conn
@@ -237,7 +233,6 @@ impl Database {
     }
 
     /// Removes all file listings for the selected episode ids.
-    #[allow(clippy::missing_panics_doc)]
     pub fn remove_files(&self, episode_ids: &[i64]) -> Result<()> {
         let conn = self
             .conn
@@ -257,7 +252,6 @@ impl Database {
     }
 
     /// Removes a podcast, all episodes, and files from the database.
-    #[allow(clippy::missing_panics_doc)]
     pub fn remove_podcast(&self, podcast_id: i64) -> Result<()> {
         let conn = self
             .conn
@@ -275,7 +269,6 @@ impl Database {
     /// Updates an existing podcast in the database, where metadata is
     /// changed if necessary, and episodes are updated (modified episodes
     /// are updated, new episodes are inserted).
-    #[allow(clippy::missing_panics_doc)]
     pub fn update_podcast(&self, pod_id: i64, podcast: &PodcastNoId) -> Result<SyncResult> {
         {
             let conn = self
@@ -429,7 +422,6 @@ impl Database {
     }
 
     /// Updates an episode to mark it as played or unplayed.
-    #[allow(clippy::missing_panics_doc)]
     pub fn set_played_status(&self, episode_id: i64, played: bool) -> Result<()> {
         let conn = self
             .conn
@@ -442,7 +434,6 @@ impl Database {
     }
 
     /// Updates an episode to mark it as played or unplayed.
-    #[allow(clippy::missing_panics_doc)]
     pub fn set_all_played_status(&self, episode_id_vec: &[i64], played: bool) -> Result<()> {
         let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
@@ -458,7 +449,6 @@ impl Database {
     /// Updates an episode to "remove" it by hiding it. "Removed"
     /// episodes need to stay in the database so that they don't get
     /// re-added when the podcast is synced again.
-    #[allow(clippy::missing_panics_doc)]
     pub fn hide_episode(&self, episode_id: i64, hide: bool) -> Result<()> {
         let conn = self
             .conn
@@ -472,7 +462,6 @@ impl Database {
 
     /// Generates list of all podcasts in database.
     /// TODO: This should probably use a JOIN statement instead.
-    #[allow(clippy::missing_panics_doc)]
     pub fn get_podcasts(&self) -> Result<Vec<Podcast>> {
         let conn = self
             .conn
@@ -518,7 +507,6 @@ impl Database {
     }
 
     /// Generates list of episodes for a given podcast.
-    #[allow(clippy::missing_panics_doc)]
     pub fn get_episodes(&self, pod_id: i64, include_hidden: bool) -> Result<Vec<Episode>> {
         let conn = self
             .conn
@@ -565,7 +553,6 @@ impl Database {
     }
 
     /// Deletes all rows in all tables
-    #[allow(clippy::missing_panics_doc)]
     pub fn clear_db(&self) -> Result<()> {
         let conn = self
             .conn
@@ -577,7 +564,6 @@ impl Database {
         Ok(())
     }
 
-    #[allow(clippy::missing_panics_doc)]
     pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
         let query = "SELECT last_position FROM episodes WHERE url = ?1";
 
