@@ -424,32 +424,24 @@ pub fn export_to_opml(db_path: &Path, file: &Path) -> Result<()> {
 /// Import a list of podcast feeds from an OPML file. Supports
 /// v1.0, v1.1, and v2.0 OPML files.
 fn import_opml_feeds(xml: &str) -> Result<Vec<PodcastFeed>> {
-    match OPML::from_str(xml) {
-        Err(err) => Err(anyhow!(err)),
-        Ok(opml) => {
-            let mut feeds = Vec::new();
-            for pod in opml.body.outlines {
-                if pod.xml_url.is_some() {
-                    // match against title attribute first -- if this is
-                    // not set or empty, then match against the text
-                    // attribute; this must be set, but can be empty
-                    let temp_title = pod.title.filter(|t| !t.is_empty());
-                    let title = match temp_title {
-                        Some(t) => Some(t),
-                        None => {
-                            if pod.text.is_empty() {
-                                None
-                            } else {
-                                Some(pod.text)
-                            }
-                        }
-                    };
-                    feeds.push(PodcastFeed::new(None, &pod.xml_url.unwrap(), title));
+    let opml = OPML::from_str(xml)?;
+    let mut feeds = Vec::new();
+    for pod in opml.body.outlines {
+        if pod.xml_url.is_some() {
+            // match against title attribute first -- if this is
+            // not set or empty, then match against the text
+            // attribute; this must be set, but can be empty
+            let title = pod.title.filter(|t| !t.is_empty()).or({
+                if pod.text.is_empty() {
+                    None
+                } else {
+                    Some(pod.text)
                 }
-            }
-            Ok(feeds)
+            });
+            feeds.push(PodcastFeed::new(None, &pod.xml_url.unwrap(), title));
         }
     }
+    Ok(feeds)
 }
 
 /// Converts the current set of podcast feeds to the OPML format
