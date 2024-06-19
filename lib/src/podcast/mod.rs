@@ -15,7 +15,7 @@ use episode::{Episode, EpisodeNoId, NewEpisode};
 #[allow(clippy::module_name_repetitions)]
 pub use podcast::{Podcast, PodcastNoId};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{bail, Context, Result};
 use bytes::Buf;
 use chrono::{DateTime, Utc};
 use db::Database;
@@ -27,7 +27,7 @@ use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
 use sanitize_filename::{sanitize_with_options, Options};
 use std::fs::File;
-use std::io::{Read as _, Write as _};
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Sender};
 use std::time::Duration;
@@ -110,24 +110,19 @@ async fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId>
         .connect_timeout(Duration::from_secs(5))
         .build()?;
 
-    let request: Result<reqwest::Response> = loop {
+    let resp: reqwest::Response = loop {
         let response = agent.get(url).send().await;
         if let Ok(resp) = response {
-            break Ok(resp);
+            break resp;
         }
         max_retries -= 1;
         if max_retries == 0 {
-            break Err(anyhow!("No response from feed"));
+            bail!("No response from feed");
         }
     };
 
-    match request {
-        Ok(resp) => {
-            let channel = Channel::read_from(resp.bytes().await?.reader())?;
-            Ok(parse_feed_data(channel, url))
-        }
-        Err(err) => Err(err),
-    }
+    let channel = Channel::read_from(resp.bytes().await?.reader())?;
+    Ok(parse_feed_data(channel, url))
 }
 
 /// Given a Channel with the RSS feed data, this parses the data about a
@@ -146,17 +141,14 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
     let mut image_url = None;
     if let Some(itunes) = channel.itunes_ext() {
         author = itunes.author().map(std::string::ToString::to_string);
-        explicit = match itunes.explicit() {
-            None => None,
-            Some(s) => {
-                let ss = s.to_lowercase();
+        explicit = itunes.explicit().and_then(|s| {
+            let ss = s.to_lowercase();
                 match &ss[..] {
                     "yes" | "explicit" | "true" => Some(true),
                     "no" | "clean" | "false" => Some(false),
                     _ => None,
                 }
-            }
-        };
+        });
         image_url = itunes.image().map(std::string::ToString::to_string);
     }
 
@@ -186,10 +178,7 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
 /// make some attempt to account for the possibility that a feed might
 /// not be valid according to the spec.
 fn parse_episode_data(item: &Item) -> EpisodeNoId {
-    let title = match item.title() {
-        Some(s) => s.to_string(),
-        None => String::new(),
-    };
+    let title = item.title().unwrap_or("").to_string();
     let url = match item.enclosure() {
         Some(enc) => enc.url().to_string(),
         None => String::new(),
@@ -198,10 +187,7 @@ fn parse_episode_data(item: &Item) -> EpisodeNoId {
         Some(guid) => guid.value().to_string(),
         None => String::new(),
     };
-    let description = match item.description() {
-        Some(dsc) => dsc.to_string(),
-        None => String::new(),
-    };
+    let description = item.description().unwrap_or("").to_string();
     let pubdate = item
         .pub_date()
         .and_then(|pd| parse_from_rfc2822_with_fallback(pd).ok())
@@ -287,17 +273,11 @@ fn regex_to_int(re_match: Match<'_>) -> Result<i32, std::num::ParseIntError> {
     mstr.parse::<i32>()
 }
 
-/// Imports a list of podcasts from OPML format, either reading from a
-/// file or from stdin. If the `replace` flag is set, this replaces all
+/// Imports a list of podcasts from OPML format, reading from a file. If the `replace` flag is set, this replaces all
 /// existing data in the database.
 pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -> Result<()> {
-    // read from file or from stdin
-    let mut f = File::open(file)
+    let xml = std::fs::read_to_string(file)
         .with_context(|| format!("Could not open OPML file: {}", file.display()))?;
-    let mut contents = String::new();
-    f.read_to_string(&mut contents)
-        .with_context(|| format!("Failed to read from OPML file: {}", file.display()))?;
-    let xml = contents;
 
     let mut podcast_list = import_opml_feeds(&xml).with_context(|| {
         "Could not properly parse OPML file -- file may be formatted improperly or corrupted."
@@ -391,7 +371,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
     }
 
     if failure {
-        return Err(anyhow!("Process finished with errors."));
+        bail!("Process finished with errors.");
     }
     println!("Import successful.");
 
@@ -405,10 +385,7 @@ pub fn export_to_opml(db_path: &Path, file: &Path) -> Result<()> {
     let podcast_list = db_inst.get_podcasts()?;
     let opml = export_opml_feeds(&podcast_list);
 
-    let xml = opml
-        .to_string()
-        .map_err(|err| anyhow!(err))
-        .with_context(|| "Could not create OPML format")?;
+    let xml = opml.to_string().context("Could not create OPML format")?;
 
     let mut dst = File::create(file)
         .with_context(|| format!("Could not create output file: {}", file.display()))?;
