@@ -529,32 +529,24 @@ async fn download_file(
         .build()
         .expect("reqwest client build failed");
 
-    let request: Result<reqwest::Response, ()> = loop {
+    let response: reqwest::Response = loop {
         let response = agent.get(&ep_data.url).send().await;
         if let Ok(resp) = response {
-            break Ok(resp);
+            break resp;
         }
         max_retries -= 1;
         if max_retries == 0 {
-            break Err(());
+            return PCMsg::DLResponseError(ep_data);
         }
     };
 
-    if request.is_err() {
-        return PCMsg::DLResponseError(ep_data);
-    };
-
-    let response = request.unwrap();
-
     // figure out the file type
-    let mut ext = "mp3";
-
-    if let Some(content_type) = response
+    let ext = if let Some(content_type) = response
         .headers()
         .get("content-type")
         .and_then(|v| v.to_str().ok())
     {
-        ext = match content_type {
+        match content_type {
             "audio/x-m4a" | "audio/mp4" => "m4a",
             "audio/x-matroska" => "mka",
             "audio/flac" => "flac",
@@ -566,10 +558,11 @@ async fn download_file(
             // "audio/mpeg" => "mp3",
             // fallback
             _ => "mp3",
-        };
+        }
     } else {
         error!("The response doesn't contain a content type, using \"mp3\" as fallback!");
-    }
+        "mp3"
+    };
 
     let mut file_name = sanitize_with_options(
         &ep_data.title,
