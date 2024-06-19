@@ -2,7 +2,7 @@ use crate::ui::{model::TermusicLayout, Model};
 use anyhow::anyhow;
 use std::thread::{self, sleep};
 use std::time::Duration;
-use termusiclib::sqlite::SearchCriteria;
+use termusiclib::library_db::SearchCriteria;
 use termusiclib::track::MediaType;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,

@@ -22,37 +22,25 @@ use crate::config::v2::server::ScanDepth;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// database
 use crate::config::ServerOverlay;
 use crate::track::Track;
 use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
+use anyhow::Context;
 use parking_lot::Mutex;
-use rusqlite::{params, Connection, Error, Result, Row};
+use rusqlite::{params, Connection, Error, Result};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
+use track_db::TrackDBInsertable;
 
-const DB_VERSION: u32 = 2;
+mod migration;
+mod track_db;
+
+pub use track_db::TrackDB;
 
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
     max_depth: ScanDepth,
-}
-
-#[derive(Clone, Debug)]
-pub struct TrackForDB {
-    pub id: u64,
-    pub artist: String,
-    pub title: String,
-    pub album: String,
-    pub genre: String,
-    pub file: String,
-    pub duration: Duration,
-    pub name: String,
-    pub ext: String,
-    pub directory: String,
-    pub last_modified: String,
-    pub last_position: Duration,
 }
 
 #[derive(PartialEq, Eq)]
@@ -95,88 +83,40 @@ impl DataBase {
     ///
     /// - if app config path creation fails
     /// - if any required database operation fails
-    pub fn new(config: &ServerOverlay) -> Self {
-        let mut db_path = get_app_config_path().expect("failed to get app configuration path");
+    pub fn new(config: &ServerOverlay) -> anyhow::Result<Self> {
+        let mut db_path = get_app_config_path().context("failed to get app configuration path")?;
         db_path.push("library.db");
-        let conn = Connection::open(db_path).expect("open db failed");
+        let conn = Connection::open(db_path).context("open/create database")?;
 
-        let user_version: u32 = conn
-            .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
-                r.get(0)
-            })
-            .expect("get user_version error");
-        if DB_VERSION != user_version {
-            conn.execute("DROP TABLE tracks", []).ok();
-            conn.pragma_update(None, "user_version", DB_VERSION)
-                .expect("update user_version error");
-        }
-
-        conn.execute(
-            "create table if not exists tracks(
-             id integer primary key,
-             artist TEXT,
-             title TEXT,
-             album TEXT,
-             genre TEXT,
-             file TEXT NOT NULL,
-             duration INTERGER,
-             name TEXT,
-             ext TEXT,
-             directory TEXT,
-             last_modified TEXT,
-             last_position INTERGER
-            )",
-            [],
-        )
-        .expect("create table tracks failed");
+        migration::migrate(&conn).context("Database creation / migration")?;
 
         let max_depth = config.get_library_scan_depth();
 
         let conn = Arc::new(Mutex::new(conn));
-        Self { conn, max_depth }
+        Ok(Self { conn, max_depth })
     }
 
+    /// Insert multiple tracks into the database
     fn add_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<Track>) -> Result<()> {
         let mut conn = conn.lock();
         let tx = conn.transaction()?;
 
         for track in tracks {
-            tx.execute(
-            "INSERT INTO tracks (artist, title, album, genre,  file, duration, name, ext, directory, last_modified, last_position) 
-            values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-            params![
-                track.artist().unwrap_or("Unknown Artist").to_string(),
-                track.title().unwrap_or("Unknown Title").to_string(),
-                track.album().unwrap_or("empty").to_string(),
-                track.genre().unwrap_or("no type").to_string(),
-                track.file().unwrap_or("Unknown File").to_string(),
-                track.duration().as_secs(),
-                track.name().unwrap_or_default().to_string(),
-                track.ext().unwrap_or_default().to_string(),
-                track.directory().unwrap_or_default().to_string(),
-                track
-                    .last_modified
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_secs()
-                    .to_string(),
-                0,
-
-            ],
-        )?;
+            TrackDBInsertable::from(&track).insert_track(&tx)?;
         }
 
         tx.commit()?;
         Ok(())
     }
 
+    /// Check if the given path's track needs to be updated in the database by comparing `last_modified` times
     fn need_update(conn: &Arc<Mutex<Connection>>, path: &Path) -> Result<bool> {
         let conn = conn.lock();
         let filename = path
             .file_name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
             .to_string_lossy();
-        let mut stmt = conn.prepare("SELECT last_modified FROM tracks WHERE name = ? ")?;
+        let mut stmt = conn.prepare("SELECT last_modified FROM tracks WHERE name = ?")?;
         let rows = stmt.query_map([filename], |row| {
             let last_modified: String = row.get(0)?;
 
@@ -195,24 +135,28 @@ impl DataBase {
         Ok(true)
     }
 
+    /// Get all Track Paths from the database which dont exist on disk anymore
     fn need_delete(conn: &Arc<Mutex<Connection>>) -> Result<Vec<String>> {
         let conn = conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
-        let mut track_vec: Vec<String> = vec![];
-        let vec: Vec<TrackForDB> = stmt
-            .query_map([], |row| Ok(Self::track_db(row)))?
+
+        let track_vec: Vec<String> = stmt
+            .query_map([], TrackDB::try_from_row_named)?
             .flatten()
+            .filter_map(|record| {
+                let path = Path::new(&record.file);
+                if path.exists() {
+                    None
+                } else {
+                    Some(record.file)
+                }
+            })
             .collect();
-        for record in vec {
-            let path = Path::new(&record.file);
-            if path.exists() {
-                continue;
-            }
-            track_vec.push(record.file.clone());
-        }
+
         Ok(track_vec)
     }
 
+    /// Delete Tracks from the database by the full file path
     fn delete_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<String>) -> Result<()> {
         let mut conn = conn.lock();
         let tx = conn.transaction()?;
@@ -225,10 +169,10 @@ impl DataBase {
         Ok(())
     }
 
+    /// Synchronize the database with the on-disk paths (insert, update, remove), limited to `path` root
     pub fn sync_database(&mut self, path: &Path) {
         // add updated records
         let conn = self.conn.clone();
-        let mut track_vec: Vec<Track> = vec![];
         let all_items = {
             let mut walker = walkdir::WalkDir::new(path).follow_links(true);
 
@@ -240,6 +184,8 @@ impl DataBase {
         };
 
         std::thread::spawn(move || -> Result<()> {
+            let mut need_updates: Vec<Track> = vec![];
+
             for record in all_items
                 .into_iter()
                 .filter_map(std::result::Result::ok)
@@ -249,7 +195,7 @@ impl DataBase {
                 match Self::need_update(&conn, record.path()) {
                     Ok(true) => {
                         if let Ok(track) = Track::read_from_path(record.path(), true) {
-                            track_vec.push(track);
+                            need_updates.push(track);
                         }
                     }
                     Ok(false) => {}
@@ -258,8 +204,8 @@ impl DataBase {
                     }
                 }
             }
-            if !track_vec.is_empty() {
-                Self::add_records(&conn, track_vec)?;
+            if !need_updates.is_empty() {
+                Self::add_records(&conn, need_updates)?;
             }
 
             // delete records where local file are missing
@@ -279,70 +225,44 @@ impl DataBase {
         });
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
-    pub fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
+    /// Get all Tracks in the database at once
+    pub fn get_all_records(&mut self) -> Result<Vec<TrackDB>> {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
-        let vec: Vec<TrackForDB> = stmt
-            .query_map([], |row| Ok(Self::track_db(row)))?
+        let vec: Vec<TrackDB> = stmt
+            .query_map([], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
         Ok(vec)
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
+    /// Get Tracks by [`SearchCriteria`]
     pub fn get_record_by_criteria(
         &mut self,
-        str: &str,
-        cri: &SearchCriteria,
-    ) -> Result<Vec<TrackForDB>> {
-        let search_str = format!("SELECT * FROM tracks WHERE {cri} = ?");
+        criteria_val: &str,
+        criteria: &SearchCriteria,
+    ) -> Result<Vec<TrackDB>> {
+        let search_str = format!("SELECT * FROM tracks WHERE {criteria} = ?");
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
-        let mut vec_records: Vec<TrackForDB> = stmt
-            .query_map([str], |row| Ok(Self::track_db(row)))?
+        let mut vec_records: Vec<TrackDB> = stmt
+            .query_map([criteria_val], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
 
         // Left for debug
-        // error!("str: {}", str);
-        // error!("cri: {}", cri);
+        // error!("criteria_val: {}", criteria_val);
+        // error!("criteria: {}", criteria);
         // error!("vec: {:?}", vec_records);
 
         vec_records.sort_by_cached_key(|k| get_pin_yin(&k.name));
         Ok(vec_records)
     }
 
-    fn track_db(row: &Row<'_>) -> TrackForDB {
-        let d_u64: u64 = row.get(6).unwrap();
-        let last_position_u64: u64 = row.get(11).unwrap();
-        TrackForDB {
-            // id: row.get(0).unwrap(),
-            id: row.get_unwrap(0),
-            artist: row.get_unwrap(1),
-            title: row.get_unwrap(2),
-            album: row.get(3).unwrap(),
-            genre: row.get(4).unwrap(),
-            file: row.get(5).unwrap(),
-            duration: Duration::from_secs(d_u64),
-            name: row.get(7).unwrap(),
-            ext: row.get(8).unwrap(),
-            directory: row.get(9).unwrap(),
-            last_modified: row.get(10).unwrap(),
-            last_position: Duration::from_secs(last_position_u64),
-        }
-    }
-
-    /// # Panics
-    ///
-    /// if the connection is unavailable
-    pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Result<Vec<String>> {
-        let search_str = format!("SELECT DISTINCT {cri} FROM tracks");
+    /// Get a list of available distinct [`SearchCriteria`] (ie get Artist names deduplicated)
+    pub fn get_criterias(&mut self, criteria: &SearchCriteria) -> Result<Vec<String>> {
+        let search_str = format!("SELECT DISTINCT {criteria} FROM tracks");
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
@@ -358,66 +278,62 @@ impl DataBase {
         Ok(vec)
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
+    /// Get the stored `last_position` of a given track
     pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
+        let filename = track
+            .name()
+            .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?;
         let query = "SELECT last_position FROM tracks WHERE name = ?1";
 
         let mut last_position: Duration = Duration::from_secs(0);
         let conn = self.conn.lock();
-        conn.query_row(
-            query,
-            params![track.name().unwrap_or("Unknown File").to_string(),],
-            |row| {
-                let last_position_u64: u64 = row.get(0)?;
-                // error!("last_position_u64 is {last_position_u64}");
-                last_position = Duration::from_secs(last_position_u64);
-                Ok(last_position)
-            },
-        )?;
-        // .expect("get last position failed.");
+        conn.query_row(query, params![filename], |row| {
+            let last_position_u64: u64 = row.get(0)?;
+            // error!("last_position_u64 is {last_position_u64}");
+            last_position = Duration::from_secs(last_position_u64);
+            Ok(last_position)
+        })?;
         // error!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
-    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
+    /// Set the stored `last_position` of a given track
+    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) -> Result<()> {
+        let filename = track
+            .name()
+            .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?;
         let query = "UPDATE tracks SET last_position = ?1 WHERE name = ?2";
         let conn = self.conn.lock();
-        conn.execute(
-            query,
-            params![
-                last_position.as_secs(),
-                track.name().unwrap_or("Unknown File Name").to_string(),
-            ],
-        )
-        .expect("update last position failed.");
+        conn.execute(query, params![last_position.as_secs(), filename,])?;
         // error!("set last position as {}", last_position.as_secs());
+        Ok(())
     }
 
-    /// # Panics
-    ///
-    /// if the connection is unavailable
-    pub fn get_record_by_path(&mut self, str: &str) -> Result<TrackForDB> {
+    /// Get a Track by the given full file path
+    pub fn get_record_by_path(&mut self, file_path: &str) -> Result<TrackDB> {
         let search_str = "SELECT * FROM tracks WHERE file = ?";
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(search_str)?;
 
-        let vec_records: Vec<TrackForDB> = stmt
-            .query_map([str], |row| Ok(Self::track_db(row)))?
+        let vec_records: Vec<TrackDB> = stmt
+            .query_map([file_path], TrackDB::try_from_row_named)?
             .flatten()
             .collect();
 
-        // Left for debug
-        // error!("str: {}", str);
-        // error!("cri: {}", cri);
         if let Some(record) = vec_records.first() {
             return Ok(record.clone());
         }
 
         Err(Error::QueryReturnedNoRows)
+    }
+}
+
+#[cfg(test)]
+mod test_utils {
+    use rusqlite::Connection;
+
+    /// Open a new In-Memory sqlite database
+    pub fn gen_database() -> Connection {
+        Connection::open_in_memory().expect("open db failed")
     }
 }

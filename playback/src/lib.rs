@@ -66,8 +66,8 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
+use termusiclib::library_db::DataBase;
 use termusiclib::podcast::db::Database as DBPod;
-use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
 use tokio::runtime::Handle;
@@ -242,7 +242,7 @@ impl GeneralPlayer {
 
         let db_podcast =
             DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
-        let db = DataBase::new(&config);
+        let db = DataBase::new(&config)?;
 
         let config = new_shared_server_settings(config);
         let playlist = Playlist::new(config.clone()).unwrap_or_default();
@@ -542,7 +542,11 @@ impl GeneralPlayer {
 
         if time_before_save < position.as_secs() {
             match track.media_type {
-                MediaType::Music => self.db.set_last_position(track, position),
+                MediaType::Music => {
+                    if let Err(err) = self.db.set_last_position(track, position) {
+                        error!("Saving last_position for music failed, Error: {:#?}", err);
+                    }
+                }
                 MediaType::Podcast => self.db_podcast.set_last_position(track, position),
                 MediaType::LiveRadio => (),
             }
@@ -591,7 +595,9 @@ impl GeneralPlayer {
 
         if restored {
             if let Some(track) = self.playlist.current_track() {
-                self.db.set_last_position(track, Duration::from_secs(0));
+                if let Err(err) = self.db.set_last_position(track, Duration::from_secs(0)) {
+                    error!("Resetting last_position failed, Error: {:#?}", err);
+                }
             }
         }
     }

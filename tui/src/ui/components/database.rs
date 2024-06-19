@@ -1,7 +1,7 @@
 use crate::ui::Model;
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::sqlite::SearchCriteria;
+use termusiclib::library_db::SearchCriteria;
 use termusiclib::types::{DBMsg, Id, Msg};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
