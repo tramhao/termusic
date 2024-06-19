@@ -11,8 +11,8 @@ mod podcast;
 use crate::config::v2::server::PodcastSettings;
 use crate::taskpool::TaskPool;
 use crate::types::{Msg, PCMsg};
-use episode::{Episode, EpisodeNoId, NewEpisode};
 use db::Database;
+use episode::{Episode, EpisodeNoId, NewEpisode};
 #[allow(clippy::module_name_repetitions)]
 pub use podcast::{Podcast, PodcastNoId};
 
@@ -216,53 +216,39 @@ fn parse_episode_data(item: &Item) -> EpisodeNoId {
 /// formats HH:MM:SS, MM:SS, and SS. If the duration cannot be converted
 /// (covering numerous reasons), it will return None.
 fn duration_to_int(duration: Option<&str>) -> Option<i32> {
-    match duration {
-        Some(dur) => {
-            match RE_DURATION.captures(dur) {
-                Some(cap) => {
-                    /*
-                     * Provided that the regex succeeds, we should have
-                     * 4 capture groups (with 0th being the full match).
-                     * Depending on the string format, however, some of
-                     * these may return None. We first loop through the
-                     * capture groups and push Some results to an array.
-                     * This will fail on the first non-numeric value,
-                     * so the duration is parsed only if all components
-                     * of it were successfully converted to integers.
-                     * Finally, we convert hours, minutes, and seconds
-                     * into a total duration in seconds and return.
-                     */
+    let duration = duration?;
+    let captures = RE_DURATION.captures(duration)?;
 
-                    let mut times = [None; 3];
-                    let mut counter = 0;
-                    // cap[0] is always full match
-                    for c in cap.iter().skip(1).flatten() {
-                        if let Ok(intval) = c.as_str().parse() {
-                            times[counter] = Some(intval);
-                            counter += 1;
-                        } else {
-                            return None;
-                        }
-                    }
+    /*
+     * Provided that the regex succeeds, we should have
+     * 4 capture groups (with 0th being the full match).
+     * Depending on the string format, however, some of
+     * these may return None. We first loop through the
+     * capture groups and push Some results to an array.
+     * This will fail on the first non-numeric value,
+     * so the duration is parsed only if all components
+     * of it were successfully converted to integers.
+     * Finally, we convert hours, minutes, and seconds
+     * into a total duration in seconds and return.
+     */
 
-                    match counter {
-                        // HH:MM:SS
-                        3 => Some(
-                            times[0].unwrap() * 60 * 60
-                                + times[1].unwrap() * 60
-                                + times[2].unwrap(),
-                        ),
-                        // MM:SS
-                        2 => Some(times[0].unwrap() * 60 + times[1].unwrap()),
-                        // SS
-                        1 => times[0],
-                        _ => None,
-                    }
-                }
-                None => None,
-            }
-        }
-        None => None,
+    let mut times = [None; 3];
+    let mut counter = 0;
+    // cap[0] is always full match
+    for c in captures.iter().skip(1).flatten() {
+        let intval = c.as_str().parse().ok()?;
+        times[counter] = Some(intval);
+        counter += 1;
+    }
+
+    match counter {
+        // HH:MM:SS
+        3 => Some(times[0].unwrap() * 60 * 60 + times[1].unwrap() * 60 + times[2].unwrap()),
+        // MM:SS
+        2 => Some(times[0].unwrap() * 60 + times[1].unwrap()),
+        // SS
+        1 => times[0],
+        _ => None,
     }
 }
 
