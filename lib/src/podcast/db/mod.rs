@@ -31,7 +31,7 @@ pub struct SyncResult {
 #[derive(Debug)]
 pub struct Database {
     path: PathBuf,
-    conn: Option<Connection>,
+    conn: Connection,
 }
 
 impl Database {
@@ -50,21 +50,14 @@ impl Database {
 
         migration::migrate(&conn).context("Database creation / migration")?;
 
-        let db_conn = Database {
-            path: db_path,
-            conn: Some(conn),
-        };
-
-        let conn = db_conn
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-
         // SQLite defaults to foreign key support off
         conn.execute("PRAGMA foreign_keys=ON;", [])
             .context("Could not set database parameters.")?;
 
-        Ok(db_conn)
+        Ok(Database {
+            path: db_path,
+            conn,
+        })
     }
 
     /// Inserts a new podcast and list of podcast episodes into the
@@ -146,12 +139,7 @@ impl Database {
 
     /// Inserts a filepath to a downloaded episode.
     pub fn insert_file(&self, episode_id: i64, path: &Path) -> Result<()> {
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-
-        let mut stmt = conn.prepare_cached(
+        let mut stmt = self.conn.prepare_cached(
             "INSERT INTO files (episode_id, path)
                 VALUES (?, ?);",
         )?;
@@ -162,22 +150,15 @@ impl Database {
     /// Removes a file listing for an episode from the database when the
     /// user has chosen to delete the file.
     pub fn remove_file(&self, episode_id: i64) -> Result<()> {
-        let conn = self
+        let mut stmt = self
             .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-        let mut stmt = conn.prepare_cached("DELETE FROM files WHERE episode_id = ?;")?;
+            .prepare_cached("DELETE FROM files WHERE episode_id = ?;")?;
         stmt.execute(params![episode_id])?;
         Ok(())
     }
 
     /// Removes all file listings for the selected episode ids.
     pub fn remove_files(&self, episode_ids: &[i64]) -> Result<()> {
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-
         // convert list of episode ids into a comma-separated String
         let episode_list: Vec<String> = episode_ids
             .iter()
@@ -185,22 +166,22 @@ impl Database {
             .collect();
         let episodes = episode_list.join(", ");
 
-        let mut stmt = conn.prepare_cached("DELETE FROM files WHERE episode_id = (?);")?;
+        let mut stmt = self
+            .conn
+            .prepare_cached("DELETE FROM files WHERE episode_id = (?);")?;
         stmt.execute(params![episodes])?;
         Ok(())
     }
 
     /// Removes a podcast, all episodes, and files from the database.
     pub fn remove_podcast(&self, podcast_id: i64) -> Result<()> {
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
         // Note: Because of the foreign key constraints on `episodes`
         // and `files` tables, all associated episodes for this podcast
         // will also be deleted, and all associated file entries for
         // those episodes as well.
-        let mut stmt = conn.prepare_cached("DELETE FROM podcasts WHERE id = ?;")?;
+        let mut stmt = self
+            .conn
+            .prepare_cached("DELETE FROM podcasts WHERE id = ?;")?;
         stmt.execute(params![podcast_id])?;
         Ok(())
     }
@@ -210,11 +191,7 @@ impl Database {
     /// are updated, new episodes are inserted).
     pub fn update_podcast(&self, pod_id: i64, podcast: &PodcastNoId) -> Result<SyncResult> {
         {
-            let conn = self
-                .conn
-                .as_ref()
-                .ok_or(anyhow!("Error connecting to database."))?;
-            let mut stmt = conn.prepare_cached(
+            let mut stmt = self.conn.prepare_cached(
                 "UPDATE podcasts SET title = ?, url = ?, description = ?,
             author = ?, explicit = ?, last_checked = ?
             WHERE id = ?;",
@@ -362,12 +339,9 @@ impl Database {
 
     /// Updates an episode to mark it as played or unplayed.
     pub fn set_played_status(&self, episode_id: i64, played: bool) -> Result<()> {
-        let conn = self
+        let mut stmt = self
             .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-
-        let mut stmt = conn.prepare_cached("UPDATE episodes SET played = ? WHERE id = ?;")?;
+            .prepare_cached("UPDATE episodes SET played = ? WHERE id = ?;")?;
         stmt.execute(params![played, episode_id])?;
         Ok(())
     }
@@ -389,12 +363,9 @@ impl Database {
     /// episodes need to stay in the database so that they don't get
     /// re-added when the podcast is synced again.
     pub fn hide_episode(&self, episode_id: i64, hide: bool) -> Result<()> {
-        let conn = self
+        let mut stmt = self
             .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-
-        let mut stmt = conn.prepare_cached("UPDATE episodes SET hidden = ? WHERE id = ?;")?;
+            .prepare_cached("UPDATE episodes SET hidden = ? WHERE id = ?;")?;
         stmt.execute(params![hide, episode_id])?;
         Ok(())
     }
@@ -402,11 +373,7 @@ impl Database {
     /// Generates list of all podcasts in database.
     /// TODO: This should probably use a JOIN statement instead.
     pub fn get_podcasts(&self) -> Result<Vec<Podcast>> {
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-        let mut stmt = conn.prepare_cached("SELECT * FROM podcasts;")?;
+        let mut stmt = self.conn.prepare_cached("SELECT * FROM podcasts;")?;
         let podcast_iter = stmt.query_map(params![], |row| {
             let pod_id = row.get("id")?;
             let episodes = match self.get_episodes(pod_id, false) {
@@ -447,19 +414,15 @@ impl Database {
 
     /// Generates list of episodes for a given podcast.
     pub fn get_episodes(&self, pod_id: i64, include_hidden: bool) -> Result<Vec<Episode>> {
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
         let mut stmt = if include_hidden {
-            conn.prepare_cached(
+            self.conn.prepare_cached(
                 "SELECT * FROM episodes
                         LEFT JOIN files ON episodes.id = files.episode_id
                         WHERE episodes.podcast_id = ?
                         ORDER BY pubdate DESC;",
             )?
         } else {
-            conn.prepare_cached(
+            self.conn.prepare_cached(
                 "SELECT * FROM episodes
                         LEFT JOIN files ON episodes.id = files.episode_id
                         WHERE episodes.podcast_id = ?
@@ -493,13 +456,9 @@ impl Database {
 
     /// Deletes all rows in all tables
     pub fn clear_db(&self) -> Result<()> {
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-        conn.execute("DELETE FROM files;", params![])?;
-        conn.execute("DELETE FROM episodes;", params![])?;
-        conn.execute("DELETE FROM podcasts;", params![])?;
+        self.conn.execute("DELETE FROM files;", params![])?;
+        self.conn.execute("DELETE FROM episodes;", params![])?;
+        self.conn.execute("DELETE FROM podcasts;", params![])?;
         Ok(())
     }
 
@@ -507,11 +466,7 @@ impl Database {
         let query = "SELECT last_position FROM episodes WHERE url = ?1";
 
         let mut last_position: Duration = Duration::from_secs(0);
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("conn is not available for get last position."))?;
-        conn.query_row(
+        self.conn.query_row(
             query,
             params![track.file().unwrap_or("Unknown File").to_string(),],
             |row| {
@@ -529,20 +484,17 @@ impl Database {
     ///
     /// - if the connection is unavailable
     /// - if the query fails
-    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) -> Result<()> {
+    pub fn set_last_position(&self, track: &Track, last_position: Duration) -> Result<()> {
         let query = "UPDATE episodes SET last_position = ?1 WHERE url = ?2";
-        let conn = self
-            .conn
-            .as_ref()
-            .context("conn is not available for set last position.")?;
-        conn.execute(
-            query,
-            params![
-                last_position.as_secs(),
-                track.file().unwrap_or("Unknown File Name").to_string(),
-            ],
-        )
-        .context("update last position failed.")?;
+        self.conn
+            .execute(
+                query,
+                params![
+                    last_position.as_secs(),
+                    track.file().unwrap_or("Unknown File Name").to_string(),
+                ],
+            )
+            .context("update last position failed.")?;
         // error!("set last position as {}", last_position.as_secs());
 
         Ok(())
