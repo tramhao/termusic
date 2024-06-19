@@ -12,6 +12,8 @@ use std::time::Duration;
 
 use super::{Episode, EpisodeNoId, NewEpisode, Podcast, PodcastNoId};
 
+mod migration;
+
 lazy_static! {
     /// Regex for removing "A", "An", and "The" from the beginning of
     /// podcast titles
@@ -45,90 +47,24 @@ impl Database {
         std::fs::create_dir_all(&db_path).context("Unable to create subdirectory for database.")?;
         db_path.push("data.db");
         let conn = Connection::open(&db_path)?;
+
+        migration::migrate(&conn).context("Database creation / migration")?;
+
         let db_conn = Database {
             path: db_path,
             conn: Some(conn),
         };
-        db_conn.create()?;
 
-        {
-            let conn = db_conn
-                .conn
-                .as_ref()
-                .ok_or(anyhow!("Error connecting to database."))?;
+        let conn = db_conn
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
 
-            // SQLite defaults to foreign key support off
-            conn.execute("PRAGMA foreign_keys=ON;", params![])
-                .context("Could not set database parameters.")?;
-
-            // get version number stored in database
-            let mut stmt = conn.prepare("SELECT version FROM version WHERE id = 1;")?;
-            let vstr: Result<String, rusqlite::Error> =
-                stmt.query_row(params![], |row| row.get("version"));
-
-            // compare to current app version
-            let curr_ver = Version::parse(crate::VERSION)?;
-
-            match vstr {
-                Ok(vstr) => {
-                    let db_version = Version::parse(&vstr)?;
-                    if db_version < curr_ver {
-                        // any version checks for DB migrations should
-                        // go here first, before we update the version
-
-                        // adding a column to capture episode guids
-                        // if db_version <= Version::parse("1.2.1")? {
-                        //     conn.execute("ALTER TABLE episodes ADD COLUMN guid TEXT;", params![])
-                        //         .expect("Could not run database migrations.");
-                        // }
-
-                        // db_conn.update_version(&curr_ver, true)?;
-                    }
-                }
-                Err(_) => db_conn.update_version(&curr_ver, false)?,
-            }
-        }
+        // SQLite defaults to foreign key support off
+        conn.execute("PRAGMA foreign_keys=ON;", [])
+            .context("Could not set database parameters.")?;
 
         Ok(db_conn)
-    }
-
-    /// Creates the necessary database tables, if they do not already
-    /// exist. Errors are returned if database cannot be accessed, or if tables cannot
-    /// be created.
-    pub fn create(&self) -> Result<()> {
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-
-        conn.execute(include_str!("migrations/001.sql"), [])
-            .context("PodcastDatabase version 1 could not be created")?;
-        Ok(())
-    }
-
-    /// If version stored in database is less than the current version
-    /// of the app, this updates the value stored in the database to
-    /// match.
-    fn update_version(&self, current_version: &Version, update: bool) -> Result<()> {
-        let conn = self
-            .conn
-            .as_ref()
-            .ok_or(anyhow!("Error connecting to database."))?;
-
-        if update {
-            conn.execute(
-                "UPDATE version SET version = ?
-                WHERE id = ?;",
-                params![current_version.to_string(), 1],
-            )?;
-        } else {
-            conn.execute(
-                "INSERT INTO version (id, version)
-                VALUES (?, ?)",
-                params![1, current_version.to_string()],
-            )?;
-        }
-        Ok(())
     }
 
     /// Inserts a new podcast and list of podcast episodes into the
@@ -619,5 +555,15 @@ fn convert_date(result: &Result<i64, rusqlite::Error>) -> Option<DateTime<Utc>> 
     match result {
         Ok(timestamp) => DateTime::from_timestamp(*timestamp, 0),
         Err(_) => None,
+    }
+}
+
+#[cfg(test)]
+mod test_utils {
+    use rusqlite::Connection;
+
+    /// Open a new In-Memory sqlite database
+    pub fn gen_database() -> Connection {
+        Connection::open_in_memory().expect("open db failed")
     }
 }
