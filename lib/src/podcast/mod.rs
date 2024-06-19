@@ -12,16 +12,16 @@ use crate::config::v2::server::PodcastSettings;
 use crate::taskpool::TaskPool;
 use crate::types::{Msg, PCMsg};
 use episode::{Episode, EpisodeNoId, NewEpisode};
+use db::Database;
 #[allow(clippy::module_name_repetitions)]
 pub use podcast::{Podcast, PodcastNoId};
 
 use anyhow::{bail, Context, Result};
 use bytes::Buf;
 use chrono::{DateTime, Utc};
-use db::Database;
 use lazy_static::lazy_static;
 use opml::{Body, Head, Outline, OPML};
-use regex::{Match, Regex};
+use regex::Regex;
 use reqwest::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
@@ -237,7 +237,7 @@ fn duration_to_int(duration: Option<&str>) -> Option<i32> {
                     let mut counter = 0;
                     // cap[0] is always full match
                     for c in cap.iter().skip(1).flatten() {
-                        if let Ok(intval) = regex_to_int(c) {
+                        if let Ok(intval) = c.as_str().parse() {
                             times[counter] = Some(intval);
                             counter += 1;
                         } else {
@@ -264,13 +264,6 @@ fn duration_to_int(duration: Option<&str>) -> Option<i32> {
         }
         None => None,
     }
-}
-
-/// Helper function converting a match from a regex capture group into an
-/// integer.
-fn regex_to_int(re_match: Match<'_>) -> Result<i32, std::num::ParseIntError> {
-    let mstr = re_match.as_str();
-    mstr.parse::<i32>()
 }
 
 /// Imports a list of podcasts from OPML format, reading from a file. If the `replace` flag is set, this replaces all
