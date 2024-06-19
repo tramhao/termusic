@@ -83,11 +83,10 @@ impl Database {
             ])?;
         }
 
-        let pod_id;
-        {
+        let pod_id: i64 = {
             let mut stmt = tx.prepare_cached("SELECT id FROM podcasts WHERE url = ?")?;
-            pod_id = stmt.query_row::<i64, _, _>(params![podcast.url], |row| row.get(0))?;
-        }
+            stmt.query_row(params![podcast.url], |row| row.get(0))?
+        };
         let mut ep_ids = Vec::new();
         for ep in podcast.episodes.iter().rev() {
             let id = Self::insert_episode(&tx, pod_id, ep)?;
@@ -374,7 +373,7 @@ impl Database {
     /// TODO: This should probably use a JOIN statement instead.
     pub fn get_podcasts(&self) -> Result<Vec<Podcast>> {
         let mut stmt = self.conn.prepare_cached("SELECT * FROM podcasts;")?;
-        let podcast_iter = stmt.query_map(params![], |row| {
+        let podcast_iter = stmt.query_map([], |row| {
             let pod_id = row.get("id")?;
             let episodes = match self.get_episodes(pod_id, false) {
                 Ok(ep_list) => Ok(ep_list),
@@ -431,7 +430,7 @@ impl Database {
             )?
         };
         let episode_iter = stmt.query_map(params![pod_id], |row| {
-            let path = match row.get::<&str, String>("path") {
+            let path = match row.get::<_, String>("path") {
                 Ok(val) => Some(PathBuf::from(val)),
                 Err(_) => None,
             };
@@ -440,7 +439,7 @@ impl Database {
                 pod_id: row.get("podcast_id")?,
                 title: row.get("title")?,
                 url: row.get("url")?,
-                guid: row.get::<&str, Option<String>>("guid")?.unwrap_or_default(),
+                guid: row.get::<_, Option<String>>("guid")?.unwrap_or_default(),
                 description: row.get("description")?,
                 pubdate: convert_date(&row.get("pubdate")),
                 duration: row.get("duration")?,
@@ -456,9 +455,9 @@ impl Database {
 
     /// Deletes all rows in all tables
     pub fn clear_db(&self) -> Result<()> {
-        self.conn.execute("DELETE FROM files;", params![])?;
-        self.conn.execute("DELETE FROM episodes;", params![])?;
-        self.conn.execute("DELETE FROM podcasts;", params![])?;
+        self.conn.execute("DELETE FROM files;", [])?;
+        self.conn.execute("DELETE FROM episodes;", [])?;
+        self.conn.execute("DELETE FROM podcasts;", [])?;
         Ok(())
     }
 
