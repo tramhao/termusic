@@ -267,7 +267,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
         return Ok(());
     }
 
-    let db_inst = db::Database::connect(db_path)?;
+    let db_inst = db::Database::new(db_path)?;
 
     // delete database if we are replacing the data
     // if args.is_present("replace") {
@@ -360,7 +360,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
 /// Exports all podcasts to OPML format, either printing to stdout or
 /// exporting to a file.
 pub fn export_to_opml(db_path: &Path, file: &Path) -> Result<()> {
-    let db_inst = Database::connect(db_path)?;
+    let db_inst = Database::new(db_path)?;
     let podcast_list = db_inst.get_podcasts()?;
     let opml = export_opml_feeds(&podcast_list);
 

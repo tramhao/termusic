@@ -42,7 +42,7 @@ impl Database {
     ///
     /// - if creating / opening the database fails
     /// - if migration fails
-    pub fn connect(path: &Path) -> Result<Database> {
+    pub fn new(path: &Path) -> Result<Database> {
         let mut db_path = path.to_path_buf();
         std::fs::create_dir_all(&db_path).context("Unable to create subdirectory for database.")?;
         db_path.push("data.db");

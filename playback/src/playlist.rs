@@ -136,7 +136,7 @@ impl Playlist {
 
         let mut playlist_items = Vec::new();
         let db_path = get_app_config_path()?;
-        let db_podcast = DBPod::connect(&db_path)?;
+        let db_podcast = DBPod::new(&db_path)?;
         let podcasts = db_podcast
             .get_podcasts()
             .with_context(|| "failed to get podcasts from db.")?;

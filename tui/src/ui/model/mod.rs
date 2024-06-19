@@ -169,7 +169,7 @@ impl Model {
         let ueberzug_instance = UeInstance::default();
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 
-        let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
+        let db_podcast = DBPod::new(&db_path).expect("error connecting to podcast db.");
 
         let podcasts = db_podcast
             .get_podcasts()

@@ -240,8 +240,7 @@ impl GeneralPlayer {
 
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
-        let db_podcast =
-            DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
+        let db_podcast = DBPod::new(&db_path).with_context(|| "error connecting to podcast db.")?;
         let db = DataBase::new(&config)?;
 
         let config = new_shared_server_settings(config);
