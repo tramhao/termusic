@@ -143,11 +143,11 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
         author = itunes.author().map(std::string::ToString::to_string);
         explicit = itunes.explicit().and_then(|s| {
             let ss = s.to_lowercase();
-                match &ss[..] {
-                    "yes" | "explicit" | "true" => Some(true),
-                    "no" | "clean" | "false" => Some(false),
-                    _ => None,
-                }
+            match &ss[..] {
+                "yes" | "explicit" | "true" => Some(true),
+                "no" | "clean" | "false" => Some(false),
+                _ => None,
+            }
         });
         image_url = itunes.image().map(std::string::ToString::to_string);
     }

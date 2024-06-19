@@ -18,6 +18,7 @@ lazy_static! {
     static ref RE_ARTICLES: Regex = Regex::new(r"^(a|an|the) ").expect("Regex error.");
 }
 
+#[derive(Debug)]
 pub struct SyncResult {
     pub added: Vec<NewEpisode>,
     pub updated: Vec<i64>,
@@ -38,8 +39,7 @@ impl Database {
     /// if database cannot be accessed.
     pub fn connect(path: &Path) -> Result<Database> {
         let mut db_path = path.to_path_buf();
-        std::fs::create_dir_all(&db_path)
-            .with_context(|| "Unable to create subdirectory for database.")?;
+        std::fs::create_dir_all(&db_path).context("Unable to create subdirectory for database.")?;
         db_path.push("data.db");
         let conn = Connection::open(&db_path)?;
         let db_conn = Database {
@@ -56,7 +56,7 @@ impl Database {
 
             // SQLite defaults to foreign key support off
             conn.execute("PRAGMA foreign_keys=ON;", params![])
-                .with_context(|| "Could not set database parameters.")?;
+                .context("Could not set database parameters.")?;
 
             // get version number stored in database
             let mut stmt = conn.prepare("SELECT version FROM version WHERE id = 1;")?;
@@ -113,7 +113,7 @@ impl Database {
             );",
             params![],
         )
-        .with_context(|| "Could not create podcasts database table")?;
+        .context("Could not create podcasts database table")?;
 
         // create episodes table
         conn.execute(
@@ -134,7 +134,7 @@ impl Database {
             );",
             params![],
         )
-        .with_context(|| "Could not create episodes database table")?;
+        .context("Could not create episodes database table")?;
 
         // create files table
         conn.execute(
@@ -146,7 +146,7 @@ impl Database {
             );",
             params![],
         )
-        .with_context(|| "Could not create files database table")?;
+        .context("Could not create files database table")?;
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS version (
@@ -155,7 +155,7 @@ impl Database {
             );",
             params![],
         )
-        .with_context(|| "Could not create version database table")?;
+        .context("Could not create version database table")?;
         Ok(())
     }
 
@@ -188,8 +188,7 @@ impl Database {
     /// database.
     #[allow(clippy::missing_panics_doc)]
     pub fn insert_podcast(&self, podcast: &PodcastNoId) -> Result<SyncResult> {
-        let mut conn =
-            Connection::open(&self.path).with_context(|| "Error connecting to database.")?;
+        let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
         // let conn = self.conn.as_ref().expect("Error connecting to database.");
         {
@@ -380,8 +379,7 @@ impl Database {
             }
         }
 
-        let mut conn =
-            Connection::open(&self.path).with_context(|| "Error connecting to database.")?;
+        let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
 
         let mut insert_ep = Vec::new();
@@ -501,8 +499,7 @@ impl Database {
     /// Updates an episode to mark it as played or unplayed.
     #[allow(clippy::missing_panics_doc)]
     pub fn set_all_played_status(&self, episode_id_vec: &[i64], played: bool) -> Result<()> {
-        let mut conn =
-            Connection::open(&self.path).with_context(|| "Error connecting to database.")?;
+        let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
 
         for episode_id in episode_id_vec {
