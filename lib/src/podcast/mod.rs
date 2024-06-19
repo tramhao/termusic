@@ -562,12 +562,6 @@ async fn download_file(
             Ok(_) | Err(_) => ext = "mp3",
         },
         None => error!("The response doesn't contain a content type"),
-        // Some("audio/x-m4a") => "m4a",
-        // // Some("audio/mpeg") => "mp3",
-        // Some("video/quicktime") => "mov",
-        // Some("video/mp4") => "mp4",
-        // Some("video/x-m4v") => "m4v",
-        // _ => "mp3", // assume .mp3 unless we figure out otherwise
     };
 
     let mut file_name = sanitize_with_options(
