@@ -135,24 +135,53 @@ pub fn playlist_get_vec(current_node: &str) -> Result<Vec<String>> {
 /// Some helper functions for dealing with Unicode strings.
 #[allow(clippy::module_name_repetitions)]
 pub trait StringUtils {
-    fn substr(&self, start: usize, length: usize) -> String;
+    /// Creates a string slice from `start` and taking `length`, counted by grapheme clusters.
+    fn substr(&self, start: usize, length: usize) -> &str;
+    /// Counts the total number of Unicode graphemes in the String.
     fn grapheme_len(&self) -> usize;
 }
 
-impl StringUtils for String {
-    /// Takes a slice of the String, properly separated at Unicode
-    /// grapheme boundaries. Returns a new String.
-    fn substr(&self, start: usize, length: usize) -> String {
-        return self
-            .graphemes(true)
-            .skip(start)
-            .take(length)
-            .collect::<String>();
+impl StringUtils for str {
+    fn substr(&self, start: usize, length: usize) -> &str {
+        // the logic below assumes "length > 0", so this is a fallback
+        if length == 0 {
+            return "";
+        }
+
+        let mut iter = self.grapheme_indices(true).skip(start);
+        // get the start idx
+        let Some((start_idx, _)) = iter.next() else {
+            return "";
+        };
+        // skip all remaining wanted length, minus the one we already have
+        match iter.nth(length - 1) {
+            Some((end_idx, _)) => {
+                // a grapheme index here is the beginning idx of the provided `grapheme`
+                // as the grapheme we got here is the next *unwanted* character, use a exclusive range
+                &self[start_idx..end_idx]
+            }
+            None => {
+                // there was no character after the skip, so just take everything since the start
+                &self[start_idx..]
+            }
+        }
     }
 
-    /// Counts the total number of Unicode graphemes in the String.
     fn grapheme_len(&self) -> usize {
         return self.graphemes(true).count();
+    }
+}
+
+// passthrough impl for "String", otherwise you would always have to cast it manually
+impl StringUtils for String {
+    #[inline]
+    fn substr(&self, start: usize, length: usize) -> &str {
+        (**self).substr(start, length)
+    }
+
+    #[inline]
+    fn grapheme_len(&self) -> usize {
+        self.as_str().grapheme_len()
     }
 }
 
@@ -229,5 +258,22 @@ mod tests {
         assert_eq!(get_pin_yin("Gala乐队"), "GALAledui".to_string());
         assert_eq!(get_pin_yin("乐队Gala乐队"), "leduiGALAledui".to_string());
         assert_eq!(get_pin_yin("Annett Louisan"), "ANNETT LOUISAN".to_string());
+    }
+
+    #[test]
+    fn test_substr() {
+        // 0 length fallback
+        assert_eq!("abcde".substr(0, 0), "");
+
+        assert_eq!("abcde".substr(0, 1), "a");
+        assert_eq!("abcde".substr(4, 1), "e");
+
+        // something starting beyond the current string
+        assert_eq!("abcde".substr(100, 1), "");
+        // requesting more length that is available
+        assert_eq!("abcde".substr(3, 3), "de");
+
+        assert_eq!("陈一发儿".substr(0, 1), "陈");
+        assert_eq!("陈一发儿".substr(3, 1), "儿");
     }
 }
