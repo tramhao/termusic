@@ -498,7 +498,6 @@ pub struct EpData {
 /// New jobs can be requested by the user while there are still ongoing jobs.
 ///
 /// If `tx_to_main` is closed, no errors will be throws and the task will continue
-#[allow(clippy::missing_panics_doc)]
 pub fn download_list(
     episodes: Vec<EpData>,
     dest: &Path,
@@ -520,7 +519,6 @@ pub fn download_list(
 
 /// Downloads a file to a local filepath, returning `DownloadMsg` variant
 /// indicating success or failure.
-#[allow(clippy::single_match_else)]
 async fn download_file(
     mut ep_data: EpData,
     destination_path: PathBuf,
@@ -533,14 +531,12 @@ async fn download_file(
 
     let request: Result<reqwest::Response, ()> = loop {
         let response = agent.get(&ep_data.url).send().await;
-        match response {
-            Ok(resp) => break Ok(resp),
-            Err(_) => {
-                max_retries -= 1;
-                if max_retries == 0 {
-                    break Err(());
-                }
-            }
+        if let Ok(resp) = response {
+            break Ok(resp);
+        }
+        max_retries -= 1;
+        if max_retries == 0 {
+            break Err(());
         }
     };
 
@@ -552,17 +548,24 @@ async fn download_file(
 
     // figure out the file type
     let mut ext = "mp3";
-    match response.headers().get("content-type") {
-        Some(content_type) => match content_type.to_str() {
-            Ok("audio/x-m4a") => ext = "m4a",
-            // Ok("audio/mpeg") => ext = "mp3",
-            Ok("video/quicktime") => ext = "mov",
-            Ok("video/mp4") => ext = "mp4",
-            Ok("video/x-m4v") => ext = "m4v",
-            Ok(_) | Err(_) => ext = "mp3",
-        },
-        None => error!("The response doesn't contain a content type"),
-    };
+
+    if let Some(content_type) = response
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+    {
+        ext = match content_type {
+            "audio/x-m4a" => "m4a",
+            "video/quicktime" => "mov",
+            "video/mp4" => "mp4",
+            "video/x-m4v" => "m4v",
+            // "audio/mpeg" => "mp3",
+            // fallback
+            _ => "mp3",
+        };
+    } else {
+        error!("The response doesn't contain a content type, using \"mp3\" as fallback!");
+    }
 
     let mut file_name = sanitize_with_options(
         &ep_data.title,
