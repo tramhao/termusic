@@ -4,7 +4,7 @@ use std::time::Duration;
 use ahash::AHashMap;
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
-use episode_db::EpisodeDB;
+use episode_db::{EpisodeDB, EpisodeDBInsertable};
 use file_db::FileDB;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -107,26 +107,8 @@ impl Database {
         podcast_id: PodcastDBId,
         episode: &EpisodeNoId,
     ) -> Result<PodcastDBId> {
-        let pubdate = episode.pubdate.map(|dt| dt.timestamp());
+        EpisodeDBInsertable::new(episode, podcast_id).insert_episode(conn)?;
 
-        let mut stmt = conn.prepare_cached(
-            "INSERT INTO episodes (podcast_id, title, url, guid,
-                description, pubdate, duration, played, hidden, last_position, image_url)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-        )?;
-        stmt.execute(params![
-            podcast_id,
-            episode.title,
-            episode.url,
-            episode.guid,
-            episode.description,
-            pubdate,
-            episode.duration,
-            false,
-            false,
-            0,
-            episode.image_url,
-        ])?;
         Ok(conn.last_insert_rowid())
     }
 
@@ -257,20 +239,8 @@ impl Database {
 
             if let Some(id) = existing_id {
                 if update {
-                    let mut stmt = tx.prepare_cached(
-                        "UPDATE episodes SET title = ?, url = ?,
-                                guid = ?, description = ?, pubdate = ?,
-                                duration = ? WHERE id = ?;",
-                    )?;
-                    stmt.execute(params![
-                        new_ep.title,
-                        new_ep.url,
-                        new_ep.guid,
-                        new_ep.description,
-                        new_pd,
-                        new_ep.duration,
-                        id,
-                    ])?;
+                    EpisodeDBInsertable::new(new_ep, podcast_id).update_episode(id, &tx)?;
+
                     update_ep.push(id);
                 }
             } else {
