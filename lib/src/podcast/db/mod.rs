@@ -1,18 +1,20 @@
-use anyhow::{anyhow, Context, Result};
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
-use crate::track::Track;
 use ahash::AHashMap;
+use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
 use rusqlite::{params, Connection};
 use semver::Version;
-use std::time::Duration;
 
 use super::{Episode, EpisodeNoId, NewEpisode, Podcast, PodcastNoId};
+use crate::track::Track;
+use podcast_db::PodcastDB;
 
 mod migration;
+mod podcast_db;
 
 lazy_static! {
     /// Regex for removing "A", "An", and "The" from the beginning of
@@ -373,40 +375,32 @@ impl Database {
     /// TODO: This should probably use a JOIN statement instead.
     pub fn get_podcasts(&self) -> Result<Vec<Podcast>> {
         let mut stmt = self.conn.prepare_cached("SELECT * FROM podcasts;")?;
-        let podcast_iter = stmt.query_map([], |row| {
-            let pod_id = row.get("id")?;
-            let episodes = match self.get_episodes(pod_id, false) {
-                Ok(ep_list) => Ok(ep_list),
-                Err(_) => Err(rusqlite::Error::QueryReturnedNoRows),
-            }?;
+        let podcasts = stmt
+            .query_map([], PodcastDB::try_from_row_named)?
+            .flatten()
+            .map(|podcast| {
+                let episodes = match self.get_episodes(podcast.id, false) {
+                    Ok(ep_list) => Ok(ep_list),
+                    Err(_) => Err(rusqlite::Error::QueryReturnedNoRows),
+                }?;
 
-            // create a sort title that is lowercased and removes
-            // articles from the beginning
-            let title: String = row.get("title")?;
-            let title_lower = title.to_lowercase();
-            let sort_title = RE_ARTICLES.replace(&title_lower, "").to_string();
+                let title_lower = podcast.title.to_lowercase();
+                let sort_title = RE_ARTICLES.replace(&title_lower, "").to_string();
 
-            let last_checked =
-                convert_date(&row.get("last_checked")).ok_or(rusqlite::Error::InvalidQuery)?;
-
-            Ok(Podcast {
-                id: pod_id,
-                title,
-                sort_title,
-                url: row.get("url")?,
-                description: row.get("description")?,
-                author: row.get("author")?,
-                explicit: row.get("explicit")?,
-                last_checked,
-                image_url: row.get("image_url")?,
-                episodes,
+                Ok(Podcast {
+                    id: podcast.id,
+                    title: podcast.title,
+                    sort_title,
+                    url: podcast.url,
+                    description: podcast.description,
+                    author: podcast.author,
+                    explicit: podcast.explicit,
+                    last_checked: podcast.last_checked,
+                    episodes,
+                    image_url: podcast.image_url,
+                })
             })
-        })?;
-        let mut podcasts = Vec::new();
-        for pc in podcast_iter {
-            podcasts.push(pc?);
-        }
-        // podcasts.sort_unstable();
+            .collect::<Result<_, rusqlite::Error>>()?;
 
         Ok(podcasts)
     }
