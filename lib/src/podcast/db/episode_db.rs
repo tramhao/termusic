@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Utc};
-use rusqlite::{named_params, Connection, Row};
+use rusqlite::{named_params, params, Connection, Row};
 
 use crate::podcast::episode::EpisodeNoId;
 
@@ -154,4 +154,12 @@ impl<'a> EpisodeDBInsertable<'a> {
             ":epid": id,
         ])
     }
+}
+
+/// Delete a episode by id
+///
+/// This also deletes all associated files (not removing the actual files)!
+pub fn delete_episode(id: PodcastDBId, con: &Connection) -> Result<usize, rusqlite::Error> {
+    let mut stmt = con.prepare_cached("DELETE FROM episodes WHERE id = ?;")?;
+    stmt.execute(params![id])
 }

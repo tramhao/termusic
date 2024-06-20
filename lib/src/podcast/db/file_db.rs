@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use rusqlite::{named_params, Connection, Row};
+use rusqlite::{named_params, params, Connection, Row};
 
 use super::PodcastDBId;
 
@@ -64,4 +64,24 @@ impl<'a> FileDBInsertable<'a> {
             ":path": self.path.to_string_lossy()
         ])
     }
+}
+
+/// Delete a file by episode id
+///
+/// This does *not* remove the actual (on disk) files!
+pub fn delete_file(id: PodcastDBId, con: &Connection) -> Result<usize, rusqlite::Error> {
+    let mut stmt = con.prepare_cached("DELETE FROM files WHERE episode_id = ?;")?;
+    stmt.execute(params![id])
+}
+
+/// Delete multiple files by episode id
+///
+/// This does *not* remove the actual (on disk) files!
+pub fn delete_files(ids: &[PodcastDBId], con: &Connection) -> Result<usize, rusqlite::Error> {
+    // convert list of episode ids into a comma-separated String
+    let episode_list: Vec<String> = ids.iter().map(std::string::ToString::to_string).collect();
+    let episodes = episode_list.join(", ");
+
+    let mut stmt = con.prepare_cached("DELETE FROM files WHERE episode_id = (?);")?;
+    stmt.execute(params![episodes])
 }

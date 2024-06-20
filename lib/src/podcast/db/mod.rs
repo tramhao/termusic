@@ -122,39 +122,22 @@ impl Database {
     /// Removes a file listing for an episode from the database when the
     /// user has chosen to delete the file.
     pub fn remove_file(&self, episode_id: PodcastDBId) -> Result<()> {
-        let mut stmt = self
-            .conn
-            .prepare_cached("DELETE FROM files WHERE episode_id = ?;")?;
-        stmt.execute(params![episode_id])?;
+        file_db::delete_file(episode_id, &self.conn)?;
+
         Ok(())
     }
 
     /// Removes all file listings for the selected episode ids.
     pub fn remove_files(&self, episode_ids: &[PodcastDBId]) -> Result<()> {
-        // convert list of episode ids into a comma-separated String
-        let episode_list: Vec<String> = episode_ids
-            .iter()
-            .map(std::string::ToString::to_string)
-            .collect();
-        let episodes = episode_list.join(", ");
+        file_db::delete_files(episode_ids, &self.conn)?;
 
-        let mut stmt = self
-            .conn
-            .prepare_cached("DELETE FROM files WHERE episode_id = (?);")?;
-        stmt.execute(params![episodes])?;
         Ok(())
     }
 
     /// Removes a podcast, all episodes, and files from the database.
     pub fn remove_podcast(&self, podcast_id: PodcastDBId) -> Result<()> {
-        // Note: Because of the foreign key constraints on `episodes`
-        // and `files` tables, all associated episodes for this podcast
-        // will also be deleted, and all associated file entries for
-        // those episodes as well.
-        let mut stmt = self
-            .conn
-            .prepare_cached("DELETE FROM podcasts WHERE id = ?;")?;
-        stmt.execute(params![podcast_id])?;
+        podcast_db::delete_podcast(podcast_id, &self.conn)?;
+
         Ok(())
     }
 

@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use rusqlite::{named_params, Connection, Row};
+use rusqlite::{named_params, params, Connection, Row};
 
 use super::{convert_date, PodcastDBId};
 use crate::podcast::PodcastNoId;
@@ -107,4 +107,16 @@ impl PodcastDBInsertable<'_> {
             ":id": id,
         ])
     }
+}
+
+/// Delete a podcast by id
+///
+/// This also deletes all associated episodes and files (not removing the actual files)!
+pub fn delete_podcast(id: PodcastDBId, con: &Connection) -> Result<usize, rusqlite::Error> {
+    // Note: Because of the foreign key constraints on `episodes`
+    // and `files` tables, all associated episodes for this podcast
+    // will also be deleted, and all associated file entries for
+    // those episodes as well.
+    let mut stmt = con.prepare_cached("DELETE FROM podcasts WHERE id = ?;")?;
+    stmt.execute(params![id])
 }
