@@ -4,7 +4,7 @@ use std::time::Duration;
 use ahash::AHashMap;
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
-use episode_db::{EpisodeDB, EpisodeDBInsertable, NewEpisode};
+use episode_db::{EpisodeDB, EpisodeDBInsertable};
 use file_db::{FileDB, FileDBInsertable};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -31,8 +31,8 @@ pub type PodcastDBId = i64;
 
 #[derive(Debug)]
 pub struct SyncResult {
-    pub added: Vec<NewEpisode>,
-    pub updated: Vec<i64>,
+    pub added: u64,
+    pub updated: u64,
 }
 
 /// Struct holding a sqlite database connection, with methods to interact
@@ -71,7 +71,7 @@ impl Database {
 
     /// Inserts a new podcast and list of podcast episodes into the
     /// database.
-    pub fn insert_podcast(&self, podcast: &PodcastNoId) -> Result<SyncResult> {
+    pub fn insert_podcast(&self, podcast: &PodcastNoId) -> Result<u64> {
         let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
 
@@ -81,24 +81,14 @@ impl Database {
             let mut stmt = tx.prepare_cached("SELECT id FROM podcasts WHERE url = ?")?;
             stmt.query_row(params![podcast.url], |row| row.get(0))?
         };
-        let mut ep_ids = Vec::new();
+        let mut inserted = 0;
         for ep in podcast.episodes.iter().rev() {
-            let id = Self::insert_episode(&tx, pod_id, ep)?;
-            let new_ep = NewEpisode {
-                id,
-                pod_id,
-                title: ep.title.clone(),
-                pod_title: podcast.title.clone(),
-                selected: false,
-            };
-            ep_ids.push(new_ep);
+            Self::insert_episode(&tx, pod_id, ep)?;
+            inserted += 1;
         }
         tx.commit()?;
 
-        Ok(SyncResult {
-            added: ep_ids,
-            updated: Vec::new(),
-        })
+        Ok(inserted)
     }
 
     /// Inserts a podcast episode into the database.
@@ -176,8 +166,8 @@ impl Database {
         let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
 
-        let mut insert_ep = Vec::new();
-        let mut update_ep = Vec::new();
+        let mut inserted = 0;
+        let mut updated = 0;
         for new_ep in episodes.iter().rev() {
             let new_pd = new_ep.pubdate.map(|dt| dt.timestamp());
 
@@ -221,24 +211,18 @@ impl Database {
                 if update {
                     EpisodeDBInsertable::new(new_ep, podcast_id).update_episode(id, &tx)?;
 
-                    update_ep.push(id);
+                    updated += 1;
                 }
             } else {
-                let id = Self::insert_episode(&tx, podcast_id, new_ep)?;
-                let new_ep = NewEpisode {
-                    id,
-                    pod_id: podcast_id,
-                    title: new_ep.title.clone(),
-                    pod_title: podcast_title.to_string(),
-                    selected: false,
-                };
-                insert_ep.push(new_ep);
+                Self::insert_episode(&tx, podcast_id, new_ep)?;
+
+                inserted += 1;
             }
         }
         tx.commit()?;
         Ok(SyncResult {
-            added: insert_ep,
-            updated: update_ep,
+            added: inserted,
+            updated,
         })
     }
 
