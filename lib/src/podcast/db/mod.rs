@@ -11,7 +11,7 @@ use semver::Version;
 
 use super::{Episode, EpisodeNoId, NewEpisode, Podcast, PodcastNoId};
 use crate::track::Track;
-use podcast_db::PodcastDB;
+use podcast_db::{PodcastDB, PodcastDBInsertable};
 
 mod migration;
 mod podcast_db;
@@ -21,6 +21,9 @@ lazy_static! {
     /// podcast titles
     static ref RE_ARTICLES: Regex = Regex::new(r"^(a|an|the) ").expect("Regex error.");
 }
+
+/// The id type used in the podcast database
+pub type PodcastDBId = i64;
 
 #[derive(Debug)]
 pub struct SyncResult {
@@ -67,25 +70,10 @@ impl Database {
     pub fn insert_podcast(&self, podcast: &PodcastNoId) -> Result<SyncResult> {
         let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
-        // let conn = self.conn.as_ref().expect("Error connecting to database.");
-        {
-            let mut stmt = tx.prepare_cached(
-                "INSERT INTO podcasts (title, url, description, author,
-                explicit, last_checked, image_url)
-                VALUES (?, ?, ?, ?, ?, ?, ?);",
-            )?;
-            stmt.execute(params![
-                podcast.title,
-                podcast.url,
-                podcast.description,
-                podcast.author,
-                podcast.explicit,
-                podcast.last_checked.timestamp(),
-                podcast.image_url
-            ])?;
-        }
 
-        let pod_id: i64 = {
+        PodcastDBInsertable::from(podcast).insert_podcast(&tx)?;
+
+        let pod_id: PodcastDBId = {
             let mut stmt = tx.prepare_cached("SELECT id FROM podcasts WHERE url = ?")?;
             stmt.query_row(params![podcast.url], |row| row.get(0))?
         };
@@ -112,9 +100,9 @@ impl Database {
     /// Inserts a podcast episode into the database.
     pub fn insert_episode(
         conn: &Connection,
-        podcast_id: i64,
+        podcast_id: PodcastDBId,
         episode: &EpisodeNoId,
-    ) -> Result<i64> {
+    ) -> Result<PodcastDBId> {
         let pubdate = episode.pubdate.map(|dt| dt.timestamp());
 
         let mut stmt = conn.prepare_cached(
@@ -139,7 +127,7 @@ impl Database {
     }
 
     /// Inserts a filepath to a downloaded episode.
-    pub fn insert_file(&self, episode_id: i64, path: &Path) -> Result<()> {
+    pub fn insert_file(&self, episode_id: PodcastDBId, path: &Path) -> Result<()> {
         let mut stmt = self.conn.prepare_cached(
             "INSERT INTO files (episode_id, path)
                 VALUES (?, ?);",
@@ -150,7 +138,7 @@ impl Database {
 
     /// Removes a file listing for an episode from the database when the
     /// user has chosen to delete the file.
-    pub fn remove_file(&self, episode_id: i64) -> Result<()> {
+    pub fn remove_file(&self, episode_id: PodcastDBId) -> Result<()> {
         let mut stmt = self
             .conn
             .prepare_cached("DELETE FROM files WHERE episode_id = ?;")?;
@@ -159,7 +147,7 @@ impl Database {
     }
 
     /// Removes all file listings for the selected episode ids.
-    pub fn remove_files(&self, episode_ids: &[i64]) -> Result<()> {
+    pub fn remove_files(&self, episode_ids: &[PodcastDBId]) -> Result<()> {
         // convert list of episode ids into a comma-separated String
         let episode_list: Vec<String> = episode_ids
             .iter()
@@ -175,7 +163,7 @@ impl Database {
     }
 
     /// Removes a podcast, all episodes, and files from the database.
-    pub fn remove_podcast(&self, podcast_id: i64) -> Result<()> {
+    pub fn remove_podcast(&self, podcast_id: PodcastDBId) -> Result<()> {
         // Note: Because of the foreign key constraints on `episodes`
         // and `files` tables, all associated episodes for this podcast
         // will also be deleted, and all associated file entries for
@@ -190,23 +178,8 @@ impl Database {
     /// Updates an existing podcast in the database, where metadata is
     /// changed if necessary, and episodes are updated (modified episodes
     /// are updated, new episodes are inserted).
-    pub fn update_podcast(&self, pod_id: i64, podcast: &PodcastNoId) -> Result<SyncResult> {
-        {
-            let mut stmt = self.conn.prepare_cached(
-                "UPDATE podcasts SET title = ?, url = ?, description = ?,
-            author = ?, explicit = ?, last_checked = ?
-            WHERE id = ?;",
-            )?;
-            stmt.execute(params![
-                podcast.title,
-                podcast.url,
-                podcast.description,
-                podcast.author,
-                podcast.explicit,
-                podcast.last_checked.timestamp(),
-                pod_id,
-            ])?;
-        }
+    pub fn update_podcast(&self, pod_id: PodcastDBId, podcast: &PodcastNoId) -> Result<SyncResult> {
+        PodcastDBInsertable::from(podcast).update_podcast(pod_id, &self.conn)?;
 
         let result = self.update_episodes(pod_id, &podcast.title, &podcast.episodes)?;
         Ok(result)
@@ -222,7 +195,7 @@ impl Database {
     /// database.
     fn update_episodes(
         &self,
-        podcast_id: i64,
+        podcast_id: PodcastDBId,
         podcast_title: &str,
         episodes: &[EpisodeNoId],
     ) -> Result<SyncResult> {
@@ -339,7 +312,7 @@ impl Database {
     }
 
     /// Updates an episode to mark it as played or unplayed.
-    pub fn set_played_status(&self, episode_id: i64, played: bool) -> Result<()> {
+    pub fn set_played_status(&self, episode_id: PodcastDBId, played: bool) -> Result<()> {
         let mut stmt = self
             .conn
             .prepare_cached("UPDATE episodes SET played = ? WHERE id = ?;")?;
@@ -348,7 +321,11 @@ impl Database {
     }
 
     /// Updates an episode to mark it as played or unplayed.
-    pub fn set_all_played_status(&self, episode_id_vec: &[i64], played: bool) -> Result<()> {
+    pub fn set_all_played_status(
+        &self,
+        episode_id_vec: &[PodcastDBId],
+        played: bool,
+    ) -> Result<()> {
         let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
         let tx = conn.transaction()?;
 
@@ -363,7 +340,7 @@ impl Database {
     /// Updates an episode to "remove" it by hiding it. "Removed"
     /// episodes need to stay in the database so that they don't get
     /// re-added when the podcast is synced again.
-    pub fn hide_episode(&self, episode_id: i64, hide: bool) -> Result<()> {
+    pub fn hide_episode(&self, episode_id: PodcastDBId, hide: bool) -> Result<()> {
         let mut stmt = self
             .conn
             .prepare_cached("UPDATE episodes SET hidden = ? WHERE id = ?;")?;
@@ -406,7 +383,7 @@ impl Database {
     }
 
     /// Generates list of episodes for a given podcast.
-    pub fn get_episodes(&self, pod_id: i64, include_hidden: bool) -> Result<Vec<Episode>> {
+    pub fn get_episodes(&self, pod_id: PodcastDBId, include_hidden: bool) -> Result<Vec<Episode>> {
         let mut stmt = if include_hidden {
             self.conn.prepare_cached(
                 "SELECT * FROM episodes
