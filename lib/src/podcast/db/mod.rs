@@ -5,7 +5,7 @@ use ahash::AHashMap;
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use episode_db::{EpisodeDB, EpisodeDBInsertable};
-use file_db::FileDB;
+use file_db::{FileDB, FileDBInsertable};
 use lazy_static::lazy_static;
 use regex::Regex;
 use rusqlite::{params, Connection};
@@ -114,11 +114,8 @@ impl Database {
 
     /// Inserts a filepath to a downloaded episode.
     pub fn insert_file(&self, episode_id: PodcastDBId, path: &Path) -> Result<()> {
-        let mut stmt = self.conn.prepare_cached(
-            "INSERT INTO files (episode_id, path)
-                VALUES (?, ?);",
-        )?;
-        stmt.execute(params![episode_id, path.to_str()])?;
+        FileDBInsertable::new(episode_id, path).insert_file(&self.conn)?;
+
         Ok(())
     }
 
