@@ -4,6 +4,8 @@ use std::time::Duration;
 use ahash::AHashMap;
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
+use episode_db::EpisodeDB;
+use file_db::FileDB;
 use lazy_static::lazy_static;
 use regex::Regex;
 use rusqlite::{params, Connection};
@@ -13,6 +15,8 @@ use super::{Episode, EpisodeNoId, NewEpisode, Podcast, PodcastNoId};
 use crate::track::Track;
 use podcast_db::{PodcastDB, PodcastDBInsertable};
 
+mod episode_db;
+mod file_db;
 mod migration;
 mod podcast_db;
 
@@ -386,41 +390,44 @@ impl Database {
     pub fn get_episodes(&self, pod_id: PodcastDBId, include_hidden: bool) -> Result<Vec<Episode>> {
         let mut stmt = if include_hidden {
             self.conn.prepare_cached(
-                "SELECT * FROM episodes
+                "SELECT episodes.id as epid, files.id as fileid, * FROM episodes
                         LEFT JOIN files ON episodes.id = files.episode_id
                         WHERE episodes.podcast_id = ?
                         ORDER BY pubdate DESC;",
             )?
         } else {
             self.conn.prepare_cached(
-                "SELECT * FROM episodes
+                "SELECT episodes.id as epid, files.id as fileid, * FROM episodes
                         LEFT JOIN files ON episodes.id = files.episode_id
                         WHERE episodes.podcast_id = ?
                         AND episodes.hidden = 0
                         ORDER BY pubdate DESC;",
             )?
         };
-        let episode_iter = stmt.query_map(params![pod_id], |row| {
-            let path = match row.get::<_, String>("path") {
-                Ok(val) => Some(PathBuf::from(val)),
-                Err(_) => None,
-            };
-            Ok(Episode {
-                id: row.get("id")?,
-                pod_id: row.get("podcast_id")?,
-                title: row.get("title")?,
-                url: row.get("url")?,
-                guid: row.get::<_, Option<String>>("guid")?.unwrap_or_default(),
-                description: row.get("description")?,
-                pubdate: convert_date(&row.get("pubdate")),
-                duration: row.get("duration")?,
-                path,
-                played: row.get("played")?,
-                last_position: row.get("last_position")?,
-                image_url: row.get("image_url")?,
-            })
-        })?;
-        let episodes = episode_iter.flatten().collect();
+
+        let episodes = stmt
+            .query_map(params![pod_id], |row| {
+                let episode = EpisodeDB::try_from_row_named_alias_id(row)?;
+                let file = FileDB::try_from_row_named_alias_id(row).ok();
+
+                Ok(Episode {
+                    id: episode.id,
+                    pod_id,
+                    title: episode.title,
+                    url: episode.url,
+                    guid: episode.guid,
+                    description: episode.description,
+                    pubdate: episode.pubdate,
+                    duration: episode.duration,
+                    path: file.map(|v| v.path),
+                    played: episode.played,
+                    last_position: episode.last_position,
+                    image_url: episode.image_url,
+                })
+            })?
+            .flatten()
+            .collect();
+
         Ok(episodes)
     }
 
