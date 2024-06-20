@@ -4,14 +4,14 @@ use std::time::Duration;
 use ahash::AHashMap;
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
-use episode_db::{EpisodeDB, EpisodeDBInsertable};
+use episode_db::{EpisodeDB, EpisodeDBInsertable, NewEpisode};
 use file_db::{FileDB, FileDBInsertable};
 use lazy_static::lazy_static;
 use regex::Regex;
 use rusqlite::{params, Connection};
 use semver::Version;
 
-use super::{Episode, EpisodeNoId, NewEpisode, Podcast, PodcastNoId};
+use super::{Episode, EpisodeNoId, Podcast, PodcastNoId};
 use crate::track::Track;
 use podcast_db::{PodcastDB, PodcastDBInsertable};
 

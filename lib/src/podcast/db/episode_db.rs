@@ -163,3 +163,16 @@ pub fn delete_episode(id: PodcastDBId, con: &Connection) -> Result<usize, rusqli
     let mut stmt = con.prepare_cached("DELETE FROM episodes WHERE id = ?;")?;
     stmt.execute(params![id])
 }
+
+/// Stripped down [`EpisodeDB`] for [`SyncResult`](super::SyncResult)
+/// Struct holding data about an individual podcast episode, specifically
+/// for the popup window that asks users which new episodes they wish to
+/// download.
+#[derive(Debug, Clone)]
+pub struct NewEpisode {
+    pub id: i64,
+    pub pod_id: i64,
+    pub title: String,
+    pub pod_title: String,
+    pub selected: bool,
+}

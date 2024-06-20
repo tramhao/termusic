@@ -12,7 +12,7 @@ use crate::config::v2::server::PodcastSettings;
 use crate::taskpool::TaskPool;
 use crate::types::{Msg, PCMsg};
 use db::Database;
-use episode::{Episode, EpisodeNoId, NewEpisode};
+use episode::{Episode, EpisodeNoId};
 #[allow(clippy::module_name_repetitions)]
 pub use podcast::{Podcast, PodcastNoId};
 

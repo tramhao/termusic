@@ -111,15 +111,3 @@ pub struct EpisodeNoId {
     pub duration: Option<i64>,
     pub image_url: Option<String>,
 }
-
-/// Struct holding data about an individual podcast episode, specifically
-/// for the popup window that asks users which new episodes they wish to
-/// download.
-#[derive(Debug, Clone)]
-pub struct NewEpisode {
-    pub id: i64,
-    pub pod_id: i64,
-    pub title: String,
-    pub pod_title: String,
-    pub selected: bool,
-}
