@@ -1,4 +1,4 @@
-use crate::podcast::Episode;
+use crate::podcast::episode::Episode;
 /**
  * MIT License
  *

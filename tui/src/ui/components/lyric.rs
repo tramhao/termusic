@@ -1,5 +1,5 @@
 use crate::ui::{model::TermusicLayout, Model};
-use termusiclib::podcast::Episode;
+use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, LyricMsg, Msg};
 

@@ -580,77 +580,16 @@ impl Model {
     /// `pod_id` will be None if a new podcast is being added (i.e.,
     /// the database has not given it an id yet).
     pub fn add_or_sync_data(&mut self, pod: &PodcastNoId, pod_id: Option<i64>) -> Result<()> {
-        // let title = pod.title.clone();
-        let db_result;
-
         if let Some(id) = pod_id {
-            db_result = self.db_podcast.update_podcast(id, pod);
+            self.db_podcast.update_podcast(id, pod)?;
         } else {
-            db_result = self.db_podcast.insert_podcast(pod);
+            self.db_podcast.insert_podcast(pod)?;
         }
-        match db_result {
-            Ok(_result) => {
-                {
-                    self.podcasts = self.db_podcast.get_podcasts()?;
-                    self.podcast_sync_feeds_and_episodes();
-                    Ok(())
-                }
-                // self.update_filters(self.filters, true);
 
-                // if pod_id.is_some() {
-                //     self.sync_tracker.push(result);
-                //     self.sync_counter -= 1;
-                //     self.update_tracker_notif();
+        self.podcasts = self.db_podcast.get_podcasts()?;
+        self.podcast_sync_feeds_and_episodes();
 
-                //     if self.sync_counter == 0 {
-                //         // count up total new episodes and updated
-                //         // episodes when sync process is finished
-                //         let mut added = 0;
-                //         let mut updated = 0;
-                //         let mut new_eps = Vec::new();
-                //         for res in self.sync_tracker.iter() {
-                //             added += res.added.len();
-                //             updated += res.updated.len();
-                //             new_eps.extend(res.added.clone());
-                //         }
-                //         self.sync_tracker = Vec::new();
-                //         self.notif_to_ui(
-                //             format!("Sync complete: Added {added}, updated {updated} episodes."),
-                //             false,
-                //         );
-
-                //         // deal with new episodes once syncing is
-                //         // complete, based on user preferences
-                //         if !new_eps.is_empty() {
-                //             match self.config.download_new_episodes {
-                //                 DownloadNewEpisodes::Always => {
-                //                     for ep in new_eps.into_iter() {
-                //                         self.download(ep.pod_id, Some(ep.id));
-                //                     }
-                //                 }
-                //                 DownloadNewEpisodes::AskSelected => {
-                //                     self.tx_to_ui
-                //                         .send(MainMessage::UiSpawnDownloadPopup(new_eps, true))
-                //                         .expect("Thread messaging error");
-                //                 }
-                //                 DownloadNewEpisodes::AskUnselected => {
-                //                     self.tx_to_ui
-                //                         .send(MainMessage::UiSpawnDownloadPopup(new_eps, false))
-                //                         .expect("Thread messaging error");
-                //                 }
-                //                 _ => (),
-                //             }
-                //         }
-                //     }
-                // } else {
-                //     self.notif_to_ui(
-                //         format!("Successfully added {} episodes.", result.added.len()),
-                //         false,
-                //     );
-                // }
-            }
-            Err(e) => Err(e),
-        }
+        Ok(())
     }
 
     /// Synchronize RSS feed data for one or more podcasts.

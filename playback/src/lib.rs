@@ -240,8 +240,7 @@ impl GeneralPlayer {
 
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
-        let db_podcast =
-            DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
+        let db_podcast = DBPod::new(&db_path).with_context(|| "error connecting to podcast db.")?;
         let db = DataBase::new(&config)?;
 
         let config = new_shared_server_settings(config);
@@ -547,7 +546,11 @@ impl GeneralPlayer {
                         error!("Saving last_position for music failed, Error: {:#?}", err);
                     }
                 }
-                MediaType::Podcast => self.db_podcast.set_last_position(track, position),
+                MediaType::Podcast => {
+                    if let Err(err) = self.db_podcast.set_last_position(track, position) {
+                        error!("Saving last_position for podcast failed, Error: {:#?}", err);
+                    }
+                }
                 MediaType::LiveRadio => (),
             }
         } else {

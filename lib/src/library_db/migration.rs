@@ -63,7 +63,7 @@ fn apply_migrations(conn: &Connection, mut user_version: u32) -> Result<()> {
     // do all migrations in steps, this way everyone is in the same state and had the same things applied, even for new things
     if user_version == 0 {
         // Version 2 is the base version, so there are basically no migrations, only creations
-        conn.execute(include_str!("./migrations/002.sql"), [])
+        conn.execute_batch(include_str!("./migrations/002.sql"))
             .context("Database version 2 could not be created")?;
         user_version = set_user_version(conn, 2)?;
     }

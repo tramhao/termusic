@@ -2,33 +2,35 @@
 
 #[allow(unused)]
 pub mod db;
+#[allow(clippy::module_name_repetitions)]
+pub mod episode;
+// repetetive name, but will do for now
+#[allow(clippy::module_inception)]
+mod podcast;
 
 use crate::config::v2::server::PodcastSettings;
+use crate::taskpool::TaskPool;
 use crate::types::{Msg, PCMsg};
-use crate::utils::StringUtils;
-use anyhow::{anyhow, Context, Result};
+use db::Database;
+use episode::{Episode, EpisodeNoId};
+#[allow(clippy::module_name_repetitions)]
+pub use podcast::{Podcast, PodcastNoId};
+
+use anyhow::{bail, Context, Result};
 use bytes::Buf;
 use chrono::{DateTime, Utc};
-use db::Database;
-use futures::Future;
 use lazy_static::lazy_static;
 use opml::{Body, Head, Outline, OPML};
-use regex::{Match, Regex};
+use regex::Regex;
 use reqwest::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
 use sanitize_filename::{sanitize_with_options, Options};
-use std::cmp::Ordering;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
-use std::sync::{
-    mpsc::{self, Sender},
-    Arc,
-};
+use std::sync::mpsc::{self, Sender};
 use std::time::Duration;
-use tokio::sync::Semaphore;
-use tokio_util::sync::CancellationToken;
 
 // How many columns we need, minimum, before we display the
 // (unplayed/total) after the podcast title
@@ -50,7 +52,6 @@ lazy_static! {
     /// Regex for removing "A", "An", and "The" from the beginning of
     /// podcast titles
     static ref RE_ARTICLES: Regex = Regex::new(r"^(a|an|the) ").expect("Regex error");
-
 }
 
 /// Defines interface used for both podcasts and episodes, to be
@@ -59,217 +60,6 @@ pub trait Menuable {
     fn get_id(&self) -> i64;
     fn get_title(&self, length: usize) -> String;
     fn is_played(&self) -> bool;
-}
-
-/// Struct holding data about an individual podcast feed. This includes a
-/// (possibly empty) vector of episodes.
-#[derive(Debug, Clone)]
-pub struct Podcast {
-    pub id: i64,
-    pub title: String,
-    pub sort_title: String,
-    pub url: String,
-    pub description: Option<String>,
-    pub author: Option<String>,
-    pub explicit: Option<bool>,
-    pub last_checked: DateTime<Utc>,
-    pub episodes: Vec<Episode>,
-    pub image_url: Option<String>,
-}
-
-impl Podcast {
-    // Counts and returns the number of unplayed episodes in the podcast.
-    pub fn num_unplayed(&self) -> usize {
-        self.episodes
-            .iter()
-            .map(|ep| usize::from(!ep.is_played()))
-            .sum()
-    }
-}
-
-impl Menuable for Podcast {
-    /// Returns the database ID for the podcast.
-    fn get_id(&self) -> i64 {
-        self.id
-    }
-
-    /// Returns the title for the podcast, up to length characters.
-    fn get_title(&self, length: usize) -> String {
-        let mut title_length = length;
-
-        // if the size available is big enough, we add the unplayed data
-        // to the end
-        if length > PODCAST_UNPLAYED_TOTALS_LENGTH {
-            let meta_str = format!("({}/{})", self.num_unplayed(), self.episodes.len());
-            title_length = length - meta_str.chars().count() - 3;
-
-            let out = self.title.substr(0, title_length);
-
-            format!(
-                " {out} {meta_str:>width$} ",
-                width = length - out.grapheme_len() - 3
-            ) // this pads spaces between title and totals
-        } else {
-            format!(" {} ", self.title.substr(0, title_length - 2))
-        }
-    }
-
-    fn is_played(&self) -> bool {
-        self.num_unplayed() == 0
-    }
-}
-
-impl PartialEq for Podcast {
-    fn eq(&self, other: &Self) -> bool {
-        self.sort_title == other.sort_title
-    }
-}
-impl Eq for Podcast {}
-
-impl PartialOrd for Podcast {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Podcast {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.sort_title.cmp(&other.sort_title)
-    }
-}
-
-/// Struct holding data about an individual podcast episode. Most of this
-/// is metadata, but if the episode has been downloaded to the local
-/// machine, the filepath will be included here as well. `played`
-/// indicates whether the podcast has been marked as played or unplayed.
-#[derive(Debug, Clone, Default)]
-pub struct Episode {
-    pub id: i64,
-    pub pod_id: i64,
-    pub title: String,
-    pub url: String,
-    pub guid: String,
-    pub description: String,
-    pub pubdate: Option<DateTime<Utc>>,
-    pub duration: Option<i64>,
-    pub path: Option<PathBuf>,
-    pub played: bool,
-    pub last_position: Option<i64>,
-    pub image_url: Option<String>,
-}
-
-impl Episode {
-    /// Formats the duration in seconds into an HH:MM:SS format.
-    pub fn format_duration(&self) -> String {
-        match self.duration {
-            Some(dur) => {
-                let mut seconds = dur;
-                let hours = seconds / 3600;
-                seconds -= hours * 3600;
-                let minutes = seconds / 60;
-                seconds -= minutes * 60;
-                format!("{hours:02}:{minutes:02}:{seconds:02}")
-            }
-            None => "--:--:--".to_string(),
-        }
-    }
-}
-
-impl Menuable for Episode {
-    /// Returns the database ID for the episode.
-    fn get_id(&self) -> i64 {
-        self.id
-    }
-
-    /// Returns the title for the episode, up to length characters.
-    fn get_title(&self, length: usize) -> String {
-        let out = match self.path {
-            Some(_) => {
-                let title = self.title.substr(0, length - 4);
-                format!("[D] {title}")
-            }
-            None => self.title.substr(0, length).to_string(),
-        };
-        if length > EPISODE_PUBDATE_LENGTH {
-            let dur = self.format_duration();
-            let meta_dur = format!("[{dur}]");
-
-            if let Some(pubdate) = self.pubdate {
-                // print pubdate and duration
-                let pd = pubdate.format("%F");
-                let meta_str = format!("({pd}) {meta_dur}");
-                let added_len = meta_str.chars().count();
-
-                let out_added = out.substr(0, length - added_len - 3);
-                format!(
-                    " {out_added} {meta_str:>width$} ",
-                    width = length - out_added.grapheme_len() - 3
-                )
-            } else {
-                // just print duration
-                let out_added = out.substr(0, length - meta_dur.chars().count() - 3);
-                format!(
-                    " {out_added} {meta_dur:>width$} ",
-                    width = length - out_added.grapheme_len() - 3
-                )
-            }
-        } else if length > EPISODE_DURATION_LENGTH {
-            let dur = self.format_duration();
-            let meta_dur = format!("[{dur}]");
-            let out_added = out.substr(0, length - meta_dur.chars().count() - 3);
-            format!(
-                " {out_added} {meta_dur:>width$} ",
-                width = length - out_added.grapheme_len() - 3
-            )
-        } else {
-            format!(" {} ", out.substr(0, length - 2))
-        }
-    }
-
-    fn is_played(&self) -> bool {
-        self.played
-    }
-}
-
-/// Struct holding data about an individual podcast feed, before it has
-/// been inserted into the database. This includes a
-/// (possibly empty) vector of episodes.
-#[derive(Debug, Clone, Eq, PartialEq)]
-#[allow(clippy::module_name_repetitions)]
-pub struct PodcastNoId {
-    pub title: String,
-    pub url: String,
-    pub description: Option<String>,
-    pub author: Option<String>,
-    pub explicit: Option<bool>,
-    pub last_checked: DateTime<Utc>,
-    pub episodes: Vec<EpisodeNoId>,
-    pub image_url: Option<String>,
-}
-
-/// Struct holding data about an individual podcast episode, before it
-/// has been inserted into the database.
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct EpisodeNoId {
-    pub title: String,
-    pub url: String,
-    pub guid: String,
-    pub description: String,
-    pub pubdate: Option<DateTime<Utc>>,
-    pub duration: Option<i64>,
-    pub image_url: Option<String>,
-}
-
-/// Struct holding data about an individual podcast episode, specifically
-/// for the popup window that asks users which new episodes they wish to
-/// download.
-#[derive(Debug, Clone)]
-pub struct NewEpisode {
-    pub id: i64,
-    pub pod_id: i64,
-    pub title: String,
-    pub pod_title: String,
-    pub selected: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -290,35 +80,25 @@ impl PodcastFeed {
     }
 }
 
-/// Spawns a new thread to check a feed and retrieve podcast data.
+/// Spawns a new task to check a feed and retrieve podcast data.
 ///
-/// # Panics
-///
-/// if sending commands to `tx_to_main` fails
-pub fn check_feed(
-    feed: PodcastFeed,
-    max_retries: usize,
-    threadpool: &TaskPool,
-    tx_to_main: Sender<Msg>,
-) {
-    threadpool.execute(async move {
-        tx_to_main
-            .send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())))
-            .expect("thread messaging error in fetch start");
+/// If `tx_to_main` is closed, no errors will be throws and the task will continue
+pub fn check_feed(feed: PodcastFeed, max_retries: usize, tp: &TaskPool, tx_to_main: Sender<Msg>) {
+    tp.execute(async move {
+        let _ = tx_to_main.send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())));
         match get_feed_data(&feed.url, max_retries).await {
             Ok(pod) => match feed.id {
                 Some(id) => {
-                    tx_to_main
-                        .send(Msg::Podcast(PCMsg::SyncData((id, pod))))
-                        .expect("Thread messaging error when sync old");
+                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::SyncData((id, pod))));
                 }
-                None => tx_to_main
-                    .send(Msg::Podcast(PCMsg::NewData(pod)))
-                    .expect("Thread messaging error when add new"),
+                None => {
+                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::NewData(pod)));
+                }
             },
-            Err(_err) => tx_to_main
-                .send(Msg::Podcast(PCMsg::Error(feed.url.to_string(), feed)))
-                .expect("Thread messaging error when get feed"),
+            Err(err) => {
+                error!("get_feed_data had a Error: {:#?}", err);
+                let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed.url.to_string(), feed)));
+            }
         }
     });
 }
@@ -330,24 +110,19 @@ async fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId>
         .connect_timeout(Duration::from_secs(5))
         .build()?;
 
-    let request: Result<reqwest::Response> = loop {
+    let resp: reqwest::Response = loop {
         let response = agent.get(url).send().await;
         if let Ok(resp) = response {
-            break Ok(resp);
+            break resp;
         }
         max_retries -= 1;
         if max_retries == 0 {
-            break Err(anyhow!("No response from feed"));
+            bail!("No response from feed");
         }
     };
 
-    match request {
-        Ok(resp) => {
-            let channel = Channel::read_from(resp.bytes().await?.reader())?;
-            Ok(parse_feed_data(channel, url))
-        }
-        Err(err) => Err(err),
-    }
+    let channel = Channel::read_from(resp.bytes().await?.reader())?;
+    Ok(parse_feed_data(channel, url))
 }
 
 /// Given a Channel with the RSS feed data, this parses the data about a
@@ -366,17 +141,14 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
     let mut image_url = None;
     if let Some(itunes) = channel.itunes_ext() {
         author = itunes.author().map(std::string::ToString::to_string);
-        explicit = match itunes.explicit() {
-            None => None,
-            Some(s) => {
-                let ss = s.to_lowercase();
-                match &ss[..] {
-                    "yes" | "explicit" | "true" => Some(true),
-                    "no" | "clean" | "false" => Some(false),
-                    _ => None,
-                }
+        explicit = itunes.explicit().and_then(|s| {
+            let ss = s.to_lowercase();
+            match &ss[..] {
+                "yes" | "explicit" | "true" => Some(true),
+                "no" | "clean" | "false" => Some(false),
+                _ => None,
             }
-        };
+        });
         image_url = itunes.image().map(std::string::ToString::to_string);
     }
 
@@ -406,10 +178,7 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
 /// make some attempt to account for the possibility that a feed might
 /// not be valid according to the spec.
 fn parse_episode_data(item: &Item) -> EpisodeNoId {
-    let title = match item.title() {
-        Some(s) => s.to_string(),
-        None => String::new(),
-    };
+    let title = item.title().unwrap_or("").to_string();
     let url = match item.enclosure() {
         Some(enc) => enc.url().to_string(),
         None => String::new(),
@@ -418,10 +187,7 @@ fn parse_episode_data(item: &Item) -> EpisodeNoId {
         Some(guid) => guid.value().to_string(),
         None => String::new(),
     };
-    let description = match item.description() {
-        Some(dsc) => dsc.to_string(),
-        None => String::new(),
-    };
+    let description = item.description().unwrap_or("").to_string();
     let pubdate = item
         .pub_date()
         .and_then(|pd| parse_from_rfc2822_with_fallback(pd).ok())
@@ -450,136 +216,47 @@ fn parse_episode_data(item: &Item) -> EpisodeNoId {
 /// formats HH:MM:SS, MM:SS, and SS. If the duration cannot be converted
 /// (covering numerous reasons), it will return None.
 fn duration_to_int(duration: Option<&str>) -> Option<i32> {
-    match duration {
-        Some(dur) => {
-            match RE_DURATION.captures(dur) {
-                Some(cap) => {
-                    /*
-                     * Provided that the regex succeeds, we should have
-                     * 4 capture groups (with 0th being the full match).
-                     * Depending on the string format, however, some of
-                     * these may return None. We first loop through the
-                     * capture groups and push Some results to an array.
-                     * This will fail on the first non-numeric value,
-                     * so the duration is parsed only if all components
-                     * of it were successfully converted to integers.
-                     * Finally, we convert hours, minutes, and seconds
-                     * into a total duration in seconds and return.
-                     */
+    let duration = duration?;
+    let captures = RE_DURATION.captures(duration)?;
 
-                    let mut times = [None; 3];
-                    let mut counter = 0;
-                    // cap[0] is always full match
-                    for c in cap.iter().skip(1).flatten() {
-                        if let Ok(intval) = regex_to_int(c) {
-                            times[counter] = Some(intval);
-                            counter += 1;
-                        } else {
-                            return None;
-                        }
-                    }
+    /*
+     * Provided that the regex succeeds, we should have
+     * 4 capture groups (with 0th being the full match).
+     * Depending on the string format, however, some of
+     * these may return None. We first loop through the
+     * capture groups and push Some results to an array.
+     * This will fail on the first non-numeric value,
+     * so the duration is parsed only if all components
+     * of it were successfully converted to integers.
+     * Finally, we convert hours, minutes, and seconds
+     * into a total duration in seconds and return.
+     */
 
-                    match counter {
-                        // HH:MM:SS
-                        3 => Some(
-                            times[0].unwrap() * 60 * 60
-                                + times[1].unwrap() * 60
-                                + times[2].unwrap(),
-                        ),
-                        // MM:SS
-                        2 => Some(times[0].unwrap() * 60 + times[1].unwrap()),
-                        // SS
-                        1 => times[0],
-                        _ => None,
-                    }
-                }
-                None => None,
-            }
-        }
-        None => None,
+    let mut times = [None; 3];
+    let mut counter = 0;
+    // cap[0] is always full match
+    for c in captures.iter().skip(1).flatten() {
+        let intval = c.as_str().parse().ok()?;
+        times[counter] = Some(intval);
+        counter += 1;
+    }
+
+    match counter {
+        // HH:MM:SS
+        3 => Some(times[0].unwrap() * 60 * 60 + times[1].unwrap() * 60 + times[2].unwrap()),
+        // MM:SS
+        2 => Some(times[0].unwrap() * 60 + times[1].unwrap()),
+        // SS
+        1 => times[0],
+        _ => None,
     }
 }
 
-/// Helper function converting a match from a regex capture group into an
-/// integer.
-fn regex_to_int(re_match: Match<'_>) -> Result<i32, std::num::ParseIntError> {
-    let mstr = re_match.as_str();
-    mstr.parse::<i32>()
-}
-
-/// Manages a taskpool of a given size of how many task to execute at once.
-///
-/// Also cancels all tasks spawned by this pool on [`Drop`]
-pub struct TaskPool {
-    /// Semaphore to manage how many active tasks there at a time
-    semaphore: Arc<Semaphore>,
-    /// Cancel Token to stop a task on drop
-    cancel_token: CancellationToken,
-}
-
-impl TaskPool {
-    /// Creates a new [`TaskPool`] with a given amount of active tasks
-    pub fn new(n_tasks: usize) -> TaskPool {
-        let semaphore = Arc::new(Semaphore::new(n_tasks));
-        let cancel_token = CancellationToken::new();
-
-        TaskPool {
-            semaphore,
-            cancel_token,
-        }
-    }
-
-    /// Adds a new task to the [`TaskPool`]
-    ///
-    /// see [`tokio::spawn`]
-    ///
-    /// Provided task will be cancelled on [`TaskPool`] [`Drop`]
-    pub fn execute<F, T>(&self, func: F)
-    where
-        F: Future<Output = T> + Send + 'static,
-        T: Send,
-    {
-        let semaphore = self.semaphore.clone();
-        let token = self.cancel_token.clone();
-        tokio::spawn(async move {
-            // multiple "await" points, so combine them to a single future for the select
-            let main = async {
-                let Ok(_permit) = semaphore.acquire().await else {
-                    // ignore / cancel task if semaphore is closed
-                    // just for clarity, this "return" cancels the whole spawned task and does not execute "func.await"
-                    return;
-                };
-                func.await;
-            };
-
-            tokio::select! {
-                () = main => {},
-                () = token.cancelled() => {}
-            }
-        });
-    }
-}
-
-impl Drop for TaskPool {
-    fn drop(&mut self) {
-        // prevent new tasks from being added / executed
-        self.semaphore.close();
-        // cancel all tasks that were spawned with this token
-        self.cancel_token.cancel();
-    }
-}
-
-/// Imports a list of podcasts from OPML format, either reading from a
-/// file or from stdin. If the `replace` flag is set, this replaces all
+/// Imports a list of podcasts from OPML format, reading from a file. If the `replace` flag is set, this replaces all
 /// existing data in the database.
 pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -> Result<()> {
-    // read from file or from stdin
-    let mut f = File::open(file)
+    let xml = std::fs::read_to_string(file)
         .with_context(|| format!("Could not open OPML file: {}", file.display()))?;
-    let mut contents = String::new();
-    f.read_to_string(&mut contents)
-        .with_context(|| format!("Failed to read from OPML file: {}", file.display()))?;
-    let xml = contents;
 
     let mut podcast_list = import_opml_feeds(&xml).with_context(|| {
         "Could not properly parse OPML file -- file may be formatted improperly or corrupted."
@@ -590,7 +267,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
         return Ok(());
     }
 
-    let db_inst = db::Database::connect(db_path)?;
+    let db_inst = db::Database::new(db_path)?;
 
     // delete database if we are replacing the data
     // if args.is_present("replace") {
@@ -620,14 +297,14 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
 
     println!("Importing {} podcasts...", podcast_list.len());
 
-    let threadpool = TaskPool::new(usize::from(config.concurrent_downloads_max.get()));
+    let taskpool = TaskPool::new(usize::from(config.concurrent_downloads_max.get()));
     let (tx_to_main, rx_to_main) = mpsc::channel();
 
     for pod in &podcast_list {
         check_feed(
             pod.clone(),
             usize::from(config.max_download_retries),
-            &threadpool,
+            &taskpool,
             tx_to_main.clone(),
         );
     }
@@ -673,7 +350,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
     }
 
     if failure {
-        return Err(anyhow!("Process finished with errors."));
+        bail!("Process finished with errors.");
     }
     println!("Import successful.");
 
@@ -683,14 +360,11 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
 /// Exports all podcasts to OPML format, either printing to stdout or
 /// exporting to a file.
 pub fn export_to_opml(db_path: &Path, file: &Path) -> Result<()> {
-    let db_inst = Database::connect(db_path)?;
+    let db_inst = Database::new(db_path)?;
     let podcast_list = db_inst.get_podcasts()?;
     let opml = export_opml_feeds(&podcast_list);
 
-    let xml = opml
-        .to_string()
-        .map_err(|err| anyhow!(err))
-        .with_context(|| "Could not create OPML format")?;
+    let xml = opml.to_string().context("Could not create OPML format")?;
 
     let mut dst = File::create(file)
         .with_context(|| format!("Could not create output file: {}", file.display()))?;
@@ -706,32 +380,24 @@ pub fn export_to_opml(db_path: &Path, file: &Path) -> Result<()> {
 /// Import a list of podcast feeds from an OPML file. Supports
 /// v1.0, v1.1, and v2.0 OPML files.
 fn import_opml_feeds(xml: &str) -> Result<Vec<PodcastFeed>> {
-    match OPML::from_str(xml) {
-        Err(err) => Err(anyhow!(err)),
-        Ok(opml) => {
-            let mut feeds = Vec::new();
-            for pod in opml.body.outlines {
-                if pod.xml_url.is_some() {
-                    // match against title attribute first -- if this is
-                    // not set or empty, then match against the text
-                    // attribute; this must be set, but can be empty
-                    let temp_title = pod.title.filter(|t| !t.is_empty());
-                    let title = match temp_title {
-                        Some(t) => Some(t),
-                        None => {
-                            if pod.text.is_empty() {
-                                None
-                            } else {
-                                Some(pod.text)
-                            }
-                        }
-                    };
-                    feeds.push(PodcastFeed::new(None, &pod.xml_url.unwrap(), title));
+    let opml = OPML::from_str(xml)?;
+    let mut feeds = Vec::new();
+    for pod in opml.body.outlines {
+        if pod.xml_url.is_some() {
+            // match against title attribute first -- if this is
+            // not set or empty, then match against the text
+            // attribute; this must be set, but can be empty
+            let title = pod.title.filter(|t| !t.is_empty()).or({
+                if pod.text.is_empty() {
+                    None
+                } else {
+                    Some(pod.text)
                 }
-            }
-            Ok(feeds)
+            });
+            feeds.push(PodcastFeed::new(None, &pod.xml_url.unwrap(), title));
         }
     }
+    Ok(feeds)
 }
 
 /// Converts the current set of podcast feeds to the OPML format
@@ -763,7 +429,7 @@ fn export_opml_feeds(podcasts: &[Podcast]) -> OPML {
     opml
 }
 
-/// Enum used to communicate relevant data to the threadpool.
+/// Enum used to communicate relevant data to the taskpool.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct EpData {
     pub id: i64,
@@ -774,42 +440,33 @@ pub struct EpData {
     pub file_path: Option<PathBuf>,
 }
 
-/// This is the function the main controller uses to indicate new
-/// files to download. It uses the threadpool to start jobs
-/// for every episode to be downloaded. New jobs can be requested
-/// by the user while there are still ongoing jobs.
-#[allow(clippy::missing_panics_doc)]
+/// This is the function the main controller uses to indicate new files to download.
+///
+/// It uses the taskpool to start jobs for every episode to be downloaded.
+/// New jobs can be requested by the user while there are still ongoing jobs.
+///
+/// If `tx_to_main` is closed, no errors will be throws and the task will continue
 pub fn download_list(
     episodes: Vec<EpData>,
     dest: &Path,
     max_retries: usize,
-    threadpool: &TaskPool,
+    tp: &TaskPool,
     tx_to_main: &Sender<Msg>,
 ) {
     // parse episode details and push to queue
     for ep in episodes {
         let tx = tx_to_main.clone();
         let dest2 = dest.to_path_buf();
-        threadpool.execute(async move { download_job(&tx, ep, dest2, max_retries).await });
+        tp.execute(async move {
+            let _ = tx.send(Msg::Podcast(PCMsg::DLStart(ep.clone())));
+            let result = download_file(ep, dest2, max_retries).await;
+            let _ = tx.send(Msg::Podcast(result));
+        });
     }
-}
-
-/// # Panics
-///
-/// if sending command via `tx_to_main` fails
-async fn download_job(tx_to_main: &Sender<Msg>, ep: EpData, dest: PathBuf, max_retries: usize) {
-    tx_to_main
-        .send(Msg::Podcast(PCMsg::DLStart(ep.clone())))
-        .expect("Thread messaging error when start download");
-    let result = download_file(ep, dest, max_retries).await;
-    tx_to_main
-        .send(Msg::Podcast(result))
-        .expect("Thread messaging error");
 }
 
 /// Downloads a file to a local filepath, returning `DownloadMsg` variant
 /// indicating success or failure.
-#[allow(clippy::single_match_else)]
 async fn download_file(
     mut ep_data: EpData,
     destination_path: PathBuf,
@@ -820,43 +477,39 @@ async fn download_file(
         .build()
         .expect("reqwest client build failed");
 
-    let request: Result<reqwest::Response, ()> = loop {
+    let response: reqwest::Response = loop {
         let response = agent.get(&ep_data.url).send().await;
-        match response {
-            Ok(resp) => break Ok(resp),
-            Err(_) => {
-                max_retries -= 1;
-                if max_retries == 0 {
-                    break Err(());
-                }
-            }
+        if let Ok(resp) = response {
+            break resp;
+        }
+        max_retries -= 1;
+        if max_retries == 0 {
+            return PCMsg::DLResponseError(ep_data);
         }
     };
 
-    if request.is_err() {
-        return PCMsg::DLResponseError(ep_data);
-    };
-
-    let response = request.unwrap();
-
     // figure out the file type
-    let mut ext = "mp3";
-    match response.headers().get("content-type") {
-        Some(content_type) => match content_type.to_str() {
-            Ok("audio/x-m4a") => ext = "m4a",
-            // Ok("audio/mpeg") => ext = "mp3",
-            Ok("video/quicktime") => ext = "mov",
-            Ok("video/mp4") => ext = "mp4",
-            Ok("video/x-m4v") => ext = "m4v",
-            Ok(_) | Err(_) => ext = "mp3",
-        },
-        None => error!("The response doesn't contain a content type"),
-        // Some("audio/x-m4a") => "m4a",
-        // // Some("audio/mpeg") => "mp3",
-        // Some("video/quicktime") => "mov",
-        // Some("video/mp4") => "mp4",
-        // Some("video/x-m4v") => "m4v",
-        // _ => "mp3", // assume .mp3 unless we figure out otherwise
+    let ext = if let Some(content_type) = response
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+    {
+        match content_type {
+            "audio/x-m4a" | "audio/mp4" => "m4a",
+            "audio/x-matroska" => "mka",
+            "audio/flac" => "flac",
+            "video/quicktime" => "mov",
+            "video/mp4" => "mp4",
+            "video/x-m4v" => "m4v",
+            "video/x-matroska" => "mkv",
+            "video/webm" => "webm",
+            // "audio/mpeg" => "mp3",
+            // fallback
+            _ => "mp3",
+        }
+    } else {
+        error!("The response doesn't contain a content type, using \"mp3\" as fallback!");
+        "mp3"
     };
 
     let mut file_name = sanitize_with_options(

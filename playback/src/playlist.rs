@@ -9,7 +9,7 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
-use termusiclib::podcast::{db::Database as DBPod, Episode};
+use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::MediaType;
 use termusiclib::{
     track::Track,
@@ -136,7 +136,7 @@ impl Playlist {
 
         let mut playlist_items = Vec::new();
         let db_path = get_app_config_path()?;
-        let db_podcast = DBPod::connect(&db_path)?;
+        let db_podcast = DBPod::new(&db_path)?;
         let podcasts = db_podcast
             .get_podcasts()
             .with_context(|| "failed to get podcasts from db.")?;
