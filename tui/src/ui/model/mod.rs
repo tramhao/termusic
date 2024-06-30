@@ -84,6 +84,7 @@ pub struct Model {
     pub config_tui: SharedTuiSettings,
     pub config_server: SharedServerSettings,
     pub yanked_node_id: Option<String>,
+    /// Clone of `playlist.current_track`, but kept around when playlist goes empty but song is still playing
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
     pub time_pos: Duration,
