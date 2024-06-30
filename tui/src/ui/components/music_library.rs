@@ -228,7 +228,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 impl Model {
     pub fn library_scan_dir(&mut self, p: &Path) {
         self.path = p.to_path_buf();
-        self.tree = Tree::new(Self::library_dir_tree(
+        self.library_tree = Tree::new(Self::library_dir_tree(
             p,
             self.config_server.read().get_library_scan_depth(),
         ));
@@ -303,7 +303,7 @@ impl Model {
     }
 
     pub fn library_reload_tree(&mut self) {
-        self.tree = Tree::new(Self::library_dir_tree(
+        self.library_tree = Tree::new(Self::library_dir_tree(
             self.path.as_ref(),
             self.config_server.read().get_library_scan_depth(),
         ));
@@ -326,7 +326,7 @@ impl Model {
                 .mount(
                     Id::Library,
                     Box::new(MusicLibrary::new(
-                        &self.tree.clone(),
+                        &self.library_tree.clone(),
                         current_node,
                         self.config_tui.clone(),
                     ),),
@@ -342,7 +342,7 @@ impl Model {
             .remount(
                 Id::Library,
                 Box::new(MusicLibrary::new(
-                    &self.tree.clone(),
+                    &self.library_tree.clone(),
                     current_node,
                     self.config_tui.clone(),
                 ),),
@@ -384,7 +384,7 @@ impl Model {
 
     pub fn library_delete_song(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            if let Some(mut route) = self.tree.root().route_by_node(&node_id) {
+            if let Some(mut route) = self.library_tree.root().route_by_node(&node_id) {
                 let p: &Path = Path::new(node_id.as_str());
                 if p.is_file() {
                     remove_file(p)?;
@@ -395,7 +395,7 @@ impl Model {
 
                 // // this is to keep the state of playlist
                 self.library_reload_tree();
-                let tree = self.tree.clone();
+                let tree = self.library_tree.clone();
                 if let Some(new_node) = tree.root().node_by_route(&route) {
                     self.library_reload_with_node_focus(Some(new_node.id()));
                 } else {
@@ -450,7 +450,7 @@ impl Model {
 
     pub fn library_update_search(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
-        let root = self.tree.root();
+        let root = self.library_tree.root();
         let p: &Path = Path::new(root.id());
         let all_items = walkdir::WalkDir::new(p).follow_links(true);
         let mut idx = 0;

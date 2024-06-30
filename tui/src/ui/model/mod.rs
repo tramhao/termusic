@@ -80,7 +80,8 @@ pub struct Model {
     /// Used to draw to terminal
     pub terminal: TerminalBridge,
     pub path: PathBuf,
-    pub tree: Tree,
+    /// Tree of the Music Library widget
+    pub library_tree: Tree,
     pub config_tui: SharedTuiSettings,
     pub config_server: SharedServerSettings,
     pub yanked_node_id: Option<String>,
@@ -199,7 +200,7 @@ impl Model {
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),
-            tree,
+            library_tree: tree,
             path,
             terminal,
             config_server,
