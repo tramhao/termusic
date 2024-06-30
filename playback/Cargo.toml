@@ -65,7 +65,8 @@ default = []
 # cover = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sirno"]
-rusty = ["dep:symphonia", "dep:soundtouch", "dep:stream-download", "dep:cpal"]
+rusty = ["dep:symphonia", "dep:stream-download", "dep:cpal"]
+rusty-soundtouch = ["dep:soundtouch"]
 all-backends = ["gst", "mpv", "rusty"]
 
 
