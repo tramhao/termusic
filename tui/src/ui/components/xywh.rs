@@ -68,7 +68,15 @@ impl Model {
     pub fn xywh_toggle_hide(&mut self) {
         self.clear_photo().ok();
         let mut config_tui = self.config_tui.write();
-        config_tui.disable_tui_images = !config_tui.disable_tui_images;
+
+        // dont save value if cli has overwritten it, but still allow runtime changing
+        if let Some(current) = config_tui.coverart_hidden_overwrite {
+            config_tui.coverart_hidden_overwrite = Some(!current);
+            info!("Not saving coverart.hidden as it is overwritten by cli!");
+        } else {
+            config_tui.settings.coverart.hidden = !config_tui.settings.coverart.hidden;
+        }
+
         drop(config_tui);
         self.update_photo().ok();
     }
@@ -108,7 +116,7 @@ impl Model {
     /// Requires that the current thread has a entered runtime
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
-        if self.config_tui.read().disable_tui_images {
+        if self.config_tui.read().get_coverart_hidden() {
             return Ok(());
         }
         self.clear_photo()?;

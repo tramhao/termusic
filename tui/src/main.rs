@@ -255,9 +255,11 @@ fn get_config(args: &cli::Args) -> Result<CombinedSettings> {
 
     let config_tui = TuiConfigVersionedDefaulted::from_config_path()?.into_settings();
 
+    let coverart_hidden_overwrite = if args.disable_cover { Some(true) } else { None };
+
     let overlay_tui = TuiOverlay {
         settings: config_tui,
-        disable_tui_images: args.disable_cover,
+        coverart_hidden_overwrite,
     };
 
     Ok(CombinedSettings {

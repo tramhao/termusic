@@ -96,6 +96,8 @@ pub struct CoverArtPosition {
     pub align: Alignment,
     /// Scale of the image
     pub size_scale: i8,
+    /// Whether to show or hide the coverart if it is compiled in
+    pub hidden: bool,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Default, PartialEq, Eq)]
@@ -133,6 +135,7 @@ mod v1_interop {
                 align: value.align.into(),
                 // the value is named "width", but more use like a scale on both axis
                 size_scale: value.width_between_1_100.clamp(0, i8::MAX as u32) as i8,
+                hidden: Self::default().hidden,
             }
         }
     }
@@ -176,7 +179,8 @@ mod v1_interop {
                 converted.coverart,
                 CoverArtPosition {
                     align: Alignment::BottomRight,
-                    size_scale: 20
+                    size_scale: 20,
+                    hidden: false
                 }
             );
 

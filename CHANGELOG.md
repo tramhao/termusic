@@ -16,6 +16,7 @@
 - Feat: Add new V2 Config Layout, old v1 config is automatically migrated to v2.
 - Feat(tui): allow Sixel to be used for covers.
 - Feat(tui): allow all cover providers to not be compiled in.
+- Feat(tui): allow disabling the coverart display in config (previously the only options were to not compile it in or disable via cli).
 - Fix: update the build scripts to check that the repository is actually the `termusic` repository before using the git version.
 - Fix: allow backends to be compiled in for `termusic-playback` but not in `termusic-server`.
 - Fix: on backend mpv, clear media-title on EndOfFile.
