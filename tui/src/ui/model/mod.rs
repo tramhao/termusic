@@ -79,7 +79,8 @@ pub struct Model {
     pub app: Application<Id, Msg, NoUserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge,
-    pub path: PathBuf,
+    /// Current Path that the library-tree is in
+    pub library_tree_path: PathBuf,
     /// Tree of the Music Library widget
     pub library_tree: Tree,
     pub config_tui: SharedTuiSettings,
@@ -201,7 +202,7 @@ impl Model {
             redraw: true,
             last_redraw: Instant::now(),
             library_tree: tree,
-            path,
+            library_tree_path: path,
             terminal,
             config_server,
             config_tui,
@@ -273,7 +274,7 @@ impl Model {
             self.mount_error_popup(e.context("theme save"));
         }
         self.mount_label_help();
-        self.db.sync_database(&self.path);
+        self.db.sync_database(&self.library_tree_path);
         self.playlist_sync();
     }
 

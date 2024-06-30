@@ -227,7 +227,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 
 impl Model {
     pub fn library_scan_dir(&mut self, p: &Path) {
-        self.path = p.to_path_buf();
+        self.library_tree_path = p.to_path_buf();
         self.library_tree = Tree::new(Self::library_dir_tree(
             p,
             self.config_server.read().get_library_scan_depth(),
@@ -235,7 +235,9 @@ impl Model {
     }
 
     pub fn library_upper_dir(&self) -> Option<PathBuf> {
-        self.path.parent().map(std::path::Path::to_path_buf)
+        self.library_tree_path
+            .parent()
+            .map(std::path::Path::to_path_buf)
     }
 
     pub fn library_dir_tree(p: &Path, depth: ScanDepth) -> Node {
@@ -287,7 +289,7 @@ impl Model {
     }
 
     pub fn library_reload_with_node_focus(&mut self, node: Option<&str>) {
-        self.db.sync_database(self.path.as_path());
+        self.db.sync_database(self.library_tree_path.as_path());
         self.database_reload();
         self.library_reload_tree();
         if let Some(n) = node {
@@ -304,7 +306,7 @@ impl Model {
 
     pub fn library_reload_tree(&mut self) {
         self.library_tree = Tree::new(Self::library_dir_tree(
-            self.path.as_ref(),
+            self.library_tree_path.as_ref(),
             self.config_server.read().get_library_scan_depth(),
         ));
         let current_node = match self.app.state(&Id::Library).ok().unwrap() {
@@ -491,7 +493,7 @@ impl Model {
         drop(config_server);
 
         let mut index = 0;
-        let current_path = &self.path;
+        let current_path = &self.library_tree_path;
         for (idx, dir) in vec.iter().enumerate() {
             if current_path == dir {
                 index = idx + 1;
@@ -509,7 +511,7 @@ impl Model {
     }
 
     pub fn library_add_root(&mut self) -> Result<()> {
-        let current_path = &self.path;
+        let current_path = &self.library_tree_path;
 
         let mut config_server = self.config_server.write();
 
@@ -538,7 +540,7 @@ impl Model {
     }
 
     pub fn library_remove_root(&mut self) -> Result<()> {
-        let current_path = &self.path;
+        let current_path = &self.library_tree_path;
         let mut config_server = self.config_server.write();
 
         let mut vec = Vec::new();
