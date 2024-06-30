@@ -36,7 +36,7 @@ clap.workspace = true
 
 
 [features]
-default = ["rusty"]
+default = ["rusty", "rusty-soundtouch"]
 # # left for debug
 # default = ["mpv"]
 # default = ["gst"]
