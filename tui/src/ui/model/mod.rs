@@ -70,6 +70,17 @@ pub enum ConfigEditorLayout {
     Key2,
 }
 
+/// All data specific to the Music Library Widget / View
+#[derive(Debug)]
+pub struct MusicLibraryData {
+    /// Current Path that the library-tree is in
+    pub tree_path: PathBuf,
+    /// Tree of the Music Library widget
+    pub tree: Tree,
+    /// The Node that a yank & paste was started on
+    pub yanked_node_id: Option<String>,
+}
+
 /// All data specific to the Database Widget / View
 #[derive(Debug)]
 pub struct DatabaseWidgetData {
@@ -101,13 +112,10 @@ pub struct Model {
     pub app: Application<Id, Msg, NoUserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge,
-    /// Current Path that the library-tree is in
-    pub library_tree_path: PathBuf,
-    /// Tree of the Music Library widget
-    pub library_tree: Tree,
+
+    pub library: MusicLibraryData,
     pub config_tui: SharedTuiSettings,
     pub config_server: SharedServerSettings,
-    pub yanked_node_id: Option<String>,
     /// Clone of `playlist.current_track`, but kept around when playlist goes empty but song is still playing
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
@@ -221,17 +229,19 @@ impl Model {
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),
-            library_tree: tree,
-            library_tree_path: path,
             terminal,
             config_server,
             config_tui,
-            yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,
             time_pos: Duration::default(),
             lyric_line: String::new(),
 
+            library: MusicLibraryData {
+                tree_path: path,
+                tree,
+                yanked_node_id: None,
+            },
             // TODO: Consider making YoutubeOptions async and use async reqwest in YoutubeOptions
             // and avoid this `spawn_blocking` call.
             youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)
@@ -296,7 +306,7 @@ impl Model {
             self.mount_error_popup(e.context("theme save"));
         }
         self.mount_label_help();
-        self.db.sync_database(&self.library_tree_path);
+        self.db.sync_database(&self.library.tree_path);
         self.playlist_sync();
     }
 

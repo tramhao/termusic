@@ -530,7 +530,7 @@ impl Model {
     fn database_get_playlist(&self) -> Vec<String> {
         let mut vec = Vec::new();
 
-        let root = self.library_tree.root();
+        let root = self.library.tree.root();
         let p: &Path = Path::new(root.id());
         let all_items = walkdir::WalkDir::new(p).follow_links(true);
         for record in all_items
