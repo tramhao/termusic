@@ -70,6 +70,28 @@ pub enum ConfigEditorLayout {
     Key2,
 }
 
+/// All data specific to the Database Widget / View
+#[derive(Debug)]
+pub struct DatabaseWidgetData {
+    /// Criteria to search for
+    pub criteria: SearchCriteria,
+    /// Criteria Search results `(criteria -> this)`
+    pub search_results: Vec<String>,
+    /// Results of the critea results search `(criteria -> search_results -> this)`
+    pub search_tracks: Vec<TrackDB>,
+}
+
+impl DatabaseWidgetData {
+    /// Reset all search Vectors to a new empty Vector
+    ///
+    /// (removing allocations)
+    pub fn reset_search_results(&mut self) {
+        // Reset instead of ".clear" as "clear" does not remove capacity and might not be used again and could potentially be large
+        self.search_results = Vec::new();
+        self.search_tracks = Vec::new();
+    }
+}
+
 pub struct Model {
     /// Indicates that the application must quit
     pub quit: bool,
@@ -102,9 +124,7 @@ pub struct Model {
     pub ce_theme: ThemeWrap,
     pub ke_key_config: Keys,
     pub db: DataBase,
-    pub db_criteria: SearchCriteria,
-    pub db_search_results: Vec<String>,
-    pub db_search_tracks: Vec<TrackDB>,
+    pub dw: DatabaseWidgetData,
     pub layout: TermusicLayout,
     pub config_layout: ConfigEditorLayout,
     pub config_changed: bool,
@@ -229,9 +249,11 @@ impl Model {
             db,
             layout: TermusicLayout::TreeView,
             config_layout: ConfigEditorLayout::General,
-            db_criteria,
-            db_search_results: Vec::new(),
-            db_search_tracks: Vec::new(),
+            dw: DatabaseWidgetData {
+                criteria: db_criteria,
+                search_results: Vec::new(),
+                search_tracks: Vec::new(),
+            },
             config_changed: false,
             podcasts,
             podcasts_index: 0,

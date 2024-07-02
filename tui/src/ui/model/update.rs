@@ -571,15 +571,15 @@ impl Model {
                 self.app.active(&Id::DBListCriteria).ok();
             }
             DBMsg::SearchResult(index) => {
-                self.db_criteria = SearchCriteria::from(*index);
+                self.dw.criteria = SearchCriteria::from(*index);
                 self.database_update_search_results();
             }
             DBMsg::SearchTrack(index) => {
                 self.database_update_search_tracks(*index);
             }
             DBMsg::AddPlaylist(index) => {
-                if !self.db_search_tracks.is_empty() {
-                    if let Some(track) = self.db_search_tracks.get(*index) {
+                if !self.dw.search_tracks.is_empty() {
+                    if let Some(track) = self.dw.search_tracks.get(*index) {
                         let file = track.file.clone();
                         if let Err(e) = self.playlist_add(&file) {
                             self.mount_error_popup(e.context("playlist add"));
@@ -588,7 +588,7 @@ impl Model {
                 }
             }
             DBMsg::AddAllToPlaylist => {
-                let db_search_tracks = self.db_search_tracks.clone();
+                let db_search_tracks = self.dw.search_tracks.clone();
                 self.playlist_add_all_from_db(&db_search_tracks);
             }
         }

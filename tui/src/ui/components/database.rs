@@ -420,7 +420,7 @@ impl Model {
     pub fn database_sync_tracks(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.db_search_tracks.iter().enumerate() {
+        for (idx, record) in self.dw.search_tracks.iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -440,7 +440,7 @@ impl Model {
                 .add_col(TextSpan::from(" "))
                 .add_col(TextSpan::from(name));
         }
-        if self.db_search_results.is_empty() {
+        if self.dw.search_results.is_empty() {
             table.add_col(TextSpan::from("empty results"));
         }
 
@@ -458,9 +458,9 @@ impl Model {
     pub fn database_sync_results(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
         let mut index = 0;
-        for (idx, record) in self.db_search_results.iter().enumerate() {
+        for (idx, record) in self.dw.search_results.iter().enumerate() {
             let mut display_name = String::new();
-            match self.db_criteria {
+            match self.dw.criteria {
                 SearchCriteria::Playlist => {
                     let path = Path::new(record);
                     let path_string = path.to_string_lossy().to_string();
@@ -496,7 +496,7 @@ impl Model {
                     .add_col(TextSpan::from(display_name));
             }
         }
-        if self.db_search_results.is_empty() {
+        if self.dw.search_results.is_empty() {
             table.add_col(TextSpan::from("empty results"));
         }
 
@@ -513,13 +513,13 @@ impl Model {
     }
 
     pub fn database_update_search_results(&mut self) {
-        match self.db_criteria {
+        match self.dw.criteria {
             SearchCriteria::Playlist => {
-                self.db_search_results = self.database_get_playlist();
+                self.dw.search_results = self.database_get_playlist();
             }
             _ => {
-                if let Ok(results) = self.db.get_criterias(&self.db_criteria) {
-                    self.db_search_results = results;
+                if let Ok(results) = self.db.get_criterias(&self.dw.criteria) {
+                    self.dw.search_results = results;
                 }
             }
         }
@@ -545,9 +545,9 @@ impl Model {
     }
 
     pub fn database_update_search_tracks(&mut self, index: usize) {
-        match self.db_criteria {
+        match self.dw.criteria {
             SearchCriteria::Playlist => {
-                if let Some(result) = self.db_search_results.get(index) {
+                if let Some(result) = self.dw.search_results.get(index) {
                     if let Ok(vec) = playlist_get_vec(result) {
                         let mut vec_db = Vec::new();
                         for item in vec {
@@ -555,16 +555,16 @@ impl Model {
                                 vec_db.push(i);
                             }
                         }
-                        self.db_search_tracks = vec_db;
+                        self.dw.search_tracks = vec_db;
                     }
                 }
             }
             _ => {
                 if let Ok(vec) = self
                     .db
-                    .get_record_by_criteria(&self.db_search_results[index], &self.db_criteria)
+                    .get_record_by_criteria(&self.dw.search_results[index], &self.dw.criteria)
                 {
-                    self.db_search_tracks = vec;
+                    self.dw.search_tracks = vec;
                 };
             }
         }
@@ -613,8 +613,7 @@ impl Model {
             )
             .is_ok());
 
-        self.db_search_results = vec![];
-        self.db_search_tracks = vec![];
+        self.dw.reset_search_results();
         self.database_sync_tracks();
         self.database_sync_results();
     }
