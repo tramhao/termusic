@@ -116,6 +116,21 @@ pub struct PodcastWidgetData {
     pub search_results: Option<Vec<PodcastFeed>>,
 }
 
+/// All data specific to the Config Editor Widget / View
+#[derive(Debug)]
+pub struct ConfigEditorData {
+    /// All possible themes that could be selected
+    pub themes: Vec<String>,
+    /// The Theme to edit to preview before saving
+    pub theme: ThemeWrap,
+    /// The Keybindings to preview before saving
+    pub key_config: Keys,
+    /// The current tab in the config editor
+    pub layout: ConfigEditorLayout,
+    /// Indicator to prompt a save on config editor exit
+    pub config_changed: bool,
+}
+
 pub struct Model {
     /// Indicates that the application must quit
     pub quit: bool,
@@ -141,16 +156,12 @@ pub struct Model {
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
     pub viuer_supported: ViuerSupported,
-    pub ce_themes: Vec<String>,
-    pub ce_theme: ThemeWrap,
-    pub ke_key_config: Keys,
     pub db: DataBase,
     pub dw: DatabaseWidgetData,
     pub layout: TermusicLayout,
-    pub config_layout: ConfigEditorLayout,
-    pub config_changed: bool,
     pub download_tracker: DownloadTracker,
     pub podcast: PodcastWidgetData,
+    pub config_editor: ConfigEditorData,
     pub threadpool: TaskPool,
     pub tx_to_main: Sender<Msg>,
     pub rx_to_main: Receiver<Msg>,
@@ -263,23 +274,25 @@ impl Model {
             sender_songtag: tx3,
             receiver_songtag: rx3,
             viuer_supported,
-            ce_themes: vec![],
-            ce_theme,
-            ke_key_config: Keys::default(),
             db,
             layout: TermusicLayout::TreeView,
-            config_layout: ConfigEditorLayout::General,
             dw: DatabaseWidgetData {
                 criteria: db_criteria,
                 search_results: Vec::new(),
                 search_tracks: Vec::new(),
             },
-            config_changed: false,
             podcast: PodcastWidgetData {
                 podcasts,
                 podcasts_index: 0,
                 db_podcast,
                 search_results: None,
+            },
+            config_editor: ConfigEditorData {
+                themes: Vec::new(),
+                theme: ce_theme,
+                key_config: Keys::default(),
+                layout: ConfigEditorLayout::General,
+                config_changed: false,
             },
             threadpool,
             tx_to_main,
