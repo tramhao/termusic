@@ -70,6 +70,67 @@ pub enum ConfigEditorLayout {
     Key2,
 }
 
+/// All data specific to the Music Library Widget / View
+#[derive(Debug)]
+pub struct MusicLibraryData {
+    /// Current Path that the library-tree is in
+    pub tree_path: PathBuf,
+    /// Tree of the Music Library widget
+    pub tree: Tree,
+    /// The Node that a yank & paste was started on
+    pub yanked_node_id: Option<String>,
+}
+
+/// All data specific to the Database Widget / View
+#[derive(Debug)]
+pub struct DatabaseWidgetData {
+    /// Criteria to search for
+    pub criteria: SearchCriteria,
+    /// Criteria Search results `(criteria -> this)`
+    pub search_results: Vec<String>,
+    /// Results of the critea results search `(criteria -> search_results -> this)`
+    pub search_tracks: Vec<TrackDB>,
+}
+
+impl DatabaseWidgetData {
+    /// Reset all search Vectors to a new empty Vector
+    ///
+    /// (removing allocations)
+    pub fn reset_search_results(&mut self) {
+        // Reset instead of ".clear" as "clear" does not remove capacity and might not be used again and could potentially be large
+        self.search_results = Vec::new();
+        self.search_tracks = Vec::new();
+    }
+}
+
+/// All data specific to the Podcast Widget / View
+#[derive(Debug)]
+pub struct PodcastWidgetData {
+    /// Loaded and displayed Podcast list
+    pub podcasts: Vec<Podcast>,
+    /// Selected podcast index
+    pub podcasts_index: usize,
+    /// Podcast Database
+    pub db_podcast: DBPod,
+    /// Podcast search results
+    pub search_results: Option<Vec<PodcastFeed>>,
+}
+
+/// All data specific to the Config Editor Widget / View
+#[derive(Debug)]
+pub struct ConfigEditorData {
+    /// All possible themes that could be selected
+    pub themes: Vec<String>,
+    /// The Theme to edit to preview before saving
+    pub theme: ThemeWrap,
+    /// The Keybindings to preview before saving
+    pub key_config: Keys,
+    /// The current tab in the config editor
+    pub layout: ConfigEditorLayout,
+    /// Indicator to prompt a save on config editor exit
+    pub config_changed: bool,
+}
+
 pub struct Model {
     /// Indicates that the application must quit
     pub quit: bool,
@@ -79,43 +140,42 @@ pub struct Model {
     pub app: Application<Id, Msg, NoUserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge,
-    pub path: PathBuf,
-    pub tree: Tree,
+    pub tx_to_main: Sender<Msg>,
+    pub rx_to_main: Receiver<Msg>,
+    /// Sender for Player Commands
+    pub cmd_tx: UnboundedSender<PlayerCmd>,
+
     pub config_tui: SharedTuiSettings,
     pub config_server: SharedServerSettings,
-    pub yanked_node_id: Option<String>,
+    pub db: DataBase,
+
+    pub layout: TermusicLayout,
+    pub library: MusicLibraryData,
+    pub dw: DatabaseWidgetData,
+    pub podcast: PodcastWidgetData,
+    pub config_editor: ConfigEditorData,
+
+    /// Clone of `playlist.current_track`, but kept around when playlist goes empty but song is still playing
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
     pub time_pos: Duration,
     pub lyric_line: String,
-    youtube_options: YoutubeOptions,
+    pub playlist: Playlist,
+
     #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
     pub ueberzug_instance: UeInstance,
+    pub viuer_supported: ViuerSupported,
+    pub xywh: xywh::Xywh,
+
+    youtube_options: YoutubeOptions,
     pub songtag_options: Vec<SongTag>,
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
-    pub viuer_supported: ViuerSupported,
-    pub ce_themes: Vec<String>,
-    pub ce_theme: ThemeWrap,
-    pub ke_key_config: Keys,
-    pub db: DataBase,
-    pub db_criteria: SearchCriteria,
-    pub db_search_results: Vec<String>,
-    pub db_search_tracks: Vec<TrackDB>,
-    pub layout: TermusicLayout,
-    pub config_layout: ConfigEditorLayout,
-    pub config_changed: bool,
     pub download_tracker: DownloadTracker,
-    pub podcasts: Vec<Podcast>,
-    pub podcasts_index: usize,
-    pub db_podcast: DBPod,
-    pub threadpool: TaskPool,
-    pub tx_to_main: Sender<Msg>,
-    pub rx_to_main: Receiver<Msg>,
-    pub podcast_search_vec: Option<Vec<PodcastFeed>>,
-    pub playlist: Playlist,
-    pub cmd_tx: UnboundedSender<PlayerCmd>,
-    pub xywh: xywh::Xywh,
+    /// Taskpool to limit number of active network requests
+    ///
+    /// Currently only used for podcast sync & download
+    pub taskpool: TaskPool,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -174,7 +234,7 @@ impl Model {
         let podcasts = db_podcast
             .get_podcasts()
             .expect("failed to get podcasts from db.");
-        let threadpool = TaskPool::new(usize::from(
+        let taskpool = TaskPool::new(usize::from(
             config_server
                 .read()
                 .settings
@@ -198,17 +258,19 @@ impl Model {
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),
-            tree,
-            path,
             terminal,
             config_server,
             config_tui,
-            yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,
             time_pos: Duration::default(),
             lyric_line: String::new(),
 
+            library: MusicLibraryData {
+                tree_path: path,
+                tree,
+                yanked_node_id: None,
+            },
             // TODO: Consider making YoutubeOptions async and use async reqwest in YoutubeOptions
             // and avoid this `spawn_blocking` call.
             youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)
@@ -220,24 +282,30 @@ impl Model {
             sender_songtag: tx3,
             receiver_songtag: rx3,
             viuer_supported,
-            ce_themes: vec![],
-            ce_theme,
-            ke_key_config: Keys::default(),
             db,
             layout: TermusicLayout::TreeView,
-            config_layout: ConfigEditorLayout::General,
-            db_criteria,
-            db_search_results: Vec::new(),
-            db_search_tracks: Vec::new(),
-            config_changed: false,
-            podcasts,
-            podcasts_index: 0,
-            db_podcast,
-            threadpool,
+            dw: DatabaseWidgetData {
+                criteria: db_criteria,
+                search_results: Vec::new(),
+                search_tracks: Vec::new(),
+            },
+            podcast: PodcastWidgetData {
+                podcasts,
+                podcasts_index: 0,
+                db_podcast,
+                search_results: None,
+            },
+            config_editor: ConfigEditorData {
+                themes: Vec::new(),
+                theme: ce_theme,
+                key_config: Keys::default(),
+                layout: ConfigEditorLayout::General,
+                config_changed: false,
+            },
+            taskpool,
             tx_to_main,
             rx_to_main,
             download_tracker: DownloadTracker::default(),
-            podcast_search_vec: None,
             playlist,
             cmd_tx,
             current_song: None,
@@ -271,7 +339,7 @@ impl Model {
             self.mount_error_popup(e.context("theme save"));
         }
         self.mount_label_help();
-        self.db.sync_database(&self.path);
+        self.db.sync_database(&self.library.tree_path);
         self.playlist_sync();
     }
 

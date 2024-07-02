@@ -277,7 +277,7 @@ impl Model {
                 );
             }
             PCMsg::PodcastSelected(index) => {
-                self.podcasts_index = *index;
+                self.podcast.podcasts_index = *index;
                 if let Err(e) = self.podcast_sync_episodes() {
                     self.mount_error_popup(e.context("podcast sync episodes"));
                 }
@@ -399,7 +399,7 @@ impl Model {
             PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
             PCMsg::SearchItunesCloseCancel => self.umount_podcast_search_table(),
             PCMsg::SearchItunesCloseOk(index) => {
-                if let Some(vec) = &self.podcast_search_vec {
+                if let Some(vec) = &self.podcast.search_results {
                     if let Some(pod) = vec.get(*index) {
                         let url = pod.url.clone();
                         self.podcast_add(&url);
@@ -407,7 +407,7 @@ impl Model {
                 }
             }
             PCMsg::SearchSuccess(vec) => {
-                self.podcast_search_vec = Some(vec.clone());
+                self.podcast.search_results = Some(vec.clone());
                 self.update_podcast_search_table();
             }
             PCMsg::SearchError(e) => self.mount_error_popup(anyhow!(e.to_owned())),
@@ -571,15 +571,15 @@ impl Model {
                 self.app.active(&Id::DBListCriteria).ok();
             }
             DBMsg::SearchResult(index) => {
-                self.db_criteria = SearchCriteria::from(*index);
+                self.dw.criteria = SearchCriteria::from(*index);
                 self.database_update_search_results();
             }
             DBMsg::SearchTrack(index) => {
                 self.database_update_search_tracks(*index);
             }
             DBMsg::AddPlaylist(index) => {
-                if !self.db_search_tracks.is_empty() {
-                    if let Some(track) = self.db_search_tracks.get(*index) {
+                if !self.dw.search_tracks.is_empty() {
+                    if let Some(track) = self.dw.search_tracks.get(*index) {
                         let file = track.file.clone();
                         if let Err(e) = self.playlist_add(&file) {
                             self.mount_error_popup(e.context("playlist add"));
@@ -588,7 +588,7 @@ impl Model {
                 }
             }
             DBMsg::AddAllToPlaylist => {
-                let db_search_tracks = self.db_search_tracks.clone();
+                let db_search_tracks = self.dw.search_tracks.clone();
                 self.playlist_add_all_from_db(&db_search_tracks);
             }
         }

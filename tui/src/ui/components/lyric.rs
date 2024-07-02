@@ -138,7 +138,7 @@ impl Model {
         if let Some(track) = self.playlist.current_track().cloned() {
             if MediaType::Podcast == track.media_type {
                 if let Some(file) = track.file() {
-                    'outer: for pod in &self.podcasts {
+                    'outer: for pod in &self.podcast.podcasts {
                         for ep in &pod.episodes {
                             if ep.url == file {
                                 pod_title.clone_from(&pod.title);
@@ -160,13 +160,14 @@ impl Model {
     }
 
     pub fn lyric_update_for_podcast(&mut self) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
         if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
             let podcast_selected = self
+                .podcast
                 .podcasts
-                .get(self.podcasts_index)
+                .get(self.podcast.podcasts_index)
                 .ok_or_else(|| anyhow!("get podcast selected failed."))?
                 .clone();
             let episode_selected = podcast_selected

@@ -38,24 +38,24 @@ impl Model {
     pub fn update_config_editor(&mut self, msg: ConfigEditorMsg) -> Option<Msg> {
         match msg {
             ConfigEditorMsg::Open => {
-                self.ce_theme = self.config_tui.read().settings.theme.clone();
-                self.ke_key_config = self.config_tui.read().settings.keys.clone();
+                self.config_editor.theme = self.config_tui.read().settings.theme.clone();
+                self.config_editor.key_config = self.config_tui.read().settings.keys.clone();
                 self.mount_config_editor();
             }
             ConfigEditorMsg::CloseCancel => {
-                self.config_changed = false;
+                self.config_editor.config_changed = false;
                 self.umount_config_editor();
             }
             ConfigEditorMsg::CloseOk => {
-                if self.config_changed {
-                    self.config_changed = false;
+                if self.config_editor.config_changed {
+                    self.config_editor.config_changed = false;
                     self.mount_config_save_popup();
                 } else {
                     self.umount_config_editor();
                 }
             }
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
-            ConfigEditorMsg::ConfigChanged => self.config_changed = true,
+            ConfigEditorMsg::ConfigChanged => self.config_editor.config_changed = true,
             // Handle focus of general page
             ConfigEditorMsg::PlayerPortBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
                 self.app
@@ -178,7 +178,7 @@ impl Model {
                     }
                     Err(e) => {
                         self.mount_error_popup(e.context("collect config data"));
-                        self.config_changed = true;
+                        self.config_editor.config_changed = true;
                     }
                 }
             }
@@ -339,39 +339,42 @@ impl Model {
             }
 
             ConfigEditorMsg::ThemeSelectLoad(index) => {
-                if let Some(theme_path_str) = self.ce_themes.get(index) {
+                if let Some(theme_path_str) = self.config_editor.themes.get(index) {
                     let theme_path = PathBuf::from(theme_path_str);
                     if let Some(theme_file_stem) = theme_path.file_stem() {
                         self.config_tui.write().settings.theme.theme.name =
                             theme_file_stem.to_string_lossy().to_string();
                         if let Ok(theme) = ThemeColors::from_yaml_file(&theme_path) {
-                            self.ce_theme.theme = theme;
+                            self.config_editor.theme.theme = theme;
                         }
                     }
                 }
-                self.config_changed = true;
+                self.config_editor.config_changed = true;
                 let mut config = self.config_tui.read().clone();
                 // This is for preview the theme colors
-                config.settings.theme = self.ce_theme.clone();
+                config.settings.theme = self.config_editor.theme.clone();
                 let config = new_shared_tui_settings(config);
                 self.remount_config_color(&config);
             }
             ConfigEditorMsg::ColorChanged(id, color_config) => {
-                self.config_changed = true;
+                self.config_editor.config_changed = true;
                 self.update_config_editor_color_changed(id, color_config);
             }
             ConfigEditorMsg::SymbolChanged(id, symbol) => {
-                self.config_changed = true;
+                self.config_editor.config_changed = true;
 
                 match id {
                     IdConfigEditor::LibraryHighlightSymbol => {
-                        self.ce_theme.style.library.highlight_symbol = symbol.to_string();
+                        self.config_editor.theme.style.library.highlight_symbol =
+                            symbol.to_string();
                     }
                     IdConfigEditor::PlaylistHighlightSymbol => {
-                        self.ce_theme.style.playlist.highlight_symbol = symbol.to_string();
+                        self.config_editor.theme.style.playlist.highlight_symbol =
+                            symbol.to_string();
                     }
                     IdConfigEditor::CurrentlyPlayingTrackSymbol => {
-                        self.ce_theme.style.playlist.current_track_symbol = symbol.to_string();
+                        self.config_editor.theme.style.playlist.current_track_symbol =
+                            symbol.to_string();
                     }
                     _ => {}
                 };
@@ -855,107 +858,111 @@ impl Model {
     // cannot reduce a match statement
     #[allow(clippy::too_many_lines)]
     fn update_key(&mut self, id: IdKey, binding: KeyBinding) {
-        self.config_changed = true;
+        self.config_editor.config_changed = true;
+
+        // alias to reduce line length
+        let keys = &mut self.config_editor.key_config;
+
         match id {
-            IdKey::DatabaseAddAll => self.ke_key_config.database_keys.add_all = binding,
-            IdKey::DatabaseAddSelected => self.ke_key_config.database_keys.add_selected = binding,
-            IdKey::GlobalConfig => self.ke_key_config.select_view_keys.open_config = binding,
-            IdKey::GlobalDown => self.ke_key_config.navigation_keys.down = binding,
-            IdKey::GlobalGotoBottom => self.ke_key_config.navigation_keys.goto_bottom = binding,
-            IdKey::GlobalGotoTop => self.ke_key_config.navigation_keys.goto_top = binding,
-            IdKey::GlobalHelp => self.ke_key_config.select_view_keys.open_help = binding,
+            IdKey::DatabaseAddAll => keys.database_keys.add_all = binding,
+            IdKey::DatabaseAddSelected => keys.database_keys.add_selected = binding,
+            IdKey::GlobalConfig => keys.select_view_keys.open_config = binding,
+            IdKey::GlobalDown => keys.navigation_keys.down = binding,
+            IdKey::GlobalGotoBottom => keys.navigation_keys.goto_bottom = binding,
+            IdKey::GlobalGotoTop => keys.navigation_keys.goto_top = binding,
+            IdKey::GlobalHelp => keys.select_view_keys.open_help = binding,
             IdKey::GlobalLayoutTreeview => {
-                self.ke_key_config.select_view_keys.view_library = binding;
+                keys.select_view_keys.view_library = binding;
             }
             IdKey::GlobalLayoutDatabase => {
-                self.ke_key_config.select_view_keys.view_database = binding;
+                keys.select_view_keys.view_database = binding;
             }
-            IdKey::GlobalLeft => self.ke_key_config.navigation_keys.left = binding,
+            IdKey::GlobalLeft => keys.navigation_keys.left = binding,
             IdKey::GlobalLyricAdjustForward => {
-                self.ke_key_config.lyric_keys.adjust_offset_forwards = binding;
+                keys.lyric_keys.adjust_offset_forwards = binding;
             }
             IdKey::GlobalLyricAdjustBackward => {
-                self.ke_key_config.lyric_keys.adjust_offset_backwards = binding;
+                keys.lyric_keys.adjust_offset_backwards = binding;
             }
-            IdKey::GlobalLyricCycle => self.ke_key_config.lyric_keys.cycle_frames = binding,
+            IdKey::GlobalLyricCycle => keys.lyric_keys.cycle_frames = binding,
             IdKey::GlobalPlayerToggleGapless => {
-                self.ke_key_config.player_keys.toggle_prefetch = binding;
+                keys.player_keys.toggle_prefetch = binding;
             }
             IdKey::GlobalPlayerTogglePause => {
-                self.ke_key_config.player_keys.toggle_pause = binding;
+                keys.player_keys.toggle_pause = binding;
             }
-            IdKey::GlobalPlayerNext => self.ke_key_config.player_keys.next_track = binding,
-            IdKey::GlobalPlayerPrevious => self.ke_key_config.player_keys.previous_track = binding,
+            IdKey::GlobalPlayerNext => keys.player_keys.next_track = binding,
+            IdKey::GlobalPlayerPrevious => keys.player_keys.previous_track = binding,
             IdKey::GlobalPlayerSeekForward => {
-                self.ke_key_config.player_keys.seek_forward = binding;
+                keys.player_keys.seek_forward = binding;
             }
             IdKey::GlobalPlayerSeekBackward => {
-                self.ke_key_config.player_keys.seek_backward = binding;
+                keys.player_keys.seek_backward = binding;
             }
-            IdKey::GlobalPlayerSpeedUp => self.ke_key_config.player_keys.speed_up = binding,
-            IdKey::GlobalPlayerSpeedDown => self.ke_key_config.player_keys.speed_down = binding,
-            IdKey::GlobalQuit => self.ke_key_config.quit = binding,
-            IdKey::GlobalRight => self.ke_key_config.navigation_keys.right = binding,
-            IdKey::GlobalUp => self.ke_key_config.navigation_keys.up = binding,
-            IdKey::GlobalVolumeDown => self.ke_key_config.player_keys.volume_down = binding,
-            IdKey::GlobalVolumeUp => self.ke_key_config.player_keys.volume_up = binding,
-            IdKey::GlobalSavePlaylist => self.ke_key_config.player_keys.save_playlist = binding,
-            IdKey::LibraryDelete => self.ke_key_config.library_keys.delete = binding,
-            IdKey::LibraryLoadDir => self.ke_key_config.library_keys.load_dir = binding,
-            IdKey::LibraryPaste => self.ke_key_config.library_keys.paste = binding,
-            IdKey::LibrarySearch => self.ke_key_config.library_keys.search = binding,
-            IdKey::LibrarySearchYoutube => self.ke_key_config.library_keys.youtube_search = binding,
-            IdKey::LibraryTagEditor => self.ke_key_config.library_keys.open_tag_editor = binding,
-            IdKey::LibraryYank => self.ke_key_config.library_keys.yank = binding,
-            IdKey::PlaylistDelete => self.ke_key_config.playlist_keys.delete = binding,
-            IdKey::PlaylistDeleteAll => self.ke_key_config.playlist_keys.delete_all = binding,
-            IdKey::PlaylistShuffle => self.ke_key_config.playlist_keys.shuffle = binding,
-            IdKey::PlaylistModeCycle => self.ke_key_config.playlist_keys.cycle_loop_mode = binding,
-            IdKey::PlaylistPlaySelected => self.ke_key_config.playlist_keys.play_selected = binding,
-            IdKey::PlaylistSearch => self.ke_key_config.playlist_keys.search = binding,
-            IdKey::PlaylistSwapDown => self.ke_key_config.playlist_keys.swap_down = binding,
-            IdKey::PlaylistSwapUp => self.ke_key_config.playlist_keys.swap_up = binding,
+            IdKey::GlobalPlayerSpeedUp => keys.player_keys.speed_up = binding,
+            IdKey::GlobalPlayerSpeedDown => keys.player_keys.speed_down = binding,
+            IdKey::GlobalQuit => keys.quit = binding,
+            IdKey::GlobalRight => keys.navigation_keys.right = binding,
+            IdKey::GlobalUp => keys.navigation_keys.up = binding,
+            IdKey::GlobalVolumeDown => keys.player_keys.volume_down = binding,
+            IdKey::GlobalVolumeUp => keys.player_keys.volume_up = binding,
+            IdKey::GlobalSavePlaylist => keys.player_keys.save_playlist = binding,
+            IdKey::LibraryDelete => keys.library_keys.delete = binding,
+            IdKey::LibraryLoadDir => keys.library_keys.load_dir = binding,
+            IdKey::LibraryPaste => keys.library_keys.paste = binding,
+            IdKey::LibrarySearch => keys.library_keys.search = binding,
+            IdKey::LibrarySearchYoutube => keys.library_keys.youtube_search = binding,
+            IdKey::LibraryTagEditor => keys.library_keys.open_tag_editor = binding,
+            IdKey::LibraryYank => keys.library_keys.yank = binding,
+            IdKey::PlaylistDelete => keys.playlist_keys.delete = binding,
+            IdKey::PlaylistDeleteAll => keys.playlist_keys.delete_all = binding,
+            IdKey::PlaylistShuffle => keys.playlist_keys.shuffle = binding,
+            IdKey::PlaylistModeCycle => keys.playlist_keys.cycle_loop_mode = binding,
+            IdKey::PlaylistPlaySelected => keys.playlist_keys.play_selected = binding,
+            IdKey::PlaylistSearch => keys.playlist_keys.search = binding,
+            IdKey::PlaylistSwapDown => keys.playlist_keys.swap_down = binding,
+            IdKey::PlaylistSwapUp => keys.playlist_keys.swap_up = binding,
             IdKey::PlaylistAddRandomAlbum => {
-                self.ke_key_config.playlist_keys.add_random_album = binding;
+                keys.playlist_keys.add_random_album = binding;
             }
             IdKey::PlaylistAddRandomTracks => {
-                self.ke_key_config.playlist_keys.add_random_songs = binding;
+                keys.playlist_keys.add_random_songs = binding;
             }
-            IdKey::LibrarySwitchRoot => self.ke_key_config.library_keys.cycle_root = binding,
-            IdKey::LibraryAddRoot => self.ke_key_config.library_keys.add_root = binding,
-            IdKey::LibraryRemoveRoot => self.ke_key_config.library_keys.remove_root = binding,
+            IdKey::LibrarySwitchRoot => keys.library_keys.cycle_root = binding,
+            IdKey::LibraryAddRoot => keys.library_keys.add_root = binding,
+            IdKey::LibraryRemoveRoot => keys.library_keys.remove_root = binding,
             IdKey::GlobalLayoutPodcast => {
-                self.ke_key_config.select_view_keys.view_podcasts = binding;
+                keys.select_view_keys.view_podcasts = binding;
             }
-            IdKey::GlobalXywhMoveLeft => self.ke_key_config.move_cover_art_keys.move_left = binding,
+            IdKey::GlobalXywhMoveLeft => keys.move_cover_art_keys.move_left = binding,
             IdKey::GlobalXywhMoveRight => {
-                self.ke_key_config.move_cover_art_keys.move_right = binding;
+                keys.move_cover_art_keys.move_right = binding;
             }
-            IdKey::GlobalXywhMoveUp => self.ke_key_config.move_cover_art_keys.move_up = binding,
-            IdKey::GlobalXywhMoveDown => self.ke_key_config.move_cover_art_keys.move_down = binding,
+            IdKey::GlobalXywhMoveUp => keys.move_cover_art_keys.move_up = binding,
+            IdKey::GlobalXywhMoveDown => keys.move_cover_art_keys.move_down = binding,
             IdKey::GlobalXywhZoomIn => {
-                self.ke_key_config.move_cover_art_keys.increase_size = binding;
+                keys.move_cover_art_keys.increase_size = binding;
             }
             IdKey::GlobalXywhZoomOut => {
-                self.ke_key_config.move_cover_art_keys.decrease_size = binding;
+                keys.move_cover_art_keys.decrease_size = binding;
             }
-            IdKey::GlobalXywhHide => self.ke_key_config.move_cover_art_keys.toggle_hide = binding,
-            IdKey::PodcastMarkPlayed => self.ke_key_config.podcast_keys.mark_played = binding,
+            IdKey::GlobalXywhHide => keys.move_cover_art_keys.toggle_hide = binding,
+            IdKey::PodcastMarkPlayed => keys.podcast_keys.mark_played = binding,
             IdKey::PodcastMarkAllPlayed => {
-                self.ke_key_config.podcast_keys.mark_all_played = binding;
+                keys.podcast_keys.mark_all_played = binding;
             }
-            IdKey::PodcastEpDownload => self.ke_key_config.podcast_keys.download_episode = binding,
+            IdKey::PodcastEpDownload => keys.podcast_keys.download_episode = binding,
             IdKey::PodcastEpDeleteFile => {
-                self.ke_key_config.podcast_keys.delete_local_episode = binding;
+                keys.podcast_keys.delete_local_episode = binding;
             }
-            IdKey::PodcastDeleteFeed => self.ke_key_config.podcast_keys.delete_feed = binding,
+            IdKey::PodcastDeleteFeed => keys.podcast_keys.delete_feed = binding,
             IdKey::PodcastDeleteAllFeeds => {
-                self.ke_key_config.podcast_keys.delete_all_feeds = binding;
+                keys.podcast_keys.delete_all_feeds = binding;
             }
-            IdKey::PodcastSearchAddFeed => self.ke_key_config.podcast_keys.search = binding,
-            IdKey::PodcastRefreshFeed => self.ke_key_config.podcast_keys.refresh_feed = binding,
+            IdKey::PodcastSearchAddFeed => keys.podcast_keys.search = binding,
+            IdKey::PodcastRefreshFeed => keys.podcast_keys.refresh_feed = binding,
             IdKey::PodcastRefreshAllFeeds => {
-                self.ke_key_config.podcast_keys.refresh_all_feeds = binding;
+                keys.podcast_keys.refresh_all_feeds = binding;
             }
         }
     }
@@ -965,48 +972,51 @@ impl Model {
         id: IdConfigEditor,
         color_config: ColorTermusic,
     ) {
+        // alias to reduce line length
+        let style = &mut self.config_editor.theme.style;
+
         match id {
             IdConfigEditor::LibraryForeground => {
-                self.ce_theme.style.library.foreground_color = color_config;
+                style.library.foreground_color = color_config;
             }
             IdConfigEditor::LibraryBackground => {
-                self.ce_theme.style.library.background_color = color_config;
+                style.library.background_color = color_config;
             }
             IdConfigEditor::LibraryBorder => {
-                self.ce_theme.style.library.border_color = color_config;
+                style.library.border_color = color_config;
             }
             IdConfigEditor::LibraryHighlight => {
-                self.ce_theme.style.library.highlight_color = color_config;
+                style.library.highlight_color = color_config;
             }
             IdConfigEditor::PlaylistForeground => {
-                self.ce_theme.style.playlist.foreground_color = color_config;
+                style.playlist.foreground_color = color_config;
             }
             IdConfigEditor::PlaylistBackground => {
-                self.ce_theme.style.playlist.background_color = color_config;
+                style.playlist.background_color = color_config;
             }
             IdConfigEditor::PlaylistBorder => {
-                self.ce_theme.style.playlist.border_color = color_config;
+                style.playlist.border_color = color_config;
             }
             IdConfigEditor::PlaylistHighlight => {
-                self.ce_theme.style.playlist.highlight_color = color_config;
+                style.playlist.highlight_color = color_config;
             }
             IdConfigEditor::ProgressForeground => {
-                self.ce_theme.style.progress.foreground_color = color_config;
+                style.progress.foreground_color = color_config;
             }
             IdConfigEditor::ProgressBackground => {
-                self.ce_theme.style.progress.background_color = color_config;
+                style.progress.background_color = color_config;
             }
             IdConfigEditor::ProgressBorder => {
-                self.ce_theme.style.progress.border_color = color_config;
+                style.progress.border_color = color_config;
             }
             IdConfigEditor::LyricForeground => {
-                self.ce_theme.style.lyric.foreground_color = color_config;
+                style.lyric.foreground_color = color_config;
             }
             IdConfigEditor::LyricBackground => {
-                self.ce_theme.style.lyric.background_color = color_config;
+                style.lyric.background_color = color_config;
             }
             IdConfigEditor::LyricBorder => {
-                self.ce_theme.style.lyric.border_color = color_config;
+                style.lyric.border_color = color_config;
             }
 
             _ => {}
