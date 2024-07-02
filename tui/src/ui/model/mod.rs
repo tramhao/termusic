@@ -175,7 +175,7 @@ pub struct Model {
     /// Taskpool to limit number of active network requests
     ///
     /// Currently only used for podcast sync & download
-    pub threadpool: TaskPool,
+    pub taskpool: TaskPool,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -234,7 +234,7 @@ impl Model {
         let podcasts = db_podcast
             .get_podcasts()
             .expect("failed to get podcasts from db.");
-        let threadpool = TaskPool::new(usize::from(
+        let taskpool = TaskPool::new(usize::from(
             config_server
                 .read()
                 .settings
@@ -302,7 +302,7 @@ impl Model {
                 layout: ConfigEditorLayout::General,
                 config_changed: false,
             },
-            threadpool,
+            taskpool,
             tx_to_main,
             rx_to_main,
             download_tracker: DownloadTracker::default(),

@@ -433,7 +433,7 @@ impl Model {
                     .podcast
                     .max_download_retries,
             ),
-            &self.threadpool,
+            &self.taskpool,
             self.tx_to_main.clone(),
         );
     }
@@ -649,7 +649,7 @@ impl Model {
                         .podcast
                         .max_download_retries,
                 ),
-                &self.threadpool,
+                &self.taskpool,
                 self.tx_to_main.clone(),
             );
         }
@@ -748,7 +748,7 @@ impl Model {
                                 .podcast
                                 .max_download_retries,
                         ),
-                        &self.threadpool,
+                        &self.taskpool,
                         &self.tx_to_main,
                     );
                 }
