@@ -440,7 +440,7 @@ impl Model {
     pub fn podcast_sync_feeds_and_episodes(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.podcasts.iter().enumerate() {
+        for (idx, record) in self.podcast.podcasts.iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -453,7 +453,7 @@ impl Model {
 
             table.add_col(TextSpan::new(format!("{} ({new}/{total})", record.title)));
         }
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             table.add_col(TextSpan::from("empty feeds list"));
         }
 
@@ -471,7 +471,7 @@ impl Model {
     }
 
     pub fn podcast_sync_episodes(&mut self) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             let mut table: TableBuilder = TableBuilder::default();
             table.add_col(TextSpan::from("empty episodes list"));
 
@@ -489,8 +489,9 @@ impl Model {
         }
 
         let podcast_selected = self
+            .podcast
             .podcasts
-            .get(self.podcasts_index)
+            .get(self.podcast.podcasts_index)
             .ok_or_else(|| anyhow!("get podcast selected failed."))?;
         // let episodes = self.db_podcast.get_episodes(podcast_selected.id, true)?;
         let mut table: TableBuilder = TableBuilder::default();
@@ -528,26 +529,29 @@ impl Model {
         Ok(())
     }
     pub fn episode_mark_played(&mut self, index: usize) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
         let podcast_selected = self
+            .podcast
             .podcasts
-            .get_mut(self.podcasts_index)
+            .get_mut(self.podcast.podcasts_index)
             .ok_or_else(|| anyhow!("get podcast selected failed."))?;
         let ep = podcast_selected
             .episodes
             .get_mut(index)
             .ok_or_else(|| anyhow!("get episode selected failed"))?;
         ep.played = !ep.played;
-        self.db_podcast.set_played_status(ep.id, ep.played)?;
+        self.podcast
+            .db_podcast
+            .set_played_status(ep.id, ep.played)?;
         self.podcast_sync_feeds_and_episodes();
 
         Ok(())
     }
 
     pub fn episode_mark_all_played(&mut self) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
 
@@ -556,8 +560,9 @@ impl Model {
             ep_index = idx;
         }
         let podcast_selected = self
+            .podcast
             .podcasts
-            .get_mut(self.podcasts_index)
+            .get_mut(self.podcast.podcasts_index)
             .ok_or_else(|| anyhow!("get podcast selected failed."))?;
         let played = podcast_selected
             .episodes
@@ -569,7 +574,9 @@ impl Model {
             epid_vec.push(ep.id);
             ep.played = !played;
         }
-        self.db_podcast.set_all_played_status(&epid_vec, !played)?;
+        self.podcast
+            .db_podcast
+            .set_all_played_status(&epid_vec, !played)?;
         self.podcast_sync_feeds_and_episodes();
 
         Ok(())
@@ -581,12 +588,12 @@ impl Model {
     /// the database has not given it an id yet).
     pub fn add_or_sync_data(&mut self, pod: &PodcastNoId, pod_id: Option<i64>) -> Result<()> {
         if let Some(id) = pod_id {
-            self.db_podcast.update_podcast(id, pod)?;
+            self.podcast.db_podcast.update_podcast(id, pod)?;
         } else {
-            self.db_podcast.insert_podcast(pod)?;
+            self.podcast.db_podcast.insert_podcast(pod)?;
         }
 
-        self.podcasts = self.db_podcast.get_podcasts()?;
+        self.podcast.podcasts = self.podcast.db_podcast.get_podcasts()?;
         self.podcast_sync_feeds_and_episodes();
 
         Ok(())
@@ -604,10 +611,11 @@ impl Model {
         match index {
             // just grab one podcast
             Some(i) => {
-                if self.podcasts.is_empty() {
+                if self.podcast.podcasts.is_empty() {
                     return Ok(());
                 }
                 let pod_selected = self
+                    .podcast
                     .podcasts
                     .get(i)
                     .ok_or_else(|| anyhow!("get podcast selected failed."))?;
@@ -622,6 +630,7 @@ impl Model {
             // get all of 'em!
             None => {
                 pod_data = self
+                    .podcast
                     .podcasts
                     .iter()
                     .map(|pod| {
@@ -650,12 +659,13 @@ impl Model {
     }
 
     pub fn episode_download(&mut self, index: Option<usize>) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
         let podcast_selected = self
+            .podcast
             .podcasts
-            .get_mut(self.podcasts_index)
+            .get_mut(self.podcast.podcasts_index)
             .ok_or_else(|| anyhow!("get podcast selected failed."))?;
 
         let pod_title;
@@ -752,7 +762,7 @@ impl Model {
 
     pub fn episode_download_complete(&mut self, ep_data: EpData) -> Result<()> {
         let file_path = ep_data.file_path.unwrap();
-        let res = self.db_podcast.insert_file(ep_data.id, &file_path);
+        let res = self.podcast.db_podcast.insert_file(ep_data.id, &file_path);
         if res.is_err() {
             bail!(
                 "Could not add episode file to database: {}",
@@ -760,8 +770,8 @@ impl Model {
             );
         }
 
-        let podcasts = self.db_podcast.get_podcasts()?;
-        self.podcasts = podcasts;
+        let podcasts = self.podcast.db_podcast.get_podcasts()?;
+        self.podcast.podcasts = podcasts;
 
         self.podcast_sync_feeds_and_episodes();
         self.episode_update_playlist();
@@ -771,12 +781,13 @@ impl Model {
     /// Deletes a downloaded file for an episode from the user's local
     /// system.
     pub fn episode_delete_file(&mut self, ep_index: usize) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
         let podcast_selected = self
+            .podcast
             .podcasts
-            .get_mut(self.podcasts_index)
+            .get_mut(self.podcast.podcasts_index)
             .ok_or_else(|| anyhow!("get podcast selected failed."))?;
 
         let ep = podcast_selected
@@ -789,14 +800,14 @@ impl Model {
             let path = ep.path.clone().unwrap();
             match std::fs::remove_file(path) {
                 Ok(()) => {
-                    self.db_podcast.remove_file(ep.id).map_err(|e| {
+                    self.podcast.db_podcast.remove_file(ep.id).map_err(|e| {
                         anyhow!(format!("Could not remove file from db: {title} {e}"))
                     })?;
                     ep.path = None;
                 }
                 Err(e) => {
                     // Repeat the same thing in case the local file is missing. Update db
-                    self.db_podcast.remove_file(ep.id).map_err(|e| {
+                    self.podcast.db_podcast.remove_file(ep.id).map_err(|e| {
                         anyhow!(format!("Could not remove file from db: {title} {e}"))
                     })?;
                     ep.path = None;
@@ -819,6 +830,7 @@ impl Model {
         let mut success = true;
         {
             let podcast_selected = self
+                .podcast
                 .podcasts
                 .get_mut(pod_index)
                 .ok_or_else(|| anyhow!("failed to find the podcast selected for deletion."))?;
@@ -836,7 +848,7 @@ impl Model {
             }
         }
 
-        self.db_podcast.remove_files(&eps_to_remove)?;
+        self.podcast.db_podcast.remove_files(&eps_to_remove)?;
         if !success {
             bail!("Error happened when deleting a file. Please verify that it is accessible.");
         }
@@ -845,20 +857,20 @@ impl Model {
     }
 
     pub fn podcast_remove_all_feeds(&mut self) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
 
-        let len = self.podcasts.len();
+        let len = self.podcast.podcasts.len();
 
         for index in 0..len {
             self.podcast_delete_files(index).ok();
         }
 
-        self.db_podcast.clear_db()?;
+        self.podcast.db_podcast.clear_db()?;
 
-        self.podcasts = Vec::new();
-        self.podcasts_index = 0;
+        self.podcast.podcasts = Vec::new();
+        self.podcast.podcasts_index = 0;
 
         self.podcast_sync_feeds_and_episodes();
         self.episode_update_playlist();
@@ -866,17 +878,19 @@ impl Model {
     }
 
     pub fn podcast_remove_feed(&mut self) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
 
         if let Ok(feed_index) = self.podcast_get_feed_index() {
             self.podcast_delete_files(feed_index)?;
-            let podcast_selected = self.podcasts.remove(feed_index);
-            self.db_podcast.remove_podcast(podcast_selected.id)?;
+            let podcast_selected = self.podcast.podcasts.remove(feed_index);
+            self.podcast
+                .db_podcast
+                .remove_podcast(podcast_selected.id)?;
         }
 
-        self.podcasts_index = self.podcasts_index.saturating_sub(1);
+        self.podcast.podcasts_index = self.podcast.podcasts_index.saturating_sub(1);
         self.podcast_sync_feeds_and_episodes();
         self.episode_update_playlist();
         Ok(())
@@ -897,18 +911,20 @@ impl Model {
     }
 
     pub fn podcast_mark_current_track_played(&mut self) -> Result<()> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
         if let Some(track) = self.playlist.current_track() {
             if MediaType::Podcast == track.media_type {
                 if let Some(url) = track.file() {
-                    'outer: for pod in &mut self.podcasts {
+                    'outer: for pod in &mut self.podcast.podcasts {
                         for ep in &mut pod.episodes {
                             if ep.url == url {
                                 if !ep.played {
                                     ep.played = true;
-                                    self.db_podcast.set_played_status(ep.id, ep.played)?;
+                                    self.podcast
+                                        .db_podcast
+                                        .set_played_status(ep.id, ep.played)?;
                                 }
                                 break 'outer;
                             }
@@ -924,10 +940,10 @@ impl Model {
     }
 
     pub fn podcast_get_album_photo_by_url(&self, url: &str) -> Option<String> {
-        if self.podcasts.is_empty() {
+        if self.podcast.podcasts.is_empty() {
             return None;
         }
-        for pod in &self.podcasts {
+        for pod in &self.podcast.podcasts {
             for ep in &pod.episodes {
                 if ep.url == url {
                     return pod.image_url.clone();
@@ -959,9 +975,9 @@ impl Model {
         let search = format!("*{}*", input.to_lowercase());
         let mut db_tracks = vec![];
         // Get all episodes
-        let podcasts = self.podcasts.clone();
+        let podcasts = self.podcast.podcasts.clone();
         for podcast in podcasts {
-            if let Ok(episodes) = self.db_podcast.get_episodes(podcast.id, true) {
+            if let Ok(episodes) = self.podcast.db_podcast.get_episodes(podcast.id, true) {
                 db_tracks.extend(episodes);
             }
         }
@@ -994,7 +1010,7 @@ impl Model {
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
         // Get all episodes
-        let db_tracks = self.podcasts.clone();
+        let db_tracks = self.podcast.podcasts.clone();
 
         if db_tracks.is_empty() {
             table.add_col(TextSpan::from("0"));
@@ -1043,11 +1059,11 @@ impl Model {
 
     #[allow(clippy::cast_possible_wrap)]
     pub fn podcast_find_by_ep_id(&mut self, ep_id: usize) -> Result<(usize, usize)> {
-        for (podcast_index, podcast) in self.podcasts.iter().enumerate() {
+        for (podcast_index, podcast) in self.podcast.podcasts.iter().enumerate() {
             for (episode_index, episode) in podcast.episodes.iter().enumerate() {
                 if episode.id == ep_id as i64 {
                     // Need to set podcast index here, otherwise the wrong episodes will be added
-                    self.podcasts_index = podcast_index;
+                    self.podcast.podcasts_index = podcast_index;
                     return Ok((podcast_index, episode_index));
                 }
             }
@@ -1057,10 +1073,10 @@ impl Model {
 
     #[allow(clippy::cast_possible_wrap)]
     pub fn podcast_find_by_pod_id(&mut self, pod_id: usize) -> Result<usize> {
-        for (podcast_index, podcast) in self.podcasts.iter().enumerate() {
+        for (podcast_index, podcast) in self.podcast.podcasts.iter().enumerate() {
             if podcast.id == pod_id as i64 {
                 // Need to set podcast index here
-                self.podcasts_index = podcast_index;
+                self.podcast.podcasts_index = podcast_index;
                 return Ok(podcast_index);
             }
         }

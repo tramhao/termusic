@@ -277,7 +277,7 @@ impl Model {
                 );
             }
             PCMsg::PodcastSelected(index) => {
-                self.podcasts_index = *index;
+                self.podcast.podcasts_index = *index;
                 if let Err(e) = self.podcast_sync_episodes() {
                     self.mount_error_popup(e.context("podcast sync episodes"));
                 }
@@ -399,7 +399,7 @@ impl Model {
             PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
             PCMsg::SearchItunesCloseCancel => self.umount_podcast_search_table(),
             PCMsg::SearchItunesCloseOk(index) => {
-                if let Some(vec) = &self.podcast_search_vec {
+                if let Some(vec) = &self.podcast.search_results {
                     if let Some(pod) = vec.get(*index) {
                         let url = pod.url.clone();
                         self.podcast_add(&url);
@@ -407,7 +407,7 @@ impl Model {
                 }
             }
             PCMsg::SearchSuccess(vec) => {
-                self.podcast_search_vec = Some(vec.clone());
+                self.podcast.search_results = Some(vec.clone());
                 self.update_podcast_search_table();
             }
             PCMsg::SearchError(e) => self.mount_error_popup(anyhow!(e.to_owned())),

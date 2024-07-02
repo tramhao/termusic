@@ -103,6 +103,19 @@ impl DatabaseWidgetData {
     }
 }
 
+/// All data specific to the Podcast Widget / View
+#[derive(Debug)]
+pub struct PodcastWidgetData {
+    /// Loaded and displayed Podcast list
+    pub podcasts: Vec<Podcast>,
+    /// Selected podcast index
+    pub podcasts_index: usize,
+    /// Podcast Database
+    pub db_podcast: DBPod,
+    /// Podcast search results
+    pub search_results: Option<Vec<PodcastFeed>>,
+}
+
 pub struct Model {
     /// Indicates that the application must quit
     pub quit: bool,
@@ -137,13 +150,10 @@ pub struct Model {
     pub config_layout: ConfigEditorLayout,
     pub config_changed: bool,
     pub download_tracker: DownloadTracker,
-    pub podcasts: Vec<Podcast>,
-    pub podcasts_index: usize,
-    pub db_podcast: DBPod,
+    pub podcast: PodcastWidgetData,
     pub threadpool: TaskPool,
     pub tx_to_main: Sender<Msg>,
     pub rx_to_main: Receiver<Msg>,
-    pub podcast_search_vec: Option<Vec<PodcastFeed>>,
     pub playlist: Playlist,
     pub cmd_tx: UnboundedSender<PlayerCmd>,
     pub xywh: xywh::Xywh,
@@ -265,14 +275,16 @@ impl Model {
                 search_tracks: Vec::new(),
             },
             config_changed: false,
-            podcasts,
-            podcasts_index: 0,
-            db_podcast,
+            podcast: PodcastWidgetData {
+                podcasts,
+                podcasts_index: 0,
+                db_podcast,
+                search_results: None,
+            },
             threadpool,
             tx_to_main,
             rx_to_main,
             download_tracker: DownloadTracker::default(),
-            podcast_search_vec: None,
             playlist,
             cmd_tx,
             current_song: None,
