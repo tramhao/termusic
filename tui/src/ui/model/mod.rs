@@ -140,34 +140,42 @@ pub struct Model {
     pub app: Application<Id, Msg, NoUserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge,
+    pub tx_to_main: Sender<Msg>,
+    pub rx_to_main: Receiver<Msg>,
+    /// Sender for Player Commands
+    pub cmd_tx: UnboundedSender<PlayerCmd>,
 
-    pub library: MusicLibraryData,
     pub config_tui: SharedTuiSettings,
     pub config_server: SharedServerSettings,
+    pub db: DataBase,
+
+    pub layout: TermusicLayout,
+    pub library: MusicLibraryData,
+    pub dw: DatabaseWidgetData,
+    pub podcast: PodcastWidgetData,
+    pub config_editor: ConfigEditorData,
+
     /// Clone of `playlist.current_track`, but kept around when playlist goes empty but song is still playing
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
     pub time_pos: Duration,
     pub lyric_line: String,
-    youtube_options: YoutubeOptions,
+    pub playlist: Playlist,
+
     #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
     pub ueberzug_instance: UeInstance,
+    pub viuer_supported: ViuerSupported,
+    pub xywh: xywh::Xywh,
+
+    youtube_options: YoutubeOptions,
     pub songtag_options: Vec<SongTag>,
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
-    pub viuer_supported: ViuerSupported,
-    pub db: DataBase,
-    pub dw: DatabaseWidgetData,
-    pub layout: TermusicLayout,
     pub download_tracker: DownloadTracker,
-    pub podcast: PodcastWidgetData,
-    pub config_editor: ConfigEditorData,
+    /// Taskpool to limit number of active network requests
+    ///
+    /// Currently only used for podcast sync & download
     pub threadpool: TaskPool,
-    pub tx_to_main: Sender<Msg>,
-    pub rx_to_main: Receiver<Msg>,
-    pub playlist: Playlist,
-    pub cmd_tx: UnboundedSender<PlayerCmd>,
-    pub xywh: xywh::Xywh,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
