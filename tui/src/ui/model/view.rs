@@ -172,7 +172,7 @@ impl Model {
                 self.view_tag_editor();
                 return;
             } else if self.app.mounted(&Id::ConfigEditor(IdConfigEditor::Header)) {
-                match self.config_layout {
+                match self.config_editor.layout {
                     ConfigEditorLayout::General => self.view_config_editor_general(),
                     ConfigEditorLayout::Color => self.view_config_editor_color(),
                     ConfigEditorLayout::Key1 => self.view_config_editor_key1(),

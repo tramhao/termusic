@@ -227,15 +227,18 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 
 impl Model {
     pub fn library_scan_dir(&mut self, p: &Path) {
-        self.path = p.to_path_buf();
-        self.tree = Tree::new(Self::library_dir_tree(
+        self.library.tree_path = p.to_path_buf();
+        self.library.tree = Tree::new(Self::library_dir_tree(
             p,
             self.config_server.read().get_library_scan_depth(),
         ));
     }
 
     pub fn library_upper_dir(&self) -> Option<PathBuf> {
-        self.path.parent().map(std::path::Path::to_path_buf)
+        self.library
+            .tree_path
+            .parent()
+            .map(std::path::Path::to_path_buf)
     }
 
     pub fn library_dir_tree(p: &Path, depth: ScanDepth) -> Node {
@@ -287,7 +290,7 @@ impl Model {
     }
 
     pub fn library_reload_with_node_focus(&mut self, node: Option<&str>) {
-        self.db.sync_database(self.path.as_path());
+        self.db.sync_database(self.library.tree_path.as_path());
         self.database_reload();
         self.library_reload_tree();
         if let Some(n) = node {
@@ -303,8 +306,8 @@ impl Model {
     }
 
     pub fn library_reload_tree(&mut self) {
-        self.tree = Tree::new(Self::library_dir_tree(
-            self.path.as_ref(),
+        self.library.tree = Tree::new(Self::library_dir_tree(
+            self.library.tree_path.as_ref(),
             self.config_server.read().get_library_scan_depth(),
         ));
         let current_node = match self.app.state(&Id::Library).ok().unwrap() {
@@ -326,7 +329,7 @@ impl Model {
                 .mount(
                     Id::Library,
                     Box::new(MusicLibrary::new(
-                        &self.tree.clone(),
+                        &self.library.tree.clone(),
                         current_node,
                         self.config_tui.clone(),
                     ),),
@@ -342,7 +345,7 @@ impl Model {
             .remount(
                 Id::Library,
                 Box::new(MusicLibrary::new(
-                    &self.tree.clone(),
+                    &self.library.tree.clone(),
                     current_node,
                     self.config_tui.clone(),
                 ),),
@@ -384,7 +387,7 @@ impl Model {
 
     pub fn library_delete_song(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            if let Some(mut route) = self.tree.root().route_by_node(&node_id) {
+            if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
                 let p: &Path = Path::new(node_id.as_str());
                 if p.is_file() {
                     remove_file(p)?;
@@ -395,7 +398,7 @@ impl Model {
 
                 // // this is to keep the state of playlist
                 self.library_reload_tree();
-                let tree = self.tree.clone();
+                let tree = self.library.tree.clone();
                 if let Some(new_node) = tree.root().node_by_route(&route) {
                     self.library_reload_with_node_focus(Some(new_node.id()));
                 } else {
@@ -424,13 +427,17 @@ impl Model {
 
     pub fn library_yank(&mut self) {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            self.yanked_node_id = Some(node_id);
+            self.library.yanked_node_id = Some(node_id);
         }
     }
 
     pub fn library_paste(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(new_id))) = self.app.state(&Id::Library) {
-            let old_id = self.yanked_node_id.as_ref().context("no id yanked")?;
+            let old_id = self
+                .library
+                .yanked_node_id
+                .as_ref()
+                .context("no id yanked")?;
             let p: &Path = Path::new(new_id.as_str());
             let pold: &Path = Path::new(old_id.as_str());
             let p_parent = p.parent().context("no parent folder found")?;
@@ -443,14 +450,14 @@ impl Model {
             rename(pold, new_node_id.as_path())?;
             self.library_reload_with_node_focus(new_node_id.to_str());
         }
-        self.yanked_node_id = None;
+        self.library.yanked_node_id = None;
         self.playlist_update_library_delete();
         Ok(())
     }
 
     pub fn library_update_search(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
-        let root = self.tree.root();
+        let root = self.library.tree.root();
         let p: &Path = Path::new(root.id());
         let all_items = walkdir::WalkDir::new(p).follow_links(true);
         let mut idx = 0;
@@ -491,7 +498,7 @@ impl Model {
         drop(config_server);
 
         let mut index = 0;
-        let current_path = &self.path;
+        let current_path = &self.library.tree_path;
         for (idx, dir) in vec.iter().enumerate() {
             if current_path == dir {
                 index = idx + 1;
@@ -509,7 +516,7 @@ impl Model {
     }
 
     pub fn library_add_root(&mut self) -> Result<()> {
-        let current_path = &self.path;
+        let current_path = &self.library.tree_path;
 
         let mut config_server = self.config_server.write();
 
@@ -538,7 +545,7 @@ impl Model {
     }
 
     pub fn library_remove_root(&mut self) -> Result<()> {
-        let current_path = &self.path;
+        let current_path = &self.library.tree_path;
         let mut config_server = self.config_server.write();
 
         let mut vec = Vec::new();

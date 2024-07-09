@@ -1732,13 +1732,16 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     pub fn mount_config_editor(&mut self) {
-        self.config_layout = ConfigEditorLayout::General;
+        self.config_editor.layout = ConfigEditorLayout::General;
 
         assert!(self
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(self.config_layout, &self.config_tui.read())),
+                Box::new(CEHeader::new(
+                    self.config_editor.layout,
+                    &self.config_tui.read()
+                )),
                 vec![]
             )
             .is_ok());
@@ -3254,23 +3257,26 @@ impl Model {
     }
 
     pub fn action_change_layout(&mut self) {
-        match self.config_layout {
-            ConfigEditorLayout::General => self.config_layout = ConfigEditorLayout::Color,
+        match self.config_editor.layout {
+            ConfigEditorLayout::General => self.config_editor.layout = ConfigEditorLayout::Color,
 
-            ConfigEditorLayout::Color => self.config_layout = ConfigEditorLayout::Key1,
-            ConfigEditorLayout::Key1 => self.config_layout = ConfigEditorLayout::Key2,
-            ConfigEditorLayout::Key2 => self.config_layout = ConfigEditorLayout::General,
+            ConfigEditorLayout::Color => self.config_editor.layout = ConfigEditorLayout::Key1,
+            ConfigEditorLayout::Key1 => self.config_editor.layout = ConfigEditorLayout::Key2,
+            ConfigEditorLayout::Key2 => self.config_editor.layout = ConfigEditorLayout::General,
         }
 
         assert!(self
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(self.config_layout, &self.config_tui.read())),
+                Box::new(CEHeader::new(
+                    self.config_editor.layout,
+                    &self.config_tui.read()
+                )),
                 vec![]
             )
             .is_ok());
-        match self.config_layout {
+        match self.config_editor.layout {
             ConfigEditorLayout::General => self
                 .app
                 .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
@@ -3311,11 +3317,11 @@ impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn collect_config_data(&mut self) -> Result<()> {
         let mut config_tui = self.config_tui.write();
-        match self.ke_key_config.check_keys() {
-            Ok(()) => config_tui.settings.keys = self.ke_key_config.clone(),
+        match self.config_editor.key_config.check_keys() {
+            Ok(()) => config_tui.settings.keys = self.config_editor.key_config.clone(),
             Err(err) => bail!(err),
         }
-        config_tui.settings.theme = self.ce_theme.clone();
+        config_tui.settings.theme = self.config_editor.theme.clone();
 
         let mut config_server = self.config_server.write();
 
@@ -3530,7 +3536,9 @@ impl Model {
                     continue;
                 };
 
-                self.ce_themes.push(stem.to_string_lossy().to_string());
+                self.config_editor
+                    .themes
+                    .push(stem.to_string_lossy().to_string());
             }
         }
 
@@ -3540,7 +3548,7 @@ impl Model {
     pub fn theme_select_sync(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.ce_themes.iter().enumerate() {
+        for (idx, record) in self.config_editor.themes.iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -3549,7 +3557,7 @@ impl Model {
                 .add_col(TextSpan::new(idx.to_string()))
                 .add_col(TextSpan::new(record));
         }
-        if self.ce_themes.is_empty() {
+        if self.config_editor.themes.is_empty() {
             table.add_col(TextSpan::from("0"));
             table.add_col(TextSpan::from("empty theme list"));
         }
@@ -3564,8 +3572,8 @@ impl Model {
             .ok();
         // select theme currently used
         let mut index = 0;
-        for (idx, name) in self.ce_themes.iter().enumerate() {
-            if name == &self.ce_theme.theme.name {
+        for (idx, name) in self.config_editor.themes.iter().enumerate() {
+            if name == &self.config_editor.theme.theme.name {
                 index = idx;
                 break;
             }

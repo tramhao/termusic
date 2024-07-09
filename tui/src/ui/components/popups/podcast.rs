@@ -352,7 +352,7 @@ impl Model {
     pub fn update_podcast_search_table(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
         let mut idx = 0;
-        if let Some(vec) = &self.podcast_search_vec {
+        if let Some(vec) = &self.podcast.search_results {
             for record in vec {
                 if idx > 0 {
                     table.add_row();

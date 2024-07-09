@@ -43,7 +43,7 @@ pub struct DataBase {
     max_depth: ScanDepth,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SearchCriteria {
     Artist,
     Album,
