@@ -4,7 +4,7 @@
 - Unreleased
 - Change: enable `log-to-file` by default.
 - Change: updated MSRV to 1.75.
-- Change: on backend rusty, require `clang` and `soundtouch` as system-dependencies.
+- Change: on backend rusty when using `rusty-soundtouch`(default feature), require `clang` and `soundtouch` as system-dependencies.
 - Change: update some dependencies.
 - Change: use more specific versions instead of just the major version (lib.rs suggestion).
 - Change: remove unused dependencies from all packages.

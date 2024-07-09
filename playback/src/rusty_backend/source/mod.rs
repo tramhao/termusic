@@ -15,6 +15,7 @@ pub use self::mix_source::MixSource;
 pub use self::pausable::Pausable;
 pub use self::periodic::PeriodicAccess;
 pub use self::samples_converter::SamplesConverter;
+#[cfg(feature = "rusty-soundtouch")]
 pub use self::scaletempo::TempoStretch;
 pub use self::skippable::Skippable;
 pub use self::speed::Speed;
@@ -33,6 +34,7 @@ mod mix_source;
 mod pausable;
 mod periodic;
 mod samples_converter;
+#[cfg(feature = "rusty-soundtouch")]
 pub mod scaletempo;
 mod skippable;
 mod speed;
@@ -230,6 +232,7 @@ where
         speed::speed(self, ratio)
     }
 
+    #[cfg(feature = "rusty-soundtouch")]
     fn tempo_stretch(self, factor: f32) -> TempoStretch<Self>
     where
         Self: Sized,

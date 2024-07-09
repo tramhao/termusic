@@ -129,17 +129,27 @@ impl Sink {
                     amp.set_factor(*controls.volume.lock());
                     amp.inner_mut()
                         .set_paused(controls.pause.load(Ordering::SeqCst));
-                    // amp.inner_mut()
-                    //     .inner_mut()
-                    //     .set_factor(*controls.speed.lock());
+
+                    #[cfg(not(feature = "rusty-soundtouch"))]
+                    {
+                        amp.inner_mut()
+                            .inner_mut()
+                            .set_factor(*controls.speed.lock());
+                    }
+
                     start_played.store(true, Ordering::SeqCst);
                 }
             })
-            .convert_samples()
-            .tempo_stretch(1.0)
-            .periodic_access(Duration::from_millis(500), move |src| {
-                src.set_factor(f64::from(*controls_tempo.speed.lock()));
-            });
+            .convert_samples();
+
+        #[cfg(feature = "rusty-soundtouch")]
+        let source =
+            source
+                .tempo_stretch(1.0)
+                .periodic_access(Duration::from_millis(500), move |src| {
+                    src.set_factor(f64::from(*controls_tempo.speed.lock()));
+                });
+
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
         // let source = super::source::scaletempo::tempo_stretch(source, 1.3);
