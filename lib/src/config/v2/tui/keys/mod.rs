@@ -2018,7 +2018,7 @@ mod v1_interop {
                 )
                 .into(),
                 volume_down: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('_'),
+                    tuievents::Key::Char('-'),
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
