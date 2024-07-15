@@ -1890,8 +1890,8 @@ mod v1_interop {
                     toggle_pause: value.global_player_toggle_pause.into(),
                     next_track: value.global_player_next.into(),
                     previous_track: value.global_player_previous.into(),
-                    volume_up: value.global_player_volume_plus_1.into(),
-                    volume_down: value.global_player_volume_minus_1.into(),
+                    volume_up: value.global_player_volume_plus_2.into(),
+                    volume_down: value.global_player_volume_minus_2.into(),
                     seek_forward: value.global_player_seek_forward.into(),
                     seek_backward: value.global_player_seek_backward.into(),
                     speed_up: value.global_player_speed_up.into(),
@@ -2013,13 +2013,13 @@ mod v1_interop {
                 .into(),
                 // volume_up and volume_down have different default key-bindings in v2
                 volume_up: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('+'),
-                    tuievents::KeyModifiers::SHIFT,
+                    tuievents::Key::Char('='),
+                    tuievents::KeyModifiers::NONE,
                 )
                 .into(),
                 volume_down: tuievents::KeyEvent::new(
-                    tuievents::Key::Char('-'),
-                    tuievents::KeyModifiers::SHIFT,
+                    tuievents::Key::Char('_'),
+                    tuievents::KeyModifiers::NONE,
                 )
                 .into(),
                 seek_forward: tuievents::Key::Char('f').into(),
