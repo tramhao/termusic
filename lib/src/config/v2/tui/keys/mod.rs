@@ -1868,6 +1868,7 @@ mod v1_interop {
                 value.podcast_episode_delete_file.into()
             };
 
+            // this only really applies to volume_down_1 had "_+SHIFT", but now volume_down_2 is actually used instead
             // fixup the old broken way where volume down 1 was by default set to "shift+_", which actually never fires and only fires "_"
             let player_volume_down_key = {
                 let old = value.global_player_volume_minus_2;
@@ -1981,6 +1982,7 @@ mod v1_interop {
     mod test {
         use super::*;
         use pretty_assertions::assert_eq;
+        use v1::BindingForEvent;
 
         #[test]
         fn should_convert_default_without_error() {
@@ -2239,6 +2241,63 @@ mod v1_interop {
             assert_eq!(converted, expected_keys);
 
             assert_eq!(Ok(()), expected_keys.check_keys());
+        }
+
+        #[test]
+        fn should_fixup_old_volume_default() {
+            let converted: Keys = {
+                let mut v1 = v1::Keys::default();
+                v1.global_player_volume_minus_2 = BindingForEvent {
+                    code: tuievents::Key::Char('_'),
+                    modifier: tuievents::KeyModifiers::SHIFT,
+                };
+
+                v1.into()
+            };
+
+            let expected_player_keys = KeysPlayer {
+                toggle_pause: tuievents::Key::Char(' ').into(),
+                next_track: tuievents::Key::Char('n').into(),
+                previous_track: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('N'),
+                    tuievents::KeyModifiers::SHIFT,
+                )
+                .into(),
+                // volume_up and volume_down have different default key-bindings in v2
+                volume_up: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('='),
+                    tuievents::KeyModifiers::NONE,
+                )
+                .into(),
+                volume_down: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('_'),
+                    tuievents::KeyModifiers::NONE,
+                )
+                .into(),
+                seek_forward: tuievents::Key::Char('f').into(),
+                seek_backward: tuievents::Key::Char('b').into(),
+                speed_up: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('f'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+                speed_down: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('b'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+                toggle_prefetch: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('g'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+                save_playlist: tuievents::KeyEvent::new(
+                    tuievents::Key::Char('s'),
+                    tuievents::KeyModifiers::CONTROL,
+                )
+                .into(),
+            };
+            assert_eq!(converted.player_keys, expected_player_keys);
         }
     }
 }
