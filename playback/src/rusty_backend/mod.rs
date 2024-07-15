@@ -35,7 +35,6 @@ use parking_lot::Mutex;
 use std::fs::File;
 use std::path::Path;
 use std::sync::atomic::{AtomicU16, Ordering};
-use std::sync::mpsc::RecvTimeoutError;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
@@ -437,10 +436,9 @@ async fn player_thread(
     sink.set_speed(speed_inside as f32 / 10.0);
     sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
     loop {
-        let cmd = match picmd_rx.recv_timeout(Duration::from_micros(100)) {
-            Ok(v) => v,
-            Err(RecvTimeoutError::Disconnected) => break,
-            Err(_) => continue,
+        let Ok(cmd) = picmd_rx.recv() else {
+            // only error can be a disconnect (no more senders)
+            break;
         };
 
         match cmd {
