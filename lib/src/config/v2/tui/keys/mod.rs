@@ -1868,6 +1868,21 @@ mod v1_interop {
                 value.podcast_episode_delete_file.into()
             };
 
+            // fixup the old broken way where volume down 1 was by default set to "shift+_", which actually never fires and only fires "_"
+            let player_volume_down_key = {
+                let old = value.global_player_volume_minus_2;
+                if old.code == tuievents::Key::Char('_')
+                    && old.modifier.intersects(tuievents::KeyModifiers::SHIFT)
+                {
+                    KeyBinding::from(tuievents::KeyEvent::new(
+                        tuievents::Key::Char('_'),
+                        tuievents::KeyModifiers::NONE,
+                    ))
+                } else {
+                    old.into()
+                }
+            };
+
             Self {
                 escape: value.global_esc.into(),
                 quit: value.global_quit.into(),
@@ -1891,7 +1906,7 @@ mod v1_interop {
                     next_track: value.global_player_next.into(),
                     previous_track: value.global_player_previous.into(),
                     volume_up: value.global_player_volume_plus_2.into(),
-                    volume_down: value.global_player_volume_minus_2.into(),
+                    volume_down: player_volume_down_key,
                     seek_forward: value.global_player_seek_forward.into(),
                     seek_backward: value.global_player_seek_backward.into(),
                     speed_up: value.global_player_speed_up.into(),
