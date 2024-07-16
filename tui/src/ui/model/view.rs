@@ -1,6 +1,6 @@
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
-    FeedsList, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
+    FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
     Playlist, Progress, Source,
 };
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
@@ -566,67 +566,7 @@ impl Model {
     pub fn mount_label_help(&mut self) {
         let config = self.config_tui.read();
         self.app
-            .remount(
-                Id::Label,
-                Box::new(LabelSpan::new(
-                    &config,
-                    &[
-                        TextSpan::new(" Help: ")
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                        TextSpan::new(format!(
-                            "<{}>",
-                            config.settings.keys.select_view_keys.open_help
-                        ))
-                        .fg(config.settings.theme.fallback_highlight())
-                        .bold(),
-                        TextSpan::new(" Config: ")
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                        TextSpan::new(format!(
-                            "<{}>",
-                            config.settings.keys.select_view_keys.open_config
-                        ))
-                        .fg(config.settings.theme.fallback_highlight())
-                        .bold(),
-                        TextSpan::new(" Library: ")
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                        TextSpan::new(format!(
-                            "<{}>",
-                            config.settings.keys.select_view_keys.view_library
-                        ))
-                        .fg(config.settings.theme.fallback_highlight())
-                        .bold(),
-                        TextSpan::new(" Database: ")
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                        TextSpan::new(format!(
-                            "<{}>",
-                            config.settings.keys.select_view_keys.view_database
-                        ))
-                        .fg(config.settings.theme.fallback_highlight())
-                        .bold(),
-                        TextSpan::new(" Podcasts: ")
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                        TextSpan::new(format!(
-                            "<{}>",
-                            config.settings.keys.select_view_keys.view_podcasts
-                        ))
-                        .fg(config.settings.theme.fallback_highlight())
-                        .bold(),
-                        TextSpan::new(" Version: ")
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                        // maybe consider moving version into Help or Config or its own popup (like a About)
-                        TextSpan::new(env!("TERMUSIC_VERSION"))
-                            .fg(config.settings.theme.fallback_highlight())
-                            .bold(),
-                    ],
-                )),
-                Vec::default(),
-            )
+            .remount(Id::Label, Box::new(Footer::new(&config)), Vec::default())
             .expect("Expected to remount without error");
     }
 

@@ -24,6 +24,7 @@
 
 /// -- modules
 mod te_counter_delete_lyric;
+mod te_footer;
 mod te_input;
 mod te_select_lyric;
 mod te_table_lyric_options;

@@ -1,5 +1,5 @@
 use crate::ui::components::{
-    AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
+    AlbumPhotoAlign, CEFooter, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
     ConfigDatabaseAddAll, ConfigDatabaseAddSelected, ConfigFallbackBackground,
     ConfigFallbackBorder, ConfigFallbackForeground, ConfigFallbackHighlight, ConfigFallbackTitle,
     ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop,
@@ -28,7 +28,7 @@ use crate::ui::components::{
     ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed, ConfigPodcastRefreshAllFeeds,
     ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed, ConfigProgressBackground,
     ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle, ConfigSavePopup,
-    ConfigSeekStep, ExitConfirmation, Footer, GlobalListener, KillDaemon, MusicDir, PlayerPort,
+    ConfigSeekStep, ExitConfirmation, GlobalListener, KillDaemon, MusicDir, PlayerPort,
     PlayerUseDiscord, PlayerUseMpris, PlaylistDisplaySymbol, PlaylistRandomAlbum,
     PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
 };
@@ -1749,7 +1749,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Footer),
-                Box::new(Footer::new(&self.config_tui.read())),
+                Box::new(CEFooter::new(&self.config_tui.read())),
                 vec![]
             )
             .is_ok());
