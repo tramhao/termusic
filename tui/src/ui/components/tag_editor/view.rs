@@ -1,3 +1,4 @@
+use crate::ui::components::tag_editor::te_footer::TEFooter;
 /**
  * MIT License
  *
@@ -22,8 +23,8 @@
  * SOFTWARE.
  */
 use crate::ui::components::{
-    LabelGeneric, LabelSpan, TECounterDelete, TEInputAlbum, TEInputArtist, TEInputGenre,
-    TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    LabelGeneric, TECounterDelete, TEInputAlbum, TEInputArtist, TEInputGenre, TEInputTitle,
+    TESelectLyric, TETableLyricOptions, TETextareaLyric,
 };
 use crate::ui::model::Model;
 use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
@@ -181,7 +182,14 @@ impl Model {
         let p = p.to_string_lossy();
         match Track::read_from_path(p.as_ref(), false) {
             Ok(s) => {
-                self.remount_tag_editor_label_help();
+                assert!(self
+                    .app
+                    .remount(
+                        Id::Label,
+                        Box::new(TEFooter::new(&self.config_tui.read())),
+                        Vec::default(),
+                    )
+                    .is_ok());
                 assert!(self
                     .app
                     .remount(
@@ -457,47 +465,6 @@ impl Model {
                 AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
                     "No Lyrics."
                 )),]))
-            )
-            .is_ok());
-    }
-
-    pub fn remount_tag_editor_label_help(&mut self) {
-        let config = self.config_tui.read();
-        assert!(self
-            .app
-            .remount(
-                Id::Label,
-                Box::new(LabelSpan::new(
-                    &config,
-                    &[
-                        TextSpan::new(" Save tag: ").fg(config.settings.theme.library_foreground()),
-                        TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
-                            .bold()
-                            .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" Exit: ").fg(config.settings.theme.library_foreground()),
-                        TextSpan::new(format!("<{}>", config.settings.keys.escape))
-                            .bold()
-                            .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" Change field: ")
-                            .fg(config.settings.theme.library_foreground()),
-                        TextSpan::new("<Tab/ShiftTab>")
-                            .bold()
-                            .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" Search/Embed tag: ")
-                            .fg(config.settings.theme.library_foreground()),
-                        TextSpan::new("<ENTER>")
-                            .bold()
-                            .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" Download: ").fg(config.settings.theme.library_foreground()),
-                        TextSpan::new(format!(
-                            "<{}>",
-                            config.settings.keys.library_keys.youtube_search
-                        ))
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    ]
-                )),
-                Vec::default(),
             )
             .is_ok());
     }
