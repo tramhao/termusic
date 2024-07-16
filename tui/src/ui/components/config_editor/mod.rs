@@ -87,26 +87,26 @@ impl Footer {
     pub fn new(config: &TuiOverlay) -> Self {
         Self {
             component: Span::default().spans(&[
+                TextSpan::new(" Save parameters: ").bold(),
                 TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
                     .bold()
                     .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Save parameters ").bold(),
+                TextSpan::new(" Exit: ").bold(),
                 TextSpan::new(format!("<{}>", config.settings.keys.escape))
                     .bold()
                     .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Exit ").bold(),
+                TextSpan::new(" Change panel: ").bold(),
                 TextSpan::new("<TAB>")
                     .bold()
                     .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Change panel ").bold(),
+                TextSpan::new(" Change field: ").bold(),
                 TextSpan::new("<UP/DOWN>")
                     .bold()
                     .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Change field ").bold(),
+                TextSpan::new(" Select theme/Preview symbol: ").bold(),
                 TextSpan::new("<ENTER>")
                     .bold()
                     .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Select theme/Preview symbol ").bold(),
             ]),
         }
     }
