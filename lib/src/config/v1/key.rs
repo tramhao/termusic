@@ -619,11 +619,11 @@ impl Default for Keys {
                 modifier: KeyModifiers::NONE,
             },
             global_player_volume_minus_1: BindingForEvent {
-                code: Key::Char('_'),
+                code: Key::Char('-'),
                 modifier: KeyModifiers::SHIFT,
             },
             global_player_volume_minus_2: BindingForEvent {
-                code: Key::Char('-'),
+                code: Key::Char('_'),
                 modifier: KeyModifiers::NONE,
             },
             global_help: BindingForEvent {
