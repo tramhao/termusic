@@ -24,6 +24,7 @@
 // -- modules
 mod config_editor;
 mod database;
+mod footer;
 mod labels;
 mod lyric;
 mod music_library;
@@ -44,6 +45,7 @@ mod xywh;
 // -- export
 pub use config_editor::*;
 pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
+pub use footer::Footer;
 pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;

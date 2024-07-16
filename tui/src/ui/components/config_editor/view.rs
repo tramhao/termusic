@@ -1,5 +1,5 @@
 use crate::ui::components::{
-    AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
+    AlbumPhotoAlign, CEFooter, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
     ConfigDatabaseAddAll, ConfigDatabaseAddSelected, ConfigFallbackBackground,
     ConfigFallbackBorder, ConfigFallbackForeground, ConfigFallbackHighlight, ConfigFallbackTitle,
     ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop,
@@ -28,7 +28,7 @@ use crate::ui::components::{
     ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed, ConfigPodcastRefreshAllFeeds,
     ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed, ConfigProgressBackground,
     ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle, ConfigSavePopup,
-    ConfigSeekStep, ExitConfirmation, CEFooter, GlobalListener, KillDaemon, MusicDir, PlayerPort,
+    ConfigSeekStep, ExitConfirmation, GlobalListener, KillDaemon, MusicDir, PlayerPort,
     PlayerUseDiscord, PlayerUseMpris, PlaylistDisplaySymbol, PlaylistRandomAlbum,
     PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
 };
