@@ -470,31 +470,31 @@ impl Model {
                 Box::new(LabelSpan::new(
                     &config,
                     &[
+                        TextSpan::new(" Save tag: ").fg(config.settings.theme.library_foreground()),
                         TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
                             .bold()
                             .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" Save tag ").fg(config.settings.theme.library_foreground()),
+                        TextSpan::new(" Exit: ").fg(config.settings.theme.library_foreground()),
                         TextSpan::new(format!("<{}>", config.settings.keys.escape))
                             .bold()
                             .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" Exit ").fg(config.settings.theme.library_foreground()),
+                        TextSpan::new(" Change field: ")
+                            .fg(config.settings.theme.library_foreground()),
                         TextSpan::new("<Tab/ShiftTab>")
                             .bold()
                             .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" Change field ")
+                        TextSpan::new(" Search/Embed tag: ")
                             .fg(config.settings.theme.library_foreground()),
                         TextSpan::new("<ENTER>")
                             .bold()
                             .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" Search/Embed tag ")
-                            .fg(config.settings.theme.library_foreground()),
+                        TextSpan::new(" Download: ").fg(config.settings.theme.library_foreground()),
                         TextSpan::new(format!(
                             "<{}>",
                             config.settings.keys.library_keys.youtube_search
                         ))
                         .bold()
                         .fg(config.settings.theme.library_highlight()),
-                        TextSpan::new(" download ").fg(config.settings.theme.library_foreground()),
                     ]
                 )),
                 Vec::default(),
