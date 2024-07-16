@@ -79,11 +79,11 @@ impl Component<Msg, NoUserEvent> for CEHeader {
 }
 
 #[derive(MockComponent)]
-pub struct Footer {
+pub struct CEFooter {
     component: Span,
 }
 
-impl Footer {
+impl CEFooter {
     pub fn new(config: &TuiOverlay) -> Self {
         Self {
             component: Span::default().spans(&[
@@ -112,7 +112,7 @@ impl Footer {
     }
 }
 
-impl Component<Msg, NoUserEvent> for Footer {
+impl Component<Msg, NoUserEvent> for CEFooter {
     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
