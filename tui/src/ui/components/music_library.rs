@@ -170,7 +170,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::Library(LIMsg::TreeGoToUpperDir)),
+            }) => return Some(Msg::Library(LIMsg::TreeStepOut)),
             Event::Keyboard(
                 KeyEvent {
                     code: Key::Tab,
@@ -218,7 +218,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
         };
         match result {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
-                Some(Msg::Library(LIMsg::TreeExtendDir(node)))
+                Some(Msg::Library(LIMsg::TreeStepInto(node)))
             }
             _ => Some(Msg::None),
         }
