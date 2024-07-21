@@ -258,7 +258,7 @@ impl Model {
             if let Ok(paths) = std::fs::read_dir(p) {
                 let mut paths: Vec<_> = paths
                     .filter_map(std::result::Result::ok)
-                    .filter(|p| !p.file_name().to_string_lossy().to_string().starts_with('.'))
+                    .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
                     .collect();
 
                 paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
