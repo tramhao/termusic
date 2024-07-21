@@ -532,14 +532,9 @@ impl Model {
             .push(current_path.clone());
         let res = ServerConfigVersionedDefaulted::save_config_path(&config_server.settings);
         drop(config_server);
-        match res {
-            Ok(()) => {
-                self.command(&PlayerCmd::ReloadConfig);
-            }
-            Err(e) => {
-                bail!("error when saving config: {e}");
-            }
-        }
+
+        res.context("Error while saving config")?;
+        self.command(&PlayerCmd::ReloadConfig);
         Ok(())
     }
 
