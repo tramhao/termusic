@@ -462,11 +462,10 @@ impl Model {
         let all_items = walkdir::WalkDir::new(p).follow_links(true);
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
+        let search = wildmatch::WildMatch::new(&search);
         for record in all_items.into_iter().filter_map(std::result::Result::ok) {
             let file_name = record.path();
-            if wildmatch::WildMatch::new(&search)
-                .matches(&file_name.to_string_lossy().to_lowercase())
-            {
+            if search.matches(&file_name.to_string_lossy().to_lowercase()) {
                 if idx > 0 {
                     table.add_row();
                 }
