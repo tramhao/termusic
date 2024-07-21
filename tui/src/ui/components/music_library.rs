@@ -226,10 +226,10 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 }
 
 impl Model {
-    pub fn library_scan_dir(&mut self, p: &Path) {
-        self.library.tree_path = p.to_path_buf();
+    pub fn library_scan_dir<P: Into<PathBuf>>(&mut self, p: P) {
+        self.library.tree_path = p.into();
         self.library.tree = Tree::new(Self::library_dir_tree(
-            p,
+            &self.library.tree_path,
             self.config_server.read().get_library_scan_depth(),
         ));
     }
@@ -363,13 +363,13 @@ impl Model {
     //     }
     // }
     pub fn library_stepinto(&mut self, node_id: &str) {
-        self.library_scan_dir(PathBuf::from(node_id).as_path());
+        self.library_scan_dir(PathBuf::from(node_id));
         self.library_reload_tree();
     }
 
     pub fn library_stepout(&mut self) {
         if let Some(p) = self.library_upper_dir() {
-            self.library_scan_dir(p.as_path());
+            self.library_scan_dir(p);
             self.library_reload_tree();
         }
     }
@@ -510,7 +510,7 @@ impl Model {
         }
         if let Some(dir) = vec.get(index) {
             let pathbuf = PathBuf::from(dir);
-            self.library_scan_dir(pathbuf.as_path());
+            self.library_scan_dir(pathbuf);
             self.library_reload_with_node_focus(None);
         }
     }
