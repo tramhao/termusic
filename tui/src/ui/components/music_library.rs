@@ -385,7 +385,7 @@ impl Model {
         }
     }
 
-    pub fn library_delete_song(&mut self) -> Result<()> {
+    pub fn library_delete_node(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
                 let p: &Path = Path::new(node_id.as_str());
@@ -396,7 +396,7 @@ impl Model {
                     remove_dir_all(p)?;
                 }
 
-                // // this is to keep the state of playlist
+                // this is to keep the state of playlist
                 self.library_reload_tree();
                 let tree = self.library.tree.clone();
                 if let Some(new_node) = tree.root().node_by_route(&route) {
