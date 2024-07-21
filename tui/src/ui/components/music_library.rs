@@ -555,8 +555,13 @@ impl Model {
         }
 
         config_server.settings.player.music_dirs = vec;
+        let res = ServerConfigVersionedDefaulted::save_config_path(&config_server.settings);
         drop(config_server);
+
         self.library_switch_root();
+
+        res.context("Error while saving config")?;
+
         Ok(())
     }
 }
