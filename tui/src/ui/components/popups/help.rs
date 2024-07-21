@@ -243,7 +243,7 @@ impl HelpPopup {
                         .add_col(TextSpan::new("Podcast").bold().fg(Color::LightYellow))
                         .add_row()
                         .add_col(Self::key(&[&keys.podcast_keys.search]))
-                        .add_col(Self::comment("Feeds: search or add feed"))
+                        .add_col(Self::comment("Feeds: search for new feeds"))
                         .add_row()
                         .add_col(Self::key(&[
                             &keys.podcast_keys.delete_feed,
@@ -268,6 +268,9 @@ impl HelpPopup {
                         .add_row()
                         .add_col(Self::key(&[&keys.podcast_keys.delete_local_episode]))
                         .add_col(Self::comment("Episode: delete episode local file"))
+                        .add_row()
+                        .add_col(Self::key(&[&keys.library_keys.search]))
+                        .add_col(Self::comment("Search through added Feeds / Episodes"))
                         .build(),
                 )
         };
