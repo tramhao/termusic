@@ -56,6 +56,7 @@ impl MusicLibrary {
         }
     }
 
+    /// Also known as going up in the tree
     fn handle_left_key(&mut self) -> CmdResult {
         if let State::One(StateValue::String(node_id)) = self.state() {
             if let Some(node) = self.component.tree().root().query(&node_id) {
@@ -75,6 +76,22 @@ impl MusicLibrary {
             }
         }
         CmdResult::None
+    }
+
+    /// Also known as going down the tree / adding file to playlist
+    fn handle_right_key(&mut self) -> (CmdResult, Option<Msg>) {
+        let current_node = self.component.tree_state().selected().unwrap();
+        let p: &Path = Path::new(current_node);
+        if p.is_dir() {
+            (self.perform(Cmd::Custom(TREE_CMD_OPEN)), None)
+        } else {
+            (
+                CmdResult::None,
+                Some(Msg::Playlist(crate::ui::PLMsg::Add(
+                    current_node.to_string(),
+                ))),
+            )
+        }
     }
 }
 
@@ -102,26 +119,14 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
-            }) => {
-                let current_node = self.component.tree_state().selected().unwrap();
-                let p: &Path = Path::new(current_node);
-                if p.is_dir() {
-                    self.perform(Cmd::Custom(TREE_CMD_OPEN))
-                } else {
-                    return Some(Msg::Playlist(crate::ui::PLMsg::Add(
-                        current_node.to_string(),
-                    )));
-                }
-            }
+            }) => match self.handle_right_key() {
+                (_, Some(msg)) => return Some(msg),
+                (cmdresult, None) => cmdresult,
+            },
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
-                let current_node = self.component.tree_state().selected().unwrap();
-                let p: &Path = Path::new(current_node);
-                if p.is_dir() {
-                    self.perform(Cmd::Custom(TREE_CMD_OPEN))
-                } else {
-                    return Some(Msg::Playlist(crate::ui::PLMsg::Add(
-                        current_node.to_string(),
-                    )));
+                match self.handle_right_key() {
+                    (_, Some(msg)) => return Some(msg),
+                    (cmdresult, None) => cmdresult,
                 }
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
