@@ -325,8 +325,8 @@ pub enum KFMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
-    TreeExtendDir(String),
-    TreeGoToUpperDir,
+    TreeStepInto(String),
+    TreeStepOut,
     TreeBlur,
     Yank,
     Paste,

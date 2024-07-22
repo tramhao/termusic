@@ -600,10 +600,10 @@ impl Model {
             LIMsg::TreeBlur => {
                 assert!(self.app.active(&Id::Playlist).is_ok());
             }
-            LIMsg::TreeExtendDir(path) => {
+            LIMsg::TreeStepInto(path) => {
                 self.library_stepinto(path);
             }
-            LIMsg::TreeGoToUpperDir => {
+            LIMsg::TreeStepOut => {
                 self.library_stepout();
             }
             LIMsg::Yank => {
@@ -809,7 +809,7 @@ impl Model {
                 if self.app.mounted(&Id::DeleteConfirmInputPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
-                if let Err(e) = self.library_delete_song() {
+                if let Err(e) = self.library_delete_node() {
                     self.mount_error_popup(e.context("library delete song"));
                 };
             }

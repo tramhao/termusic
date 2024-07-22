@@ -56,6 +56,7 @@ impl MusicLibrary {
         }
     }
 
+    /// Also known as going up in the tree
     fn handle_left_key(&mut self) -> CmdResult {
         if let State::One(StateValue::String(node_id)) = self.state() {
             if let Some(node) = self.component.tree().root().query(&node_id) {
@@ -75,6 +76,22 @@ impl MusicLibrary {
             }
         }
         CmdResult::None
+    }
+
+    /// Also known as going down the tree / adding file to playlist
+    fn handle_right_key(&mut self) -> (CmdResult, Option<Msg>) {
+        let current_node = self.component.tree_state().selected().unwrap();
+        let p: &Path = Path::new(current_node);
+        if p.is_dir() {
+            (self.perform(Cmd::Custom(TREE_CMD_OPEN)), None)
+        } else {
+            (
+                CmdResult::None,
+                Some(Msg::Playlist(crate::ui::PLMsg::Add(
+                    current_node.to_string(),
+                ))),
+            )
+        }
     }
 }
 
@@ -102,26 +119,14 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
-            }) => {
-                let current_node = self.component.tree_state().selected().unwrap();
-                let p: &Path = Path::new(current_node);
-                if p.is_dir() {
-                    self.perform(Cmd::Custom(TREE_CMD_OPEN))
-                } else {
-                    return Some(Msg::Playlist(crate::ui::PLMsg::Add(
-                        current_node.to_string(),
-                    )));
-                }
-            }
+            }) => match self.handle_right_key() {
+                (_, Some(msg)) => return Some(msg),
+                (cmdresult, None) => cmdresult,
+            },
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
-                let current_node = self.component.tree_state().selected().unwrap();
-                let p: &Path = Path::new(current_node);
-                if p.is_dir() {
-                    self.perform(Cmd::Custom(TREE_CMD_OPEN))
-                } else {
-                    return Some(Msg::Playlist(crate::ui::PLMsg::Add(
-                        current_node.to_string(),
-                    )));
+                match self.handle_right_key() {
+                    (_, Some(msg)) => return Some(msg),
+                    (cmdresult, None) => cmdresult,
                 }
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
@@ -170,7 +175,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::Library(LIMsg::TreeGoToUpperDir)),
+            }) => return Some(Msg::Library(LIMsg::TreeStepOut)),
             Event::Keyboard(
                 KeyEvent {
                     code: Key::Tab,
@@ -218,7 +223,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
         };
         match result {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
-                Some(Msg::Library(LIMsg::TreeExtendDir(node)))
+                Some(Msg::Library(LIMsg::TreeStepInto(node)))
             }
             _ => Some(Msg::None),
         }
@@ -226,10 +231,10 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 }
 
 impl Model {
-    pub fn library_scan_dir(&mut self, p: &Path) {
-        self.library.tree_path = p.to_path_buf();
+    pub fn library_scan_dir<P: Into<PathBuf>>(&mut self, p: P) {
+        self.library.tree_path = p.into();
         self.library.tree = Tree::new(Self::library_dir_tree(
-            p,
+            &self.library.tree_path,
             self.config_server.read().get_library_scan_depth(),
         ));
     }
@@ -258,7 +263,7 @@ impl Model {
             if let Ok(paths) = std::fs::read_dir(p) {
                 let mut paths: Vec<_> = paths
                     .filter_map(std::result::Result::ok)
-                    .filter(|p| !p.file_name().to_string_lossy().to_string().starts_with('.'))
+                    .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
                     .collect();
 
                 paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
@@ -363,13 +368,13 @@ impl Model {
     //     }
     // }
     pub fn library_stepinto(&mut self, node_id: &str) {
-        self.library_scan_dir(PathBuf::from(node_id).as_path());
+        self.library_scan_dir(PathBuf::from(node_id));
         self.library_reload_tree();
     }
 
     pub fn library_stepout(&mut self) {
         if let Some(p) = self.library_upper_dir() {
-            self.library_scan_dir(p.as_path());
+            self.library_scan_dir(p);
             self.library_reload_tree();
         }
     }
@@ -385,7 +390,7 @@ impl Model {
         }
     }
 
-    pub fn library_delete_song(&mut self) -> Result<()> {
+    pub fn library_delete_node(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
                 let p: &Path = Path::new(node_id.as_str());
@@ -396,7 +401,7 @@ impl Model {
                     remove_dir_all(p)?;
                 }
 
-                // // this is to keep the state of playlist
+                // this is to keep the state of playlist
                 self.library_reload_tree();
                 let tree = self.library.tree.clone();
                 if let Some(new_node) = tree.root().node_by_route(&route) {
@@ -462,11 +467,10 @@ impl Model {
         let all_items = walkdir::WalkDir::new(p).follow_links(true);
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
+        let search = wildmatch::WildMatch::new(&search);
         for record in all_items.into_iter().filter_map(std::result::Result::ok) {
             let file_name = record.path();
-            if wildmatch::WildMatch::new(&search)
-                .matches(&file_name.to_string_lossy().to_lowercase())
-            {
+            if search.matches(&file_name.to_string_lossy().to_lowercase()) {
                 if idx > 0 {
                     table.add_row();
                 }
@@ -510,7 +514,7 @@ impl Model {
         }
         if let Some(dir) = vec.get(index) {
             let pathbuf = PathBuf::from(dir);
-            self.library_scan_dir(pathbuf.as_path());
+            self.library_scan_dir(pathbuf);
             self.library_reload_with_node_focus(None);
         }
     }
@@ -533,14 +537,9 @@ impl Model {
             .push(current_path.clone());
         let res = ServerConfigVersionedDefaulted::save_config_path(&config_server.settings);
         drop(config_server);
-        match res {
-            Ok(()) => {
-                self.command(&PlayerCmd::ReloadConfig);
-            }
-            Err(e) => {
-                bail!("error when saving config: {e}");
-            }
-        }
+
+        res.context("Error while saving config")?;
+        self.command(&PlayerCmd::ReloadConfig);
         Ok(())
     }
 
@@ -561,8 +560,13 @@ impl Model {
         }
 
         config_server.settings.player.music_dirs = vec;
+        let res = ServerConfigVersionedDefaulted::save_config_path(&config_server.settings);
         drop(config_server);
+
         self.library_switch_root();
+
+        res.context("Error while saving config")?;
+
         Ok(())
     }
 }
