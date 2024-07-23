@@ -31,7 +31,7 @@ impl Mpris {
         #[cfg(target_os = "windows")]
         let (hwnd, _dummy_window) = {
             let dummy_window = windows::DummyWindow::new().unwrap();
-            let handle = Some(dummy_window.handle.0 as _);
+            let handle = Some(dummy_window.handle.0);
             (handle, dummy_window)
         };
 
@@ -297,7 +297,7 @@ mod windows {
                     ));
                 }
 
-                let handle = CreateWindowExW(
+                let handle = match CreateWindowExW(
                     WINDOW_EX_STYLE::default(),
                     class_name,
                     w!(""),
@@ -310,9 +310,14 @@ mod windows {
                     None,
                     instance,
                     None,
-                );
+                ) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        return Err(format!("{err}"));
+                    }
+                };
 
-                if handle.0 == 0 {
+                if handle.is_invalid() {
                     Err(format!(
                         "Message only window creation failed: {}",
                         Error::last_os_error()
