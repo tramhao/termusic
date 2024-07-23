@@ -265,9 +265,8 @@ mod windows {
     use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
-        CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetAncestor,
-        IsDialogMessageW, PeekMessageW, RegisterClassExW, TranslateMessage, GA_ROOT, MSG,
-        PM_REMOVE, WINDOW_EX_STYLE, WINDOW_STYLE, WM_QUIT, WNDCLASSEXW,
+        CreateWindowExW, DefWindowProcW, DestroyWindow, RegisterClassExW, WINDOW_EX_STYLE,
+        WINDOW_STYLE, WNDCLASSEXW,
     };
 
     pub struct DummyWindow {
@@ -347,21 +346,21 @@ mod windows {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn pump_event_queue() -> bool {
-        unsafe {
-            let mut msg: MSG = std::mem::zeroed();
-            let mut has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
-            while msg.message != WM_QUIT && has_message {
-                if !IsDialogMessageW(GetAncestor(msg.hwnd, GA_ROOT), &msg).as_bool() {
-                    TranslateMessage(&msg);
-                    DispatchMessageW(&msg);
-                }
+    // #[allow(dead_code)]
+    // pub fn pump_event_queue() -> bool {
+    //     unsafe {
+    //         let mut msg: MSG = std::mem::zeroed();
+    //         let mut has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
+    //         while msg.message != WM_QUIT && has_message {
+    //             if !IsDialogMessageW(GetAncestor(msg.hwnd, GA_ROOT), &msg).as_bool() {
+    //                 TranslateMessage(&msg);
+    //                 DispatchMessageW(&msg);
+    //             }
 
-                has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
-            }
+    //             has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
+    //         }
 
-            msg.message == WM_QUIT
-        }
-    }
+    //         msg.message == WM_QUIT
+    //     }
+    // }
 }
