@@ -60,7 +60,6 @@ pathdiff = { version = "0.2", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
 pretty_assertions = "1.4"
-prost = "0.12"
 quick-xml = "0.36"
 rand = "0.8"
 regex = "^1.5.5"
@@ -97,8 +96,10 @@ textwrap = "0.16"
 tokio = { version = "1.37", features = ["sync", "macros", "rt","rt-multi-thread"] }
 tokio-util = "0.7"
 toml = "0.8"
-tonic = "0.11"
-tonic-build = "0.11"
+# only update prost and tonic major versions together
+prost = "0.13"
+tonic = "0.12"
+tonic-build = "0.12"
 tuirealm = { version = "~1.8", features = ["serialize"] }
 tui-realm-stdlib = "~1.2"
 tui-realm-treeview = "~1.1"
