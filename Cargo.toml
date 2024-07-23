@@ -61,7 +61,7 @@ percent-encoding = "2.2"
 pinyin = "0.10"
 pretty_assertions = "1.4"
 prost = "0.12"
-quick-xml = "0.31"
+quick-xml = "0.36"
 rand = "0.8"
 regex = "^1.5.5"
 reqwest = { version = "0.12", features = [

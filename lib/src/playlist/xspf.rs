@@ -54,7 +54,7 @@ pub fn decode(content: &str) -> Result<Vec<XSPFItem>> {
     let mut current_item = PrivateItem::default();
 
     let mut reader = Reader::from_str(content);
-    reader.trim_text(true);
+    reader.config_mut().trim_text(true);
     let mut xml_stack = Vec::with_capacity(4);
     let mut buf = Vec::new();
     let decoder = reader.decoder();

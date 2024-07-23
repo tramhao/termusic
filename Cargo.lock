@@ -3046,6 +3046,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-xml"
+version = "0.36.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4091e032efecb09d7b1f711f487b85ab925632a842627e3200fb088382cde32c"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4103,7 +4112,7 @@ dependencies = [
  "percent-encoding",
  "pinyin",
  "pretty_assertions",
- "quick-xml 0.31.0",
+ "quick-xml 0.36.0",
  "rand",
  "regex",
  "reqwest",
