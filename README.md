@@ -1,7 +1,7 @@
 [![Build status](https://github.com/tramhao/termusic/actions/workflows/build.yml/badge.svg)](https://github.com/tramhao/termusic/actions)
 [![crates.io](https://img.shields.io/crates/v/termusic.svg)](https://crates.io/crates/termusic)
 [![dependency status](https://deps.rs/repo/github/tramhao/termusic/status.svg)](https://deps.rs/repo/github/tramhao/termusic)
-[![MSRV](https://img.shields.io/badge/MSRV-1.75.0-blue)](https://blog.rust-lang.org/2023/12/28/Rust-1.75.0.html)
+[![MSRV](https://img.shields.io/badge/MSRV-1.77.0-blue)](https://blog.rust-lang.org/2023/12/28/Rust-1.77.0.html)
 # Terminal Music and Podcast Player written in Rust
 
 Listen to music and podcasts freely as both in freedom and free of charge!
@@ -54,7 +54,7 @@ Default backend: `rusty`
 ### Requirements
 
 #### MSRV
-You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.75.0.
+You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.77.0.
 
 ### git
 
