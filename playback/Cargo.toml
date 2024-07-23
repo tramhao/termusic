@@ -46,9 +46,6 @@ tokio.workspace = true
 tonic.workspace = true
 # soundtouch= { git = 'https://github.com/Drewol/soundtouch-rs.git' }
 
-[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies.winit]
-version = "0.29.10"
-
 [target.'cfg(target_os = "windows")'.dependencies.windows]
 version = "0.54.0"
 features = [
