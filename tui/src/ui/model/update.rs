@@ -954,7 +954,7 @@ impl Model {
             DLMsg::DownloadRunning(url, title) => {
                 self.download_tracker.increase_one(url);
                 self.show_message_timeout_label_help(
-                    &self.download_tracker.message_download_start(title),
+                    self.download_tracker.message_download_start(title),
                     None,
                     None,
                     None,
