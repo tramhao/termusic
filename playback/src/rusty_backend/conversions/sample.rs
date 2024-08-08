@@ -65,7 +65,7 @@ where
 /// - For `u16`, silence corresponds to the value `u16::MAX / 2`. The minimum and maximum
 ///   amplitudes are represented by `0` and `u16::MAX` respectively.
 /// - For `f32`, silence corresponds to the value `0.0`. The minimum and maximum amplitudes are
-///  represented by `-1.0` and `1.0` respectively.
+///   represented by `-1.0` and `1.0` respectively.
 ///
 /// You can implement this trait on your own type as well if you wish so.
 ///

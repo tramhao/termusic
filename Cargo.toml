@@ -17,7 +17,7 @@ categories = [
 ]
 readme = "./README.md"
 version = "0.9.0"
-rust-version = "1.75"
+rust-version = "1.77"
 
 [workspace.dependencies]
 # "version" key is required, as per https://github.com/rust-lang/cargo/issues/11133
@@ -38,8 +38,8 @@ dirs = "5.0"
 discord-rich-presence = { version = "0.2" }
 escaper = "0.1.1"
 figment = { version = "0.10", features = ["toml"] }
-glib = { version = "0.19" }
-gstreamer = { version = "0.22" }
+glib = { version = "0.20" }
+gstreamer = { version = "0.23" }
 hex = "0.4"
 id3 = "1.13"
 # image cannot be upgraded to 0.25 because of viuer, see https://github.com/atanunq/viuer/issues/56
@@ -60,8 +60,7 @@ pathdiff = { version = "0.2", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
 pretty_assertions = "1.4"
-prost = "0.12"
-quick-xml = "0.31"
+quick-xml = "0.36"
 rand = "0.8"
 regex = "^1.5.5"
 reqwest = { version = "0.12", features = [
@@ -72,7 +71,7 @@ reqwest = { version = "0.12", features = [
 ] }
 rfc822_sanitizer = "0.3"
 rss = "2.0"
-rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
 sanitize-filename = "0.5"
 semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -81,7 +80,7 @@ serde_yaml = "0.9"
 shellexpand = { version = "3.1", features = ["path"] }
 soundtouch = "0.4"
 souvlaki = "0.7.2"
-stream-download = { version = "0.5.2", features = ["reqwest-rustls"] }
+stream-download = { version = "0.6.0", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
     "default",
     "aac",
@@ -97,8 +96,10 @@ textwrap = "0.16"
 tokio = { version = "1.37", features = ["sync", "macros", "rt","rt-multi-thread"] }
 tokio-util = "0.7"
 toml = "0.8"
-tonic = "0.11"
-tonic-build = "0.11"
+# only update prost and tonic major versions together
+prost = "0.13"
+tonic = "0.12"
+tonic-build = "0.12"
 tuirealm = { version = "~1.8", features = ["serialize"] }
 tui-realm-stdlib = "~1.2"
 tui-realm-treeview = "~1.1"
@@ -110,6 +111,8 @@ walkdir = "2.5"
 wildmatch = "2.3"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures = "0.3"
+# transistive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
+cc = "1.1"
 
 [profile.release]
 # lto = true
