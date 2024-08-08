@@ -154,7 +154,7 @@ Finally, you can run it with:
 ~/.local/share/cargo/bin/termusic
 ```
 
-You can copy it anywhere in your `$PATH`. The configuration file is located in `~/.config/termusic/config.toml` (or on macOS, `~/Library/Application Support/termusic/config.toml`).
+You can copy it anywhere in your `$PATH`. The configuration file for the TUI is located in `~/.config/termusic/tui.toml`, and the configuration file for the server is located in `~/.config/termusic/server.toml` (or on macOS, `~/Library/Application Support/termusic/tui.toml`, `~/Library/Application Support/termusic/server.toml`, respectively). <!---The MacOS, i assume it has the same rules as linux, so its a good idea to check, as i lack and macOS machine.-->
 However, as this is a minimalistic program, you don't need to edit the configuration file and almost everything can be set from the app.
 
 ## TODO
