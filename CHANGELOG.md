@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+- Unreleased
+- Fix: change default config ip address to `::1` instead of `::` (any old values on windows will need to be changed manually)
+
 ### [V0.9.1]
 - Released on: August 21, 2024.
 - Change: enable `log-to-file` by default.

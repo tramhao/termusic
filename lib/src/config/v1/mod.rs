@@ -340,7 +340,7 @@ impl Default for Settings {
             player_use_mpris: true,
             player_use_discord: true,
             player_port: 50101,
-            player_interface: "::".parse().unwrap(),
+            player_interface: "::1".parse().unwrap(),
         }
     }
 }
