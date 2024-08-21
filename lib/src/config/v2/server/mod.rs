@@ -339,7 +339,7 @@ impl Default for ComSettings {
     fn default() -> Self {
         Self {
             port: 50101,
-            address: "::".parse().unwrap(),
+            address: "::1".parse().unwrap(),
         }
     }
 }
@@ -525,7 +525,7 @@ mod v1_interop {
                 converted.com,
                 ComSettings {
                     port: 50101,
-                    address: "::".parse().unwrap()
+                    address: "::1".parse().unwrap()
                 }
             );
 
