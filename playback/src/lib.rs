@@ -136,7 +136,7 @@ impl Backend {
         return Self::new_mpv(config, cmd_tx);
 
         #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
-        compile_error!("No useable backend feature!");
+        unimplemented!("No compiled backend!");
     }
 
     /// Explicitly choose Backend [`RustyBackend`](rusty_backend::RustyBackend)
@@ -169,6 +169,8 @@ impl Backend {
             Backend::Rusty(v) => v,
             #[cfg(feature = "gst")]
             Backend::GStreamer(v) => v,
+            #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
+            _ => unimplemented!("No compiled backend!"),
         }
     }
 
@@ -181,6 +183,8 @@ impl Backend {
             Backend::Rusty(v) => v,
             #[cfg(feature = "gst")]
             Backend::GStreamer(v) => v,
+            #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
+            _ => unimplemented!("No compiled backend!"),
         }
     }
 }

@@ -102,6 +102,9 @@ async fn actual_main() -> Result<()> {
         return execute_action(action, &config);
     }
 
+    #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
+    compile_error!("No useable backend feature!");
+
     info!("Server starting...");
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
