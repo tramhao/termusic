@@ -36,6 +36,7 @@ clap.workspace = true
 
 
 [features]
+# NOTE: this package fails to compile if not one of the backends (rusty, gst, mpv) are compiled in!
 default = ["rusty", "rusty-soundtouch"]
 # # left for debug
 # default = ["mpv"]

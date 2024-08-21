@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+- Unreleased
+- Change: move the "no backend selected" compile error to the "-server" package instead of "-playback" (no need to specify a feature when compiling "termusic"(tui) now)
+
 ### [V0.9.1]
 - Released on: August 21, 2024.
 - Change: enable `log-to-file` by default.
