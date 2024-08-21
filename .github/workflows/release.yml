@@ -87,19 +87,19 @@ jobs:
       
       - name: Run cargo test (cargo)
         if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'x86_64-windows') && !matrix.cross
-        run: cargo test --release --locked --target ${{ matrix.target }}
+        run: cargo test --release --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-linux)
         if: matrix.build == 'x86_64-linux'
-        run: cargo build --features cover,all-backends --release --all --locked --target ${{ matrix.target }}
+        run: cargo build --features cover,all-backends --release --all --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-macos)
         if: matrix.build == 'x86_64-macos'
-        run: cargo build --release --all --locked --target ${{ matrix.target }}
+        run: cargo build --release --all --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-windows)
         if: matrix.build == 'x86_64-windows'
-        run: cargo build --release --all --locked --target ${{ matrix.target }}
+        run: cargo build --release --all --target ${{ matrix.target }}
 
       - name: Install cross (cross)
         if: matrix.cross
@@ -107,11 +107,11 @@ jobs:
 
       - name: Run cargo test (cross)
         if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'x86_64-windows') && matrix.cross
-        run: cargo test --release --locked --target ${{ matrix.target }}
+        run: cargo test --release --target ${{ matrix.target }}
 
       - name: Build release binary (cross)
         if: matrix.cross
-        run: cargo build --features cover,all-backends --release --all --locked --target ${{ matrix.target }}
+        run: cargo build --features cover,all-backends --release --all --target ${{ matrix.target }}
 
       - name: Strip release binary (linux and macos)
         if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos'
