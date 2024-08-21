@@ -1,7 +1,7 @@
 ## ChangeLog
 
-### next
-- Unreleased
+### [V0.9.1]
+- Released on: August 21, 2024.
 - Change: enable `log-to-file` by default.
 - Change: updated MSRV to 1.77.
 - Change: on backend rusty when using `rusty-soundtouch`(default feature), require `clang` and `soundtouch` as system-dependencies.
