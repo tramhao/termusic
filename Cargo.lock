@@ -1972,7 +1972,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -3283,9 +3283,9 @@ dependencies = [
 
 [[package]]
 name = "soundtouch"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d662f67e30fe3c2295ca80dbae52b67408a2e842aa0cc3b432ddd7f1e357edd"
+checksum = "b7f854f53163c2a3cc36ed1808d3a2c92952540542075b4fcc0d69de26d7ad04"
 dependencies = [
  "libc",
  "soundtouch-ffi",
