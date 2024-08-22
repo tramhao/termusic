@@ -89,10 +89,10 @@ Do note that these will be compiled with the **symphonia** backend.
 
 #### Arch Linux
 
-Arch Linux users can install `termusic` from the [AUR](https://aur.archlinux.org/) using an [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers).
+Arch Linux users can install `termusic` from the [official repositories](https://archlinux.org/packages/extra/x86_64/termusic) using [pacman](https://wiki.archlinux.org/title/pacman).
 
 ```bash
-paru termusic
+pacman -S termusic
 ```
 
 #### NetBSD
