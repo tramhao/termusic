@@ -44,7 +44,7 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
     pub max_depth: Option<u32>,
-    #[arg(short, long, default_value_t = Backend::Default, env = "TMS_BACKEND")]
+    #[arg(short, long, default_value_t = Backend::Rusty, env = "TMS_BACKEND")]
     pub backend: Backend,
     #[clap(flatten)]
     pub log_options: LogOptions,
@@ -54,19 +54,16 @@ pub struct Args {
 pub enum Backend {
     #[cfg(feature = "mpv")]
     Mpv,
-    #[cfg(feature = "rusty")]
-    Rusty,
     #[cfg(feature = "gst")]
     #[value(alias = "gst", name = "gstreamer")]
     GStreamer,
     /// Create a new Backend with default backend ordering
     ///
     /// Order:
-    /// - [`Rusty`](Backend::Rusty) (feature `rusty`)
+    /// - [`Rusty`](Backend::Rusty) (default)
     /// - [`GStreamer`](Backend::GStreamer) (feature `gst`)
     /// - [`Mpv`](Backend::Mpv) (feature `mpv`)
-    /// - Compile Error
-    Default,
+    Rusty,
 }
 
 impl From<Backend> for BackendSelect {
@@ -74,11 +71,9 @@ impl From<Backend> for BackendSelect {
         match val {
             #[cfg(feature = "mpv")]
             Backend::Mpv => BackendSelect::Mpv,
-            #[cfg(feature = "rusty")]
-            Backend::Rusty => BackendSelect::Rusty,
             #[cfg(feature = "gst")]
             Backend::GStreamer => BackendSelect::GStreamer,
-            Backend::Default => BackendSelect::Default,
+            Backend::Rusty => BackendSelect::Rusty,
         }
     }
 }
@@ -91,11 +86,9 @@ impl std::fmt::Display for Backend {
             match self {
                 #[cfg(feature = "mpv")]
                 Backend::Mpv => "mpv",
-                #[cfg(feature = "rusty")]
-                Backend::Rusty => "rusty",
                 #[cfg(feature = "gst")]
                 Backend::GStreamer => "gstreamer",
-                Backend::Default => "default",
+                Backend::Rusty => "rusty",
             }
         )
     }

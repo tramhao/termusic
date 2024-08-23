@@ -60,3 +60,11 @@ post:
 	cp -f target/release/$(server) "$(install_to)"
 
 install: release post
+
+win:
+	cargo build --all
+wininstall:
+	cargo build --release --all
+	echo $(install_to)
+	cp -f target/release/$(prog) "$(install_to)"
+	cp -f target/release/$(server) "$(install_to)"

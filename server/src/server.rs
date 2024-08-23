@@ -4,7 +4,6 @@ mod music_player_service;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-#[cfg(any(feature = "gst", feature = "rusty"))]
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
@@ -101,9 +100,6 @@ async fn actual_main() -> Result<()> {
     if let Some(action) = args.action {
         return execute_action(action, &config);
     }
-
-    #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
-    compile_error!("No useable backend feature!");
 
     info!("Server starting...");
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -304,7 +300,6 @@ fn player_loop(
                         // TODO: consider changing "radio_title" and "media_title" to be consistent
                         p_tick.radio_title = player.media_info().media_title.unwrap_or_default();
 
-                        #[cfg(feature = "rusty")]
                         if let Backend::Rusty(ref mut backend) = player.backend {
                             p_tick.progress.total_duration = Some(Duration::from_secs(
                                 ((*backend.radio_downloaded.lock() as f32 * 44100.0

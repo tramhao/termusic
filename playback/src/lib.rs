@@ -52,7 +52,6 @@ pub mod player {
 mod gstreamer_backend;
 #[cfg(feature = "mpv")]
 mod mpv_backend;
-#[cfg(feature = "rusty")]
 mod rusty_backend;
 
 mod discord;
@@ -80,19 +79,16 @@ extern crate log;
 pub enum BackendSelect {
     #[cfg(feature = "mpv")]
     Mpv,
-    #[cfg(feature = "rusty")]
-    Rusty,
     #[cfg(feature = "gst")]
     GStreamer,
     /// Create a new Backend with default backend ordering
     ///
     /// Order:
-    /// - [`RustyBackend`](rusty_backend::RustyBackend) (feature `rusty`)
     /// - [`GstreamerBackend`](gstreamer_backend::GStreamerBackend) (feature `gst`)
     /// - [`MpvBackend`](mpv_backend::MpvBackend) (feature `mpv`)
-    /// - Compile Error
+    /// - [`RustyBackend`](rusty_backend::RustyBackend) (default)
     #[default]
-    Default,
+    Rusty,
 }
 
 /// Enum to choose backend at runtime
@@ -100,7 +96,6 @@ pub enum BackendSelect {
 pub enum Backend {
     #[cfg(feature = "mpv")]
     Mpv(mpv_backend::MpvBackend),
-    #[cfg(feature = "rusty")]
     Rusty(rusty_backend::RustyBackend),
     #[cfg(feature = "gst")]
     GStreamer(gstreamer_backend::GStreamerBackend),
@@ -115,32 +110,25 @@ impl Backend {
         match backend {
             #[cfg(feature = "mpv")]
             BackendSelect::Mpv => Self::new_mpv(config, cmd_tx),
-            #[cfg(feature = "rusty")]
-            BackendSelect::Rusty => Self::new_rusty(config, cmd_tx),
             #[cfg(feature = "gst")]
             BackendSelect::GStreamer => Self::new_gstreamer(config, cmd_tx),
-            BackendSelect::Default => Self::new_default(config, cmd_tx),
+            BackendSelect::Rusty => Self::new_rusty(config, cmd_tx),
         }
     }
 
-    /// Create a new Backend with default backend ordering
-    ///
-    /// For the order see [`BackendSelect::Default`]
-    #[allow(unreachable_code)]
-    fn new_default(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
-        #[cfg(feature = "rusty")]
-        return Self::new_rusty(config, cmd_tx);
-        #[cfg(feature = "gst")]
-        return Self::new_gstreamer(config, cmd_tx);
-        #[cfg(feature = "mpv")]
-        return Self::new_mpv(config, cmd_tx);
-
-        #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
-        unimplemented!("No compiled backend!");
-    }
+    // /// Create a new Backend with default backend ordering
+    // ///
+    // /// For the order see [`BackendSelect::Default`]
+    // #[allow(unreachable_code)]
+    // fn new_default(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
+    //     #[cfg(feature = "gst")]
+    //     return Self::new_gstreamer(config, cmd_tx);
+    //     #[cfg(feature = "mpv")]
+    //     return Self::new_mpv(config, cmd_tx);
+    //     return Self::new_rusty(config, cmd_tx);
+    // }
 
     /// Explicitly choose Backend [`RustyBackend`](rusty_backend::RustyBackend)
-    #[cfg(feature = "rusty")]
     fn new_rusty(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
         info!("Using Backend \"rusty\"");
         Self::Rusty(rusty_backend::RustyBackend::new(config, cmd_tx))
@@ -165,12 +153,9 @@ impl Backend {
         match self {
             #[cfg(feature = "mpv")]
             Backend::Mpv(v) => v,
-            #[cfg(feature = "rusty")]
-            Backend::Rusty(v) => v,
             #[cfg(feature = "gst")]
             Backend::GStreamer(v) => v,
-            #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
-            _ => unimplemented!("No compiled backend!"),
+            Backend::Rusty(v) => v,
         }
     }
 
@@ -179,12 +164,9 @@ impl Backend {
         match self {
             #[cfg(feature = "mpv")]
             Backend::Mpv(v) => v,
-            #[cfg(feature = "rusty")]
-            Backend::Rusty(v) => v,
             #[cfg(feature = "gst")]
             Backend::GStreamer(v) => v,
-            #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
-            _ => unimplemented!("No compiled backend!"),
+            Backend::Rusty(v) => v,
         }
     }
 }
@@ -280,7 +262,7 @@ impl GeneralPlayer {
     /// - if connecting to the database fails
     /// - if config path creation fails
     pub fn new(config: ServerOverlay, cmd_tx: PlayerCmdSender) -> Result<Self> {
-        Self::new_backend(BackendSelect::Default, config, cmd_tx)
+        Self::new_backend(BackendSelect::Rusty, config, cmd_tx)
     }
 
     /// Reload the config from file, on fail continue to use the old
@@ -361,7 +343,6 @@ impl GeneralPlayer {
                 self.playlist.set_next_track(None);
                 self.current_track_updated = true;
                 info!("gapless next track played");
-                #[cfg(feature = "rusty")]
                 #[allow(irrefutable_let_patterns)]
                 if let Backend::Rusty(ref mut backend) = self.backend {
                     backend.message_on_end();
@@ -378,7 +359,6 @@ impl GeneralPlayer {
 
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
-            #[cfg(feature = "rusty")]
             #[allow(irrefutable_let_patterns)]
             if let Backend::Rusty(ref mut backend) = self.backend {
                 backend.message_on_end();

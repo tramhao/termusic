@@ -37,12 +37,12 @@ clap.workspace = true
 
 [features]
 # NOTE: this package fails to compile if not one of the backends (rusty, gst, mpv) are compiled in!
-default = ["rusty", "rusty-soundtouch"]
+default = []
 # # left for debug
 # default = ["mpv"]
 # default = ["gst"]
 gst = ["termusic-playback/gst"]
 mpv = ["termusic-playback/mpv"]
-rusty = ["termusic-playback/rusty"]
+# rusty = ["termusic-playback/rusty"]
 rusty-soundtouch = ["termusic-playback/rusty-soundtouch"]
-all-backends = ["gst", "mpv", "rusty"]
+all-backends = ["gst", "mpv", "rusty-soundtouch"]

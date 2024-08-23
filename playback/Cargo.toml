@@ -25,7 +25,7 @@ anyhow.workspace = true
 async-channel.workspace = true
 async-trait.workspace = true
 base64.workspace = true
-cpal = { workspace = true, optional = true }
+cpal = { workspace = true }
 discord-rich-presence.workspace = true
 glib = { workspace = true, optional = true }
 gstreamer = { workspace = true, optional = true}
@@ -40,8 +40,8 @@ reqwest.workspace = true
 serde.workspace = true
 soundtouch = { workspace = true, optional = true }
 souvlaki.workspace = true
-stream-download = { workspace = true, optional = true }
-symphonia = { workspace = true, optional = true }
+stream-download = { workspace = true }
+symphonia = { workspace = true }
 tokio.workspace = true
 tonic.workspace = true
 # soundtouch= { git = 'https://github.com/Drewol/soundtouch-rs.git' }
@@ -62,9 +62,8 @@ default = []
 # cover = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sirno"]
-rusty = ["dep:symphonia", "dep:stream-download", "dep:cpal"]
 rusty-soundtouch = ["dep:soundtouch"]
-all-backends = ["gst", "mpv", "rusty"]
+all-backends = ["gst", "mpv"]
 
 
 [dev-dependencies]
