@@ -43,18 +43,14 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
     pub max_depth: Option<u32>,
-    #[arg(short, long, default_value_t = Backend::Default, env = "TMS_BACKEND")]
+    #[arg(short, long, default_value_t = Backend::Rusty, env = "TMS_BACKEND")]
     pub backend: Backend,
     #[clap(flatten)]
     pub log_options: LogOptions,
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
 pub enum Backend {
-    Mpv,
-    Rusty,
-    #[value(alias = "gst", name = "gstreamer")]
-    GStreamer,
     /// Create a new Backend with default backend ordering
     ///
     /// Order:
@@ -62,7 +58,11 @@ pub enum Backend {
     /// - [`GStreamer`](Backend::GStreamer) (feature `gst`)
     /// - [`Mpv`](Backend::Mpv) (feature `mpv`)
     /// - Compile Error
-    Default,
+    #[default]
+    Rusty,
+    Mpv,
+    #[value(alias = "gst", name = "gstreamer")]
+    GStreamer,
 }
 
 impl std::fmt::Display for Backend {
@@ -74,7 +74,6 @@ impl std::fmt::Display for Backend {
                 Backend::Mpv => "mpv",
                 Backend::Rusty => "rusty",
                 Backend::GStreamer => "gstreamer",
-                Backend::Default => "default",
             }
         )
     }
