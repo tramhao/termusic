@@ -29,7 +29,6 @@ flexi_logger.workspace = true
 colored.workspace = true
 parking_lot.workspace = true
 serde.workspace = true
-sysinfo.workspace = true
 tokio.workspace = true
 tonic.workspace = true
 clap.workspace = true
