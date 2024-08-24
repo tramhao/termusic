@@ -3404,13 +3404,12 @@ dependencies = [
 
 [[package]]
 name = "stream-download"
-version = "0.6.0"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b494018f8bc4c0feafa9ef6b22d7ab3c979237adf0e7f9abb2121d86167ca97"
+checksum = "bc043c44b31b4fd805b9f495f1848dd451a2e14a6fed8889847b7b74cfc6df08"
 dependencies = [
  "bytes",
  "educe",
- "enum-ordinalize",
  "futures",
  "mediatype",
  "parking_lot",
