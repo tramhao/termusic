@@ -2037,9 +2037,9 @@ dependencies = [
 
 [[package]]
 name = "lofty"
-version = "0.20.1"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a102be499034ad09aa54fb54df817528f11ca4f642dd2434b64bced7044945f"
+checksum = "c780f414cc123090cf47ee43a58c3a8ef941a4ea66ce262cb5958a844e909523"
 dependencies = [
  "byteorder",
  "data-encoding",
@@ -3404,13 +3404,12 @@ dependencies = [
 
 [[package]]
 name = "stream-download"
-version = "0.6.0"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b494018f8bc4c0feafa9ef6b22d7ab3c979237adf0e7f9abb2121d86167ca97"
+checksum = "bc043c44b31b4fd805b9f495f1848dd451a2e14a6fed8889847b7b74cfc6df08"
 dependencies = [
  "bytes",
  "educe",
- "enum-ordinalize",
  "futures",
  "mediatype",
  "parking_lot",
@@ -3657,17 +3656,15 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.30.13"
+version = "0.31.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a5b4ddaee55fb2bea2bf0e5000747e5f5c0de765e5a5ff87f4cd106439f4bb3"
+checksum = "2b92e0bdf838cbc1c4c9ba14f9c97a7ec6cdcd1ae66b10e1e42775a25553f45d"
 dependencies = [
- "cfg-if",
  "core-foundation-sys",
  "libc",
+ "memchr",
  "ntapi",
- "once_cell",
- "rayon",
- "windows 0.52.0",
+ "windows 0.54.0",
 ]
 
 [[package]]
@@ -3883,7 +3880,6 @@ dependencies = [
  "log",
  "parking_lot",
  "serde",
- "sysinfo",
  "termusic-lib",
  "termusic-playback",
  "tokio",
@@ -4594,16 +4590,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e745dab35a0c4c77aa3ce42d595e13d2003d6902d6b08c9ef5fc326d08da12b"
 dependencies = [
  "windows-targets 0.42.2",
-]
-
-[[package]]
-name = "windows"
-version = "0.52.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e48a53791691ab099e5e2ad123536d0fff50652600abaf43bbf952894110d0be"
-dependencies = [
- "windows-core 0.52.0",
- "windows-targets 0.52.6",
 ]
 
 [[package]]

@@ -194,7 +194,7 @@ async fn wait_till_connected(
             );
         }
 
-        sys.refresh_process(sys_pid);
+        sys.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sys_pid]));
 
         let status = sys.process(sys_pid);
 

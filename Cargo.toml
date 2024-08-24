@@ -48,7 +48,7 @@ include_dir = "0.7"
 lazy_static = "1.4"
 libaes = "0.7"
 libmpv-sirno = "2.0.2-fork.1"
-lofty = "0.20"
+lofty = "0.21"
 log = "0.4"
 flexi_logger = "0.28"
 colored = "2.0"
@@ -80,7 +80,7 @@ serde_yaml = "0.9"
 shellexpand = { version = "3.1", features = ["path"] }
 soundtouch = "0.4.1"
 souvlaki = "0.7.2"
-stream-download = { version = "0.6.0", features = ["reqwest-rustls"] }
+stream-download = { version = "0.7.2", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
     "default",
     "aac",
@@ -90,7 +90,7 @@ symphonia = { version = "0.5.1", features = [
     "flac",
     "mkv",
 ] }
-sysinfo = "^0.30"
+sysinfo = { version = "^0.31", default-features = false, features = ["system"] }
 tempfile = "3.10"
 textwrap = "0.16"
 tokio = { version = "1.37", features = ["sync", "macros", "rt","rt-multi-thread"] }
