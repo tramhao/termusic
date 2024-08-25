@@ -37,7 +37,7 @@ impl Mpris {
 
         let config = PlatformConfig {
             dbus_name: "termusic",
-            display_name: "Termuisc in Rust",
+            display_name: "Termusic in Rust",
             hwnd,
         };
 
