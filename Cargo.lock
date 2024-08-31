@@ -3797,9 +3797,9 @@ dependencies = [
 
 [[package]]
 name = "soundtouch"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7f854f53163c2a3cc36ed1808d3a2c92952540542075b4fcc0d69de26d7ad04"
+checksum = "d474ff89069d36b37dfaa65b1f41e3165bca0a9ae16102685c885d17d04ac9fa"
 dependencies = [
  "libc",
  "soundtouch-ffi",
