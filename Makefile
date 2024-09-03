@@ -9,10 +9,9 @@ default_cargo_home = $(HOME)/.local/share/cargo
 # define CARGO_HOME if not defined
 ifndef CARGO_HOME
 	CARGO_HOME=$(default_cargo_home)
-	install_to = $(CARGO_HOME)/bin
 endif
 # needs to be after CARGO_HOME, otherwise the default is not ever added
-# install_to = $(CARGO_HOME)/bin
+install_to = $(CARGO_HOME)/bin
 
 ifeq ($(OS),Windows_NT)
 	install_to = $(USERPROFILE)\.cargo\bin
