@@ -9,9 +9,14 @@ default_cargo_home = $(HOME)/.local/share/cargo
 # define CARGO_HOME if not defined
 ifndef CARGO_HOME
 	CARGO_HOME=$(default_cargo_home)
+	install_to = $(CARGO_HOME)/bin
 endif
 # needs to be after CARGO_HOME, otherwise the default is not ever added
-install_to = $(CARGO_HOME)/bin
+# install_to = $(CARGO_HOME)/bin
+
+ifeq ($(OS),Windows_NT)
+	install_to = $(USERPROFILE)\.cargo\bin
+endif
 
 default: fmt 
 
@@ -45,7 +50,6 @@ all-backends:
 	cargo build  --features cover,all-backends --release --all
 
 test: 
-
 	cargo test --features cover,all-backends --release --all
 
 # end backends + cover
@@ -63,8 +67,13 @@ install: release post
 
 win:
 	cargo build --all
-wininstall:
+
+winrelease:
 	cargo build --release --all
-	echo $(install_to)
+
+winpost:
+	powershell -noprofile -command "Write-Host $(install_to)"
 	cp -f target/release/$(prog) "$(install_to)"
 	cp -f target/release/$(server) "$(install_to)"
+
+wininstall: winrelease winpost
