@@ -65,11 +65,6 @@ message ToggleGaplessReply {
 
 message SeekForwardRequest {}
 message SeekBackwardRequest {}
-// old usage for the Seek*Request, but completely covered by PlayerTime
-// message SeekReply {
-//   uint32 position = 1;
-//   uint32 duration = 2;
-// }
 
 message ReloadConfigRequest {}
 message ReloadPlaylistRequest {}
