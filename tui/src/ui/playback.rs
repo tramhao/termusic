@@ -124,6 +124,7 @@ impl Playback {
         info!("Got response from server: {:?}", response);
         Ok(())
     }
+
     pub async fn play_selected(&mut self) -> Result<()> {
         let request = tonic::Request::new(PlaySelectedRequest {});
         let response = self.client.play_selected(request).await?;
@@ -131,6 +132,7 @@ impl Playback {
         info!("Got response from server: {:?}", response);
         Ok(())
     }
+
     pub async fn skip_previous(&mut self) -> Result<()> {
         let request = tonic::Request::new(SkipPreviousRequest {});
         let response = self.client.skip_previous(request).await?;
