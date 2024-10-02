@@ -46,11 +46,12 @@ use std::time::Duration;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
 use termusiclib::library_db::DataBase;
-use termusiclib::player::{PlayerProgress, PlayerTimeUnit};
+use termusiclib::player::{PlayerProgress, PlayerTimeUnit, UpdateEvents};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
 use tokio::runtime::Handle;
+use tokio::sync::broadcast;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
@@ -178,6 +179,8 @@ pub enum PlayerCmd {
     VolumeUp,
 }
 
+pub type StreamTX = broadcast::Sender<UpdateEvents>;
+
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     pub backend: Backend,
@@ -189,6 +192,7 @@ pub struct GeneralPlayer {
     pub db: DataBase,
     pub db_podcast: DBPod,
     pub cmd_tx: PlayerCmdSender,
+    pub stream_tx: StreamTX,
 }
 
 impl GeneralPlayer {
@@ -202,6 +206,7 @@ impl GeneralPlayer {
         backend: BackendSelect,
         config: ServerOverlay,
         cmd_tx: PlayerCmdSender,
+        stream_tx: StreamTX,
     ) -> Result<Self> {
         let backend = Backend::new_select(backend, &config, cmd_tx.clone());
 
@@ -232,6 +237,7 @@ impl GeneralPlayer {
             db,
             db_podcast,
             cmd_tx,
+            stream_tx,
             current_track_updated: false,
         })
     }
@@ -242,8 +248,12 @@ impl GeneralPlayer {
     ///
     /// - if connecting to the database fails
     /// - if config path creation fails
-    pub fn new(config: ServerOverlay, cmd_tx: PlayerCmdSender) -> Result<Self> {
-        Self::new_backend(BackendSelect::Rusty, config, cmd_tx)
+    pub fn new(
+        config: ServerOverlay,
+        cmd_tx: PlayerCmdSender,
+        stream_tx: StreamTX,
+    ) -> Result<Self> {
+        Self::new_backend(BackendSelect::Rusty, config, cmd_tx, stream_tx)
     }
 
     /// Reload the config from file, on fail continue to use the old
@@ -541,6 +551,14 @@ impl GeneralPlayer {
             }
         }
     }
+
+    /// Send stream events with consistent error handling
+    fn send_stream_ev(&self, ev: UpdateEvents) {
+        // there is only one error case: no receivers
+        if self.stream_tx.send(ev).is_err() {
+            debug!("Stream Event not send: No Receivers");
+        }
+    }
 }
 
 #[async_trait]
@@ -552,10 +570,16 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player().volume()
     }
     fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
-        self.get_player_mut().add_volume(volume)
+        let vol = self.get_player_mut().add_volume(volume);
+        self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
+
+        vol
     }
     fn set_volume(&mut self, volume: Volume) -> Volume {
-        self.get_player_mut().set_volume(volume)
+        let vol = self.get_player_mut().set_volume(volume);
+        self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
+
+        vol
     }
     /// This function should not be used directly, use GeneralPlayer::pause
     fn pause(&mut self) {

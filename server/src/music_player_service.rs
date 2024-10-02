@@ -8,18 +8,15 @@ use termusiclib::player::{
     PlaySelectedRequest, PlayerTime, ReloadConfigRequest, ReloadPlaylistRequest,
     SeekBackwardRequest, SeekForwardRequest, SkipNextRequest, SkipNextResponse,
     SkipPreviousRequest, SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply,
-    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, UpdateEvents, VolumeDownRequest,
-    VolumeReply, VolumeUpRequest,
+    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
+    VolumeUpRequest,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdSender};
-use tokio::sync::broadcast;
+use termusicplayback::{PlayerCmd, PlayerCmdSender, StreamTX};
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::{Stream, StreamExt};
 use tonic::{Request, Response, Status};
 
 use crate::PlayerStats;
-
-pub type StreamTX = broadcast::Sender<UpdateEvents>;
 
 #[derive(Debug)]
 pub struct MusicPlayerService {

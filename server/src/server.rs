@@ -8,13 +8,13 @@ use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-use music_player_service::{MusicPlayerService, StreamTX};
+use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::ServerOverlay;
 use termusiclib::player::music_player_server::MusicPlayerServer;
-use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, UpdateEvents};
+use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime};
 use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -173,9 +173,9 @@ fn player_loop(
     mut cmd_rx: PlayerCmdReciever,
     config: ServerOverlay,
     playerstats: Arc<Mutex<PlayerStats>>,
-    stream_tx: music_player_service::StreamTX,
+    stream_tx: termusicplayback::StreamTX,
 ) -> Result<()> {
-    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx)?;
+    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx)?;
     while let Some(cmd) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {
@@ -351,10 +351,6 @@ fn player_loop(
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
                 player.mpris_volume_update();
-                send_stream_ev(
-                    &stream_tx,
-                    UpdateEvents::VolumeChanged { volume: new_volume },
-                );
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
@@ -364,10 +360,6 @@ fn player_loop(
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
                 player.mpris_volume_update();
-                send_stream_ev(
-                    &stream_tx,
-                    UpdateEvents::VolumeChanged { volume: new_volume },
-                );
             }
             PlayerCmd::Pause => {
                 player.pause();
@@ -392,14 +384,6 @@ fn ticker_thread(cmd_tx: PlayerCmdSender) -> Result<()> {
         })?;
 
     Ok(())
-}
-
-/// Send stream events with consistent error handling
-fn send_stream_ev(stream_tx: &StreamTX, ev: UpdateEvents) {
-    // there is only one error case: no receivers
-    if stream_tx.send(ev).is_err() {
-        debug!("Stream Event not send: No Receivers");
-    }
 }
 
 fn get_config(args: &cli::Args) -> Result<ServerOverlay> {
