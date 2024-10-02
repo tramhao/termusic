@@ -58,8 +58,8 @@ impl From<PlayerProgress> for protobuf::PlayerTime {
 pub enum UpdateEvents {
     VolumeChanged { volume: u16 },
     SpeedChanged { speed: i32 },
+    PlayStateChanged { playing: u32 },
     // TrackChanged,
-    // PlayStateChanged { playing: bool },
 }
 
 type StreamTypes = protobuf::stream_updates::Type;
@@ -77,14 +77,12 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
             }
             UpdateEvents::SpeedChanged { speed } => StreamTypes::SpeedChanged(UpdateSpeedChanged {
                 msg: Some(SpeedReply { speed }),
-            }), // UpdateEvents::TrackChanged => StreamTypes::TrackChanged(UpdateTrackChanged {}),
-                // UpdateEvents::PlayStateChanged { playing } => {
-                //     StreamTypes::PlayStateChanged(UpdatePlayStateChanged {
-                //         msg: Some(TogglePauseResponse {
-                //             status: playing as u32,
-                //         }),
-                //     })
-                // }
+            }),
+            UpdateEvents::PlayStateChanged { playing } => {
+                StreamTypes::PlayStateChanged(UpdatePlayStateChanged {
+                    msg: Some(TogglePauseResponse { status: playing }),
+                })
+            } // UpdateEvents::TrackChanged => StreamTypes::TrackChanged(UpdateTrackChanged {}),
         };
 
         Self { r#type: Some(val) }
@@ -106,6 +104,9 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
             },
             stream_updates::Type::SpeedChanged(ev) => Self::SpeedChanged {
                 speed: unwrap_msg(ev.msg, "StreamUpdates.types.speed_changed.msg")?.speed,
+            },
+            stream_updates::Type::PlayStateChanged(ev) => Self::PlayStateChanged {
+                playing: unwrap_msg(ev.msg, "StreamUpdates.types.play_state_changed.msg")?.status,
             },
         };
 

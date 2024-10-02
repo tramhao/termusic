@@ -92,8 +92,8 @@ message StreamUpdates {
   oneof type {
     UpdateVolumeChanged volume_changed = 1;
     UpdateSpeedChanged speed_changed = 2;
-    // UpdateTrackChanged track_changed = 3;
-    // UpdatePlayStateChanged play_state_changed = 4;
+    UpdatePlayStateChanged play_state_changed = 3;
+    // UpdateTrackChanged track_changed = 4;
   }
 }
 
@@ -109,13 +109,13 @@ message UpdateSpeedChanged {
   SpeedReply msg = 1;
 }
 
+// TODO: is play-state (playing / paused / ??) the only things this should do?
+message UpdatePlayStateChanged {
+  // reuse the existing message
+  TogglePauseResponse msg = 1;
+}
+
 // // The track changed, send new information
 // message UpdateTrackChanged {
 //   // TODO: do track changed information
-// }
-
-// // TODO: is play-state (playing / paused / ??) the only things this should do?
-// message UpdatePlayStateChanged {
-//   // reuse the existing message
-//   TogglePauseResponse msg = 1;
 // }
