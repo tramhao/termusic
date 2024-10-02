@@ -368,7 +368,7 @@ impl GeneralPlayer {
         };
 
         self.playlist.set_next_track(Some(&track));
-        self.get_player_mut().enqueue_next(&track);
+        self.enqueue_next(&track);
 
         info!("Next track enqueued: {:#?}", track);
     }
@@ -377,7 +377,7 @@ impl GeneralPlayer {
         if self.playlist.current_track().is_some() {
             info!("skip route 1 which is in most cases.");
             self.playlist.set_next_track(None);
-            self.get_player_mut().skip_one();
+            self.skip_one();
         } else {
             info!("skip route 2 cause no current track.");
             self.stop();
@@ -446,9 +446,7 @@ impl GeneralPlayer {
         if !forward {
             offset = -offset;
         }
-        self.get_player_mut()
-            .seek(offset)
-            .expect("Error in player seek.");
+        self.seek(offset).expect("Error in player seek.");
     }
 
     #[allow(clippy::cast_sign_loss)]
@@ -457,7 +455,7 @@ impl GeneralPlayer {
             info!("Not saving Last position as there is no current track");
             return;
         };
-        let Some(position) = self.get_player().position() else {
+        let Some(position) = self.position() else {
             info!("Not saving Last position as there is no position");
             return;
         };
@@ -515,13 +513,13 @@ impl GeneralPlayer {
             match track.media_type {
                 MediaType::Music => {
                     if let Ok(last_pos) = self.db.get_last_position(track) {
-                        self.get_player_mut().seek_to(last_pos);
+                        self.seek_to(last_pos);
                         restored = true;
                     }
                 }
                 MediaType::Podcast => {
                     if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                        self.get_player_mut().seek_to(last_pos);
+                        self.seek_to(last_pos);
                         restored = true;
                     }
                 }
