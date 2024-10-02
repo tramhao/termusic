@@ -615,11 +615,17 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn set_speed(&mut self, speed: Speed) -> Speed {
-        self.get_player_mut().set_speed(speed)
+        let speed = self.get_player_mut().set_speed(speed);
+        self.send_stream_ev(UpdateEvents::SpeedChanged { speed });
+
+        speed
     }
 
     fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
-        self.get_player_mut().add_speed(speed)
+        let speed = self.get_player_mut().add_speed(speed);
+        self.send_stream_ev(UpdateEvents::SpeedChanged { speed });
+
+        speed
     }
 
     fn speed(&self) -> Speed {

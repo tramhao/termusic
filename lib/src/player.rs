@@ -57,8 +57,8 @@ impl From<PlayerProgress> for protobuf::PlayerTime {
 #[derive(Debug, Clone, PartialEq)]
 pub enum UpdateEvents {
     VolumeChanged { volume: u16 },
+    SpeedChanged { speed: i32 },
     // TrackChanged,
-    // SpeedChanged { speed: i32 },
     // PlayStateChanged { playing: bool },
 }
 
@@ -74,17 +74,17 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
                         volume: u32::from(volume),
                     }),
                 })
-            } // UpdateEvents::TrackChanged => StreamTypes::TrackChanged(UpdateTrackChanged {}),
-              // UpdateEvents::SpeedChanged { speed } => StreamTypes::SpeedChanged(UpdateSpeedChanged {
-              //     msg: Some(SpeedReply { speed: speed }),
-              // }),
-              // UpdateEvents::PlayStateChanged { playing } => {
-              //     StreamTypes::PlayStateChanged(UpdatePlayStateChanged {
-              //         msg: Some(TogglePauseResponse {
-              //             status: playing as u32,
-              //         }),
-              //     })
-              // }
+            }
+            UpdateEvents::SpeedChanged { speed } => StreamTypes::SpeedChanged(UpdateSpeedChanged {
+                msg: Some(SpeedReply { speed }),
+            }), // UpdateEvents::TrackChanged => StreamTypes::TrackChanged(UpdateTrackChanged {}),
+                // UpdateEvents::PlayStateChanged { playing } => {
+                //     StreamTypes::PlayStateChanged(UpdatePlayStateChanged {
+                //         msg: Some(TogglePauseResponse {
+                //             status: playing as u32,
+                //         }),
+                //     })
+                // }
         };
 
         Self { r#type: Some(val) }
@@ -103,6 +103,9 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
                 volume: clamp_u16(
                     unwrap_msg(ev.msg, "StreamUpdates.types.volume_changed.msg")?.volume,
                 ),
+            },
+            stream_updates::Type::SpeedChanged(ev) => Self::SpeedChanged {
+                speed: unwrap_msg(ev.msg, "StreamUpdates.types.speed_changed.msg")?.speed,
             },
         };
 
