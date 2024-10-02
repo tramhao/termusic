@@ -30,6 +30,7 @@ colored.workspace = true
 parking_lot.workspace = true
 serde.workspace = true
 tokio.workspace = true
+tokio-stream.workspace = true
 tonic.workspace = true
 clap.workspace = true
 

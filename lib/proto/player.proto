@@ -17,6 +17,8 @@ service MusicPlayer {
   rpc ReloadPlaylist(ReloadPlaylistRequest) returns (EmptyReply);
   rpc PlaySelected(PlaySelectedRequest) returns (EmptyReply);
   rpc SkipPrevious(SkipPreviousRequest) returns (EmptyReply);
+
+  rpc SubscribeServerUpdates(EmptyReply) returns (stream StreamUpdates);
 }
 
 message TogglePauseRequest {}
@@ -83,3 +85,37 @@ message Duration {
   uint64 secs = 1;
   uint32 nanos = 2;
 }
+
+// all updates that can happen from the server side, without the client to have to ask explicitly
+// naming convention for the stream update specific messages is to add the "Update" prefix, even if it already exists
+message StreamUpdates {
+  oneof type {
+    UpdateVolumeChanged volume_changed = 1;
+    // UpdateTrackChanged track_changed = 2;
+    // UpdateSpeedChanged speed_changed = 3;
+    // UpdatePlayStateChanged play_state_changed = 4;
+  }
+}
+
+// The Volume changed, send new information
+message UpdateVolumeChanged {
+  // reuse the existing message
+  VolumeReply msg = 1;
+}
+
+// // The track changed, send new information
+// message UpdateTrackChanged {
+//   // TODO: do track changed information
+// }
+
+// // The Speed changed, send new information
+// message UpdateSpeedChanged {
+//   // reuse the existing message
+//   SpeedReply msg = 1;
+// }
+
+// // TODO: is play-state (playing / paused / ??) the only things this should do?
+// message UpdatePlayStateChanged {
+//   // reuse the existing message
+//   TogglePauseResponse msg = 1;
+// }

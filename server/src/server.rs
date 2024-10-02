@@ -8,13 +8,13 @@ use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-use music_player_service::MusicPlayerService;
+use music_player_service::{MusicPlayerService, StreamTX};
 use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::ServerOverlay;
 use termusiclib::player::music_player_server::MusicPlayerServer;
-use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime};
+use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, UpdateEvents};
 use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -22,7 +22,7 @@ use termusicplayback::{
     PlayerTrait, SpeedSigned, Status, VolumeSigned,
 };
 use tokio::runtime::Handle;
-use tokio::sync::oneshot;
+use tokio::sync::{broadcast, oneshot};
 use tonic::transport::server::TcpIncoming;
 use tonic::transport::Server;
 
@@ -103,8 +103,10 @@ async fn actual_main() -> Result<()> {
 
     info!("Server starting...");
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
+    let (stream_tx, _) = broadcast::channel(3);
 
-    let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
+    let music_player_service: MusicPlayerService =
+        MusicPlayerService::new(cmd_tx.clone(), stream_tx.clone());
     let playerstats = music_player_service.player_stats.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
@@ -134,7 +136,14 @@ async fn actual_main() -> Result<()> {
         .name("main player loop".into())
         .spawn(move || {
             let _guard = tokio_handle.enter();
-            let res = player_loop(args.backend.into(), cmd_tx, cmd_rx, config, playerstats);
+            let res = player_loop(
+                args.backend.into(),
+                cmd_tx,
+                cmd_rx,
+                config,
+                playerstats,
+                stream_tx,
+            );
             let _ = player_handle_os_tx.send(res);
         })?;
 
@@ -164,6 +173,7 @@ fn player_loop(
     mut cmd_rx: PlayerCmdReciever,
     config: ServerOverlay,
     playerstats: Arc<Mutex<PlayerStats>>,
+    stream_tx: music_player_service::StreamTX,
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx)?;
     while let Some(cmd) = cmd_rx.blocking_recv() {
@@ -341,6 +351,10 @@ fn player_loop(
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
                 player.mpris_volume_update();
+                send_stream_ev(
+                    &stream_tx,
+                    UpdateEvents::VolumeChanged { volume: new_volume },
+                );
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
@@ -350,6 +364,10 @@ fn player_loop(
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
                 player.mpris_volume_update();
+                send_stream_ev(
+                    &stream_tx,
+                    UpdateEvents::VolumeChanged { volume: new_volume },
+                );
             }
             PlayerCmd::Pause => {
                 player.pause();
@@ -374,6 +392,14 @@ fn ticker_thread(cmd_tx: PlayerCmdSender) -> Result<()> {
         })?;
 
     Ok(())
+}
+
+/// Send stream events with consistent error handling
+fn send_stream_ev(stream_tx: &StreamTX, ev: UpdateEvents) {
+    // there is only one error case: no receivers
+    if stream_tx.send(ev).is_err() {
+        debug!("Stream Event not send: No Receivers");
+    }
 }
 
 fn get_config(args: &cli::Args) -> Result<ServerOverlay> {

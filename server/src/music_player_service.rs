@@ -1,5 +1,6 @@
 use anyhow::Result;
 use parking_lot::Mutex;
+use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::{
@@ -7,27 +8,34 @@ use termusiclib::player::{
     PlaySelectedRequest, PlayerTime, ReloadConfigRequest, ReloadPlaylistRequest,
     SeekBackwardRequest, SeekForwardRequest, SkipNextRequest, SkipNextResponse,
     SkipPreviousRequest, SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply,
-    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
-    VolumeUpRequest,
+    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, UpdateEvents, VolumeDownRequest,
+    VolumeReply, VolumeUpRequest,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdSender};
+use tokio::sync::broadcast;
+use tokio_stream::wrappers::BroadcastStream;
+use tokio_stream::{Stream, StreamExt};
 use tonic::{Request, Response, Status};
 
 use crate::PlayerStats;
 
+pub type StreamTX = broadcast::Sender<UpdateEvents>;
+
 #[derive(Debug)]
 pub struct MusicPlayerService {
     cmd_tx: PlayerCmdSender,
+    stream_tx: StreamTX,
     pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
 impl MusicPlayerService {
-    pub fn new(cmd_tx: PlayerCmdSender) -> Self {
+    pub fn new(cmd_tx: PlayerCmdSender, stream_tx: StreamTX) -> Self {
         let player_stats = Arc::new(Mutex::new(PlayerStats::new()));
 
         Self {
             cmd_tx,
             player_stats,
+            stream_tx,
         }
     }
 }
@@ -219,5 +227,21 @@ impl MusicPlayer for MusicPlayerService {
         };
 
         Ok(Response::new(reply))
+    }
+
+    type SubscribeServerUpdatesStream =
+        Pin<Box<dyn Stream<Item = Result<termusiclib::player::StreamUpdates, Status>> + Send>>;
+    async fn subscribe_server_updates(
+        &self,
+        _: Request<EmptyReply>,
+    ) -> Result<Response<Self::SubscribeServerUpdatesStream>, Status> {
+        let rx = self.stream_tx.subscribe();
+
+        // map to the grpc types
+        let receiver_stream = BroadcastStream::new(rx).map(|res| match res {
+            Ok(ev) => Ok(ev.into()),
+            Err(err) => Err(Status::from_error(Box::new(err))),
+        });
+        Ok(Response::new(Box::pin(receiver_stream)))
     }
 }

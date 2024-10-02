@@ -33,9 +33,11 @@ use std::time::Duration;
 use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::PlayerProgress;
+use termusiclib::player::UpdateEvents;
 pub use termusiclib::types::*;
 use termusicplayback::{PlayerCmd, Status};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
+use tokio_stream::StreamExt;
 use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -94,6 +96,22 @@ impl UI {
     ///
     /// This function does NOT handle initializing and finializing the terminal
     async fn run_inner(&mut self) -> Result<()> {
+        let mut stream_updates = self.playback.subscribe_to_stream_updates().await?;
+
+        // placeholder showcase that it is working
+        tokio::spawn(async move {
+            while let Some(ev) = stream_updates.next().await {
+                let ev = ev.map(UpdateEvents::try_from);
+
+                debug!("Stream Event: {ev:?}");
+
+                // just exit on first error, but still print it first
+                if ev.is_err() {
+                    break;
+                }
+            }
+        });
+
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
