@@ -391,62 +391,36 @@ impl GeneralPlayer {
         self.playlist.proceed_false();
         self.next();
     }
+
+    /// Resume playback if paused, pause playback if running
     pub fn toggle_pause(&mut self) {
         match self.playlist.status() {
             Status::Running => {
-                self.get_player_mut().pause();
-                if let Some(ref mut mpris) = self.mpris {
-                    mpris.pause();
-                }
-                if let Some(ref mut discord) = self.discord {
-                    discord.pause();
-                }
-                self.playlist.set_status(Status::Paused);
+                <Self as PlayerTrait>::pause(self);
             }
             Status::Stopped => {}
             Status::Paused => {
-                self.get_player_mut().resume();
-                if let Some(ref mut mpris) = self.mpris {
-                    mpris.resume();
-                }
-                let time_pos = self.get_player().position();
-                if let Some(ref mut discord) = self.discord {
-                    discord.resume(time_pos);
-                }
-                self.playlist.set_status(Status::Running);
+                <Self as PlayerTrait>::resume(self);
             }
         }
     }
 
+    /// Pause playback if running
     pub fn pause(&mut self) {
         match self.playlist.status() {
             Status::Running => {
-                self.get_player_mut().pause();
-                if let Some(ref mut mpris) = self.mpris {
-                    mpris.pause();
-                }
-                if let Some(ref mut discord) = self.discord {
-                    discord.pause();
-                }
-                self.playlist.set_status(Status::Paused);
+                <Self as PlayerTrait>::pause(self);
             }
             Status::Stopped | Status::Paused => {}
         }
     }
 
+    /// Resume playback if paused
     pub fn play(&mut self) {
         match self.playlist.status() {
             Status::Running | Status::Stopped => {}
             Status::Paused => {
-                self.get_player_mut().resume();
-                if let Some(ref mut mpris) = self.mpris {
-                    mpris.resume();
-                }
-                let time_pos = self.get_player().position();
-                if let Some(ref mut discord) = self.discord {
-                    discord.resume(time_pos);
-                }
-                self.playlist.set_status(Status::Running);
+                <Self as PlayerTrait>::resume(self);
             }
         }
     }
@@ -584,13 +558,28 @@ impl PlayerTrait for GeneralPlayer {
     fn set_volume(&mut self, volume: Volume) -> Volume {
         self.get_player_mut().set_volume(volume)
     }
+    /// This function should not be used directly, use GeneralPlayer::pause
     fn pause(&mut self) {
         self.playlist.set_status(Status::Paused);
         self.get_player_mut().pause();
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.pause();
+        }
+        if let Some(ref mut discord) = self.discord {
+            discord.pause();
+        }
     }
+    /// This function should not be used directly, use GeneralPlayer::play
     fn resume(&mut self) {
         self.playlist.set_status(Status::Running);
         self.get_player_mut().resume();
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.resume();
+        }
+        let time_pos = self.get_player().position();
+        if let Some(ref mut discord) = self.discord {
+            discord.resume(time_pos);
+        }
     }
     fn is_paused(&self) -> bool {
         self.get_player().is_paused()
