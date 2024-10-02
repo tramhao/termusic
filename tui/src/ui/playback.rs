@@ -1,6 +1,6 @@
 use anyhow::Result;
-use termusicplayback::player::music_player_client::MusicPlayerClient;
-use termusicplayback::player::{
+use termusiclib::player::music_player_client::MusicPlayerClient;
+use termusiclib::player::{
     CycleLoopRequest, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
     ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest,
     SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest,

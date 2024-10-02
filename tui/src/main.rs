@@ -44,7 +44,7 @@ use termusiclib::config::{
     new_shared_server_settings, new_shared_tui_settings, ServerOverlay, SharedServerSettings,
     SharedTuiSettings, TuiOverlay,
 };
-use termusicplayback::player::music_player_client::MusicPlayerClient;
+use termusiclib::player::music_player_client::MusicPlayerClient;
 
 use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::{podcast, utils};

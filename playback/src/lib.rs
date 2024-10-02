@@ -27,26 +27,6 @@
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
 #![warn(clippy::pedantic)]
-#[allow(clippy::pedantic)]
-pub mod player {
-    tonic::include_proto!("player");
-
-    // implement transform function for easy use
-    impl From<Duration> for std::time::Duration {
-        fn from(value: Duration) -> Self {
-            std::time::Duration::new(value.secs, value.nanos)
-        }
-    }
-
-    impl From<std::time::Duration> for Duration {
-        fn from(value: std::time::Duration) -> Self {
-            Self {
-                secs: value.as_secs(),
-                nanos: value.subsec_nanos(),
-            }
-        }
-    }
-}
 
 #[cfg(feature = "gst")]
 mod gstreamer_backend;
@@ -681,8 +661,8 @@ pub struct PlayerProgress {
     pub total_duration: Option<PlayerTimeUnit>,
 }
 
-impl From<crate::player::PlayerTime> for PlayerProgress {
-    fn from(value: crate::player::PlayerTime) -> Self {
+impl From<termusiclib::player::PlayerTime> for PlayerProgress {
+    fn from(value: termusiclib::player::PlayerTime) -> Self {
         Self {
             position: value.position.map(std::convert::Into::into),
             total_duration: value.total_duration.map(std::convert::Into::into),
@@ -690,7 +670,7 @@ impl From<crate::player::PlayerTime> for PlayerProgress {
     }
 }
 
-impl From<PlayerProgress> for crate::player::PlayerTime {
+impl From<PlayerProgress> for termusiclib::player::PlayerTime {
     fn from(value: PlayerProgress) -> Self {
         Self {
             position: value.position.map(std::convert::Into::into),

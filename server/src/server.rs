@@ -13,10 +13,10 @@ use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::ServerOverlay;
+use termusiclib::player::music_player_server::MusicPlayerServer;
+use termusiclib::player::{GetProgressResponse, PlayerTime};
 use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
-use termusicplayback::player::music_player_server::MusicPlayerServer;
-use termusicplayback::player::{GetProgressResponse, PlayerTime};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
     PlayerProgress, PlayerTrait, SpeedSigned, Status, VolumeSigned,

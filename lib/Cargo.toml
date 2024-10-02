@@ -69,9 +69,12 @@ ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
 futures.workspace = true
 tokio.workspace = true
 tokio-util = { workspace = true, features = ["rt"] }
+tonic.workspace = true
+prost.workspace = true
 
 [build-dependencies]
 cc.workspace = true
+tonic-build.workspace = true
 
 
 [features]
