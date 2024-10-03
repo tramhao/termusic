@@ -46,6 +46,7 @@ use std::time::Duration;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
 use termusiclib::library_db::DataBase;
+use termusiclib::player::{PlayerProgress, PlayerTimeUnit};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
@@ -634,35 +635,6 @@ impl PlayerTrait for GeneralPlayer {
 
     fn media_info(&self) -> MediaInfo {
         self.get_player().media_info()
-    }
-}
-
-/// The primitive in which time (current position / total duration) will be stored as
-pub type PlayerTimeUnit = Duration;
-
-/// Struct to keep both values with a name, as tuples cannot have named fields
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct PlayerProgress {
-    pub position: Option<PlayerTimeUnit>,
-    /// Total duration of the currently playing track, if there is a known total duration
-    pub total_duration: Option<PlayerTimeUnit>,
-}
-
-impl From<termusiclib::player::PlayerTime> for PlayerProgress {
-    fn from(value: termusiclib::player::PlayerTime) -> Self {
-        Self {
-            position: value.position.map(std::convert::Into::into),
-            total_duration: value.total_duration.map(std::convert::Into::into),
-        }
-    }
-}
-
-impl From<PlayerProgress> for termusiclib::player::PlayerTime {
-    fn from(value: PlayerProgress) -> Self {
-        Self {
-            position: value.position.map(std::convert::Into::into),
-            total_duration: value.total_duration.map(std::convert::Into::into),
-        }
     }
 }
 

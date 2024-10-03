@@ -1,12 +1,12 @@
 use anyhow::Result;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::{
-    CycleLoopRequest, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
+    CycleLoopRequest, GetProgressRequest, GetProgressResponse, PlaySelectedRequest, PlayerProgress,
     ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest,
     SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest,
     TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
 };
-use termusicplayback::{PlayerProgress, Status};
+use termusicplayback::Status;
 use tonic::transport::Channel;
 
 pub struct Playback {
