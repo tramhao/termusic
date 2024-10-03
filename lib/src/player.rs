@@ -55,12 +55,24 @@ impl From<PlayerProgress> for protobuf::PlayerTime {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct TrackChangedInfo {
+    /// Current track index in the playlist
+    pub current_track_index: u32,
+    /// Indicate if the track changed to another track
+    pub current_track_updated: bool,
+    /// Title of the current track / radio
+    pub title: Option<String>,
+    /// Current progress of the track
+    pub progress: Option<PlayerProgress>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum UpdateEvents {
     MissedEvents { amount: u64 },
     VolumeChanged { volume: u16 },
     SpeedChanged { speed: i32 },
     PlayStateChanged { playing: u32 },
-    // TrackChanged,
+    TrackChanged(TrackChangedInfo),
 }
 
 type StreamTypes = protobuf::stream_updates::Type;
@@ -86,7 +98,13 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
                 StreamTypes::PlayStateChanged(UpdatePlayStateChanged {
                     msg: Some(TogglePauseResponse { status: playing }),
                 })
-            } // UpdateEvents::TrackChanged => StreamTypes::TrackChanged(UpdateTrackChanged {}),
+            }
+            UpdateEvents::TrackChanged(info) => StreamTypes::TrackChanged(UpdateTrackChanged {
+                current_track_index: info.current_track_index,
+                current_track_updated: info.current_track_updated,
+                title: info.title,
+                progress: info.progress.map(Into::into),
+            }),
         };
 
         Self { r#type: Some(val) }
@@ -113,6 +131,12 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
                 playing: unwrap_msg(ev.msg, "StreamUpdates.types.play_state_changed.msg")?.status,
             },
             stream_updates::Type::MissedEvents(ev) => Self::MissedEvents { amount: ev.amount },
+            stream_updates::Type::TrackChanged(ev) => Self::TrackChanged(TrackChangedInfo {
+                current_track_index: ev.current_track_index,
+                current_track_updated: ev.current_track_updated,
+                title: ev.title,
+                progress: ev.progress.map(Into::into),
+            }),
         };
 
         Ok(res)

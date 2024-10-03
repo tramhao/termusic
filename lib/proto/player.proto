@@ -94,7 +94,7 @@ message StreamUpdates {
     UpdateVolumeChanged volume_changed = 2;
     UpdateSpeedChanged speed_changed = 3;
     UpdatePlayStateChanged play_state_changed = 4;
-    // UpdateTrackChanged track_changed = 5;
+    UpdateTrackChanged track_changed = 5;
   }
 }
 
@@ -122,7 +122,17 @@ message UpdatePlayStateChanged {
   TogglePauseResponse msg = 1;
 }
 
-// // The track changed, send new information
-// message UpdateTrackChanged {
-//   // TODO: do track changed information
-// }
+// The track changed in some way, send new information
+// This includes everything from changing to a new track, new radio title, etc
+// This is *not* used for regular track progress updates
+// NOTE: this may or may not be sent for the initial track after startup as the client may connect after the track started
+message UpdateTrackChanged {
+  uint32 current_track_index = 1;
+  bool current_track_updated = 2;
+
+  // all values below should be moved into their own "Track" message at some point
+  // instead of having the TUI fetch everything from the file itself
+  // radio title, track title
+  optional string title = 3;
+  PlayerTime progress = 4;
+}

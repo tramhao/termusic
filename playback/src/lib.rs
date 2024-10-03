@@ -46,7 +46,7 @@ use std::time::Duration;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
 use termusiclib::library_db::DataBase;
-use termusiclib::player::{PlayerProgress, PlayerTimeUnit, UpdateEvents};
+use termusiclib::player::{PlayerProgress, PlayerTimeUnit, TrackChangedInfo, UpdateEvents};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
@@ -318,6 +318,10 @@ impl GeneralPlayer {
     }
 
     /// Requires that the function is called on a thread with a entered tokio runtime
+    ///
+    /// # Panics
+    ///
+    /// if `current_track_index` in playlist is above u32
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
@@ -354,6 +358,14 @@ impl GeneralPlayer {
             if let Backend::Rusty(ref mut backend) = self.backend {
                 backend.message_on_end();
             }
+
+            self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
+                current_track_index: u32::try_from(self.playlist.get_current_track_index())
+                    .unwrap(),
+                current_track_updated: self.current_track_updated,
+                title: self.media_info().media_title,
+                progress: self.get_progress(),
+            }));
         }
     }
 
