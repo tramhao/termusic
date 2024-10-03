@@ -4,14 +4,15 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::{
-    CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
-    PlaySelectedRequest, PlayerTime, ReloadConfigRequest, ReloadPlaylistRequest,
-    SeekBackwardRequest, SeekForwardRequest, SkipNextRequest, SkipNextResponse,
-    SkipPreviousRequest, SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply,
-    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
-    VolumeUpRequest,
+    stream_updates, CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest,
+    GetProgressResponse, PlaySelectedRequest, PlayerTime, ReloadConfigRequest,
+    ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest, SkipNextRequest,
+    SkipNextResponse, SkipPreviousRequest, SpeedDownRequest, SpeedReply, SpeedUpRequest,
+    StreamUpdates, ToggleGaplessReply, ToggleGaplessRequest, TogglePauseRequest,
+    TogglePauseResponse, UpdateMissedEvents, VolumeDownRequest, VolumeReply, VolumeUpRequest,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdSender, StreamTX};
+use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::{Stream, StreamExt};
 use tonic::{Request, Response, Status};
@@ -237,7 +238,17 @@ impl MusicPlayer for MusicPlayerService {
         // map to the grpc types
         let receiver_stream = BroadcastStream::new(rx).map(|res| match res {
             Ok(ev) => Ok(ev.into()),
-            Err(err) => Err(Status::from_error(Box::new(err))),
+            Err(err) => {
+                let BroadcastStreamRecvError::Lagged(amount) = err;
+                Ok(StreamUpdates {
+                    r#type: Some(stream_updates::Type::MissedEvents(UpdateMissedEvents {
+                        amount,
+                    })),
+                })
+
+                // else case if ever necessary
+                // Err(Status::from_error(Box::new(err)))
+            }
         });
         Ok(Response::new(Box::pin(receiver_stream)))
     }

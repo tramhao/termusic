@@ -56,6 +56,7 @@ impl From<PlayerProgress> for protobuf::PlayerTime {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum UpdateEvents {
+    MissedEvents { amount: u64 },
     VolumeChanged { volume: u16 },
     SpeedChanged { speed: i32 },
     PlayStateChanged { playing: u32 },
@@ -68,6 +69,9 @@ type StreamTypes = protobuf::stream_updates::Type;
 impl From<UpdateEvents> for protobuf::StreamUpdates {
     fn from(value: UpdateEvents) -> Self {
         let val = match value {
+            UpdateEvents::MissedEvents { amount } => {
+                StreamTypes::MissedEvents(UpdateMissedEvents { amount })
+            }
             UpdateEvents::VolumeChanged { volume } => {
                 StreamTypes::VolumeChanged(UpdateVolumeChanged {
                     msg: Some(VolumeReply {
@@ -108,6 +112,7 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
             stream_updates::Type::PlayStateChanged(ev) => Self::PlayStateChanged {
                 playing: unwrap_msg(ev.msg, "StreamUpdates.types.play_state_changed.msg")?.status,
             },
+            stream_updates::Type::MissedEvents(ev) => Self::MissedEvents { amount: ev.amount },
         };
 
         Ok(res)

@@ -90,11 +90,18 @@ message Duration {
 // naming convention for the stream update specific messages is to add the "Update" prefix, even if it already exists
 message StreamUpdates {
   oneof type {
-    UpdateVolumeChanged volume_changed = 1;
-    UpdateSpeedChanged speed_changed = 2;
-    UpdatePlayStateChanged play_state_changed = 3;
-    // UpdateTrackChanged track_changed = 4;
+    UpdateMissedEvents missed_events = 1;
+    UpdateVolumeChanged volume_changed = 2;
+    UpdateSpeedChanged speed_changed = 3;
+    UpdatePlayStateChanged play_state_changed = 4;
+    // UpdateTrackChanged track_changed = 5;
   }
+}
+
+// Indicate that some events could not be send
+// Like a "Lagged" Error from tokio-stream
+message UpdateMissedEvents {
+  uint64 amount = 1;
 }
 
 // The Volume changed, send new information
