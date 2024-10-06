@@ -34,7 +34,6 @@ libmpv-sirno = { workspace = true, optional = true }
 log.workspace = true # = "0.4"
 parking_lot.workspace = true
 pathdiff.workspace = true #  = { version = "0.2", features = ["camino"] }
-prost.workspace = true
 rand.workspace = true #  = "0.8"
 reqwest.workspace = true
 serde.workspace = true
@@ -43,7 +42,6 @@ souvlaki.workspace = true
 stream-download = { workspace = true }
 symphonia = { workspace = true }
 tokio.workspace = true
-tonic.workspace = true
 # soundtouch= { git = 'https://github.com/Drewol/soundtouch-rs.git' }
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
@@ -68,6 +66,3 @@ all-backends = ["gst", "mpv"]
 
 [dev-dependencies]
 pretty_assertions.workspace = true
-
-[build-dependencies]
-tonic-build.workspace = true

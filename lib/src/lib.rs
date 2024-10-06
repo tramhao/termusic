@@ -8,6 +8,7 @@
 pub mod config;
 pub mod invidious;
 pub mod library_db;
+pub mod player;
 pub mod playlist;
 pub mod podcast;
 pub mod songtag;

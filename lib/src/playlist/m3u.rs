@@ -52,13 +52,13 @@ mod tests {
 
     #[test]
     fn should_parse() {
-        let playlist = r#"/some/absolute/unix/path.mp3
+        let playlist = r"/some/absolute/unix/path.mp3
 # this is a test comment, below is a empty line to be ignored
 
 relative.mp3
-https://somewhere.url/path"#;
+https://somewhere.url/path";
 
-        let results = decode(&playlist);
+        let results = decode(playlist);
         assert_eq!(results.len(), 3);
         assert_eq!(
             results[0].url,

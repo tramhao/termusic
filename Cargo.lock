@@ -4254,6 +4254,7 @@ dependencies = [
  "percent-encoding",
  "pinyin",
  "pretty_assertions",
+ "prost",
  "quick-xml 0.36.1",
  "rand",
  "regex",
@@ -4271,6 +4272,8 @@ dependencies = [
  "tokio",
  "tokio-util",
  "toml",
+ "tonic",
+ "tonic-build",
  "tuirealm",
  "unicode-segmentation",
  "unicode-width",
@@ -4299,7 +4302,6 @@ dependencies = [
  "parking_lot",
  "pathdiff",
  "pretty_assertions",
- "prost",
  "rand",
  "reqwest",
  "serde",
@@ -4309,8 +4311,6 @@ dependencies = [
  "symphonia",
  "termusic-lib",
  "tokio",
- "tonic",
- "tonic-build",
  "windows 0.58.0",
 ]
 

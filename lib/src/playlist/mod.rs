@@ -217,7 +217,7 @@ Title1=mytitle
     fn should_parse_m3u() {
         let playlist = "/some/absolute/unix/path.mp3";
 
-        let results = decode(&playlist).unwrap();
+        let results = decode(playlist).unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(
             results[0],

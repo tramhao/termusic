@@ -1,8 +1,8 @@
 use anyhow::Result;
 use parking_lot::Mutex;
 use std::sync::Arc;
-use termusicplayback::player::music_player_server::MusicPlayer;
-use termusicplayback::player::{
+use termusiclib::player::music_player_server::MusicPlayer;
+use termusiclib::player::{
     CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
     PlaySelectedRequest, PlayerTime, ReloadConfigRequest, ReloadPlaylistRequest,
     SeekBackwardRequest, SeekForwardRequest, SkipNextRequest, SkipNextResponse,
