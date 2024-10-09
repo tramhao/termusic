@@ -4193,6 +4193,7 @@ dependencies = [
  "dirs",
  "escaper",
  "flexi_logger",
+ "futures",
  "id3",
  "image",
  "include_dir",

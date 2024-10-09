@@ -55,6 +55,7 @@ percent-encoding.workspace = true #   = "2.2"
 tonic.workspace = true
 tokio.workspace = true
 tokio-stream.workspace = true
+futures.workspace = true
 reqwest.workspace = true
 parking_lot.workspace = true
 

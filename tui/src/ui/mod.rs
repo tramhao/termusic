@@ -26,17 +26,21 @@ pub mod model;
 mod playback;
 pub mod utils;
 
+use anyhow::Context;
 use anyhow::Result;
+use futures::future::FutureExt;
 use model::{Model, TermusicLayout};
 use playback::Playback;
 use std::time::Duration;
 use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::PlayerProgress;
+use termusiclib::player::StreamUpdates;
 use termusiclib::player::UpdateEvents;
 pub use termusiclib::types::*;
 use termusicplayback::{PlayerCmd, Status};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
+use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
@@ -98,20 +102,6 @@ impl UI {
     async fn run_inner(&mut self) -> Result<()> {
         let mut stream_updates = self.playback.subscribe_to_stream_updates().await?;
 
-        // placeholder showcase that it is working
-        tokio::spawn(async move {
-            while let Some(ev) = stream_updates.next().await {
-                let ev = ev.map(UpdateEvents::try_from);
-
-                debug!("Stream Event: {ev:?}");
-
-                // just exit on first error, but still print it first
-                if ev.is_err() {
-                    break;
-                }
-            }
-        });
-
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
@@ -121,6 +111,7 @@ impl UI {
             if self.model.layout != TermusicLayout::Podcast {
                 self.model.lyric_update();
             }
+            self.handle_stream_events(&mut stream_updates)?;
             if progress_interval == 0 {
                 self.model.run();
             }
@@ -324,6 +315,68 @@ impl UI {
                 _ => {}
             }
         }
+        Ok(())
+    }
+
+    /// Handle Stream updates from the provided stream.
+    ///
+    /// In case of lag, sends a [`PlayerCmd::GetProgress`] to `self.model`.
+    ///
+    /// - Does not wait until the next event (non-blocking).
+    /// - Processess *all* available events.
+    fn handle_stream_events(
+        &mut self,
+        stream: &mut (impl Stream<Item = Result<StreamUpdates, anyhow::Error>> + std::marker::Unpin),
+    ) -> Result<()> {
+        while let Some(ev) = stream.next().now_or_never().flatten() {
+            let ev = ev
+                .map(UpdateEvents::try_from)
+                .context("Conversion from StreamUpdates to UpdateEvents failed!")?;
+
+            debug!("Stream Event: {ev:?}");
+
+            // just exit on first error, but still print it first
+            let Ok(ev) = ev else {
+                break;
+            };
+
+            match ev {
+                UpdateEvents::MissedEvents { amount } => {
+                    warn!("Stream Lagged, missed events: {amount}");
+                    // we know that we missed events, force to get full information from GetProgress endpoint
+                    self.model.command(&PlayerCmd::GetProgress);
+                }
+                UpdateEvents::VolumeChanged { volume } => {
+                    self.model.config_server.write().settings.player.volume = volume;
+                }
+                UpdateEvents::SpeedChanged { speed } => {
+                    self.model.config_server.write().settings.player.speed = speed;
+                }
+                UpdateEvents::PlayStateChanged { playing } => {
+                    self.model.playlist.set_status(Status::from_u32(playing));
+                    self.model.progress_update_title();
+                }
+                UpdateEvents::TrackChanged(track_changed_info) => {
+                    if let Some(progress) = track_changed_info.progress {
+                        self.model.progress_update(
+                            progress.position,
+                            progress.total_duration.unwrap_or_default(),
+                        );
+                    }
+
+                    if track_changed_info.current_track_updated {
+                        self.handle_current_track_index(
+                            track_changed_info.current_track_index as usize,
+                        );
+                    }
+
+                    if let Some(title) = track_changed_info.title {
+                        self.model.lyric_update_for_radio(title);
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 }
