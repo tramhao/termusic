@@ -133,6 +133,11 @@ message UpdateTrackChanged {
   // all values below should be moved into their own "Track" message at some point
   // instead of having the TUI fetch everything from the file itself
   // radio title, track title
-  optional string title = 3;
+  // the following is (linux protobuf) 3.15, ubuntu 2204 still has (linux protobuf) 3.12
+  // optional string title = 3;
+  // the following "oneof" is wire equivalent to the above "optional"
+  oneof optional_title {
+    string title = 3;
+  }
   PlayerTime progress = 4;
 }

@@ -102,7 +102,9 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
             UpdateEvents::TrackChanged(info) => StreamTypes::TrackChanged(UpdateTrackChanged {
                 current_track_index: info.current_track_index,
                 current_track_updated: info.current_track_updated,
-                title: info.title,
+                optional_title: info
+                    .title
+                    .map(protobuf::update_track_changed::OptionalTitle::Title),
                 progress: info.progress.map(Into::into),
             }),
         };
@@ -134,7 +136,10 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
             stream_updates::Type::TrackChanged(ev) => Self::TrackChanged(TrackChangedInfo {
                 current_track_index: ev.current_track_index,
                 current_track_updated: ev.current_track_updated,
-                title: ev.title,
+                title: ev.optional_title.map(|v| {
+                    let protobuf::update_track_changed::OptionalTitle::Title(v) = v;
+                    v
+                }),
                 progress: ev.progress.map(Into::into),
             }),
         };
