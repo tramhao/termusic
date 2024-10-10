@@ -4193,6 +4193,7 @@ dependencies = [
  "dirs",
  "escaper",
  "flexi_logger",
+ "futures",
  "id3",
  "image",
  "include_dir",
@@ -4213,6 +4214,7 @@ dependencies = [
  "termusic-playback",
  "textwrap 0.16.1",
  "tokio",
+ "tokio-stream",
  "tonic",
  "tui-realm-stdlib",
  "tui-realm-treeview",
@@ -4330,6 +4332,7 @@ dependencies = [
  "termusic-lib",
  "termusic-playback",
  "tokio",
+ "tokio-stream",
  "tonic",
 ]
 
@@ -4489,6 +4492,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

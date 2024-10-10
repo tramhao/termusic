@@ -95,6 +95,7 @@ tempfile = "3.10"
 textwrap = "0.16"
 tokio = { version = "1.37", features = ["sync", "macros", "rt","rt-multi-thread"] }
 tokio-util = "0.7"
+tokio-stream = { version = "0.1", features = ["sync"] }
 toml = "0.8"
 # only update prost and tonic major versions together
 prost = "0.13"
