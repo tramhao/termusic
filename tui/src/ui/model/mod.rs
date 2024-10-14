@@ -356,6 +356,8 @@ impl Model {
         }));
         let _drop = self.terminal.enable_raw_mode();
         let _drop = self.terminal.enter_alternate_screen();
+        // required as "enter_alternate_screen" always enabled mouse-capture
+        let _drop = self.terminal.disable_mouse_capture();
         let _drop = self.terminal.clear_screen();
     }
 
