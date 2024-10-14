@@ -121,7 +121,7 @@ impl UI {
                 progress_interval = 0;
             }
 
-            match self.model.app.tick(PollStrategy::Once) {
+            match self.model.app.tick(PollStrategy::UpTo(20)) {
                 Err(err) => {
                     self.model
                         .mount_error_popup((anyhow::anyhow!(err)).context("tick poll error"));
