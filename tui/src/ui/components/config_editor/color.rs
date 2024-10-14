@@ -32,7 +32,7 @@ use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{
     Alignment, BorderType, Borders, Color, InputType, Style, TableBuilder, TextModifiers, TextSpan,
 };
-use tuirealm::tui::style::Modifier;
+use tuirealm::ratatui::style::Modifier;
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 const COLOR_LIST: [ColorTermusic; 19] = [

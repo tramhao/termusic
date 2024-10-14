@@ -39,14 +39,17 @@ use termusiclib::utils::get_parent_folder;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
-use tuirealm::tui::layout::{Constraint, Direction, Layout};
-use tuirealm::tui::widgets::Clear;
+use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
+use tuirealm::ratatui::widgets::Clear;
 use tuirealm::EventListenerCfg;
 use tuirealm::{Frame, State, StateValue};
 
 impl Model {
     #[allow(clippy::too_many_lines)]
-    pub fn init_app(tree: &Tree, config: &SharedTuiSettings) -> Application<Id, Msg, NoUserEvent> {
+    pub fn init_app(
+        tree: &Tree<String>,
+        config: &SharedTuiSettings,
+    ) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
@@ -54,7 +57,7 @@ impl Model {
 
         let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
             EventListenerCfg::default()
-                .default_input_listener(Duration::from_millis(20))
+                .crossterm_input_listener(Duration::from_millis(20), 20)
                 .poll_timeout(Duration::from_millis(10))
                 .tick_interval(Duration::from_secs(1)),
         );
@@ -204,7 +207,7 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(f.size());
+                    .split(f.area());
                 let chunks_center = Layout::default()
                     .direction(Direction::Horizontal)
                     .margin(0)
@@ -241,7 +244,7 @@ impl Model {
                     .direction(Direction::Vertical)
                     .margin(0)
                     .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                    .split(f.size());
+                    .split(f.area());
                 let chunks_left = Layout::default()
                     .direction(Direction::Horizontal)
                     .margin(0)
@@ -296,7 +299,7 @@ impl Model {
                     .direction(Direction::Vertical)
                     .margin(0)
                     .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                    .split(f.size());
+                    .split(f.area());
                 let chunks_left = Layout::default()
                     .direction(Direction::Horizontal)
                     .margin(0)
@@ -338,7 +341,7 @@ impl Model {
                 .direction(Direction::Vertical)
                 .margin(0)
                 .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                .split(f.size());
+                .split(f.area());
             let chunks_footer = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
@@ -359,37 +362,37 @@ impl Model {
                 .direction(Direction::Vertical)
                 .margin(0)
                 .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                .split(f.size());
+                .split(f.area());
             app.view(&Id::Label, f, chunks_main[1]);
         }
 
         // -- popups
         if app.mounted(&Id::QuitPopup) {
-            let popup = draw_area_in_absolute(f.size(), 30, 3);
+            let popup = draw_area_in_absolute(f.area(), 30, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::QuitPopup, f, popup);
         } else if app.mounted(&Id::HelpPopup) {
-            let popup = draw_area_in_relative(f.size(), 88, 91);
+            let popup = draw_area_in_relative(f.area(), 88, 91);
             f.render_widget(Clear, popup);
             app.view(&Id::HelpPopup, f, popup);
         } else if app.mounted(&Id::DeleteConfirmRadioPopup) {
-            let popup = draw_area_in_absolute(f.size(), 30, 3);
+            let popup = draw_area_in_absolute(f.area(), 30, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::DeleteConfirmRadioPopup, f, popup);
         } else if app.mounted(&Id::DeleteConfirmInputPopup) {
-            let popup = draw_area_in_absolute(f.size(), 30, 3);
+            let popup = draw_area_in_absolute(f.area(), 30, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::DeleteConfirmInputPopup, f, popup);
         } else if app.mounted(&Id::FeedDeleteConfirmRadioPopup) {
-            let popup = draw_area_in_absolute(f.size(), 60, 3);
+            let popup = draw_area_in_absolute(f.area(), 60, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::FeedDeleteConfirmRadioPopup, f, popup);
         } else if app.mounted(&Id::FeedDeleteConfirmInputPopup) {
-            let popup = draw_area_in_absolute(f.size(), 60, 3);
+            let popup = draw_area_in_absolute(f.area(), 60, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::FeedDeleteConfirmInputPopup, f, popup);
         } else if app.mounted(&Id::GeneralSearchInput) {
-            let popup = draw_area_in_relative(f.size(), 65, 68);
+            let popup = draw_area_in_relative(f.area(), 65, 68);
             f.render_widget(Clear, popup);
             let popup_chunks = Layout::default()
                 .direction(Direction::Vertical)
@@ -404,19 +407,19 @@ impl Model {
             app.view(&Id::GeneralSearchInput, f, popup_chunks[0]);
             app.view(&Id::GeneralSearchTable, f, popup_chunks[1]);
         } else if app.mounted(&Id::YoutubeSearchInputPopup) {
-            let popup = draw_area_in_absolute(f.size(), 50, 3);
+            let popup = draw_area_in_absolute(f.area(), 50, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::YoutubeSearchInputPopup, f, popup);
         } else if app.mounted(&Id::YoutubeSearchTablePopup) {
-            let popup = draw_area_in_relative(f.size(), 65, 68);
+            let popup = draw_area_in_relative(f.area(), 65, 68);
             f.render_widget(Clear, popup);
             app.view(&Id::YoutubeSearchTablePopup, f, popup);
         } else if app.mounted(&Id::PodcastSearchTablePopup) {
-            let popup = draw_area_in_relative(f.size(), 65, 68);
+            let popup = draw_area_in_relative(f.area(), 65, 68);
             f.render_widget(Clear, popup);
             app.view(&Id::PodcastSearchTablePopup, f, popup);
         } else if app.mounted(&Id::SavePlaylistPopup) {
-            let popup = draw_area_in_absolute(f.size(), 76, 6);
+            let popup = draw_area_in_absolute(f.area(), 76, 6);
             f.render_widget(Clear, popup);
             let popup_chunks = Layout::default()
                 .direction(Direction::Vertical)
@@ -425,21 +428,21 @@ impl Model {
             app.view(&Id::SavePlaylistPopup, f, popup_chunks[0]);
             app.view(&Id::SavePlaylistLabel, f, popup_chunks[1]);
         } else if app.mounted(&Id::SavePlaylistConfirm) {
-            let popup = draw_area_in_absolute(f.size(), 40, 3);
+            let popup = draw_area_in_absolute(f.area(), 40, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::SavePlaylistConfirm, f, popup);
         } else if app.mounted(&Id::PodcastAddPopup) {
-            let popup = draw_area_in_absolute(f.size(), 65, 3);
+            let popup = draw_area_in_absolute(f.area(), 65, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::PodcastAddPopup, f, popup);
         }
         if app.mounted(&Id::MessagePopup) {
-            let popup = draw_area_top_right_absolute(f.size(), 25, 4);
+            let popup = draw_area_top_right_absolute(f.area(), 25, 4);
             f.render_widget(Clear, popup);
             app.view(&Id::MessagePopup, f, popup);
         }
         if app.mounted(&Id::ErrorPopup) {
-            let popup = draw_area_in_absolute(f.size(), 50, 4);
+            let popup = draw_area_in_absolute(f.area(), 50, 4);
             f.render_widget(Clear, popup);
             app.view(&Id::ErrorPopup, f, popup);
         }

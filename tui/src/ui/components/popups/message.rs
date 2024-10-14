@@ -25,7 +25,7 @@ impl MessagePopup {
                 // .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
-                .title(title, Alignment::Center)
+                .title(title.as_ref(), Alignment::Center)
                 .text(vec![TextSpan::from(msg.as_ref().to_string())].as_slice()),
         }
     }

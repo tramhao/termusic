@@ -641,7 +641,7 @@ impl Model {
                         .add_col(TextSpan::new(duration_string.as_str()))
                         .add_col(
                             TextSpan::new(record.artist)
-                                .fg(tuirealm::tui::style::Color::LightYellow),
+                                .fg(tuirealm::ratatui::style::Color::LightYellow),
                         )
                         .add_col(TextSpan::new(record.title).bold())
                         .add_col(TextSpan::new(record.file));

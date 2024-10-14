@@ -1,4 +1,4 @@
-use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
+use tuirealm::ratatui::layout::{Constraint, Direction, Layout, Rect};
 
 ///
 /// Get block

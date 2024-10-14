@@ -190,7 +190,7 @@ impl Model {
             }
 
             table
-                .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+                .add_col(TextSpan::new(artist).fg(tuirealm::ratatui::style::Color::LightYellow))
                 .add_col(TextSpan::new(title).bold())
                 .add_col(TextSpan::new(album))
                 .add_col(TextSpan::new(api))

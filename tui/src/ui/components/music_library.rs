@@ -15,13 +15,17 @@ use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, Sta
 
 #[derive(MockComponent)]
 pub struct MusicLibrary {
-    component: TreeView,
+    component: TreeView<String>,
     config: SharedTuiSettings,
     pub init: bool,
 }
 
 impl MusicLibrary {
-    pub fn new(tree: &Tree, initial_node: Option<String>, config: SharedTuiSettings) -> Self {
+    pub fn new(
+        tree: &Tree<String>,
+        initial_node: Option<String>,
+        config: SharedTuiSettings,
+    ) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,
@@ -246,12 +250,12 @@ impl Model {
             .map(std::path::Path::to_path_buf)
     }
 
-    pub fn library_dir_tree(p: &Path, depth: ScanDepth) -> Node {
+    pub fn library_dir_tree(p: &Path, depth: ScanDepth) -> Node<String> {
         let name: String = match p.file_name() {
             None => "/".to_string(),
             Some(n) => n.to_string_lossy().into_owned(),
         };
-        let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
+        let mut node: Node<String> = Node::new(p.to_string_lossy().into_owned(), name);
 
         let depth = match depth {
             ScanDepth::Limited(v) => v,
