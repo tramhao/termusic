@@ -342,6 +342,22 @@ mod key_serde_code {
                 Key::KeypadBegin => KeySerde::KeypadBegin,
                 Key::Media(v) => KeySerde::Media(v.into()),
                 Key::Esc => KeySerde::Esc,
+
+                // the following are new events with tuirealm 2.0, but only available in backend "termion", which we dont use
+                Key::ShiftLeft
+                | Key::AltLeft
+                | Key::CtrlLeft
+                | Key::ShiftRight
+                | Key::AltRight
+                | Key::CtrlRight
+                | Key::ShiftUp
+                | Key::AltUp
+                | Key::CtrlUp
+                | Key::ShiftDown
+                | Key::AltDown
+                | Key::CtrlDown
+                | Key::CtrlHome
+                | Key::CtrlEnd => unimplemented!(),
             }
         }
     }
@@ -512,6 +528,22 @@ impl BindingForEvent {
             Key::Menu => "Menu".to_string(),
             Key::KeypadBegin => "KeyPadBegin".to_string(),
             Key::Media(media_key) => format!("Media {media_key:?}"),
+
+            // the following are new events with tuirealm 2.0, but only available in backend "termion", which we dont use
+            Key::ShiftLeft
+            | Key::AltLeft
+            | Key::CtrlLeft
+            | Key::ShiftRight
+            | Key::AltRight
+            | Key::CtrlRight
+            | Key::ShiftUp
+            | Key::AltUp
+            | Key::CtrlUp
+            | Key::ShiftDown
+            | Key::AltDown
+            | Key::CtrlDown
+            | Key::CtrlHome
+            | Key::CtrlEnd => unimplemented!(),
         }
     }
 

@@ -1725,6 +1725,22 @@ impl Display for KeyWrap {
 
             // i literally have no clue what key this is supposed to be
             tuievents::Key::KeypadBegin => unimplemented!(),
+
+            // the following are new events with tuirealm 2.0, but only available in backend "termion", which we dont use
+            tuievents::Key::ShiftLeft
+            | tuievents::Key::AltLeft
+            | tuievents::Key::CtrlLeft
+            | tuievents::Key::ShiftRight
+            | tuievents::Key::AltRight
+            | tuievents::Key::CtrlRight
+            | tuievents::Key::ShiftUp
+            | tuievents::Key::AltUp
+            | tuievents::Key::CtrlUp
+            | tuievents::Key::ShiftDown
+            | tuievents::Key::AltDown
+            | tuievents::Key::CtrlDown
+            | tuievents::Key::CtrlHome
+            | tuievents::Key::CtrlEnd => unimplemented!(),
         }
     }
 }

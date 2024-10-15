@@ -101,9 +101,9 @@ toml = "0.8"
 prost = "0.13"
 tonic = "0.12"
 tonic-build = "0.12"
-tuirealm = { version = "~1.8", features = ["serialize"] }
-tui-realm-stdlib = "~1.2"
-tui-realm-treeview = "~1.1"
+tuirealm = { version = "~2.0.3", features = ["serialize"] }
+tui-realm-stdlib = "~2.0"
+tui-realm-treeview = "~2.0"
 unicode-segmentation = "1.10"
 unicode-width = "^0.1.8"
 urlencoding = "2.1"

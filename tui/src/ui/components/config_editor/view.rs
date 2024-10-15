@@ -70,8 +70,8 @@ use std::path::PathBuf;
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
-use tuirealm::tui::layout::{Constraint, Direction, Layout};
-use tuirealm::tui::widgets::Clear;
+use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
+use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 
 impl Model {
@@ -91,7 +91,7 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(f.size());
+                    .split(f.area());
 
                 let chunks_middle = Layout::default()
                     .direction(Direction::Horizontal)
@@ -234,12 +234,12 @@ impl Model {
     fn view_config_editor_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, NoUserEvent>) {
         // -- popups
         if app.mounted(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup)) {
-            let popup = draw_area_in_absolute(f.size(), 50, 3);
+            let popup = draw_area_in_absolute(f.area(), 50, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup), f, popup);
         }
         if app.mounted(&Id::ErrorPopup) {
-            let popup = draw_area_in_absolute(f.size(), 50, 4);
+            let popup = draw_area_in_absolute(f.area(), 50, 4);
             f.render_widget(Clear, popup);
             app.view(&Id::ErrorPopup, f, popup);
         }
@@ -414,7 +414,7 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(f.size());
+                    .split(f.area());
 
                 let chunks_middle = Layout::default()
                     .direction(Direction::Horizontal)
@@ -964,7 +964,7 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(f.size());
+                    .split(f.area());
 
                 let chunks_middle = Layout::default()
                     .direction(Direction::Horizontal)
@@ -1465,7 +1465,7 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(f.size());
+                    .split(f.area());
 
                 let chunks_middle = Layout::default()
                     .direction(Direction::Horizontal)

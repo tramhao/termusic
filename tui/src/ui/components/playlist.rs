@@ -430,7 +430,7 @@ impl Model {
 
             table
                 .add_col(TextSpan::new(duration_string.as_str()))
-                .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+                .add_col(TextSpan::new(artist).fg(tuirealm::ratatui::style::Color::LightYellow))
                 .add_col(TextSpan::new(title).bold())
                 .add_col(TextSpan::new(album));
         }
@@ -546,7 +546,7 @@ impl Model {
 
                 table
                     .add_col(TextSpan::new(duration_string.as_str()))
-                    .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+                    .add_col(TextSpan::new(artist).fg(tuirealm::ratatui::style::Color::LightYellow))
                     .add_col(TextSpan::new(title).bold())
                     .add_col(TextSpan::new(file_name));
                 // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));

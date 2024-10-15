@@ -53,7 +53,7 @@ use termusicplayback::{PlayerCmd, Playlist};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
-use tuirealm::terminal::TerminalBridge;
+use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TermusicLayout {
@@ -76,7 +76,7 @@ pub struct MusicLibraryData {
     /// Current Path that the library-tree is in
     pub tree_path: PathBuf,
     /// Tree of the Music Library widget
-    pub tree: Tree,
+    pub tree: Tree<String>,
     /// The Node that a yank & paste was started on
     pub yanked_node_id: Option<String>,
 }
@@ -139,7 +139,7 @@ pub struct Model {
     last_redraw: Instant,
     pub app: Application<Id, Msg, NoUserEvent>,
     /// Used to draw to terminal
-    pub terminal: TerminalBridge,
+    pub terminal: TerminalBridge<CrosstermTerminalAdapter>,
     pub tx_to_main: Sender<Msg>,
     pub rx_to_main: Receiver<Msg>,
     /// Sender for Player Commands
@@ -213,6 +213,7 @@ impl Model {
             tui: config_tui,
         } = config;
         let path = Self::get_full_path_from_config(&config_server.read());
+        // TODO: refactor music library tree to be Paths instead?
         let tree = Tree::new(Self::library_dir_tree(
             &path,
             config_server.read().get_library_scan_depth(),
@@ -223,7 +224,7 @@ impl Model {
         let viuer_supported = get_viuer_support();
         let db = DataBase::new(&config_server.read()).expect("Open Library Database");
         let db_criteria = SearchCriteria::Artist;
-        let terminal = TerminalBridge::new().expect("Could not initialize terminal");
+        let terminal = TerminalBridge::new_crossterm().expect("Could not initialize terminal");
 
         #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
         let ueberzug_instance = UeInstance::default();
@@ -347,13 +348,16 @@ impl Model {
     pub fn init_terminal(&mut self) {
         let original_hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |panic| {
-            let mut terminal_clone = TerminalBridge::new().expect("Could not initialize terminal");
+            let mut terminal_clone =
+                TerminalBridge::new_crossterm().expect("Could not initialize terminal");
             let _drop = terminal_clone.disable_raw_mode();
             let _drop = terminal_clone.leave_alternate_screen();
             original_hook(panic);
         }));
         let _drop = self.terminal.enable_raw_mode();
         let _drop = self.terminal.enter_alternate_screen();
+        // required as "enter_alternate_screen" always enabled mouse-capture
+        let _drop = self.terminal.disable_mouse_capture();
         let _drop = self.terminal.clear_screen();
     }
 

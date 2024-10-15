@@ -30,7 +30,7 @@ use tuirealm::event::NoUserEvent;
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, PropPayload, PropValue, TextModifiers, TextSpan,
 };
-use tuirealm::tui::layout::Rect;
+use tuirealm::ratatui::layout::Rect;
 use tuirealm::{Component, Event, Frame, MockComponent, State};
 
 #[derive(MockComponent)]

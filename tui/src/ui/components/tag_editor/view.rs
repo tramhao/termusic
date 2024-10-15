@@ -33,8 +33,8 @@ use std::path::Path;
 use termusiclib::track::Track;
 use termusiclib::types::{Id, IdTagEditor};
 use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
-use tuirealm::tui::layout::{Constraint, Direction, Layout};
-use tuirealm::tui::widgets::Clear;
+use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
+use tuirealm::ratatui::widgets::Clear;
 use tuirealm::State;
 
 impl Model {
@@ -49,7 +49,7 @@ impl Model {
                         _ => 8,
                     };
                 if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
-                    f.render_widget(Clear, f.size());
+                    f.render_widget(Clear, f.area());
                     let chunks_main = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
@@ -64,7 +64,7 @@ impl Model {
                             ]
                             .as_ref(),
                         )
-                        .split(f.size());
+                        .split(f.area());
 
                     let chunks_row1 = Layout::default()
                         .direction(Direction::Horizontal)
@@ -158,12 +158,12 @@ impl Model {
                     );
 
                     if self.app.mounted(&Id::MessagePopup) {
-                        let popup = draw_area_top_right_absolute(f.size(), 25, 4);
+                        let popup = draw_area_top_right_absolute(f.area(), 25, 4);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::MessagePopup, f, popup);
                     }
                     if self.app.mounted(&Id::ErrorPopup) {
-                        let popup = draw_area_in_absolute(f.size(), 50, 4);
+                        let popup = draw_area_in_absolute(f.area(), 50, 4);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::ErrorPopup, f, popup);
                     }
