@@ -57,11 +57,12 @@ Default backend: `rusty`
 
 You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.77.0.
 
-### git
+#### git
 
 `git` will be required to build the package.
 
-=======
+#### Backends
+
 | Backend   | Requirements                                                                                                                                                                                                                                                                       |
 |-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Symphonia | You will need [ALSA](https://alsa-project.org) installed to support decoding with symphonia.<br />Note that the ALSA development files are required. These are provided as part of the `libasound2-dev` package on Debian and Ubuntu distributions and `alsa-lib-devel` on Fedora.<br/>In addition `soundtouch` and `clang`(build only) are required. |
