@@ -71,21 +71,24 @@ You will need to build with the stable rust toolchain. Minimal Supported Rust Ve
 
 #### Protobuf
 
-This is required to build and run termusic. For ubuntu: `apt-get protobuf-compiler`, For arch: `paru -S protobuf`.
+This is required to build and run termusic. For ubuntu: `protobuf-compiler`, For arch: `protobuf`.
 
 #### Dbus
 
-As right now use_dbus is a configuration option, it's required to compile. For ubuntu: `apt-get libdbus-1-dev`, For arch: `paru -S dbus`.
+DBus is required for MPRIS control. For ubuntu: `libdbus-1-dev`, For arch: `dbus`.
 
 #### Yt-dlp support
 
-You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download MP3s from Youtube.
+You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download from various providers.
 
 #### Album cover support
 
-For kitty, album cover support is default. For other terminals, need ueberzug/ueberzugpp installed and `cover` feature flag compiled.
+To display covers in the terminal itself, feature `cover` can be enabled.
+To only enable specific protocols for cover support, see [Cargo.toml#features](./Cargo.toml).
 
-### Packages
+Feature `cover-ueberzug` will require some ueberzug implementation to be present at runtime.
+
+### Pre-Compiled Packages
 
 Do note that these will be compiled with the **symphonia** backend.
 
