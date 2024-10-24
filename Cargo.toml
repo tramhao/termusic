@@ -63,7 +63,7 @@ pinyin = "0.10"
 pretty_assertions = "1.4"
 quick-xml = "0.36"
 rand = "0.8"
-regex = "^1.5.5"
+regex = "^1.11.0"
 reqwest = { version = "0.12", features = [
     "cookies",
     "gzip",
