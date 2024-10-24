@@ -1,4 +1,5 @@
 # Terminal Music and Podcast Player written in Rust
+
 [![Build status](https://github.com/tramhao/termusic/actions/workflows/build.yml/badge.svg)](https://github.com/tramhao/termusic/actions)
 [![crates.io](https://img.shields.io/crates/v/termusic.svg)](https://crates.io/crates/termusic)
 [![dependency status](https://deps.rs/repo/github/tramhao/termusic/status.svg)](https://deps.rs/repo/github/tramhao/termusic)
@@ -54,6 +55,7 @@ Default backend: `rusty`
 ### Requirements
 
 #### MSRV
+
 You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.77.0.
 
 ### git
@@ -102,6 +104,7 @@ NetBSD users can install `termusic` from the official repositories.
 ```bash
 pkgin install termusic
 ```
+
 #### Nix/NixOS
 
 Either in the user's environment:
@@ -158,6 +161,7 @@ You can copy it anywhere in your `$PATH`. The configuration file for the TUI is 
 However, as this is a minimalistic program, you don't need to edit the configuration file and almost everything can be set from the app.
 
 ## TODO
+
 - [ ] Better interface to adjust timestamp of lyric.
 - [ ] Rating and sync support.
 - [x] Multiple root and easy switch.
@@ -172,15 +176,18 @@ If you have any question or concern, or you want to suggest a new feature, or yo
 Please follow [our contributing guidelines](CONTRIBUTING.md)
 
 ## Contributors
+
 hasezoey
 
 ## Thanks
+
 - [tui-realm](https://github.com/veeso/tui-realm) 
 - [termscp](https://github.com/veeso/termscp)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
 - [alacritty-themes](https://github.com/rajasegar/alacritty-themes)
 - [shellcaster](https://github.com/jeff-hughes/shellcaster)
 - [stream-download ](https://github.com/aschey/stream-download-rs)
+
 ## License
 
 MIT License for main part of code.
