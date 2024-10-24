@@ -213,10 +213,9 @@ impl Model {
             }
         }
 
-        let mut lines_textspan: Vec<_> = short_string_vec
+        let lines_textspan = short_string_vec
             .into_iter()
-            .map(|l| PropValue::TextSpan(TextSpan::from(l)))
-            .collect();
+            .map(|l| PropValue::TextSpan(TextSpan::from(l)));
 
         let mut final_vec: Vec<_> = Vec::new();
         final_vec.push(PropValue::TextSpan(TextSpan::from(po_title).bold()));
@@ -235,7 +234,7 @@ impl Model {
 
         final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
         final_vec.push(PropValue::TextSpan(TextSpan::from("Description:").bold()));
-        final_vec.append(&mut lines_textspan);
+        final_vec.extend(lines_textspan);
 
         self.app
             .attr(
