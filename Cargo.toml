@@ -105,7 +105,7 @@ tuirealm = { version = "~2.0.3", features = ["serialize"] }
 tui-realm-stdlib = "~2.0"
 tui-realm-treeview = "~2.0"
 unicode-segmentation = "1.10"
-unicode-width = "^0.1.8"
+unicode-width = "^0.2.0"
 urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.4"
