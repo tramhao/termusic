@@ -104,7 +104,7 @@ tonic-build = "0.12.3"
 tuirealm = { version = "~2.0.3", features = ["serialize"] }
 tui-realm-stdlib = "~2.0"
 tui-realm-treeview = "~2.0"
-unicode-segmentation = "1.10"
+unicode-segmentation = "1.12"
 unicode-width = "^0.2.0"
 urlencoding = "2.1"
 walkdir = "2.5"
