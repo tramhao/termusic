@@ -4129,9 +4129,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "stream-download"
-version = "0.7.2"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc043c44b31b4fd805b9f495f1848dd451a2e14a6fed8889847b7b74cfc6df08"
+checksum = "3477aa8f472c758e73aff6621f24bf5eb4caca3d12b64057e0d72827427e8785"
 dependencies = [
  "bytes",
  "educe",
@@ -4142,6 +4142,7 @@ dependencies = [
  "reqwest",
  "tap",
  "tempfile",
+ "thiserror",
  "tokio",
  "tokio-util",
  "tracing",
