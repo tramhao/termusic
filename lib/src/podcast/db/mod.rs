@@ -6,12 +6,10 @@ use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use episode_db::{EpisodeDB, EpisodeDBInsertable};
 use file_db::{FileDB, FileDBInsertable};
-use lazy_static::lazy_static;
-use regex::Regex;
 use rusqlite::{params, Connection};
 use semver::Version;
 
-use super::{Episode, EpisodeNoId, Podcast, PodcastNoId};
+use super::{Episode, EpisodeNoId, Podcast, PodcastNoId, RE_ARTICLES};
 use crate::track::Track;
 use podcast_db::{PodcastDB, PodcastDBInsertable};
 
@@ -19,12 +17,6 @@ mod episode_db;
 mod file_db;
 mod migration;
 mod podcast_db;
-
-lazy_static! {
-    /// Regex for removing "A", "An", and "The" from the beginning of
-    /// podcast titles
-    static ref RE_ARTICLES: Regex = Regex::new(r"^(a|an|the) ").expect("Regex error.");
-}
 
 /// The id type used in the podcast database
 pub type PodcastDBId = i64;
