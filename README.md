@@ -148,7 +148,9 @@ make install
 ```
 
 By default, termusic can display album covers in Kitty or iTerm2 (mac, not tested).
-If you need album covers displayed on other terminals, please install [ueberzug](https://github.com/ueber-devel/ueberzug) or [ueberzugpp](https://github.com/jstkdng/ueberzugpp), then:
+If you need album covers displayed on other terminals, you can enable the `sixel` protocol or use a ueberzug implementation(x11/xwayland only).
+
+To build with all backends and all cover protocols:
 
 ```bash
 make full
