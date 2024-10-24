@@ -19,15 +19,14 @@ Listen to music and podcasts freely as both in freedom and free of charge!
 </table>
 
 **Freedom**: As time goes by, online service providers control pretty much everything we listen to.
-Complicated copyright issues make things worse. If my favorite song cannot be found on a website, 
-I'll probably just not listen to them for years.
+Complicated copyright issues make things worse.
+If my favorite song cannot be found on a website, I'll probably just not listen to them for years.
 
-**Free of charge**: You can download from YouTube, NetEase, Migu and KuGou for free. No need to 
-register for monthly paid memberships.
+**Free of charge**: You can download from YouTube, NetEase, Migu and KuGou for free.
+No need to register for monthly paid memberships.
 
-As a contributor of [GOMU](https://github.com/issadarkthing/gomu), I met serious problems during 
-development. The main problem is data race condition. So I rewrote the player in rust, and hope to
-solve the problem.
+As a contributor of [GOMU](https://github.com/issadarkthing/gomu), I met serious problems during development. The main problem is data race condition.
+So I rewrote the player in rust, and hope to solve the problem.
 
 ## Supported Formats
 
@@ -181,12 +180,12 @@ hasezoey
 
 ## Thanks
 
-- [tui-realm](https://github.com/veeso/tui-realm) 
+- [tui-realm](https://github.com/veeso/tui-realm)
 - [termscp](https://github.com/veeso/termscp)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
 - [alacritty-themes](https://github.com/rajasegar/alacritty-themes)
 - [shellcaster](https://github.com/jeff-hughes/shellcaster)
-- [stream-download ](https://github.com/aschey/stream-download-rs)
+- [stream-download](https://github.com/aschey/stream-download-rs)
 
 ## License
 
