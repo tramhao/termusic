@@ -42,8 +42,9 @@ glib = { version = "0.20" }
 gstreamer = { version = "0.23" }
 hex = "0.4"
 id3 = "1.13"
-# image cannot be upgraded to 0.25 because of viuer, see https://github.com/atanunq/viuer/issues/56
-image = "0.24"
+# image must be upgraded together with viuer
+image = "0.25"
+viuer = "0.8"
 include_dir = "0.7"
 lazy_static = "1.4"
 libaes = "0.7"
@@ -107,7 +108,6 @@ tui-realm-treeview = "~2.0"
 unicode-segmentation = "1.10"
 unicode-width = "^0.1.8"
 urlencoding = "2.1"
-viuer = "0.7"
 walkdir = "2.5"
 wildmatch = "2.3"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
