@@ -44,7 +44,7 @@ hex = "0.4"
 id3 = "1.13"
 # image must be upgraded together with viuer
 image = "0.25"
-viuer = "0.8"
+viuer = "0.9"
 include_dir = "0.7"
 lazy_static = "1.4"
 libaes = "0.7"

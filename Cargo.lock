@@ -5186,9 +5186,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "viuer"
-version = "0.8.1"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "361c1fcf4a5a72e9ddebcf2caf14a74a19d667e52528a849084259932653ce21"
+checksum = "d3f25eeadaacb5253b24f4b576fecad471b07107e552e2a631a6d7ab5e1e49e0"
 dependencies = [
  "ansi_colours",
  "base64",
