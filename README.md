@@ -63,11 +63,11 @@ You will need to build with the stable rust toolchain. Minimal Supported Rust Ve
 
 #### Backends
 
-| Backend   | Requirements                                                                                                                                                                                                                                                                       |
-|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Symphonia | You will need [ALSA](https://alsa-project.org) installed to support decoding with symphonia.<br />Note that the ALSA development files are required. These are provided as part of the `libasound2-dev` package on Debian and Ubuntu distributions and `alsa-lib-devel` on Fedora.<br/>In addition `soundtouch` and `clang`(build only) are required. |
-| GStreamer | [GStreamer](https://gstreamer.freedesktop.org)                                                                                                                                                                                                                                     |
-| MPV       | [MPV](https://mpv.io/)                                                                                                                                                                                                                                                             |
+| Backend   | Requirements |
+| :-------: | :----------- |
+| Symphonia(rusty) | On Linux [`libasound2-dev`](https://launchpad.net/ubuntu/noble/+package/libasound2-dev) is required for building.<br/>When using `rusty-soundtouch` additionally `soundtouch` and `clang`(build only) are required. |
+| GStreamer | [GStreamer](https://gstreamer.freedesktop.org) |
+| MPV       | [MPV](https://mpv.io/) |
 
 #### Protobuf
 
