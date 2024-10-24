@@ -93,7 +93,7 @@ symphonia = { version = "0.5.1", features = [
 ] }
 sysinfo = { version = "^0.32", default-features = false, features = ["system"] }
 textwrap = "0.16"
-tokio = { version = "1.37", features = ["sync", "macros", "rt","rt-multi-thread"] }
+tokio = { version = "1.41", features = ["sync", "macros", "rt","rt-multi-thread"] }
 tokio-util = "0.7"
 tokio-stream = { version = "0.1", features = ["sync"] }
 toml = "0.8"
