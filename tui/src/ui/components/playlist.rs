@@ -6,6 +6,7 @@ use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
 use termusiclib::track::Track;
@@ -410,9 +411,9 @@ impl Model {
 
             let noname_string = "No Name".to_string();
             let name = record.name().unwrap_or(&noname_string);
-            let artist = record.artist().unwrap_or(name);
-            let mut title: Cow<'_, str> = record.title().unwrap_or("Unknown Title").into();
-            let album = record.album().unwrap_or("Unknown Album");
+            let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
+            let mut title: Cow<'_, str> = record.title().unwrap_or(name).into();
+            let album = record.album().unwrap_or(UNKNOWN_ALBUM);
 
             // TODO: is there maybe a better option to do this on-demand instead of the whole playlist; like on draw-time?
             if idx == self.playlist.get_current_track_index() {
@@ -527,8 +528,8 @@ impl Model {
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
         for record in self.playlist.tracks() {
-            let artist = record.artist().unwrap_or("Unknown artist");
-            let title = record.title().unwrap_or("Unknown title");
+            let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
+            let title = record.title().unwrap_or(UNKNOWN_TITLE);
             if wildmatch::WildMatch::new(&search).matches(&artist.to_lowercase())
                 | wildmatch::WildMatch::new(&search).matches(&title.to_lowercase())
             {
@@ -541,8 +542,8 @@ impl Model {
 
                 let noname_string = "No Name".to_string();
                 let name = record.name().unwrap_or(&noname_string);
-                let artist = record.artist().unwrap_or(name);
-                let title = record.title().unwrap_or("Unknown Title");
+                let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
+                let title = record.title().unwrap_or(name);
                 let file_name = record.file().unwrap_or("no file");
 
                 table
