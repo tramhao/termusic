@@ -240,10 +240,7 @@ impl Track {
             .file_name()
             .and_then(OsStr::to_str)
             .map(std::string::ToString::to_string);
-        let parsed_lyric: Option<Lyric> = None;
         let lyric_frames: Vec<Lyrics> = Vec::new();
-        let picture: Option<Picture> = None;
-        let album_photo: Option<String> = None;
         let genre = Some(String::from("Unknown"));
         let mut last_modified = SystemTime::now();
         if let Ok(meta) = p.metadata() {
@@ -261,11 +258,11 @@ impl Track {
             directory,
             duration,
             name,
-            parsed_lyric,
+            parsed_lyric: None,
             lyric_frames,
             lyric_selected_index: 0,
-            picture,
-            album_photo,
+            picture: None,
+            album_photo: None,
             last_modified,
             genre,
             media_type: MediaType::Music,
