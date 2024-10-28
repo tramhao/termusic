@@ -41,6 +41,13 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
+// TODO: use this for database migration
+/// This is the old string that was used as default for "artist" & "album"
+///
+/// this value is currently unused, but this will stay here as a reminder until the database is migrated
+#[allow(unused)]
+pub const UNSUPPORTED: &str = "Unsupported?";
+
 // TODO: add some kind of identifier for easy printing, like a uri that is NOT optional
 #[derive(Clone, Debug)]
 pub struct Track {
@@ -231,8 +238,6 @@ impl Track {
         let p = path.as_ref();
         let directory = Some(get_parent_folder(p).to_string_lossy().to_string());
         let ext = p.extension().and_then(OsStr::to_str).map(String::from);
-        let artist = Some(String::from("Unsupported?"));
-        let album = Some(String::from("Unsupported?"));
         let title = p.file_stem().and_then(OsStr::to_str).map(String::from);
         let file = Some(p.to_string_lossy().into_owned());
         let duration = Duration::from_secs(0);
@@ -251,8 +256,8 @@ impl Track {
         Self {
             ext,
             file_type: None,
-            artist,
-            album,
+            artist: None,
+            album: None,
             title,
             file,
             directory,
