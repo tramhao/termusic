@@ -59,7 +59,6 @@ pub struct Track {
     name: Option<String>,
     /// Extension of the song
     ext: Option<String>,
-    // TODO: why is this set to the http(s) url in Radio case?
     directory: Option<String>,
     pub last_modified: SystemTime,
     /// USLT lyrics
@@ -225,6 +224,7 @@ impl Track {
         track.title = Some("Radio Station".to_string());
         track.album = Some("Live".to_string());
         track.media_type = MediaType::LiveRadio;
+        track.directory = None;
         track
     }
     fn new<P: AsRef<Path>>(path: P) -> Self {
