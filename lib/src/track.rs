@@ -247,7 +247,6 @@ impl Track {
             .and_then(OsStr::to_str)
             .map(std::string::ToString::to_string);
         let lyric_frames: Vec<Lyrics> = Vec::new();
-        let genre = Some(String::from("Unknown"));
         let mut last_modified = SystemTime::now();
         if let Ok(meta) = p.metadata() {
             if let Ok(modified) = meta.modified() {
@@ -270,7 +269,7 @@ impl Track {
             picture: None,
             album_photo: None,
             last_modified,
-            genre,
+            genre: None,
             media_type: MediaType::Music,
             podcast_localfile: None,
         }
