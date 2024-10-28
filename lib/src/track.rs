@@ -202,7 +202,7 @@ impl Track {
             }
         }
 
-        let parent_folder = get_parent_folder(&path.to_string_lossy());
+        let parent_folder = get_parent_folder(path);
 
         if let Ok(files) = std::fs::read_dir(parent_folder) {
             for f in files.flatten() {
@@ -229,7 +229,7 @@ impl Track {
     }
     fn new<P: AsRef<Path>>(path: P) -> Self {
         let p = path.as_ref();
-        let directory = Some(get_parent_folder(&p.to_string_lossy()));
+        let directory = Some(get_parent_folder(p).to_string_lossy().to_string());
         let ext = p.extension().and_then(OsStr::to_str).map(String::from);
         let artist = Some(String::from("Unsupported?"));
         let album = Some(String::from("Unsupported?"));

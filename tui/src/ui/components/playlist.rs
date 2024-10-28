@@ -3,6 +3,7 @@ use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use std::borrow::Cow;
+use std::ffi::OsString;
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::library_db::SearchCriteria;
@@ -620,30 +621,35 @@ impl Model {
         result
     }
 
+    /// Save the current playlist as m3u with the given `filename`
     pub fn playlist_save_m3u_before(&mut self, filename: &str) -> Result<()> {
         let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => id,
             _ => bail!("Invalid node selected in library"),
         };
 
-        let parent_folder = get_parent_folder(&current_node);
+        let path_m3u = {
+            let mut parent_folder = get_parent_folder(Path::new(&current_node)).to_path_buf();
+            let mut filename = OsString::from(filename);
+            filename.push(".m3u");
+            parent_folder.push(filename);
 
-        let full_filename = format!("{parent_folder}/{filename}.m3u");
-
-        let path_m3u = Path::new(&full_filename);
+            parent_folder
+        };
 
         if path_m3u.exists() {
-            self.mount_save_playlist_confirm(&full_filename);
+            self.mount_save_playlist_confirm(&path_m3u.to_string_lossy());
             return Ok(());
         }
 
-        self.playlist_save_m3u(&full_filename)
+        self.playlist_save_m3u(&path_m3u)
     }
 
-    pub fn playlist_save_m3u(&mut self, filename: &str) -> Result<()> {
+    /// Save the current playlist as m3u in the given full path
+    pub fn playlist_save_m3u(&mut self, filename: &Path) -> Result<()> {
         self.playlist.save_m3u(filename)?;
 
-        self.library_reload_with_node_focus(Some(filename));
+        self.library_reload_with_node_focus(Some(&filename.to_string_lossy()));
 
         Ok(())
     }
