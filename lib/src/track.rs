@@ -1,3 +1,4 @@
+use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::podcast::episode::Episode;
 /**
  * MIT License
@@ -502,8 +503,8 @@ impl Track {
         if let Some(ext) = self.ext() {
             let new_name = format!(
                 "{}-{}.{}",
-                self.artist().unwrap_or("Unknown Artist"),
-                self.title().unwrap_or("Unknown Title"),
+                self.artist().unwrap_or(UNKNOWN_ARTIST),
+                self.title().unwrap_or(UNKNOWN_TITLE),
                 ext,
             );
 
@@ -552,12 +553,12 @@ impl Track {
     fn update_tag<T: Accessor>(&self, tag: &mut T) {
         tag.set_artist(
             self.artist()
-                .map_or_else(|| String::from("Unknown Artist"), str::to_string),
+                .map_or_else(|| String::from(UNKNOWN_ARTIST), str::to_string),
         );
 
         tag.set_title(
             self.title()
-                .map_or_else(|| String::from("Unknown Title"), str::to_string),
+                .map_or_else(|| String::from(UNKNOWN_TITLE), str::to_string),
         );
 
         tag.set_album(self.album().map_or_else(String::new, str::to_string));

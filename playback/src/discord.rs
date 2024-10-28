@@ -3,6 +3,7 @@ use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::track::Track;
 
 const APP_ID: &str = "968407067889131520";
@@ -125,8 +126,8 @@ impl Default for Rpc {
 
 impl Rpc {
     pub fn update(&mut self, track: &Track) {
-        let artist = track.artist().unwrap_or("Unknown Artist").to_string();
-        let title = track.title().unwrap_or("Unknown Title").to_string();
+        let artist = track.artist().unwrap_or(UNKNOWN_ARTIST).to_string();
+        let title = track.title().unwrap_or(UNKNOWN_TITLE).to_string();
         self.tx.send(RpcCommand::Update(artist, title)).ok();
     }
     pub fn pause(&mut self) {
