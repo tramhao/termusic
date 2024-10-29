@@ -24,19 +24,16 @@ use crate::podcast::episode::Episode;
  */
 use crate::songtag::lrc::Lyric;
 use crate::utils::get_parent_folder;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use id3::frame::Lyrics;
-use lofty::config::{ParseOptions, WriteOptions};
-use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
+use lofty::config::WriteOptions;
 use lofty::picture::{Picture, PictureType};
 use lofty::prelude::{Accessor, AudioFile, ItemKey, TagExt, TaggedFileExt};
 use lofty::tag::{ItemValue, Tag as LoftyTag, TagItem};
-use lofty::{file::FileType, mpeg::MpegFile, probe::Probe, TextEncoding};
+use lofty::{file::FileType, probe::Probe};
 use std::convert::From;
 use std::ffi::OsStr;
 use std::fs::rename;
-use std::fs::File;
-use std::io::BufReader;
 use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
@@ -131,7 +128,6 @@ impl Track {
         let path = path.as_ref();
 
         let probe = Probe::open(path)?;
-        let file_type = probe.file_type();
 
         let mut song = Self::new(path);
         if let Ok(mut tagged_file) = probe.read() {
@@ -158,31 +154,8 @@ impl Track {
 
                 // Get all of the lyrics tags
                 let mut lyric_frames: Vec<Lyrics> = Vec::new();
-                match file_type {
-                    Some(FileType::Mpeg) => {
-                        let mut reader = BufReader::new(File::open(path)?);
-                        // let file = MPEGFile::read_from(&mut reader, false)?;
-                        let file = MpegFile::read_from(&mut reader, ParseOptions::new())?;
+                create_lyrics(tag, &mut lyric_frames);
 
-                        if let Some(id3v2_tag) = file.id3v2() {
-                            for lyrics_frame in id3v2_tag.unsync_text() {
-                                let mut language =
-                                    String::from_utf8_lossy(&lyrics_frame.language).to_string();
-                                if language.len() < 3 {
-                                    language = "eng".to_string();
-                                }
-                                lyric_frames.push(Lyrics {
-                                    lang: language,
-                                    description: lyrics_frame.description.clone(),
-                                    text: lyrics_frame.content.clone(),
-                                });
-                            }
-                        }
-                    }
-                    _ => {
-                        create_lyrics(tag, &mut lyric_frames);
-                    }
-                };
                 song.parsed_lyric = lyric_frames
                     .first()
                     .map(|lf| Lyric::from_str(&lf.text).ok())
@@ -434,62 +407,28 @@ impl Track {
     }
 
     pub fn save_tag(&mut self) -> Result<()> {
-        match self.file_type {
-            Some(FileType::Mpeg) => {
-                if let Some(file_path) = self.file() {
-                    let mut tag = Id3v2Tag::default();
-                    self.update_tag(&mut tag);
+        if let Some(file_path) = self.file() {
+            let tag_type = match self.file_type {
+                Some(file_type) => file_type.primary_tag_type(),
+                None => return Ok(()),
+            };
 
-                    if !self.lyric_frames_is_empty() {
-                        if let Some(lyric_frames) = self.lyric_frames() {
-                            for l in lyric_frames {
-                                let l_frame =
-                                    Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
-                                        TextEncoding::UTF8,
-                                        l.lang.as_bytes()[0..3]
-                                            .try_into()
-                                            .with_context(|| "wrong length of language")?,
-                                        l.description,
-                                        l.text,
-                                    ));
-                                tag.insert(l_frame);
-                            }
-                        }
+            let mut tag = LoftyTag::new(tag_type);
+            self.update_tag(&mut tag);
+
+            if !self.lyric_frames_is_empty() {
+                if let Some(lyric_frames) = self.lyric_frames() {
+                    for l in lyric_frames {
+                        tag.push(TagItem::new(ItemKey::Lyrics, ItemValue::Text(l.text)));
                     }
-
-                    if let Some(any_picture) = self.picture().cloned() {
-                        tag.insert_picture(any_picture);
-                    }
-
-                    tag.save_to_path(file_path, WriteOptions::new())?;
                 }
             }
 
-            _ => {
-                if let Some(file_path) = self.file() {
-                    let tag_type = match self.file_type {
-                        Some(file_type) => file_type.primary_tag_type(),
-                        None => return Ok(()),
-                    };
-
-                    let mut tag = LoftyTag::new(tag_type);
-                    self.update_tag(&mut tag);
-
-                    if !self.lyric_frames_is_empty() {
-                        if let Some(lyric_frames) = self.lyric_frames() {
-                            for l in lyric_frames {
-                                tag.push(TagItem::new(ItemKey::Lyrics, ItemValue::Text(l.text)));
-                            }
-                        }
-                    }
-
-                    if let Some(any_picture) = self.picture().cloned() {
-                        tag.push_picture(any_picture);
-                    }
-
-                    tag.save_to_path(file_path, WriteOptions::new())?;
-                }
+            if let Some(any_picture) = self.picture().cloned() {
+                tag.push_picture(any_picture);
             }
+
+            tag.save_to_path(file_path, WriteOptions::new())?;
         }
 
         self.rename_by_tag()?;
@@ -568,9 +507,8 @@ fn create_lyrics(tag: &mut LoftyTag, lyric_frames: &mut Vec<Lyrics>) {
     for lyric in lyrics {
         if let ItemValue::Text(lyrics_text) = lyric.value() {
             lyric_frames.push(Lyrics {
-                lang: "eng".to_string(),
-                // description: String::new(),
-                description: "default".to_string(),
+                lang: lyric.lang().escape_ascii().to_string(),
+                description: lyric.description().to_string(),
                 text: lyrics_text.to_string(),
             });
         }
