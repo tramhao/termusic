@@ -298,7 +298,7 @@
 - fix: when start the app, the first song in playlist will be skipped.
 
 ### [v0.6.0]
-- Released on: Dec 1,2021.
+- Released on: Dec 1, 2021.
 - Update to tui-realm 1.0. Please note, as it's basically a rewrite, small bugs are inevitable. Please report it in issues and I'll respond very fast.
 - Hotkey to quit changed from `Q` to `q`, as now there will show a popup confirmation so it's unlikely to quit accidentally.
 - Can add a song to the beginning of playlist or the end. Switch by `a`. Note: I add this to configuration file, and it'll reset your configuration file to default values. Please backup if you need. Basically it's not necessary as all options can be set from inside termusic.
@@ -405,7 +405,7 @@
 - Released on: August 21, 2021.
 - Run songtag search in parallel to save some time in tageditor.
 
-## Implemented features(changelog before v0.3.3):
+## Implemented features before v0.3.3
 - [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
 - [x] Pause/Skip
 - [x] Seek forward/backward
