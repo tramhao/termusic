@@ -187,17 +187,21 @@ impl Lyric {
 
 impl Caption {
     /// Try to parse a single [`Caption`]
-    fn parse_line(line: &mut String) -> Result<Self, ()> {
+    fn parse_line(line: &str) -> Result<Self, ()> {
         //[00:12.00]Line 1 lyrics
-        // !line.starts_with('[') | !line.contains(']')
-        // First, parse the time
-        let time_stamp = Self::parse_time(
-            line.get(line.find('[').ok_or(())? + 1..line.find(']').ok_or(())?)
-                .ok_or(())?,
-        )?;
-        let text = line
-            .drain(line.find(']').ok_or(())? + 1..)
-            .collect::<String>();
+
+        // plus 1 can always be done because "find" has found a instance (and returns before), and the character is ASCII
+        // start index after the character
+        let timestamp_start = line.find('[').ok_or(())? + 1;
+        // theoretically, a LRC timestamp is always 8 characters long, but we do this to support longer possible values
+        // end index before the character
+        let timestamp_end = (line[timestamp_start..]).find(']').ok_or(())? + timestamp_start;
+        // exclude the end character
+        let text_start = timestamp_end + 1;
+
+        let time_stamp = Self::parse_time(&line[timestamp_start..timestamp_end])?;
+        let text = line[text_start..].to_string();
+
         Ok(Self {
             timestamp: time_stamp.try_into().unwrap_or(0),
             text,
@@ -272,8 +276,7 @@ impl FromStr for Lyric {
                     line.pop();
                 }
             }
-            let line = line.trim();
-            let mut line = line.to_string();
+            let line = line.trim().to_string();
             if line.is_empty() {
                 continue;
             }
@@ -291,7 +294,7 @@ impl FromStr for Lyric {
                 continue;
             }
 
-            if let Ok(s) = Caption::parse_line(&mut line) {
+            if let Ok(s) = Caption::parse_line(&line) {
                 captions.push(s);
             };
         }
