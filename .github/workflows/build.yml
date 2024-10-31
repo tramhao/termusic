@@ -6,6 +6,34 @@ on:
     - cron: '00 01 * * *'
 
 jobs:
+  lint:
+    name: Lint (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Install developer package dependencies
+        run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev libmpv-dev
+        # extra packages for gst (last updated for 22.04): libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev
+        # extra packages for mpv: libmpv-dev
+        # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
+        # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev gstreamer-player-1
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # run formatting after clippy, so that the CI does not exit early when formatting has issues (but still would compile)
+      - name: Run cargo fmt
+        run: cargo fmt --all --check
+
   test_linux:
     name: Test Linux
     strategy:
@@ -21,7 +49,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-          components: rustfmt, clippy
 
       - name: Install developer package dependencies
         run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev libmpv-dev
@@ -36,12 +63,6 @@ jobs:
 
       - name: Run cargo test
         run: cargo test --features cover,all-backends --release --all
-
-      - name: Run cargo fmt
-        run: cargo fmt --all
-
-      - name: Run cargo clippy
-        run: cargo clippy --all --features cover,all-backends -- -D warnings
 
   test_macos:
     name: Test Mac
@@ -58,7 +79,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-          components: rustfmt, clippy
 
       - name: Install developer package dependencies
         run: | 
@@ -79,14 +99,6 @@ jobs:
         run: cargo test --all
         # run: cargo test --features cover,all-backends --release --all
 
-      - name: Run cargo fmt
-        run: cargo fmt --all
-
-      - name: Run cargo clippy
-        run: cargo clippy --all -- -D warnings
-        # run: cargo clippy --all --features cover,all-backends -- -D warnings
-
-
   test-win:
     name: Test Win
     strategy:
@@ -102,7 +114,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-          components: rustfmt, clippy
 
       - name: Install dependencies
         run: choco install protoc
@@ -114,9 +125,3 @@ jobs:
 
       - name: Run cargo test
         run: cargo test
-
-      - name: Run cargo fmt
-        run: cargo fmt --all -- --check
-
-      - name: Run cargo clippy
-        run: cargo clippy -- -D warnings
