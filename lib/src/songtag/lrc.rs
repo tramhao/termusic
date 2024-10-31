@@ -40,8 +40,11 @@ use anyhow::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::cmp::Ordering;
+use std::fmt::{Error as FmtError, Write};
 use std::str::FromStr;
 use std::time::Duration;
+
+use crate::utils::display_with;
 
 lazy_static! {
     static ref LINE_STARTS_WITH_RE: Regex =
@@ -152,12 +155,13 @@ impl Lyric {
     pub fn as_lrc_text(&self) -> String {
         let mut result: String = String::new();
         if self.offset != 0 {
-            let string_offset = format!("[offset:{}]\n", self.offset);
-            result += string_offset.as_ref();
+            // No known ways this could fail, ignore the result
+            let _ = writeln!(&mut result, "[offset:{}]", self.offset);
         }
 
         for line in &self.captions {
-            result += line.as_lrc().as_str();
+            // No known ways this could fail, ignore the result
+            let _ = line.as_lrc(&mut result);
         }
         result
     }
@@ -229,17 +233,18 @@ impl Caption {
     }
 
     /// Format the current [`Caption`] as a LRC line
-    fn as_lrc(&self) -> String {
-        format!(
-            "[{}]{}\n",
+    fn as_lrc(&self, w: &mut impl Write) -> Result<(), FmtError> {
+        writeln!(
+            w,
+            "[{}]{}",
             time_lrc(self.timestamp.try_into().unwrap_or(0)),
             self.text
         )
     }
 }
 
-/// Format a time as a LRC time `mm:ss.ms`
-fn time_lrc(time_stamp: u64) -> String {
+/// Format the given timestamp as a LRC time: `mm:ss.ms`
+fn time_lrc(time_stamp: u64) -> impl std::fmt::Display {
     let time_duration = Duration::from_millis(time_stamp);
     // LRC format does not handle hours, so this formatting assumes it is below 1 hour
     // let _h = time_duration.as_secs() / 3600;
@@ -250,7 +255,7 @@ fn time_lrc(time_stamp: u64) -> String {
     // subsec is always guranteed to be less than a second; dividing by 10 to only have the 2 most significant numbers
     let ms = time_duration.subsec_millis() / 10;
 
-    format!("{m:02}:{s:02}.{ms:02}")
+    display_with(move |f| write!(f, "{m:02}:{s:02}.{ms:02}"))
 }
 
 impl FromStr for Lyric {
