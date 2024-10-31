@@ -51,20 +51,23 @@ lazy_static! {
             .unwrap();
 }
 
+/// The struct to hold all the metadata and the lyric frames
 #[derive(Clone, Debug, PartialEq)]
 pub struct Lyric {
     /// Offset in milliseconds
     ///
     /// positive means delay lyric
     pub offset: i64,
-    /// USLT captions
-    pub unsynced_captions: Vec<UnsyncedCaption>,
+    /// Text frames
+    pub captions: Vec<Caption>,
 }
 
+/// A caption for a specific time
 #[derive(Clone, Debug, PartialEq)]
-pub struct UnsyncedCaption {
+pub struct Caption {
     /// Timestamp in milliseconds
-    time_stamp: i64,
+    timestamp: i64,
+    /// The text of the current caption, trimmed
     text: String,
 }
 
@@ -73,7 +76,7 @@ const EOL: &str = "\n";
 impl Lyric {
     // GetText will fetch lyric by time in seconds
     pub fn get_text(&self, time: Duration) -> Option<String> {
-        if self.unsynced_captions.is_empty() {
+        if self.captions.is_empty() {
             return None;
         };
 
@@ -89,10 +92,10 @@ impl Lyric {
 
         time = adjusted_time;
 
-        let mut text = self.unsynced_captions.first()?.text.clone();
-        for v in &self.unsynced_captions {
-            if time >= v.time_stamp {
-                text.clone_from(&v.text);
+        let mut text = self.captions.first()?.text.clone();
+        for caption in &self.captions {
+            if time >= caption.timestamp {
+                text.clone_from(&caption.text);
             } else {
                 break;
             }
@@ -100,8 +103,9 @@ impl Lyric {
         Some(text)
     }
 
+    /// Get a index into the captions list for a specific time
     pub fn get_index(&self, mut time: i64) -> Option<usize> {
-        if self.unsynced_captions.is_empty() {
+        if self.captions.is_empty() {
             return None;
         };
 
@@ -115,8 +119,8 @@ impl Lyric {
         time = adjusted_time.abs();
 
         let mut index: usize = 0;
-        for (i, v) in self.unsynced_captions.iter().enumerate() {
-            if time >= v.time_stamp {
+        for (i, caption) in self.captions.iter().enumerate() {
+            if time >= caption.timestamp {
                 index = i;
             } else {
                 break;
@@ -125,6 +129,7 @@ impl Lyric {
         Some(index)
     }
 
+    /// Adjust all captions in `time` by `offset`(milliseconds) and sort captions based on adjusted time
     pub fn adjust_offset(&mut self, time: Duration, offset: i64) {
         #[allow(clippy::cast_possible_wrap)]
         let time = time.as_secs() as i64;
@@ -135,19 +140,19 @@ impl Lyric {
                 self.offset -= offset;
             } else {
                 // fine tuning each line after 10 seconds
-                let v = &mut self.unsynced_captions[index];
-                let adjusted_time_stamp = v.time_stamp + offset;
-                v.time_stamp = match adjusted_time_stamp.cmp(&0) {
+                let caption = &mut self.captions[index];
+                let adjusted_time_stamp = caption.timestamp + offset;
+                caption.timestamp = match adjusted_time_stamp.cmp(&0) {
                     Ordering::Greater | Ordering::Equal => adjusted_time_stamp,
                     Ordering::Less => 0,
                 };
             }
         };
         // we sort the captions by time_stamp. This is to fix some lyrics downloaded are not sorted
-        self.unsynced_captions
-            .sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
+        self.captions.sort_by(|b, a| b.timestamp.cmp(&a.timestamp));
     }
 
+    /// Format current [`Lyric`] as a LRC file
     pub fn as_lrc_text(&self) -> String {
         let mut result: String = String::new();
         if self.offset != 0 {
@@ -155,34 +160,36 @@ impl Lyric {
             result += string_offset.as_ref();
         }
 
-        for line in &self.unsynced_captions {
+        for line in &self.captions {
             result += line.as_lrc().as_str();
         }
         result
     }
 
+    /// Merge captions that are less than 2 seconds apart
     pub fn merge_adjacent(&mut self) {
-        let mut unsynced_captions = self.unsynced_captions.clone();
+        let mut merged_captions = self.captions.clone();
         let mut offset = 1;
-        for (i, v) in self.unsynced_captions.iter().enumerate() {
+        for (i, old_caption) in self.captions.iter().enumerate() {
             if i < 1 {
                 continue;
             }
-            if let Some(item) = unsynced_captions.get(i - offset) {
-                if v.time_stamp - item.time_stamp < 2000 {
-                    unsynced_captions[i - offset].text += "  ";
-                    unsynced_captions[i - offset].text += v.text.as_ref();
-                    unsynced_captions.remove(i - offset + 1);
+            if let Some(item) = merged_captions.get(i - offset) {
+                if old_caption.timestamp - item.timestamp < 2000 {
+                    merged_captions[i - offset].text += "  ";
+                    merged_captions[i - offset].text += old_caption.text.as_ref();
+                    merged_captions.remove(i - offset + 1);
                     offset += 1;
                 }
             }
         }
 
-        self.unsynced_captions = unsynced_captions;
+        self.captions = merged_captions;
     }
 }
 
-impl UnsyncedCaption {
+impl Caption {
+    /// Try to parse a single [`Caption`]
     fn parse_line(line: &mut String) -> Result<Self, ()> {
         //[00:12.00]Line 1 lyrics
         // !line.starts_with('[') | !line.contains(']')
@@ -195,11 +202,12 @@ impl UnsyncedCaption {
             .drain(line.find(']').ok_or(())? + 1..)
             .collect::<String>();
         Ok(Self {
-            time_stamp: time_stamp.try_into().unwrap_or(0),
+            timestamp: time_stamp.try_into().unwrap_or(0),
             text,
         })
     }
 
+    /// Parse the time from a caption, the input needs to have the "[]" already removed
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     fn parse_time(string: &str) -> Result<u64, ()> {
         //mm:ss.xx or mm:ss.xxx
@@ -224,25 +232,26 @@ impl UnsyncedCaption {
         Ok(sum_milis)
     }
 
+    /// Format the current [`Caption`] as a LRC line
     fn as_lrc(&self) -> String {
         let line = format!(
             "[{}]{}",
-            time_lrc(self.time_stamp.try_into().unwrap_or(0)),
+            time_lrc(self.timestamp.try_into().unwrap_or(0)),
             self.text
         );
         line + EOL
     }
 }
 
+/// Format a time as a LRC time `mm:ss.ms`
 fn time_lrc(time_stamp: u64) -> String {
     let time_duration = Duration::from_millis(time_stamp);
-    let _h = time_duration.as_secs() / 3600;
+    // let _h = time_duration.as_secs() / 3600;
     let m = (time_duration.as_secs() / 60) % 60;
     let s = time_duration.as_secs() % 60;
     let ms = time_duration.as_millis() % 60;
 
-    let res = format!("{m:02}:{s:02}.{ms:02}");
-    res
+    format!("{m:02}:{s:02}.{ms:02}")
 }
 
 impl FromStr for Lyric {
@@ -253,7 +262,7 @@ impl FromStr for Lyric {
         // s = cleanLRC(s)
         // lines := strings.Split(s, "\n")
         let mut offset: i64 = 0;
-        let mut unsynced_captions = vec![];
+        let mut captions = vec![];
         for line in s.split('\n') {
             let mut line = line.to_string();
             if line.ends_with('\n') {
@@ -281,18 +290,15 @@ impl FromStr for Lyric {
                 continue;
             }
 
-            if let Ok(s) = UnsyncedCaption::parse_line(&mut line) {
-                unsynced_captions.push(s);
+            if let Ok(s) = Caption::parse_line(&mut line) {
+                captions.push(s);
             };
         }
 
         // we sort the captions by Timestamp. This is to fix some lyrics downloaded are not sorted
-        unsynced_captions.sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
+        captions.sort_by(|b, a| b.timestamp.cmp(&a.timestamp));
 
-        let mut lyric = Self {
-            offset,
-            unsynced_captions,
-        };
+        let mut lyric = Self { offset, captions };
 
         lyric.merge_adjacent();
 
@@ -324,14 +330,14 @@ mod tests {
         assert_eq!(lyrics.offset, 10);
 
         assert_eq!(
-            lyrics.unsynced_captions.as_slice(),
+            lyrics.captions.as_slice(),
             &[
-                UnsyncedCaption {
-                    time_stamp: 12 * 1000,
+                Caption {
+                    timestamp: 12 * 1000,
                     text: "Lyrics beginning ...".into()
                 },
-                UnsyncedCaption {
-                    time_stamp: (15 * 1000) + 300,
+                Caption {
+                    timestamp: (15 * 1000) + 300,
                     text: "Some more lyrics ...".into()
                 },
                 Caption {
@@ -351,9 +357,9 @@ mod tests {
         assert_eq!(lyrics.offset, 0);
 
         assert_eq!(
-            lyrics.unsynced_captions.as_slice(),
-            &[UnsyncedCaption {
-                time_stamp: 12 * 1000,
+            lyrics.captions.as_slice(),
+            &[Caption {
+                timestamp: 12 * 1000,
                 text: "Lyrics beginning ...".into()
             },]
         );
@@ -365,6 +371,6 @@ mod tests {
 
         let lyrics = Lyric::from_str(txt).unwrap();
 
-        assert_eq!(lyrics.unsynced_captions.len(), 0);
+        assert_eq!(lyrics.captions.len(), 0);
     }
 }

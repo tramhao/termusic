@@ -270,7 +270,7 @@ impl Model {
             }
 
             if let Some(l) = song.parsed_lyric() {
-                if l.unsynced_captions.is_empty() {
+                if l.captions.is_empty() {
                     self.lyric_set_lyric("No lyrics available.");
                     return;
                 }
