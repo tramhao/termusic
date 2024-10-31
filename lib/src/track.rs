@@ -27,7 +27,9 @@ use crate::songtag::lrc::Lyric;
 use crate::utils::get_parent_folder;
 use anyhow::{bail, Result};
 use id3::frame::Lyrics;
+use lofty::config::ParseOptions;
 use lofty::config::WriteOptions;
+use lofty::mpeg::MpegFile;
 use lofty::picture::{Picture, PictureType};
 use lofty::prelude::{Accessor, AudioFile, ItemKey, TagExt, TaggedFileExt};
 use lofty::tag::{ItemValue, Tag as LoftyTag, TagItem};
@@ -139,7 +141,6 @@ impl Track {
         }
     }
 
-
     /// Create a new [`MediaType::Music`] track
     pub fn read_from_path<P: AsRef<Path>>(path: P, for_db: bool) -> Result<Self> {
         let path = path.as_ref();
@@ -208,7 +209,6 @@ impl Track {
 
         Ok(song)
     }
-
 
     /// Process a given [`LoftyTag`] into the given `track`
     fn process_tag(
@@ -280,7 +280,6 @@ impl Track {
 
         Ok(())
     }
-
 
     /// Create a new [`MediaType::LiveRadio`] track
     pub fn new_radio(url: &str) -> Self {
