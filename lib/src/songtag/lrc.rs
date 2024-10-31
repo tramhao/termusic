@@ -44,8 +44,6 @@ use std::str::FromStr;
 use std::time::Duration;
 
 lazy_static! {
-    static ref LYRICS_RE: Regex = Regex::new("^[^\x00-\x08\x0A-\x1F\x7F]*$").unwrap();
-    static ref TAG_RE: Regex = Regex::new(r"\[.*:.*\]").unwrap();
     static ref LINE_STARTS_WITH_RE: Regex =
         Regex::new("^\\[([^\x00-\x08\x0A-\x1F\x7F\\[\\]:]*):([^\x00-\x08\x0A-\x1F\x7F\\[\\]]*)\\]")
             .unwrap();
