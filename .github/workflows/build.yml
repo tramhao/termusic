@@ -62,7 +62,7 @@ jobs:
         run: cargo check --workspace --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test --workspace --features cover,all-backends --release
+        run: cargo test --workspace --features cover,all-backends
 
   test_macos:
     name: Test Mac
@@ -97,7 +97,7 @@ jobs:
 
       - name: Run cargo test
         run: cargo test --workspace
-        # run: cargo test --workspace --features cover,all-backends --release
+        # run: cargo test --workspace --features cover,all-backends
 
   test-win:
     name: Test Win
