@@ -59,10 +59,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check --all --features cover,all-backends
+        run: cargo check --workspace --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test --features cover,all-backends --release --all
+        run: cargo test --workspace --features cover,all-backends --release
 
   test_macos:
     name: Test Mac
@@ -92,12 +92,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check --all
-        # run: cargo check --all --features cover,all-backends
+        run: cargo check --workspace
+        # run: cargo check --workspace --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test --all
-        # run: cargo test --features cover,all-backends --release --all
+        run: cargo test --workspace
+        # run: cargo test --workspace --features cover,all-backends --release
 
   test-win:
     name: Test Win
@@ -121,7 +121,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check
+        run: cargo check --workspace
 
       - name: Run cargo test
-        run: cargo test
+        run: cargo test --workspace
