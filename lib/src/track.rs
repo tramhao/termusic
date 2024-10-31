@@ -171,6 +171,11 @@ impl Track {
             }
         }
 
+        // exit early if its for db only as no cover is needed there
+        if for_db {
+            return Ok(song);
+        }
+
         let parent_folder = get_parent_folder(path);
 
         if let Ok(files) = std::fs::read_dir(parent_folder) {
