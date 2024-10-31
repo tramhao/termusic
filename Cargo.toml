@@ -17,7 +17,7 @@ categories = [
 ]
 readme = "./README.md"
 version = "0.9.1"
-rust-version = "1.77"
+rust-version = "1.79"
 
 [workspace.dependencies]
 # "version" key is required, as per https://github.com/rust-lang/cargo/issues/11133
@@ -29,7 +29,7 @@ anyhow = { version = "1.0", features = ["backtrace"] }
 async-channel = "2.2"
 async-trait = "0.1"
 base64 = "0.22"
-bytes = "1.6"
+bytes = "1.8"
 chrono = "^0.4.23"
 clap = { version = "4.5", features = ["derive", "env"] }
 cpal = "^0.15"
@@ -42,15 +42,16 @@ glib = { version = "0.20" }
 gstreamer = { version = "0.23" }
 hex = "0.4"
 id3 = "1.13"
-# image cannot be upgraded to 0.25 because of viuer, see https://github.com/atanunq/viuer/issues/56
-image = "0.24"
+# image must be upgraded together with viuer
+image = "0.25"
+viuer = "0.9"
 include_dir = "0.7"
 lazy_static = "1.4"
 libaes = "0.7"
 libmpv-sirno = "2.0.2-fork.1"
 lofty = "0.21"
 log = "0.4"
-flexi_logger = "0.28"
+flexi_logger = "0.29"
 colored = "2.0"
 md5 = "0.7"
 num-bigint = "0.4"
@@ -62,7 +63,7 @@ pinyin = "0.10"
 pretty_assertions = "1.4"
 quick-xml = "0.36"
 rand = "0.8"
-regex = "^1.5.5"
+regex = "^1.11.0"
 reqwest = { version = "0.12", features = [
     "cookies",
     "gzip",
@@ -80,43 +81,42 @@ serde_yaml = "0.9"
 shellexpand = { version = "3.1", features = ["path"] }
 soundtouch = "0.4.2"
 souvlaki = { version = "0.7.3", default-features=false, features = ["use_zbus"] }
-stream-download = { version = "0.7.2", features = ["reqwest-rustls"] }
+stream-download = { version = "0.9.0", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
-    "default",
     "aac",
     "mp3",
     "isomp4",
     "alac",
     "flac",
     "mkv",
+    "wav",
+    "aiff"
 ] }
-sysinfo = { version = "^0.31", default-features = false, features = ["system"] }
-tempfile = "3.10"
+sysinfo = { version = "^0.32", default-features = false, features = ["system"] }
 textwrap = "0.16"
-tokio = { version = "1.37", features = ["sync", "macros", "rt","rt-multi-thread"] }
+tokio = { version = "1.41", features = ["sync", "macros", "rt","rt-multi-thread"] }
 tokio-util = "0.7"
 tokio-stream = { version = "0.1", features = ["sync"] }
 toml = "0.8"
 # only update prost and tonic major versions together
-prost = "0.13"
-tonic = "0.12"
-tonic-build = "0.12"
+prost = "0.13.3"
+tonic = "0.12.3"
+tonic-build = "0.12.3"
 tuirealm = { version = "~2.0.3", features = ["serialize"] }
 tui-realm-stdlib = "~2.0"
 tui-realm-treeview = "~2.0"
-unicode-segmentation = "1.10"
-unicode-width = "^0.1.8"
+unicode-segmentation = "1.12"
+unicode-width = "^0.2.0"
 urlencoding = "2.1"
-viuer = "0.7"
 walkdir = "2.5"
-wildmatch = "2.3"
+wildmatch = "2.4"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures = "0.3"
 # transistive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
 cc = "1.1"
 
 [profile.release]
-# lto = true
+lto = true
 # panic = 'abort'
 # opt-level = 'z'
 # codegen-units = 1

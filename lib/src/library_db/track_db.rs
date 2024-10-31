@@ -2,7 +2,7 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use rusqlite::{named_params, Connection, Row};
 
-use crate::{const_str, track::Track};
+use crate::track::Track;
 
 /// A struct representing a [`Track`](Track) in the database
 #[derive(Clone, Debug)]
@@ -86,13 +86,19 @@ pub struct TrackDBInsertable<'a> {
     pub last_position: Duration,
 }
 
-const_str! {
-    UNKNOWN_ARTIST "Unknown Artist",
-    UNKNOWN_TITLE "Unknown Title",
-    UNKNOWN_ALBUM "empty",
-    UNKNOWN_GENRE "no type",
-    UNKNOWN_FILE "Unknown File",
+/// Constant strings for Unknown values
+pub mod const_unknown {
+    use crate::const_str;
+
+    const_str! {
+        UNKNOWN_ARTIST "Unknown Artist",
+        UNKNOWN_TITLE "Unknown Title",
+        UNKNOWN_ALBUM "empty",
+        UNKNOWN_GENRE "no type",
+        UNKNOWN_FILE "Unknown File",
+    }
 }
+use const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_GENRE, UNKNOWN_TITLE};
 
 impl<'a> From<&'a Track> for TrackDBInsertable<'a> {
     fn from(value: &'a Track) -> Self {

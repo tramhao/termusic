@@ -1,5 +1,6 @@
 use crate::ui::{model::TermusicLayout, Model};
 use anyhow::anyhow;
+use std::path::Path;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use termusiclib::library_db::SearchCriteria;
@@ -161,7 +162,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::SavePlaylistConfirmCloseOk(filename) => {
-                    if let Err(e) = self.playlist_save_m3u(&filename) {
+                    if let Err(e) = self.playlist_save_m3u(Path::new(&filename)) {
                         self.mount_error_popup(e.context("save m3u playlist"));
                     }
                     self.umount_save_playlist_confirm();

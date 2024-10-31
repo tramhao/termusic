@@ -1,7 +1,9 @@
+# Terminal Music and Podcast Player written in Rust
+
 [![Build status](https://github.com/tramhao/termusic/actions/workflows/build.yml/badge.svg)](https://github.com/tramhao/termusic/actions)
 [![crates.io](https://img.shields.io/crates/v/termusic.svg)](https://crates.io/crates/termusic)
 [![dependency status](https://deps.rs/repo/github/tramhao/termusic/status.svg)](https://deps.rs/repo/github/tramhao/termusic)
-[![MSRV](https://img.shields.io/badge/MSRV-1.77.0-blue)](https://blog.rust-lang.org/2023/12/28/Rust-1.77.0.html)
+[![MSRV](https://img.shields.io/badge/MSRV-1.79.0-blue)](https://blog.rust-lang.org/2023/12/28/Rust-1.79.0.html)
 # Terminal Music and Podcast Player written in Rust
 
 Listen to music and podcasts freely as both in freedom and free of charge!
@@ -18,15 +20,14 @@ Listen to music and podcasts freely as both in freedom and free of charge!
 </table>
 
 **Freedom**: As time goes by, online service providers control pretty much everything we listen to.
-Complicated copyright issues make things worse. If my favorite song cannot be found on a website, 
-I'll probably just not listen to them for years.
+Complicated copyright issues make things worse.
+If my favorite song cannot be found on a website, I'll probably just not listen to them for years.
 
-**Free of charge**: You can download from YouTube, NetEase, Migu and KuGou for free. No need to 
-register for monthly paid memberships.
+**Free of charge**: You can download from YouTube, NetEase, Migu and KuGou for free.
+No need to register for monthly paid memberships.
 
-As a contributor of [GOMU](https://github.com/issadarkthing/gomu), I met serious problems during 
-development. The main problem is data race condition. So I rewrote the player in rust, and hope to
-solve the problem.
+As a contributor of [GOMU](https://github.com/issadarkthing/gomu), I met serious problems during development. The main problem is data race condition.
+So I rewrote the player in rust, and hope to solve the problem.
 
 ## Supported Formats
 
@@ -37,7 +38,7 @@ In the case that metadata is not supported, an attempt will still be made to pla
 | Format (`feature`) | Symphonia (`rusty`)     | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
 | ------------------ | ----------------------- | ----------- | ----------------- | -------- |
 | ADTS               | Yes                     | Yes         | Yes               | No       |
-| AIFF               | No                      | Yes         | Yes               | Yes      |
+| AIFF               | Yes                     | Yes         | Yes               | Yes      |
 | FLAC               | Yes                     | Yes         | Yes               | Yes      |
 | M4a                | Yes                     | Yes         | Yes               | Yes      |
 | MP3                | Yes                     | Yes         | Yes               | Yes      |
@@ -54,36 +55,40 @@ Default backend: `rusty`
 ### Requirements
 
 #### MSRV
-You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.77.0.
+You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.79.0.
 
-### git
+#### git
 
 `git` will be required to build the package.
 
-=======
-| Backend   | Requirements                                                                                                                                                                                                                                                                       |
-|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Symphonia | You will need [ALSA](https://alsa-project.org) installed to support decoding with symphonia.<br />Note that the ALSA development files are required. These are provided as part of the `libasound2-dev` package on Debian and Ubuntu distributions and `alsa-lib-devel` on Fedora.<br/>In addition `soundtouch` and `clang`(build only) are required. |
-| GStreamer | [GStreamer](https://gstreamer.freedesktop.org)                                                                                                                                                                                                                                     |
-| MPV       | [MPV](https://mpv.io/)                                                                                                                                                                                                                                                             |
+#### Backends
+
+| Backend   | Requirements |
+| :-------: | :----------- |
+| Symphonia(rusty) | On Linux [`libasound2-dev`](https://launchpad.net/ubuntu/noble/+package/libasound2-dev) is required for building.<br/>When using `rusty-soundtouch` additionally `soundtouch` and `clang`(build only) are required. |
+| GStreamer | [GStreamer](https://gstreamer.freedesktop.org) |
+| MPV       | [MPV](https://mpv.io/) |
 
 #### Protobuf
 
-This is required to build and run termusic. For ubuntu: `apt-get protobuf-compiler`, For arch: `paru -S protobuf`.
+This is required to build and run termusic. For ubuntu: `protobuf-compiler`, For arch: `protobuf`.
 
 #### Dbus
 
-As right now use_dbus is a configuration option, it's required to compile. For ubuntu: `apt-get libdbus-1-dev`, For arch: `paru -S dbus`.
+DBus is required for MPRIS control. For ubuntu: `libdbus-1-dev`, For arch: `dbus`.
 
 #### Yt-dlp support
 
-You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download MP3s from Youtube.
+You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download from various providers.
 
 #### Album cover support
 
-For kitty, album cover support is default. For other terminals, need ueberzug/ueberzugpp installed and `cover` feature flag compiled.
+To display covers in the terminal itself, feature `cover` can be enabled.
+To only enable specific protocols for cover support, see [Cargo.toml#features](./Cargo.toml).
 
-### Packages
+Feature `cover-ueberzug` will require some ueberzug implementation to be present at runtime.
+
+### Pre-Compiled Packages
 
 Do note that these will be compiled with the **symphonia** backend.
 
@@ -102,6 +107,7 @@ NetBSD users can install `termusic` from the official repositories.
 ```bash
 pkgin install termusic
 ```
+
 #### Nix/NixOS
 
 Either in the user's environment:
@@ -142,7 +148,9 @@ make install
 ```
 
 By default, termusic can display album covers in Kitty or iTerm2 (mac, not tested).
-If you need album covers displayed on other terminals, please install [ueberzug](https://github.com/ueber-devel/ueberzug) or [ueberzugpp](https://github.com/jstkdng/ueberzugpp), then:
+If you need album covers displayed on other terminals, you can enable the `sixel` protocol or use a ueberzug implementation(x11/xwayland only).
+
+To build with all backends and all cover protocols:
 
 ```bash
 make full
@@ -158,6 +166,7 @@ You can copy it anywhere in your `$PATH`. The configuration file for the TUI is 
 However, as this is a minimalistic program, you don't need to edit the configuration file and almost everything can be set from the app.
 
 ## TODO
+
 - [ ] Better interface to adjust timestamp of lyric.
 - [ ] Rating and sync support.
 - [x] Multiple root and easy switch.
@@ -172,15 +181,18 @@ If you have any question or concern, or you want to suggest a new feature, or yo
 Please follow [our contributing guidelines](CONTRIBUTING.md)
 
 ## Contributors
+
 hasezoey
 
 ## Thanks
-- [tui-realm](https://github.com/veeso/tui-realm) 
+
+- [tui-realm](https://github.com/veeso/tui-realm)
 - [termscp](https://github.com/veeso/termscp)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
 - [alacritty-themes](https://github.com/rajasegar/alacritty-themes)
 - [shellcaster](https://github.com/jeff-hughes/shellcaster)
-- [stream-download ](https://github.com/aschey/stream-download-rs)
+- [stream-download](https://github.com/aschey/stream-download-rs)
+
 ## License
 
 MIT License for main part of code.

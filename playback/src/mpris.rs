@@ -1,7 +1,10 @@
 use base64::Engine;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use std::sync::mpsc::{self, Receiver};
-use termusiclib::track::Track;
+use termusiclib::{
+    library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE},
+    track::Track,
+};
 
 use crate::{
     GeneralPlayer, PlayerCmd, PlayerProgress, PlayerTimeUnit, PlayerTrait, Status, Volume,
@@ -85,8 +88,8 @@ impl Mpris {
 
         self.controls
             .set_metadata(MediaMetadata {
-                title: Some(track.title().unwrap_or("Unknown Title")),
-                artist: Some(track.artist().unwrap_or("Unknown Artist")),
+                title: Some(track.title().unwrap_or(UNKNOWN_TITLE)),
+                artist: Some(track.artist().unwrap_or(UNKNOWN_ARTIST)),
                 album: Some(track.album().unwrap_or("")),
                 cover_url: cover_art.as_deref(),
                 duration: Some(track.duration()),

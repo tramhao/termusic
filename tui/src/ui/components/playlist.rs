@@ -3,8 +3,10 @@ use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use std::borrow::Cow;
+use std::ffi::OsString;
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
 use termusiclib::track::Track;
@@ -409,9 +411,9 @@ impl Model {
 
             let noname_string = "No Name".to_string();
             let name = record.name().unwrap_or(&noname_string);
-            let artist = record.artist().unwrap_or(name);
-            let mut title: Cow<'_, str> = record.title().unwrap_or("Unknown Title").into();
-            let album = record.album().unwrap_or("Unknown Album");
+            let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
+            let mut title: Cow<'_, str> = record.title().unwrap_or(name).into();
+            let album = record.album().unwrap_or(UNKNOWN_ALBUM);
 
             // TODO: is there maybe a better option to do this on-demand instead of the whole playlist; like on draw-time?
             if idx == self.playlist.get_current_track_index() {
@@ -526,8 +528,8 @@ impl Model {
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
         for record in self.playlist.tracks() {
-            let artist = record.artist().unwrap_or("Unknown artist");
-            let title = record.title().unwrap_or("Unknown title");
+            let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
+            let title = record.title().unwrap_or(UNKNOWN_TITLE);
             if wildmatch::WildMatch::new(&search).matches(&artist.to_lowercase())
                 | wildmatch::WildMatch::new(&search).matches(&title.to_lowercase())
             {
@@ -540,8 +542,8 @@ impl Model {
 
                 let noname_string = "No Name".to_string();
                 let name = record.name().unwrap_or(&noname_string);
-                let artist = record.artist().unwrap_or(name);
-                let title = record.title().unwrap_or("Unknown Title");
+                let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
+                let title = record.title().unwrap_or(name);
                 let file_name = record.file().unwrap_or("no file");
 
                 table
@@ -620,30 +622,35 @@ impl Model {
         result
     }
 
+    /// Save the current playlist as m3u with the given `filename`
     pub fn playlist_save_m3u_before(&mut self, filename: &str) -> Result<()> {
         let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => id,
             _ => bail!("Invalid node selected in library"),
         };
 
-        let parent_folder = get_parent_folder(&current_node);
+        let path_m3u = {
+            let mut parent_folder = get_parent_folder(Path::new(&current_node)).to_path_buf();
+            let mut filename = OsString::from(filename);
+            filename.push(".m3u");
+            parent_folder.push(filename);
 
-        let full_filename = format!("{parent_folder}/{filename}.m3u");
-
-        let path_m3u = Path::new(&full_filename);
+            parent_folder
+        };
 
         if path_m3u.exists() {
-            self.mount_save_playlist_confirm(&full_filename);
+            self.mount_save_playlist_confirm(&path_m3u.to_string_lossy());
             return Ok(());
         }
 
-        self.playlist_save_m3u(&full_filename)
+        self.playlist_save_m3u(&path_m3u)
     }
 
-    pub fn playlist_save_m3u(&mut self, filename: &str) -> Result<()> {
+    /// Save the current playlist as m3u in the given full path
+    pub fn playlist_save_m3u(&mut self, filename: &Path) -> Result<()> {
         self.playlist.save_m3u(filename)?;
 
-        self.library_reload_with_node_focus(Some(filename));
+        self.library_reload_with_node_focus(Some(&filename.to_string_lossy()));
 
         Ok(())
     }

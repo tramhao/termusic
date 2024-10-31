@@ -174,7 +174,7 @@ impl Model {
     pub fn youtube_dl(&mut self, url: &str) -> Result<()> {
         let mut path: PathBuf = std::env::temp_dir();
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            path = PathBuf::from(get_parent_folder(&node_id));
+            path = get_parent_folder(Path::new(&node_id)).to_path_buf();
         }
         let args = vec![
             Arg::new("--extract-audio"),

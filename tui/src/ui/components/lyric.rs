@@ -1,4 +1,5 @@
 use crate::ui::{model::TermusicLayout, Model};
+use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, LyricMsg, Msg};
@@ -203,22 +204,22 @@ impl Model {
         let lyric_width = term_width * 3 / 5;
         let lines_vec: Vec<_> = no_line_breaks.split('\n').collect();
         let mut short_string_vec: Vec<_> = Vec::new();
-        for l in lines_vec {
-            let unicode_width = unicode_width::UnicodeWidthStr::width(l);
+        for line in lines_vec {
+            let unicode_width = unicode_width::UnicodeWidthStr::width(line);
             if unicode_width > lyric_width {
-                let mut string_tmp = textwrap::wrap(l, lyric_width);
+                let mut string_tmp = textwrap::wrap(line, lyric_width);
                 short_string_vec.append(&mut string_tmp);
             } else {
-                short_string_vec.push(std::borrow::Cow::Borrowed(l));
+                short_string_vec.push(std::borrow::Cow::Borrowed(line));
             }
         }
 
-        let mut lines_textspan: Vec<_> = short_string_vec
+        let lines_textspan_len = short_string_vec.len();
+        let lines_textspan = short_string_vec
             .into_iter()
-            .map(|l| PropValue::TextSpan(TextSpan::from(l)))
-            .collect();
+            .map(|l| PropValue::TextSpan(TextSpan::from(l)));
 
-        let mut final_vec: Vec<_> = Vec::new();
+        let mut final_vec: Vec<_> = Vec::with_capacity(7 + lines_textspan_len);
         final_vec.push(PropValue::TextSpan(TextSpan::from(po_title).bold()));
         final_vec.push(PropValue::TextSpan(TextSpan::from(&ep.title).bold()));
         final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
@@ -235,7 +236,7 @@ impl Model {
 
         final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
         final_vec.push(PropValue::TextSpan(TextSpan::from("Description:").bold()));
-        final_vec.append(&mut lines_textspan);
+        final_vec.extend(lines_textspan);
 
         self.app
             .attr(
@@ -342,8 +343,8 @@ impl Model {
         if let Some(track) = &self.current_song {
             match track.media_type {
                 MediaType::Music => {
-                    let artist = track.artist().unwrap_or("Unknown Artist");
-                    let title = track.title().unwrap_or("Unknown Title");
+                    let artist = track.artist().unwrap_or(UNKNOWN_ARTIST);
+                    let title = track.title().unwrap_or(UNKNOWN_TITLE);
                     lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
                 }
                 MediaType::Podcast => {

@@ -64,19 +64,15 @@ pub fn is_playlist(current_node: &str) -> bool {
     }
 }
 
-pub fn get_parent_folder(filename: &str) -> String {
-    let parent_folder: PathBuf;
-    let path_old = Path::new(filename);
-
-    if path_old.is_dir() {
-        parent_folder = path_old.to_path_buf();
-        return parent_folder.to_string_lossy().to_string();
+/// Get the parent path of the given `path`, if there is none use the tempdir
+pub fn get_parent_folder(path: &Path) -> Cow<'_, Path> {
+    if path.is_dir() {
+        return path.into();
     }
-    match path_old.parent() {
-        Some(p) => parent_folder = p.to_path_buf(),
-        None => parent_folder = std::env::temp_dir(),
+    match path.parent() {
+        Some(p) => p.into(),
+        None => std::env::temp_dir().into(),
     }
-    parent_folder.to_string_lossy().to_string()
 }
 
 pub fn get_app_config_path() -> Result<PathBuf> {

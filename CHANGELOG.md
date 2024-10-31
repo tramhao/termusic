@@ -3,8 +3,14 @@
 ### next
 - Unreleased
 - Change: move the "no backend selected" compile error to the "-server" package instead of "-playback" (no need to specify a feature when compiling "termusic"(tui) now)
+- Change: enable `lto` (Link Time Optimizations) for the `release` profile.
+- Change: updated MSRV to 1.79.
+- Change: update some dependencies.
+- Change: remove unused dependencies from all packages.
 - Feat: more immediate event changes (Example: updated via mpris)
+- Feat(server): on rusty backend, enable `aiff` codec support.
 - Fix: change default config ip address to `::1` instead of `::` (any old values on windows will need to be changed manually)
+- Fix: check for other tag types instead of just the primary tag type (for example a wav file with riff metadata instead of id3v2 would not get metadata)
 
 ### [V0.9.1]
 - Released on: August 21, 2024.
@@ -293,7 +299,7 @@
 - fix: when start the app, the first song in playlist will be skipped.
 
 ### [v0.6.0]
-- Released on: Dec 1,2021.
+- Released on: Dec 1, 2021.
 - Update to tui-realm 1.0. Please note, as it's basically a rewrite, small bugs are inevitable. Please report it in issues and I'll respond very fast.
 - Hotkey to quit changed from `Q` to `q`, as now there will show a popup confirmation so it's unlikely to quit accidentally.
 - Can add a song to the beginning of playlist or the end. Switch by `a`. Note: I add this to configuration file, and it'll reset your configuration file to default values. Please backup if you need. Basically it's not necessary as all options can be set from inside termusic.
@@ -400,7 +406,7 @@
 - Released on: August 21, 2021.
 - Run songtag search in parallel to save some time in tageditor.
 
-## Implemented features(changelog before v0.3.3):
+## Implemented features before v0.3.3
 - [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
 - [x] Pause/Skip
 - [x] Seek forward/backward

@@ -10,8 +10,8 @@ Open an issue when:
 
 ## Preferred contributions
 
-Any contribution are welcome and I'll try my best to merge any PRs. 
+Any contribution are welcome and I'll try my best to merge any PRs.
 Please commit to master branch and it's usually the most stable branch. dev branch is not stable, and probably crazy things can happen, for example, cannot build at all. I'll manage the difference between these two branches and you don't need to modify your PRs.
 
-Thank you for any contribution! 
+Thank you for any contribution!
 Larry Hao
