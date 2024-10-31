@@ -250,10 +250,7 @@ pub enum ColorParseError {
 impl ColorParseError {
     #[cfg(test)]
     fn is_parseint_error(&self) -> bool {
-        match self {
-            Self::ParseIntError(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::ParseIntError(_))
     }
 }
 

@@ -2000,6 +2000,7 @@ mod v1_interop {
         use pretty_assertions::assert_eq;
         use v1::BindingForEvent;
 
+        #[allow(clippy::too_many_lines)] // this test just requires a lot of fields
         #[test]
         fn should_convert_default_without_error() {
             let converted: Keys = v1::Keys::default().into();
@@ -2262,10 +2263,12 @@ mod v1_interop {
         #[test]
         fn should_fixup_old_volume_default() {
             let converted: Keys = {
-                let mut v1 = v1::Keys::default();
-                v1.global_player_volume_minus_2 = BindingForEvent {
-                    code: tuievents::Key::Char('_'),
-                    modifier: tuievents::KeyModifiers::SHIFT,
+                let v1 = v1::Keys {
+                    global_player_volume_minus_2: BindingForEvent {
+                        code: tuievents::Key::Char('_'),
+                        modifier: tuievents::KeyModifiers::SHIFT,
+                    },
+                    ..v1::Keys::default()
                 };
 
                 v1.into()
