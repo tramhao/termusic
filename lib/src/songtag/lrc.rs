@@ -51,7 +51,7 @@ lazy_static! {
             .unwrap();
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Lyric {
     /// Offset in milliseconds
     ///
@@ -62,7 +62,7 @@ pub struct Lyric {
     pub unsynced_captions: Vec<UnsyncedCaption>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct UnsyncedCaption {
     /// Timestamp in milliseconds
     time_stamp: i64,
@@ -300,5 +300,76 @@ impl FromStr for Lyric {
         lyric.merge_adjacent();
 
         Ok(lyric)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn should_parse_simple() {
+        let txt = r"[al:Album Title]
+[ar:Performing Artist]
+[by:Lyric creator]
+[offset:+10]
+[re:Lyric creator App]
+[ve:Lyric creator version]
+[ti:Song Title]
+[au:Song Author]
+[00:12.00]Lyrics beginning ...
+[00:15.30]Some more lyrics ...
+[10:11.12]Extra Lyrics";
+
+        let lyrics = Lyric::from_str(txt).unwrap();
+
+        assert_eq!(lyrics.offset, 10);
+        assert_eq!(lyrics.lang_extension, Some(String::new()));
+
+        assert_eq!(
+            lyrics.unsynced_captions.as_slice(),
+            &[
+                UnsyncedCaption {
+                    time_stamp: 12 * 1000,
+                    text: "Lyrics beginning ...".into()
+                },
+                UnsyncedCaption {
+                    time_stamp: (15 * 1000) + 300,
+                    text: "Some more lyrics ...".into()
+                },
+                Caption {
+                    timestamp: (10 * 60 * 1000) + (11 * 1000) + 120,
+                    text: "Extra Lyrics".into()
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn should_parse_minimal() {
+        let txt = r"[00:12.00]Lyrics beginning ...";
+
+        let lyrics = Lyric::from_str(txt).unwrap();
+
+        assert_eq!(lyrics.offset, 0);
+        assert_eq!(lyrics.lang_extension, Some(String::new()));
+
+        assert_eq!(
+            lyrics.unsynced_captions.as_slice(),
+            &[UnsyncedCaption {
+                time_stamp: 12 * 1000,
+                text: "Lyrics beginning ...".into()
+            },]
+        );
+    }
+
+    #[test]
+    fn should_handle_empty() {
+        let txt = "";
+
+        let lyrics = Lyric::from_str(txt).unwrap();
+
+        assert_eq!(lyrics.unsynced_captions.len(), 0);
     }
 }
