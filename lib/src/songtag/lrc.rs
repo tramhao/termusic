@@ -170,10 +170,7 @@ impl Lyric {
     pub fn merge_adjacent(&mut self) {
         let mut merged_captions = self.captions.clone();
         let mut offset = 1;
-        for (i, old_caption) in self.captions.iter().enumerate() {
-            if i < 1 {
-                continue;
-            }
+        for (i, old_caption) in self.captions.iter().enumerate().skip(1) {
             if let Some(item) = merged_captions.get_mut(i - offset) {
                 if old_caption.timestamp - item.timestamp < 2000 {
                     item.text += "  ";
