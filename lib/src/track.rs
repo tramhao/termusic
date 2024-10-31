@@ -1,3 +1,4 @@
+use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::podcast::episode::Episode;
 /**
  * MIT License
@@ -37,30 +38,46 @@ use std::ffi::OsStr;
 use std::fs::rename;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
-// TODO: add some kind of identifier for easy printing, like a uri that is NOT optional
+// TODO: use this for database migration
+/// This is the old string that was used as default for "artist" & "album"
+///
+/// this value is currently unused, but this will stay here as a reminder until the database is migrated
+#[allow(unused)]
+pub const UNSUPPORTED: &str = "Unsupported?";
+
+/// Location types for a Track, could be a local file with [`LocationType::Path`] or a remote URI with [`LocationType::Uri`]
+#[derive(Clone, Debug, PartialEq)]
+pub enum LocationType {
+    /// A Local file, for use with [`MediaType::Music`]
+    Path(PathBuf),
+    /// A remote URI, for use with [`MediaType::LiveRadio`] and [`MediaType::Podcast`]
+    Uri(String),
+}
+
+impl From<PathBuf> for LocationType {
+    fn from(value: PathBuf) -> Self {
+        Self::Path(value)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Track {
+    /// The URI or the Path of the file
+    location: LocationType,
+    pub media_type: MediaType,
+
     /// Artist of the song
     artist: Option<String>,
     /// Album of the song
     album: Option<String>,
     /// Title of the song
     title: Option<String>,
-    /// File path to the song
-    // TODO: why is this a http(s) url in Radio case?
-    file: Option<String>,
     /// Duration of the song
     duration: Duration,
-    /// Name of the song
-    name: Option<String>,
-    /// Extension of the song
-    ext: Option<String>,
-    // TODO: why is this set to the http(s) url in Radio case?
-    directory: Option<String>,
     pub last_modified: SystemTime,
     /// USLT lyrics
     lyric_frames: Vec<Lyrics>,
@@ -76,13 +93,12 @@ pub struct Track {
     // Performer
     // Disc
     // Comment
-    pub media_type: MediaType,
     pub podcast_localfile: Option<String>,
 }
 
 impl PartialEq for Track {
     fn eq(&self, other: &Self) -> bool {
-        self.file == other.file
+        self.location == other.location
     }
 }
 
@@ -94,6 +110,7 @@ pub enum MediaType {
 }
 
 impl Track {
+    /// Create a new [`MediaType::Podcast`] track
     #[allow(clippy::cast_sign_loss)]
     pub fn from_episode(ep: &Episode) -> Self {
         let lyric_frames: Vec<Lyrics> = Vec::new();
@@ -107,13 +124,9 @@ impl Track {
         Self {
             artist: Some("Episode".to_string()),
             album: None,
-            // album: Some(ep.description.clone()),
             title: Some(ep.title.clone()),
-            file: Some(ep.url.clone()),
+            location: LocationType::Uri(ep.url.clone()),
             duration: Duration::from_secs(ep.duration.unwrap_or(0) as u64),
-            name: None,
-            ext: None,
-            directory: None,
             last_modified: SystemTime::now(),
             lyric_frames,
             lyric_selected_index: 0,
@@ -127,16 +140,15 @@ impl Track {
         }
     }
 
-    /// Read all metadata from a given `path` and process them into a new [`Track`]
-    ///
-    /// Setting `for_db` to `true` skips lyric and picture processing
+
+    /// Create a new [`MediaType::Music`] track
     pub fn read_from_path<P: AsRef<Path>>(path: P, for_db: bool) -> Result<Self> {
         let path = path.as_ref();
 
         let probe = Probe::open(path)?;
         let file_type = probe.file_type();
 
-        let mut song = Self::new(path);
+        let mut song = Self::new(LocationType::Path(path.to_path_buf()), MediaType::Music);
         if let Ok(mut tagged_file) = probe.read() {
             // We can at most get the duration and file type at this point
             let properties = tagged_file.properties();
@@ -152,7 +164,7 @@ impl Track {
             }
         }
 
-        let parent_folder = get_parent_folder(&path.to_string_lossy());
+        let parent_folder = get_parent_folder(path);
 
         if let Ok(files) = std::fs::read_dir(parent_folder) {
             for f in files.flatten() {
@@ -167,6 +179,7 @@ impl Track {
 
         Ok(song)
     }
+
 
     /// Process a given [`LoftyTag`] into the given `track`
     fn process_tag(
@@ -239,56 +252,47 @@ impl Track {
         Ok(())
     }
 
+
+    /// Create a new [`MediaType::LiveRadio`] track
     pub fn new_radio(url: &str) -> Self {
-        let mut track = Self::new(url);
+        let mut track = Self::new(LocationType::Uri(url.to_string()), MediaType::LiveRadio);
         track.artist = Some("Radio".to_string());
         track.title = Some("Radio Station".to_string());
         track.album = Some("Live".to_string());
-        track.media_type = MediaType::LiveRadio;
         track
     }
-    fn new<P: AsRef<Path>>(path: P) -> Self {
-        let p = path.as_ref();
-        let directory = Some(get_parent_folder(&p.to_string_lossy()));
-        let ext = p.extension().and_then(OsStr::to_str).map(String::from);
-        let artist = Some(String::from("Unsupported?"));
-        let album = Some(String::from("Unsupported?"));
-        let title = p.file_stem().and_then(OsStr::to_str).map(String::from);
-        let file = Some(p.to_string_lossy().into_owned());
+
+    fn new(location: LocationType, media_type: MediaType) -> Self {
         let duration = Duration::from_secs(0);
-        let name = p
-            .file_name()
-            .and_then(OsStr::to_str)
-            .map(std::string::ToString::to_string);
-        let parsed_lyric: Option<Lyric> = None;
         let lyric_frames: Vec<Lyrics> = Vec::new();
-        let picture: Option<Picture> = None;
-        let album_photo: Option<String> = None;
-        let genre = Some(String::from("Unknown"));
         let mut last_modified = SystemTime::now();
-        if let Ok(meta) = p.metadata() {
-            if let Ok(modified) = meta.modified() {
-                last_modified = modified;
+        let mut title = None;
+
+        if let LocationType::Path(path) = &location {
+            if let Ok(meta) = path.metadata() {
+                if let Ok(modified) = meta.modified() {
+                    last_modified = modified;
+                }
             }
+
+            title = path.file_stem().and_then(OsStr::to_str).map(String::from);
         }
+
         Self {
-            ext,
             file_type: None,
-            artist,
-            album,
+            artist: None,
+            album: None,
             title,
-            file,
-            directory,
             duration,
-            name,
-            parsed_lyric,
+            location,
+            parsed_lyric: None,
             lyric_frames,
             lyric_selected_index: 0,
-            picture,
-            album_photo,
+            picture: None,
+            album_photo: None,
             last_modified,
-            genre,
-            media_type: MediaType::Music,
+            genre: None,
+            media_type,
             podcast_localfile: None,
         }
     }
@@ -417,16 +421,31 @@ impl Track {
         self.title = Some(title.to_string());
     }
 
+    /// Get the full Path or URI of the track, if its a local file
     pub fn file(&self) -> Option<&str> {
-        self.file.as_deref()
+        match &self.location {
+            LocationType::Path(path_buf) => path_buf.to_str(),
+            LocationType::Uri(uri) => Some(uri),
+        }
     }
 
+    /// Get the directory the track is in, if its a local file
     pub fn directory(&self) -> Option<&str> {
-        self.directory.as_deref()
+        if let LocationType::Path(path) = &self.location {
+            // not using "utils::get_parent_directory" as if a track is "LocationType::Path", it should have a directory and a file in the path
+            path.parent().and_then(Path::to_str)
+        } else {
+            None
+        }
     }
 
+    /// Get the extension of the track, if its a local file
     pub fn ext(&self) -> Option<&str> {
-        self.ext.as_deref()
+        if let LocationType::Path(path) = &self.location {
+            path.extension().and_then(OsStr::to_str)
+        } else {
+            None
+        }
     }
 
     pub const fn duration(&self) -> Duration {
@@ -449,8 +468,13 @@ impl Track {
         }
     }
 
+    /// Get the `file_name` or the full URI of the current Track
     pub fn name(&self) -> Option<&str> {
-        self.name.as_deref()
+        match &self.location {
+            LocationType::Path(path) => path.file_name().and_then(OsStr::to_str),
+            // TODO: should this really return the uri here instead of None?
+            LocationType::Uri(uri) => Some(uri),
+        }
     }
 
     pub fn save_tag(&mut self) -> Result<()> {
@@ -520,8 +544,8 @@ impl Track {
         if let Some(ext) = self.ext() {
             let new_name = format!(
                 "{}-{}.{}",
-                self.artist().unwrap_or("Unknown Artist"),
-                self.title().unwrap_or("Unknown Title"),
+                self.artist().unwrap_or(UNKNOWN_ARTIST),
+                self.title().unwrap_or(UNKNOWN_TITLE),
                 ext,
             );
 
@@ -531,7 +555,7 @@ impl Track {
                 if let Some(p_prefix) = p_old.parent() {
                     let p_new = p_prefix.join(new_name_path);
                     rename(p_old, &p_new)?;
-                    self.file = Some(String::from(p_new.to_string_lossy()));
+                    self.location = LocationType::Path(p_new);
                 }
             }
         }
@@ -570,12 +594,12 @@ impl Track {
     fn update_tag<T: Accessor>(&self, tag: &mut T) {
         tag.set_artist(
             self.artist()
-                .map_or_else(|| String::from("Unknown Artist"), str::to_string),
+                .map_or_else(|| String::from(UNKNOWN_ARTIST), str::to_string),
         );
 
         tag.set_title(
             self.title()
-                .map_or_else(|| String::from("Unknown Title"), str::to_string),
+                .map_or_else(|| String::from(UNKNOWN_TITLE), str::to_string),
         );
 
         tag.set_album(self.album().map_or_else(String::new, str::to_string));

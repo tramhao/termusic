@@ -1,4 +1,5 @@
 use crate::ui::{model::TermusicLayout, Model};
+use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, LyricMsg, Msg};
@@ -342,8 +343,8 @@ impl Model {
         if let Some(track) = &self.current_song {
             match track.media_type {
                 MediaType::Music => {
-                    let artist = track.artist().unwrap_or("Unknown Artist");
-                    let title = track.title().unwrap_or("Unknown Title");
+                    let artist = track.artist().unwrap_or(UNKNOWN_ARTIST);
+                    let title = track.title().unwrap_or(UNKNOWN_TITLE);
                     lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
                 }
                 MediaType::Podcast => {

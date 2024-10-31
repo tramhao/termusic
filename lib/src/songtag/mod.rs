@@ -247,7 +247,7 @@ impl SongTag {
 
     #[allow(clippy::too_many_lines)]
     pub async fn download(&self, file: &str, tx_tageditor: &Sender<Msg>) -> Result<()> {
-        let p_parent = get_parent_folder(file);
+        let p_parent = get_parent_folder(Path::new(file));
         let song_id = self
             .song_id
             .as_ref()
@@ -275,8 +275,8 @@ impl SongTag {
             Arg::new_with_arg("--audio-format", "mp3"),
         ];
 
-        let p_full = format!("{p_parent}/{artist}-{title}.mp3");
-        match std::fs::remove_file(Path::new(p_full.as_str())) {
+        let p_full = p_parent.join(format!("{artist}-{title}.mp3"));
+        match std::fs::remove_file(&p_full) {
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => (),
             v => v?,
         }
@@ -343,13 +343,11 @@ impl SongTag {
                         tag.insert_picture(picture);
                     }
 
-                    let file = p_full.as_str();
-
-                    if tag.save_to_path(file, WriteOptions::new()).is_ok() {
+                    if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
                         sleep(Duration::from_secs(10));
                         tx.send(Msg::Download(DLMsg::DownloadCompleted(
                             url.clone(),
-                            Some(file.to_string()),
+                            Some(p_full.to_string_lossy().to_string()),
                         )))
                         .ok();
                     } else {
