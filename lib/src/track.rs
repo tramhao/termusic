@@ -27,9 +27,7 @@ use crate::songtag::lrc::Lyric;
 use crate::utils::get_parent_folder;
 use anyhow::{bail, Result};
 use id3::frame::Lyrics;
-use lofty::config::ParseOptions;
 use lofty::config::WriteOptions;
-use lofty::mpeg::MpegFile;
 use lofty::picture::{Picture, PictureType};
 use lofty::prelude::{Accessor, AudioFile, ItemKey, TagExt, TaggedFileExt};
 use lofty::tag::{ItemValue, Tag as LoftyTag, TagItem};
@@ -37,8 +35,6 @@ use lofty::{file::FileType, probe::Probe};
 use std::convert::From;
 use std::ffi::OsStr;
 use std::fs::rename;
-use std::fs::File;
-use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
@@ -155,42 +151,11 @@ impl Track {
             song.file_type = Some(tagged_file.file_type());
 
             if let Some(tag) = tagged_file.primary_tag_mut() {
-                // Check for a length tag (Ex. TLEN in ID3v2)
-                if let Some(len_tag) = tag.get_string(&ItemKey::Length) {
-                    song.duration = Duration::from_millis(len_tag.parse::<u64>()?);
-                }
-
-                song.artist = tag.artist().map(std::borrow::Cow::into_owned);
-                song.album = tag.album().map(std::borrow::Cow::into_owned);
-                song.title = tag.title().map(std::borrow::Cow::into_owned);
-                song.genre = tag.genre().map(std::borrow::Cow::into_owned);
-                song.media_type = MediaType::Music;
-
-                if for_db {
-                    return Ok(song);
-                }
-
-                // Get all of the lyrics tags
-                let mut lyric_frames: Vec<Lyrics> = Vec::new();
-                create_lyrics(tag, &mut lyric_frames);
-
-                song.parsed_lyric = lyric_frames
-                    .first()
-                    .map(|lf| Lyric::from_str(&lf.text).ok())
-                    .and_then(|pl| pl);
-                song.lyric_frames = lyric_frames;
-
-                // Get the picture (not necessarily the front cover)
-                let mut picture = tag
-                    .pictures()
-                    .iter()
-                    .find(|pic| pic.pic_type() == PictureType::CoverFront)
-                    .cloned();
-                if picture.is_none() {
-                    picture = tag.pictures().first().cloned();
-                }
-
-                song.picture = picture;
+                Self::process_tag(tag, &mut song, for_db)?;
+            } else if let Some(tag) = tagged_file.first_tag_mut() {
+                Self::process_tag(tag, &mut song, for_db)?;
+            } else {
+                warn!("File \"{}\" does not have any tags!", path.display());
             }
         }
 
@@ -211,13 +176,7 @@ impl Track {
     }
 
     /// Process a given [`LoftyTag`] into the given `track`
-    fn process_tag(
-        path: &Path,
-        tag: &mut LoftyTag,
-        track: &mut Track,
-        file_type: &Option<FileType>,
-        for_db: bool,
-    ) -> Result<()> {
+    fn process_tag(tag: &mut LoftyTag, track: &mut Track, for_db: bool) -> Result<()> {
         // Check for a length tag (Ex. TLEN in ID3v2)
         if let Some(len_tag) = tag.get_string(&ItemKey::Length) {
             track.duration = Duration::from_millis(len_tag.parse::<u64>()?);
@@ -235,31 +194,8 @@ impl Track {
 
         // Get all of the lyrics tags
         let mut lyric_frames: Vec<Lyrics> = Vec::new();
-        match file_type {
-            Some(FileType::Mpeg) => {
-                let mut reader = BufReader::new(File::open(path)?);
-                // let file = MPEGFile::read_from(&mut reader, false)?;
-                let file = MpegFile::read_from(&mut reader, ParseOptions::new())?;
+        create_lyrics(tag, &mut lyric_frames);
 
-                if let Some(id3v2_tag) = file.id3v2() {
-                    for lyrics_frame in id3v2_tag.unsync_text() {
-                        let mut language =
-                            String::from_utf8_lossy(&lyrics_frame.language).to_string();
-                        if language.len() < 3 {
-                            language = "eng".to_string();
-                        }
-                        lyric_frames.push(Lyrics {
-                            lang: language,
-                            description: lyrics_frame.description.clone(),
-                            text: lyrics_frame.content.clone(),
-                        });
-                    }
-                }
-            }
-            _ => {
-                create_lyrics(tag, &mut lyric_frames);
-            }
-        };
         track.parsed_lyric = lyric_frames
             .first()
             .map(|lf| Lyric::from_str(&lf.text).ok())
