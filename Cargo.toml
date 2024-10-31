@@ -83,13 +83,14 @@ soundtouch = "0.4.2"
 souvlaki = { version = "0.7.3", default-features=false, features = ["use_zbus"] }
 stream-download = { version = "0.9.0", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
-    "default",
     "aac",
     "mp3",
     "isomp4",
     "alac",
     "flac",
     "mkv",
+    "wav",
+    "aiff"
 ] }
 sysinfo = { version = "^0.32", default-features = false, features = ["system"] }
 textwrap = "0.16"

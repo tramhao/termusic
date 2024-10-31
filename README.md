@@ -37,7 +37,7 @@ In the case that metadata is not supported, an attempt will still be made to pla
 | Format (`feature`) | Symphonia (`rusty`)     | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
 | ------------------ | ----------------------- | ----------- | ----------------- | -------- |
 | ADTS               | Yes                     | Yes         | Yes               | No       |
-| AIFF               | No                      | Yes         | Yes               | Yes      |
+| AIFF               | Yes                     | Yes         | Yes               | Yes      |
 | FLAC               | Yes                     | Yes         | Yes               | Yes      |
 | M4a                | Yes                     | Yes         | Yes               | Yes      |
 | MP3                | Yes                     | Yes         | Yes               | Yes      |
