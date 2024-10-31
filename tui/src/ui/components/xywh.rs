@@ -30,8 +30,8 @@ use crate::ui::model::{Model, ViuerSupported};
 use anyhow::Context;
 use anyhow::Result;
 use bytes::Buf;
-use image::io::Reader as ImageReader;
 use image::DynamicImage;
+use image::ImageReader;
 use lofty::picture::Picture;
 #[cfg(any(
     feature = "cover-viuer-iterm",

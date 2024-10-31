@@ -3,6 +3,9 @@
 ### next
 - Unreleased
 - Change: move the "no backend selected" compile error to the "-server" package instead of "-playback" (no need to specify a feature when compiling "termusic"(tui) now)
+- Change: updated MSRV to 1.79.
+- Change: update some dependencies.
+- Change: remove unused dependencies from all packages.
 - Feat: more immediate event changes (Example: updated via mpris)
 - Fix: change default config ip address to `::1` instead of `::` (any old values on windows will need to be changed manually)
 
