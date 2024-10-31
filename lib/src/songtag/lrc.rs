@@ -57,7 +57,6 @@ pub struct Lyric {
     ///
     /// positive means delay lyric
     pub offset: i64,
-    pub lang_extension: Option<String>,
     /// USLT captions
     pub unsynced_captions: Vec<UnsyncedCaption>,
 }
@@ -254,7 +253,6 @@ impl FromStr for Lyric {
         // s = cleanLRC(s)
         // lines := strings.Split(s, "\n")
         let mut offset: i64 = 0;
-        let lang_extension = Some(String::new());
         let mut unsynced_captions = vec![];
         for line in s.split('\n') {
             let mut line = line.to_string();
@@ -293,7 +291,6 @@ impl FromStr for Lyric {
 
         let mut lyric = Self {
             offset,
-            lang_extension,
             unsynced_captions,
         };
 
@@ -325,7 +322,6 @@ mod tests {
         let lyrics = Lyric::from_str(txt).unwrap();
 
         assert_eq!(lyrics.offset, 10);
-        assert_eq!(lyrics.lang_extension, Some(String::new()));
 
         assert_eq!(
             lyrics.unsynced_captions.as_slice(),
@@ -353,7 +349,6 @@ mod tests {
         let lyrics = Lyric::from_str(txt).unwrap();
 
         assert_eq!(lyrics.offset, 0);
-        assert_eq!(lyrics.lang_extension, Some(String::new()));
 
         assert_eq!(
             lyrics.unsynced_captions.as_slice(),
