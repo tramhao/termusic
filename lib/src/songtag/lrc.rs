@@ -69,8 +69,6 @@ pub struct Caption {
     text: String,
 }
 
-const EOL: &str = "\n";
-
 impl Lyric {
     // GetText will fetch lyric by time in seconds
     pub fn get_text(&self, time: Duration) -> Option<String> {
@@ -232,12 +230,11 @@ impl Caption {
 
     /// Format the current [`Caption`] as a LRC line
     fn as_lrc(&self) -> String {
-        let line = format!(
-            "[{}]{}",
+        format!(
+            "[{}]{}\n",
             time_lrc(self.timestamp.try_into().unwrap_or(0)),
             self.text
-        );
-        line + EOL
+        )
     }
 }
 
