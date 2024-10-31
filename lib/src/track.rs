@@ -25,14 +25,13 @@ use crate::podcast::episode::Episode;
  */
 use crate::songtag::lrc::Lyric;
 use crate::utils::get_parent_folder;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use id3::frame::Lyrics;
-use lofty::config::{ParseOptions, WriteOptions};
-use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
+use lofty::config::WriteOptions;
 use lofty::picture::{Picture, PictureType};
 use lofty::prelude::{Accessor, AudioFile, ItemKey, TagExt, TaggedFileExt};
 use lofty::tag::{ItemValue, Tag as LoftyTag, TagItem};
-use lofty::{file::FileType, mpeg::MpegFile, probe::Probe, TextEncoding};
+use lofty::{file::FileType, probe::Probe};
 use std::convert::From;
 use std::ffi::OsStr;
 use std::fs::rename;
@@ -146,7 +145,6 @@ impl Track {
         let path = path.as_ref();
 
         let probe = Probe::open(path)?;
-        let file_type = probe.file_type();
 
         let mut song = Self::new(LocationType::Path(path.to_path_buf()), MediaType::Music);
         if let Ok(mut tagged_file) = probe.read() {
@@ -156,11 +154,42 @@ impl Track {
             song.file_type = Some(tagged_file.file_type());
 
             if let Some(tag) = tagged_file.primary_tag_mut() {
-                Self::process_tag(path, tag, &mut song, &file_type, for_db)?;
-            } else if let Some(tag) = tagged_file.first_tag_mut() {
-                Self::process_tag(path, tag, &mut song, &file_type, for_db)?;
-            } else {
-                warn!("File \"{}\" does not have any tags!", path.display());
+                // Check for a length tag (Ex. TLEN in ID3v2)
+                if let Some(len_tag) = tag.get_string(&ItemKey::Length) {
+                    song.duration = Duration::from_millis(len_tag.parse::<u64>()?);
+                }
+
+                song.artist = tag.artist().map(std::borrow::Cow::into_owned);
+                song.album = tag.album().map(std::borrow::Cow::into_owned);
+                song.title = tag.title().map(std::borrow::Cow::into_owned);
+                song.genre = tag.genre().map(std::borrow::Cow::into_owned);
+                song.media_type = MediaType::Music;
+
+                if for_db {
+                    return Ok(song);
+                }
+
+                // Get all of the lyrics tags
+                let mut lyric_frames: Vec<Lyrics> = Vec::new();
+                create_lyrics(tag, &mut lyric_frames);
+
+                song.parsed_lyric = lyric_frames
+                    .first()
+                    .map(|lf| Lyric::from_str(&lf.text).ok())
+                    .and_then(|pl| pl);
+                song.lyric_frames = lyric_frames;
+
+                // Get the picture (not necessarily the front cover)
+                let mut picture = tag
+                    .pictures()
+                    .iter()
+                    .find(|pic| pic.pic_type() == PictureType::CoverFront)
+                    .cloned();
+                if picture.is_none() {
+                    picture = tag.pictures().first().cloned();
+                }
+
+                song.picture = picture;
             }
         }
 
@@ -478,62 +507,28 @@ impl Track {
     }
 
     pub fn save_tag(&mut self) -> Result<()> {
-        match self.file_type {
-            Some(FileType::Mpeg) => {
-                if let Some(file_path) = self.file() {
-                    let mut tag = Id3v2Tag::default();
-                    self.update_tag(&mut tag);
+        if let Some(file_path) = self.file() {
+            let tag_type = match self.file_type {
+                Some(file_type) => file_type.primary_tag_type(),
+                None => return Ok(()),
+            };
 
-                    if !self.lyric_frames_is_empty() {
-                        if let Some(lyric_frames) = self.lyric_frames() {
-                            for l in lyric_frames {
-                                let l_frame =
-                                    Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
-                                        TextEncoding::UTF8,
-                                        l.lang.as_bytes()[0..3]
-                                            .try_into()
-                                            .with_context(|| "wrong length of language")?,
-                                        l.description,
-                                        l.text,
-                                    ));
-                                tag.insert(l_frame);
-                            }
-                        }
+            let mut tag = LoftyTag::new(tag_type);
+            self.update_tag(&mut tag);
+
+            if !self.lyric_frames_is_empty() {
+                if let Some(lyric_frames) = self.lyric_frames() {
+                    for l in lyric_frames {
+                        tag.push(TagItem::new(ItemKey::Lyrics, ItemValue::Text(l.text)));
                     }
-
-                    if let Some(any_picture) = self.picture().cloned() {
-                        tag.insert_picture(any_picture);
-                    }
-
-                    tag.save_to_path(file_path, WriteOptions::new())?;
                 }
             }
 
-            _ => {
-                if let Some(file_path) = self.file() {
-                    let tag_type = match self.file_type {
-                        Some(file_type) => file_type.primary_tag_type(),
-                        None => return Ok(()),
-                    };
-
-                    let mut tag = LoftyTag::new(tag_type);
-                    self.update_tag(&mut tag);
-
-                    if !self.lyric_frames_is_empty() {
-                        if let Some(lyric_frames) = self.lyric_frames() {
-                            for l in lyric_frames {
-                                tag.push(TagItem::new(ItemKey::Lyrics, ItemValue::Text(l.text)));
-                            }
-                        }
-                    }
-
-                    if let Some(any_picture) = self.picture().cloned() {
-                        tag.push_picture(any_picture);
-                    }
-
-                    tag.save_to_path(file_path, WriteOptions::new())?;
-                }
+            if let Some(any_picture) = self.picture().cloned() {
+                tag.push_picture(any_picture);
             }
+
+            tag.save_to_path(file_path, WriteOptions::new())?;
         }
 
         self.rename_by_tag()?;
@@ -612,9 +607,8 @@ fn create_lyrics(tag: &mut LoftyTag, lyric_frames: &mut Vec<Lyrics>) {
     for lyric in lyrics {
         if let ItemValue::Text(lyrics_text) = lyric.value() {
             lyric_frames.push(Lyrics {
-                lang: "eng".to_string(),
-                // description: String::new(),
-                description: "default".to_string(),
+                lang: lyric.lang().escape_ascii().to_string(),
+                description: lyric.description().to_string(),
                 text: lyrics_text.to_string(),
             });
         }
