@@ -174,10 +174,10 @@ impl Lyric {
             if i < 1 {
                 continue;
             }
-            if let Some(item) = merged_captions.get(i - offset) {
+            if let Some(item) = merged_captions.get_mut(i - offset) {
                 if old_caption.timestamp - item.timestamp < 2000 {
-                    merged_captions[i - offset].text += "  ";
-                    merged_captions[i - offset].text += old_caption.text.as_ref();
+                    item.text += "  ";
+                    item.text += old_caption.text.as_ref();
                     merged_captions.remove(i - offset + 1);
                     offset += 1;
                 }
