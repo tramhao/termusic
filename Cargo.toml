@@ -116,7 +116,7 @@ futures = "0.3"
 cc = "1.1"
 
 [profile.release]
-# lto = true
+lto = true
 # panic = 'abort'
 # opt-level = 'z'
 # codegen-units = 1
