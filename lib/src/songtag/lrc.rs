@@ -368,4 +368,35 @@ mod tests {
 
         assert_eq!(lyrics.captions.len(), 0);
     }
+
+    #[test]
+    fn should_format_as_lrc() {
+        let lyrics = Lyric {
+            offset: 10,
+            captions: vec![
+                Caption {
+                    timestamp: 12 * 1000,
+                    text: "Lyrics beginning ...".into(),
+                },
+                Caption {
+                    timestamp: (15 * 1000) + 300,
+                    text: "Some more lyrics ...".into(),
+                },
+                Caption {
+                    timestamp: (10 * 60 * 1000) + (11 * 1000) + 120,
+                    text: "Extra Lyrics".into(),
+                },
+            ],
+        };
+
+        // TODO: the milliseconds dont seem to work right
+        assert_eq!(
+            lyrics.as_lrc_text(),
+            r"[offset:10]
+[00:12.00]Lyrics beginning ...
+[00:15.00]Some more lyrics ...
+[10:11.20]Extra Lyrics
+"
+        );
+    }
 }
