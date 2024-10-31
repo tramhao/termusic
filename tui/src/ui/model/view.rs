@@ -9,6 +9,7 @@ use crate::ui::utils::{
 };
 use crate::ui::Application;
 use anyhow::{bail, Result};
+use std::path::Path;
 use std::time::{Duration, Instant};
 use termusiclib::config::SharedTuiSettings;
 /**
@@ -579,7 +580,10 @@ impl Model {
             _ => bail!("Invalid node selected in library"),
         };
 
-        let mut path_string = get_parent_folder(&current_node);
+        let mut path_string = get_parent_folder(Path::new(&current_node))
+            .to_string_lossy()
+            .to_string();
+        // push extra "/" as "Path::to_string()" does not end with a "/"
         path_string.push('/');
 
         let config = self.config_tui.read();

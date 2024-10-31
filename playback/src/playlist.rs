@@ -1,5 +1,5 @@
 use anyhow::{bail, Context, Result};
-use pathdiff::diff_utf8_paths;
+use pathdiff::diff_paths;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
@@ -364,7 +364,7 @@ impl Playlist {
     ///
     /// # Errors
     /// Error could happen when writing file to local disk.
-    pub fn save_m3u(&self, filename: &str) -> Result<()> {
+    pub fn save_m3u(&self, filename: &Path) -> Result<()> {
         if self.tracks.is_empty() {
             bail!("Unable to save since the playlist is empty.");
         }
@@ -377,14 +377,17 @@ impl Playlist {
         Ok(())
     }
 
-    fn get_m3u_file(&self, parent_folder: &str) -> String {
+    /// Generate the m3u's file content
+    ///
+    /// All Paths are relative to the `parent_folder` directory
+    fn get_m3u_file(&self, parent_folder: &Path) -> String {
         let mut m3u = String::from("#EXTM3U\n");
         for track in &self.tracks {
             if let Some(file) = track.file() {
-                let path_relative = diff_utf8_paths(file, parent_folder);
+                let path_relative = diff_paths(file, parent_folder);
 
-                if let Some(p) = path_relative {
-                    let path = format!("{p}\n");
+                if let Some(path_relative) = path_relative {
+                    let path = format!("{}\n", path_relative.display());
                     m3u.push_str(&path);
                 }
             }
