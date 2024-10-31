@@ -241,10 +241,14 @@ impl Caption {
 /// Format a time as a LRC time `mm:ss.ms`
 fn time_lrc(time_stamp: u64) -> String {
     let time_duration = Duration::from_millis(time_stamp);
+    // LRC format does not handle hours, so this formatting assumes it is below 1 hour
     // let _h = time_duration.as_secs() / 3600;
+    // modulate by 60 to keep it only to the current hour, instead of all the duration as minutes
     let m = (time_duration.as_secs() / 60) % 60;
+    // modulate by 60 to keep it only to the current minute, instead of all the duration as seconds
     let s = time_duration.as_secs() % 60;
-    let ms = time_duration.as_millis() % 60;
+    // subsec is always guranteed to be less than a second; dividing by 10 to only have the 2 most significant numbers
+    let ms = time_duration.subsec_millis() / 10;
 
     format!("{m:02}:{s:02}.{ms:02}")
 }
@@ -389,13 +393,12 @@ mod tests {
             ],
         };
 
-        // TODO: the milliseconds dont seem to work right
         assert_eq!(
             lyrics.as_lrc_text(),
             r"[offset:10]
 [00:12.00]Lyrics beginning ...
-[00:15.00]Some more lyrics ...
-[10:11.20]Extra Lyrics
+[00:15.30]Some more lyrics ...
+[10:11.12]Extra Lyrics
 "
         );
     }
