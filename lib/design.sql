@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS files_metadata(
     -- can be null if not present or cannot be parsed
     title TEXT,
     -- can be null if not present or cannot be parsed
-    genre TEXT
+    genre TEXT,
+    -- what will be shown for the author field, example "AuthorA feat. AuthorB" (but for linking use the artists / files_artists tables)
+    author_display TEXT
 );
 
 -- the table for all artists
