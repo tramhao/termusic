@@ -187,22 +187,22 @@ impl Lyric {
 
 impl Caption {
     /// Try to parse a single [`Caption`]
-    fn parse_line(line: &str) -> Result<Self, ()> {
+    fn parse_line(line: &str) -> Option<Self> {
         //[00:12.00]Line 1 lyrics
 
         // plus 1 can always be done because "find" has found a instance (and returns before), and the character is ASCII
         // start index after the character
-        let timestamp_start = line.find('[').ok_or(())? + 1;
+        let timestamp_start = line.find('[')? + 1;
         // theoretically, a LRC timestamp is always 8 characters long, but we do this to support longer possible values
         // end index before the character
-        let timestamp_end = (line[timestamp_start..]).find(']').ok_or(())? + timestamp_start;
+        let timestamp_end = (line[timestamp_start..]).find(']')? + timestamp_start;
         // exclude the end character
         let text_start = timestamp_end + 1;
 
         let time_stamp = Self::parse_time(&line[timestamp_start..timestamp_end])?;
         let text = line[text_start..].to_string();
 
-        Ok(Self {
+        Some(Self {
             timestamp: time_stamp.try_into().unwrap_or(0),
             text,
         })
@@ -212,13 +212,13 @@ impl Caption {
     ///
     /// LRC time is `mm:ss.xx` where `m` is minutes, `s` is seconds and `x` hundreths of a second (centis)
     /// or non-standard `mm:ss.xxx` where `x` is milliseconds
-    fn parse_time(string: &str) -> Result<u64, ()> {
-        let double_idx = string.find(':').ok_or(())?;
-        let dot_idx = string[double_idx..].find('.').ok_or(())? + double_idx;
+    fn parse_time(string: &str) -> Option<u64> {
+        let double_idx = string.find(':')?;
+        let dot_idx = string[double_idx..].find('.')? + double_idx;
 
-        let minutes: u32 = string[..double_idx].parse().map_err(|_| ())?;
-        let seconds: u32 = string[double_idx + 1..dot_idx].parse().map_err(|_| ())?;
-        let centis_or_millis: u32 = string[dot_idx + 1..].parse().map_err(|_| ())?;
+        let minutes: u32 = string[..double_idx].parse().ok()?;
+        let seconds: u32 = string[double_idx + 1..dot_idx].parse().ok()?;
+        let centis_or_millis: u32 = string[dot_idx + 1..].parse().ok()?;
 
         // support non-standard ".xxx" (milliseconds)
         // will still have to below 1 second (999 milliseconds max)
@@ -229,7 +229,7 @@ impl Caption {
         };
         let sum_millis = (u64::from(minutes) * 60 + u64::from(seconds)) * 1000 + u64::from(millis);
 
-        Ok(sum_millis)
+        Some(sum_millis)
     }
 
     /// Format the current [`Caption`] as a LRC line
@@ -293,7 +293,7 @@ impl FromStr for Lyric {
                 continue;
             }
 
-            if let Ok(s) = Caption::parse_line(&line) {
+            if let Some(s) = Caption::parse_line(&line) {
                 captions.push(s);
             };
         }
