@@ -202,14 +202,12 @@ impl Track {
         track.lyric_frames = lyric_frames;
 
         // Get the picture (not necessarily the front cover)
-        let mut picture = tag
+        let picture = tag
             .pictures()
             .iter()
             .find(|pic| pic.pic_type() == PictureType::CoverFront)
+            .or_else(|| tag.pictures().first())
             .cloned();
-        if picture.is_none() {
-            picture = tag.pictures().first().cloned();
-        }
 
         track.picture = picture;
 
