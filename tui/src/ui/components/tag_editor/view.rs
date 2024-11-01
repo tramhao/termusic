@@ -368,11 +368,9 @@ impl Model {
             return;
         }
 
-        let mut vec_lang: Vec<String> = vec![];
+        let mut vec_lang: Vec<String> = Vec::new();
         if let Some(lf) = s.lyric_frames() {
-            for l in lf {
-                vec_lang.push(l.description.clone());
-            }
+            vec_lang = lf.into_iter().map(|lyric| lyric.description).collect();
         }
         vec_lang.sort();
 
