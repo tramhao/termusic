@@ -209,28 +209,27 @@ impl Caption {
     }
 
     /// Parse the time from a caption, the input needs to have the "[]" already removed
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    ///
+    /// LRC time is `mm:ss.xx` where `m` is minutes, `s` is seconds and `x` hundreths of a second (centis)
+    /// or non-standard `mm:ss.xxx` where `x` is milliseconds
     fn parse_time(string: &str) -> Result<u64, ()> {
-        //mm:ss.xx or mm:ss.xxx
-        if !(string.contains(':')) | !(string.contains('.')) {
-            return Err(());
-        }
-        let (x, y) = (string.find(':').ok_or(())?, string.find('.').ok_or(())?);
-        let minute = string.get(0..x).ok_or(())?.parse::<u32>().map_err(|_| ())?;
-        let second = string
-            .get(x + 1..y)
-            .ok_or(())?
-            .parse::<u32>()
-            .map_err(|_| ())?;
-        let micros = &format!("0.{}", string.get(y + 1..).ok_or(())?)
-            .parse::<f64>()
-            .map_err(|_| ())?;
-        // let secs_u64 = u64::try_from(micros * 1000.0).ok();
-        // let secs = u64::from((micros * 1000.0).round());
-        let sum_milis = u64::from(minute) * 60 * 1000
-            + u64::from(second) * 1000
-            + (micros * 1000.0).abs() as u64;
-        Ok(sum_milis)
+        let double_idx = string.find(':').ok_or(())?;
+        let dot_idx = string[double_idx..].find('.').ok_or(())? + double_idx;
+
+        let minutes: u32 = string[..double_idx].parse().map_err(|_| ())?;
+        let seconds: u32 = string[double_idx + 1..dot_idx].parse().map_err(|_| ())?;
+        let centis_or_millis: u32 = string[dot_idx + 1..].parse().map_err(|_| ())?;
+
+        // support non-standard ".xxx" (milliseconds)
+        // will still have to below 1 second (999 milliseconds max)
+        let millis = if centis_or_millis < 99 {
+            centis_or_millis * 10
+        } else {
+            centis_or_millis
+        };
+        let sum_millis = (u64::from(minutes) * 60 + u64::from(seconds)) * 1000 + u64::from(millis);
+
+        Ok(sum_millis)
     }
 
     /// Format the current [`Caption`] as a LRC line
@@ -364,6 +363,23 @@ mod tests {
             lyrics.captions.as_slice(),
             &[Caption {
                 timestamp: 12 * 1000,
+                text: "Lyrics beginning ...".into()
+            },]
+        );
+    }
+
+    #[test]
+    fn should_parse_milliseconds() {
+        let txt = r"[00:12.305]Lyrics beginning ...";
+
+        let lyrics = Lyric::from_str(txt).unwrap();
+
+        assert_eq!(lyrics.offset, 0);
+
+        assert_eq!(
+            lyrics.captions.as_slice(),
+            &[Caption {
+                timestamp: 12 * 1000 + 305,
                 text: "Lyrics beginning ...".into()
             },]
         );
