@@ -37,20 +37,12 @@
 // [00:12.00]Lyrics beginning ...
 // [00:15.30]Some more lyrics ...
 use anyhow::Result;
-use lazy_static::lazy_static;
-use regex::Regex;
 use std::cmp::Ordering;
 use std::fmt::{Error as FmtError, Write};
 use std::str::FromStr;
 use std::time::Duration;
 
 use crate::utils::display_with;
-
-lazy_static! {
-    static ref LINE_STARTS_WITH_RE: Regex =
-        Regex::new("^\\[([^\x00-\x08\x0A-\x1F\x7F\\[\\]:]*):([^\x00-\x08\x0A-\x1F\x7F\\[\\]]*)\\]")
-            .unwrap();
-}
 
 /// The struct to hold all the metadata and the lyric frames
 #[derive(Clone, Debug, PartialEq)]
@@ -148,7 +140,7 @@ impl Lyric {
             }
         };
         // we sort the captions by time_stamp. This is to fix some lyrics downloaded are not sorted
-        self.captions.sort_by(|b, a| b.timestamp.cmp(&a.timestamp));
+        self.captions.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
     }
 
     /// Format current [`Lyric`] as a LRC file
@@ -259,47 +251,41 @@ fn time_lrc(time_stamp: u64) -> impl std::fmt::Display {
 }
 
 impl FromStr for Lyric {
-    // type Err = std::string::ParseError;
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // s = cleanLRC(s)
-        // lines := strings.Split(s, "\n")
         let mut offset: i64 = 0;
-        let mut captions = vec![];
-        for line in s.split('\n') {
-            let mut line = line.to_string();
-            if line.ends_with('\n') {
-                line.pop();
-                if line.ends_with('\r') {
-                    line.pop();
-                }
-            }
-            let line = line.trim().to_string();
+        let mut captions = Vec::new();
+        for line in s.lines() {
+            let line = line.trim();
             if line.is_empty() {
                 continue;
             }
 
-            if line.starts_with("[offset") {
-                let line = line.trim_start_matches("[offset:");
-                let line = line.trim_end_matches(']');
-                let line = line.replace(' ', "");
-                if let Ok(o) = line.parse() {
+            if let Some(remainder) = line.strip_prefix("[offset:") {
+                let Some(end_idx) = remainder.find(']') else {
+                    continue;
+                };
+                let offset_str = remainder[..end_idx].trim();
+                if let Ok(o) = offset_str.parse() {
                     offset = o;
+                    // no need to check the line again, there *should* be only one tag per line
+                    continue;
                 }
             }
 
-            if !LINE_STARTS_WITH_RE.is_match(line.as_ref()) {
+            // skip all lines that do not start with "["
+            if !line.as_bytes().iter().next().is_some_and(|v| *v == b'[') {
                 continue;
             }
 
-            if let Some(s) = Caption::parse_line(&line) {
-                captions.push(s);
+            if let Some(caption) = Caption::parse_line(line) {
+                captions.push(caption);
             };
         }
 
         // we sort the captions by Timestamp. This is to fix some lyrics downloaded are not sorted
-        captions.sort_by(|b, a| b.timestamp.cmp(&a.timestamp));
+        captions.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
         let mut lyric = Self { offset, captions };
 
