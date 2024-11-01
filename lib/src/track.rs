@@ -494,14 +494,11 @@ impl Track {
         let mut lyric_frames = self.lyric_frames.clone();
         match self.lyric_frames.get(self.lyric_selected_index) {
             Some(lyric_frame) => {
-                lyric_frames.remove(self.lyric_selected_index);
-                lyric_frames.insert(
-                    self.lyric_selected_index,
-                    Id3Lyrics {
-                        text: lyric_str.to_string(),
-                        ..lyric_frame.clone()
-                    },
-                );
+                // No panic as the vec has just been cloned and using the same index into both vecs which has been checked
+                lyric_frames[self.lyric_selected_index] = Id3Lyrics {
+                    text: lyric_str.to_string(),
+                    ..lyric_frame.clone()
+                };
             }
             None => {
                 lyric_frames.push(Id3Lyrics {
