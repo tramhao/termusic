@@ -79,7 +79,7 @@ impl Lyric {
 
         let mut time = i64::try_from(time.as_millis()).expect("Cannot represent input time as i64");
 
-        // here we want to show lyric 2 second earlier
+        // use a 2 second offset because of client progress delay
         let mut adjusted_time = time + 2000;
         adjusted_time += self.offset;
         if adjusted_time < 0 {
