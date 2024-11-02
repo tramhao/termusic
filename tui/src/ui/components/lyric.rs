@@ -264,10 +264,6 @@ impl Model {
             }
 
             let mut line = String::new();
-            if song.lyric_frames_is_empty() {
-                self.lyric_set_lyric("No lyrics available.");
-                return;
-            }
 
             if let Some(l) = song.parsed_lyric() {
                 if l.captions.is_empty() {
@@ -277,6 +273,9 @@ impl Model {
                 if let Some(l) = l.get_text(self.time_pos) {
                     line = l.to_string();
                 }
+            } else {
+                self.lyric_set_lyric("No lyrics available.");
+                return;
             }
             self.lyric_set_lyric(line);
         }
