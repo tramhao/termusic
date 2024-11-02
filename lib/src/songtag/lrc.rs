@@ -409,4 +409,49 @@ mod tests {
 "
         );
     }
+
+    #[test]
+    fn should_merge_adjacent() {
+        let mut lyrics = Lyric {
+            offset: 0,
+            captions: vec![
+                Caption {
+                    timestamp: 1000,
+                    text: "unmerged1".into(),
+                },
+                Caption {
+                    timestamp: 3 * 1000,
+                    text: "merged1".into(),
+                },
+                Caption {
+                    timestamp: 4 * 1000,
+                    text: "merged2".into(),
+                },
+                Caption {
+                    timestamp: 5 * 1000,
+                    text: "unmerged2".into(),
+                },
+            ],
+        };
+
+        lyrics.merge_adjacent();
+
+        assert_eq!(
+            lyrics.captions.as_slice(),
+            &[
+                Caption {
+                    timestamp: 1000,
+                    text: "unmerged1".into()
+                },
+                Caption {
+                    timestamp: 3 * 1000,
+                    text: "merged1  merged2".into()
+                },
+                Caption {
+                    timestamp: 5 * 1000,
+                    text: "unmerged2".into()
+                },
+            ]
+        );
+    }
 }
