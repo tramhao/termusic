@@ -11,7 +11,7 @@
 - Feat(server): on rusty backend, enable `aiff` codec support.
 - Fix: change default config ip address to `::1` instead of `::` (any old values on windows will need to be changed manually)
 - Fix: check for other tag types instead of just the primary tag type (for example a wav file with riff metadata instead of id3v2 would not get metadata)
-- Fix: correctly write LRC milliseconds
+- Fix: correctly write LRC milliseconds.
 
 ### [V0.9.1]
 - Released on: August 21, 2024.
