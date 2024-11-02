@@ -67,13 +67,16 @@ pub struct Caption {
 impl Lyric {
     // GetText will fetch lyric by time in seconds
     /// This function takes `self.offset` into account
+    ///
+    /// # Panics
+    ///
+    /// if `time` cannot be represented as a [`i64`]
     pub fn get_text(&self, time: Duration) -> Option<String> {
         if self.captions.is_empty() {
             return None;
         };
 
-        #[allow(clippy::cast_possible_wrap)]
-        let mut time = time.as_secs() as i64;
+        let mut time = i64::try_from(time.as_secs()).expect("Cannot represent input time as i64");
 
         // here we want to show lyric 2 second earlier
         let mut adjusted_time = time * 1000 + 2000;
@@ -119,9 +122,12 @@ impl Lyric {
     /// Adjust the caption at `time` or next lowest by `offset`(milliseconds) and sort captions based on new timestamps
     ///
     /// This function takes `self.offset` into account
+    ///
+    /// # Panics
+    ///
+    /// if `time` cannot be represented as a [`i64`]
     pub fn adjust_offset(&mut self, time: Duration, offset: i64) {
-        #[allow(clippy::cast_possible_wrap)]
-        let time = time.as_millis() as i64;
+        let time = i64::try_from(time.as_millis()).expect("Cannot represent input time as i64");
         if let Some(index) = self.get_index(time) {
             // when time stamp is less than 10 seconds or index is before the first line, we adjust
             // the offset.
