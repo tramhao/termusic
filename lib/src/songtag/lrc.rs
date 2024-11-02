@@ -95,7 +95,7 @@ impl Lyric {
         Some(text)
     }
 
-    /// Get a index for the next caption from `time` (in milliseconds)
+    /// Get a index for the next lowest caption from `time` (in milliseconds)
     ///
     /// This function takes `self.offset` into account
     pub fn get_index(&self, time: i64) -> Option<usize> {
@@ -116,7 +116,7 @@ impl Lyric {
         Some(index)
     }
 
-    /// Adjust the caption at `time` by `offset`(milliseconds) and sort captions based on new timestamps
+    /// Adjust the caption at `time` or next lowest by `offset`(milliseconds) and sort captions based on new timestamps
     ///
     /// This function takes `self.offset` into account
     pub fn adjust_offset(&mut self, time: Duration, offset: i64) {
@@ -126,7 +126,7 @@ impl Lyric {
             // when time stamp is less than 10 seconds or index is before the first line, we adjust
             // the offset.
             if (index == 0) || (time < 11) {
-                self.offset -= offset;
+                self.offset += offset;
             } else {
                 // fine tuning each line after 10 seconds
                 let caption = &mut self.captions[index];
@@ -471,12 +471,16 @@ mod tests {
                     text: "changed1".into(),
                 },
                 Caption {
-                    timestamp: 14 * 1000,
+                    timestamp: 15 * 1000,
                     text: "changed2".into(),
                 },
                 Caption {
                     timestamp: 16 * 1000,
                     text: "unchanged2".into(),
+                },
+                Caption {
+                    timestamp: 17 * 1000,
+                    text: "unchanged3".into(),
                 },
             ],
         };
@@ -486,12 +490,12 @@ mod tests {
         // input is song time
         // below <=10 seconds it will adjust "self.offset" instead of the caption
         lyrics.adjust_offset(Duration::from_secs(5), 1000);
-        // "+ 1" because "self.offset" is took into account, but it currently is inverted, see "lyrics.offset -1000" assert
-        lyrics.adjust_offset(Duration::from_secs(14 + 1), 1000);
-        lyrics.adjust_offset(Duration::from_secs(13 + 1), 1000);
+        // "14" because input is un-offset time (song time), a offset of "1000" will be added because of the above
+        lyrics.adjust_offset(Duration::from_secs(14), 1000);
+        // this is song time OR caption time as 13 is the nearest lowest, there is no 14s caption
+        lyrics.adjust_offset(Duration::from_secs(13), 2000);
 
-        // this does not make sense, arent we adjusting to have them *delayed* not *earlier*?
-        assert_eq!(lyrics.offset, -1000);
+        assert_eq!(lyrics.offset, 1000);
 
         assert_eq!(
             lyrics.captions.as_slice(),
@@ -505,16 +509,20 @@ mod tests {
                     text: "unchanged1".into(),
                 },
                 Caption {
-                    timestamp: 14 * 1000,
+                    timestamp: 15 * 1000,
                     text: "changed1".into(),
                 },
                 Caption {
-                    timestamp: 15 * 1000,
+                    timestamp: 16 * 1000,
                     text: "changed2".into(),
                 },
                 Caption {
                     timestamp: 16 * 1000,
                     text: "unchanged2".into(),
+                },
+                Caption {
+                    timestamp: 17 * 1000,
+                    text: "unchanged3".into(),
                 },
             ]
         );
