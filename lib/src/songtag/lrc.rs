@@ -72,7 +72,7 @@ impl Lyric {
     /// # Panics
     ///
     /// if `time` cannot be represented as a [`i64`]
-    pub fn get_text(&self, time: Duration) -> Option<String> {
+    pub fn get_text(&self, time: Duration) -> Option<&str> {
         if self.captions.is_empty() {
             return None;
         };
@@ -88,10 +88,10 @@ impl Lyric {
 
         time = adjusted_time;
 
-        let mut text = self.captions.first()?.text.clone();
+        let mut text = &self.captions.first()?.text;
         for caption in &self.captions {
             if time >= caption.timestamp {
-                text.clone_from(&caption.text);
+                text = &caption.text;
             } else {
                 break;
             }

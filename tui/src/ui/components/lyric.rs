@@ -275,10 +275,10 @@ impl Model {
                     return;
                 }
                 if let Some(l) = l.get_text(self.time_pos) {
-                    line = l;
+                    line = l.to_string();
                 }
             }
-            self.lyric_set_lyric(&line);
+            self.lyric_set_lyric(line);
         }
     }
 
