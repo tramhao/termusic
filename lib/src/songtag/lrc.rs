@@ -37,7 +37,6 @@
 // [00:12.00]Lyrics beginning ...
 // [00:15.30]Some more lyrics ...
 use anyhow::Result;
-use std::cmp::Ordering;
 use std::fmt::{Error as FmtError, Write};
 use std::str::FromStr;
 use std::time::Duration;
@@ -137,9 +136,10 @@ impl Lyric {
                 // fine tuning each line after 10 seconds
                 let caption = &mut self.captions[index];
                 let adjusted_time_stamp = caption.timestamp + offset;
-                caption.timestamp = match adjusted_time_stamp.cmp(&0) {
-                    Ordering::Greater | Ordering::Equal => adjusted_time_stamp,
-                    Ordering::Less => 0,
+                caption.timestamp = if adjusted_time_stamp > 0 {
+                    adjusted_time_stamp
+                } else {
+                    0
                 };
             }
         };
