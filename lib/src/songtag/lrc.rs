@@ -64,8 +64,10 @@ pub struct Caption {
 }
 
 impl Lyric {
-    // GetText will fetch lyric by time in seconds
-    /// This function takes `self.offset` into account
+    /// Get the lyric text at `time` or next lowest (in seconds)
+    ///
+    /// `time` is adjusted by +2 seconds.
+    /// This function takes `self.offset` into account.
     ///
     /// # Panics
     ///
@@ -99,7 +101,7 @@ impl Lyric {
 
     /// Get a index for the next lowest caption from `time` (in milliseconds)
     ///
-    /// This function takes `self.offset` into account
+    /// This function takes `self.offset` into account.
     pub fn get_index(&self, time: i64) -> Option<usize> {
         if self.captions.is_empty() {
             return None;
@@ -531,6 +533,46 @@ mod tests {
                     text: "unchanged3".into(),
                 },
             ]
+        );
+    }
+
+    #[test]
+    fn should_get_text() {
+        let lyrics = Lyric {
+            offset: 0,
+            captions: vec![
+                Caption {
+                    timestamp: 1000,
+                    text: "text1".into(),
+                },
+                Caption {
+                    timestamp: 3 * 1000,
+                    text: "text2".into(),
+                },
+                Caption {
+                    timestamp: 4 * 1000,
+                    text: "text3".into(),
+                },
+                Caption {
+                    timestamp: 5 * 1000,
+                    text: "text4".into(),
+                },
+            ],
+        };
+
+        assert_eq!(lyrics.get_text(Duration::from_secs(0)).unwrap(), "text1");
+        // plus 2 seconds as the function adjusts by 2 seconds
+        assert_eq!(
+            lyrics.get_text(Duration::from_secs(3 - 2)).unwrap(),
+            "text2"
+        );
+        assert_eq!(
+            lyrics.get_text(Duration::from_secs(4 - 2)).unwrap(),
+            "text3"
+        );
+        assert_eq!(
+            lyrics.get_text(Duration::from_secs(5 - 2)).unwrap(),
+            "text4"
         );
     }
 }
