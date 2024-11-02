@@ -94,7 +94,9 @@ impl Lyric {
         Some(text)
     }
 
-    /// Get a index into the captions list for a specific time
+    /// Get a index for the next caption from `time` (in seconds)
+    ///
+    /// `time` is adjusted to add 2 seconds
     pub fn get_index(&self, mut time: i64) -> Option<usize> {
         if self.captions.is_empty() {
             return None;
@@ -120,7 +122,9 @@ impl Lyric {
         Some(index)
     }
 
-    /// Adjust all captions in `time` by `offset`(milliseconds) and sort captions based on adjusted time
+    /// Adjust the caption at `time` by `offset`(milliseconds) and sort captions based on new timestamps
+    ///
+    /// `time` is adjusted to add 2 seconds
     pub fn adjust_offset(&mut self, time: Duration, offset: i64) {
         #[allow(clippy::cast_possible_wrap)]
         let time = time.as_secs() as i64;
@@ -450,6 +454,71 @@ mod tests {
                 Caption {
                     timestamp: 5 * 1000,
                     text: "unmerged2".into()
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn should_adjust_offset() {
+        let mut lyrics = Lyric {
+            offset: 0,
+            captions: vec![
+                Caption {
+                    timestamp: 5 * 1000,
+                    text: "changed offset".into(),
+                },
+                Caption {
+                    timestamp: 11 * 1000,
+                    text: "unchanged1".into(),
+                },
+                Caption {
+                    timestamp: 13 * 1000,
+                    text: "changed1".into(),
+                },
+                Caption {
+                    timestamp: 14 * 1000,
+                    text: "changed2".into(),
+                },
+                Caption {
+                    timestamp: 16 * 1000,
+                    text: "unchanged2".into(),
+                },
+            ],
+        };
+
+        assert_eq!(lyrics.offset, 0);
+
+        lyrics.adjust_offset(Duration::from_secs(5), 1000);
+        // needing to adjust for 2 seconds before, as "get_index" adjusts by 2 seconds
+        lyrics.adjust_offset(Duration::from_secs(14 - 2), 1000);
+        lyrics.adjust_offset(Duration::from_secs(15 - 2), 1000);
+
+        // this does not make sense, arent we adjusting to have them *delayed* not *earlier*?
+        assert_eq!(lyrics.offset, -1000);
+
+        assert_eq!(
+            lyrics.captions.as_slice(),
+            &[
+                Caption {
+                    timestamp: 5 * 1000,
+                    text: "changed offset".into(),
+                },
+                Caption {
+                    timestamp: 11 * 1000,
+                    text: "unchanged1".into(),
+                },
+                Caption {
+                    timestamp: 14 * 1000,
+                    text: "changed1".into(),
+                },
+                Caption {
+                    timestamp: 15 * 1000,
+                    text: "changed2".into(),
+                },
+                Caption {
+                    timestamp: 16 * 1000,
+                    text: "unchanged2".into(),
                 },
             ]
         );
