@@ -23,7 +23,6 @@
  */
 use crate::ui::Model;
 use anyhow::Context;
-use std::path::PathBuf;
 use termusiclib::config::new_shared_tui_settings;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
@@ -31,6 +30,7 @@ use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
+use termusiclib::utils::get_app_config_path;
 use termusicplayback::PlayerCmd;
 
 impl Model {
@@ -339,22 +339,33 @@ impl Model {
             }
 
             ConfigEditorMsg::ThemeSelectLoad(index) => {
-                if let Some(theme_path_str) = self.config_editor.themes.get(index) {
-                    let theme_path = PathBuf::from(theme_path_str);
-                    if let Some(theme_file_stem) = theme_path.file_stem() {
-                        self.config_tui.write().settings.theme.theme.name =
-                            theme_file_stem.to_string_lossy().to_string();
-                        if let Ok(theme) = ThemeColors::from_yaml_file(&theme_path) {
-                            self.config_editor.theme.theme = theme;
+                if let Some(theme_name) = self.config_editor.themes.get(index) {
+                    match get_app_config_path() {
+                        Ok(mut theme_path) => {
+                            theme_path.push("themes");
+                            theme_path.push(format!("{theme_name}.yml"));
+                            self.config_tui.write().settings.theme.theme.name =
+                                theme_name.to_string();
+                            match ThemeColors::from_yaml_file(&theme_path) {
+                                Ok(theme) => {
+                                    self.config_editor.theme.theme = theme;
+                                    self.config_editor.config_changed = true;
+                                    let mut config = self.config_tui.read().clone();
+                                    // This is for preview the theme colors
+                                    config.settings.theme = self.config_editor.theme.clone();
+                                    let config = new_shared_tui_settings(config);
+                                    self.remount_config_color(&config);
+                                }
+                                Err(e) => {
+                                    error!("Failed to load theme colors: {:?}", e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            error!("Error getting config path: {:?}", e);
                         }
                     }
                 }
-                self.config_editor.config_changed = true;
-                let mut config = self.config_tui.read().clone();
-                // This is for preview the theme colors
-                config.settings.theme = self.config_editor.theme.clone();
-                let config = new_shared_tui_settings(config);
-                self.remount_config_color(&config);
             }
             ConfigEditorMsg::ColorChanged(id, color_config) => {
                 self.config_editor.config_changed = true;
