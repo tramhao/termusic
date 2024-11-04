@@ -11,9 +11,11 @@
 - Feat(server): on rusty backend, enable `aiff` codec support.
 - Fix: change default config ip address to `::1` instead of `::` (any old values on windows will need to be changed manually)
 - Fix: check for other tag types instead of just the primary tag type (for example a wav file with riff metadata instead of id3v2 would not get metadata)
+- Fix: report errors reading metadata to the log
 - Fix: correctly write LRC milliseconds.
 - Fix: change Lyric::adjust_offset to not work invertedly for below 10 seconds anymore.
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
+
 
 ### [V0.9.1]
 - Released on: August 21, 2024.

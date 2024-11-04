@@ -144,7 +144,19 @@ impl Track {
         let probe = Probe::open(path)?;
 
         let mut song = Self::new(LocationType::Path(path.to_path_buf()), MediaType::Music);
-        if let Ok(mut tagged_file) = probe.read() {
+        let tagged_file = match probe.read() {
+            Ok(v) => Some(v),
+            Err(err) => {
+                warn!(
+                    "Failed to read metadata from \"{}\": {}",
+                    path.display(),
+                    err
+                );
+                None
+            }
+        };
+
+        if let Some(mut tagged_file) = tagged_file {
             // We can at most get the duration and file type at this point
             let properties = tagged_file.properties();
             song.duration = properties.duration();
@@ -157,6 +169,11 @@ impl Track {
             } else {
                 warn!("File \"{}\" does not have any tags!", path.display());
             }
+        }
+
+        // exit early if its for db only as no cover is needed there
+        if for_db {
+            return Ok(song);
         }
 
         let parent_folder = get_parent_folder(path);
