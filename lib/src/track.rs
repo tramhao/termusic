@@ -26,7 +26,7 @@ use crate::podcast::episode::Episode;
 use crate::songtag::lrc::Lyric;
 use crate::utils::get_parent_folder;
 use anyhow::{bail, Result};
-use id3::frame::Lyrics;
+use id3::frame::Lyrics as Id3Lyrics;
 use lofty::config::WriteOptions;
 use lofty::picture::{Picture, PictureType};
 use lofty::prelude::{Accessor, AudioFile, ItemKey, TagExt, TaggedFileExt};
@@ -77,7 +77,7 @@ pub struct Track {
     duration: Duration,
     pub last_modified: SystemTime,
     /// USLT lyrics
-    lyric_frames: Vec<Lyrics>,
+    lyric_frames: Vec<Id3Lyrics>,
     lyric_selected_index: usize,
     parsed_lyric: Option<Lyric>,
     picture: Option<Picture>,
@@ -110,7 +110,7 @@ impl Track {
     /// Create a new [`MediaType::Podcast`] track
     #[allow(clippy::cast_sign_loss)]
     pub fn from_episode(ep: &Episode) -> Self {
-        let lyric_frames: Vec<Lyrics> = Vec::new();
+        let lyric_frames: Vec<Id3Lyrics> = Vec::new();
         let mut podcast_localfile: Option<String> = None;
         if let Some(path) = &ep.path {
             if path.exists() {
@@ -210,24 +210,21 @@ impl Track {
         }
 
         // Get all of the lyrics tags
-        let mut lyric_frames: Vec<Lyrics> = Vec::new();
+        let mut lyric_frames: Vec<Id3Lyrics> = Vec::new();
         create_lyrics(tag, &mut lyric_frames);
 
         track.parsed_lyric = lyric_frames
             .first()
-            .map(|lf| Lyric::from_str(&lf.text).ok())
-            .and_then(|pl| pl);
+            .and_then(|lf| Lyric::from_str(&lf.text).ok());
         track.lyric_frames = lyric_frames;
 
         // Get the picture (not necessarily the front cover)
-        let mut picture = tag
+        let picture = tag
             .pictures()
             .iter()
             .find(|pic| pic.pic_type() == PictureType::CoverFront)
+            .or_else(|| tag.pictures().first())
             .cloned();
-        if picture.is_none() {
-            picture = tag.pictures().first().cloned();
-        }
 
         track.picture = picture;
 
@@ -245,7 +242,7 @@ impl Track {
 
     fn new(location: LocationType, media_type: MediaType) -> Self {
         let duration = Duration::from_secs(0);
-        let lyric_frames: Vec<Lyrics> = Vec::new();
+        let lyric_frames: Vec<Id3Lyrics> = Vec::new();
         let mut last_modified = SystemTime::now();
         let mut title = None;
 
@@ -288,7 +285,7 @@ impl Track {
         Ok(())
     }
 
-    pub fn cycle_lyrics(&mut self) -> Result<&Lyrics> {
+    pub fn cycle_lyrics(&mut self) -> Result<&Id3Lyrics> {
         if self.lyric_frames_is_empty() {
             bail!("no lyrics embedded");
         }
@@ -328,7 +325,7 @@ impl Track {
         self.lyric_selected_index
     }
 
-    pub fn lyric_selected(&self) -> Option<&Lyrics> {
+    pub fn lyric_selected(&self) -> Option<&Id3Lyrics> {
         if self.lyric_frames.is_empty() {
             return None;
         }
@@ -349,7 +346,7 @@ impl Track {
         self.lyric_frames.len()
     }
 
-    pub fn lyric_frames(&self) -> Option<Vec<Lyrics>> {
+    pub fn lyric_frames(&self) -> Option<Vec<Id3Lyrics>> {
         if self.lyric_frames.is_empty() {
             return None;
         }
@@ -514,17 +511,14 @@ impl Track {
         let mut lyric_frames = self.lyric_frames.clone();
         match self.lyric_frames.get(self.lyric_selected_index) {
             Some(lyric_frame) => {
-                lyric_frames.remove(self.lyric_selected_index);
-                lyric_frames.insert(
-                    self.lyric_selected_index,
-                    Lyrics {
-                        text: lyric_str.to_string(),
-                        ..lyric_frame.clone()
-                    },
-                );
+                // No panic as the vec has just been cloned and using the same index into both vecs which has been checked
+                lyric_frames[self.lyric_selected_index] = Id3Lyrics {
+                    text: lyric_str.to_string(),
+                    ..lyric_frame.clone()
+                };
             }
             None => {
-                lyric_frames.push(Lyrics {
+                lyric_frames.push(Id3Lyrics {
                     lang: "eng".to_string(),
                     description: lang_ext.to_string(),
                     text: lyric_str.to_string(),
@@ -554,11 +548,11 @@ impl Track {
     }
 }
 
-fn create_lyrics(tag: &mut LoftyTag, lyric_frames: &mut Vec<Lyrics>) {
+fn create_lyrics(tag: &mut LoftyTag, lyric_frames: &mut Vec<Id3Lyrics>) {
     let lyrics = tag.take(&ItemKey::Lyrics);
     for lyric in lyrics {
         if let ItemValue::Text(lyrics_text) = lyric.value() {
-            lyric_frames.push(Lyrics {
+            lyric_frames.push(Id3Lyrics {
                 lang: lyric.lang().escape_ascii().to_string(),
                 description: lyric.description().to_string(),
                 text: lyrics_text.to_string(),

@@ -233,9 +233,47 @@ pub fn absolute_path_base<'a>(path: &'a Path, base: &Path) -> Cow<'a, Path> {
     }
 }
 
+/// Helper function to defer formatting to later, without having to allocate a intermediate [`String`]
+///
+/// similar to [`format_args!`], but it can be returned by `move`d values
+///
+/// Source: <https://internals.rust-lang.org/t/suggestion-for-helper-for-writing-fmt-debug-impls-with-nested-structure/19477/2>
+///
+/// Example:
+/// ```
+/// # use std::fmt::Display;
+/// # use termusiclib::utils::display_with;
+/// // instead of `fn nested() -> String`
+/// fn nested() -> impl Display {
+///   let new_string = String::from("Hello allocated string");
+///   // instead of `format!("Formatted! {}", new_string)`
+///   display_with(move |f| write!(f, "Formatted! {}", new_string))
+/// }
+///
+/// println!("No Extra allocation:\n{}", nested());
+/// ```
+pub fn display_with(
+    f: impl Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result,
+) -> impl std::fmt::Display {
+    struct DisplayWith<F>(F);
+
+    impl<F> std::fmt::Display for DisplayWith<F>
+    where
+        F: Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result,
+    {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            self.0(f)
+        }
+    }
+
+    DisplayWith(f)
+}
+
 #[cfg(test)]
 #[allow(clippy::non_ascii_literal)]
 mod tests {
+    use std::fmt::{Display, Write};
+
     use super::*;
     use pretty_assertions::assert_eq;
 
@@ -262,5 +300,20 @@ mod tests {
 
         assert_eq!("陈一发儿".substr(0, 1), "陈");
         assert_eq!("陈一发儿".substr(3, 1), "儿");
+    }
+
+    #[test]
+    fn display_with_to_string() {
+        fn nested() -> impl Display {
+            let new_owned = String::from("Owned");
+
+            display_with(move |f| write!(f, "Nested! {new_owned}"))
+        }
+
+        let mut str = String::new();
+
+        let _ = write!(&mut str, "Formatted! {}", nested());
+
+        assert_eq!(str, "Formatted! Nested! Owned");
     }
 }
