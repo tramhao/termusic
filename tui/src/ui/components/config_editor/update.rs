@@ -343,7 +343,7 @@ impl Model {
                     match get_app_config_path() {
                         Ok(mut theme_path) => {
                             theme_path.push("themes");
-                            theme_path.push(format!("{}.yml", theme_name));
+                            theme_path.push(format!("{theme_name}.yml"));
                             self.config_tui.write().settings.theme.theme.name =
                                 theme_name.to_string();
                             match ThemeColors::from_yaml_file(&theme_path) {
