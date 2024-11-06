@@ -153,24 +153,23 @@ impl SongTag {
     pub async fn fetch_lyric(&self) -> Result<String> {
         let mut lyric_string = String::new();
 
+        let Some(lyric_id) = &self.lyric_id else {
+            // TODO: this is not correct
+            return Ok(lyric_string);
+        };
+
         match self.service_provider {
             Some(ServiceProvider::Kugou) => {
                 let kugou_api = kugou::Api::new();
-                if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = kugou_api.song_lyric(lyric_id).await?;
-                }
+                lyric_string = kugou_api.song_lyric(lyric_id).await?;
             }
             Some(ServiceProvider::Netease) => {
                 let mut netease_api = netease::Api::new();
-                if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = netease_api.song_lyric(lyric_id).await?;
-                }
+                lyric_string = netease_api.song_lyric(lyric_id).await?;
             }
             Some(ServiceProvider::Migu) => {
                 let migu_api = migu::Api::new();
-                if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = migu_api.song_lyric(lyric_id).await?;
-                }
+                lyric_string = migu_api.song_lyric(lyric_id).await?;
             }
             None => {}
         }
