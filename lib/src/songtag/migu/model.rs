@@ -1,3 +1,5 @@
+use crate::songtag::UrlTypes;
+
 /**
  * MIT License
  *
@@ -80,12 +82,13 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
 
     let album_id = v.get("albumId")?.as_str()?.to_owned();
 
+    // not using ".to_string()" as that produces a escaped string
     let url = v
         .get("mp3")
-        .unwrap_or(&json!("N/A"))
-        .as_str()
-        .unwrap_or("Copyright protected")
-        .to_owned();
+        .and_then(Value::as_str)
+        .map_or(UrlTypes::Protected, |v| {
+            UrlTypes::FreeDownloadable(v.to_owned())
+        });
 
     Some(SongTag {
         song_id: v.get("id")?.as_str()?.to_owned(),
@@ -110,6 +113,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn should_parse_songinfo() {
@@ -188,7 +192,7 @@ mod tests {
                 service_provider: ServiceProvider::Migu,
                 song_id: "0000000002".to_owned(),
                 lyric_id: Some("0000000AAAA".to_owned()),
-                url: Some("https://freetyst.nf.migu.cn/SomeLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned()),
+                url: Some(UrlTypes::FreeDownloadable("https://freetyst.nf.migu.cn/SomeLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned())),
                 pic_id: Some("https://mcontent.migu.cn/newlv2/new/album/20230810/0000000000/someRandomCode.jpg".to_owned()),
                 album_id: Some("0000000000".to_owned())
             }
@@ -204,7 +208,7 @@ mod tests {
                 service_provider: ServiceProvider::Migu,
                 song_id: "1111111112".to_owned(),
                 lyric_id: Some("1111111BBBB".to_owned()),
-                url: Some("https://freetyst.nf.migu.cn/SomeOtherLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned()),
+                url: Some(UrlTypes::FreeDownloadable("https://freetyst.nf.migu.cn/SomeOtherLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned())),
                 pic_id: Some("https://tyqk.migu.cn/files/resize/album/2023-12-19/someOtherRandomCode.jpg?200x200".to_owned()),
                 album_id: Some("1111111111".to_owned())
             }

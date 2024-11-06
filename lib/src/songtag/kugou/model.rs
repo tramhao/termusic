@@ -1,3 +1,5 @@
+use crate::songtag::UrlTypes;
+
 /**
  * MIT License
  *
@@ -113,9 +115,9 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         .as_u64()
         .unwrap_or(0);
     let url = if price == 0 {
-        "Downloadable".to_string()
+        UrlTypes::AvailableRequiresFetching
     } else {
-        "Copyright Protected".to_string()
+        UrlTypes::Protected
     };
 
     Some(SongTag {
@@ -147,6 +149,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     // TODO: get some actual test data like migu or netease
     #[test]

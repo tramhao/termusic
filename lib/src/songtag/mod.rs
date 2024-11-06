@@ -36,14 +36,13 @@ use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use lofty::TextEncoding;
-use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct SongTag {
     service_provider: ServiceProvider,
     song_id: String,
@@ -52,13 +51,24 @@ pub struct SongTag {
     album: Option<String>,
     lang_ext: Option<String>,
     lyric_id: Option<String>,
-    url: Option<String>,
+    url: Option<UrlTypes>,
     pic_id: Option<String>,
     album_id: Option<String>,
     // genre: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Copy)]
+/// Indicate in which way the song can be downloaded, if at all.
+#[derive(Debug, PartialEq, Clone)]
+pub enum UrlTypes {
+    /// Download is protected by DRM or a fee, something which we dont do here
+    Protected,
+    /// Download is freely available, but requires extra fetching (`Api::song_url()`)
+    AvailableRequiresFetching,
+    /// Url is freely available to be downloaded
+    FreeDownloadable(String),
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ServiceProvider {
     Netease,
     Kugou,
@@ -145,8 +155,8 @@ impl SongTag {
         self.service_provider
     }
 
-    pub fn url(&self) -> Option<&str> {
-        self.url.as_deref()
+    pub const fn url(&self) -> Option<&UrlTypes> {
+        self.url.as_ref()
     }
 
     // get lyric by lyric_id
@@ -249,11 +259,15 @@ impl SongTag {
             v => v?,
         }
 
-        let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
-        if mp3_url.starts_with("Copyright") {
+        if self.url().is_some_and(|v| *v == UrlTypes::Protected) {
             bail!("The item is protected by copyright, please, select another one.");
         }
-        let mut url = mp3_url;
+
+        let mut url = if let Some(UrlTypes::FreeDownloadable(url)) = &self.url {
+            url.clone()
+        } else {
+            String::new()
+        };
 
         match self.service_provider {
             ServiceProvider::Netease => {
