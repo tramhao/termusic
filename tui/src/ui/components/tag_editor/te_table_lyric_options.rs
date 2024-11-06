@@ -184,7 +184,7 @@ impl Model {
                 api = a.to_string();
             }
 
-            let mut url = record.url().unwrap_or_else(|| "No url".to_string());
+            let mut url = record.url().unwrap_or("No url").to_string();
             if url.starts_with("http") {
                 url = "Downloadable".to_string();
             }

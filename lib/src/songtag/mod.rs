@@ -164,9 +164,10 @@ impl SongTag {
         // }
     }
 
-    pub fn url(&self) -> Option<String> {
-        self.url.as_ref().map(std::string::ToString::to_string)
+    pub fn url(&self) -> Option<&str> {
+        self.url.as_deref()
     }
+
     // get lyric by lyric_id
     pub async fn fetch_lyric(&self) -> Result<String> {
         let mut lyric_string = String::new();
