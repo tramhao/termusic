@@ -27,6 +27,7 @@ pub mod lrc;
 mod migu;
 mod netease;
 
+use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
@@ -255,11 +256,11 @@ impl SongTag {
         let artist = self
             .artist
             .clone()
-            .unwrap_or_else(|| "Unknown Artist".to_string());
+            .unwrap_or_else(|| UNKNOWN_ARTIST.to_string());
         let title = self
             .title
             .clone()
-            .unwrap_or_else(|| "Unknown Title".to_string());
+            .unwrap_or_else(|| UNKNOWN_TITLE.to_string());
 
         let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
         let lyric = self.fetch_lyric().await;
