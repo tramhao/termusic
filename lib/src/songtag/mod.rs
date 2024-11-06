@@ -327,7 +327,7 @@ impl SongTag {
                         err.to_string(),
                     )))
                     .ok();
-                    sleep(Duration::from_secs(10));
+                    sleep(Duration::from_secs(1));
                     tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
                         .ok();
 
@@ -358,7 +358,7 @@ impl SongTag {
             }
 
             if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
-                sleep(Duration::from_secs(10));
+                sleep(Duration::from_secs(1));
                 tx.send(Msg::Download(DLMsg::DownloadCompleted(
                     url.clone(),
                     Some(p_full.to_string_lossy().to_string()),
@@ -370,7 +370,7 @@ impl SongTag {
                     title,
                 )))
                 .ok();
-                sleep(Duration::from_secs(10));
+                sleep(Duration::from_secs(1));
                 tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
                     .ok();
             }
