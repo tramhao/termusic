@@ -165,7 +165,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         ),
         lang_ext: Some(String::from("netease")),
         lyric_id: Some(v.get("id")?.as_u64()?.to_string()),
-        song_id: Some(v.get("id")?.as_u64()?.to_string()),
+        song_id: v.get("id")?.as_u64()?.to_string(),
         service_provider: ServiceProvider::Netease,
         url: Some(
             if v.get("fee")?.as_u64()? == 0 {
@@ -373,7 +373,7 @@ mod tests {
                 album: Some("Some Album 1".to_owned()),
                 lang_ext: Some("netease".to_string()),
                 service_provider: ServiceProvider::Netease,
-                song_id: Some("1000000000".to_owned()),
+                song_id: "1000000000".to_owned(),
                 lyric_id: Some("1000000000".to_owned()),
                 url: Some("Copyright protected".to_owned()),
                 pic_id: Some("444444444444444444".to_owned()),
@@ -389,7 +389,7 @@ mod tests {
                 album: Some("Some Album 2".to_owned()),
                 lang_ext: Some("netease".to_string()),
                 service_provider: ServiceProvider::Netease,
-                song_id: Some("1111111111".to_owned()),
+                song_id: "1111111111".to_owned(),
                 lyric_id: Some("1111111111".to_owned()),
                 url: Some("Copyright protected".to_owned()),
                 pic_id: Some("555555555555555555".to_owned()),

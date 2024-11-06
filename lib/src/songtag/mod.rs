@@ -30,7 +30,7 @@ mod netease;
 use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use lofty::config::WriteOptions;
 use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
@@ -46,11 +46,11 @@ use ytd_rs::{Arg, YoutubeDL};
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct SongTag {
     service_provider: ServiceProvider,
+    song_id: String,
     artist: Option<String>,
     title: Option<String>,
     album: Option<String>,
     lang_ext: Option<String>,
-    song_id: Option<String>,
     lyric_id: Option<String>,
     url: Option<String>,
     pic_id: Option<String>,
@@ -200,11 +200,7 @@ impl SongTag {
             }
             ServiceProvider::Migu => {
                 let migu_api = migu::Api::new();
-                if let Some(p) = &self.song_id {
-                    Ok(migu_api.pic(p).await?)
-                } else {
-                    bail!("song_id is missing for migu")
-                }
+                Ok(migu_api.pic(&self.song_id).await?)
             }
         }
 
@@ -223,10 +219,7 @@ impl SongTag {
     #[allow(clippy::too_many_lines)]
     pub async fn download(&self, file: &str, tx_tageditor: &Sender<Msg>) -> Result<()> {
         let p_parent = get_parent_folder(Path::new(file));
-        let song_id = self
-            .song_id
-            .as_ref()
-            .ok_or_else(|| anyhow!("failed to download because no song id was found"))?;
+        let song_id = &self.song_id;
         let artist = self
             .artist
             .clone()

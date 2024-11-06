@@ -119,7 +119,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
     };
 
     Some(SongTag {
-        song_id: Some(v.get("hash")?.as_str()?.to_owned()),
+        song_id: v.get("hash")?.as_str()?.to_owned(),
         title: Some(v.get("songname")?.as_str()?.to_owned()),
         artist: Some(
             v.get("singername")

@@ -88,7 +88,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         .to_owned();
 
     Some(SongTag {
-        song_id: Some(v.get("id")?.as_str()?.to_owned()),
+        song_id: v.get("id")?.as_str()?.to_owned(),
         title: Some(title),
         artist: Some(artist),
         album: Some(
@@ -186,7 +186,7 @@ mod tests {
                 album: Some("Some Album 1".to_owned()),
                 lang_ext: Some("migu".to_string()),
                 service_provider: ServiceProvider::Migu,
-                song_id: Some("0000000002".to_owned()),
+                song_id: "0000000002".to_owned(),
                 lyric_id: Some("0000000AAAA".to_owned()),
                 url: Some("https://freetyst.nf.migu.cn/SomeLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned()),
                 pic_id: Some("https://mcontent.migu.cn/newlv2/new/album/20230810/0000000000/someRandomCode.jpg".to_owned()),
@@ -202,7 +202,7 @@ mod tests {
                 album: Some("Some Album 2".to_owned()),
                 lang_ext: Some("migu".to_string()),
                 service_provider: ServiceProvider::Migu,
-                song_id: Some("1111111112".to_owned()),
+                song_id: "1111111112".to_owned(),
                 lyric_id: Some("1111111BBBB".to_owned()),
                 url: Some("https://freetyst.nf.migu.cn/SomeOtherLongPercentFilename.mp3?Key=AAAAAAAAAAAAAAAA&Tim=1111111111111&channelid=01&msisdn=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned()),
                 pic_id: Some("https://tyqk.migu.cn/files/resize/album/2023-12-19/someOtherRandomCode.jpg?200x200".to_owned()),
