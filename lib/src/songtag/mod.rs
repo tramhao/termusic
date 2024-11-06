@@ -181,8 +181,12 @@ impl SongTag {
     pub async fn fetch_photo(&self) -> Result<Picture> {
         // let mut encoded_image_bytes: Vec<u8> = Vec::new();
 
-        match self.service_provider {
-            Some(ServiceProvider::Kugou) => {
+        let Some(provider) = &self.service_provider else {
+            bail!("no servie provider given");
+        };
+
+        match provider {
+            ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
                 if let Some(p) = &self.pic_id {
                     if let Some(album_id) = &self.album_id {
@@ -194,7 +198,7 @@ impl SongTag {
                     bail!("pic_id is missing for kugou")
                 }
             }
-            Some(ServiceProvider::Netease) => {
+            ServiceProvider::Netease => {
                 let mut netease_api = netease::Api::new();
                 if let Some(p) = &self.pic_id {
                     Ok(netease_api.pic(p).await?)
@@ -202,16 +206,13 @@ impl SongTag {
                     bail!("pic_id is missing for netease")
                 }
             }
-            Some(ServiceProvider::Migu) => {
+            ServiceProvider::Migu => {
                 let migu_api = migu::Api::new();
                 if let Some(p) = &self.song_id {
                     Ok(migu_api.pic(p).await?)
                 } else {
                     bail!("song_id is missing for migu")
                 }
-            }
-            None => {
-                bail!("no servie provider given");
             }
         }
 
