@@ -183,10 +183,9 @@ impl SongTag {
         Ok(Some(lyric_string))
     }
 
-    // get photo by pic_id(kugou/netease) or song_id(migu)
+    /// Fetch a picture for the current song
+    /// For kugou & netease `pic_id()` or for migu `song_id` is used
     pub async fn fetch_photo(&self) -> Result<Picture> {
-        // let mut encoded_image_bytes: Vec<u8> = Vec::new();
-
         match self.service_provider {
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
@@ -213,17 +212,6 @@ impl SongTag {
                 Ok(migu_api.pic(&self.song_id).await?)
             }
         }
-
-        // if encoded_image_bytes.is_empty() {
-        //     bail!("failed to fetch image");
-        // }
-
-        // Ok(Picture::new_unchecked(
-        //     PictureType::Other,
-        //     MimeType::Jpeg,
-        //     Some(String::from("Image")),
-        //     encoded_image_bytes,
-        // ))
     }
 
     #[allow(clippy::too_many_lines)]
