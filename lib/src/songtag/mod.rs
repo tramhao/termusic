@@ -150,31 +150,31 @@ impl SongTag {
     }
 
     // get lyric by lyric_id
-    pub async fn fetch_lyric(&self) -> Result<String> {
-        let mut lyric_string = String::new();
-
+    pub async fn fetch_lyric(&self) -> Result<Option<String>> {
         let Some(lyric_id) = &self.lyric_id else {
-            // TODO: this is not correct
-            return Ok(lyric_string);
+            return Ok(None);
         };
 
-        match self.service_provider {
-            Some(ServiceProvider::Kugou) => {
-                let kugou_api = kugou::Api::new();
-                lyric_string = kugou_api.song_lyric(lyric_id).await?;
-            }
-            Some(ServiceProvider::Netease) => {
-                let mut netease_api = netease::Api::new();
-                lyric_string = netease_api.song_lyric(lyric_id).await?;
-            }
-            Some(ServiceProvider::Migu) => {
-                let migu_api = migu::Api::new();
-                lyric_string = migu_api.song_lyric(lyric_id).await?;
-            }
-            None => {}
-        }
+        let Some(provider) = self.service_provider else {
+            return Ok(None);
+        };
 
-        Ok(lyric_string)
+        let lyric_string = match provider {
+            ServiceProvider::Kugou => {
+                let kugou_api = kugou::Api::new();
+                kugou_api.song_lyric(lyric_id).await?
+            }
+            ServiceProvider::Netease => {
+                let mut netease_api = netease::Api::new();
+                netease_api.song_lyric(lyric_id).await?
+            }
+            ServiceProvider::Migu => {
+                let migu_api = migu::Api::new();
+                migu_api.song_lyric(lyric_id).await?
+            }
+        };
+
+        Ok(Some(lyric_string))
     }
 
     // get photo by pic_id(kugou/netease) or song_id(migu)
@@ -324,7 +324,7 @@ impl SongTag {
             tag.set_artist(artist);
             tag.set_album(album);
 
-            if let Ok(l) = lyric {
+            if let Ok(Some(l)) = lyric {
                 let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
                     TextEncoding::UTF8,
                     *b"eng",

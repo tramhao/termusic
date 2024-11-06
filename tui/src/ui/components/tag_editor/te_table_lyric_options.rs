@@ -324,7 +324,7 @@ impl Model {
                 })
             });
 
-            if let Ok(lyric_string) = lyric_string {
+            if let Ok(Some(lyric_string)) = lyric_string {
                 song.set_lyric(&lyric_string, lang_ext);
             }
             if let Ok(artwork) = artwork {
