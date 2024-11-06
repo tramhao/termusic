@@ -315,65 +315,66 @@ impl SongTag {
                 title.clone(),
             )))
             .ok();
+
             // start download
-            let download = ytd.download();
-
             // check what the result is and print out the path to the download or the error
-            match download {
-                Ok(_result) => {
-                    tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
-                        .ok();
-                    let mut tag = Id3v2Tag::default();
-
-                    tag.set_title(title.clone());
-                    tag.set_artist(artist);
-                    tag.set_album(album);
-
-                    // safe to unwrap these frames, since the ID is valid
-                    if let Ok(l) = lyric {
-                        let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
-                            TextEncoding::UTF8,
-                            *b"eng",
-                            String::from("saved by termusic"),
-                            l,
-                        ));
-                        tag.insert(frame);
-                    }
-
-                    if let Ok(picture) = photo {
-                        tag.insert_picture(picture);
-                    }
-
-                    if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
-                        sleep(Duration::from_secs(10));
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(
-                            url.clone(),
-                            Some(p_full.to_string_lossy().to_string()),
-                        )))
-                        .ok();
-                    } else {
-                        tx.send(Msg::Download(DLMsg::DownloadErrEmbedData(
-                            url.clone(),
-                            title,
-                        )))
-                        .ok();
-                        sleep(Duration::from_secs(10));
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
-                            .ok();
-                    }
-                }
-                Err(e) => {
+            let _download_result = match ytd.download() {
+                Ok(res) => res,
+                Err(err) => {
                     tx.send(Msg::Download(DLMsg::DownloadErrDownload(
                         url.clone(),
                         title.clone(),
-                        e.to_string(),
+                        err.to_string(),
                     )))
                     .ok();
                     sleep(Duration::from_secs(10));
                     tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
                         .ok();
+
+                    return Ok(());
                 }
             };
+
+            tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
+                .ok();
+            let mut tag = Id3v2Tag::default();
+
+            tag.set_title(title.clone());
+            tag.set_artist(artist);
+            tag.set_album(album);
+
+            if let Ok(l) = lyric {
+                let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
+                    TextEncoding::UTF8,
+                    *b"eng",
+                    String::from("saved by termusic"),
+                    l,
+                ));
+                tag.insert(frame);
+            }
+
+            if let Ok(picture) = photo {
+                tag.insert_picture(picture);
+            }
+
+            if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
+                sleep(Duration::from_secs(10));
+                tx.send(Msg::Download(DLMsg::DownloadCompleted(
+                    url.clone(),
+                    Some(p_full.to_string_lossy().to_string()),
+                )))
+                .ok();
+            } else {
+                tx.send(Msg::Download(DLMsg::DownloadErrEmbedData(
+                    url.clone(),
+                    title,
+                )))
+                .ok();
+                sleep(Duration::from_secs(10));
+                tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
+                    .ok();
+            }
+
             Ok(())
         });
         Ok(())
