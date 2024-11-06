@@ -179,10 +179,7 @@ impl Model {
             let artist = record.artist().unwrap_or("Nobody");
             let title = record.title().unwrap_or("Unknown Title");
             let album = record.album().unwrap_or("Unknown Album");
-            let mut api = "N/A".to_string();
-            if let Some(a) = record.service_provider() {
-                api = a.to_string();
-            }
+            let api = record.service_provider().to_string();
 
             let mut url = record.url().unwrap_or("No url").to_string();
             if url.starts_with("http") {

@@ -137,7 +137,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         ),
         pic_id: Some(v.get("hash")?.as_str()?.to_owned()),
         lang_ext: Some("kugou".to_string()),
-        service_provider: Some(ServiceProvider::Kugou),
+        service_provider: ServiceProvider::Kugou,
         lyric_id: Some(v.get("hash")?.as_str()?.to_owned()),
         url: Some(url),
         album_id: Some(v.get("album_id")?.as_str()?.to_owned()),

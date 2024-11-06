@@ -45,11 +45,11 @@ use ytd_rs::{Arg, YoutubeDL};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct SongTag {
+    service_provider: ServiceProvider,
     artist: Option<String>,
     title: Option<String>,
     album: Option<String>,
     lang_ext: Option<String>,
-    service_provider: Option<ServiceProvider>,
     song_id: Option<String>,
     lyric_id: Option<String>,
     url: Option<String>,
@@ -141,8 +141,8 @@ impl SongTag {
         self.lang_ext.as_deref()
     }
 
-    pub const fn service_provider(&self) -> Option<&ServiceProvider> {
-        self.service_provider.as_ref()
+    pub const fn service_provider(&self) -> ServiceProvider {
+        self.service_provider
     }
 
     pub fn url(&self) -> Option<&str> {
@@ -155,11 +155,7 @@ impl SongTag {
             return Ok(None);
         };
 
-        let Some(provider) = self.service_provider else {
-            return Ok(None);
-        };
-
-        let lyric_string = match provider {
+        let lyric_string = match self.service_provider {
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
                 kugou_api.song_lyric(lyric_id).await?
@@ -181,11 +177,7 @@ impl SongTag {
     pub async fn fetch_photo(&self) -> Result<Picture> {
         // let mut encoded_image_bytes: Vec<u8> = Vec::new();
 
-        let Some(provider) = &self.service_provider else {
-            bail!("no servie provider given");
-        };
-
-        match provider {
+        match self.service_provider {
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
                 if let Some(p) = &self.pic_id {
@@ -270,17 +262,15 @@ impl SongTag {
         }
         let mut url = mp3_url;
 
-        if let Some(s) = &self.service_provider {
-            match s {
-                ServiceProvider::Netease => {
-                    let mut netease_api = netease::Api::new();
-                    url = netease_api.song_url(song_id).await?;
-                }
-                ServiceProvider::Migu => {}
-                ServiceProvider::Kugou => {
-                    let kugou_api = kugou::Api::new();
-                    url = kugou_api.song_url(song_id, &album_id).await?;
-                }
+        match self.service_provider {
+            ServiceProvider::Netease => {
+                let mut netease_api = netease::Api::new();
+                url = netease_api.song_url(song_id).await?;
+            }
+            ServiceProvider::Migu => {}
+            ServiceProvider::Kugou => {
+                let kugou_api = kugou::Api::new();
+                url = kugou_api.song_url(song_id, &album_id).await?;
             }
         }
 
