@@ -27,37 +27,48 @@ pub mod lrc;
 mod migu;
 mod netease;
 
+use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use lofty::config::WriteOptions;
 use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use lofty::TextEncoding;
-use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct SongTag {
+    service_provider: ServiceProvider,
+    song_id: String,
     artist: Option<String>,
     title: Option<String>,
     album: Option<String>,
     lang_ext: Option<String>,
-    service_provider: Option<ServiceProvider>,
-    song_id: Option<String>,
     lyric_id: Option<String>,
-    url: Option<String>,
+    url: Option<UrlTypes>,
     pic_id: Option<String>,
     album_id: Option<String>,
     // genre: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Copy)]
+/// Indicate in which way the song can be downloaded, if at all.
+#[derive(Debug, PartialEq, Clone)]
+pub enum UrlTypes {
+    /// Download is protected by DRM or a fee, something which we dont do here
+    Protected,
+    /// Download is freely available, but requires extra fetching (`Api::song_url()`)
+    AvailableRequiresFetching,
+    /// Url is freely available to be downloaded
+    FreeDownloadable(String),
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ServiceProvider {
     Netease,
     Kugou,
@@ -124,83 +135,59 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 impl SongTag {
     pub fn artist(&self) -> Option<&str> {
         self.artist.as_deref()
-        // match self.artist.as_ref() {
-        //     Some(artist) => Some(artist),
-        //     None => None,
-        // }
     }
 
     pub fn album(&self) -> Option<&str> {
         self.album.as_deref()
-        // match self.album.as_ref() {
-        //     Some(album) => Some(album),
-        //     None => None,
-        // }
     }
+
     /// Optionally return the title of the song
     /// If `None` it wasn't able to read the tags
     pub fn title(&self) -> Option<&str> {
         self.title.as_deref()
-        // match self.title.as_ref() {
-        //     Some(title) => Some(title),
-        //     None => None,
-        // }
     }
 
     pub fn lang_ext(&self) -> Option<&str> {
         self.lang_ext.as_deref()
-        // match self.lang_ext.as_ref() {
-        //     Some(lang_ext) => Some(lang_ext),
-        //     None => None,
-        // }
     }
 
-    pub const fn service_provider(&self) -> Option<&ServiceProvider> {
-        self.service_provider.as_ref()
-        // match self.service_provider.as_ref() {
-        //     Some(service_provider) => Some(service_provider),
-        //     None => None,
-        // }
+    pub const fn service_provider(&self) -> ServiceProvider {
+        self.service_provider
     }
 
-    pub fn url(&self) -> Option<String> {
-        self.url.as_ref().map(std::string::ToString::to_string)
+    pub const fn url(&self) -> Option<&UrlTypes> {
+        self.url.as_ref()
     }
+
     // get lyric by lyric_id
-    pub async fn fetch_lyric(&self) -> Result<String> {
-        let mut lyric_string = String::new();
+    pub async fn fetch_lyric(&self) -> Result<Option<String>> {
+        let Some(lyric_id) = &self.lyric_id else {
+            return Ok(None);
+        };
 
-        match self.service_provider {
-            Some(ServiceProvider::Kugou) => {
+        let lyric_string = match self.service_provider {
+            ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
-                if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = kugou_api.song_lyric(lyric_id).await?;
-                }
+                kugou_api.song_lyric(lyric_id).await?
             }
-            Some(ServiceProvider::Netease) => {
+            ServiceProvider::Netease => {
                 let mut netease_api = netease::Api::new();
-                if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = netease_api.song_lyric(lyric_id).await?;
-                }
+                netease_api.song_lyric(lyric_id).await?
             }
-            Some(ServiceProvider::Migu) => {
+            ServiceProvider::Migu => {
                 let migu_api = migu::Api::new();
-                if let Some(lyric_id) = &self.lyric_id {
-                    lyric_string = migu_api.song_lyric(lyric_id).await?;
-                }
+                migu_api.song_lyric(lyric_id).await?
             }
-            None => {}
-        }
+        };
 
-        Ok(lyric_string)
+        Ok(Some(lyric_string))
     }
 
-    // get photo by pic_id(kugou/netease) or song_id(migu)
+    /// Fetch a picture for the current song
+    /// For kugou & netease `pic_id()` or for migu `song_id` is used
     pub async fn fetch_photo(&self) -> Result<Picture> {
-        // let mut encoded_image_bytes: Vec<u8> = Vec::new();
-
         match self.service_provider {
-            Some(ServiceProvider::Kugou) => {
+            ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
                 if let Some(p) = &self.pic_id {
                     if let Some(album_id) = &self.album_id {
@@ -212,7 +199,7 @@ impl SongTag {
                     bail!("pic_id is missing for kugou")
                 }
             }
-            Some(ServiceProvider::Netease) => {
+            ServiceProvider::Netease => {
                 let mut netease_api = netease::Api::new();
                 if let Some(p) = &self.pic_id {
                     Ok(netease_api.pic(p).await?)
@@ -220,46 +207,25 @@ impl SongTag {
                     bail!("pic_id is missing for netease")
                 }
             }
-            Some(ServiceProvider::Migu) => {
+            ServiceProvider::Migu => {
                 let migu_api = migu::Api::new();
-                if let Some(p) = &self.song_id {
-                    Ok(migu_api.pic(p).await?)
-                } else {
-                    bail!("song_id is missing for migu")
-                }
-            }
-            None => {
-                bail!("no servie provider given");
+                Ok(migu_api.pic(&self.song_id).await?)
             }
         }
-
-        // if encoded_image_bytes.is_empty() {
-        //     bail!("failed to fetch image");
-        // }
-
-        // Ok(Picture::new_unchecked(
-        //     PictureType::Other,
-        //     MimeType::Jpeg,
-        //     Some(String::from("Image")),
-        //     encoded_image_bytes,
-        // ))
     }
 
     #[allow(clippy::too_many_lines)]
     pub async fn download(&self, file: &str, tx_tageditor: &Sender<Msg>) -> Result<()> {
         let p_parent = get_parent_folder(Path::new(file));
-        let song_id = self
-            .song_id
-            .as_ref()
-            .ok_or_else(|| anyhow!("failed to download because no song id was found"))?;
+        let song_id = &self.song_id;
         let artist = self
             .artist
             .clone()
-            .unwrap_or_else(|| "Unknown Artist".to_string());
+            .unwrap_or_else(|| UNKNOWN_ARTIST.to_string());
         let title = self
             .title
             .clone()
-            .unwrap_or_else(|| "Unknown Title".to_string());
+            .unwrap_or_else(|| UNKNOWN_TITLE.to_string());
 
         let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
         let lyric = self.fetch_lyric().await;
@@ -281,23 +247,25 @@ impl SongTag {
             v => v?,
         }
 
-        let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
-        if mp3_url.starts_with("Copyright") {
+        if self.url().is_some_and(|v| *v == UrlTypes::Protected) {
             bail!("The item is protected by copyright, please, select another one.");
         }
-        let mut url = mp3_url;
 
-        if let Some(s) = &self.service_provider {
-            match s {
-                ServiceProvider::Netease => {
-                    let mut netease_api = netease::Api::new();
-                    url = netease_api.song_url(song_id).await?;
-                }
-                ServiceProvider::Migu => {}
-                ServiceProvider::Kugou => {
-                    let kugou_api = kugou::Api::new();
-                    url = kugou_api.song_url(song_id, &album_id).await?;
-                }
+        let mut url = if let Some(UrlTypes::FreeDownloadable(url)) = &self.url {
+            url.clone()
+        } else {
+            String::new()
+        };
+
+        match self.service_provider {
+            ServiceProvider::Netease => {
+                let mut netease_api = netease::Api::new();
+                url = netease_api.song_url(song_id).await?;
+            }
+            ServiceProvider::Migu => {}
+            ServiceProvider::Kugou => {
+                let kugou_api = kugou::Api::new();
+                url = kugou_api.song_url(song_id, &album_id).await?;
             }
         }
 
@@ -314,65 +282,66 @@ impl SongTag {
                 title.clone(),
             )))
             .ok();
+
             // start download
-            let download = ytd.download();
-
             // check what the result is and print out the path to the download or the error
-            match download {
-                Ok(_result) => {
-                    tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
-                        .ok();
-                    let mut tag = Id3v2Tag::default();
-
-                    tag.set_title(title.clone());
-                    tag.set_artist(artist);
-                    tag.set_album(album);
-
-                    // safe to unwrap these frames, since the ID is valid
-                    if let Ok(l) = lyric {
-                        let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
-                            TextEncoding::UTF8,
-                            *b"eng",
-                            String::from("saved by termusic"),
-                            l,
-                        ));
-                        tag.insert(frame);
-                    }
-
-                    if let Ok(picture) = photo {
-                        tag.insert_picture(picture);
-                    }
-
-                    if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
-                        sleep(Duration::from_secs(10));
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(
-                            url.clone(),
-                            Some(p_full.to_string_lossy().to_string()),
-                        )))
-                        .ok();
-                    } else {
-                        tx.send(Msg::Download(DLMsg::DownloadErrEmbedData(
-                            url.clone(),
-                            title,
-                        )))
-                        .ok();
-                        sleep(Duration::from_secs(10));
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
-                            .ok();
-                    }
-                }
-                Err(e) => {
+            let _download_result = match ytd.download() {
+                Ok(res) => res,
+                Err(err) => {
                     tx.send(Msg::Download(DLMsg::DownloadErrDownload(
                         url.clone(),
                         title.clone(),
-                        e.to_string(),
+                        err.to_string(),
                     )))
                     .ok();
-                    sleep(Duration::from_secs(10));
+                    sleep(Duration::from_secs(1));
                     tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
                         .ok();
+
+                    return Ok(());
                 }
             };
+
+            tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
+                .ok();
+            let mut tag = Id3v2Tag::default();
+
+            tag.set_title(title.clone());
+            tag.set_artist(artist);
+            tag.set_album(album);
+
+            if let Ok(Some(l)) = lyric {
+                let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
+                    TextEncoding::UTF8,
+                    *b"eng",
+                    String::from("saved by termusic"),
+                    l,
+                ));
+                tag.insert(frame);
+            }
+
+            if let Ok(picture) = photo {
+                tag.insert_picture(picture);
+            }
+
+            if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
+                sleep(Duration::from_secs(1));
+                tx.send(Msg::Download(DLMsg::DownloadCompleted(
+                    url.clone(),
+                    Some(p_full.to_string_lossy().to_string()),
+                )))
+                .ok();
+            } else {
+                tx.send(Msg::Download(DLMsg::DownloadErrEmbedData(
+                    url.clone(),
+                    title,
+                )))
+                .ok();
+                sleep(Duration::from_secs(1));
+                tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
+                    .ok();
+            }
+
             Ok(())
         });
         Ok(())

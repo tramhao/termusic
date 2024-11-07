@@ -1,3 +1,5 @@
+use crate::songtag::UrlTypes;
+
 /**
  * MIT License
  *
@@ -113,13 +115,13 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         .as_u64()
         .unwrap_or(0);
     let url = if price == 0 {
-        "Downloadable".to_string()
+        UrlTypes::AvailableRequiresFetching
     } else {
-        "Copyright Protected".to_string()
+        UrlTypes::Protected
     };
 
     Some(SongTag {
-        song_id: Some(v.get("hash")?.as_str()?.to_owned()),
+        song_id: v.get("hash")?.as_str()?.to_owned(),
         title: Some(v.get("songname")?.as_str()?.to_owned()),
         artist: Some(
             v.get("singername")
@@ -137,7 +139,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         ),
         pic_id: Some(v.get("hash")?.as_str()?.to_owned()),
         lang_ext: Some("kugou".to_string()),
-        service_provider: Some(ServiceProvider::Kugou),
+        service_provider: ServiceProvider::Kugou,
         lyric_id: Some(v.get("hash")?.as_str()?.to_owned()),
         url: Some(url),
         album_id: Some(v.get("album_id")?.as_str()?.to_owned()),
@@ -147,6 +149,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     // TODO: get some actual test data like migu or netease
     #[test]

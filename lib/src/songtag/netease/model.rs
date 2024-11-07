@@ -1,3 +1,5 @@
+use crate::songtag::UrlTypes;
+
 /**
  * model.rs
  * Copyright (C) 2019 gmg137 <gmg137@live.com>
@@ -144,6 +146,13 @@ pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
 
 fn parse_song_info(v: &Value) -> Option<SongTag> {
     // let _duration = v.get("duration")?.as_u64()?;
+
+    let url = if v.get("fee")?.as_u64()? == 0 {
+        UrlTypes::AvailableRequiresFetching
+    } else {
+        UrlTypes::Protected
+    };
+
     Some(SongTag {
         artist: Some(
             v.get("artists")?
@@ -165,16 +174,9 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         ),
         lang_ext: Some(String::from("netease")),
         lyric_id: Some(v.get("id")?.as_u64()?.to_string()),
-        song_id: Some(v.get("id")?.as_u64()?.to_string()),
-        service_provider: Some(ServiceProvider::Netease),
-        url: Some(
-            if v.get("fee")?.as_u64()? == 0 {
-                "Downloadable"
-            } else {
-                "Copyright protected"
-            }
-            .to_string(),
-        ),
+        song_id: v.get("id")?.as_u64()?.to_string(),
+        service_provider: ServiceProvider::Netease,
+        url: Some(url),
         pic_id: Some(
             v.get("album")?
                 .get("picId")
@@ -245,6 +247,7 @@ pub enum Parse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     #[allow(clippy::too_many_lines)]
@@ -372,10 +375,10 @@ mod tests {
                 title: Some("Track A".to_owned()),
                 album: Some("Some Album 1".to_owned()),
                 lang_ext: Some("netease".to_string()),
-                service_provider: Some(ServiceProvider::Netease),
-                song_id: Some("1000000000".to_owned()),
+                service_provider: ServiceProvider::Netease,
+                song_id: "1000000000".to_owned(),
                 lyric_id: Some("1000000000".to_owned()),
-                url: Some("Copyright protected".to_owned()),
+                url: Some(UrlTypes::Protected),
                 pic_id: Some("444444444444444444".to_owned()),
                 album_id: Some("444444444444444444".to_owned())
             }
@@ -388,10 +391,10 @@ mod tests {
                 title: Some("Track B".to_owned()),
                 album: Some("Some Album 2".to_owned()),
                 lang_ext: Some("netease".to_string()),
-                service_provider: Some(ServiceProvider::Netease),
-                song_id: Some("1111111111".to_owned()),
+                service_provider: ServiceProvider::Netease,
+                song_id: "1111111111".to_owned(),
                 lyric_id: Some("1111111111".to_owned()),
-                url: Some("Copyright protected".to_owned()),
+                url: Some(UrlTypes::Protected),
                 pic_id: Some("555555555555555555".to_owned()),
                 album_id: Some("555555555555555555".to_owned())
             }

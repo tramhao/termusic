@@ -179,15 +179,13 @@ impl Model {
             let artist = record.artist().unwrap_or("Nobody");
             let title = record.title().unwrap_or("Unknown Title");
             let album = record.album().unwrap_or("Unknown Album");
-            let mut api = "N/A".to_string();
-            if let Some(a) = record.service_provider() {
-                api = a.to_string();
-            }
+            let api = record.service_provider().to_string();
 
-            let mut url = record.url().unwrap_or_else(|| "No url".to_string());
-            if url.starts_with("http") {
-                url = "Downloadable".to_string();
-            }
+            let url = match record.url() {
+                Some(termusiclib::songtag::UrlTypes::Protected) => "Copyright Protected",
+                Some(_) => "Downloadable",
+                None => "No URL",
+            };
 
             table
                 .add_col(TextSpan::new(artist).fg(tuirealm::ratatui::style::Color::LightYellow))
@@ -324,7 +322,7 @@ impl Model {
                 })
             });
 
-            if let Ok(lyric_string) = lyric_string {
+            if let Ok(Some(lyric_string)) = lyric_string {
                 song.set_lyric(&lyric_string, lang_ext);
             }
             if let Ok(artwork) = artwork {
