@@ -6,20 +6,20 @@ mod icy_metadata;
 mod sink;
 mod stream;
 
-pub mod buffer;
-pub mod decoder;
-pub mod dynamic_mixer;
-pub mod queue;
-pub mod source;
+mod buffer;
+mod decoder;
+mod dynamic_mixer;
+mod queue;
+mod source;
 
 use async_trait::async_trait;
-pub use conversions::Sample;
-pub use cpal::{traits::StreamTrait, ChannelCount, SampleRate};
-pub use decoder::Symphonia;
-pub use sink::Sink;
-pub use source::Source;
+use conversions::Sample;
+use cpal::{ChannelCount, SampleRate};
+use decoder::Symphonia;
+use sink::Sink;
+use source::Source;
 use std::num::{NonZeroU16, NonZeroUsize};
-pub use stream::OutputStream;
+use stream::OutputStream;
 use termusiclib::config::ServerOverlay;
 use tokio::runtime::Handle;
 
