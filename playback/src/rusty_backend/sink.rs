@@ -3,7 +3,6 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::mpsc::UnboundedSender;
 
 use super::stream::{OutputStreamHandle, PlayError};
 use super::{queue, source::Done, PlayerInternalCmd, Sample, Source};
@@ -34,6 +33,7 @@ struct Controls {
     to_clear: Mutex<u32>,
 }
 
+#[allow(dead_code)]
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
@@ -94,6 +94,7 @@ impl Sink {
         }
 
         let controls = self.controls.clone();
+        #[cfg(feature = "rusty-soundtouch")]
         let controls_tempo = self.controls.clone();
 
         let start_played = AtomicBool::new(false);

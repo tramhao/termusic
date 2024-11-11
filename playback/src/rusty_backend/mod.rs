@@ -2,7 +2,6 @@
 
 mod conversions;
 mod icy_metadata;
-#[allow(unused)]
 mod sink;
 mod stream;
 
