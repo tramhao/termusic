@@ -6,7 +6,6 @@ mod icy_metadata;
 mod sink;
 mod stream;
 
-mod buffer;
 mod decoder;
 mod dynamic_mixer;
 mod queue;
