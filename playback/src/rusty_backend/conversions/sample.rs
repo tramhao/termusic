@@ -3,10 +3,7 @@ use std::marker::PhantomData;
 
 /// Converts the samples data type to `O`.
 #[derive(Clone, Debug)]
-pub struct DataConverter<I, O>
-// where
-//     D: cpal::FromSample<<I as Iterator>::Item>,
-{
+pub struct DataConverter<I, O> {
     input: I,
     marker: PhantomData<O>,
 }

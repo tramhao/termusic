@@ -753,14 +753,3 @@ async fn queue_next(
         }
     }
 }
-
-// Parse a given `str` int oa [`reqwest::Url`], otherwise log a error
-// fn parse_url(url_str: &str) -> Option<reqwest::Url> {
-//     match url_str.parse::<reqwest::Url>() {
-//         Ok(v) => Some(v),
-//         Err(err) => {
-//             error!("error parse url: {:#?}", err);
-//             None
-//         }
-//     }
-// }
