@@ -8,7 +8,6 @@ pub use self::amplify::Amplify;
 pub use self::delay::Delay;
 pub use self::done::Done;
 pub use self::empty::Empty;
-// pub use self::fadein::FadeIn;
 #[allow(clippy::module_name_repetitions)]
 #[allow(unused_imports)]
 pub use self::mix_source::MixSource;
@@ -20,7 +19,6 @@ pub use self::scaletempo::TempoStretch;
 pub use self::skippable::Skippable;
 pub use self::speed::Speed;
 pub use self::stoppable::Stoppable;
-// pub use self::take::TakeDuration;
 pub use self::uniform::UniformSourceIterator;
 pub use self::zero::Zero;
 
@@ -28,9 +26,7 @@ mod amplify;
 mod delay;
 mod done;
 mod empty;
-// mod fadein;
 mod mix_source;
-// mod http;
 mod pausable;
 mod periodic;
 mod samples_converter;
@@ -39,7 +35,6 @@ pub mod scaletempo;
 mod skippable;
 mod speed;
 mod stoppable;
-// mod take;
 mod uniform;
 mod zero;
 
@@ -137,15 +132,6 @@ where
 
     fn elapsed(&mut self) -> Duration;
 
-    // /// Takes a certain duration of this source and then stops.
-    // #[inline]
-    // fn take_duration(self, duration: Duration) -> TakeDuration<Self>
-    // where
-    //     Self: Sized,
-    // {
-    //     take::take_duration(self, duration)
-    // }
-
     /// Immediately skips a certain duration of this source.
     ///
     /// If the specified duration is longer than the source itself, `skip_duration` will skip to the end of the source.
@@ -158,15 +144,6 @@ where
     {
         amplify::amplify(self, value)
     }
-
-    // /// Fades in the sound.
-    // #[inline]
-    // fn fade_in(self, duration: Duration) -> FadeIn<Self>
-    // where
-    //     Self: Sized,
-    // {
-    //     fadein::fadein(self, duration)
-    // }
 
     /// Calls the `access` closure on `Self` the first time the source is iterated and every
     /// time `period` elapses.
