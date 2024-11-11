@@ -2,6 +2,7 @@ use std::io::{Read, Result, Seek, SeekFrom};
 
 use symphonia::core::io::MediaSource;
 
+/// A [`MediaSource`] which can work on any [`Read`] + [`Seek`] (does not exist by default in symphonia)
 pub struct ReadSeekSource<T: Read + Seek + Send + Sync> {
     inner: T,
     length: Option<u64>,
