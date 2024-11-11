@@ -10,6 +10,7 @@ pub use self::delay::Delay;
 pub use self::done::Done;
 pub use self::empty::Empty;
 #[cfg(feature = "rusty-soundtouch")]
+#[allow(clippy::module_name_repetitions)]
 pub use self::mix_source::MixSource;
 pub use self::pausable::Pausable;
 pub use self::periodic::PeriodicAccess;
