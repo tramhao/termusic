@@ -5,11 +5,11 @@ use std::time::Duration;
 use super::Sample;
 
 pub use self::amplify::Amplify;
+#[cfg(feature = "rusty-soundtouch")]
 pub use self::delay::Delay;
 pub use self::done::Done;
 pub use self::empty::Empty;
-#[allow(clippy::module_name_repetitions)]
-#[allow(unused_imports)]
+#[cfg(feature = "rusty-soundtouch")]
 pub use self::mix_source::MixSource;
 pub use self::pausable::Pausable;
 pub use self::periodic::PeriodicAccess;
@@ -23,9 +23,11 @@ pub use self::uniform::UniformSourceIterator;
 pub use self::zero::Zero;
 
 mod amplify;
+#[cfg(feature = "rusty-soundtouch")]
 mod delay;
 mod done;
 mod empty;
+#[cfg(feature = "rusty-soundtouch")]
 mod mix_source;
 mod pausable;
 mod periodic;

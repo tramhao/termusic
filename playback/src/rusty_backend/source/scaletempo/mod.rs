@@ -2,7 +2,7 @@
 
 use std::collections::VecDeque;
 
-use super::mix_source::MixSource;
+use super::MixSource;
 use super::Source;
 use soundtouch::{Setting, SoundTouch};
 
