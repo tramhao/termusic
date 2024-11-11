@@ -12,7 +12,7 @@ pub struct Done<I> {
     signal_sent: bool,
 }
 
-#[allow(clippy::use_self, clippy::missing_const_for_fn, unused)]
+#[allow(dead_code)]
 impl<I> Done<I> {
     #[inline]
     pub fn new(input: I, signal: Arc<AtomicUsize>) -> Done<I> {

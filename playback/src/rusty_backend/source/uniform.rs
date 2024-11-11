@@ -30,7 +30,6 @@ where
     D: Sample,
 {
     #[inline]
-    #[allow(clippy::use_self)]
     pub fn new(
         input: I,
         target_channels: u16,

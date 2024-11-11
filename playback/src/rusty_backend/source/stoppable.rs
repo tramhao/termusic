@@ -15,7 +15,7 @@ pub struct Stoppable<I> {
     stopped: bool,
 }
 
-#[allow(unused, clippy::missing_const_for_fn)]
+#[allow(dead_code)]
 impl<I> Stoppable<I> {
     /// Stops the sound.
     #[inline]

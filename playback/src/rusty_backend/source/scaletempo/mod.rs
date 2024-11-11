@@ -134,7 +134,7 @@ where
     }
 }
 
-#[allow(unused)]
+#[allow(dead_code)]
 impl<I> TempoStretch<I>
 where
     I: Source<Item = f32>,

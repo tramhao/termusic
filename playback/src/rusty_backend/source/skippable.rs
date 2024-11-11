@@ -17,7 +17,7 @@ pub struct Skippable<I> {
     do_skip: bool,
 }
 
-#[allow(unused, clippy::missing_const_for_fn)]
+#[allow(dead_code)]
 impl<I> Skippable<I> {
     /// Skips the current source
     #[inline]

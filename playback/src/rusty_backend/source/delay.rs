@@ -1,9 +1,9 @@
+#![allow(dead_code)]
 use std::time::Duration;
 
 use super::{Sample, Source};
 
 /// Internal function that builds a `Delay` object.
-#[allow(unused)]
 pub fn delay<I>(input: I, duration: Duration) -> Delay<I>
 where
     I: Source,
@@ -28,7 +28,6 @@ pub struct Delay<I> {
     requested_duration: Duration,
 }
 
-#[allow(unused)]
 impl<I> Delay<I>
 where
     I: Source,

@@ -52,7 +52,7 @@ pub struct SourcesQueueInput<S> {
     keep_alive_if_empty: AtomicBool,
 }
 
-#[allow(unused)]
+#[allow(dead_code)]
 impl<S> SourcesQueueInput<S>
 where
     S: Sample + Send + 'static,
@@ -181,7 +181,6 @@ where
     }
 }
 
-#[allow(clippy::question_mark)]
 impl<S> Iterator for SourcesQueueOutput<S>
 where
     S: Sample + Send + 'static,

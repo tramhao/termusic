@@ -15,7 +15,7 @@ pub struct SamplesConverter<I, D> {
     dest: PhantomData<D>,
 }
 
-#[allow(clippy::use_self, unused, clippy::missing_const_for_fn)]
+#[allow(dead_code)]
 impl<I, D> SamplesConverter<I, D> {
     #[inline]
     pub fn new(input: I) -> SamplesConverter<I, D> {

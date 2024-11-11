@@ -56,7 +56,6 @@ use termusiclib::track::{MediaType, Track};
 pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
-#[allow(unused)]
 #[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
     MessageOnEnd,

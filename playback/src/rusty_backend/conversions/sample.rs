@@ -11,7 +11,6 @@ pub struct DataConverter<I, O>
     marker: PhantomData<O>,
 }
 
-#[allow(clippy::missing_const_for_fn)]
 impl<I, O> DataConverter<I, O> {
     /// Builds a new converter.
     #[inline]
