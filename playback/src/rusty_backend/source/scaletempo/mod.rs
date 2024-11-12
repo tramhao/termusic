@@ -2,7 +2,6 @@
 
 use std::{collections::VecDeque, time::Duration};
 
-use super::MixSource;
 use rodio::Source;
 use soundtouch::{Setting, SoundTouch};
 
@@ -122,15 +121,6 @@ where
     }
 }
 
-impl<I> MixSource for TempoStretch<I>
-where
-    I: Source<Item = f32>,
-{
-    fn set_mix(&mut self, mix: f32) {
-        self.mix = mix;
-    }
-}
-
 #[allow(dead_code)]
 impl<I> TempoStretch<I>
 where
@@ -140,5 +130,10 @@ where
     #[inline]
     pub fn set_factor(&mut self, factor: f64) {
         self.factor = factor;
+    }
+
+    #[inline]
+    pub fn set_mix(&mut self, mix: f32) {
+        self.mix = mix;
     }
 }

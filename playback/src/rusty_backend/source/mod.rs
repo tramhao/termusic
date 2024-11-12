@@ -3,13 +3,8 @@
 use rodio::{Sample, Source};
 
 #[cfg(feature = "rusty-soundtouch")]
-#[allow(clippy::module_name_repetitions)]
-pub use self::mix_source::MixSource;
-#[cfg(feature = "rusty-soundtouch")]
 pub use self::scaletempo::TempoStretch;
 
-#[cfg(feature = "rusty-soundtouch")]
-mod mix_source;
 #[cfg(feature = "rusty-soundtouch")]
 pub mod scaletempo;
 
