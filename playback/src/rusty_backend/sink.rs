@@ -138,6 +138,8 @@ impl Sink {
                 let src = src.inner_mut();
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
+                    // reset position to be at 0, otherwise the position could be stale if there is no new source
+                    *elapsed.write() = Duration::ZERO;
                 } else {
                     if let Some(seek_time) = controls.seek.lock().take() {
                         let _ = src.try_seek(seek_time);
@@ -148,6 +150,8 @@ impl Sink {
                         if *to_clear > 0 {
                             src.inner_mut().skip();
                             *to_clear -= 1;
+                            // reset position to be at 0, otherwise the position could be stale if there is no new source
+                            *elapsed.write() = Duration::ZERO;
                         }
                     }
                     let amp = src.inner_mut().inner_mut();
