@@ -1,9 +1,9 @@
 // mod sonic;
 
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::Duration};
 
 use super::MixSource;
-use super::Source;
+use rodio::Source;
 use soundtouch::{Setting, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
@@ -116,12 +116,9 @@ where
         self.input.total_duration()
     }
 
-    fn seek(&mut self, time: std::time::Duration) -> Option<std::time::Duration> {
-        self.input.seek(time)
-    }
-
-    fn elapsed(&mut self) -> std::time::Duration {
-        self.input.elapsed()
+    #[inline]
+    fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
+        self.input.try_seek(pos)
     }
 }
 

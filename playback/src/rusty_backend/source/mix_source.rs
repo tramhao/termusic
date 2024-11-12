@@ -1,9 +1,8 @@
 use std::time::Duration;
 
-use super::Delay;
-use super::Sample;
-
-use super::Source;
+use rodio::source::Delay;
+use rodio::Sample;
+use rodio::Source;
 
 pub trait MixSource: Source
 where
@@ -33,12 +32,8 @@ where
     }
 
     #[inline]
-    fn elapsed(&mut self) -> Duration {
-        (**self).elapsed()
-    }
-    #[inline]
-    fn seek(&mut self, time: Duration) -> Option<Duration> {
-        (**self).seek(time)
+    fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
+        (**self).try_seek(pos)
     }
 }
 
@@ -63,12 +58,8 @@ where
     }
 
     #[inline]
-    fn elapsed(&mut self) -> Duration {
-        (**self).elapsed()
-    }
-    #[inline]
-    fn seek(&mut self, time: Duration) -> Option<Duration> {
-        (**self).seek(time)
+    fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
+        (**self).try_seek(pos)
     }
 }
 
@@ -93,12 +84,8 @@ where
     }
 
     #[inline]
-    fn elapsed(&mut self) -> Duration {
-        (**self).elapsed()
-    }
-    #[inline]
-    fn seek(&mut self, time: Duration) -> Option<Duration> {
-        (**self).seek(time)
+    fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
+        (**self).try_seek(pos)
     }
 }
 
@@ -165,12 +152,8 @@ where
     }
 
     #[inline]
-    fn elapsed(&mut self) -> Duration {
-        self.0.elapsed()
-    }
-    #[inline]
-    fn seek(&mut self, time: Duration) -> Option<Duration> {
-        self.0.seek(time)
+    fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
+        self.0.try_seek(pos)
     }
 }
 

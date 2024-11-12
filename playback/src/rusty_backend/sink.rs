@@ -4,10 +4,13 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
 
-use super::stream::{OutputStreamHandle, PlayError};
-use super::{queue, source::Done, PlayerInternalCmd, Sample, Source};
+#[allow(unused_imports)] // used for "rusty-soundtouch"
+use super::source::SourceExt as _;
+use super::PlayerInternalCmd;
 use crate::PlayerCmd;
-use cpal::FromSample;
+use rodio::cpal::FromSample;
+use rodio::{queue, source::Done, Sample, Source};
+use rodio::{OutputStreamHandle, PlayError};
 
 /// Handle to an device that outputs sounds.
 ///
@@ -103,12 +106,16 @@ impl Sink {
         let elapsed = self.elapsed.clone();
         let source = source
             .speed(1.0)
+            .track_position()
             .pausable(false)
             .amplify(1.0)
             .skippable()
             .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
-                tx.send(PlayerInternalCmd::Progress(src.elapsed())).ok();
+                tx.send(PlayerInternalCmd::Progress(
+                    src.inner().inner().inner().inner().get_pos(),
+                ))
+                .ok();
             })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
@@ -116,9 +123,9 @@ impl Sink {
                     src.stop();
                 } else {
                     if let Some(seek_time) = controls.seek.lock().take() {
-                        src.seek(seek_time);
+                        let _ = src.try_seek(seek_time);
                     }
-                    *elapsed.write() = src.elapsed();
+                    *elapsed.write() = src.inner().inner().inner().inner().get_pos();
                     {
                         let mut to_clear = controls.to_clear.lock();
                         if *to_clear > 0 {
@@ -134,6 +141,7 @@ impl Sink {
                     #[cfg(not(feature = "rusty-soundtouch"))]
                     {
                         amp.inner_mut()
+                            .inner_mut()
                             .inner_mut()
                             .set_factor(*controls.speed.lock());
                     }
