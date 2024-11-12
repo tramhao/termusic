@@ -422,7 +422,7 @@ async fn player_thread(
     // note that the current implementation is only meant to have 1 enqueued next after the current playing song
     let mut next_duration_opt = None;
     let (_stream, handle) = OutputStream::try_default().unwrap();
-    let mut sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
+    let sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
     sink.set_speed(speed_inside as f32 / 10.0);
     sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
     loop {
@@ -477,9 +477,7 @@ async fn player_thread(
                 sink.set_speed(speed_inside as f32 / 10.0);
             }
             PlayerInternalCmd::Stop => {
-                sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
-                sink.set_speed(speed_inside as f32 / 10.0);
-                sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
+                sink.stop();
             }
             PlayerInternalCmd::Volume(volume) => {
                 sink.set_volume(f32::from(volume) / 100.0);
