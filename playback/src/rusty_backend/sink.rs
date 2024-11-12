@@ -1,3 +1,5 @@
+//# This File is a modified version of "rodio::Sink" which is licensed under MIT
+
 use parking_lot::{Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
