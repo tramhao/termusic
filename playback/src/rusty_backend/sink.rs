@@ -19,12 +19,13 @@ use rodio::{OutputStreamHandle, PlayError};
 pub struct Sink {
     queue_tx: Arc<queue::SourcesQueueInput<f32>>,
     sleep_until_end: Mutex<Option<Receiver<()>>>,
+
     controls: Arc<Controls>,
     sound_count: Arc<AtomicUsize>,
-
     elapsed: Arc<RwLock<Duration>>,
-    message_tx: Sender<PlayerInternalCmd>,
-    cmd_tx: crate::PlayerCmdSender,
+
+    picmd_tx: Sender<PlayerInternalCmd>,
+    pcmd_tx: crate::PlayerCmdSender,
 }
 
 struct Controls {
@@ -42,18 +43,18 @@ impl Sink {
     #[inline]
     pub fn try_new(
         stream: &OutputStreamHandle,
-        tx: Sender<PlayerInternalCmd>,
-        cmd_tx: crate::PlayerCmdSender,
+        picmd_tx: Sender<PlayerInternalCmd>,
+        pcmd_tx: crate::PlayerCmdSender,
     ) -> Result<Self, PlayError> {
-        let (sink, queue_rx) = Self::new_idle(tx, cmd_tx);
+        let (sink, queue_rx) = Self::new_idle(picmd_tx, pcmd_tx);
         stream.play_raw(queue_rx)?;
         Ok(sink)
     }
     /// Builds a new `Sink`.
     #[inline]
     pub fn new_idle(
-        tx: Sender<PlayerInternalCmd>,
-        cmd_tx: crate::PlayerCmdSender,
+        picmd_tx: Sender<PlayerInternalCmd>,
+        pcmd_tx: crate::PlayerCmdSender,
     ) -> (Self, queue::SourcesQueueOutput<f32>) {
         // pub fn new_idle() -> (Sink, queue::SourcesQueueOutput<f32>) {
         // let (queue_tx, queue_rx) = queue::queue(true);
@@ -72,8 +73,8 @@ impl Sink {
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
             elapsed: Arc::new(RwLock::new(Duration::from_secs(0))),
-            message_tx: tx,
-            cmd_tx,
+            picmd_tx,
+            pcmd_tx,
         };
         (sink, queue_rx)
     }
@@ -101,7 +102,7 @@ impl Sink {
 
         let start_played = AtomicBool::new(false);
 
-        let tx = self.message_tx.clone();
+        let progress_tx = self.picmd_tx.clone();
         let elapsed = self.elapsed.clone();
         let source = source
             .speed(1.0)
@@ -111,10 +112,11 @@ impl Sink {
             .skippable()
             .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
-                tx.send(PlayerInternalCmd::Progress(
-                    src.inner().inner().inner().inner().get_pos(),
-                ))
-                .ok();
+                progress_tx
+                    .send(PlayerInternalCmd::Progress(
+                        src.inner().inner().inner().inner().get_pos(),
+                    ))
+                    .ok();
             })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
@@ -299,16 +301,16 @@ impl Sink {
     // message through the given Sender.
     pub fn message_on_end(&self) {
         if let Some(sleep_until_end) = self.sleep_until_end.lock().take() {
-            let cmd_tx = self.cmd_tx.clone();
-            let message_tx = self.message_tx.clone();
+            let pcmd_tx = self.pcmd_tx.clone();
+            let picmd_tx = self.picmd_tx.clone();
             std::thread::Builder::new()
                 .name("rusty message_on_end".into())
                 .spawn(move || {
                     let _drop = sleep_until_end.recv();
-                    if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
+                    if let Err(e) = pcmd_tx.send(PlayerCmd::Eos) {
                         error!("Error in message_on_end: {e}");
                     }
-                    if let Err(e) = message_tx.send(PlayerInternalCmd::Eos) {
+                    if let Err(e) = picmd_tx.send(PlayerInternalCmd::Eos) {
                         error!("Error in message_on_end: {e}");
                     }
                 })
