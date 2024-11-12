@@ -25,8 +25,6 @@ pub struct Sink {
     controls: Arc<Controls>,
     /// Indicates how many sources are currently in the queue.
     sound_count: Arc<AtomicUsize>,
-    /// The current position in the currently playing source (may be off by a few milliseconds).
-    elapsed: Arc<RwLock<Duration>>,
 
     picmd_tx: Sender<PlayerInternalCmd>,
     pcmd_tx: crate::PlayerCmdSender,
@@ -51,6 +49,8 @@ struct Controls {
     ///
     /// Used for skipping / clearing while accounting for the case that a new source is added before finishing clearing.
     to_clear: Mutex<u32>,
+    /// The current position in the currently playing source (may be off by a few milliseconds).
+    position: RwLock<Duration>,
 }
 
 #[allow(dead_code)]
@@ -85,9 +85,9 @@ impl Sink {
                 seek: Mutex::new(None),
                 speed: Mutex::new(1.0),
                 to_clear: Mutex::new(0),
+                position: RwLock::new(Duration::from_secs(0)),
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
-            elapsed: Arc::new(RwLock::new(Duration::from_secs(0))),
             picmd_tx,
             pcmd_tx,
         };
@@ -119,7 +119,6 @@ impl Sink {
         let start_played = AtomicBool::new(false);
 
         let progress_tx = self.picmd_tx.clone();
-        let elapsed = self.elapsed.clone();
         let source = source
             .speed(1.0)
             .track_position()
@@ -139,7 +138,7 @@ impl Sink {
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
                     // reset position to be at 0, otherwise the position could be stale if there is no new source
-                    *elapsed.write() = Duration::ZERO;
+                    *controls.position.write() = Duration::ZERO;
                 } else {
                     if let Some(seek_time) = controls.seek.lock().take() {
                         let _ = src.try_seek(seek_time);
@@ -150,10 +149,10 @@ impl Sink {
                             src.inner_mut().skip();
                             *to_clear -= 1;
                             // reset position to be at 0, otherwise the position could be stale if there is no new source
-                            *elapsed.write() = Duration::ZERO;
+                            *controls.position.write() = Duration::ZERO;
                         }
                     }
-                    *elapsed.write() = src.inner().inner().inner().inner().get_pos();
+                    *controls.position.write() = src.inner().inner().inner().inner().get_pos();
 
                     let amp = src.inner_mut().inner_mut();
                     amp.set_factor(*controls.volume.lock());
@@ -322,7 +321,7 @@ impl Sink {
     /// Note that there can be a difference of a few milliseconds to actual position
     #[inline]
     pub fn elapsed(&self) -> Duration {
-        *self.elapsed.read()
+        *self.controls.position.read()
     }
 
     // Spawns a new thread to sleep until the sound ends, and then sends the SoundEnded
