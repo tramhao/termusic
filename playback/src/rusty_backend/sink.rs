@@ -144,7 +144,6 @@ impl Sink {
                     if let Some(seek_time) = controls.seek.lock().take() {
                         let _ = src.try_seek(seek_time);
                     }
-                    *elapsed.write() = src.inner().inner().inner().inner().get_pos();
                     {
                         let mut to_clear = controls.to_clear.lock();
                         if *to_clear > 0 {
@@ -154,6 +153,8 @@ impl Sink {
                             *elapsed.write() = Duration::ZERO;
                         }
                     }
+                    *elapsed.write() = src.inner().inner().inner().inner().get_pos();
+
                     let amp = src.inner_mut().inner_mut();
                     amp.set_factor(*controls.volume.lock());
                     amp.inner_mut()
