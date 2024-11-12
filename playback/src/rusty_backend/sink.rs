@@ -21,7 +21,7 @@ pub struct Sink {
     sleep_until_end: Mutex<Option<Receiver<()>>>,
     controls: Arc<Controls>,
     sound_count: Arc<AtomicUsize>,
-    detached: bool,
+
     elapsed: Arc<RwLock<Duration>>,
     message_tx: Sender<PlayerInternalCmd>,
     cmd_tx: crate::PlayerCmdSender,
@@ -71,7 +71,6 @@ impl Sink {
                 to_clear: Mutex::new(0),
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
-            detached: false,
             elapsed: Arc::new(RwLock::new(Duration::from_secs(0))),
             message_tx: tx,
             cmd_tx,
@@ -271,12 +270,6 @@ impl Sink {
         self.controls.stopped.store(true, Ordering::SeqCst);
     }
 
-    /// Destroys the sink without stopping the sounds that are still playing.
-    #[inline]
-    pub fn detach(mut self) {
-        self.detached = true;
-    }
-
     /// Sleeps the current thread until the sound ends.
     #[inline]
     pub fn sleep_until_end(&self) {
@@ -328,9 +321,6 @@ impl Drop for Sink {
     #[inline]
     fn drop(&mut self) {
         self.queue_tx.set_keep_alive_if_empty(false);
-
-        if !self.detached {
-            self.controls.stopped.store(true, Ordering::Relaxed);
-        }
+        self.controls.stopped.store(true, Ordering::Relaxed);
     }
 }
