@@ -1,13 +1,8 @@
 #![cfg_attr(test, deny(missing_docs))]
 
-// mod conversions;
+mod decoder;
 mod icy_metadata;
 mod sink;
-// mod stream;
-
-mod decoder;
-// mod dynamic_mixer;
-// mod queue;
 mod source;
 
 use async_trait::async_trait;
