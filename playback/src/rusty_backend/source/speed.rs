@@ -14,7 +14,7 @@ pub struct Speed<I> {
     factor: f32,
 }
 
-#[allow(unused)]
+#[allow(dead_code)]
 impl<I> Speed<I>
 where
     I: Source,

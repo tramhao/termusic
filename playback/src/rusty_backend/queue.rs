@@ -27,7 +27,8 @@ where
     S: Sample + Send + 'static,
 {
     let input = Arc::new(SourcesQueueInput {
-        next_sounds: Mutex::new(Vec::new()),
+        // capacity: we really only need 1, but there could be up to 2 in our implementation and default capacity on first allocate for one push is 4
+        next_sounds: Mutex::new(Vec::with_capacity(4)),
         keep_alive_if_empty: AtomicBool::new(keep_alive_if_empty),
     });
 
@@ -52,7 +53,7 @@ pub struct SourcesQueueInput<S> {
     keep_alive_if_empty: AtomicBool,
 }
 
-#[allow(unused)]
+#[allow(dead_code)]
 impl<S> SourcesQueueInput<S>
 where
     S: Sample + Send + 'static,
@@ -181,7 +182,6 @@ where
     }
 }
 
-#[allow(clippy::question_mark)]
 impl<S> Iterator for SourcesQueueOutput<S>
 where
     S: Sample + Send + 'static,

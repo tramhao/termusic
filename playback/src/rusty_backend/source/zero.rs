@@ -12,9 +12,9 @@ pub struct Zero<S> {
     marker: PhantomData<S>,
 }
 
+#[allow(dead_code)]
 impl<S> Zero<S> {
     #[inline]
-    #[allow(unused)]
     pub const fn new(channels: u16, sample_rate: u32) -> Self {
         Self {
             channels,

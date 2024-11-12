@@ -27,7 +27,7 @@ pub struct Pausable<I> {
     remaining_paused_samples: u16,
 }
 
-#[allow(unused)]
+#[allow(dead_code)]
 impl<I> Pausable<I>
 where
     I: Source,

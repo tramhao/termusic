@@ -2,24 +2,22 @@
 
 mod conversions;
 mod icy_metadata;
-#[allow(unused)]
 mod sink;
 mod stream;
 
-pub mod buffer;
-pub mod decoder;
-pub mod dynamic_mixer;
-pub mod queue;
-pub mod source;
+mod decoder;
+mod dynamic_mixer;
+mod queue;
+mod source;
 
 use async_trait::async_trait;
-pub use conversions::Sample;
-pub use cpal::{traits::StreamTrait, ChannelCount, SampleRate};
-pub use decoder::Symphonia;
-pub use sink::Sink;
-pub use source::Source;
+use conversions::Sample;
+use cpal::{ChannelCount, SampleRate};
+use decoder::Symphonia;
+use sink::Sink;
+use source::Source;
 use std::num::{NonZeroU16, NonZeroUsize};
-pub use stream::OutputStream;
+use stream::OutputStream;
 use termusiclib::config::ServerOverlay;
 use tokio::runtime::Handle;
 
@@ -58,7 +56,6 @@ use termusiclib::track::{MediaType, Track};
 pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
-#[allow(unused)]
 #[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
     MessageOnEnd,
@@ -756,14 +753,3 @@ async fn queue_next(
         }
     }
 }
-
-// Parse a given `str` int oa [`reqwest::Url`], otherwise log a error
-// fn parse_url(url_str: &str) -> Option<reqwest::Url> {
-//     match url_str.parse::<reqwest::Url>() {
-//         Ok(v) => Some(v),
-//         Err(err) => {
-//             error!("error parse url: {:#?}", err);
-//             None
-//         }
-//     }
-// }

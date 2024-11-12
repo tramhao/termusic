@@ -1,9 +1,8 @@
-// mod scaletempo_1;
 // mod sonic;
 
 use std::collections::VecDeque;
 
-use super::mix_source::MixSource;
+use super::MixSource;
 use super::Source;
 use soundtouch::{Setting, SoundTouch};
 
@@ -135,7 +134,7 @@ where
     }
 }
 
-#[allow(unused)]
+#[allow(dead_code)]
 impl<I> TempoStretch<I>
 where
     I: Source<Item = f32>,

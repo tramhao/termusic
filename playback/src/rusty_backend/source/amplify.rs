@@ -18,7 +18,7 @@ pub struct Amplify<I> {
     factor: f32,
 }
 
-#[allow(clippy::missing_const_for_fn, unused)]
+#[allow(unused)]
 impl<I> Amplify<I> {
     /// Modifies the amplification factor.
     #[inline]

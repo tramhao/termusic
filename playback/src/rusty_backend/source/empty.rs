@@ -14,7 +14,6 @@ impl<S> Default for Empty<S> {
     }
 }
 
-#[allow(clippy::use_self)]
 impl<S> Empty<S> {
     #[inline]
     pub const fn new() -> Empty<S> {

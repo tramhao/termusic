@@ -44,7 +44,7 @@ pub struct PeriodicAccess<I, F> {
     samples_until_update: u32,
 }
 
-#[allow(unused)]
+#[allow(dead_code)]
 impl<I, F> PeriodicAccess<I, F>
 where
     I: Source,
