@@ -17,23 +17,39 @@ use rodio::{OutputStreamHandle, PlayError};
 /// Dropping the `Sink` stops all sounds. You can use `detach` if you want the sounds to continue
 /// playing.
 pub struct Sink {
+    /// The queue that the sources are added onto
     queue_tx: Arc<queue::SourcesQueueInput<f32>>,
+    /// Stores the last added source's [`Receiver`] End-of-Stream oneshot channel.
     sleep_until_end: Mutex<Option<Receiver<()>>>,
 
     controls: Arc<Controls>,
+    /// Indicates how many sources are currently in the queue.
     sound_count: Arc<AtomicUsize>,
+    /// The current position in the currently playing source (may be off by a few milliseconds).
     elapsed: Arc<RwLock<Duration>>,
 
     picmd_tx: Sender<PlayerInternalCmd>,
     pcmd_tx: crate::PlayerCmdSender,
 }
 
+/// The Controls for the Sink, most values store the value to be applied while some others store a remaining amount.
+#[derive(Debug)]
 struct Controls {
+    /// Stores whether the playback should be paused or not.
     pause: AtomicBool,
+    /// Stores the volume to be applied.
     volume: Mutex<f32>,
+    /// Stores a position to seek to (forwards / backwards).
     seek: Mutex<Option<Duration>>,
+    /// Stores whether to fully clear the current queue.
+    ///
+    /// Automatically gets reset to `false` once cleared.
     stopped: AtomicBool,
+    /// Stores the speed to be applied.
     speed: Mutex<f32>,
+    /// Stores how many sources should be skipped.
+    ///
+    /// Used for skipping / clearing while accounting for the case that a new source is added before finishing clearing.
     to_clear: Mutex<u32>,
 }
 
@@ -50,14 +66,13 @@ impl Sink {
         stream.play_raw(queue_rx)?;
         Ok(sink)
     }
+
     /// Builds a new `Sink`.
     #[inline]
     pub fn new_idle(
         picmd_tx: Sender<PlayerInternalCmd>,
         pcmd_tx: crate::PlayerCmdSender,
     ) -> (Self, queue::SourcesQueueOutput<f32>) {
-        // pub fn new_idle() -> (Sink, queue::SourcesQueueOutput<f32>) {
-        // let (queue_tx, queue_rx) = queue::queue(true);
         let (queue_tx, queue_rx) = queue::queue(true);
 
         let sink = Sink {
@@ -76,6 +91,7 @@ impl Sink {
             picmd_tx,
             pcmd_tx,
         };
+
         (sink, queue_rx)
     }
 
@@ -162,7 +178,6 @@ impl Sink {
 
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
-        // let source = super::source::scaletempo::tempo_stretch(source, 1.3);
         *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
     }
 
@@ -227,12 +242,16 @@ impl Sink {
         self.controls.pause.load(Ordering::SeqCst)
     }
 
-    pub fn seek(&self, seek_time: Duration) {
+    /// Seek to a specified position
+    ///
+    /// This will do nothing if the source is not seekable.
+    pub fn seek(&self, seek_to: Duration) {
         if self.is_paused() {
             self.play();
         }
-        *self.controls.seek.lock() = Some(seek_time);
+        *self.controls.seek.lock() = Some(seek_to);
     }
+
     /// Toggles playback of the sink
     pub fn toggle_playback(&self) {
         if self.is_paused() {
@@ -241,6 +260,7 @@ impl Sink {
             self.pause();
         }
     }
+
     /// Removes all currently loaded `Source`s from the `Sink`, and pauses it.
     ///
     /// See `pause()` for information about pausing a `Sink`.
@@ -292,6 +312,9 @@ impl Sink {
         self.sound_count.load(Ordering::Relaxed)
     }
 
+    /// Returns the current position of the currently playing source
+    ///
+    /// Note that there can be a difference of a few milliseconds to actual position
     #[inline]
     pub fn elapsed(&self) -> Duration {
         *self.elapsed.read()
