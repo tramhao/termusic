@@ -487,7 +487,7 @@ async fn player_thread(
             }
             PlayerInternalCmd::Skip => {
                 // the sink can be empty, if for example nothing could be enqueued, so a "skip_one" would be a no-op and never send EOS, which is required to go to the next track
-                if sink.empty() {
+                if sink.is_empty() {
                     let _ = picmd_tx.send(PlayerInternalCmd::Eos);
                     let _ = pcmd_tx.send(PlayerCmd::Eos);
                 } else {
