@@ -1,23 +1,16 @@
 #![cfg_attr(test, deny(missing_docs))]
 
-mod conversions;
+mod decoder;
 mod icy_metadata;
 mod sink;
-mod stream;
-
-mod decoder;
-mod dynamic_mixer;
-mod queue;
 mod source;
 
 use async_trait::async_trait;
-use conversions::Sample;
-use cpal::{ChannelCount, SampleRate};
 use decoder::Symphonia;
+use rodio::OutputStream;
+use rodio::Source;
 use sink::Sink;
-use source::Source;
 use std::num::{NonZeroU16, NonZeroUsize};
-use stream::OutputStream;
 use termusiclib::config::ServerOverlay;
 use tokio::runtime::Handle;
 
@@ -429,7 +422,7 @@ async fn player_thread(
     // note that the current implementation is only meant to have 1 enqueued next after the current playing song
     let mut next_duration_opt = None;
     let (_stream, handle) = OutputStream::try_default().unwrap();
-    let mut sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
+    let sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
     sink.set_speed(speed_inside as f32 / 10.0);
     sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
     loop {
@@ -484,9 +477,7 @@ async fn player_thread(
                 sink.set_speed(speed_inside as f32 / 10.0);
             }
             PlayerInternalCmd::Stop => {
-                sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
-                sink.set_speed(speed_inside as f32 / 10.0);
-                sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
+                sink.stop();
             }
             PlayerInternalCmd::Volume(volume) => {
                 sink.set_volume(f32::from(volume) / 100.0);
@@ -494,7 +485,7 @@ async fn player_thread(
             }
             PlayerInternalCmd::Skip => {
                 // the sink can be empty, if for example nothing could be enqueued, so a "skip_one" would be a no-op and never send EOS, which is required to go to the next track
-                if sink.empty() {
+                if sink.is_empty() {
                     let _ = picmd_tx.send(PlayerInternalCmd::Eos);
                     let _ = pcmd_tx.send(PlayerCmd::Eos);
                 } else {

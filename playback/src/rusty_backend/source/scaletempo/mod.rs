@@ -1,9 +1,8 @@
 // mod sonic;
 
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::Duration};
 
-use super::MixSource;
-use super::Source;
+use rodio::Source;
 use soundtouch::{Setting, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
@@ -116,21 +115,9 @@ where
         self.input.total_duration()
     }
 
-    fn seek(&mut self, time: std::time::Duration) -> Option<std::time::Duration> {
-        self.input.seek(time)
-    }
-
-    fn elapsed(&mut self) -> std::time::Duration {
-        self.input.elapsed()
-    }
-}
-
-impl<I> MixSource for TempoStretch<I>
-where
-    I: Source<Item = f32>,
-{
-    fn set_mix(&mut self, mix: f32) {
-        self.mix = mix;
+    #[inline]
+    fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
+        self.input.try_seek(pos)
     }
 }
 
@@ -143,5 +130,10 @@ where
     #[inline]
     pub fn set_factor(&mut self, factor: f64) {
         self.factor = factor;
+    }
+
+    #[inline]
+    pub fn set_mix(&mut self, mix: f32) {
+        self.mix = mix;
     }
 }

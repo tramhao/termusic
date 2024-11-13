@@ -270,16 +270,11 @@ impl Source for Symphonia {
     }
 
     #[inline]
-    fn elapsed(&mut self) -> Duration {
-        self.elapsed
-    }
-
-    #[inline]
-    fn seek(&mut self, time: Duration) -> Option<Duration> {
+    fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
         match self.probed.format.seek(
             SeekMode::Coarse,
             SeekTo::Time {
-                time: time.into(),
+                time: pos.into(),
                 track_id: Some(self.track_id),
             },
         ) {
@@ -300,11 +295,9 @@ impl Source for Symphonia {
                     self.decoder.reset();
                 }
 
-                self.time_base
-                    .as_ref()
-                    .map(|v| v.calc_time(seeked_to.actual_ts).into())
+                Ok(())
             }
-            Err(_) => None,
+            Err(_) => Ok(()),
         }
     }
 }

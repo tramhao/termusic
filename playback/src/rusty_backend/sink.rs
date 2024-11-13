@@ -1,36 +1,58 @@
+//# This File is a modified version of "rodio::Sink" which is licensed under MIT
+
 use parking_lot::{Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
 
-use super::stream::{OutputStreamHandle, PlayError};
-use super::{queue, source::Done, PlayerInternalCmd, Sample, Source};
+#[allow(unused_imports)] // used for "rusty-soundtouch"
+use super::source::SourceExt as _;
+use super::PlayerInternalCmd;
 use crate::PlayerCmd;
-use cpal::FromSample;
+use rodio::cpal::FromSample;
+use rodio::{queue, source::Done, Sample, Source};
+use rodio::{OutputStreamHandle, PlayError};
 
 /// Handle to an device that outputs sounds.
 ///
 /// Dropping the `Sink` stops all sounds. You can use `detach` if you want the sounds to continue
 /// playing.
 pub struct Sink {
+    /// The queue that the sources are added onto
     queue_tx: Arc<queue::SourcesQueueInput<f32>>,
+    /// Stores the last added source's [`Receiver`] End-of-Stream oneshot channel.
     sleep_until_end: Mutex<Option<Receiver<()>>>,
+
     controls: Arc<Controls>,
+    /// Indicates how many sources are currently in the queue.
     sound_count: Arc<AtomicUsize>,
-    detached: bool,
-    elapsed: Arc<RwLock<Duration>>,
-    message_tx: Sender<PlayerInternalCmd>,
-    cmd_tx: crate::PlayerCmdSender,
+
+    picmd_tx: Sender<PlayerInternalCmd>,
+    pcmd_tx: crate::PlayerCmdSender,
 }
 
+/// The Controls for the Sink, most values store the value to be applied while some others store a remaining amount.
+#[derive(Debug)]
 struct Controls {
+    /// Stores whether the playback should be paused or not.
     pause: AtomicBool,
+    /// Stores the volume to be applied.
     volume: Mutex<f32>,
+    /// Stores a position to seek to (forwards / backwards).
     seek: Mutex<Option<Duration>>,
+    /// Stores whether to fully clear the current queue.
+    ///
+    /// Automatically gets reset to `false` once cleared.
     stopped: AtomicBool,
+    /// Stores the speed to be applied.
     speed: Mutex<f32>,
+    /// Stores how many sources should be skipped.
+    ///
+    /// Used for skipping / clearing while accounting for the case that a new source is added before finishing clearing.
     to_clear: Mutex<u32>,
+    /// The current position in the currently playing source (may be off by a few milliseconds).
+    position: RwLock<Duration>,
 }
 
 #[allow(dead_code)]
@@ -39,21 +61,20 @@ impl Sink {
     #[inline]
     pub fn try_new(
         stream: &OutputStreamHandle,
-        tx: Sender<PlayerInternalCmd>,
-        cmd_tx: crate::PlayerCmdSender,
+        picmd_tx: Sender<PlayerInternalCmd>,
+        pcmd_tx: crate::PlayerCmdSender,
     ) -> Result<Self, PlayError> {
-        let (sink, queue_rx) = Self::new_idle(tx, cmd_tx);
+        let (sink, queue_rx) = Self::new_idle(picmd_tx, pcmd_tx);
         stream.play_raw(queue_rx)?;
         Ok(sink)
     }
+
     /// Builds a new `Sink`.
     #[inline]
     pub fn new_idle(
-        tx: Sender<PlayerInternalCmd>,
-        cmd_tx: crate::PlayerCmdSender,
+        picmd_tx: Sender<PlayerInternalCmd>,
+        pcmd_tx: crate::PlayerCmdSender,
     ) -> (Self, queue::SourcesQueueOutput<f32>) {
-        // pub fn new_idle() -> (Sink, queue::SourcesQueueOutput<f32>) {
-        // let (queue_tx, queue_rx) = queue::queue(true);
         let (queue_tx, queue_rx) = queue::queue(true);
 
         let sink = Sink {
@@ -66,13 +87,13 @@ impl Sink {
                 seek: Mutex::new(None),
                 speed: Mutex::new(1.0),
                 to_clear: Mutex::new(0),
+                position: RwLock::new(Duration::from_secs(0)),
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
-            detached: false,
-            elapsed: Arc::new(RwLock::new(Duration::from_secs(0))),
-            message_tx: tx,
-            cmd_tx,
+            picmd_tx,
+            pcmd_tx,
         };
+
         (sink, queue_rx)
     }
 
@@ -99,33 +120,42 @@ impl Sink {
 
         let start_played = AtomicBool::new(false);
 
-        let tx = self.message_tx.clone();
-        let elapsed = self.elapsed.clone();
+        let progress_tx = self.picmd_tx.clone();
         let source = source
             .speed(1.0)
+            .track_position()
             .pausable(false)
             .amplify(1.0)
             .skippable()
             .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
-                tx.send(PlayerInternalCmd::Progress(src.elapsed())).ok();
+                progress_tx
+                    .send(PlayerInternalCmd::Progress(
+                        src.inner().inner().inner().inner().get_pos(),
+                    ))
+                    .ok();
             })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
+                    // reset position to be at 0, otherwise the position could be stale if there is no new source
+                    *controls.position.write() = Duration::ZERO;
                 } else {
                     if let Some(seek_time) = controls.seek.lock().take() {
-                        src.seek(seek_time);
+                        let _ = src.try_seek(seek_time);
                     }
-                    *elapsed.write() = src.elapsed();
                     {
                         let mut to_clear = controls.to_clear.lock();
                         if *to_clear > 0 {
                             src.inner_mut().skip();
                             *to_clear -= 1;
+                            // reset position to be at 0, otherwise the position could be stale if there is no new source
+                            *controls.position.write() = Duration::ZERO;
                         }
                     }
+                    *controls.position.write() = src.inner().inner().inner().inner().get_pos();
+
                     let amp = src.inner_mut().inner_mut();
                     amp.set_factor(*controls.volume.lock());
                     amp.inner_mut()
@@ -134,6 +164,7 @@ impl Sink {
                     #[cfg(not(feature = "rusty-soundtouch"))]
                     {
                         amp.inner_mut()
+                            .inner_mut()
                             .inner_mut()
                             .set_factor(*controls.speed.lock());
                     }
@@ -153,7 +184,6 @@ impl Sink {
 
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
-        // let source = super::source::scaletempo::tempo_stretch(source, 1.3);
         *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
     }
 
@@ -218,12 +248,16 @@ impl Sink {
         self.controls.pause.load(Ordering::SeqCst)
     }
 
-    pub fn seek(&self, seek_time: Duration) {
+    /// Seek to a specified position
+    ///
+    /// This will do nothing if the source is not seekable.
+    pub fn seek(&self, seek_to: Duration) {
         if self.is_paused() {
             self.play();
         }
-        *self.controls.seek.lock() = Some(seek_time);
+        *self.controls.seek.lock() = Some(seek_to);
     }
+
     /// Toggles playback of the sink
     pub fn toggle_playback(&self) {
         if self.is_paused() {
@@ -232,6 +266,7 @@ impl Sink {
             self.pause();
         }
     }
+
     /// Removes all currently loaded `Source`s from the `Sink`, and pauses it.
     ///
     /// See `pause()` for information about pausing a `Sink`.
@@ -263,12 +298,6 @@ impl Sink {
         self.controls.stopped.store(true, Ordering::SeqCst);
     }
 
-    /// Destroys the sink without stopping the sounds that are still playing.
-    #[inline]
-    pub fn detach(mut self) {
-        self.detached = true;
-    }
-
     /// Sleeps the current thread until the sound ends.
     #[inline]
     pub fn sleep_until_end(&self) {
@@ -279,7 +308,7 @@ impl Sink {
 
     /// Returns true if this sink has no more sounds to play.
     #[inline]
-    pub fn empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
@@ -289,25 +318,28 @@ impl Sink {
         self.sound_count.load(Ordering::Relaxed)
     }
 
+    /// Returns the current position of the currently playing source
+    ///
+    /// Note that there can be a difference of a few milliseconds to actual position
     #[inline]
     pub fn elapsed(&self) -> Duration {
-        *self.elapsed.read()
+        *self.controls.position.read()
     }
 
     // Spawns a new thread to sleep until the sound ends, and then sends the SoundEnded
     // message through the given Sender.
     pub fn message_on_end(&self) {
         if let Some(sleep_until_end) = self.sleep_until_end.lock().take() {
-            let cmd_tx = self.cmd_tx.clone();
-            let message_tx = self.message_tx.clone();
+            let pcmd_tx = self.pcmd_tx.clone();
+            let picmd_tx = self.picmd_tx.clone();
             std::thread::Builder::new()
                 .name("rusty message_on_end".into())
                 .spawn(move || {
                     let _drop = sleep_until_end.recv();
-                    if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
+                    if let Err(e) = pcmd_tx.send(PlayerCmd::Eos) {
                         error!("Error in message_on_end: {e}");
                     }
-                    if let Err(e) = message_tx.send(PlayerInternalCmd::Eos) {
+                    if let Err(e) = picmd_tx.send(PlayerInternalCmd::Eos) {
                         error!("Error in message_on_end: {e}");
                     }
                 })
@@ -320,9 +352,6 @@ impl Drop for Sink {
     #[inline]
     fn drop(&mut self) {
         self.queue_tx.set_keep_alive_if_empty(false);
-
-        if !self.detached {
-            self.controls.stopped.store(true, Ordering::Relaxed);
-        }
+        self.controls.stopped.store(true, Ordering::Relaxed);
     }
 }
