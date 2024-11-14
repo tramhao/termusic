@@ -26,6 +26,7 @@ mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;
+mod service;
 
 use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SearchLyricState};
