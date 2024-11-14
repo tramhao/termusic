@@ -119,6 +119,5 @@ CREATE TABLE IF NOT EXISTS podcast_episodes(
 
 -- Open questions:
 -- 1: should pocast author and music artist link to the same place or be separate?
--- 2: should "created_at" and "modified_at" for local music files also be stored for quick search?
 -- 3: should "files.file" be split to "directory, file_stem, ext" instead of just the full path?
 -- 4: should we do some kind of design where there is one single "last_position" table for both music and podcasts?
