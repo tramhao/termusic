@@ -151,9 +151,8 @@ mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
-    // TODO: get some actual test data like migu or netease
     #[test]
-    fn should_parse_songinfo() {
+    fn should_parse_songinfo_empty() {
         let sample_data = r#"{
             "status": 1,
             "errcode": 0,
@@ -176,5 +175,124 @@ mod tests {
         let res = to_song_info(sample_data).unwrap();
 
         assert_eq!(res.len(), 0);
+    }
+
+    #[allow(clippy::too_many_lines)]
+    #[test]
+    fn should_parse_songinfo() {
+        let sample_data = r#"{
+            "status": 1,
+            "errcode": 0,
+            "data": {
+                "timestamp": 1111111111,
+                "tab": "",
+                "forcecorrection": 0,
+                "correctiontype": 0,
+                "total": 1,
+                "istag": 0,
+                "allowerr": 0,
+                "info": [
+                    {
+                        "hash": "11111111111111111111111111111111",
+                        "sqfilesize": 11111,
+                        "sourceid": 0,
+                        "pay_type_sq": 3,
+                        "bitrate": 128,
+                        "ownercount": 743,
+                        "pkg_price_sq": 1,
+                        "songname": "test song",
+                        "album_name": "test album",
+                        "songname_original": "original songname?",
+                        "Accompany": 0,
+                        "sqhash": "22222222222222222222222222222222",
+                        "fail_process": 4,
+                        "pay_type": 3,
+                        "rp_type": "audio",
+                        "album_id": "88888888",
+                        "othername_original": "",
+                        "mvhash": "",
+                        "extname": "mp3",
+                        "group": [],
+                        "price_320": 200,
+                        "320hash": "33333333333333333333333333333333",
+                        "topic": "",
+                        "othername": "",
+                        "isnew": 0,
+                        "fold_type": 0,
+                        "old_cpy": 0,
+                        "srctype": 1,
+                        "singername": "some singer",
+                        "album_audio_id": 999999999,
+                        "duration": 60,
+                        "320filesize": 11111,
+                        "pkg_price_320": 1,
+                        "audio_id": 555555555,
+                        "feetype": 0,
+                        "price": 200,
+                        "filename": "some filename",
+                        "source": "",
+                        "price_sq": 200,
+                        "fail_process_320": 4,
+                        "trans_param": {
+                            "cpy_level": 1,
+                            "cpy_grade": 5,
+                            "qualitymap": {
+                                "attr0": 116
+                            },
+                            "union_cover": "http:\/\/imge.kugou.com\/stdmusic\/{size}\/20220101\/00000000000000000000.jpg",
+                            "classmap": {
+                                "attr0": 777777777
+                            },
+                            "language": "日语",
+                            "pay_block_tpl": 1,
+                            "cpy_attr0": 8192,
+                            "ipmap": {
+                                "attr0": 131313131313
+                            },
+                            "cid": 110101010,
+                            "musicpack_advance": 0,
+                            "display": 0,
+                            "display_rate": 0
+                        },
+                        "pkg_price": 1,
+                        "pay_type_320": 3,
+                        "topic_url": "",
+                        "m4afilesize": 0,
+                        "rp_publish": 1,
+                        "privilege": 8,
+                        "filesize": 111111,
+                        "isoriginal": 1,
+                        "320privilege": 10,
+                        "sqprivilege": 10,
+                        "fail_process_sq": 4
+                    }
+                ],
+                "aggregation": [],
+                "correctiontip": "",
+                "istagresult": 0
+            },
+            "error": ""
+        }
+        "#;
+
+        let res = to_song_info(sample_data).unwrap();
+
+        assert_eq!(res.len(), 1);
+
+        assert_eq!(
+            res[0],
+            SongTag {
+                artist: Some("some singer".to_owned()),
+                title: Some("test song".to_owned()),
+                album: Some("test album".to_owned()),
+                lang_ext: Some("kugou".to_string()),
+                service_provider: ServiceProvider::Kugou,
+                song_id: "11111111111111111111111111111111".to_owned(),
+                lyric_id: Some("11111111111111111111111111111111".to_owned()),
+                url: Some(UrlTypes::Protected),
+                pic_id: Some("11111111111111111111111111111111".to_owned()),
+                album_id: Some("88888888".to_owned())
+            }
+        );
     }
 }
