@@ -24,7 +24,7 @@
 mod model;
 
 use super::{encrypt::Crypto, SongTag};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use bytes::Buf;
 use lofty::picture::Picture;
 use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
@@ -85,12 +85,9 @@ impl Api {
             .text()
             .await?;
 
-        // let mut file = std::fs::File::create("data.txt").expect("create failed");
-        // file.write_all(result.as_bytes()).expect("write failed");
-
         match types {
             SearchRequestType::Song => {
-                let song_info = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
+                let song_info = to_song_info(&result).context("convert result to songtag array")?;
                 Ok(song_info)
             }
         }
@@ -116,8 +113,7 @@ impl Api {
             .text()
             .await?;
 
-        let (accesskey, id) =
-            to_lyric_id_accesskey(&result).ok_or_else(|| anyhow!("Search Error"))?;
+        let (accesskey, id) = to_lyric_id_accesskey(&result).context("lyricid + accesskey")?;
 
         let query_vec = vec![
             ("charset", "utf8"),
@@ -136,7 +132,7 @@ impl Api {
             .text()
             .await?;
 
-        to_lyric(&result).ok_or_else(|| anyhow!("Search Error"))
+        to_lyric(&result).context("lyric text from response")
     }
 
     // 歌曲 URL
@@ -155,10 +151,7 @@ impl Api {
             .text()
             .await?;
 
-        // let mut file = std::fs::File::create("data.txt").expect("create failed");
-        // file.write_all(result.as_bytes()).expect("write failed");
-
-        to_song_url(&result).ok_or_else(|| anyhow!("Search Error"))
+        to_song_url(&result).context("get download url from response")
     }
 
     // download picture
@@ -175,16 +168,9 @@ impl Api {
             .text()
             .await?;
 
-        let url = to_pic_url(&result).ok_or_else(|| anyhow!("Search Error"))?;
+        let url = to_pic_url(&result).context("get picture url from response")?;
 
         let result = self.client.get(url).send().await?;
-
-        // let mut bytes: Vec<u8> = Vec::new();
-        // result.into_reader().read_to_end(&mut bytes)?;
-
-        // Ok(bytes)
-        // let mut bytes = Vec::new();
-        // result.read_to_end(&mut bytes)?;
 
         let mut reader = result.bytes().await?.reader();
         let picture = Picture::from_reader(&mut reader)?;
