@@ -19,7 +19,10 @@ CREATE TABLE IF NOT EXISTS files(
     -- last known played position, if NULL should assume 0
     last_position INTEGER,
     -- the date the file was first added to the database
-    added_at DATE
+    added_at DATE,
+    -- the album the file belongs to, if any
+    -- set "NULL" on delete as deleting a album does not inheritly mean the file is deleted
+    album INTEGER REFERENCES albums(id) ON DELETE SET NULL
 );
 
 -- single metadata for a file
@@ -69,14 +72,6 @@ CREATE TABLE IF NOT EXISTS albums_artist(
     id INTEGER PRIMARY KEY,
     album INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
     artist INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE
-);
-
--- relation table for a file which belongs to a album
--- TODO: should this maybe get integrated to the "files" table as a file can really only belong to one album?
-CREATE TABLE IF NOT EXISTS files_album(
-    id INTEGER PRIMARY KEY,
-    file INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
-    album INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE
 );
 
 --- SECTION: podcasts
