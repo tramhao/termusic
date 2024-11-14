@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS albums(
     id INTEGER PRIMARY KEY,
     -- can be null if failed to parse, or is in a album but does not have a name for whatever reason
     title TEXT,
+    -- what will be shown for the author field, example "AuthorA feat. AuthorB" (but for linking use the artists / albums_artist tables)
+    author_display TEXT
 );
 
 -- relation table for a album's artist
