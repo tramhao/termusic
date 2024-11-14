@@ -23,8 +23,10 @@
  */
 mod model;
 
-use super::{encrypt::Crypto, SongTag};
-use anyhow::{anyhow, Context, Result};
+use crate::songtag::service::SongTagServiceError;
+
+use super::{encrypt::Crypto, service::SongTagService, ServiceProvider, SongTag, UrlTypes};
+use anyhow::anyhow;
 use bytes::Buf;
 use lofty::picture::Picture;
 use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
@@ -35,11 +37,6 @@ const URL_SEARCH_KUGOU: &str = "http://mobilecdn.kugou.com/api/v3/search/song";
 const URL_LYRIC_SEARCH_KUGOU: &str = "http://krcs.kugou.com/search";
 const URL_LYRIC_DOWNLOAD_KUGOU: &str = "http://lyrics.kugou.com/download";
 const URL_SONG_DOWNLOAD_KUGOU: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
-
-#[derive(Debug, Clone, Copy)]
-pub enum SearchRequestType {
-    Song = 1,
-}
 
 pub struct Api {
     client: Client,
@@ -54,68 +51,88 @@ impl Api {
 
         Self { client }
     }
+}
 
-    pub async fn search(
+impl SongTagService for Api {
+    type Error = anyhow::Error;
+
+    fn display_name() -> &'static str
+    where
+        Self: Sized,
+    {
+        "kogou"
+    }
+
+    async fn search_recording(
         &self,
         keywords: &str,
-        types: SearchRequestType,
-        offset: u16,
-        limit: u16,
-    ) -> Result<Vec<SongTag>> {
-        let q_1 = 1.to_string();
-        let q_page = offset.to_string();
-        let q_pagesize = limit.to_string();
+        offset: u32,
+        limit: u32,
+    ) -> std::result::Result<Vec<SongTag>, super::service::SongTagServiceError<Self::Error>> {
+        let offset_str = offset.to_string();
+        let limit_str = limit.to_string();
 
-        let query_vec = vec![
+        let query_params = vec![
             ("format", "json"),
-            ("page", "1"),
-            ("showtype", &q_1),
+            ("page", &offset_str),
+            ("pagesize", &limit_str),
+            // 1 is for type "Song"
+            ("showtype", "1"),
             ("keyword", keywords),
-            ("page", &q_page),
-            ("pagesize", &q_pagesize),
-            ("showtype", &q_1),
         ];
+
         let result = self
             .client
             .post(URL_SEARCH_KUGOU)
             .header("Referer", "https://m.music.migu.cn")
-            .query(&query_vec)
+            .query(&query_params)
             .send()
-            .await?
+            .await
+            .map_err(anyhow::Error::from)?
             .text()
-            .await?;
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        match types {
-            SearchRequestType::Song => {
-                let song_info = to_song_info(&result).context("convert result to songtag array")?;
-                Ok(song_info)
-            }
-        }
+        to_song_info(&result).map_err(|err| {
+            SongTagServiceError::Other(err.context("convert result to songtag array"))
+        })
     }
 
-    // search and download lyrics
-    // music_id: 歌曲id
-    pub async fn song_lyric(&self, music_id: &str) -> Result<String> {
-        let query_vec = vec![
+    async fn get_lyrics(
+        &self,
+        song: &SongTag,
+    ) -> std::result::Result<String, super::service::SongTagServiceError<Self::Error>> {
+        if song.service_provider() != ServiceProvider::Kugou {
+            return Err(SongTagServiceError::IncorrectService(
+                song.service_provider().to_string(),
+                Self::display_name(),
+            ));
+        }
+
+        let query_params = vec![
             ("keyword", "%20-%20"),
             ("ver", "1"),
-            ("hash", music_id),
+            ("hash", &song.song_id),
             ("client", "mobi"),
+            // what does this mean?
             ("man", "yes"),
         ];
 
         let result = self
             .client
             .get(URL_LYRIC_SEARCH_KUGOU)
-            .query(&query_vec)
+            .query(&query_params)
             .send()
-            .await?
+            .await
+            .map_err(anyhow::Error::from)?
             .text()
-            .await?;
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        let (accesskey, id) = to_lyric_id_accesskey(&result).context("lyricid + accesskey")?;
+        let (accesskey, id) = to_lyric_id_accesskey(&result)
+            .map_err(|err| SongTagServiceError::Other(err.context("lyric + accesskey")))?;
 
-        let query_vec = vec![
+        let query_params = vec![
             ("charset", "utf8"),
             ("accesskey", &accesskey),
             ("id", &id),
@@ -123,57 +140,116 @@ impl Api {
             ("fmt", "lrc"),
             ("ver", "1"),
         ];
+
         let result = self
             .client
             .get(URL_LYRIC_DOWNLOAD_KUGOU)
-            .query(&query_vec)
+            .query(&query_params)
             .send()
-            .await?
+            .await
+            .map_err(anyhow::Error::from)?
             .text()
-            .await?;
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        to_lyric(&result).context("lyric text from response")
+        to_lyric(&result)
+            .map_err(|err| SongTagServiceError::Other(err.context("get lyric text from response")))
     }
 
-    // 歌曲 URL
-    // ids: 歌曲列表
-    pub async fn song_url(&self, id: &str, album_id: &str) -> Result<String> {
-        let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
+    async fn get_picture(
+        &self,
+        song: &SongTag,
+    ) -> std::result::Result<Picture, super::service::SongTagServiceError<Self::Error>> {
+        if song.service_provider() != ServiceProvider::Kugou {
+            return Err(SongTagServiceError::IncorrectService(
+                song.service_provider().to_string(),
+                Self::display_name(),
+            ));
+        }
 
-        let query_vec = vec![("hash", id), ("album_id", album_id)];
+        let Some(album_id) = song.album_id.as_ref() else {
+            return Err(SongTagServiceError::Other(anyhow!(
+                "Provided songtag does not have a album_id!"
+            )));
+        };
+
+        let Some(pic_id) = song.pic_id.as_ref() else {
+            return Err(SongTagServiceError::Other(anyhow!(
+                "Provided songtag does not have a pic_id!"
+            )));
+        };
+
+        let cookie_mid = Crypto::alpha_lowercase_random_bytes(32);
+
+        let query_params = vec![("hash", &pic_id), ("album_id", &album_id)];
+
         let result = self
             .client
             .get(URL_SONG_DOWNLOAD_KUGOU)
-            .header("Cookie", format!("kg_mid={kg_mid}").as_str())
-            .query(&query_vec)
+            .header("Cookie", format!("kg_mid={cookie_mid}"))
+            .query(&query_params)
             .send()
-            .await?
+            .await
+            .map_err(anyhow::Error::from)?
             .text()
-            .await?;
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        to_song_url(&result).context("get download url from response")
-    }
+        let pic_url = to_pic_url(&result)
+            .map_err(|err| SongTagServiceError::Other(err.context("get picture url")))?;
 
-    // download picture
-    pub async fn pic(&self, id: &str, album_id: &str) -> Result<Picture> {
-        let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
-        let query_vec = vec![("hash", id), ("album_id", album_id)];
         let result = self
             .client
-            .get(URL_SONG_DOWNLOAD_KUGOU)
-            .header("Cookie", format!("kg_mid={kg_mid}").as_str())
-            .query(&query_vec)
+            .get(pic_url)
             .send()
-            .await?
-            .text()
-            .await?;
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        let url = to_pic_url(&result).context("get picture url from response")?;
+        let mut reader = result.bytes().await.map_err(anyhow::Error::from)?.reader();
+        let picture = Picture::from_reader(&mut reader).map_err(anyhow::Error::from)?;
 
-        let result = self.client.get(url).send().await?;
-
-        let mut reader = result.bytes().await?.reader();
-        let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
+    }
+
+    async fn download_recording(
+        &self,
+        song: &SongTag,
+    ) -> std::result::Result<String, SongTagServiceError<Self::Error>> {
+        if song.service_provider() != ServiceProvider::Kugou {
+            return Err(SongTagServiceError::IncorrectService(
+                song.service_provider().to_string(),
+                Self::display_name(),
+            ));
+        }
+
+        if let Some(UrlTypes::Protected) = song.url {
+            return Err(SongTagServiceError::Other(anyhow!("Song is protected!")));
+        }
+
+        let Some(album_id) = song.album_id.as_ref() else {
+            return Err(SongTagServiceError::Other(anyhow!(
+                "Provided songtag does not have a album_id!"
+            )));
+        };
+
+        let cookie_mid = Crypto::alpha_lowercase_random_bytes(32);
+
+        let query_params = vec![("hash", &song.song_id), ("album_id", album_id)];
+
+        let result = self
+            .client
+            .get(URL_SONG_DOWNLOAD_KUGOU)
+            .header("Cookie", format!("kg_mid={cookie_mid}"))
+            .query(&query_params)
+            .send()
+            .await
+            .map_err(anyhow::Error::from)?
+            .text()
+            .await
+            .map_err(anyhow::Error::from)?;
+
+        to_song_url(&result).map_err(|err| {
+            SongTagServiceError::Other(err.context("get download url from response"))
+        })
     }
 }
