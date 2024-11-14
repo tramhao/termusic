@@ -20,7 +20,6 @@ const PRESET_KEY: &[u8] = b"0CoJUm6Qyw8W8jud";
 const LINUX_API_KEY: &[u8] = b"rFgB&h#%2?^eDg:Q";
 const BASE62: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 // const RSA_PUBLIC_KEY: &[u8] = b"-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----";
-const EAPIKEY: &[u8] = b"e82ckenh8dichen8";
 
 const MODULUS: &[u8] = b"e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7";
 // static MODULUS: &[u8] =
@@ -28,17 +27,9 @@ const MODULUS: &[u8] = b"e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615
 // ;
 const PUBKEY: &[u8] = b"010001";
 
-#[allow(non_snake_case)]
 pub struct Crypto;
 
-#[allow(dead_code)]
 impl Crypto {
-    pub fn hex_random_bytes(n: usize) -> String {
-        let mut data: Vec<u8> = Vec::with_capacity(n);
-        OsRng.fill_bytes(&mut data);
-        hex::encode(data)
-    }
-
     pub fn alpha_lowercase_random_bytes(n: usize) -> String {
         const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789";
         let mut rng = rand::thread_rng();
@@ -53,20 +44,6 @@ impl Crypto {
         rand_string
     }
 
-    pub fn eapi(url: &str, text: &str) -> Result<String> {
-        let message = format!("nobody{url}use{text}md5forencrypt");
-        let hash = compute(message.as_bytes());
-        let digest = hex::encode(hash.as_ref());
-
-        let data = format!("{url}-36cd479b6b5-{text}-36cd479b6b5-{digest}");
-        let params = Self::aes_encrypt(&data, EAPIKEY, Some(IV))?;
-        let params = hex::encode_upper(params);
-
-        let p_value = Self::escape(&params);
-        let result = format!("params={p_value}&");
-        Ok(result)
-    }
-
     pub fn weapi(text: &str) -> Result<String> {
         let mut secret_key = [0_u8; 16];
         OsRng.fill_bytes(&mut secret_key);
@@ -74,14 +51,6 @@ impl Crypto {
             .iter()
             .map(|i| BASE62[(i % 62) as usize])
             .collect();
-
-        // let b64 = general_purpose::STANDARD.encode(b"hello world~");
-        // println!("{}", b64);
-
-        // const CUSTOM_ENGINE: engine::GeneralPurpose =
-        // engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::NO_PAD);
-
-        // let b64_url = CUSTOM_ENGINE.encode(b"hello internet~");
 
         let params1 = Self::aes_encrypt(text, PRESET_KEY, Some(IV))?;
 
