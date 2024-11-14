@@ -31,12 +31,13 @@ mod service;
 use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use lofty::config::WriteOptions;
 use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use lofty::TextEncoding;
+use service::SongTagService;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use std::thread::{self, sleep};
@@ -107,9 +108,7 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 
     let handle_kugou = async {
         let kugou_api = kugou::Api::new();
-        kugou_api
-            .search(search_str, kugou::SearchRequestType::Song, 0, 30)
-            .await
+        kugou_api.search_recording(search_str, 0, 30).await
     };
 
     let (netease_res, migu_res, kugou_res) =
@@ -169,7 +168,7 @@ impl SongTag {
         let lyric_string = match self.service_provider {
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
-                kugou_api.song_lyric(lyric_id).await?
+                kugou_api.get_lyrics(self).await.map_err(|v| anyhow!(v))?
             }
             ServiceProvider::Netease => {
                 let mut netease_api = netease::Api::new();
@@ -190,15 +189,7 @@ impl SongTag {
         match self.service_provider {
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
-                if let Some(p) = &self.pic_id {
-                    if let Some(album_id) = &self.album_id {
-                        Ok(kugou_api.pic(p, album_id).await?)
-                    } else {
-                        bail!("album_id is missing for kugou")
-                    }
-                } else {
-                    bail!("pic_id is missing for kugou")
-                }
+                Ok(kugou_api.get_picture(self).await.map_err(|v| anyhow!(v))?)
             }
             ServiceProvider::Netease => {
                 let mut netease_api = netease::Api::new();
@@ -231,7 +222,6 @@ impl SongTag {
         let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
         let lyric = self.fetch_lyric().await;
         let photo = self.fetch_photo().await;
-        let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
 
         let filename = format!("{artist}-{title}.%(ext)s");
 
@@ -266,7 +256,10 @@ impl SongTag {
             ServiceProvider::Migu => {}
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
-                url = kugou_api.song_url(song_id, &album_id).await?;
+                url = kugou_api
+                    .download_recording(self)
+                    .await
+                    .map_err(|v| anyhow!(v))?;
             }
         }
 
