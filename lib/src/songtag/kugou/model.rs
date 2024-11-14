@@ -24,90 +24,140 @@ use crate::songtag::UrlTypes;
  * SOFTWARE.
  */
 use super::super::{ServiceProvider, SongTag};
+use anyhow::{anyhow, bail, Result};
 use base64::{engine::general_purpose, Engine as _};
 use serde_json::{from_str, json, Value};
 
-pub fn to_lyric(json: &str) -> Option<String> {
-    if let Ok(value) = from_str::<Value>(json) {
-        if value.get("status")?.eq(&200) {
-            let lyric = value.get("content")?.as_str()?.to_owned();
-            if let Ok(lyric_decoded) = general_purpose::STANDARD.decode(lyric) {
-                if let Ok(s) = String::from_utf8(lyric_decoded) {
-                    return Some(s);
-                }
-            }
-        }
+/// Try to get the lyric lrc content from the given result
+pub fn to_lyric(json: &str) -> Result<String> {
+    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+
+    if value.get("status").is_none() || !value.get("status").map_or(false, |v| v.eq(&200)) {
+        let errcode = value
+            .get("errcode")
+            .and_then(Value::as_str)
+            .unwrap_or("<none>");
+        bail!(
+            "Failed to get lyric text, \"status\" does not exist or is not 200 Errcode: {errcode}"
+        );
     }
-    None
+
+    let lyric = value
+        .get("content")
+        .and_then(Value::as_str)
+        .ok_or(anyhow!("property \"content\" does not exist in result!"))?
+        .to_owned();
+    let lyric_decoded = general_purpose::STANDARD.decode(lyric)?;
+    let lyric_str = String::from_utf8(lyric_decoded)?;
+
+    Ok(lyric_str)
 }
 
-pub fn to_lyric_id_accesskey(json: &str) -> Option<(String, String)> {
-    if let Ok(value) = from_str::<Value>(json) {
-        if value.get("errcode")?.eq(&200) {
-            let v = value.get("candidates")?.get(0)?;
-            let accesskey = v
-                .get("accesskey")
-                .unwrap_or(&json!("Unknown Access Key"))
-                .as_str()
-                .unwrap_or("Unknown Access Key")
-                .to_owned();
-            let id = v.get("id")?.as_str()?.to_owned();
+/// Try to get the `accesskey` and lyric `id` from the given json response
+pub fn to_lyric_id_accesskey(json: &str) -> Result<(String, String)> {
+    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-            return Some((accesskey, id));
-        }
+    if value.get("errcode").is_none() || !value.get("errcode").map_or(false, |v| v.eq(&200)) {
+        let errcode = value
+            .get("errcode")
+            .and_then(Value::as_str)
+            .unwrap_or("<none>");
+        bail!("Failed to get lyric id and accesskey, \"errcode\" does not exist or is not 200. Errcode: {errcode}");
     }
-    None
+
+    let v = value
+        .get("candidates")
+        .and_then(|v| v.get(0))
+        .ok_or(anyhow!(
+            "property \"candidates.0\" does not exist in result!"
+        ))?;
+    let accesskey = v
+        .get("accesskey")
+        .and_then(Value::as_str)
+        .ok_or(anyhow!(
+            "property \"candidates.0.accesskey\" does not exist in result!"
+        ))?
+        .to_owned();
+    let id = v
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or(anyhow!(
+            "property \"candidates.0.id\" does not exist in result!"
+        ))?
+        .to_owned();
+
+    Ok((accesskey, id))
 }
 
-pub fn to_song_url(json: &str) -> Option<String> {
-    if let Ok(value) = from_str::<Value>(json) {
-        if value.get("status")?.eq(&1) {
-            let url = value
-                .get("data")?
-                .get("play_url")
-                .unwrap_or(&json!(""))
-                .as_str()
-                .unwrap_or("")
-                .to_owned();
-            return Some(url);
-        }
+/// Try to get the play (download) url from the result
+pub fn to_song_url(json: &str) -> Result<String> {
+    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+
+    if value.get("status").is_none() || !value.get("status").map_or(false, |v| v.eq(&200)) {
+        let errcode = value
+            .get("errcode")
+            .and_then(Value::as_str)
+            .unwrap_or("<none>");
+        bail!("Failed to get download url, \"status\" does not exist or is not 200. Errcode: {errcode}");
     }
-    None
+
+    let url = value
+        .get("data")
+        .and_then(|v| v.get("play_url"))
+        .and_then(Value::as_str)
+        .ok_or(anyhow!(
+            "property \"data.play_url\" does not exist in result!"
+        ))?
+        .to_owned();
+
+    Ok(url)
 }
 
-pub fn to_pic_url(json: &str) -> Option<String> {
-    if let Ok(value) = from_str::<Value>(json) {
-        if value.get("status")?.eq(&1) {
-            let url = value
-                .get("data")?
-                .get("img")
-                .unwrap_or(&json!(""))
-                .as_str()
-                .unwrap_or("")
-                .to_owned();
-            return Some(url);
-        }
+/// Try to get the picture url from the json response
+pub fn to_pic_url(json: &str) -> Result<String> {
+    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+
+    if value.get("status").is_none() || !value.get("status").map_or(false, |v| v.eq(&1)) {
+        bail!("Failed to get picture url, \"status\" does not exist or is not 200");
     }
-    None
+
+    let url = value
+        .get("data")
+        .and_then(|v| v.get("img"))
+        .and_then(Value::as_str)
+        .ok_or(anyhow!("property \"data.img\" does not exist in result!"))?
+        .to_owned();
+
+    Ok(url)
 }
 
-// parse: 解析方式
-pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
-    if let Ok(value) = from_str::<Value>(json) {
-        if value.get("status")?.eq(&1) {
-            let mut vec: Vec<SongTag> = Vec::new();
-            let array = value.get("data")?.as_object()?.get("info")?.as_array()?;
-            for v in array {
-                if let Some(item) = parse_song_info(v) {
-                    vec.push(item);
-                }
-            }
-            return Some(vec);
+/// Try to get individual [`SongTag`]s from the json response
+pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
+    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+
+    if value.get("status").is_none() || !value.get("status").map_or(false, |v| v.eq(&1)) {
+        bail!("Failed to get picture url, \"status\" does not exist or is not 200");
+    }
+
+    let array = value
+        .get("data")
+        .and_then(Value::as_object)
+        .and_then(|v| v.get("info"))
+        .and_then(Value::as_array)
+        .ok_or(anyhow!("property \"data.info\" does not exist in result!"))?;
+
+    let mut vec: Vec<SongTag> = Vec::new();
+
+    for elem in array {
+        if let Some(parsed) = parse_song_info(elem) {
+            vec.push(parsed);
         }
     }
-    None
+
+    Ok(vec)
 }
 
+/// Try to parse a single [`SongTag`] from a given kugou value
 fn parse_song_info(v: &Value) -> Option<SongTag> {
     let price = v
         .get("price")
