@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS podcasts(
     -- refuse podcasts which do not have a title
     title TEXT NOT NULL,
     -- the author could not be present and is not necessary
-    author TEXT,
+    author_display TEXT,
     explicit BOOLEAN,
     -- optional image url
     image_url TEXT,
@@ -91,6 +91,15 @@ CREATE TABLE IF NOT EXISTS podcasts(
     last_checked DATE NOT NULL,
     -- optional description of the podcast
     description TEXT,
+);
+
+-- relation table for a podcast's artist / author
+-- this is so that podcasts with "ArtistA feat. ArtistB" can be searched for either
+-- entry will get deleted if either the artist or the podcast get dropped
+CREATE TABLE IF NOT EXISTS podcasts_artist(
+    id INTEGER PRIMARY KEY,
+    podcast INTEGER NOT NULL REFERENCES podcasts(id) ON DELETE CASCADE,
+    artist INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE
 );
 
 -- the table for episodes of a podcast
@@ -118,6 +127,5 @@ CREATE TABLE IF NOT EXISTS podcast_episodes(
 );
 
 -- Open questions:
--- 1: should pocast author and music artist link to the same place or be separate?
 -- 3: should "files.file" be split to "directory, file_stem, ext" instead of just the full path?
 -- 4: should we do some kind of design where there is one single "last_position" table for both music and podcasts?
