@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS files(
 CREATE TABLE IF NOT EXISTS files_metadata(
     id INTEGER PRIMARY KEY,
     -- the file this metadata is for; if the related file is dropped, drop this too
-    file INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+    file INTEGER NOT NULL UNIQUE REFERENCES files(id) ON DELETE CASCADE,
     -- can be null if not present or cannot be parsed
     title TEXT,
     -- can be null if not present or cannot be parsed
