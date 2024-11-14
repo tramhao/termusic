@@ -4,7 +4,7 @@
 -- examples ("key: val_format"): "db_created_at: DATE", "last_used_version: TERMUSIC_VERSION"
 CREATE TABLE IF NOT EXISTS config(
     key TEXT NOT NULL PRIMARY KEY,
-    value TEXT NOT NULL,
+    value TEXT NOT NULL
 )
 
 --- SECTION: local music files
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS artists(
 CREATE TABLE IF NOT EXISTS files_artists(
     id INTEGER PRIMARY KEY,
     file INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
-    artist INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+    artist INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE
 );
 
 -- the table for all albums
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS podcasts(
     -- the time the podcast was last checked for updates
     last_checked DATE NOT NULL,
     -- optional description of the podcast
-    description TEXT,
+    description TEXT
 );
 
 -- relation table for a podcast's artist / author
