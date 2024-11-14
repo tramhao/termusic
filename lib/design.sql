@@ -61,7 +61,6 @@ CREATE TABLE IF NOT EXISTS files_artists(
 CREATE TABLE IF NOT EXISTS albums(
     id INTEGER PRIMARY KEY,
     -- can be null if failed to parse, or is in a album but does not have a name for whatever reason
-    -- TODO: should we force "NOT NULL"?
     title TEXT,
 );
 
