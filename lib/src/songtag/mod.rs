@@ -101,9 +101,7 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 
     let handle_migu = async {
         let migu_api = migu::Api::new();
-        migu_api
-            .search(search_str, migu::SearchRequestType::Song, 0, 30)
-            .await
+        migu_api.search_recording(search_str, 0, 30).await
     };
 
     let handle_kugou = async {
@@ -176,7 +174,7 @@ impl SongTag {
             }
             ServiceProvider::Migu => {
                 let migu_api = migu::Api::new();
-                migu_api.song_lyric(lyric_id).await?
+                migu_api.get_lyrics(self).await.map_err(|v| anyhow!(v))?
             }
         };
 
@@ -201,7 +199,7 @@ impl SongTag {
             }
             ServiceProvider::Migu => {
                 let migu_api = migu::Api::new();
-                Ok(migu_api.pic(&self.song_id).await?)
+                Ok(migu_api.get_picture(self).await.map_err(|v| anyhow!(v))?)
             }
         }
     }
