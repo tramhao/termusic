@@ -7,13 +7,12 @@ mod model;
 
 use super::{encrypt::Crypto, SongTag};
 use anyhow::{anyhow, bail, Result};
+use bytes::Buf;
 use lazy_static::lazy_static;
 use lofty::picture::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
 use reqwest::{Client, ClientBuilder};
-// use std::io::Write;
-use bytes::Buf;
 use std::{collections::HashMap, time::Duration};
 
 lazy_static! {
@@ -47,10 +46,10 @@ pub struct Api {
     csrf: String,
 }
 
-#[allow(unused)]
 #[derive(Clone, Copy)]
 enum CryptoApi {
     Weapi,
+    #[allow(dead_code)]
     Linuxapi,
 }
 
@@ -67,7 +66,6 @@ pub enum SearchRequestType {
 }
 
 impl Api {
-    #[allow(unused)]
     pub fn new() -> Self {
         let client = ClientBuilder::new()
             .timeout(Duration::from_secs(10))
@@ -125,9 +123,7 @@ impl Api {
                     .post(&url)
                     .header("Cookie", "os=pc; appver=2.7.1.198277")
                     .header("Accept", "*/*")
-                    // .header("Accept-Encoding", "deflate,br")
                     .header("Accept-Encoding", "gzip,deflate")
-                    // .set("Accept-Encoding", "identity")
                     .header("Accept-Language", "en-US,en;q=0.5")
                     .header("Connection", "keep-alive")
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -137,7 +133,6 @@ impl Api {
                     .body(body)
                     .send()
                     .await?;
-                // .send_string(&body)?;
 
                 if self.csrf.is_empty() {
                     let value = response.headers().get("set-cookie");
@@ -185,10 +180,6 @@ impl Api {
             .request(Method::Post, path, params, CryptoApi::Weapi, "")
             .await?;
 
-        // Left for debug
-        // let mut file = std::fs::File::create("data.txt").expect("create failed");
-        // file.write_all(result.as_bytes()).expect("write failed");
-
         match types {
             SearchRequestType::Single => {
                 let songtag_vec =
@@ -217,7 +208,6 @@ impl Api {
 
     // 歌曲 URL
     // ids: 歌曲列表
-    #[allow(unused)]
     pub async fn songs_url(&mut self, ids: &[u64]) -> Result<Vec<SongUrl>> {
         let csrf_token = self.csrf.clone();
         let path = "/weapi/song/enhance/player/url/v1";
@@ -247,19 +237,14 @@ impl Api {
 
     // download picture
     pub async fn pic(&mut self, pic_id: &str) -> Result<Picture> {
-        // pub fn pic(&mut self, pic_id: &str) -> Result<Vec<u8>> {
         let id_encrypted = Crypto::encrypt_id(pic_id);
         let url = format!("https://p3.music.126.net/{id_encrypted}/{pic_id}.jpg?param=300y300");
 
-        let result = self.client.get(url).send().await?; //.map_err(|_| Errors::None)?;
+        let result = self.client.get(url).send().await?;
 
-        // let mut bytes: Vec<u8> = Vec::new();
-        // result.into_reader().read_to_end(&mut bytes)?;
         let mut reader = result.bytes().await?.reader();
         let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
-
-        // Ok(bytes)
     }
 }
 
