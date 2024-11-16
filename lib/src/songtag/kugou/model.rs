@@ -159,16 +159,15 @@ pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
 
 /// Try to parse a single [`SongTag`] from a given kugou value
 fn parse_song_info(v: &Value) -> Option<SongTag> {
-    let price = v
-        .get("price")
-        .unwrap_or(&json!("Unknown Price"))
-        .as_u64()
-        .unwrap_or(0);
-    let url = if price == 0 {
-        UrlTypes::AvailableRequiresFetching
-    } else {
-        UrlTypes::Protected
-    };
+    let price = v.get("price").and_then(Value::as_u64);
+
+    let urltype = price.map_or(UrlTypes::Protected, |price| {
+        if price > 0 {
+            UrlTypes::Protected
+        } else {
+            UrlTypes::AvailableRequiresFetching
+        }
+    });
 
     Some(SongTag {
         song_id: v.get("hash")?.as_str()?.to_owned(),
@@ -191,7 +190,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         lang_ext: Some("kugou".to_string()),
         service_provider: ServiceProvider::Kugou,
         lyric_id: Some(v.get("hash")?.as_str()?.to_owned()),
-        url: Some(url),
+        url: Some(urltype),
         album_id: Some(v.get("album_id")?.as_str()?.to_owned()),
     })
 }
