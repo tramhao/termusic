@@ -29,20 +29,6 @@ const PUBKEY: &[u8] = b"010001";
 pub struct Crypto;
 
 impl Crypto {
-    pub fn alpha_lowercase_random_bytes(n: usize) -> String {
-        const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789";
-        let mut rng = rand::thread_rng();
-
-        let rand_string: String = (0..n)
-            .map(|_| {
-                let idx = rng.gen_range(0..CHARSET.len());
-                CHARSET[idx] as char
-            })
-            .collect();
-
-        rand_string
-    }
-
     pub fn weapi(text: &str) -> Result<String> {
         let mut secret_key = [0_u8; 16];
         OsRng.fill_bytes(&mut secret_key);

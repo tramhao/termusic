@@ -23,9 +23,9 @@
  */
 mod model;
 
-use crate::songtag::service::SongTagServiceError;
+use crate::{songtag::service::SongTagServiceError, utils::random_ascii};
 
-use super::{encrypt::Crypto, service::SongTagService, ServiceProvider, SongTag, UrlTypes};
+use super::{service::SongTagService, ServiceProvider, SongTag, UrlTypes};
 use anyhow::anyhow;
 use bytes::Buf;
 use lofty::picture::Picture;
@@ -179,7 +179,7 @@ impl SongTagService for Api {
             )));
         };
 
-        let cookie_mid = Crypto::alpha_lowercase_random_bytes(32);
+        let cookie_mid = random_ascii(32);
 
         let query_params = vec![("hash", &pic_id), ("album_id", &album_id)];
 
@@ -232,7 +232,7 @@ impl SongTagService for Api {
             )));
         };
 
-        let cookie_mid = Crypto::alpha_lowercase_random_bytes(32);
+        let cookie_mid = random_ascii(32);
 
         let query_params = vec![("hash", &song.song_id), ("album_id", album_id)];
 
