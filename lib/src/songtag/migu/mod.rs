@@ -23,7 +23,7 @@
  */
 mod model;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Context, Result};
 use bytes::Buf;
 use lofty::picture::Picture;
 use model::{to_lyric, to_pic_url, to_song_info};
@@ -82,12 +82,9 @@ impl Api {
             .text()
             .await?;
 
-        // let mut file = std::fs::File::create("data.txt").expect("create failed");
-        // file.write_all(result.as_bytes()).expect("write failed");
-
         match types {
             SearchRequestType::Song => {
-                let songtag_vec = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
+                let songtag_vec = to_song_info(&result).context("get songtag from response")?;
                 Ok(songtag_vec)
             }
         }
@@ -106,7 +103,7 @@ impl Api {
             .text()
             .await?;
 
-        to_lyric(&result).ok_or_else(|| anyhow!("None Error"))
+        to_lyric(&result).context("get lyric text from response")
     }
 
     // download picture
@@ -121,7 +118,7 @@ impl Api {
             .text()
             .await?;
 
-        let pic_url = to_pic_url(&result).ok_or_else(|| anyhow!("Pic url error"))?;
+        let pic_url = to_pic_url(&result).context("get picture url from response")?;
         let url = format!("https:{pic_url}");
 
         let result = self.client.get(url).send().await?;
@@ -129,9 +126,5 @@ impl Api {
         let mut reader = result.bytes().await?.reader();
         let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
-        // let mut bytes: Vec<u8> = Vec::new();
-        // result.into_reader().read_to_end(&mut bytes)?;
-
-        // Ok(bytes)
     }
 }
