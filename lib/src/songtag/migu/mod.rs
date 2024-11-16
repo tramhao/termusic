@@ -23,24 +23,22 @@
  */
 mod model;
 
-use anyhow::{Context, Result};
+use anyhow::anyhow;
 use bytes::Buf;
 use lofty::picture::Picture;
 use model::{to_lyric, to_pic_url, to_song_info};
-// use std::io::Write;
 use reqwest::{Client, ClientBuilder};
 use std::time::Duration;
 
-use super::SongTag;
+use super::{
+    service::{SongTagService, SongTagServiceError, SongTagServiceErrorWhere},
+    ServiceProvider, SongTag, UrlTypes,
+};
 
 const URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";
 const URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
 const URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
-
-#[derive(Debug, Clone, Copy)]
-pub enum SearchRequestType {
-    Song = 1,
-}
+const REFERER: &str = "https://m.music.migu.cn";
 
 pub struct Api {
     client: Client,
@@ -55,76 +53,142 @@ impl Api {
 
         Self { client }
     }
+}
 
-    pub async fn search(
+impl SongTagService for Api {
+    type Error = anyhow::Error;
+
+    fn display_name() -> &'static str
+    where
+        Self: Sized,
+    {
+        "migu"
+    }
+
+    async fn search_recording(
         &self,
         keywords: &str,
-        types: SearchRequestType,
-        offset: u16,
-        limit: u16,
-    ) -> Result<Vec<SongTag>> {
-        let q_pgc = offset.to_string();
-        let q_rows = limit.to_string();
-        let q_type = 2.to_string();
-        let query_vec = vec![
+        offset: u32,
+        limit: u32,
+    ) -> std::result::Result<Vec<SongTag>, super::service::SongTagServiceError<Self::Error>> {
+        let offset = offset.to_string();
+        let limit = limit.to_string();
+
+        let query_params = vec![
             ("keyword", keywords),
-            ("pgc", &q_pgc),
-            ("rows", &q_rows),
-            ("type", &q_type),
+            ("pgc", &offset),
+            ("rows", &limit),
+            // i assume "2" stands for type "Song"
+            ("type", "2"),
         ];
+
         let result = self
             .client
             .post(URL_SEARCH_MIGU)
-            .header("Referer", "https://m.music.migu.cn")
-            .query(&query_vec)
+            .header("Referer", REFERER)
+            .query(&query_params)
             .send()
-            .await?
+            .await
+            .map_err(anyhow::Error::from)?
             .text()
-            .await?;
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        match types {
-            SearchRequestType::Song => {
-                let songtag_vec = to_song_info(&result).context("get songtag from response")?;
-                Ok(songtag_vec)
-            }
-        }
+        to_song_info(&result).map_err(|err| {
+            SongTagServiceError::Other(err.context("convert result to songtag array"))
+        })
     }
 
-    // search and download lyrics
-    // music_id: 歌曲id
-    pub async fn song_lyric(&self, music_id: &str) -> Result<String> {
+    async fn get_lyrics(
+        &self,
+        song: &SongTag,
+    ) -> std::result::Result<String, super::service::SongTagServiceError<Self::Error>> {
+        if song.service_provider() != ServiceProvider::Migu {
+            return Err(SongTagServiceError::IncorrectService(
+                song.service_provider().to_string(),
+                Self::display_name(),
+            ));
+        }
+
+        let Some(lyric_id) = song.lyric_id.as_ref() else {
+            return Err(SongTagServiceError::Other(anyhow!(
+                "Provided songtag does not have a lyric_id!"
+            )));
+        };
+
+        let query_params = &[("copyrightId", &lyric_id)];
+
         let result = self
             .client
             .get(URL_LYRIC_MIGU)
-            .header("Referer", "https://m.music.migu.cn")
-            .query(&[("copyrightId", music_id)])
+            .header("Referer", REFERER)
+            .query(&query_params)
             .send()
-            .await?
+            .await
+            .map_err(anyhow::Error::from)?
             .text()
-            .await?;
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        to_lyric(&result).context("get lyric text from response")
+        to_lyric(&result)
+            .map_err(|err| SongTagServiceError::Other(err.context("get lyric text from response")))
     }
 
-    // download picture
-    pub async fn pic(&self, song_id: &str) -> Result<Picture> {
+    async fn get_picture(
+        &self,
+        song: &SongTag,
+    ) -> std::result::Result<Picture, super::service::SongTagServiceError<Self::Error>> {
+        if song.service_provider() != ServiceProvider::Migu {
+            return Err(SongTagServiceError::IncorrectService(
+                song.service_provider().to_string(),
+                Self::display_name(),
+            ));
+        }
+
+        let query_params = &[("songId", &song.song_id)];
+
         let result = self
             .client
             .get(URL_PIC_MIGU)
-            .header("Referer", "https://m.music.migu.cn")
-            .query(&[("songId", song_id)])
+            .header("Referer", REFERER)
+            .query(query_params)
             .send()
-            .await?
+            .await
+            .map_err(anyhow::Error::from)?
             .text()
-            .await?;
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        let pic_url = to_pic_url(&result).context("get picture url from response")?;
+        let pic_url = to_pic_url(&result)
+            .map_err(|err| SongTagServiceError::Other(err.context("get picture url")))?;
         let url = format!("https:{pic_url}");
 
-        let result = self.client.get(url).send().await?;
+        let result = self
+            .client
+            .get(url)
+            .send()
+            .await
+            .map_err(anyhow::Error::from)?;
 
-        let mut reader = result.bytes().await?.reader();
-        let picture = Picture::from_reader(&mut reader)?;
+        let mut reader = result.bytes().await.map_err(anyhow::Error::from)?.reader();
+        let picture = Picture::from_reader(&mut reader).map_err(anyhow::Error::from)?;
+
         Ok(picture)
+    }
+
+    async fn download_recording(
+        &self,
+        song: &SongTag,
+    ) -> std::result::Result<String, super::service::SongTagServiceError<Self::Error>> {
+        // this function is to get the url for downloading, which in migu does not require extra fetching
+        // so if its available, use it, otherwise report "NotSupported"
+        if let Some(UrlTypes::FreeDownloadable(url)) = song.url.as_ref() {
+            return Ok(url.clone());
+        }
+
+        Err(SongTagServiceError::NotSupported(
+            SongTagServiceErrorWhere::DownloadRecording,
+            Self::display_name(),
+        ))
     }
 }
