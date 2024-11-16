@@ -10,14 +10,16 @@ pub enum SongTagServiceErrorWhere {
     SearchRecording,
     GetLyrics,
     GetPicture,
+    DownloadRecording,
 }
 
 impl Display for SongTagServiceErrorWhere {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let res = match self {
-            SongTagServiceErrorWhere::SearchRecording => "search_recording",
-            SongTagServiceErrorWhere::GetLyrics => "get_lyrics",
-            SongTagServiceErrorWhere::GetPicture => "get_picture",
+            Self::SearchRecording => "search_recording",
+            Self::GetLyrics => "get_lyrics",
+            Self::GetPicture => "get_picture",
+            Self::DownloadRecording => "download_recording",
         };
 
         write!(f, "{res}")
