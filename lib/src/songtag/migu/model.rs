@@ -101,23 +101,26 @@ pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
 
 /// Try to parse a single [`SongTag`] from a given migu value
 fn parse_song_info(v: &Value) -> Option<SongTag> {
+    // not using "Value::to_string()" as that produces a escaped string
+
     let pic_id = v
         .get("cover")
-        .unwrap_or(&json!("N/A"))
-        .as_str()
-        .unwrap_or("")
-        .to_owned();
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
     let artist = v
         .get("singerName")
-        .unwrap_or(&json!("Unknown Singer"))
-        .as_str()
-        .unwrap_or("Unknown Singer")
-        .to_owned();
-    let title = v.get("songName")?.as_str()?.to_owned();
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
+    let title = v
+        .get("songName")
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
 
-    let album_id = v.get("albumId")?.as_str()?.to_owned();
+    let album_id = v
+        .get("albumId")
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
 
-    // not using ".to_string()" as that produces a escaped string
     let url = v
         .get("mp3")
         .and_then(Value::as_str)
@@ -125,10 +128,18 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
             UrlTypes::FreeDownloadable(v.to_owned())
         });
 
+    let lyric_id = v
+        .get("copyrightId")
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
+
+    // a songid is always required
+    let song_id = v.get("id").and_then(Value::as_str).map(ToOwned::to_owned)?;
+
     Some(SongTag {
-        song_id: v.get("id")?.as_str()?.to_owned(),
-        title: Some(title),
-        artist: Some(artist),
+        song_id,
+        title,
+        artist,
         album: Some(
             v.get("albumName")
                 .unwrap_or(&json!("Unknown Album"))
@@ -136,12 +147,12 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
                 .unwrap_or("")
                 .to_owned(),
         ),
-        pic_id: Some(pic_id),
+        pic_id,
         lang_ext: Some("migu".to_string()),
         service_provider: ServiceProvider::Migu,
-        lyric_id: Some(v.get("copyrightId")?.as_str()?.to_owned()),
+        lyric_id,
         url: Some(url),
-        album_id: Some(album_id),
+        album_id,
     })
 }
 
