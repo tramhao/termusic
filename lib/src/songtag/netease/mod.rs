@@ -21,9 +21,6 @@ lazy_static! {
 
 const BASE_URL_NETEASE: &str = "https://music.163.com";
 
-const LINUX_USER_AGENT: &str =
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36";
-
 const USER_AGENT_LIST: [&str; 14] = [
     "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1",
@@ -49,8 +46,6 @@ pub struct Api {
 #[derive(Clone, Copy)]
 enum CryptoApi {
     Weapi,
-    #[allow(dead_code)]
-    Linuxapi,
 }
 
 // types: 单曲(1)，歌手(100)，专辑(10)，歌单(1000)，用户(1002) *(type)*
@@ -92,24 +87,13 @@ impl Api {
         cryptoapi: CryptoApi,
         ua: &str,
     ) -> Result<String> {
-        let mut url = format!("{BASE_URL_NETEASE}{path}");
+        let url = format!("{BASE_URL_NETEASE}{path}");
         match method {
             Method::Post => {
                 let user_agent = match cryptoapi {
-                    CryptoApi::Linuxapi => LINUX_USER_AGENT.to_string(),
                     CryptoApi::Weapi => choose_user_agent(ua).to_string(),
                 };
                 let body = match cryptoapi {
-                    CryptoApi::Linuxapi => {
-                        let data = format!(
-                            r#"{{"method":"linuxapi","url":"{}","params":{}}}"#,
-                            url.replace("weapi", "api"),
-                            // QueryParams::from_map(params).json()
-                            serde_json::to_string(&params)?
-                        );
-                        "https://music.163.com/api/linux/forward".clone_into(&mut url);
-                        Crypto::linuxapi(&data)?
-                    }
                     CryptoApi::Weapi => {
                         let mut params = params;
                         params.insert("csrf_token", &self.csrf[..]);

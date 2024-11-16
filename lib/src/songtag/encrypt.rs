@@ -17,7 +17,6 @@ use std::convert::TryFrom;
 
 const IV: &[u8] = b"0102030405060708";
 const PRESET_KEY: &[u8] = b"0CoJUm6Qyw8W8jud";
-const LINUX_API_KEY: &[u8] = b"rFgB&h#%2?^eDg:Q";
 const BASE62: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 // const RSA_PUBLIC_KEY: &[u8] = b"-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----";
 
@@ -78,14 +77,6 @@ impl Crypto {
         let enc_value = Self::escape(&enc_sec_key);
 
         Ok(format!("params={p_value}&encSecKey={enc_value}&"))
-    }
-
-    pub fn linuxapi(text: &str) -> Result<String> {
-        let params = Self::aes_encrypt(text, LINUX_API_KEY, None)?;
-        let params = hex::encode(params).to_uppercase();
-
-        let e_value = Self::escape(&params);
-        Ok(format!("eparams={e_value}&"))
     }
 
     pub fn aes_encrypt(data: &str, key: &[u8], iv: Option<&[u8]>) -> Result<String> {
