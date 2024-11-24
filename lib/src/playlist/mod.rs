@@ -232,11 +232,21 @@ Title1=mytitle
 
         use super::super::PlaylistValue;
 
+        // different test for unix and windows as paths dont match
         #[test]
+        #[cfg(target_family = "unix")]
         fn file_url_to_path() {
             let mut value = PlaylistValue::Url(Url::parse("file:///mnt/somewhere").unwrap());
             value.file_url_to_path().unwrap();
             assert_eq!(value, PlaylistValue::Path("/mnt/somewhere".into()));
+        }
+
+        #[test]
+        #[cfg(target_family = "windows")]
+        fn file_url_to_path() {
+            let mut value = PlaylistValue::Url(Url::parse("file://C:\\somewhere").unwrap());
+            value.file_url_to_path().unwrap();
+            assert_eq!(value, PlaylistValue::Path("C:\\somewhere".into()));
         }
 
         #[test]
