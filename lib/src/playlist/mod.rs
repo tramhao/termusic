@@ -224,4 +224,89 @@ Title1=mytitle
             PlaylistValue::Path("/some/absolute/unix/path.mp3".into())
         );
     }
+
+    mod playlist_value {
+        use std::path::Path;
+
+        use reqwest::Url;
+
+        use super::super::PlaylistValue;
+
+        #[test]
+        fn file_url_to_path() {
+            let mut value = PlaylistValue::Url(Url::parse("file:///mnt/somewhere").unwrap());
+            value.file_url_to_path().unwrap();
+            assert_eq!(value, PlaylistValue::Path("/mnt/somewhere".into()));
+        }
+
+        #[test]
+        fn file_url_to_path_path_noop() {
+            let mut value = PlaylistValue::Path("/mnt/somewhere".into());
+            value.file_url_to_path().unwrap();
+            assert_eq!(value, PlaylistValue::Path("/mnt/somewhere".into()));
+        }
+
+        #[test]
+        fn file_url_to_path_not_file() {
+            let url = Url::parse("http://google.com").unwrap();
+            let mut value = PlaylistValue::Url(url.clone());
+            value.file_url_to_path().unwrap();
+            assert_eq!(value, PlaylistValue::Url(url));
+        }
+
+        #[test]
+        fn absoluteize() {
+            let mut value = PlaylistValue::Path("somewhere".into());
+            value.absoluteize(Path::new("/tmp"));
+            assert_eq!(value, PlaylistValue::Path("/tmp/somewhere".into()));
+        }
+
+        #[test]
+        fn absoluteize_absolute() {
+            let mut value = PlaylistValue::Path("/mnt/somewhere".into());
+            value.absoluteize(Path::new("/tmp"));
+            assert_eq!(value, PlaylistValue::Path("/mnt/somewhere".into()));
+        }
+
+        #[test]
+        fn absoluteize_not_path() {
+            let url = Url::parse("file:///mnt/somewhere").unwrap();
+            let mut value = PlaylistValue::Url(url.clone());
+            value.absoluteize(Path::new("/tmp"));
+            assert_eq!(value, PlaylistValue::Url(url));
+        }
+
+        #[test]
+        fn from_line() {
+            let line = "somewhere";
+            assert_eq!(
+                PlaylistValue::try_from_str(line).unwrap(),
+                PlaylistValue::Path("somewhere".into())
+            );
+
+            let line = "/mnt/somewhere";
+            assert_eq!(
+                PlaylistValue::try_from_str(line).unwrap(),
+                PlaylistValue::Path("/mnt/somewhere".into())
+            );
+
+            let line = "";
+            assert_eq!(
+                PlaylistValue::try_from_str(line).unwrap(),
+                PlaylistValue::Path("".into())
+            );
+
+            let line = "file:///mnt/somewhere";
+            assert_eq!(
+                PlaylistValue::try_from_str(line).unwrap(),
+                PlaylistValue::Url(Url::parse("file:///mnt/somewhere").unwrap())
+            );
+
+            let line = "https://google.com";
+            assert_eq!(
+                PlaylistValue::try_from_str(line).unwrap(),
+                PlaylistValue::Url(Url::parse("https://google.com").unwrap())
+            );
+        }
+    }
 }
