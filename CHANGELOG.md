@@ -15,6 +15,7 @@
 - Fix: report errors reading metadata to the log
 - Fix: correctly write LRC milliseconds.
 - Fix: change Lyric::adjust_offset to not work invertedly for below 10 seconds anymore.
+- Fix: fix accidental invertion of `is_absolute` for path playlist values causing items to not have the correct path.
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
 
 ### [V0.9.1]

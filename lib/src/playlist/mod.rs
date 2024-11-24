@@ -75,7 +75,7 @@ impl PlaylistValue {
         };
 
         // do nothing if path is already absolute
-        if !path.is_absolute() {
+        if path.is_absolute() {
             return;
         }
 
