@@ -103,15 +103,21 @@ pub fn create_podcast_dir(config: &ServerOverlay, pod_title: String) -> Result<P
     Ok(download_path)
 }
 
+/// Parse the playlist at `current_node`(from the tui tree) and return the media paths
 pub fn playlist_get_vec(current_node: &str) -> Result<Vec<String>> {
-    let p = Path::new(current_node);
-    let p_base = absolute_path(p.parent().ok_or_else(|| anyhow!("cannot find path root"))?)?;
-    let str = std::fs::read_to_string(p)?;
-    let items =
-        crate::playlist::decode(&str).map_err(|e| anyhow!("playlist decode error: {}", e))?;
-    let mut vec = vec![];
+    let playlist_path = Path::new(current_node);
+    // get the directory the playlist is in
+    let playlist_directory = absolute_path(
+        playlist_path
+            .parent()
+            .ok_or_else(|| anyhow!("cannot get directory from playlist path"))?,
+    )?;
+    let playlist_str = std::fs::read_to_string(playlist_path)?;
+    let items = crate::playlist::decode(&playlist_str)
+        .with_context(|| playlist_path.display().to_string())?;
+    let mut vec = Vec::with_capacity(items.len());
     for mut item in items {
-        item.absoluteize(&p_base);
+        item.absoluteize(&playlist_directory);
 
         // TODO: refactor to return better values
         vec.push(item.to_string());
