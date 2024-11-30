@@ -161,7 +161,7 @@ impl StringUtils for str {
     }
 
     fn grapheme_len(&self) -> usize {
-        return self.graphemes(true).count();
+        self.graphemes(true).count()
     }
 }
 

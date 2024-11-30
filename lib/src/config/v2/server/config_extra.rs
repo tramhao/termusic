@@ -69,7 +69,7 @@ impl<'a, 'de> Deserialize<'de> for ServerConfigVersionedDefaulted<'a> {
 }
 
 // Note: for saving, see
-impl<'a> ServerConfigVersionedDefaulted<'a> {
+impl ServerConfigVersionedDefaulted<'_> {
     /// Read a config file, needs to be toml formatted
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
