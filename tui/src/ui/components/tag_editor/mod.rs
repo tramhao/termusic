@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * termusic - Copyright (C) 2021 Larry Hao
