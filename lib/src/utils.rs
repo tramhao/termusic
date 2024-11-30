@@ -194,6 +194,7 @@ pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
     } else {
         Command::new(prog)
     };
+    cmd.stdin(Stdio::null());
     if !shout_output {
         cmd.stdout(Stdio::null());
         cmd.stderr(Stdio::null());
