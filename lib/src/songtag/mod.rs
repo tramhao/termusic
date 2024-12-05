@@ -24,7 +24,6 @@
 mod kugou;
 pub mod lrc;
 mod migu;
-mod netease;
 mod new_netease;
 mod service;
 
