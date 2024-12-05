@@ -41,7 +41,7 @@ impl Api {
     fn common_request(builder: RequestBuilder, params: &[(&str, &str)]) -> RequestBuilder {
         let body = {
             // using hashmap as the API expects a object, a Vec would create a array
-            let params: HashMap<&str, &str> = HashMap::from_iter(params.iter().map(|v| (v.0, v.1)));
+            let params: HashMap<&str, &str> = params.iter().map(|v| (v.0, v.1)).collect();
             // there does not seem to be any CSRF-Token need to be set from the responses
             // params.insert("csrf_token", "");
 
@@ -84,6 +84,9 @@ impl Api {
     fn encrypt_for_weapi(text: &str) -> String {
         const BASE62_LIKE: &[u8] =
             b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        // truncation is expected and within limits of u8
+        #[allow(clippy::cast_possible_truncation)]
+        const BASE62_LIKE_LEN: u8 = BASE62_LIKE.len() as u8;
         const IV: &[u8] = b"0102030405060708";
         const PRESET_KEY: &[u8; 16] = b"0CoJUm6Qyw8W8jud";
 
@@ -92,7 +95,7 @@ impl Api {
 
         let mut key = [0u8; 16];
         random_bytes.iter().enumerate().for_each(|(idx, value)| {
-            key[idx] = BASE62_LIKE[(value % BASE62_LIKE.len() as u8) as usize]
+            key[idx] = BASE62_LIKE[(value % BASE62_LIKE_LEN) as usize];
         });
 
         let round1 = Self::aes_encrypt(text.as_bytes(), PRESET_KEY, IV);
@@ -225,7 +228,7 @@ impl SongTagService for Api {
             )));
         };
 
-        let id_encrypted = Self::encode_pic_id(&pic_id);
+        let id_encrypted = Self::encode_pic_id(pic_id);
         let pic_url = format!("{URL_PICTURE_SERVICE}{id_encrypted}/{pic_id}.jpg?param=300y300");
 
         let result = self
