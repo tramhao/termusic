@@ -41,9 +41,8 @@ pub fn to_song_url(json: &str) -> Result<String> {
         .and_then(Value::as_array)
         .ok_or(anyhow!("property \"data\" does not exist in result!"))?
         .iter()
-        .flat_map(parse_song_url)
         // only get one for now
-        .next()
+        .find_map(parse_song_url)
         .ok_or(anyhow!("no urls in \"data\"!"))?;
 
     Ok(first_url.to_owned())
