@@ -4,7 +4,7 @@
  * Distributed under terms of the GPLv3 license.
  */
 
-mod encrypt;
+pub mod encrypt;
 mod model;
 
 use super::SongTag;
@@ -101,6 +101,7 @@ impl Api {
                         let mut params = params;
                         params.insert("csrf_token", &self.csrf[..]);
                         let text = serde_json::to_string(&params)?;
+
                         Crypto::weapi(&text)?
                     }
                 };
@@ -200,6 +201,7 @@ impl Api {
         let path = "/weapi/song/enhance/player/url/v1";
         let mut params = HashMap::new();
         let ids = serde_json::to_string(ids)?;
+
         params.insert("ids", ids.as_str());
         params.insert("level", "standard");
         params.insert("encodeType", "aac");
