@@ -1,17 +1,18 @@
 use std::{collections::HashMap, time::Duration};
 
 use anyhow::anyhow;
+use base64::{engine::general_purpose, Engine};
 use bytes::Buf as _;
+use libaes::Cipher;
 use lofty::picture::Picture;
 use model::{to_lyric, to_song_info, to_song_url};
+use num_bigint::BigUint;
+use rand::{rngs::OsRng, RngCore};
 use reqwest::{Client, ClientBuilder, RequestBuilder};
 
 use crate::songtag::ServiceProvider;
 
-use super::{
-    netease::encrypt::Crypto,
-    service::{SongTagService, SongTagServiceError},
-};
+use super::service::{SongTagService, SongTagServiceError};
 
 mod model;
 
@@ -46,7 +47,7 @@ impl Api {
 
             let text = serde_json::to_string(&params).unwrap();
 
-            Crypto::weapi(&text).unwrap()
+            Self::encrypt_for_weapi(&text)
         };
 
         builder
@@ -59,6 +60,77 @@ impl Api {
             .header("Host", HOST)
             .header("Referer", REFERER)
             .body(body)
+    }
+
+    /// Encode the picture id with some magic
+    fn encode_pic_id(id: &str) -> String {
+        const MAGIC: &[u8] = b"3go8&$8*3*3h0k(2)2";
+
+        let magic_id: Vec<u8> = id
+            .as_bytes()
+            .iter()
+            .enumerate()
+            .map(|(idx, sid)| *sid ^ MAGIC[idx % MAGIC.len()])
+            .collect();
+
+        general_purpose::URL_SAFE
+            .encode(md5::compute(&magic_id).as_ref())
+            .replace('/', "_")
+            .replace('+', "-")
+    }
+
+    /// Encrypt the given `text` for netease.
+    /// Returns the text encrypted in url-encoding.
+    fn encrypt_for_weapi(text: &str) -> String {
+        const BASE62_LIKE: &[u8] =
+            b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const IV: &[u8] = b"0102030405060708";
+        const PRESET_KEY: &[u8; 16] = b"0CoJUm6Qyw8W8jud";
+
+        let mut random_bytes = [0u8; 16];
+        OsRng.fill_bytes(&mut random_bytes);
+
+        let mut key = [0u8; 16];
+        random_bytes.iter().enumerate().for_each(|(idx, value)| {
+            key[idx] = BASE62_LIKE[(value % BASE62_LIKE.len() as u8) as usize]
+        });
+
+        let round1 = Self::aes_encrypt(text.as_bytes(), PRESET_KEY, IV);
+        let round2 = Self::aes_encrypt(round1.as_bytes(), &key, IV);
+
+        let key_string: String = key.iter().map(|v| char::from(*v)).collect();
+        let enc_sec_key = Self::rsa_encrypt(&key_string);
+
+        let escaped_round2 = urlencoding::encode(&round2);
+        let escaped_enc_sec_key = urlencoding::encode(&enc_sec_key);
+
+        format!("params={escaped_round2}&encSecKey={escaped_enc_sec_key}")
+    }
+
+    /// Run the aes encryption with the given data. Also encode result in base64
+    fn aes_encrypt(data: &[u8], key: &[u8; 16], iv: &[u8]) -> String {
+        let cipher = Cipher::new_128(key);
+
+        let encrypted = cipher.cbc_encrypt(iv, data);
+
+        general_purpose::URL_SAFE.encode(encrypted)
+    }
+
+    /// Encrypt `text` with the RSA public key from netease
+    fn rsa_encrypt(text: &str) -> String {
+        const MODULUS: &[u8] = b"e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7";
+        const PUBKEY: &[u8] = b"010001";
+
+        let rev: String = text.chars().rev().collect();
+
+        let pubkey = BigUint::parse_bytes(PUBKEY, 16).unwrap();
+        let modulus = BigUint::parse_bytes(MODULUS, 16).unwrap();
+
+        let as_bigint = BigUint::parse_bytes(hex::encode(rev).as_bytes(), 16).unwrap();
+
+        let pow = as_bigint.modpow(&pubkey, &modulus);
+
+        pow.to_str_radix(16)
     }
 }
 
@@ -153,7 +225,7 @@ impl SongTagService for Api {
             )));
         };
 
-        let id_encrypted = Crypto::encrypt_id(&pic_id);
+        let id_encrypted = Self::encode_pic_id(&pic_id);
         let pic_url = format!("{URL_PICTURE_SERVICE}{id_encrypted}/{pic_id}.jpg?param=300y300");
 
         let result = self
