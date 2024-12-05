@@ -8,7 +8,7 @@ use base64::{engine::general_purpose, Engine};
 use libaes::Cipher;
 use md5::compute;
 use num_bigint::BigUint;
-use rand::{rngs::OsRng, Rng, RngCore};
+use rand::{rngs::OsRng, RngCore};
 use std::convert::TryFrom;
 
 // below imports are left for debug
