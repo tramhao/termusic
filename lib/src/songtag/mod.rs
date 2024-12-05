@@ -24,7 +24,7 @@
 mod kugou;
 pub mod lrc;
 mod migu;
-mod new_netease;
+mod netease_v2;
 mod service;
 
 use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
@@ -92,8 +92,8 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
 
     let handle_netease = async {
-        let new_netease_api = new_netease::Api::new();
-        new_netease_api.search_recording(search_str, 0, 30).await
+        let neteasev2_api = netease_v2::Api::new();
+        neteasev2_api.search_recording(search_str, 0, 30).await
     };
 
     let handle_migu = async {
@@ -162,8 +162,8 @@ impl SongTag {
                 kugou_api.get_lyrics(self).await.map_err(|v| anyhow!(v))?
             }
             ServiceProvider::Netease => {
-                let netease_new_api = new_netease::Api::new();
-                netease_new_api
+                let neteasev2_api = netease_v2::Api::new();
+                neteasev2_api
                     .get_lyrics(self)
                     .await
                     .map_err(|v| anyhow!(v))?
@@ -186,8 +186,8 @@ impl SongTag {
                 Ok(kugou_api.get_picture(self).await.map_err(|v| anyhow!(v))?)
             }
             ServiceProvider::Netease => {
-                let netease_new_api = new_netease::Api::new();
-                Ok(netease_new_api
+                let neteasev2_api = netease_v2::Api::new();
+                Ok(neteasev2_api
                     .get_picture(self)
                     .await
                     .map_err(|v| anyhow!(v))?)
@@ -242,8 +242,8 @@ impl SongTag {
 
         match self.service_provider {
             ServiceProvider::Netease => {
-                let netease_new_api = new_netease::Api::new();
-                url = netease_new_api
+                let neteasev2_api = netease_v2::Api::new();
+                url = neteasev2_api
                     .download_recording(self)
                     .await
                     .map_err(|v| anyhow!(v))?;
