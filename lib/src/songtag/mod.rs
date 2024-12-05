@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * termusic - Copyright (c) 2021 Larry Hao
@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-mod encrypt;
 mod kugou;
 pub mod lrc;
 mod migu;

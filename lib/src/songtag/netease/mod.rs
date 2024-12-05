@@ -1,13 +1,16 @@
-/**
+/*
  * model.rs
  * Copyright (C) 2019 gmg137 <gmg137@live.com>
  * Distributed under terms of the GPLv3 license.
  */
+
+mod encrypt;
 mod model;
 
-use super::{encrypt::Crypto, SongTag};
+use super::SongTag;
 use anyhow::{anyhow, bail, Result};
 use bytes::Buf;
+use encrypt::Crypto;
 use lazy_static::lazy_static;
 use lofty::picture::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
