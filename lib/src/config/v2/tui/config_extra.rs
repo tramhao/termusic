@@ -67,7 +67,7 @@ impl<'a, 'de> Deserialize<'de> for TuiConfigVersionedDefaulted<'a> {
 }
 
 // Note: for saving, see
-impl<'a> TuiConfigVersionedDefaulted<'a> {
+impl TuiConfigVersionedDefaulted<'_> {
     /// Read a config file, needs to be toml formatted
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();

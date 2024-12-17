@@ -148,7 +148,7 @@ impl UeInstance {
         match cmd.spawn() {
             Ok(child) => {
                 self.ueberzug = UeInstanceState::Child(child);
-                return Ok(self.ueberzug.unwrap_child_mut());
+                Ok(self.ueberzug.unwrap_child_mut())
             }
             Err(err) => {
                 if err.kind() == std::io::ErrorKind::NotFound {

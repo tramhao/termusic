@@ -161,7 +161,7 @@ impl StringUtils for str {
     }
 
     fn grapheme_len(&self) -> usize {
-        return self.graphemes(true).count();
+        self.graphemes(true).count()
     }
 }
 
@@ -194,6 +194,7 @@ pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
     } else {
         Command::new(prog)
     };
+    cmd.stdin(Stdio::null());
     if !shout_output {
         cmd.stdout(Stdio::null());
         cmd.stderr(Stdio::null());

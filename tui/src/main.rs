@@ -132,6 +132,8 @@ async fn actual_main() -> Result<()> {
         server_args.push("--backend");
         server_args.push(&backend);
 
+        // server can stay around after client exits (if supported by the system)
+        #[allow(clippy::zombie_processes)]
         let proc = utils::spawn_process(&termusic_server_prog, false, false, &server_args)
             .unwrap_or_else(|_| panic!("Could not find {} binary", termusic_server_prog.display()));
 

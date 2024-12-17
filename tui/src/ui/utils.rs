@@ -1,7 +1,6 @@
 use tuirealm::ratatui::layout::{Constraint, Direction, Layout, Rect};
 
-///
-/// Get block
+// /// Get block
 // pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
 //     Block::default()
 //         .borders(props.sides)
