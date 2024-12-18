@@ -196,5 +196,4 @@ hasezoey
 ## License
 
 MIT License for main part of code.
-GPLv3 for NetEase api code under `src/lyric/netease`. Comes from netease-cloud-music-gtk.
-GPLv3 for Podcast code under `src/podcast`. Comes from shellcaster.
+GPLv3 for Podcast code under `lib/src/podcast/mod.rs`. Comes from shellcaster.

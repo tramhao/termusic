@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * termusic - Copyright (c) 2021 Larry Hao
@@ -21,21 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-pub mod encrypt;
 mod kugou;
 pub mod lrc;
 mod migu;
-mod netease;
+mod netease_v2;
+mod service;
 
 use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use lofty::config::WriteOptions;
 use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use lofty::TextEncoding;
+use service::SongTagService;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use std::thread::{self, sleep};
@@ -91,24 +92,18 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
 
     let handle_netease = async {
-        let mut netease_api = netease::Api::new();
-        netease_api
-            .search(search_str, netease::SearchRequestType::Single, 0, 30)
-            .await
+        let neteasev2_api = netease_v2::Api::new();
+        neteasev2_api.search_recording(search_str, 0, 30).await
     };
 
     let handle_migu = async {
         let migu_api = migu::Api::new();
-        migu_api
-            .search(search_str, migu::SearchRequestType::Song, 0, 30)
-            .await
+        migu_api.search_recording(search_str, 0, 30).await
     };
 
     let handle_kugou = async {
         let kugou_api = kugou::Api::new();
-        kugou_api
-            .search(search_str, kugou::SearchRequestType::Song, 0, 30)
-            .await
+        kugou_api.search_recording(search_str, 0, 30).await
     };
 
     let (netease_res, migu_res, kugou_res) =
@@ -161,22 +156,21 @@ impl SongTag {
 
     // get lyric by lyric_id
     pub async fn fetch_lyric(&self) -> Result<Option<String>> {
-        let Some(lyric_id) = &self.lyric_id else {
-            return Ok(None);
-        };
-
         let lyric_string = match self.service_provider {
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
-                kugou_api.song_lyric(lyric_id).await?
+                kugou_api.get_lyrics(self).await.map_err(|v| anyhow!(v))?
             }
             ServiceProvider::Netease => {
-                let mut netease_api = netease::Api::new();
-                netease_api.song_lyric(lyric_id).await?
+                let neteasev2_api = netease_v2::Api::new();
+                neteasev2_api
+                    .get_lyrics(self)
+                    .await
+                    .map_err(|v| anyhow!(v))?
             }
             ServiceProvider::Migu => {
                 let migu_api = migu::Api::new();
-                migu_api.song_lyric(lyric_id).await?
+                migu_api.get_lyrics(self).await.map_err(|v| anyhow!(v))?
             }
         };
 
@@ -189,27 +183,18 @@ impl SongTag {
         match self.service_provider {
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
-                if let Some(p) = &self.pic_id {
-                    if let Some(album_id) = &self.album_id {
-                        Ok(kugou_api.pic(p, album_id).await?)
-                    } else {
-                        bail!("album_id is missing for kugou")
-                    }
-                } else {
-                    bail!("pic_id is missing for kugou")
-                }
+                Ok(kugou_api.get_picture(self).await.map_err(|v| anyhow!(v))?)
             }
             ServiceProvider::Netease => {
-                let mut netease_api = netease::Api::new();
-                if let Some(p) = &self.pic_id {
-                    Ok(netease_api.pic(p).await?)
-                } else {
-                    bail!("pic_id is missing for netease")
-                }
+                let neteasev2_api = netease_v2::Api::new();
+                Ok(neteasev2_api
+                    .get_picture(self)
+                    .await
+                    .map_err(|v| anyhow!(v))?)
             }
             ServiceProvider::Migu => {
                 let migu_api = migu::Api::new();
-                Ok(migu_api.pic(&self.song_id).await?)
+                Ok(migu_api.get_picture(self).await.map_err(|v| anyhow!(v))?)
             }
         }
     }
@@ -217,7 +202,6 @@ impl SongTag {
     #[allow(clippy::too_many_lines)]
     pub async fn download(&self, file: &str, tx_tageditor: &Sender<Msg>) -> Result<()> {
         let p_parent = get_parent_folder(Path::new(file));
-        let song_id = &self.song_id;
         let artist = self
             .artist
             .clone()
@@ -230,7 +214,6 @@ impl SongTag {
         let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
         let lyric = self.fetch_lyric().await;
         let photo = self.fetch_photo().await;
-        let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
 
         let filename = format!("{artist}-{title}.%(ext)s");
 
@@ -259,13 +242,19 @@ impl SongTag {
 
         match self.service_provider {
             ServiceProvider::Netease => {
-                let mut netease_api = netease::Api::new();
-                url = netease_api.song_url(song_id).await?;
+                let neteasev2_api = netease_v2::Api::new();
+                url = neteasev2_api
+                    .download_recording(self)
+                    .await
+                    .map_err(|v| anyhow!(v))?;
             }
             ServiceProvider::Migu => {}
             ServiceProvider::Kugou => {
                 let kugou_api = kugou::Api::new();
-                url = kugou_api.song_url(song_id, &album_id).await?;
+                url = kugou_api
+                    .download_recording(self)
+                    .await
+                    .map_err(|v| anyhow!(v))?;
             }
         }
 

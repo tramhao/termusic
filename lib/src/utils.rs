@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use pinyin::ToPinyin;
+use rand::Rng;
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -238,6 +239,15 @@ pub fn absolute_path_base<'a>(path: &'a Path, base: &Path) -> Cow<'a, Path> {
     } else {
         Cow::Owned(base.join(path))
     }
+}
+
+/// Generate `len` random ascii character (a-z0-9)
+pub fn random_ascii(len: usize) -> String {
+    rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(len)
+        .map(|v| char::from(v).to_ascii_lowercase())
+        .collect()
 }
 
 /// Helper function to defer formatting to later, without having to allocate a intermediate [`String`]
