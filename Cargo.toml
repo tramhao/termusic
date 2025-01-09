@@ -34,7 +34,7 @@ chrono = "^0.4.23"
 clap = { version = "4.5", features = ["derive", "env"] }
 ctrlc = { version = "3.4", features = ["termination"] }
 dirs = "5.0"
-discord-rich-presence = { version = "0.2" }
+discord-rich-presence = "0.2.5"
 escaper = "0.1.1"
 figment = { version = "0.10", features = ["toml"] }
 glib = { version = "0.20" }
