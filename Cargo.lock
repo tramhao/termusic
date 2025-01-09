@@ -390,15 +390,15 @@ dependencies = [
 
 [[package]]
 name = "atom_syndication"
-version = "0.12.3"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2f34613907f31c9dbef0240156db3c9263f34842b6e1a8999d2304ea62c8a30"
+checksum = "ec03a6e158ee0f38bfba811976ae909bc2505a4a2f4049c7e8df47df3497b119"
 dependencies = [
  "chrono",
  "derive_builder",
  "diligent-date-parser",
  "never",
- "quick-xml 0.31.0",
+ "quick-xml",
 ]
 
 [[package]]
@@ -3339,16 +3339,6 @@ checksum = "a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3"
 
 [[package]]
 name = "quick-xml"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1004a344b30a54e2ee58d66a71b32d2db2feb0a31f9a2d302bf0536f15de2a33"
-dependencies = [
- "encoding_rs",
- "memchr",
-]
-
-[[package]]
-name = "quick-xml"
 version = "0.37.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "165859e9e55f79d67b96c5d96f4e88b6f2695a1972849c15a6a3f5c59fc2c003"
@@ -3695,7 +3685,7 @@ dependencies = [
  "atom_syndication",
  "derive_builder",
  "never",
- "quick-xml 0.37.2",
+ "quick-xml",
 ]
 
 [[package]]
@@ -4581,7 +4571,7 @@ dependencies = [
  "pinyin",
  "pretty_assertions",
  "prost",
- "quick-xml 0.37.2",
+ "quick-xml",
  "rand",
  "regex",
  "reqwest",
