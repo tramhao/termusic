@@ -60,7 +60,7 @@ pathdiff = { version = "0.2", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
 pretty_assertions = "1.4"
-quick-xml = "0.36"
+quick-xml = "0.37"
 rand = "0.8"
 regex = "^1.11.0"
 reqwest = { version = "0.12", features = [
