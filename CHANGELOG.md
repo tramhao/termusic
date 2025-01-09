@@ -17,6 +17,7 @@
 - Fix: change Lyric::adjust_offset to not work invertedly for below 10 seconds anymore.
 - Fix: fix accidental invertion of `is_absolute` for path playlist values causing items to not have the correct path.
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
+- Fix(tui): not being able to parse themes that use `0x` as the prefix.
 
 ### [V0.9.1]
 - Released on: August 21, 2024.

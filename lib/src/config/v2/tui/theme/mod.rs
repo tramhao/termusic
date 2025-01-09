@@ -160,6 +160,7 @@ impl ThemeWrap {
 pub enum ThemeColorParseError {
     ParseIntError(ParseIntError),
     IncorrectLength(usize),
+    UnknownPrefix(String),
 }
 
 impl Display for ThemeColorParseError {
@@ -176,6 +177,8 @@ impl Display for ThemeColorParseError {
                         format!("{v}")
                     },
                 Self::IncorrectLength(length) => format!("Incorrect length {length}, expected 6"),
+                Self::UnknownPrefix(value) =>
+                    format!("Value does not start with \"#\" or \"0x\" \"{value}\""),
             }
         )
     }
@@ -194,9 +197,16 @@ pub struct ThemeColor {
 }
 
 impl ThemeColor {
+    /// Create a new instance with those values
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+
     /// Convert from a prefix + 6 length string
     pub fn from_hex(val: &str) -> Result<Self, ThemeColorParseError> {
-        let without_prefix = val.trim_start_matches('#');
+        let Some(without_prefix) = val.strip_prefix('#').or(val.strip_prefix("0x")) else {
+            return Err(ThemeColorParseError::UnknownPrefix(val.to_string()));
+        };
 
         // not in a format we support
         if without_prefix.len() != 6 {
@@ -595,6 +605,45 @@ mod v1_interop {
                         white: "#ffffff".try_into().unwrap()
                     }
                 }
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    mod theme_color {
+        use super::super::ThemeColor;
+
+        #[test]
+        fn should_parse_hashtag() {
+            assert_eq!(
+                ThemeColor::new(1, 2, 3),
+                ThemeColor::from_hex("#010203").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new(255, 255, 255),
+                ThemeColor::from_hex("#ffffff").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new(0, 0, 0),
+                ThemeColor::from_hex("#000000").unwrap()
+            );
+        }
+
+        #[test]
+        fn should_parse_0x() {
+            assert_eq!(
+                ThemeColor::new(1, 2, 3),
+                ThemeColor::from_hex("0x010203").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new(255, 255, 255),
+                ThemeColor::from_hex("0xffffff").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new(0, 0, 0),
+                ThemeColor::from_hex("0x000000").unwrap()
             );
         }
     }
