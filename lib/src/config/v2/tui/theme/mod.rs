@@ -359,8 +359,8 @@ pub struct ThemePrimary {
 impl Default for ThemePrimary {
     fn default() -> Self {
         Self {
-            background: default_000(),
-            foreground: default_fff(),
+            background: ThemeColor::from_hex("#101421").unwrap(),
+            foreground: ThemeColor::from_hex("#fffbf6").unwrap(),
         }
     }
 }
@@ -386,7 +386,7 @@ pub struct ThemeCursor {
 impl Default for ThemeCursor {
     fn default() -> Self {
         Self {
-            text: default_fff(),
+            text: ThemeColor::from_hex("#1e1e1e").unwrap(),
             cursor: default_fff(),
         }
     }
@@ -419,14 +419,14 @@ pub struct ThemeNormal {
 impl Default for ThemeNormal {
     fn default() -> Self {
         Self {
-            black: default_000(),
-            red: ThemeColor::from_hex("#ff0000").unwrap(),
-            green: ThemeColor::from_hex("#00ff00").unwrap(),
-            yellow: ThemeColor::from_hex("#ffff00").unwrap(),
-            blue: ThemeColor::from_hex("#0000ff").unwrap(),
-            magenta: ThemeColor::from_hex("#ff00ff").unwrap(),
-            cyan: ThemeColor::from_hex("#00ffff").unwrap(),
-            white: default_fff(),
+            black: ThemeColor::from_hex("#2e2e2e").unwrap(),
+            red: ThemeColor::from_hex("#eb4129").unwrap(),
+            green: ThemeColor::from_hex("#abe047").unwrap(),
+            yellow: ThemeColor::from_hex("#f6c744").unwrap(),
+            blue: ThemeColor::from_hex("#47a0f3").unwrap(),
+            magenta: ThemeColor::from_hex("#7b5cb0").unwrap(),
+            cyan: ThemeColor::from_hex("#64dbed").unwrap(),
+            white: ThemeColor::from_hex("#e5e9f0").unwrap(),
         }
     }
 }
@@ -464,14 +464,14 @@ pub struct ThemeBright {
 impl Default for ThemeBright {
     fn default() -> Self {
         Self {
-            black: ThemeColor::from_hex("#777777").unwrap(),
-            red: default_000(),
-            green: default_000(),
-            yellow: default_000(),
-            blue: default_000(),
-            magenta: default_000(),
-            cyan: default_000(),
-            white: default_000(),
+            black: ThemeColor::from_hex("#565656").unwrap(),
+            red: ThemeColor::from_hex("#ec5357").unwrap(),
+            green: ThemeColor::from_hex("#c0e17d").unwrap(),
+            yellow: ThemeColor::from_hex("#f9da6a").unwrap(),
+            blue: ThemeColor::from_hex("#49a4f8").unwrap(),
+            magenta: ThemeColor::from_hex("#a47de9").unwrap(),
+            cyan: ThemeColor::from_hex("#99faf2").unwrap(),
+            white: default_fff(),
         }
     }
 }
@@ -501,11 +501,6 @@ fn default_name() -> String {
 #[inline]
 fn default_author() -> String {
     "empty author".to_string()
-}
-
-#[inline]
-fn default_000() -> ThemeColor {
-    ThemeColor::from_hex("#000000").unwrap()
 }
 
 #[inline]
@@ -612,6 +607,8 @@ mod v1_interop {
 
 #[cfg(test)]
 mod tests {
+    use super::ThemeColors;
+
     mod theme_color {
         use super::super::ThemeColor;
 
@@ -646,5 +643,11 @@ mod tests {
                 ThemeColor::from_hex("0x000000").unwrap()
             );
         }
+    }
+
+    #[test]
+    fn should_default() {
+        // currently the default(s) are not const, so they need to be tested to actually not panic
+        let _ = ThemeColors::default();
     }
 }
