@@ -198,7 +198,7 @@ pub struct ThemeColor {
 
 impl ThemeColor {
     /// Create a new instance with those values
-    pub fn new(r: u8, g: u8, b: u8) -> Self {
+    pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
 
@@ -359,8 +359,8 @@ pub struct ThemePrimary {
 impl Default for ThemePrimary {
     fn default() -> Self {
         Self {
-            background: ThemeColor::from_hex("#101421").unwrap(),
-            foreground: ThemeColor::from_hex("#fffbf6").unwrap(),
+            background: ThemeColor::new(0x10, 0x14, 0x21),
+            foreground: ThemeColor::new(0xff, 0xfb, 0xf6),
         }
     }
 }
@@ -386,7 +386,7 @@ pub struct ThemeCursor {
 impl Default for ThemeCursor {
     fn default() -> Self {
         Self {
-            text: ThemeColor::from_hex("#1e1e1e").unwrap(),
+            text: ThemeColor::new(0x1e, 0x1e, 0x1e),
             cursor: default_fff(),
         }
     }
@@ -419,14 +419,14 @@ pub struct ThemeNormal {
 impl Default for ThemeNormal {
     fn default() -> Self {
         Self {
-            black: ThemeColor::from_hex("#2e2e2e").unwrap(),
-            red: ThemeColor::from_hex("#eb4129").unwrap(),
-            green: ThemeColor::from_hex("#abe047").unwrap(),
-            yellow: ThemeColor::from_hex("#f6c744").unwrap(),
-            blue: ThemeColor::from_hex("#47a0f3").unwrap(),
-            magenta: ThemeColor::from_hex("#7b5cb0").unwrap(),
-            cyan: ThemeColor::from_hex("#64dbed").unwrap(),
-            white: ThemeColor::from_hex("#e5e9f0").unwrap(),
+            black: ThemeColor::new(0x2e, 0x2e, 0x2e),
+            red: ThemeColor::new(0xeb, 0x41, 0x29),
+            green: ThemeColor::new(0xab, 0xe0, 0x47),
+            yellow: ThemeColor::new(0xf6, 0xc7, 0x44),
+            blue: ThemeColor::new(0x47, 0xa0, 0xf3),
+            magenta: ThemeColor::new(0x7b, 0x5c, 0xb0),
+            cyan: ThemeColor::new(0x64, 0xdb, 0xed),
+            white: ThemeColor::new(0xe5, 0xe9, 0xf0),
         }
     }
 }
@@ -464,13 +464,13 @@ pub struct ThemeBright {
 impl Default for ThemeBright {
     fn default() -> Self {
         Self {
-            black: ThemeColor::from_hex("#565656").unwrap(),
-            red: ThemeColor::from_hex("#ec5357").unwrap(),
-            green: ThemeColor::from_hex("#c0e17d").unwrap(),
-            yellow: ThemeColor::from_hex("#f9da6a").unwrap(),
-            blue: ThemeColor::from_hex("#49a4f8").unwrap(),
-            magenta: ThemeColor::from_hex("#a47de9").unwrap(),
-            cyan: ThemeColor::from_hex("#99faf2").unwrap(),
+            black: ThemeColor::new(0x56, 0x56, 0x56),
+            red: ThemeColor::new(0xec, 0x53, 0x57),
+            green: ThemeColor::new(0xc0, 0xe1, 0x7d),
+            yellow: ThemeColor::new(0xf9, 0xda, 0x6a),
+            blue: ThemeColor::new(0x49, 0xa4, 0xf8),
+            magenta: ThemeColor::new(0xa4, 0x7d, 0xe9),
+            cyan: ThemeColor::new(0x99, 0xfa, 0xf2),
             white: default_fff(),
         }
     }
@@ -505,7 +505,7 @@ fn default_author() -> String {
 
 #[inline]
 fn default_fff() -> ThemeColor {
-    ThemeColor::from_hex("#FFFFFF").unwrap()
+    ThemeColor::new(0xFF, 0xFF, 0xFF)
 }
 
 mod v1_interop {
@@ -647,7 +647,7 @@ mod tests {
 
     #[test]
     fn should_default() {
-        // currently the default(s) are not const, so they need to be tested to actually not panic
+        // Test that there are no panics in the defaults, this should be able to be omitted once it is const
         let _ = ThemeColors::default();
     }
 }
