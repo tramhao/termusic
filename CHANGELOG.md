@@ -19,6 +19,7 @@
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
 - Fix(tui): not being able to parse themes that use `0x` as the prefix.
 - Fix(tui): change that the default Theme is not using bad colors.
+- Fix(tui): change that the default `add_random_(song|album)` keys were inverted.
 
 ### [V0.9.1]
 - Released on: August 21, 2024.
