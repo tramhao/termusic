@@ -3353,6 +3353,7 @@ version = "0.37.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "165859e9e55f79d67b96c5d96f4e88b6f2695a1972849c15a6a3f5c59fc2c003"
 dependencies = [
+ "encoding_rs",
  "memchr",
 ]
 
@@ -3687,14 +3688,14 @@ dependencies = [
 
 [[package]]
 name = "rss"
-version = "2.0.8"
+version = "2.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f374fd66bb795938b78c021db1662d43a8ffbc42ec1ac25429fc4833b732751"
+checksum = "531af70fce504d369cf42ac0a9645f5a62a8ea9265de71cfa25087e9f6080c7c"
 dependencies = [
  "atom_syndication",
  "derive_builder",
  "never",
- "quick-xml 0.31.0",
+ "quick-xml 0.37.2",
 ]
 
 [[package]]
