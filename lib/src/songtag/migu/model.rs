@@ -32,7 +32,7 @@ pub fn to_lyric(json: &str) -> Result<String> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
     // english for the chinese characters: "success"
-    if value.get("msg").is_none() || !value.get("msg").map_or(false, |v| v.eq(&"成功")) {
+    if value.get("msg").is_none() || !value.get("msg").is_some_and(|v| v.eq(&"成功")) {
         let message = value.get("msg").and_then(Value::as_str).unwrap_or("<none>");
         bail!(
             "Failed to get lyric text, \"msg\" does not exist or is not \"sucess\" Errcode: {message}"
@@ -53,7 +53,7 @@ pub fn to_pic_url(json: &str) -> Result<String> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
     // english for the chinese characters: "success"
-    if value.get("msg").is_none() || !value.get("msg").map_or(false, |v| v.eq(&"成功")) {
+    if value.get("msg").is_none() || !value.get("msg").is_some_and(|v| v.eq(&"成功")) {
         let message = value.get("msg").and_then(Value::as_str).unwrap_or("<none>");
         bail!(
             "Failed to get picure url, \"msg\" does not exist or is not \"sucess\" Errcode: {message}"
@@ -73,7 +73,7 @@ pub fn to_pic_url(json: &str) -> Result<String> {
 pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("success").is_none() || !value.get("success").map_or(false, |v| v.eq(&true)) {
+    if value.get("success").is_none() || !value.get("success").is_some_and(|v| v.eq(&true)) {
         let message = value
             .get("success")
             .and_then(Value::as_str)
