@@ -274,13 +274,13 @@ fn remove_downloaded_json(path: &Path, file_fullname: &str) {
         .filter(|f| {
             let name = f.file_name();
             let p = Path::new(&name);
-            p.extension().map_or(false, |ext| ext == "json")
+            p.extension().is_some_and(|ext| ext == "json")
         })
         .filter(|f| {
             let path_json = Path::new(f.file_name());
             let p1: &Path = Path::new(file_fullname);
-            path_json.file_stem().map_or(false, |stem_lrc| {
-                p1.file_stem().map_or(false, |p_base| {
+            path_json.file_stem().is_some_and(|stem_lrc| {
+                p1.file_stem().is_some_and(|p_base| {
                     stem_lrc
                         .to_string_lossy()
                         .to_string()
@@ -316,13 +316,13 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
         .filter(|f| {
             let name = f.file_name();
             let p = Path::new(&name);
-            p.extension().map_or(false, |ext| ext == "lrc")
+            p.extension().is_some_and(|ext| ext == "lrc")
         })
         .filter(|f| {
             let path_lrc = Path::new(f.file_name());
             let p1: &Path = Path::new(file_fullname);
-            path_lrc.file_stem().map_or(false, |stem_lrc| {
-                p1.file_stem().map_or(false, |p_base| {
+            path_lrc.file_stem().is_some_and(|stem_lrc| {
+                p1.file_stem().is_some_and(|p_base| {
                     stem_lrc
                         .to_string_lossy()
                         .to_string()

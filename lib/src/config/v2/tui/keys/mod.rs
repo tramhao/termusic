@@ -1339,7 +1339,7 @@ impl<'a> Iterator for SplitAtPlus<'a> {
                         self.last_char_was_returned_delim = false;
                         self.last_char_was_delim = true;
                         continue;
-                    } else if i == 0 && self.chars.peek().map_or(false, |v| v.1 != Self::DELIM) {
+                    } else if i == 0 && self.chars.peek().is_some_and(|v| v.1 != Self::DELIM) {
                         // special case where the delimiter is the first, but not followed by another delimiter, like "+q"
                         // this is so we return a InvalidFormat later on (treat the first "+" as a delimiter instead of a key)
                         self.last_char_was_returned_delim = false;
@@ -1863,7 +1863,7 @@ mod v1_interop {
             ) {
                 // the old impl had lowercase and uppercase characters, need to compare them equally
                 (tuievents::Key::Char(left), tuievents::Key::Char(right)) => {
-                    left.to_ascii_lowercase() == right.to_ascii_lowercase()
+                    left.eq_ignore_ascii_case(&right)
                 }
                 (left, right) => left == right,
             };

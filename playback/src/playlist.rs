@@ -474,7 +474,7 @@ impl Playlist {
     pub fn remove_deleted_items(&mut self) {
         if let Some(current_track_file) = self.get_current_track() {
             self.tracks
-                .retain(|x| x.file().map_or(false, |p| Path::new(p).exists()));
+                .retain(|x| x.file().is_some_and(|p| Path::new(p).exists()));
             match self.find_index_from_file(&current_track_file) {
                 Some(new_index) => self.current_track_index = new_index,
                 None => self.current_track_index = 0,

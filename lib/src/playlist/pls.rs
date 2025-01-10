@@ -194,7 +194,7 @@ fn skip_until_playlist<'a, 'b>(iter: &'a mut impl Iterator<Item = &'b str>) -> F
         }
 
         // return when finding the correct header
-        if line.trim().to_ascii_lowercase() == "[playlist]" {
+        if line.trim().eq_ignore_ascii_case("[playlist]") {
             return Found::Yes;
         }
     }

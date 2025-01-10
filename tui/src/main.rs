@@ -201,7 +201,7 @@ async fn wait_till_connected(
         let status = sys.process(sys_pid);
 
         // dont endlessly try to connect, if the server exited / crashed
-        if status.is_none() || status.map_or(false, |v| v.status() == ProcessStatus::Zombie) {
+        if status.is_none() || status.is_some_and(|v| v.status() == ProcessStatus::Zombie) {
             anyhow::bail!("Process {pid} exited before being able to connect!");
         }
 

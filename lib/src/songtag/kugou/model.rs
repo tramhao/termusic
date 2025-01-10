@@ -32,7 +32,7 @@ use serde_json::{from_str, json, Value};
 pub fn to_lyric(json: &str) -> Result<String> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("status").is_none() || !value.get("status").map_or(false, |v| v.eq(&200)) {
+    if value.get("status").is_none() || !value.get("status").is_some_and(|v| v.eq(&200)) {
         let errcode = value
             .get("errcode")
             .and_then(Value::as_str)
@@ -57,7 +57,7 @@ pub fn to_lyric(json: &str) -> Result<String> {
 pub fn to_lyric_id_accesskey(json: &str) -> Result<(String, String)> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("errcode").is_none() || !value.get("errcode").map_or(false, |v| v.eq(&200)) {
+    if value.get("errcode").is_none() || !value.get("errcode").is_some_and(|v| v.eq(&200)) {
         let errcode = value
             .get("errcode")
             .and_then(Value::as_str)
@@ -93,7 +93,7 @@ pub fn to_lyric_id_accesskey(json: &str) -> Result<(String, String)> {
 pub fn to_song_url(json: &str) -> Result<String> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("status").is_none() || !value.get("status").map_or(false, |v| v.eq(&200)) {
+    if value.get("status").is_none() || !value.get("status").is_some_and(|v| v.eq(&200)) {
         let errcode = value
             .get("errcode")
             .and_then(Value::as_str)
@@ -117,7 +117,7 @@ pub fn to_song_url(json: &str) -> Result<String> {
 pub fn to_pic_url(json: &str) -> Result<String> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("status").is_none() || !value.get("status").map_or(false, |v| v.eq(&1)) {
+    if value.get("status").is_none() || !value.get("status").is_some_and(|v| v.eq(&1)) {
         bail!("Failed to get picture url, \"status\" does not exist or is not 200");
     }
 
@@ -135,7 +135,7 @@ pub fn to_pic_url(json: &str) -> Result<String> {
 pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("status").is_none() || !value.get("status").map_or(false, |v| v.eq(&1)) {
+    if value.get("status").is_none() || !value.get("status").is_some_and(|v| v.eq(&1)) {
         bail!("Failed to get picture url, \"status\" does not exist or is not 200");
     }
 

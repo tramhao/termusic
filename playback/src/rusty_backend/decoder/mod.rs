@@ -448,7 +448,7 @@ fn decode_loop(
     if !media_title_tx.is_none() {
         // run container metadata if new and on seek to 0
         // this maybe not be 100% reliable, where for example there is no "time_base", but i dont know of a case yet where that happens
-        if elapsed.as_ref().map_or(false, Duration::is_zero) {
+        if elapsed.as_ref().is_some_and(Duration::is_zero) {
             trace!("Time is 0, doing container metadata");
             media_title_tx.send_reset();
             do_container_metdata(media_title_tx, format, probed);
