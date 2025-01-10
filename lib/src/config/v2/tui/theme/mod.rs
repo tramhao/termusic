@@ -160,6 +160,7 @@ impl ThemeWrap {
 pub enum ThemeColorParseError {
     ParseIntError(ParseIntError),
     IncorrectLength(usize),
+    UnknownPrefix(String),
 }
 
 impl Display for ThemeColorParseError {
@@ -176,6 +177,8 @@ impl Display for ThemeColorParseError {
                         format!("{v}")
                     },
                 Self::IncorrectLength(length) => format!("Incorrect length {length}, expected 6"),
+                Self::UnknownPrefix(value) =>
+                    format!("Value does not start with \"#\" or \"0x\" \"{value}\""),
             }
         )
     }
@@ -194,9 +197,16 @@ pub struct ThemeColor {
 }
 
 impl ThemeColor {
+    /// Create a new instance with those values
+    pub const fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+
     /// Convert from a prefix + 6 length string
     pub fn from_hex(val: &str) -> Result<Self, ThemeColorParseError> {
-        let without_prefix = val.trim_start_matches('#');
+        let Some(without_prefix) = val.strip_prefix('#').or(val.strip_prefix("0x")) else {
+            return Err(ThemeColorParseError::UnknownPrefix(val.to_string()));
+        };
 
         // not in a format we support
         if without_prefix.len() != 6 {
@@ -349,8 +359,8 @@ pub struct ThemePrimary {
 impl Default for ThemePrimary {
     fn default() -> Self {
         Self {
-            background: default_000(),
-            foreground: default_fff(),
+            background: ThemeColor::new(0x10, 0x14, 0x21),
+            foreground: ThemeColor::new(0xff, 0xfb, 0xf6),
         }
     }
 }
@@ -376,7 +386,7 @@ pub struct ThemeCursor {
 impl Default for ThemeCursor {
     fn default() -> Self {
         Self {
-            text: default_fff(),
+            text: ThemeColor::new(0x1e, 0x1e, 0x1e),
             cursor: default_fff(),
         }
     }
@@ -409,14 +419,14 @@ pub struct ThemeNormal {
 impl Default for ThemeNormal {
     fn default() -> Self {
         Self {
-            black: default_000(),
-            red: ThemeColor::from_hex("#ff0000").unwrap(),
-            green: ThemeColor::from_hex("#00ff00").unwrap(),
-            yellow: ThemeColor::from_hex("#ffff00").unwrap(),
-            blue: ThemeColor::from_hex("#0000ff").unwrap(),
-            magenta: ThemeColor::from_hex("#ff00ff").unwrap(),
-            cyan: ThemeColor::from_hex("#00ffff").unwrap(),
-            white: default_fff(),
+            black: ThemeColor::new(0x2e, 0x2e, 0x2e),
+            red: ThemeColor::new(0xeb, 0x41, 0x29),
+            green: ThemeColor::new(0xab, 0xe0, 0x47),
+            yellow: ThemeColor::new(0xf6, 0xc7, 0x44),
+            blue: ThemeColor::new(0x47, 0xa0, 0xf3),
+            magenta: ThemeColor::new(0x7b, 0x5c, 0xb0),
+            cyan: ThemeColor::new(0x64, 0xdb, 0xed),
+            white: ThemeColor::new(0xe5, 0xe9, 0xf0),
         }
     }
 }
@@ -454,14 +464,14 @@ pub struct ThemeBright {
 impl Default for ThemeBright {
     fn default() -> Self {
         Self {
-            black: ThemeColor::from_hex("#777777").unwrap(),
-            red: default_000(),
-            green: default_000(),
-            yellow: default_000(),
-            blue: default_000(),
-            magenta: default_000(),
-            cyan: default_000(),
-            white: default_000(),
+            black: ThemeColor::new(0x56, 0x56, 0x56),
+            red: ThemeColor::new(0xec, 0x53, 0x57),
+            green: ThemeColor::new(0xc0, 0xe1, 0x7d),
+            yellow: ThemeColor::new(0xf9, 0xda, 0x6a),
+            blue: ThemeColor::new(0x49, 0xa4, 0xf8),
+            magenta: ThemeColor::new(0xa4, 0x7d, 0xe9),
+            cyan: ThemeColor::new(0x99, 0xfa, 0xf2),
+            white: default_fff(),
         }
     }
 }
@@ -494,13 +504,8 @@ fn default_author() -> String {
 }
 
 #[inline]
-fn default_000() -> ThemeColor {
-    ThemeColor::from_hex("#000000").unwrap()
-}
-
-#[inline]
 fn default_fff() -> ThemeColor {
-    ThemeColor::from_hex("#FFFFFF").unwrap()
+    ThemeColor::new(0xFF, 0xFF, 0xFF)
 }
 
 mod v1_interop {
@@ -597,5 +602,52 @@ mod v1_interop {
                 }
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ThemeColors;
+
+    mod theme_color {
+        use super::super::ThemeColor;
+
+        #[test]
+        fn should_parse_hashtag() {
+            assert_eq!(
+                ThemeColor::new(1, 2, 3),
+                ThemeColor::from_hex("#010203").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new(255, 255, 255),
+                ThemeColor::from_hex("#ffffff").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new(0, 0, 0),
+                ThemeColor::from_hex("#000000").unwrap()
+            );
+        }
+
+        #[test]
+        fn should_parse_0x() {
+            assert_eq!(
+                ThemeColor::new(1, 2, 3),
+                ThemeColor::from_hex("0x010203").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new(255, 255, 255),
+                ThemeColor::from_hex("0xffffff").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new(0, 0, 0),
+                ThemeColor::from_hex("0x000000").unwrap()
+            );
+        }
+    }
+
+    #[test]
+    fn should_default() {
+        // Test that there are no panics in the defaults, this should be able to be omitted once it is const
+        let _ = ThemeColors::default();
     }
 }

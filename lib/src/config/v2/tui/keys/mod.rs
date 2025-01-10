@@ -804,12 +804,12 @@ impl Default for KeysPlaylist {
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
-            add_random_songs: tuievents::KeyEvent::new(
+            add_random_songs: tuievents::Key::Char('s').into(),
+            add_random_album: tuievents::KeyEvent::new(
                 tuievents::Key::Char('S'),
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
-            add_random_album: tuievents::Key::Char('s').into(),
         }
     }
 }
