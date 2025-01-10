@@ -283,7 +283,6 @@ fn remove_downloaded_json(path: &Path, file_fullname: &str) {
                 p1.file_stem().is_some_and(|p_base| {
                     stem_lrc
                         .to_string_lossy()
-                        .to_string()
                         .contains(p_base.to_string_lossy().as_ref())
                 })
             })
@@ -325,7 +324,6 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
                 p1.file_stem().is_some_and(|p_base| {
                     stem_lrc
                         .to_string_lossy()
-                        .to_string()
                         .contains(p_base.to_string_lossy().as_ref())
                 })
             })
