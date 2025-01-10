@@ -628,6 +628,7 @@ impl Model {
             for record in tracks {
                 if wildmatch::WildMatch::new(&search).matches(&record.artist.to_lowercase())
                     | wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase())
+                    | wildmatch::WildMatch::new(&search).matches(&record.album.to_lowercase())
                 {
                     if idx > 0 {
                         table.add_row();
