@@ -10,6 +10,7 @@
 - Change(server): on rusty backend, use upstream rodio again.
 - Feat: more immediate event changes (Example: updated via mpris)
 - Feat(server): on rusty backend, enable `aiff` codec support.
+- Feat(tui): show default theme as a preview option.
 - Fix: change default config ip address to `::1` instead of `::` (any old values on windows will need to be changed manually)
 - Fix: check for other tag types instead of just the primary tag type (for example a wav file with riff metadata instead of id3v2 would not get metadata)
 - Fix: report errors reading metadata to the log
