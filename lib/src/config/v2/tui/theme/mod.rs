@@ -273,7 +273,7 @@ impl From<ThemeColor> for Color {
 pub struct ThemeColors {
     /// The Filename of the current theme, if a file is used.
     /// This value is skipped if empty.
-    /// 
+    ///
     /// This is used for example to pre-select in the config editor if available.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,

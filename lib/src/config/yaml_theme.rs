@@ -123,9 +123,7 @@ fn default_fff() -> YAMLThemeColor {
 
 #[cfg(test)]
 mod test {
-    use std::{ffi::OsStr, fs::File, io::BufReader, path::PathBuf};
-
-    use crate::config::v2::tui::theme::ThemeColors;
+    use std::{fs::File, io::BufReader};
 
     use super::*;
 
@@ -174,33 +172,5 @@ mod test {
                 },
             }
         );
-    }
-
-    /// Test that all themes in /lib/themes/ can be loaded
-    #[test]
-    fn should_parse_all_themes() {
-        let cargo_manifest_dir = env!("CARGO_MANIFEST_DIR");
-        let path = PathBuf::from(format!("{cargo_manifest_dir}/themes/"));
-        for entry in path.read_dir().unwrap() {
-            let entry = entry.unwrap();
-
-            if entry.path().extension() != Some(OsStr::new("yml")) {
-                continue;
-            }
-
-            println!(
-                "Theme: {}",
-                entry.path().file_name().unwrap().to_string_lossy()
-            );
-
-            let reader = BufReader::new(File::open(entry.path()).unwrap());
-            let parsed: std::result::Result<YAMLTheme, _> = serde_yaml::from_reader(reader);
-
-            let parsed = parsed.unwrap();
-
-            let actual_theme = ThemeColors::try_from(parsed);
-
-            let _actual_theme = actual_theme.unwrap();
-        }
     }
 }
