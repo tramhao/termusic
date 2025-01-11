@@ -10,10 +10,10 @@ type YAMLThemeColor = String;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct YAMLThemeColors {
-    #[serde(default = "default_name")]
-    pub name: String,
-    #[serde(default = "default_author")]
-    pub author: String,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub author: Option<String>,
     #[serde(default)]
     pub primary: YAMLThemePrimary,
     #[serde(default)]
@@ -112,16 +112,6 @@ impl Default for YAMLThemeBright {
 }
 
 #[inline]
-fn default_name() -> String {
-    "empty name".to_string()
-}
-
-#[inline]
-fn default_author() -> String {
-    "empty author".to_string()
-}
-
-#[inline]
 fn default_000() -> YAMLThemeColor {
     "#00000".to_string()
 }
@@ -151,8 +141,8 @@ mod test {
             parsed,
             YAMLTheme {
                 colors: YAMLThemeColors {
-                    name: default_name(),
-                    author: default_author(),
+                    name: None,
+                    author: None,
                     primary: YAMLThemePrimary {
                         background: "#2c2c2c".to_string(),
                         foreground: "#d6d6d6".to_string()

@@ -331,8 +331,8 @@ impl TryFrom<YAMLTheme> for ThemeColors {
     fn try_from(value: YAMLTheme) -> Result<Self, Self::Error> {
         let colors = value.colors;
         Ok(Self {
-            name: colors.name,
-            author: colors.author,
+            name: colors.name.unwrap_or_else(default_name),
+            author: colors.author.unwrap_or_else(default_author),
             primary: colors.primary.try_into()?,
             cursor: colors.cursor.try_into()?,
             normal: colors.normal.try_into()?,
