@@ -20,6 +20,8 @@
 - Fix(tui): not being able to parse themes that use `0x` as the prefix.
 - Fix(tui): change that the default Theme is not using bad colors.
 - Fix(tui): change that the default `add_random_(song|album)` keys were inverted.
+- Fix(tui): change Theme preview to not reset to index 0 each preview.
+- Fix(tui): not having the current theme selected when entering Theme preview tab.
 
 ### [V0.9.1]
 - Released on: August 21, 2024.

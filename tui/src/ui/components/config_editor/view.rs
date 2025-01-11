@@ -3526,6 +3526,8 @@ impl Model {
 
         Ok(())
     }
+
+    /// Find all themes in the `config/themes` directory and add them to be selected for preview
     pub fn theme_select_load_themes(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("themes");
@@ -3550,6 +3552,7 @@ impl Model {
         Ok(())
     }
 
+    /// Build the theme UI table and select the current theme
     pub fn theme_select_sync(&mut self, previous_index: Option<usize>) {
         let mut table: TableBuilder = TableBuilder::default();
 
@@ -3575,15 +3578,18 @@ impl Model {
                 AttrValue::Table(table),
             )
             .ok();
+
         // select theme currently used
         let index = if let Some(index) = previous_index {
             index
         } else {
             let mut index = 0;
-            for (idx, name) in self.config_editor.themes.iter().enumerate() {
-                if name == &self.config_editor.theme.theme.name {
-                    index = idx;
-                    break;
+            if let Some(current_file_name) = self.config_editor.theme.theme.file_name.as_ref() {
+                for (idx, name) in self.config_editor.themes.iter().enumerate() {
+                    if name == current_file_name {
+                        index = idx;
+                        break;
+                    }
                 }
             }
 

@@ -339,19 +339,19 @@ impl Model {
             }
 
             ConfigEditorMsg::ThemeSelectLoad(index) => {
-                if let Some(theme_name) = self.config_editor.themes.get(index) {
+                if let Some(theme_filename) = self.config_editor.themes.get(index) {
                     match get_app_config_path() {
                         Ok(mut theme_path) => {
                             theme_path.push("themes");
-                            theme_path.push(format!("{theme_name}.yml"));
-                            self.config_tui.write().settings.theme.theme.name =
-                                theme_name.to_string();
+                            theme_path.push(format!("{theme_filename}.yml"));
                             match ThemeColors::from_yaml_file(&theme_path) {
-                                Ok(theme) => {
+                                Ok(mut theme) => {
+                                    theme.file_name = Some(theme_filename.to_string());
                                     self.config_editor.theme.theme = theme;
                                     self.config_editor.config_changed = true;
-                                    let mut config = self.config_tui.read().clone();
+
                                     // This is for preview the theme colors
+                                    let mut config = self.config_tui.read().clone();
                                     config.settings.theme = self.config_editor.theme.clone();
                                     let config = new_shared_tui_settings(config);
                                     self.remount_config_color(&config, Some(index));
