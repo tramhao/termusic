@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
 use crate::invidious::{Instance, YoutubeVideo};
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
@@ -62,18 +64,54 @@ pub enum XYWHMsg {
     ZoomOut,
 }
 
+pub type DLMsgURL = Arc<str>;
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum DLMsg {
-    DownloadRunning(String, String), // indicates progress
-    DownloadSuccess(String),
-    DownloadCompleted(String, Option<String>),
-    DownloadErrDownload(String, String, String),
-    DownloadErrEmbedData(String, String),
+    /// Indicates a Start of a download.
+    ///
+    /// `(Url, Title)`
+    DownloadRunning(DLMsgURL, String),
+    /// Indicates the Download was a Success, though termusic post-processing is not done yet.
+    ///
+    /// `(Url)`
+    DownloadSuccess(DLMsgURL),
+    /// Indicates the Download thread finished in both Success or Error.
+    ///
+    /// `(Url, Filename)`
+    DownloadCompleted(DLMsgURL, Option<String>),
+    /// Indicates that the Download has Errored and has been aborted.
+    ///
+    /// `(Url, Title, ErrorAsString)`
+    DownloadErrDownload(DLMsgURL, String, String),
+    /// Indicates that the Download was a Success, but termusic post-processing failed.
+    /// Like re-saving tags after editing.
+    ///
+    /// `(Url, Title)`
+    DownloadErrEmbedData(DLMsgURL, String),
+
+    // TODO: The Following 2 things have absolutely nothing to-do with Download
+    /// Show a status message in the TUI.
+    ///
+    /// `((Title, Text))`
     MessageShow((String, String)),
+    /// Hide a status message in the TUI.
+    ///
+    /// `((Title, Text))`
     MessageHide((String, String)),
+
+    /// The youtube search was a success, with all values.
     YoutubeSearchSuccess(YoutubeOptions),
+    /// Indicates that the youtube search has failed, with error message.
+    ///
+    /// `(ErrorAsString)`
     YoutubeSearchFail(String),
+
+    // TODO: The Following 2 things have absolutely nothing to-do with Download
+    /// Fetching & loading the image was a success, with the image.
     FetchPhotoSuccess(ImageWrapper),
+    /// Fetching & loading the image has failed, with error message.
+    /// `(ErrorAsString)`
     FetchPhotoErr(String),
 }
 

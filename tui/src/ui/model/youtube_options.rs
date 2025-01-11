@@ -28,6 +28,7 @@ use id3::Version::Id3v24;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use termusiclib::invidious::Instance;
@@ -191,7 +192,9 @@ impl Model {
 
         let ytd = YoutubeDL::new(&path, args, url)?;
         let tx = self.tx_to_main.clone();
-        let url = url.to_string();
+
+        // avoid full string clones when sending via a channel
+        let url: Arc<str> = Arc::from(url);
 
         thread::spawn(move || -> Result<()> {
             tx.send(Msg::Download(DLMsg::DownloadRunning(
@@ -213,7 +216,7 @@ impl Model {
                         extract_filepath(result.output(), &path.to_string_lossy())
                     {
                         tx.send(Msg::Download(DLMsg::DownloadCompleted(
-                            url.to_string(),
+                            url.clone(),
                             Some(file_fullname.clone()),
                         )))
                         .ok();
