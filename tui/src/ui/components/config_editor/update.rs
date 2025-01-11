@@ -354,7 +354,7 @@ impl Model {
                                     // This is for preview the theme colors
                                     config.settings.theme = self.config_editor.theme.clone();
                                     let config = new_shared_tui_settings(config);
-                                    self.remount_config_color(&config);
+                                    self.remount_config_color(&config, Some(index));
                                 }
                                 Err(e) => {
                                     error!("Failed to load theme colors: {:?}", e);
