@@ -1890,7 +1890,7 @@ impl Model {
             )
             .is_ok());
         let config = self.config_tui.clone();
-        self.remount_config_color(&config);
+        self.remount_config_color(&config, None);
 
         // Active Config Editor
         assert!(self
@@ -1901,14 +1901,18 @@ impl Model {
         if let Err(e) = self.theme_select_load_themes() {
             self.mount_error_popup(e.context("load themes"));
         }
-        self.theme_select_sync();
+        self.theme_select_sync(None);
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn remount_config_color(&mut self, config: &SharedTuiSettings) {
+    pub fn remount_config_color(
+        &mut self,
+        config: &SharedTuiSettings,
+        previous_index: Option<usize>,
+    ) {
         // Mount color page
         assert!(self
             .app
@@ -2708,7 +2712,7 @@ impl Model {
                 vec![],
             )
             .is_ok());
-        self.theme_select_sync();
+        self.theme_select_sync(previous_index);
     }
 
     #[allow(clippy::too_many_lines)]
@@ -3545,7 +3549,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn theme_select_sync(&mut self) {
+    pub fn theme_select_sync(&mut self, previous_index: Option<usize>) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.config_editor.themes.iter().enumerate() {
@@ -3571,13 +3575,19 @@ impl Model {
             )
             .ok();
         // select theme currently used
-        let mut index = 0;
-        for (idx, name) in self.config_editor.themes.iter().enumerate() {
-            if name == &self.config_editor.theme.theme.name {
-                index = idx;
-                break;
+        let index = if let Some(index) = previous_index {
+            index
+        } else {
+            let mut index = 0;
+            for (idx, name) in self.config_editor.themes.iter().enumerate() {
+                if name == &self.config_editor.theme.theme.name {
+                    index = idx;
+                    break;
+                }
             }
-        }
+
+            index
+        };
         assert!(self
             .app
             .attr(
