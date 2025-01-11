@@ -336,7 +336,7 @@ impl Model {
     }
 
     pub fn init_config(&mut self) {
-        if let Err(e) = Self::theme_select_save() {
+        if let Err(e) = Self::theme_extract_all() {
             self.mount_error_popup(e.context("theme save"));
         }
         self.mount_label_help();

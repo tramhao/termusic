@@ -3499,7 +3499,8 @@ impl Model {
         Ok(())
     }
 
-    pub fn theme_select_save() -> Result<()> {
+    /// Extract all Themes to actual locations that can be loaded
+    pub fn theme_extract_all() -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("themes");
         if !path.exists() {
