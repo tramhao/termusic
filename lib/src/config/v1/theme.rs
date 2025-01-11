@@ -343,6 +343,16 @@ impl From<AlacrittyColor> for Color {
     }
 }
 
+#[inline]
+fn default_name() -> String {
+    "default".to_string()
+}
+
+#[inline]
+fn default_author() -> String {
+    "Larry Hao".to_string()
+}
+
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct Alacritty {
     pub path: String,
@@ -374,8 +384,8 @@ impl Default for Alacritty {
     fn default() -> Self {
         Self {
             path: String::new(),
-            name: "default".to_string(),
-            author: "Larry Hao".to_string(),
+            name: default_name(),
+            author: default_author(),
             background: AlacrittyColor::from_hex("#101421").unwrap(),
             foreground: AlacrittyColor::from_hex("#fffbf6").unwrap(),
             cursor: AlacrittyColor::from_hex("#ffffff").unwrap(),
@@ -408,8 +418,8 @@ impl Alacritty {
         let colors = value.colors;
         Ok(Alacritty {
             path,
-            name: colors.name,
-            author: colors.author,
+            name: colors.name.unwrap_or_else(default_name),
+            author: colors.author.unwrap_or_else(default_name),
             background: colors.primary.background.try_into()?,
             foreground: colors.primary.foreground.try_into()?,
             cursor: colors.cursor.cursor.try_into()?,
