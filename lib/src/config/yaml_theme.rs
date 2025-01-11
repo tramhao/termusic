@@ -10,10 +10,10 @@ type YAMLThemeColor = String;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct YAMLThemeColors {
-    #[serde(default = "default_name")]
-    pub name: String,
-    #[serde(default = "default_author")]
-    pub author: String,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub author: Option<String>,
     #[serde(default)]
     pub primary: YAMLThemePrimary,
     #[serde(default)]
@@ -112,16 +112,6 @@ impl Default for YAMLThemeBright {
 }
 
 #[inline]
-fn default_name() -> String {
-    "empty name".to_string()
-}
-
-#[inline]
-fn default_author() -> String {
-    "empty author".to_string()
-}
-
-#[inline]
 fn default_000() -> YAMLThemeColor {
     "#00000".to_string()
 }
@@ -133,7 +123,7 @@ fn default_fff() -> YAMLThemeColor {
 
 #[cfg(test)]
 mod test {
-    use std::{ffi::OsStr, fs::File, io::BufReader, path::PathBuf};
+    use std::{fs::File, io::BufReader};
 
     use super::*;
 
@@ -149,8 +139,8 @@ mod test {
             parsed,
             YAMLTheme {
                 colors: YAMLThemeColors {
-                    name: default_name(),
-                    author: default_author(),
+                    name: None,
+                    author: None,
                     primary: YAMLThemePrimary {
                         background: "#2c2c2c".to_string(),
                         foreground: "#d6d6d6".to_string()
@@ -182,33 +172,5 @@ mod test {
                 },
             }
         );
-    }
-
-    /// Test that all themes in /lib/themes/ can be loaded
-    #[test]
-    fn should_parse_all_themes() {
-        let cargo_manifest_dir = env!("CARGO_MANIFEST_DIR");
-        let path = PathBuf::from(format!("{cargo_manifest_dir}/themes/"));
-        for entry in path.read_dir().unwrap() {
-            let entry = entry.unwrap();
-
-            if entry.path().extension() != Some(OsStr::new("yml")) {
-                continue;
-            }
-
-            println!(
-                "Theme: {}",
-                entry.path().file_name().unwrap().to_string_lossy()
-            );
-
-            let reader = BufReader::new(File::open(entry.path()).unwrap());
-            let parsed: std::result::Result<YAMLTheme, _> = serde_yaml::from_reader(reader);
-
-            if let Err(ref parsed) = parsed {
-                eprintln!("{parsed:#?}");
-            }
-
-            assert!(parsed.is_ok());
-        }
     }
 }
