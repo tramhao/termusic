@@ -36,7 +36,7 @@ use track_db::TrackDBInsertable;
 mod migration;
 mod track_db;
 
-pub use track_db::{const_unknown, TrackDB};
+pub use track_db::{const_unknown, Indexable, TrackDB};
 
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
