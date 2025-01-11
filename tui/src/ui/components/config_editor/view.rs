@@ -3531,7 +3531,9 @@ impl Model {
     pub fn theme_select_load_themes(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("themes");
+
         if let Ok(paths) = std::fs::read_dir(path) {
+            self.config_editor.themes.clear();
             let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
             paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));

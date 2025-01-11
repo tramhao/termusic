@@ -119,7 +119,7 @@ pub struct PodcastWidgetData {
 /// All data specific to the Config Editor Widget / View
 #[derive(Debug)]
 pub struct ConfigEditorData {
-    /// All possible themes that could be selected
+    /// All possible file-themes that could be selected
     pub themes: Vec<String>,
     /// The Theme to edit to preview before saving
     pub theme: ThemeWrap,
