@@ -662,7 +662,7 @@ impl Model {
 
         if indexable_songs.is_empty() {
             table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty tracks from db"));
+            table.add_col(TextSpan::from("empty tracks from db/playlist"));
             table.add_col(TextSpan::from(""));
         }
         let table = table.build();
