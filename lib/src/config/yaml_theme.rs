@@ -135,6 +135,8 @@ fn default_fff() -> YAMLThemeColor {
 mod test {
     use std::{ffi::OsStr, fs::File, io::BufReader, path::PathBuf};
 
+    use crate::config::v2::tui::theme::ThemeColors;
+
     use super::*;
 
     /// First test one theme for better debugging
@@ -204,11 +206,11 @@ mod test {
             let reader = BufReader::new(File::open(entry.path()).unwrap());
             let parsed: std::result::Result<YAMLTheme, _> = serde_yaml::from_reader(reader);
 
-            if let Err(ref parsed) = parsed {
-                eprintln!("{parsed:#?}");
-            }
+            let parsed = parsed.unwrap();
 
-            assert!(parsed.is_ok());
+            let actual_theme = ThemeColors::try_from(parsed);
+
+            let _actual_theme = actual_theme.unwrap();
         }
     }
 }
