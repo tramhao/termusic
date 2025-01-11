@@ -20,6 +20,9 @@ pub mod styles;
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeWrap {
     pub style: styles::Styles,
+    // On full-on default, also set the names to "Termusic Default"
+    // this function is only used if this property does not exist at all
+    #[serde(default = "ThemeColors::full_default")]
     pub theme: ThemeColors,
 }
 
@@ -296,6 +299,19 @@ impl Default for ThemeColors {
             normal: ThemeNormal::default(),
             bright: ThemeBright::default(),
         }
+    }
+}
+
+impl ThemeColors {
+    /// Get the full default theme, including names.
+    ///
+    /// This function is different from [Self::default] as the trait impl is also used for filling empty places
+    pub fn full_default() -> Self {
+        let mut theme = Self::default();
+        theme.name = "Termusic Default".to_string();
+        theme.author = "Termusic Developers".to_string();
+
+        theme
     }
 }
 

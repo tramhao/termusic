@@ -3558,18 +3558,17 @@ impl Model {
     pub fn theme_select_sync(&mut self, previous_index: Option<usize>) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.config_editor.themes.iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
+        table
+            .add_col(TextSpan::new(0.to_string()))
+            .add_col(TextSpan::new("Termusic Default"));
 
+        for (idx, record) in self.config_editor.themes.iter().enumerate() {
+            table.add_row();
+
+            // idx + 1 as 0 entry is termusic default
             table
-                .add_col(TextSpan::new(idx.to_string()))
+                .add_col(TextSpan::new((idx + 1).to_string()))
                 .add_col(TextSpan::new(record));
-        }
-        if self.config_editor.themes.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty theme list"));
         }
 
         let table = table.build();
@@ -3585,17 +3584,18 @@ impl Model {
         let index = if let Some(index) = previous_index {
             index
         } else {
-            let mut index = 0;
+            let mut index = None;
             if let Some(current_file_name) = self.config_editor.theme.theme.file_name.as_ref() {
                 for (idx, name) in self.config_editor.themes.iter().enumerate() {
                     if name == current_file_name {
-                        index = idx;
+                        // idx + 1 as 0 entry is termusic default
+                        index = Some(idx + 1);
                         break;
                     }
                 }
             }
 
-            index
+            index.unwrap_or(0)
         };
         assert!(self
             .app

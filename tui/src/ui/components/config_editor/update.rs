@@ -339,33 +339,7 @@ impl Model {
             }
 
             ConfigEditorMsg::ThemeSelectLoad(index) => {
-                if let Some(theme_filename) = self.config_editor.themes.get(index) {
-                    match get_app_config_path() {
-                        Ok(mut theme_path) => {
-                            theme_path.push("themes");
-                            theme_path.push(format!("{theme_filename}.yml"));
-                            match ThemeColors::from_yaml_file(&theme_path) {
-                                Ok(mut theme) => {
-                                    theme.file_name = Some(theme_filename.to_string());
-                                    self.config_editor.theme.theme = theme;
-                                    self.config_editor.config_changed = true;
-
-                                    // This is for preview the theme colors
-                                    let mut config = self.config_tui.read().clone();
-                                    config.settings.theme = self.config_editor.theme.clone();
-                                    let config = new_shared_tui_settings(config);
-                                    self.remount_config_color(&config, Some(index));
-                                }
-                                Err(e) => {
-                                    error!("Failed to load theme colors: {:?}", e);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            error!("Error getting config path: {:?}", e);
-                        }
-                    }
-                }
+                self.preview_theme(index);
             }
             ConfigEditorMsg::ColorChanged(id, color_config) => {
                 self.config_editor.config_changed = true;
@@ -395,6 +369,51 @@ impl Model {
             ConfigEditorMsg::KeyFocus(msg) => self.update_key_focus(msg),
         }
         None
+    }
+
+    /// Preview theme at Table index
+    fn preview_theme(&mut self, index: usize) {
+        // table entry 0 is termusic default
+        if index == 0 {
+            self.preview_theme_apply(ThemeColors::full_default(), 0);
+
+            return;
+        }
+
+        // idx - 1 as 0 table-entry is termusic default, which always exists
+        if let Some(theme_filename) = self.config_editor.themes.get(index - 1) {
+            match get_app_config_path() {
+                Ok(mut theme_path) => {
+                    theme_path.push("themes");
+                    theme_path.push(format!("{theme_filename}.yml"));
+                    match ThemeColors::from_yaml_file(&theme_path) {
+                        Ok(mut theme) => {
+                            theme.file_name = Some(theme_filename.to_string());
+
+                            self.preview_theme_apply(theme, index);
+                        }
+                        Err(e) => {
+                            error!("Failed to load theme colors: {:?}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!("Error getting config path: {:?}", e);
+                }
+            }
+        }
+    }
+
+    /// Apply the given theme as a preview
+    fn preview_theme_apply(&mut self, theme: ThemeColors, index: usize) {
+        self.config_editor.theme.theme = theme;
+        self.config_editor.config_changed = true;
+
+        // This is for preview the theme colors
+        let mut config = self.config_tui.read().clone();
+        config.settings.theme = self.config_editor.theme.clone();
+        let config = new_shared_tui_settings(config);
+        self.remount_config_color(&config, Some(index));
     }
 
     #[allow(clippy::too_many_lines)]
