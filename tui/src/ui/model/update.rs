@@ -670,6 +670,15 @@ impl Model {
                     self.mount_error_popup(e.context("youtube-dl options download"));
                 }
             }
+            YSMsg::YoutubeSearchSuccess(y) => {
+                self.youtube_options = y.clone();
+                self.sync_youtube_options();
+                self.redraw = true;
+            }
+            YSMsg::YoutubeSearchFail(e) => {
+                self.redraw = true;
+                self.mount_error_popup(anyhow!("Youtube search fail: {e}"));
+            }
         }
     }
 
@@ -1005,14 +1014,6 @@ impl Model {
             }
             DLMsg::MessageHide((title, text)) => {
                 self.umount_message(title, text);
-            }
-            DLMsg::YoutubeSearchSuccess(y) => {
-                self.youtube_options = y.clone();
-                self.sync_youtube_options();
-                self.redraw = true;
-            }
-            DLMsg::YoutubeSearchFail(e) => {
-                self.mount_error_popup(anyhow!("Youtube search fail: {e}"));
             }
             DLMsg::FetchPhotoSuccess(image_wrapper) => {
                 self.show_image(&image_wrapper.data).ok();

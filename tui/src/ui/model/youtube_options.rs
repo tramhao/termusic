@@ -33,8 +33,8 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 use termusiclib::invidious::Instance;
 use termusiclib::track::Track;
-use termusiclib::types::YoutubeOptions;
 use termusiclib::types::{DLMsg, Id, Msg};
+use termusiclib::types::{YSMsg, YoutubeOptions};
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
@@ -72,11 +72,13 @@ impl Model {
                         page: 1,
                         invidious_instance: instance,
                     };
-                    tx.send(Msg::Download(DLMsg::YoutubeSearchSuccess(youtube_options)))
-                        .ok();
+                    tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchSuccess(
+                        youtube_options,
+                    )))
+                    .ok();
                 }
                 Err(e) => {
-                    tx.send(Msg::Download(DLMsg::YoutubeSearchFail(e.to_string())))
+                    tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchFail(e.to_string())))
                         .ok();
                 }
             }
