@@ -108,18 +108,12 @@ impl YNConfirm {
             }) => self.perform(Cmd::Submit),
             _ => return None,
         };
-        if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(0)))
-        ) {
-            Some(on_n)
-        } else if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(1)))
-        ) {
-            Some(on_y)
-        } else {
-            Some(Msg::None)
+
+        match cmd_result {
+            CmdResult::Submit(State::One(StateValue::Usize(0))) => Some(on_n),
+            CmdResult::Submit(State::One(StateValue::Usize(1))) => Some(on_y),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
     }
 }
