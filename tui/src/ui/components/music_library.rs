@@ -229,7 +229,8 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
                 Some(Msg::Library(LIMsg::TreeStepInto(node)))
             }
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
     }
 }

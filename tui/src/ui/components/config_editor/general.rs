@@ -116,23 +116,23 @@ fn handle_input_ev(
             code: Key::Left, ..
         }) => {
             component.perform(Cmd::Move(Direction::Left));
-            Some(Msg::None)
+            Some(Msg::ForceRedraw)
         }
         Event::Keyboard(KeyEvent {
             code: Key::Right, ..
         }) => {
             component.perform(Cmd::Move(Direction::Right));
-            Some(Msg::None)
+            Some(Msg::ForceRedraw)
         }
         Event::Keyboard(KeyEvent {
             code: Key::Home, ..
         }) => {
             component.perform(Cmd::GoTo(Position::Begin));
-            Some(Msg::None)
+            Some(Msg::ForceRedraw)
         }
         Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
             component.perform(Cmd::GoTo(Position::End));
-            Some(Msg::None)
+            Some(Msg::ForceRedraw)
         }
         Event::Keyboard(KeyEvent {
             code: Key::Delete, ..

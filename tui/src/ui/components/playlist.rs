@@ -72,7 +72,7 @@ impl Component<Msg, NoUserEvent> for Playlist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
                 modifiers: KeyModifiers::NONE,
@@ -122,7 +122,7 @@ impl Component<Msg, NoUserEvent> for Playlist {
                     State::One(StateValue::Usize(index_selected)) => {
                         return Some(Msg::Playlist(PLMsg::Delete(index_selected)))
                     }
-                    _ => return Some(Msg::None),
+                    _ => CmdResult::None,
                 }
             }
             Event::Keyboard(key) if key == keys.playlist_keys.delete_all.get() => {
@@ -159,7 +159,7 @@ impl Component<Msg, NoUserEvent> for Playlist {
                         self.perform(Cmd::Move(Direction::Down));
                         return Some(Msg::Playlist(PLMsg::SwapDown(index_selected)));
                     }
-                    _ => return Some(Msg::None),
+                    _ => CmdResult::None,
                 }
             }
             Event::Keyboard(key) if key == keys.playlist_keys.swap_up.get() => {
@@ -168,7 +168,7 @@ impl Component<Msg, NoUserEvent> for Playlist {
                         self.perform(Cmd::Move(Direction::Up));
                         return Some(Msg::Playlist(PLMsg::SwapUp(index_selected)));
                     }
-                    _ => return Some(Msg::None),
+                    _ => CmdResult::None,
                 }
             }
             Event::Keyboard(key) if key == keys.playlist_keys.add_random_album.get() => {
@@ -179,7 +179,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
             }
             _ => CmdResult::None,
         };
-        Some(Msg::None)
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
 

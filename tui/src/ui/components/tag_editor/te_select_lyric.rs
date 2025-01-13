@@ -120,7 +120,8 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
             CmdResult::Submit(State::One(StateValue::Usize(index))) => {
                 Some(Msg::TagEditor(TEMsg::TESelectLyricOk(index)))
             }
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
     }
 }

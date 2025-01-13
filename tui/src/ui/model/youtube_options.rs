@@ -28,12 +28,13 @@ use id3::Version::Id3v24;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use termusiclib::invidious::Instance;
 use termusiclib::track::Track;
-use termusiclib::types::YoutubeOptions;
 use termusiclib::types::{DLMsg, Id, Msg};
+use termusiclib::types::{YSMsg, YoutubeOptions};
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
@@ -60,22 +61,23 @@ impl Model {
     }
 
     /// This function requires to be run in a tokio Runtime context
-    pub fn youtube_options_search(&mut self, keyword: &str) {
-        let search_word = keyword.to_string();
+    pub fn youtube_options_search(&mut self, keyword: String) {
         let tx = self.tx_to_main.clone();
         tokio::spawn(async move {
-            match Instance::new(&search_word).await {
+            match Instance::new(&keyword).await {
                 Ok((instance, result)) => {
                     let youtube_options = YoutubeOptions {
                         items: result,
                         page: 1,
                         invidious_instance: instance,
                     };
-                    tx.send(Msg::Download(DLMsg::YoutubeSearchSuccess(youtube_options)))
-                        .ok();
+                    tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchSuccess(
+                        youtube_options,
+                    )))
+                    .ok();
                 }
                 Err(e) => {
-                    tx.send(Msg::Download(DLMsg::YoutubeSearchFail(e.to_string())))
+                    tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchFail(e.to_string())))
                         .ok();
                 }
             }
@@ -191,7 +193,9 @@ impl Model {
 
         let ytd = YoutubeDL::new(&path, args, url)?;
         let tx = self.tx_to_main.clone();
-        let url = url.to_string();
+
+        // avoid full string clones when sending via a channel
+        let url: Arc<str> = Arc::from(url);
 
         thread::spawn(move || -> Result<()> {
             tx.send(Msg::Download(DLMsg::DownloadRunning(
@@ -213,7 +217,7 @@ impl Model {
                         extract_filepath(result.output(), &path.to_string_lossy())
                     {
                         tx.send(Msg::Download(DLMsg::DownloadCompleted(
-                            url.to_string(),
+                            url.clone(),
                             Some(file_fullname.clone()),
                         )))
                         .ok();

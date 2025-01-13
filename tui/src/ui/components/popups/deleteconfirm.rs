@@ -105,14 +105,9 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmInputPopup {
                 }
                 Some(Msg::DeleteConfirmCloseCancel)
             }
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
-
-        // if cmd_result == CmdResult::Submit(State::One(StateValue::String("DELETE".to_string()))) {
-        //     Some(Msg::DeleteConfirmCloseOk)
-        // } else {
-        //     Some(Msg::DeleteConfirmCloseCancel)
-        // }
     }
 }
 

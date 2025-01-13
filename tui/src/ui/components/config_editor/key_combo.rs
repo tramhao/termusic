@@ -1327,7 +1327,6 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
-            // input
 
             // Local Hotkeys
             Event::Keyboard(KeyEvent {
@@ -1350,39 +1349,39 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                 ..
             }) => self.perform(Cmd::Delete),
 
+            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
+            }
+
+            // actual key to change the binding to
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 ..
             }) => {
-                self.perform(Cmd::Type(ch));
-                match self.state() {
-                    State::One(_) => {
-                        if let Ok(binding) = self.key_event() {
-                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                self.id, binding,
-                            )));
-                        }
-                        CmdResult::None
+                let cmd_res = self.perform(Cmd::Type(ch));
+                if let State::One(_) = self.state() {
+                    if let Ok(binding) = self.key_event() {
+                        return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                            self.id, binding,
+                        )));
                     }
-                    _ => CmdResult::None,
                 }
+                cmd_res
             }
-            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
-            }
+
             _ => CmdResult::None,
         };
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
-                // Some(Msg::None)
                 if let Ok(binding) = self.key_event() {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
                         self.id, binding,
                     )));
                 }
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
     }
 }

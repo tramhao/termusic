@@ -108,7 +108,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::YoutubeSearch(m) => {
-                    self.update_youtube_search(&m);
+                    self.update_youtube_search(m);
                     None
                 }
                 Msg::LyricCycle => {
@@ -133,7 +133,6 @@ impl Update<Msg> for Model {
                     self.update_layout(&msg)
                 }
 
-                Msg::None => None,
                 Msg::SavePlaylistPopupShow => {
                     if let Err(e) = self.mount_save_playlist() {
                         self.mount_error_popup(e.context("mount save playlist"));
@@ -172,6 +171,8 @@ impl Update<Msg> for Model {
                 Msg::LyricMessage(m) => self.update_lyric_textarea(m),
                 Msg::Download(m) => self.update_download_msg(&m),
                 Msg::Xywh(m) => self.update_xywh_msg(m),
+
+                Msg::ForceRedraw => None,
             }
         } else {
             None
@@ -197,7 +198,7 @@ impl Model {
             XYWHMsg::MoveDown => self.xywh_move_down(),
             XYWHMsg::ZoomIn => self.xywh_zoom_in(),
             XYWHMsg::ZoomOut => self.xywh_zoom_out(),
-            XYWHMsg::Hide => {
+            XYWHMsg::ToggleHidden => {
                 self.xywh_toggle_hide();
             }
         };
@@ -629,7 +630,7 @@ impl Model {
         }
     }
 
-    fn update_youtube_search(&mut self, msg: &YSMsg) {
+    fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
             YSMsg::InputPopupShow => {
                 self.mount_youtube_search_input();
@@ -644,7 +645,7 @@ impl Model {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
                 if url.starts_with("http") {
-                    match self.youtube_dl(url) {
+                    match self.youtube_dl(&url) {
                         Ok(()) => {}
                         Err(e) => {
                             self.mount_error_popup(e.context("youtube-dl download"));
@@ -665,10 +666,19 @@ impl Model {
                 self.youtube_options_prev_page();
             }
             YSMsg::TablePopupCloseOk(index) => {
-                if let Err(e) = self.youtube_options_download(*index) {
+                if let Err(e) = self.youtube_options_download(index) {
                     self.library_reload_with_node_focus(None);
                     self.mount_error_popup(e.context("youtube-dl options download"));
                 }
+            }
+            YSMsg::YoutubeSearchSuccess(youtube_options) => {
+                self.youtube_options = youtube_options;
+                self.sync_youtube_options();
+                self.redraw = true;
+            }
+            YSMsg::YoutubeSearchFail(e) => {
+                self.redraw = true;
+                self.mount_error_popup(anyhow!("Youtube search fail: {e}"));
             }
         }
     }
@@ -1005,14 +1015,6 @@ impl Model {
             }
             DLMsg::MessageHide((title, text)) => {
                 self.umount_message(title, text);
-            }
-            DLMsg::YoutubeSearchSuccess(y) => {
-                self.youtube_options = y.clone();
-                self.sync_youtube_options();
-                self.redraw = true;
-            }
-            DLMsg::YoutubeSearchFail(e) => {
-                self.mount_error_popup(anyhow!("Youtube search fail: {e}"));
             }
             DLMsg::FetchPhotoSuccess(image_wrapper) => {
                 self.show_image(&image_wrapper.data).ok();
