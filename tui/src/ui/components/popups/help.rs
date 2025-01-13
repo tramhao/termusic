@@ -283,7 +283,7 @@ impl Component<Msg, NoUserEvent> for HelpPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
@@ -309,7 +309,10 @@ impl Component<Msg, NoUserEvent> for HelpPopup {
             _ => CmdResult::None,
         };
 
-        Some(Msg::None)
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
 
