@@ -100,13 +100,6 @@ pub enum DLMsg {
     /// `((Title, Text))`
     MessageHide((String, String)),
 
-    /// The youtube search was a success, with all values.
-    YoutubeSearchSuccess(YoutubeOptions),
-    /// Indicates that the youtube search has failed, with error message.
-    ///
-    /// `(ErrorAsString)`
-    YoutubeSearchFail(String),
-
     // TODO: The Following 2 things have absolutely nothing to-do with Download
     /// Fetching & loading the image was a success, with the image.
     FetchPhotoSuccess(ImageWrapper),
@@ -492,6 +485,13 @@ pub enum YSMsg {
     TablePopupPrevious,
     TablePopupCloseCancel,
     TablePopupCloseOk(usize),
+
+    /// The youtube search was a success, with all values.
+    YoutubeSearchSuccess(YoutubeOptions),
+    /// Indicates that the youtube search has failed, with error message.
+    ///
+    /// `(ErrorAsString)`
+    YoutubeSearchFail(String),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TEMsg {
