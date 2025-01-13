@@ -93,7 +93,8 @@ impl Component<Msg, NoUserEvent> for YSInputPopup {
                 Some(Msg::YoutubeSearch(YSMsg::InputPopupCloseOk(input_string)))
             }
 
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
     }
 }
@@ -147,7 +148,7 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
             }
@@ -199,7 +200,10 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             }
             _ => CmdResult::None,
         };
-        Some(Msg::None)
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
 
