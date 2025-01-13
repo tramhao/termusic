@@ -86,36 +86,36 @@ impl EditField {
                 code: Key::Left, ..
             }) => {
                 self.perform(Cmd::Move(Direction::Left));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Right, ..
             }) => {
                 self.perform(Cmd::Move(Direction::Right));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Home, ..
             }) => {
                 self.perform(Cmd::GoTo(Position::Begin));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Delete, ..
             }) => {
                 self.perform(Cmd::Cancel);
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 ..
             }) => {
                 self.perform(Cmd::Delete);
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
 
             Event::Keyboard(KeyEvent {
@@ -123,7 +123,7 @@ impl EditField {
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => {
                 self.perform(Cmd::Type(ch));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
 
             Event::Keyboard(KeyEvent {
