@@ -172,7 +172,7 @@ impl Update<Msg> for Model {
                 Msg::Download(m) => self.update_download_msg(&m),
                 Msg::Xywh(m) => self.update_xywh_msg(m),
 
-                Msg::None | Msg::ForceRedraw => None,
+                Msg::ForceRedraw => None,
             }
         } else {
             None
