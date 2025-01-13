@@ -62,7 +62,7 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 return Some(Msg::TagEditor(TEMsg::TERename))
             }
@@ -115,6 +115,9 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
             }
             _ => CmdResult::None,
         };
-        Some(Msg::None)
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
