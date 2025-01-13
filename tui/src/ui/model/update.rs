@@ -108,7 +108,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::YoutubeSearch(m) => {
-                    self.update_youtube_search(&m);
+                    self.update_youtube_search(m);
                     None
                 }
                 Msg::LyricCycle => {
@@ -629,7 +629,7 @@ impl Model {
         }
     }
 
-    fn update_youtube_search(&mut self, msg: &YSMsg) {
+    fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
             YSMsg::InputPopupShow => {
                 self.mount_youtube_search_input();
@@ -644,7 +644,7 @@ impl Model {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
                 if url.starts_with("http") {
-                    match self.youtube_dl(url) {
+                    match self.youtube_dl(&url) {
                         Ok(()) => {}
                         Err(e) => {
                             self.mount_error_popup(e.context("youtube-dl download"));
@@ -665,13 +665,13 @@ impl Model {
                 self.youtube_options_prev_page();
             }
             YSMsg::TablePopupCloseOk(index) => {
-                if let Err(e) = self.youtube_options_download(*index) {
+                if let Err(e) = self.youtube_options_download(index) {
                     self.library_reload_with_node_focus(None);
                     self.mount_error_popup(e.context("youtube-dl options download"));
                 }
             }
-            YSMsg::YoutubeSearchSuccess(y) => {
-                self.youtube_options = y.clone();
+            YSMsg::YoutubeSearchSuccess(youtube_options) => {
+                self.youtube_options = youtube_options;
                 self.sync_youtube_options();
                 self.redraw = true;
             }
