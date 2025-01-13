@@ -197,7 +197,7 @@ impl Model {
             XYWHMsg::MoveDown => self.xywh_move_down(),
             XYWHMsg::ZoomIn => self.xywh_zoom_in(),
             XYWHMsg::ZoomOut => self.xywh_zoom_out(),
-            XYWHMsg::Hide => {
+            XYWHMsg::ToggleHidden => {
                 self.xywh_toggle_hide();
             }
         };

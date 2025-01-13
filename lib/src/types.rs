@@ -55,7 +55,8 @@ pub enum Msg {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum XYWHMsg {
-    Hide,
+    /// Toggle the hidden / shown status of the displayed image.
+    ToggleHidden,
     MoveLeft,
     MoveRight,
     MoveUp,
