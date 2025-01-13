@@ -41,7 +41,7 @@ impl PodcastAddPopup {
 
 impl Component<Msg, NoUserEvent> for PodcastAddPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => self.perform(Cmd::Move(Direction::Left)),
@@ -74,16 +74,14 @@ impl Component<Msg, NoUserEvent> for PodcastAddPopup {
                 State::One(StateValue::String(input_string)) => {
                     return Some(Msg::Podcast(PCMsg::PodcastAddPopupCloseOk(input_string)));
                 }
-                _ => return Some(Msg::None),
+                _ => CmdResult::None,
             },
             _ => CmdResult::None,
         };
-        // match cmd_result {
-        //     CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-        //         Some(Msg::SavePlaylistPopupUpdate(input_string))
-        //     }
-        Some(Msg::None)
-        // }
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
 
@@ -186,14 +184,9 @@ impl Component<Msg, NoUserEvent> for FeedDeleteConfirmInputPopup {
                 }
                 Some(Msg::Podcast(PCMsg::FeedsDeleteCloseCancel))
             }
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
-
-        // if cmd_result == CmdResult::Submit(State::One(StateValue::String("DELETE".to_string()))) {
-        //     Some(Msg::DeleteConfirmCloseOk)
-        // } else {
-        //     Some(Msg::DeleteConfirmCloseCancel)
-        // }
     }
 }
 
@@ -243,7 +236,7 @@ impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
             }
@@ -295,7 +288,10 @@ impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
             }
             _ => CmdResult::None,
         };
-        Some(Msg::None)
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
 
