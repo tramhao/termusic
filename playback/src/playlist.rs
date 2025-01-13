@@ -263,7 +263,7 @@ impl Playlist {
     }
 
     pub fn swap_down(&mut self, index: usize) {
-        if index < self.len() - 1 {
+        if index < self.len().saturating_sub(1) {
             let track = self.tracks.remove(index);
             self.tracks.insert(index + 1, track);
             // handle index
