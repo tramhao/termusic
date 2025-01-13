@@ -133,7 +133,6 @@ impl Update<Msg> for Model {
                     self.update_layout(&msg)
                 }
 
-                Msg::None => None,
                 Msg::SavePlaylistPopupShow => {
                     if let Err(e) = self.mount_save_playlist() {
                         self.mount_error_popup(e.context("mount save playlist"));
@@ -172,6 +171,8 @@ impl Update<Msg> for Model {
                 Msg::LyricMessage(m) => self.update_lyric_textarea(m),
                 Msg::Download(m) => self.update_download_msg(&m),
                 Msg::Xywh(m) => self.update_xywh_msg(m),
+
+                Msg::None | Msg::ForceRedraw => None,
             }
         } else {
             None

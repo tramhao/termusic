@@ -50,7 +50,18 @@ pub enum Msg {
     UpdatePhoto,
     YoutubeSearch(YSMsg),
     Xywh(XYWHMsg),
+
+    /// Old value for [`Msg::ForceRedraw`] used inplace of [`Option::None`].
+    ///
+    /// This value should not be used anymore and either return [`Option::None`] or [`Msg::ForceRedraw`].
     None,
+
+    /// Force a redraw because of some change.
+    ///
+    /// This is necessary as `Components` do not have access to `Model.redraw`.
+    ///
+    /// For example pushing ARROW DOWN to change the selection in a table.
+    ForceRedraw,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
