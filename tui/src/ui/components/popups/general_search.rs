@@ -131,7 +131,8 @@ impl Component<Msg, NoUserEvent> for GSInputPopup {
             },
             CmdResult::Submit(_) => Some(Msg::GeneralSearch(GSMsg::InputBlur)),
 
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
     }
 }
@@ -311,7 +312,7 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
@@ -389,7 +390,10 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
             },
             _ => CmdResult::None,
         };
-        Some(Msg::None)
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
 
