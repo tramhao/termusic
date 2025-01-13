@@ -78,7 +78,7 @@ impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
                 State::One(StateValue::String(input_string)) => {
                     return Some(Msg::SavePlaylistPopupCloseOk(input_string))
                 }
-                _ => return Some(Msg::None),
+                _ => CmdResult::None,
             },
             _ => CmdResult::None,
         };
@@ -86,7 +86,8 @@ impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
             CmdResult::Submit(State::One(StateValue::String(input_string))) => {
                 Some(Msg::SavePlaylistPopupUpdate(input_string))
             }
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
     }
 }
