@@ -37,7 +37,7 @@ impl Progress {
 
 impl Component<Msg, NoUserEvent> for Progress {
     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
-        Some(Msg::None)
+        None
     }
 }
 
