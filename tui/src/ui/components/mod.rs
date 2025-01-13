@@ -186,7 +186,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 Some(Msg::Xywh(XYWHMsg::ZoomOut))
             }
             Event::Keyboard(keyevent) if keyevent == keys.move_cover_art_keys.toggle_hide.get() => {
-                Some(Msg::Xywh(XYWHMsg::Hide))
+                Some(Msg::Xywh(XYWHMsg::ToggleHidden))
             }
             _ => None,
         }
