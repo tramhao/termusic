@@ -64,7 +64,7 @@ impl Component<Msg, NoUserEvent> for Lyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _drop = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
                 modifiers: KeyModifiers::NONE,
@@ -113,7 +113,10 @@ impl Component<Msg, NoUserEvent> for Lyric {
             }
             _ => CmdResult::None,
         };
-        Some(Msg::None)
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
 
