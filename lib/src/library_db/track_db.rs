@@ -148,6 +148,10 @@ impl TrackDBInsertable<'_> {
 }
 
 pub trait Indexable {
+    /// Defined for types which could be indexed.
+    /// Was made to allow generalization of indexing/search functions.
+    ///
+    /// the required functions are generaly the metadata you would find in an mp3 file.
     fn meta_file(&self) -> Option<&str>;
     fn meta_title(&self) -> Option<&str>;
     fn meta_album(&self) -> Option<&str>;
