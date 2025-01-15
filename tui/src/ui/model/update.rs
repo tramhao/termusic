@@ -40,143 +40,139 @@ use tuirealm::Update;
 impl Update<Msg> for Model {
     #[allow(clippy::too_many_lines)]
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
-        // match msg.unwrap_or(Msg::None) {
-        if let Some(msg) = msg {
-            // Set redraw
-            self.redraw = true;
-            // Match message
-            match msg {
-                Msg::ConfigEditor(m) => self.update_config_editor(m),
-                Msg::DataBase(m) => self.update_database_list(&m),
+        let msg = msg?;
+        // Set redraw
+        self.redraw = true;
+        // Match message
+        match msg {
+            Msg::ConfigEditor(m) => self.update_config_editor(m),
+            Msg::DataBase(m) => self.update_database_list(&m),
 
-                Msg::DeleteConfirmShow
-                | Msg::DeleteConfirmCloseCancel
-                | Msg::DeleteConfirmCloseOk => self.update_delete_confirmation(&msg),
-
-                Msg::ErrorPopupClose => {
-                    if self.app.mounted(&Id::ErrorPopup) {
-                        self.umount_error_popup();
-                    }
-                    None
-                }
-                Msg::QuitPopupShow => {
-                    if self.config_tui.read().settings.behavior.confirm_quit {
-                        self.mount_quit_popup();
-                    } else {
-                        self.quit = true;
-                    }
-                    None
-                }
-                Msg::QuitPopupCloseCancel => {
-                    self.app.umount(&Id::QuitPopup).ok();
-                    None
-                }
-                Msg::QuitPopupCloseOk => {
-                    self.quit = true;
-                    None
-                }
-                Msg::Library(m) => {
-                    self.update_library(&m);
-                    None
-                }
-                Msg::GeneralSearch(m) => {
-                    self.update_general_search(&m);
-                    None
-                }
-                Msg::Playlist(m) => {
-                    self.update_playlist(&m);
-                    None
-                }
-
-                Msg::PlayerTogglePause
-                | Msg::PlayerToggleGapless
-                | Msg::PlayerSpeedUp
-                | Msg::PlayerSpeedDown
-                | Msg::PlayerVolumeUp
-                | Msg::PlayerVolumeDown
-                | Msg::PlayerSeekForward
-                | Msg::PlayerSeekBackward => self.update_player(&msg),
-
-                Msg::HelpPopupShow => {
-                    self.mount_help_popup();
-                    None
-                }
-                Msg::HelpPopupClose => {
-                    if self.app.mounted(&Id::HelpPopup) {
-                        self.app.umount(&Id::HelpPopup).ok();
-                    }
-                    self.update_photo().ok();
-                    None
-                }
-                Msg::YoutubeSearch(m) => {
-                    self.update_youtube_search(m);
-                    None
-                }
-                Msg::LyricCycle => {
-                    self.lyric_cycle();
-                    None
-                }
-                Msg::LyricAdjustDelay(offset) => {
-                    self.lyric_adjust_delay(offset);
-                    None
-                }
-                Msg::TagEditor(m) => {
-                    self.update_tageditor(&m);
-                    None
-                }
-                Msg::UpdatePhoto => {
-                    if let Err(e) = self.update_photo() {
-                        self.mount_error_popup(e.context("update_photo"));
-                    }
-                    None
-                }
-                Msg::LayoutDataBase | Msg::LayoutTreeView | Msg::LayoutPodCast => {
-                    self.update_layout(&msg)
-                }
-
-                Msg::SavePlaylistPopupShow => {
-                    if let Err(e) = self.mount_save_playlist() {
-                        self.mount_error_popup(e.context("mount save playlist"));
-                    }
-                    None
-                }
-                Msg::SavePlaylistPopupCloseCancel => {
-                    self.umount_save_playlist();
-                    None
-                }
-                Msg::SavePlaylistPopupCloseOk(filename) => {
-                    self.umount_save_playlist();
-                    if let Err(e) = self.playlist_save_m3u_before(&filename) {
-                        self.mount_error_popup(e.context("save m3u playlist before"));
-                    }
-                    None
-                }
-                Msg::SavePlaylistPopupUpdate(filename) => {
-                    if let Err(e) = self.remount_save_playlist_label(&filename) {
-                        self.mount_error_popup(e.context("remount save playlist label"));
-                    }
-                    None
-                }
-                Msg::SavePlaylistConfirmCloseCancel => {
-                    self.umount_save_playlist_confirm();
-                    None
-                }
-                Msg::SavePlaylistConfirmCloseOk(filename) => {
-                    if let Err(e) = self.playlist_save_m3u(Path::new(&filename)) {
-                        self.mount_error_popup(e.context("save m3u playlist"));
-                    }
-                    self.umount_save_playlist_confirm();
-                    None
-                }
-                Msg::Podcast(m) => self.update_podcast(&m),
-                Msg::LyricMessage(m) => self.update_lyric_textarea(m),
-                Msg::Download(m) => self.update_download_msg(&m),
-                Msg::Xywh(m) => self.update_xywh_msg(m),
-
-                Msg::ForceRedraw => None,
+            Msg::DeleteConfirmShow | Msg::DeleteConfirmCloseCancel | Msg::DeleteConfirmCloseOk => {
+                self.update_delete_confirmation(&msg)
             }
-        } else {
-            None
+
+            Msg::ErrorPopupClose => {
+                if self.app.mounted(&Id::ErrorPopup) {
+                    self.umount_error_popup();
+                }
+                None
+            }
+            Msg::QuitPopupShow => {
+                if self.config_tui.read().settings.behavior.confirm_quit {
+                    self.mount_quit_popup();
+                } else {
+                    self.quit = true;
+                }
+                None
+            }
+            Msg::QuitPopupCloseCancel => {
+                self.app.umount(&Id::QuitPopup).ok();
+                None
+            }
+            Msg::QuitPopupCloseOk => {
+                self.quit = true;
+                None
+            }
+            Msg::Library(m) => {
+                self.update_library(&m);
+                None
+            }
+            Msg::GeneralSearch(m) => {
+                self.update_general_search(&m);
+                None
+            }
+            Msg::Playlist(m) => {
+                self.update_playlist(&m);
+                None
+            }
+
+            Msg::PlayerTogglePause
+            | Msg::PlayerToggleGapless
+            | Msg::PlayerSpeedUp
+            | Msg::PlayerSpeedDown
+            | Msg::PlayerVolumeUp
+            | Msg::PlayerVolumeDown
+            | Msg::PlayerSeekForward
+            | Msg::PlayerSeekBackward => self.update_player(&msg),
+
+            Msg::HelpPopupShow => {
+                self.mount_help_popup();
+                None
+            }
+            Msg::HelpPopupClose => {
+                if self.app.mounted(&Id::HelpPopup) {
+                    self.app.umount(&Id::HelpPopup).ok();
+                }
+                self.update_photo().ok();
+                None
+            }
+            Msg::YoutubeSearch(m) => {
+                self.update_youtube_search(m);
+                None
+            }
+            Msg::LyricCycle => {
+                self.lyric_cycle();
+                None
+            }
+            Msg::LyricAdjustDelay(offset) => {
+                self.lyric_adjust_delay(offset);
+                None
+            }
+            Msg::TagEditor(m) => {
+                self.update_tageditor(&m);
+                None
+            }
+            Msg::UpdatePhoto => {
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(e.context("update_photo"));
+                }
+                None
+            }
+            Msg::LayoutDataBase | Msg::LayoutTreeView | Msg::LayoutPodCast => {
+                self.update_layout(&msg)
+            }
+
+            Msg::SavePlaylistPopupShow => {
+                if let Err(e) = self.mount_save_playlist() {
+                    self.mount_error_popup(e.context("mount save playlist"));
+                }
+                None
+            }
+            Msg::SavePlaylistPopupCloseCancel => {
+                self.umount_save_playlist();
+                None
+            }
+            Msg::SavePlaylistPopupCloseOk(filename) => {
+                self.umount_save_playlist();
+                if let Err(e) = self.playlist_save_m3u_before(&filename) {
+                    self.mount_error_popup(e.context("save m3u playlist before"));
+                }
+                None
+            }
+            Msg::SavePlaylistPopupUpdate(filename) => {
+                if let Err(e) = self.remount_save_playlist_label(&filename) {
+                    self.mount_error_popup(e.context("remount save playlist label"));
+                }
+                None
+            }
+            Msg::SavePlaylistConfirmCloseCancel => {
+                self.umount_save_playlist_confirm();
+                None
+            }
+            Msg::SavePlaylistConfirmCloseOk(filename) => {
+                if let Err(e) = self.playlist_save_m3u(Path::new(&filename)) {
+                    self.mount_error_popup(e.context("save m3u playlist"));
+                }
+                self.umount_save_playlist_confirm();
+                None
+            }
+            Msg::Podcast(m) => self.update_podcast(&m),
+            Msg::LyricMessage(m) => self.update_lyric_textarea(m),
+            Msg::Download(m) => self.update_download_msg(&m),
+            Msg::Xywh(m) => self.update_xywh_msg(m),
+
+            Msg::ForceRedraw => None,
         }
     }
 }
