@@ -12,6 +12,9 @@ use crate::ui::model::Model;
 
 use super::{YNConfirm, YNConfirmStyle};
 
+/// Component for a "Are you sure to delete? Y/N" popup
+///
+/// Also see [`DeleteConfirmInputPopup`].
 #[derive(MockComponent)]
 pub struct DeleteConfirmRadioPopup {
     component: YNConfirm,
@@ -40,6 +43,9 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmRadioPopup {
     }
 }
 
+/// Component for a "Are you sure to delete? Write DELETE" popup
+///
+/// Also see [`DeleteConfirmRadioPopup`]
 #[derive(MockComponent)]
 pub struct DeleteConfirmInputPopup {
     component: Input,
