@@ -1,15 +1,4 @@
-use crate::ui::{model::TermusicLayout, Model};
-use anyhow::anyhow;
-use std::path::Path;
-use std::thread::{self, sleep};
-use std::time::Duration;
-use termusiclib::library_db::SearchCriteria;
-use termusiclib::track::MediaType;
-use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
-};
-use termusicplayback::PlayerCmd;
-/**
+/*!
  * MIT License
  *
  * termusic - Copyright (C) 2021 Larry Hao
@@ -32,7 +21,19 @@ use termusicplayback::PlayerCmd;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// use termusicplayback::{PlayerMsg, PlayerTrait};
+
+use crate::ui::{model::TermusicLayout, Model};
+use anyhow::anyhow;
+use std::path::Path;
+use std::time::Duration;
+use termusiclib::library_db::SearchCriteria;
+use termusiclib::track::MediaType;
+use termusiclib::types::{
+    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
+};
+use termusicplayback::PlayerCmd;
+use tokio::runtime::Handle;
+use tokio::time::sleep;
 use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::Update;
 
@@ -912,23 +913,27 @@ impl Model {
         }
     }
 
+    /// Show a message with a `title` and `text`, and hide it again after `time_out` or 10 seconds.
+    ///
+    /// This function requires to run in a tokio context.
     pub fn update_show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
         let title_string = title.to_string();
         let text_string = text.to_string();
         let tx = self.tx_to_main.clone();
-        thread::spawn(move || {
-            tx.send(Msg::Download(DLMsg::MessageShow((
+        let delay = time_out.unwrap_or(10);
+
+        Handle::current().spawn(async move {
+            let _ = tx.send(Msg::Download(DLMsg::MessageShow((
                 title_string.clone(),
                 text_string.clone(),
-            ))))
-            .expect("send first message error.");
-            let delay = time_out.unwrap_or(10);
-            sleep(Duration::from_secs(delay));
-            tx.send(Msg::Download(DLMsg::MessageHide((
+            ))));
+
+            sleep(Duration::from_secs(delay)).await;
+
+            let _ = tx.send(Msg::Download(DLMsg::MessageHide((
                 title_string,
                 text_string,
-            ))))
-            .expect("send second message error.");
+            ))));
         });
     }
 
