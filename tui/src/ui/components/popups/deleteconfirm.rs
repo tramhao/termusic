@@ -49,10 +49,12 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmRadioPopup {
 #[derive(MockComponent)]
 pub struct DeleteConfirmInputPopup {
     component: Input,
+    on_confirm: Msg,
+    on_cancel: Msg,
 }
 
 impl DeleteConfirmInputPopup {
-    pub fn new(config: &TuiOverlay) -> Self {
+    pub fn new(config: &TuiOverlay, title: &str, on_confirm: Msg, on_cancel: Msg) -> Self {
         let config = &config.settings;
         Self {
             component: Input::default()
@@ -65,7 +67,12 @@ impl DeleteConfirmInputPopup {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title(" Type DELETE to confirm: ", Alignment::Left),
+                .title(
+                    format!(" {title} Type DELETE to confirm: "),
+                    Alignment::Left,
+                ),
+            on_confirm,
+            on_cancel,
         }
     }
 }
@@ -97,7 +104,7 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmInputPopup {
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => self.perform(Cmd::Type(ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::DeleteConfirmCloseCancel);
+                return Some(self.on_cancel.clone());
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
@@ -107,9 +114,9 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmInputPopup {
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::String(input_string))) => {
                 if input_string == *"DELETE" {
-                    return Some(Msg::DeleteConfirmCloseOk);
+                    return Some(self.on_confirm.clone());
                 }
-                Some(Msg::DeleteConfirmCloseCancel)
+                Some(self.on_cancel.clone())
             }
             CmdResult::None => None,
             _ => Some(Msg::ForceRedraw),
@@ -118,6 +125,8 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmInputPopup {
 }
 
 impl Model {
+    /// Mount a [`DeleteConfirmRadioPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
+    /// as [`Id::DeleteConfirmRadioPopup`].
     pub fn mount_confirm_radio(&mut self) {
         assert!(self
             .app
@@ -130,12 +139,19 @@ impl Model {
         assert!(self.app.active(&Id::DeleteConfirmRadioPopup).is_ok());
     }
 
-    pub fn mount_confirm_input(&mut self) {
+    /// Mount a [`DeleteConfirmInputPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
+    /// as [`Id::DeleteConfirmInputPopup`].
+    pub fn mount_confirm_input(&mut self, title: &str) {
         assert!(self
             .app
             .remount(
                 Id::DeleteConfirmInputPopup,
-                Box::new(DeleteConfirmInputPopup::new(&self.config_tui.read())),
+                Box::new(DeleteConfirmInputPopup::new(
+                    &self.config_tui.read(),
+                    title,
+                    Msg::DeleteConfirmCloseOk,
+                    Msg::DeleteConfirmCloseCancel
+                )),
                 vec![]
             )
             .is_ok());

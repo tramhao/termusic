@@ -381,7 +381,7 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::DeleteConfirmRadioPopup, f, popup);
         } else if app.mounted(&Id::DeleteConfirmInputPopup) {
-            let popup = draw_area_in_absolute(f.area(), 30, 3);
+            let popup = draw_area_in_absolute(f.area(), 72, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::DeleteConfirmInputPopup, f, popup);
         } else if app.mounted(&Id::FeedDeleteConfirmRadioPopup) {
