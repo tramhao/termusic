@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
 use termusiclib::track::Track;

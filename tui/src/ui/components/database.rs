@@ -665,9 +665,7 @@ impl Model {
             table.add_col(TextSpan::from("empty tracks from db/playlist"));
             table.add_col(TextSpan::from(""));
         }
-        let table = table.build();
-
-        table
+        table.build()
     }
 
     pub fn database_update_search(&mut self, input: &str) {
