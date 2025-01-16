@@ -619,7 +619,7 @@ impl Model {
         self.database_sync_results();
     }
 
-    pub fn update_search<T: Indexable>(&self, indexable_songs: &Vec<T>, input: &str) -> Table {
+    pub fn update_search<T: Indexable>(indexable_songs: &Vec<T>, input: &str) -> Table {
         let mut table: TableBuilder = TableBuilder::default();
         let search = format!("*{}*", input.to_lowercase());
         let mut idx = 0;
@@ -676,7 +676,7 @@ impl Model {
             db_tracks.clone_from(&tracks);
         }
 
-        let table = self.update_search(&db_tracks, input);
+        let table = Model::update_search(&db_tracks, input);
         self.general_search_update_show(table);
     }
 }

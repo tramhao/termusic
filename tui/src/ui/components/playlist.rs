@@ -524,7 +524,7 @@ impl Model {
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {
-        let table = self.update_search(self.playlist.tracks(), input);
+        let table = Model::update_search(self.playlist.tracks(), input);
         self.general_search_update_show(table);
     }
 
