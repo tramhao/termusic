@@ -5,7 +5,7 @@ service MusicPlayer {
   // Player Commands
   rpc TogglePause(TogglePauseRequest) returns (TogglePauseResponse);
   rpc SkipNext(SkipNextRequest) returns (SkipNextResponse);
-  rpc SkipPrevious(SkipPreviousRequest) returns (EmptyReply);
+  rpc SkipPrevious(SkipPreviousRequest) returns (Empty);
   rpc GetProgress(GetProgressRequest) returns (GetProgressResponse);
   rpc VolumeUp(VolumeUpRequest) returns (VolumeReply);
   rpc VolumeDown(VolumeDownRequest) returns (VolumeReply);
@@ -16,14 +16,16 @@ service MusicPlayer {
   rpc SeekBackward(SeekBackwardRequest) returns (PlayerTime);
 
   // Playlist Commands
-  rpc PlaySelected(PlaySelectedRequest) returns (EmptyReply);
+  rpc PlaySelected(PlaySelectedRequest) returns (Empty);
   rpc CycleLoop(CycleLoopRequest) returns (CycleLoopReply);
-  rpc ReloadPlaylist(ReloadPlaylistRequest) returns (EmptyReply);
+  rpc ReloadPlaylist(ReloadPlaylistRequest) returns (Empty);
 
   // Misc Commands
-  rpc ReloadConfig(ReloadConfigRequest) returns (EmptyReply);
-  rpc SubscribeServerUpdates(EmptyReply) returns (stream StreamUpdates);
+  rpc ReloadConfig(ReloadConfigRequest) returns (Empty);
+  rpc SubscribeServerUpdates(Empty) returns (stream StreamUpdates);
 }
+
+message Empty {}
 
 message TogglePauseRequest {}
 message TogglePauseResponse {
@@ -77,8 +79,6 @@ message SeekBackwardRequest {}
 
 message ReloadConfigRequest {}
 message ReloadPlaylistRequest {}
-
-message EmptyReply {}
 
 message PlaySelectedRequest {}
 message SkipPreviousRequest {}

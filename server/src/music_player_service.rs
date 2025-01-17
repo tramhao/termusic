@@ -4,7 +4,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::{
-    stream_updates, CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest,
+    stream_updates, CycleLoopReply, CycleLoopRequest, Empty, GetProgressRequest,
     GetProgressResponse, PlaySelectedRequest, PlayerTime, ReloadConfigRequest,
     ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest, SkipNextRequest,
     SkipNextResponse, SkipPreviousRequest, SpeedDownRequest, SpeedReply, SpeedUpRequest,
@@ -73,8 +73,8 @@ impl MusicPlayer for MusicPlayerService {
     async fn play_selected(
         &self,
         _request: Request<PlaySelectedRequest>,
-    ) -> Result<Response<EmptyReply>, Status> {
-        let reply = EmptyReply {};
+    ) -> Result<Response<Empty>, Status> {
+        let reply = Empty {};
         self.command(&PlayerCmd::PlaySelected);
 
         Ok(Response::new(reply))
@@ -83,8 +83,8 @@ impl MusicPlayer for MusicPlayerService {
     async fn reload_config(
         &self,
         _request: Request<ReloadConfigRequest>,
-    ) -> Result<Response<EmptyReply>, Status> {
-        let reply = EmptyReply {};
+    ) -> Result<Response<Empty>, Status> {
+        let reply = Empty {};
         self.command(&PlayerCmd::ReloadConfig);
 
         Ok(Response::new(reply))
@@ -93,8 +93,8 @@ impl MusicPlayer for MusicPlayerService {
     async fn reload_playlist(
         &self,
         _request: Request<ReloadPlaylistRequest>,
-    ) -> Result<Response<EmptyReply>, Status> {
-        let reply = EmptyReply {};
+    ) -> Result<Response<Empty>, Status> {
+        let reply = Empty {};
         self.command(&PlayerCmd::ReloadPlaylist);
 
         Ok(Response::new(reply))
@@ -139,8 +139,8 @@ impl MusicPlayer for MusicPlayerService {
     async fn skip_previous(
         &self,
         _request: Request<SkipPreviousRequest>,
-    ) -> Result<Response<EmptyReply>, Status> {
-        let reply = EmptyReply {};
+    ) -> Result<Response<Empty>, Status> {
+        let reply = Empty {};
         self.command(&PlayerCmd::SkipPrevious);
 
         Ok(Response::new(reply))
@@ -231,7 +231,7 @@ impl MusicPlayer for MusicPlayerService {
         Pin<Box<dyn Stream<Item = Result<termusiclib::player::StreamUpdates, Status>> + Send>>;
     async fn subscribe_server_updates(
         &self,
-        _: Request<EmptyReply>,
+        _: Request<Empty>,
     ) -> Result<Response<Self::SubscribeServerUpdatesStream>, Status> {
         let rx = self.stream_tx.subscribe();
 

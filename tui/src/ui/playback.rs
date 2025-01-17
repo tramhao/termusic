@@ -1,7 +1,7 @@
 use anyhow::Result;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::{
-    CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
+    CycleLoopRequest, Empty, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
     PlayerProgress, ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest,
     SeekForwardRequest, SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest,
     ToggleGaplessRequest, TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
@@ -145,7 +145,7 @@ impl Playback {
     pub async fn subscribe_to_stream_updates(
         &mut self,
     ) -> Result<impl Stream<Item = Result<termusiclib::player::StreamUpdates>>> {
-        let request = tonic::Request::new(EmptyReply {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.subscribe_server_updates(request).await?;
         let response = response.into_inner().map(|res| res.map_err(Into::into));
         info!("Got response from server: {:?}", response);
