@@ -1,11 +1,6 @@
 use anyhow::Result;
 use termusiclib::player::music_player_client::MusicPlayerClient;
-use termusiclib::player::{
-    CycleLoopRequest, Empty, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
-    PlayerProgress, ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest,
-    SeekForwardRequest, SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest,
-    ToggleGaplessRequest, TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
-};
+use termusiclib::player::{Empty, GetProgressResponse, PlayerProgress};
 use termusicplayback::Status;
 use tokio_stream::{Stream, StreamExt as _};
 use tonic::transport::Channel;
@@ -19,7 +14,7 @@ impl Playback {
         Self { client }
     }
     pub async fn toggle_pause(&mut self) -> Result<Status> {
-        let request = tonic::Request::new(TogglePauseRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.toggle_pause(request).await?;
         let response = response.into_inner();
         let status = Status::from_u32(response.status);
@@ -28,14 +23,14 @@ impl Playback {
     }
 
     pub async fn skip_next(&mut self) -> Result<()> {
-        let request = tonic::Request::new(SkipNextRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.skip_next(request).await?;
         info!("Got response from server: {:?}", response);
         Ok(())
     }
 
     pub async fn get_progress(&mut self) -> Result<GetProgressResponse> {
-        let request = tonic::Request::new(GetProgressRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.get_progress(request).await?;
         let response = response.into_inner();
         // info!("Got response from server: {:?}", response);
@@ -43,7 +38,7 @@ impl Playback {
     }
 
     pub async fn volume_up(&mut self) -> Result<u16> {
-        let request = tonic::Request::new(VolumeUpRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.volume_up(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -53,7 +48,7 @@ impl Playback {
     }
 
     pub async fn volume_down(&mut self) -> Result<u16> {
-        let request = tonic::Request::new(VolumeDownRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.volume_down(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -63,7 +58,7 @@ impl Playback {
     }
 
     pub async fn cycle_loop(&mut self) -> Result<()> {
-        let request = tonic::Request::new(CycleLoopRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.cycle_loop(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -71,7 +66,7 @@ impl Playback {
     }
 
     pub async fn speed_up(&mut self) -> Result<i32> {
-        let request = tonic::Request::new(SpeedUpRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.speed_up(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -79,7 +74,7 @@ impl Playback {
     }
 
     pub async fn speed_down(&mut self) -> Result<i32> {
-        let request = tonic::Request::new(SpeedDownRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.speed_down(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -87,7 +82,7 @@ impl Playback {
     }
 
     pub async fn toggle_gapless(&mut self) -> Result<bool> {
-        let request = tonic::Request::new(ToggleGaplessRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.toggle_gapless(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -95,7 +90,7 @@ impl Playback {
     }
 
     pub async fn seek_forward(&mut self) -> Result<PlayerProgress> {
-        let request = tonic::Request::new(SeekForwardRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.seek_forward(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -103,7 +98,7 @@ impl Playback {
     }
 
     pub async fn seek_backward(&mut self) -> Result<PlayerProgress> {
-        let request = tonic::Request::new(SeekBackwardRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.seek_backward(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -111,7 +106,7 @@ impl Playback {
     }
 
     pub async fn reload_config(&mut self) -> Result<()> {
-        let request = tonic::Request::new(ReloadConfigRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.reload_config(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -119,7 +114,7 @@ impl Playback {
     }
 
     pub async fn reload_playlist(&mut self) -> Result<()> {
-        let request = tonic::Request::new(ReloadPlaylistRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.reload_playlist(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -127,7 +122,7 @@ impl Playback {
     }
 
     pub async fn play_selected(&mut self) -> Result<()> {
-        let request = tonic::Request::new(PlaySelectedRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.play_selected(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -135,7 +130,7 @@ impl Playback {
     }
 
     pub async fn skip_previous(&mut self) -> Result<()> {
-        let request = tonic::Request::new(SkipPreviousRequest {});
+        let request = tonic::Request::new(Empty {});
         let response = self.client.skip_previous(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
