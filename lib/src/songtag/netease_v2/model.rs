@@ -7,7 +7,7 @@ use serde_json::{from_str, Value};
 pub fn to_lyric(json: &str) -> Result<String> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("code").is_none() || !value.get("code").map_or(false, |v| v.eq(&200)) {
+    if value.get("code").is_none() || !value.get("code").is_some_and(|v| v.eq(&200)) {
         let code = value
             .get("code")
             .and_then(Value::as_str)
@@ -28,7 +28,7 @@ pub fn to_lyric(json: &str) -> Result<String> {
 pub fn to_song_url(json: &str) -> Result<String> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("code").is_none() || !value.get("code").map_or(false, |v| v.eq(&200)) {
+    if value.get("code").is_none() || !value.get("code").is_some_and(|v| v.eq(&200)) {
         let errcode = value
             .get("code")
             .and_then(Value::as_str)
@@ -62,7 +62,7 @@ fn parse_song_url(value: &Value) -> Option<&str> {
 pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
     let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
 
-    if value.get("code").is_none() || !value.get("code").map_or(false, |v| v.eq(&200)) {
+    if value.get("code").is_none() || !value.get("code").is_some_and(|v| v.eq(&200)) {
         let code = value
             .get("code")
             .and_then(Value::as_str)

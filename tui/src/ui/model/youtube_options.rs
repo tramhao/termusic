@@ -272,18 +272,16 @@ fn remove_downloaded_json(path: &Path, file_fullname: &str) {
         .into_iter()
         .filter_map(std::result::Result::ok)
         .filter(|f| {
-            let name = f.file_name();
-            let p = Path::new(&name);
-            p.extension().map_or(false, |ext| ext == "json")
+            let p = Path::new(f.file_name());
+            p.extension().is_some_and(|ext| ext == "json")
         })
         .filter(|f| {
             let path_json = Path::new(f.file_name());
             let p1: &Path = Path::new(file_fullname);
-            path_json.file_stem().map_or(false, |stem_lrc| {
-                p1.file_stem().map_or(false, |p_base| {
+            path_json.file_stem().is_some_and(|stem_lrc| {
+                p1.file_stem().is_some_and(|p_base| {
                     stem_lrc
                         .to_string_lossy()
-                        .to_string()
                         .contains(p_base.to_string_lossy().as_ref())
                 })
             })
@@ -297,41 +295,40 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
     let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(file_fullname) {
         tag
     } else {
-        let mut t = id3::Tag::new();
-        let p: &Path = Path::new(file_fullname);
-        if let Some(p_base) = p.file_stem() {
-            t.set_title(p_base.to_string_lossy());
+        let mut tags = id3::Tag::new();
+        let file_path = Path::new(file_fullname);
+        if let Some(p_base) = file_path.file_stem() {
+            tags.set_title(p_base.to_string_lossy());
         }
-        t.write_to_path(p, Id3v24).ok();
-        t
+        tags.write_to_path(file_path, Id3v24).ok();
+        tags
     };
 
     // here we add all downloaded lrc file
     let files = walkdir::WalkDir::new(path).follow_links(true);
 
-    for f in files
+    for entry in files
         .into_iter()
         .filter_map(std::result::Result::ok)
         .filter(|f| f.file_type().is_file())
         .filter(|f| {
             let name = f.file_name();
             let p = Path::new(&name);
-            p.extension().map_or(false, |ext| ext == "lrc")
+            p.extension().is_some_and(|ext| ext == "lrc")
         })
         .filter(|f| {
             let path_lrc = Path::new(f.file_name());
             let p1: &Path = Path::new(file_fullname);
-            path_lrc.file_stem().map_or(false, |stem_lrc| {
-                p1.file_stem().map_or(false, |p_base| {
+            path_lrc.file_stem().is_some_and(|stem_lrc| {
+                p1.file_stem().is_some_and(|p_base| {
                     stem_lrc
                         .to_string_lossy()
-                        .to_string()
                         .contains(p_base.to_string_lossy().as_ref())
                 })
             })
         })
     {
-        let path_lrc = Path::new(f.file_name());
+        let path_lrc = Path::new(entry.file_name());
         let mut lang_ext = "eng".to_string();
         if let Some(p_short) = path_lrc.file_stem() {
             let p2 = Path::new(p_short);
@@ -339,13 +336,13 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
                 lang_ext = ext2.to_string_lossy().to_string();
             }
         }
-        let lyric_string = std::fs::read_to_string(f.path());
+        let lyric_string = std::fs::read_to_string(entry.path());
         id3_tag.add_frame(id3::frame::Lyrics {
             lang: "eng".to_string(),
             description: lang_ext,
             text: lyric_string.unwrap_or_else(|_| String::from("[00:00:01] No lyric")),
         });
-        std::fs::remove_file(f.path()).ok();
+        std::fs::remove_file(entry.path()).ok();
     }
 
     id3_tag.write_to_path(file_fullname, Id3v24).ok();
