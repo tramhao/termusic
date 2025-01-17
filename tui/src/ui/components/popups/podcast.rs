@@ -135,12 +135,10 @@ impl PodcastSearchTablePopup {
                         .color(config.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                // .foreground(Color::Yellow)
                 .title(" Enter to add feed: ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(config.settings.theme.library_highlight())
                 .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
-                // .highlighted_str("🚀")
                 .rewind(false)
                 .step(4)
                 .row_height(1)
