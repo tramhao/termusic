@@ -2,22 +2,26 @@ syntax = "proto3";
 package player;
 
 service MusicPlayer {
+  // Player Commands
   rpc TogglePause(TogglePauseRequest) returns (TogglePauseResponse);
   rpc SkipNext(SkipNextRequest) returns (SkipNextResponse);
+  rpc SkipPrevious(SkipPreviousRequest) returns (EmptyReply);
   rpc GetProgress(GetProgressRequest) returns (GetProgressResponse);
   rpc VolumeUp(VolumeUpRequest) returns (VolumeReply);
   rpc VolumeDown(VolumeDownRequest) returns (VolumeReply);
-  rpc CycleLoop(CycleLoopRequest) returns (CycleLoopReply);
   rpc SpeedUp(SpeedUpRequest) returns (SpeedReply);
   rpc SpeedDown(SpeedDownRequest) returns (SpeedReply);
   rpc ToggleGapless(ToggleGaplessRequest) returns (ToggleGaplessReply);
   rpc SeekForward(SeekForwardRequest) returns (PlayerTime);
   rpc SeekBackward(SeekBackwardRequest) returns (PlayerTime);
-  rpc ReloadConfig(ReloadConfigRequest) returns (EmptyReply);
-  rpc ReloadPlaylist(ReloadPlaylistRequest) returns (EmptyReply);
-  rpc PlaySelected(PlaySelectedRequest) returns (EmptyReply);
-  rpc SkipPrevious(SkipPreviousRequest) returns (EmptyReply);
 
+  // Playlist Commands
+  rpc PlaySelected(PlaySelectedRequest) returns (EmptyReply);
+  rpc CycleLoop(CycleLoopRequest) returns (CycleLoopReply);
+  rpc ReloadPlaylist(ReloadPlaylistRequest) returns (EmptyReply);
+
+  // Misc Commands
+  rpc ReloadConfig(ReloadConfigRequest) returns (EmptyReply);
   rpc SubscribeServerUpdates(EmptyReply) returns (stream StreamUpdates);
 }
 
