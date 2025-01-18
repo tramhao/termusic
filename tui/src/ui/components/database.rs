@@ -629,6 +629,8 @@ impl Model {
     }
 
     pub fn update_search<'a, T: Indexable>(indexable_songs: &'a Vec<T>, input: &str) -> Vec<&'a T> {
+        // cr note: we could mabye make indexable_songs mut to avoid allocating another Vec
+        // or we could just allocate the full size of indexable to the new vec to avoid reallocations
         let mut filtered_records = vec![];
         let search = format!("*{}*", input.to_lowercase());
         for record in indexable_songs {
