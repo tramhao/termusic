@@ -1,13 +1,14 @@
 use crate::ui::Model;
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::library_db::SearchCriteria;
+use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
+use termusiclib::library_db::{Indexable, SearchCriteria};
 use termusiclib::types::{DBMsg, Id, Msg};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::Borders;
-use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
+use tuirealm::props::{Alignment, BorderType, Table, TableBuilder, TextSpan};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
@@ -627,46 +628,62 @@ impl Model {
         self.database_sync_results();
     }
 
-    pub fn database_update_search(&mut self, input: &str) {
+    pub fn update_search<T: Indexable>(indexable_songs: &Vec<T>, input: &str) -> Table {
         let mut table: TableBuilder = TableBuilder::default();
-        let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
-        let mut db_tracks = vec![];
-        if let Ok(tracks) = self.db.get_all_records() {
-            db_tracks.clone_from(&tracks);
-            for record in tracks {
-                if wildmatch::WildMatch::new(&search).matches(&record.artist.to_lowercase())
-                    | wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase())
-                {
-                    if idx > 0 {
-                        table.add_row();
-                    }
-
-                    let duration =
-                        termusiclib::track::Track::duration_formatted_short(&record.duration);
-                    let duration_string = format!("[{duration:^6.6}]");
-
-                    table
-                        .add_col(TextSpan::new(duration_string.as_str()))
-                        .add_col(
-                            TextSpan::new(record.artist)
-                                .fg(tuirealm::ratatui::style::Color::LightYellow),
-                        )
-                        .add_col(TextSpan::new(record.title).bold())
-                        .add_col(TextSpan::new(record.file));
-                    // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
-                    idx += 1;
+        let mut idx = 0;
+        for record in indexable_songs {
+            let artist_match: bool = if let Some(artist) = record.meta_artist() {
+                wildmatch::WildMatch::new(&search).matches(&artist.to_lowercase())
+            } else {
+                false
+            };
+            let title_match: bool = if let Some(title) = record.meta_title() {
+                wildmatch::WildMatch::new(&search).matches(&title.to_lowercase())
+            } else {
+                false
+            };
+            let album_match: bool = if let Some(album) = record.meta_album() {
+                wildmatch::WildMatch::new(&search).matches(&album.to_lowercase())
+            } else {
+                false
+            };
+            if artist_match || title_match || album_match {
+                if idx > 0 {
+                    table.add_row();
                 }
+                idx += 1;
+
+                let duration =
+                    termusiclib::track::Track::duration_formatted_short(&record.duration());
+                let duration_string = format!("[{duration:^6.6}]");
+
+                table
+                    .add_col(TextSpan::new(duration_string))
+                    .add_col(
+                        TextSpan::new(record.meta_artist().unwrap_or(UNKNOWN_ARTIST))
+                            .fg(tuirealm::ratatui::style::Color::LightYellow),
+                    )
+                    .add_col(TextSpan::new(record.meta_title().unwrap_or(UNKNOWN_TITLE)).bold())
+                    .add_col(TextSpan::new(record.meta_file().unwrap_or(UNKNOWN_FILE)));
             }
         }
 
-        if db_tracks.is_empty() {
+        if indexable_songs.is_empty() {
             table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty tracks from db"));
+            table.add_col(TextSpan::from("empty tracks from db/playlist"));
             table.add_col(TextSpan::from(""));
         }
-        let table = table.build();
+        table.build()
+    }
 
+    pub fn database_update_search(&mut self, input: &str) {
+        let mut db_tracks = vec![];
+        if let Ok(tracks) = self.db.get_all_records() {
+            db_tracks.clone_from(&tracks);
+        }
+
+        let table = Model::update_search(&db_tracks, input);
         self.general_search_update_show(table);
     }
 }

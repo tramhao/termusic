@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
 use termusiclib::track::Track;
@@ -527,44 +527,7 @@ impl Model {
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {
-        let mut table: TableBuilder = TableBuilder::default();
-        let mut idx = 0;
-        let search = format!("*{}*", input.to_lowercase());
-        for record in self.playlist.tracks() {
-            let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
-            let title = record.title().unwrap_or(UNKNOWN_TITLE);
-            if wildmatch::WildMatch::new(&search).matches(&artist.to_lowercase())
-                | wildmatch::WildMatch::new(&search).matches(&title.to_lowercase())
-            {
-                if idx > 0 {
-                    table.add_row();
-                }
-
-                let duration = record.duration_formatted().to_string();
-                let duration_string = format!("[{duration:^6.6}]");
-
-                let noname_string = "No Name".to_string();
-                let name = record.name().unwrap_or(&noname_string);
-                let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
-                let title = record.title().unwrap_or(name);
-                let file_name = record.file().unwrap_or("no file");
-
-                table
-                    .add_col(TextSpan::new(duration_string.as_str()))
-                    .add_col(TextSpan::new(artist).fg(tuirealm::ratatui::style::Color::LightYellow))
-                    .add_col(TextSpan::new(title).bold())
-                    .add_col(TextSpan::new(file_name));
-                // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
-                idx += 1;
-            }
-        }
-        if self.playlist.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty playlist"));
-            table.add_col(TextSpan::from(""));
-        }
-        let table = table.build();
-
+        let table = Model::update_search(self.playlist.tracks(), input);
         self.general_search_update_show(table);
     }
 
