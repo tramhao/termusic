@@ -119,7 +119,7 @@ pub struct PodcastWidgetData {
 /// All data specific to the Config Editor Widget / View
 #[derive(Debug)]
 pub struct ConfigEditorData {
-    /// All possible themes that could be selected
+    /// All possible file-themes that could be selected
     pub themes: Vec<String>,
     /// The Theme to edit to preview before saving
     pub theme: ThemeWrap,
@@ -336,7 +336,7 @@ impl Model {
     }
 
     pub fn init_config(&mut self) {
-        if let Err(e) = Self::theme_select_save() {
+        if let Err(e) = Self::theme_extract_all() {
             self.mount_error_popup(e.context("theme save"));
         }
         self.mount_label_help();

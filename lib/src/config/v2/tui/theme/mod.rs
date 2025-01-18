@@ -20,6 +20,9 @@ pub mod styles;
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeWrap {
     pub style: styles::Styles,
+    // On full-on default, also set the names to "Termusic Default"
+    // this function is only used if this property does not exist at all
+    #[serde(default = "ThemeColors::full_default")]
     pub theme: ThemeColors,
 }
 
@@ -271,6 +274,12 @@ impl From<ThemeColor> for Color {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeColors {
+    /// The Filename of the current theme, if a file is used.
+    /// This value is skipped if empty.
+    ///
+    /// This is used for example to pre-select in the config editor if available.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_name: Option<String>,
     pub name: String,
     pub author: String,
     pub primary: ThemePrimary,
@@ -282,12 +291,26 @@ pub struct ThemeColors {
 impl Default for ThemeColors {
     fn default() -> Self {
         Self {
+            file_name: None,
             name: default_name(),
             author: default_author(),
             primary: ThemePrimary::default(),
             cursor: ThemeCursor::default(),
             normal: ThemeNormal::default(),
             bright: ThemeBright::default(),
+        }
+    }
+}
+
+impl ThemeColors {
+    /// Get the full default theme, including names.
+    ///
+    /// This function is different from [`Self::default`] as the trait impl is also used for filling empty places
+    pub fn full_default() -> Self {
+        Self {
+            name: "Termusic Default".to_string(),
+            author: "Termusic Developers".to_string(),
+            ..Default::default()
         }
     }
 }
@@ -331,8 +354,9 @@ impl TryFrom<YAMLTheme> for ThemeColors {
     fn try_from(value: YAMLTheme) -> Result<Self, Self::Error> {
         let colors = value.colors;
         Ok(Self {
-            name: colors.name,
-            author: colors.author,
+            file_name: None,
+            name: colors.name.unwrap_or_else(default_name),
+            author: colors.author.unwrap_or_else(default_author),
             primary: colors.primary.try_into()?,
             cursor: colors.cursor.try_into()?,
             normal: colors.normal.try_into()?,
@@ -346,7 +370,12 @@ impl ThemeColors {
     pub fn from_yaml_file(path: &Path) -> anyhow::Result<Self> {
         let parsed: YAMLTheme = serde_yaml::from_reader(BufReader::new(File::open(path)?))?;
 
-        Ok(Self::try_from(parsed)?)
+        let mut theme = Self::try_from(parsed)?;
+
+        let file_name = path.file_stem();
+        theme.file_name = file_name.map(|v| v.to_string_lossy().to_string());
+
+        Ok(theme)
     }
 }
 
@@ -515,6 +544,7 @@ mod v1_interop {
     impl From<&v1::Alacritty> for ThemeColors {
         fn from(value: &v1::Alacritty) -> Self {
             Self {
+                file_name: None,
                 name: value.name.clone(),
                 author: value.author.clone(),
                 primary: ThemePrimary {
@@ -569,6 +599,7 @@ mod v1_interop {
             assert_eq!(
                 converted,
                 ThemeColors {
+                    file_name: None,
                     name: "default".into(),
                     author: "Larry Hao".into(),
                     primary: ThemePrimary {

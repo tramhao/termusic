@@ -1890,7 +1890,7 @@ impl Model {
             )
             .is_ok());
         let config = self.config_tui.clone();
-        self.remount_config_color(&config);
+        self.remount_config_color(&config, None);
 
         // Active Config Editor
         assert!(self
@@ -1901,14 +1901,18 @@ impl Model {
         if let Err(e) = self.theme_select_load_themes() {
             self.mount_error_popup(e.context("load themes"));
         }
-        self.theme_select_sync();
+        self.theme_select_sync(None);
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn remount_config_color(&mut self, config: &SharedTuiSettings) {
+    pub fn remount_config_color(
+        &mut self,
+        config: &SharedTuiSettings,
+        previous_index: Option<usize>,
+    ) {
         // Mount color page
         assert!(self
             .app
@@ -2708,7 +2712,7 @@ impl Model {
                 vec![],
             )
             .is_ok());
-        self.theme_select_sync();
+        self.theme_select_sync(previous_index);
     }
 
     #[allow(clippy::too_many_lines)]
@@ -3495,7 +3499,8 @@ impl Model {
         Ok(())
     }
 
-    pub fn theme_select_save() -> Result<()> {
+    /// Extract all Themes to actual locations that can be loaded
+    pub fn theme_extract_all() -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("themes");
         if !path.exists() {
@@ -3521,10 +3526,14 @@ impl Model {
 
         Ok(())
     }
+
+    /// Find all themes in the `config/themes` directory and add them to be selected for preview
     pub fn theme_select_load_themes(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("themes");
+
         if let Ok(paths) = std::fs::read_dir(path) {
+            self.config_editor.themes.clear();
             let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
             paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
@@ -3545,21 +3554,21 @@ impl Model {
         Ok(())
     }
 
-    pub fn theme_select_sync(&mut self) {
+    /// Build the theme UI table and select the current theme
+    pub fn theme_select_sync(&mut self, previous_index: Option<usize>) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.config_editor.themes.iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
+        table
+            .add_col(TextSpan::new(0.to_string()))
+            .add_col(TextSpan::new("Termusic Default"));
 
+        for (idx, record) in self.config_editor.themes.iter().enumerate() {
+            table.add_row();
+
+            // idx + 1 as 0 entry is termusic default
             table
-                .add_col(TextSpan::new(idx.to_string()))
+                .add_col(TextSpan::new((idx + 1).to_string()))
                 .add_col(TextSpan::new(record));
-        }
-        if self.config_editor.themes.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty theme list"));
         }
 
         let table = table.build();
@@ -3570,14 +3579,24 @@ impl Model {
                 AttrValue::Table(table),
             )
             .ok();
+
         // select theme currently used
-        let mut index = 0;
-        for (idx, name) in self.config_editor.themes.iter().enumerate() {
-            if name == &self.config_editor.theme.theme.name {
-                index = idx;
-                break;
+        let index = if let Some(index) = previous_index {
+            index
+        } else {
+            let mut index = None;
+            if let Some(current_file_name) = self.config_editor.theme.theme.file_name.as_ref() {
+                for (idx, name) in self.config_editor.themes.iter().enumerate() {
+                    if name == current_file_name {
+                        // idx + 1 as 0 entry is termusic default
+                        index = Some(idx + 1);
+                        break;
+                    }
+                }
             }
-        }
+
+            index.unwrap_or(0)
+        };
         assert!(self
             .app
             .attr(
