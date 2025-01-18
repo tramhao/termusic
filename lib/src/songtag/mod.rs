@@ -39,6 +39,7 @@ use lofty::TextEncoding;
 use service::SongTagService;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
@@ -262,6 +263,9 @@ impl SongTag {
             bail!("failed to fetch url, please, try another item.");
         }
 
+        // avoid full string clones when sending via a channel
+        let url = Arc::from(url.into_boxed_str());
+
         let ytd = YoutubeDL::new(&PathBuf::from(p_parent), args, &url)?;
 
         let tx = tx_tageditor.clone();
@@ -316,7 +320,7 @@ impl SongTag {
             if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
                 sleep(Duration::from_secs(1));
                 tx.send(Msg::Download(DLMsg::DownloadCompleted(
-                    url.clone(),
+                    url,
                     Some(p_full.to_string_lossy().to_string()),
                 )))
                 .ok();
@@ -327,7 +331,7 @@ impl SongTag {
                 )))
                 .ok();
                 sleep(Duration::from_secs(1));
-                tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
+                tx.send(Msg::Download(DLMsg::DownloadCompleted(url, None)))
                     .ok();
             }
 

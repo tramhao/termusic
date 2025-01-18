@@ -102,7 +102,7 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             // Global Hotkeys
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
@@ -168,7 +168,10 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
 
             _ => CmdResult::None,
         };
-        Some(Msg::None)
+        match cmd_result {
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
+        }
     }
 }
 
@@ -291,7 +294,7 @@ impl CEColorSelect {
                 AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(Color::Red)),
             );
 
-            Msg::None
+            Msg::ForceRedraw
         }
     }
 }
@@ -349,7 +352,8 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
             CmdResult::Submit(State::One(StateValue::Usize(index))) => {
                 Some(self.update_color(index))
             }
-            _ => Some(Msg::None),
+            CmdResult::None => None,
+            _ => Some(Msg::ForceRedraw),
         }
     }
 }
@@ -866,7 +870,7 @@ impl ConfigInputHighlight {
             if symbol.is_empty() {
                 let color = self.config.read().settings.theme.library_border();
                 self.update_symbol_after(color);
-                return Msg::None;
+                return Msg::ForceRedraw;
             }
             if let Some(s) = Self::string_to_unicode_char(&symbol) {
                 // success getting a unicode letter
@@ -885,7 +889,7 @@ impl ConfigInputHighlight {
                 return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
             }
         }
-        Msg::None
+        Msg::ForceRedraw
     }
     fn update_symbol_after(&mut self, color: Color) {
         self.attr(Attribute::Foreground, AttrValue::Color(color));
@@ -923,30 +927,27 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             }
-            // Event::Keyboard(keyevent) if keyevent == keys.global_quit.get() => {
-            //     Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
-            // }
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => {
                 self.perform(Cmd::Move(Direction::Left));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Right, ..
             }) => {
                 self.perform(Cmd::Move(Direction::Right));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Home, ..
             }) => {
                 self.perform(Cmd::GoTo(Position::Begin));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End));
-                Some(Msg::None)
+                Some(Msg::ForceRedraw)
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Delete, ..
@@ -981,7 +982,7 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
                 IdConfigEditor::CurrentlyPlayingTrackSymbol => Some(Msg::ConfigEditor(
                     ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurDown,
                 )),
-                _ => Some(Msg::None),
+                _ => None,
             },
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.id {
                 IdConfigEditor::LibraryHighlightSymbol => Some(Msg::ConfigEditor(
@@ -993,7 +994,7 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
                 IdConfigEditor::CurrentlyPlayingTrackSymbol => Some(Msg::ConfigEditor(
                     ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurUp,
                 )),
-                _ => Some(Msg::None),
+                _ => None,
             },
 
             Event::Keyboard(KeyEvent {
@@ -1002,7 +1003,7 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
                 let result = self.perform(Cmd::Submit);
                 Some(self.update_symbol(result))
             }
-            _ => Some(Msg::None),
+            _ => None,
         }
     }
 }

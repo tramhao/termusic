@@ -9,7 +9,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Textarea;
-use tuirealm::command::{Cmd, CmdResult, Direction, Position};
+use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderType, Borders, PropPayload, PropValue, TextSpan,
@@ -64,7 +64,7 @@ impl Component<Msg, NoUserEvent> for Lyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let _drop = match ev {
+        let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
                 modifiers: KeyModifiers::NONE,
@@ -111,9 +111,11 @@ impl Component<Msg, NoUserEvent> for Lyric {
             Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            _ => CmdResult::None,
+            _ => return None,
         };
-        Some(Msg::None)
+        // "Textarea::perform" currently always returns "CmdResult::None", so always redraw on event
+        // see https://github.com/veeso/tui-realm-stdlib/issues/27
+        Some(Msg::ForceRedraw)
     }
 }
 

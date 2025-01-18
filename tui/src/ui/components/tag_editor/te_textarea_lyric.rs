@@ -26,7 +26,7 @@ use crate::ui::{Msg, TEMsg, TFMsg};
 
 use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Textarea;
-use tuirealm::command::{Cmd, CmdResult, Direction, Position};
+use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
@@ -113,8 +113,10 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
             Event::Keyboard(k) if k == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            _ => CmdResult::None,
+            _ => return None,
         };
-        Some(Msg::None)
+        // "Textarea::perform" currently always returns "CmdResult::None", so always redraw on event
+        // see https://github.com/veeso/tui-realm-stdlib/issues/27
+        Some(Msg::ForceRedraw)
     }
 }
