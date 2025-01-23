@@ -259,6 +259,7 @@ impl Model {
         self.playlist_sync();
     }
 
+    /// Add a playlist (like m3u) to the playlist.
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
         let vec = playlist_get_vec(current_node)?;
         self.playlist.add_playlist(&vec)?;
@@ -267,6 +268,7 @@ impl Model {
         Ok(())
     }
 
+    /// Add a podcast episode to the playlist.
     pub fn playlist_add_episode(&mut self, episode_index: usize) -> Result<()> {
         if self.podcast.podcasts.is_empty() {
             return Ok(());
@@ -286,6 +288,9 @@ impl Model {
         Ok(())
     }
 
+    /// Add the `current_node`, regardless if it is a Track, dir, playlist, etc.
+    ///
+    /// See [`Model::playlist_add_episode`] for podcast episode adding
     pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {
         let p: &Path = Path::new(&current_node);
         if !p.exists() {
@@ -303,6 +308,7 @@ impl Model {
         Ok(())
     }
 
+    /// Add a Track or a Playlist to the playlist
     fn playlist_add_item(&mut self, current_node: &str) -> Result<()> {
         if is_playlist(current_node) {
             self.playlist_add_playlist(current_node)?;
@@ -313,6 +319,7 @@ impl Model {
         Ok(())
     }
 
+    /// Add [`TrackDB`] to the playlist
     pub fn playlist_add_all_from_db(&mut self, vec: &[TrackDB]) {
         let vec2: Vec<&str> = vec.iter().map(|f| f.file.as_str()).collect();
         if let Err(e) = self.playlist.add_playlist(&vec2) {
@@ -324,6 +331,7 @@ impl Model {
         self.playlist_sync();
     }
 
+    /// Add random album(s) from the database to the playlist
     pub fn playlist_add_random_album(&mut self) {
         let playlist_select_random_album_quantity = self
             .config_server
@@ -336,6 +344,7 @@ impl Model {
         self.playlist_add_all_from_db(&vec);
     }
 
+    /// Add random tracks from the database to the playlist
     pub fn playlist_add_random_tracks(&mut self) {
         let playlist_select_random_track_quantity = self
             .config_server
