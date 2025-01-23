@@ -283,10 +283,10 @@ impl Playlist {
         self.tracks.is_empty()
     }
 
+    /// Swap the `index` with the one below(+1) it, if there is one.
     pub fn swap_down(&mut self, index: usize) {
         if index < self.len().saturating_sub(1) {
-            let track = self.tracks.remove(index);
-            self.tracks.insert(index + 1, track);
+            self.tracks.swap(index, index + 1);
             // handle index
             if index == self.current_track_index {
                 self.current_track_index += 1;
@@ -296,10 +296,10 @@ impl Playlist {
         }
     }
 
+    /// Swap the `index` with the one above(-1) it, if there is one.
     pub fn swap_up(&mut self, index: usize) {
         if index > 0 {
-            let track = self.tracks.remove(index);
-            self.tracks.insert(index - 1, track);
+            self.tracks.swap(index, index - 1);
             // handle index
             if index == self.current_track_index {
                 self.current_track_index -= 1;
