@@ -204,17 +204,15 @@ impl Playlist {
 
         let file = File::create(&path)?;
         let mut writer = BufWriter::new(file);
-        let mut bytes = Vec::new();
-        bytes.extend(self.current_track_index.to_string().as_bytes());
-        bytes.extend(b"\n");
+        writer.write_all(self.current_track_index.to_string().as_bytes())?;
+        writer.write_all(b"\n")?;
         for track in &self.tracks {
             if let Some(f) = track.file() {
-                bytes.extend(f.as_bytes());
-                bytes.extend(b"\n");
+                writer.write_all(f.as_bytes())?;
+                writer.write_all(b"\n")?;
             }
         }
 
-        writer.write_all(&bytes)?;
         writer.flush()?;
 
         Ok(())
