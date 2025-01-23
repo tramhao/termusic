@@ -4,6 +4,8 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -424,24 +426,52 @@ impl Playlist {
 
     /// Add many Paths/Urls to the playlist.
     ///
-    /// NOTE: This function currently **does not** error on bad inputs.
+    /// # Errors
+    /// - When invalid inputs are given
+    /// - When the file(s) cannot be read correctly
+    pub fn add_playlist<T: AsRef<str>>(&mut self, vec: &[T]) -> Result<(), PlaylistAddErrorVec> {
+        let mut errors = PlaylistAddErrorVec::default();
+        for item in vec {
+            let Err(err) = self.add_track(item) else {
+                continue;
+            };
+            errors.push(err);
+        }
+
+        if !errors.is_empty() {
+            return Err(errors);
+        }
+
+        Ok(())
+    }
+
+    /// Add a single Path/Url to the playlist
     ///
     /// # Errors
-    /// Error happens when track cannot be read from local file
-    pub fn add_playlist<T: AsRef<str>>(&mut self, vec: &[T]) -> Result<()> {
-        for item in vec.iter().map(AsRef::as_ref) {
-            if item.starts_with("http") {
-                let track = Track::new_radio(item);
-                self.tracks.push(track);
-            } else if !filetype_supported(item) {
-                // TODO: add error on fail
-                error!("unsupported filetype: {:#?}", item);
-                continue;
-            } else if PathBuf::from(item).exists() {
-                let track = Track::read_from_path(item, false)?;
-                self.tracks.push(track);
-            }
+    /// - When invalid inputs are given (non-existing path, unsupported file types, etc)
+    pub fn add_track<T: AsRef<str>>(&mut self, track: &T) -> Result<(), PlaylistAddError> {
+        let track = track.as_ref();
+        if track.starts_with("http") {
+            let track = Track::new_radio(track);
+            self.tracks.push(track);
+            return Ok(());
         }
+        let path = Path::new(track);
+        if !filetype_supported(track) {
+            error!("unsupported filetype: {:#?}", track);
+            let p = path.to_path_buf();
+            let ext = p.extension().map(|v| v.to_string_lossy().to_string());
+            return Err(PlaylistAddError::UnsupportedFileType(ext, p));
+        }
+        if !path.exists() {
+            return Err(PlaylistAddError::PathDoesNotExist(path.to_path_buf()));
+        }
+
+        let track = Track::read_from_path(track, false)
+            .map_err(|err| PlaylistAddError::ReadError(err, path.to_path_buf()))?;
+
+        self.tracks.push(track);
+
         Ok(())
     }
 
@@ -565,3 +595,72 @@ fn get_playlist_path() -> Result<PathBuf> {
 
     Ok(path)
 }
+
+// TODO: consider upgrading this with "thiserror"
+/// Error for when [`Playlist::add_track`] fails
+#[derive(Debug)]
+pub enum PlaylistAddError {
+    /// `(FileType, Path)`
+    UnsupportedFileType(Option<String>, PathBuf),
+    /// `(Path)`
+    PathDoesNotExist(PathBuf),
+    /// Generic Error for when reading the track fails
+    /// `(OriginalError, Path)`
+    ReadError(anyhow::Error, PathBuf),
+}
+
+impl Display for PlaylistAddError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Failed to add to playlist because of: {}",
+            match self {
+                Self::UnsupportedFileType(ext, path) => {
+                    let ext = if let Some(ext) = ext {
+                        format!("Some({ext})")
+                    } else {
+                        "None".into()
+                    };
+                    format!("Unsupported File type \"{ext}\" at \"{}\"", path.display())
+                }
+                Self::PathDoesNotExist(path) => {
+                    format!("Path does not exist: \"{}\"", path.display())
+                }
+                Self::ReadError(err, path) => {
+                    format!("{err} at \"{}\"", path.display())
+                }
+            }
+        )
+    }
+}
+
+impl Error for PlaylistAddError {}
+
+// TODO: consider upgrading this with "thiserror"
+/// Error for when [`Playlist::add_playlist`] fails
+#[derive(Debug, Default)]
+pub struct PlaylistAddErrorVec(Vec<PlaylistAddError>);
+
+impl PlaylistAddErrorVec {
+    pub fn push(&mut self, err: PlaylistAddError) {
+        self.0.push(err);
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl Display for PlaylistAddErrorVec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{} Error(s) happened:", self.0.len())?;
+        for err in &self.0 {
+            writeln!(f, "  - {err}")?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Error for PlaylistAddErrorVec {}
