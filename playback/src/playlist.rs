@@ -63,11 +63,9 @@ pub struct Playlist {
     /// Index into `tracks` of which the current playing track is
     current_track_index: usize,
     /// Index into `tracks` for the next track to play after the current
-    next_track_index: usize,
+    next_track_index: Option<usize>,
     /// The currently playing [`Track`]. Does not need to be in `tracks`
     current_track: Option<Track>,
-    /// The next track to play after the current. Does not need to be in `tracks`
-    next_track: Option<Track>,
     /// The current playing running status of the playlist
     status: Status,
     /// The loop-/play-mode for the playlist
@@ -76,13 +74,12 @@ pub struct Playlist {
     played_index: Vec<usize>,
     /// Indicator if the playlist should advance the `current_*` and `next_*` values
     need_proceed_to_next: bool,
-    config: SharedServerSettings,
 }
 
 impl Playlist {
     /// # Errors
     /// errors could happen when reading files
-    pub fn new(config: SharedServerSettings) -> Result<Self> {
+    pub fn new(config: &SharedServerSettings) -> Result<Self> {
         let (current_track_index, tracks) = Self::load()?;
         // TODO: shouldnt "loop_mode" be combined with the config ones?
         let loop_mode = config.read().settings.player.loop_mode;
@@ -90,14 +87,12 @@ impl Playlist {
 
         Ok(Self {
             tracks,
-            next_track: None,
             status: Status::Stopped,
             loop_mode,
             current_track_index,
             current_track,
             played_index: Vec::new(),
-            config,
-            next_track_index: 0,
+            next_track_index: None,
             need_proceed_to_next: false,
         })
     }
@@ -229,11 +224,11 @@ impl Playlist {
 
     /// Change to the next track.
     pub fn next(&mut self) {
-        // TODO: what about `next_track`?
-        // TODO: why is "next_track_index" only used when "gapless" is on?
         self.played_index.push(self.current_track_index);
-        if self.config.read().settings.player.gapless && self.has_next_track() {
-            self.current_track_index = self.next_track_index;
+        // Note: the next index is *not* taken here, as ".proceed/next" is called first,
+        // then "has_next_track" is later used to check if enqueing has used.
+        if let Some(index) = self.next_track_index {
+            self.current_track_index = index;
             return;
         }
         self.current_track_index = self.get_next_track_index();
@@ -346,8 +341,9 @@ impl Playlist {
 
     /// Get the next track index and return a reference to it.
     pub fn fetch_next_track(&mut self) -> Option<&Track> {
-        self.next_track_index = self.get_next_track_index();
-        self.tracks.get(self.next_track_index)
+        let next_index = self.get_next_track_index();
+        self.next_track_index = Some(next_index);
+        self.tracks.get(next_index)
     }
 
     pub fn set_status(&mut self, status: Status) {
@@ -506,8 +502,7 @@ impl Playlist {
     pub fn clear(&mut self) {
         self.tracks.clear();
         self.played_index.clear();
-        self.next_track.take();
-        self.next_track_index = 0;
+        self.next_track_index.take();
         self.current_track_index = 0;
         self.need_proceed_to_next = false;
     }
@@ -592,19 +587,17 @@ impl Playlist {
 
     #[must_use]
     pub fn next_track(&self) -> Option<&Track> {
-        self.next_track.as_ref()
+        let index = self.next_track_index?;
+        self.tracks.get(index)
     }
 
-    pub fn set_next_track(&mut self, track: Option<&Track>) {
-        match track {
-            Some(t) => self.next_track = Some(t.clone()),
-            None => self.next_track = None,
-        }
+    pub fn set_next_track(&mut self, track_idx: Option<usize>) {
+        self.next_track_index = track_idx;
     }
 
     #[must_use]
     pub fn has_next_track(&self) -> bool {
-        self.next_track.is_some()
+        self.next_track_index.is_some()
     }
 }
 
