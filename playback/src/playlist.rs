@@ -202,15 +202,15 @@ impl Playlist {
     pub fn save(&mut self) -> Result<()> {
         let path = get_playlist_path()?;
 
-        let file = File::create(path.as_path())?;
+        let file = File::create(&path)?;
         let mut writer = BufWriter::new(file);
         let mut bytes = Vec::new();
-        bytes.extend(format!("{}", self.current_track_index).as_bytes());
-        bytes.extend("\n".as_bytes());
-        for i in &self.tracks {
-            if let Some(f) = i.file() {
+        bytes.extend(self.current_track_index.to_string().as_bytes());
+        bytes.extend(b"\n");
+        for track in &self.tracks {
+            if let Some(f) = track.file() {
                 bytes.extend(f.as_bytes());
-                bytes.extend("\n".as_bytes());
+                bytes.extend(b"\n");
             }
         }
 
