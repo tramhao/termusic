@@ -155,10 +155,6 @@ impl Playlist {
             .with_context(|| "failed to get podcasts from db.")?;
         for line in lines {
             let line = line?;
-            if let Ok(track) = Track::read_from_path(&line, false) {
-                playlist_items.push(track);
-                continue;
-            };
             if line.starts_with("http") {
                 let mut is_podcast = false;
                 'outer: for pod in &podcasts {
@@ -175,7 +171,12 @@ impl Playlist {
                     let track = Track::new_radio(&line);
                     playlist_items.push(track);
                 }
+                continue;
             }
+            if let Ok(track) = Track::read_from_path(&line, false) {
+                playlist_items.push(track);
+                continue;
+            };
         }
 
         Ok((current_track_index, playlist_items))
