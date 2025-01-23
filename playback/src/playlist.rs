@@ -450,13 +450,13 @@ impl Playlist {
         &self.tracks
     }
 
+    /// Remove the track at `index`. Does not modify `current_track`.
     pub fn remove(&mut self, index: usize) {
         self.tracks.remove(index);
         // Handle index
         if index <= self.current_track_index {
-            if self.current_track_index == 0 {
-                self.current_track_index = 0;
-            } else {
+            // nothing needs to be done if the index is already 0
+            if self.current_track_index != 0 {
                 self.current_track_index -= 1;
             }
         }
