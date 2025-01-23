@@ -390,7 +390,7 @@ impl Model {
             if p.is_file() {
                 self.mount_confirm_radio();
             } else {
-                self.mount_confirm_input();
+                self.mount_confirm_input("You're about to delete the whole directory.");
             }
         }
     }

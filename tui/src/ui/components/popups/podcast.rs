@@ -8,6 +8,7 @@ use tuirealm::{
     Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
 
+use crate::ui::components::popups::DeleteConfirmInputPopup;
 use crate::ui::model::Model;
 
 use super::{YNConfirm, YNConfirmStyle};
@@ -117,80 +118,6 @@ impl Component<Msg, NoUserEvent> for FeedDeleteConfirmRadioPopup {
 }
 
 #[derive(MockComponent)]
-pub struct FeedDeleteConfirmInputPopup {
-    component: Input,
-}
-
-impl FeedDeleteConfirmInputPopup {
-    pub fn new(config: &TuiOverlay) -> Self {
-        let config = &config.settings;
-        Self {
-            component: Input::default()
-                .foreground(config.theme.library_foreground())
-                .background(config.theme.library_background())
-                .borders(
-                    Borders::default()
-                        .color(config.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                // .invalid_style(Style::default().fg(Color::Red))
-                .input_type(InputType::Text)
-                .title(
-                    " You're about the erase all feeds. Type DELETE to confirm: ",
-                    Alignment::Left,
-                ),
-        }
-    }
-}
-
-impl Component<Msg, NoUserEvent> for FeedDeleteConfirmInputPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Left, ..
-            }) => self.perform(Cmd::Move(Direction::Left)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Right, ..
-            }) => self.perform(Cmd::Move(Direction::Right)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Delete, ..
-            }) => self.perform(Cmd::Cancel),
-            Event::Keyboard(KeyEvent {
-                code: Key::Backspace,
-                ..
-            }) => self.perform(Cmd::Delete),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char(ch),
-                modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-            }) => self.perform(Cmd::Type(ch)),
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::Podcast(PCMsg::FeedsDeleteCloseCancel));
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
-            _ => CmdResult::None,
-        };
-        match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                if input_string == *"DELETE" {
-                    return Some(Msg::Podcast(PCMsg::FeedsDeleteCloseOk));
-                }
-                Some(Msg::Podcast(PCMsg::FeedsDeleteCloseCancel))
-            }
-            CmdResult::None => None,
-            _ => Some(Msg::ForceRedraw),
-        }
-    }
-}
-
-#[derive(MockComponent)]
 pub struct PodcastSearchTablePopup {
     component: Table,
     config: SharedTuiSettings,
@@ -208,12 +135,10 @@ impl PodcastSearchTablePopup {
                         .color(config.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                // .foreground(Color::Yellow)
                 .title(" Enter to add feed: ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(config.settings.theme.library_highlight())
                 .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
-                // .highlighted_str("🚀")
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -318,7 +243,12 @@ impl Model {
             .app
             .remount(
                 Id::FeedDeleteConfirmInputPopup,
-                Box::new(FeedDeleteConfirmInputPopup::new(&self.config_tui.read())),
+                Box::new(DeleteConfirmInputPopup::new(
+                    &self.config_tui.read(),
+                    "You're about the erase all feeds.",
+                    Msg::Podcast(PCMsg::FeedsDeleteCloseOk),
+                    Msg::Podcast(PCMsg::FeedsDeleteCloseCancel)
+                )),
                 vec![]
             )
             .is_ok());

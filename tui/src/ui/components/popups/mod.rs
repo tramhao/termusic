@@ -21,10 +21,7 @@ pub use help::HelpPopup;
 pub use message::MessagePopup;
 pub use mock_yn_confirm::{YNConfirm, YNConfirmStyle};
 #[allow(unused_imports)]
-pub use podcast::{
-    FeedDeleteConfirmInputPopup, FeedDeleteConfirmRadioPopup, PodcastAddPopup,
-    PodcastSearchTablePopup,
-};
+pub use podcast::{FeedDeleteConfirmRadioPopup, PodcastAddPopup, PodcastSearchTablePopup};
 #[allow(unused_imports)]
 pub use quit::QuitPopup;
 #[allow(unused_imports)]
