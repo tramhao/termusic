@@ -56,16 +56,25 @@ impl std::fmt::Display for Status {
 
 #[derive(Default, Debug)]
 pub struct Playlist {
+    /// All tracks in the playlist
     tracks: Vec<Track>,
+    /// Index into `tracks` of which the current playing track is
     current_track_index: usize,
+    /// Index into `tracks` for the next track to play after the current
     next_track_index: usize,
-    played_index: Vec<usize>,
+    /// The currently playing [`Track`]. Does not need to be in `tracks`
     current_track: Option<Track>,
+    /// The next track to play after the current. Does not need to be in `tracks`
     next_track: Option<Track>,
+    /// The current playing running status of the playlist
     status: Status,
+    /// The loop-/play-mode for the playlist
     loop_mode: LoopMode,
-    config: SharedServerSettings,
+    /// Indexes into `tracks` that have been previously been played (for `previous`)
+    played_index: Vec<usize>,
+    /// Indicator if the playlist should advance the `current_*` and `next_*` values
     need_proceed_to_next: bool,
+    config: SharedServerSettings,
 }
 
 impl Playlist {
