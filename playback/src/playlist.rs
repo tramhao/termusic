@@ -465,9 +465,12 @@ impl Playlist {
     /// Clear the current playlist.
     /// This does not stop the playlist or clear [`current_track`].
     pub fn clear(&mut self) {
-        // TODO: clear everything except `current_track`
         self.tracks.clear();
+        self.played_index.clear();
+        self.next_track.take();
+        self.next_track_index = 0;
         self.current_track_index = 0;
+        self.need_proceed_to_next = false;
     }
 
     pub fn shuffle(&mut self) {
