@@ -182,8 +182,10 @@ impl Playlist {
         Ok((current_track_index, playlist_items))
     }
 
+    /// Reload the current playlist from the file. This function does not save beforehand.
+    ///
     /// # Errors
-    /// Errors could happen when reading files
+    /// See [`Self::load`]
     pub fn reload_tracks(&mut self) -> Result<()> {
         let (current_track_index, tracks) = Self::load()?;
         self.tracks = tracks;
@@ -352,7 +354,7 @@ impl Playlist {
         self.status
     }
 
-    /// Cycle through the loop modes and return the new mode
+    /// Cycle through the loop modes and return the new mode.
     ///
     /// order:
     /// [Random](LoopMode::Random) -> [Playlist](LoopMode::Playlist)
@@ -373,9 +375,9 @@ impl Playlist {
         self.loop_mode
     }
 
-    /// Export the current playlist to a `.m3u` playlist file
+    /// Export the current playlist to a `.m3u` playlist file.
     ///
-    /// might be confused with [save](Self::save)
+    /// Might be confused with [save](Self::save).
     ///
     /// # Errors
     /// Error could happen when writing file to local disk.
@@ -392,9 +394,9 @@ impl Playlist {
         Ok(())
     }
 
-    /// Generate the m3u's file content
+    /// Generate the m3u's file content.
     ///
-    /// All Paths are relative to the `parent_folder` directory
+    /// All Paths are relative to the `parent_folder` directory.
     fn get_m3u_file(&self, parent_folder: &Path) -> String {
         let mut m3u = String::from("#EXTM3U\n");
         for track in &self.tracks {
@@ -410,11 +412,16 @@ impl Playlist {
         m3u
     }
 
+    /// Add a podcast episode to the playlist.
     pub fn add_episode(&mut self, ep: &Episode) {
         let track = Track::from_episode(ep);
         self.tracks.push(track);
     }
 
+    /// Add many Paths/Urls to the playlist.
+    ///
+    /// NOTE: This function currently **does not** error on bad inputs.
+    ///
     /// # Errors
     /// Error happens when track cannot be read from local file
     pub fn add_playlist<T: AsRef<str>>(&mut self, vec: &[T]) -> Result<()> {
@@ -451,7 +458,10 @@ impl Playlist {
         }
     }
 
+    /// Clear the current playlist.
+    /// This does not stop the playlist or clear [`current_track`].
     pub fn clear(&mut self) {
+        // TODO: clear everything except `current_track`
         self.tracks.clear();
         self.current_track_index = 0;
     }
