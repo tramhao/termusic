@@ -2,3 +2,5 @@
 *.diff
 # ignore custom cargo configuration, like changing linker
 .cargo
+# VSCode relation configuration
+.vscode
