@@ -523,12 +523,14 @@ impl Playlist {
         }
     }
 
+    /// Find the index in the playlist for `item`, if it exists there.
     fn find_index_from_file(&self, item: &str) -> Option<usize> {
         for (index, track) in self.tracks.iter().enumerate() {
-            if let Some(file) = track.file() {
-                if file == item {
-                    return Some(index);
-                }
+            let Some(file) = track.file() else {
+                continue;
+            };
+            if file == item {
+                return Some(index);
             }
         }
         None
