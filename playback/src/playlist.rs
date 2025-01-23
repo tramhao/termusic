@@ -91,7 +91,6 @@ impl Playlist {
         Ok(Self {
             tracks,
             next_track: None,
-            // index: Some(0),
             status: Status::Stopped,
             loop_mode,
             current_track_index,
@@ -103,6 +102,7 @@ impl Playlist {
         })
     }
 
+    /// Advance the playlist to the next track.
     pub fn proceed(&mut self) {
         debug!("need to proceed to next: {}", self.need_proceed_to_next);
         if self.need_proceed_to_next {
@@ -112,6 +112,7 @@ impl Playlist {
         }
     }
 
+    /// Set `need_proceed_to_next` to `false`
     pub fn proceed_false(&mut self) {
         self.need_proceed_to_next = false;
     }
@@ -226,7 +227,10 @@ impl Playlist {
         Ok(())
     }
 
+    /// Change to the next track.
     pub fn next(&mut self) {
+        // TODO: what about `next_track`?
+        // TODO: why is "next_track_index" only used when "gapless" is on?
         self.played_index.push(self.current_track_index);
         if self.config.read().settings.player.gapless && self.has_next_track() {
             self.current_track_index = self.next_track_index;
@@ -235,11 +239,11 @@ impl Playlist {
         self.current_track_index = self.get_next_track_index();
     }
 
+    /// Get the next track index based on the [`LoopMode`] used.
     fn get_next_track_index(&self) -> usize {
         let mut next_track_index = self.current_track_index;
         match self.loop_mode {
             LoopMode::Single => {}
-
             LoopMode::Playlist => {
                 next_track_index += 1;
                 if next_track_index >= self.len() {
@@ -253,6 +257,9 @@ impl Playlist {
         next_track_index
     }
 
+    /// Change to the previous track played.
+    ///
+    /// This uses `played_index` vec, if available, otherwise uses [`LoopMode`].
     pub fn previous(&mut self) {
         if !self.played_index.is_empty() {
             if let Some(index) = self.played_index.pop() {
@@ -311,6 +318,7 @@ impl Playlist {
         }
     }
 
+    /// Get the current track's Path/Url.
     pub fn get_current_track(&mut self) -> Option<String> {
         let mut result = None;
         if let Some(track) = self.current_track() {
@@ -336,6 +344,7 @@ impl Playlist {
         result
     }
 
+    /// Get the next track index and return a reference to it.
     pub fn fetch_next_track(&mut self) -> Option<&Track> {
         self.next_track_index = self.get_next_track_index();
         self.tracks.get(self.next_track_index)
@@ -503,7 +512,9 @@ impl Playlist {
         self.need_proceed_to_next = false;
     }
 
+    /// Shuffle the playlist
     pub fn shuffle(&mut self) {
+        // TODO: why does this only shuffle if there is a current track?
         if let Some(current_track_file) = self.get_current_track() {
             self.tracks.shuffle(&mut thread_rng());
             if let Some(index) = self.find_index_from_file(&current_track_file) {
@@ -523,9 +534,11 @@ impl Playlist {
         None
     }
 
+    /// Get a random index in the playlist.
     fn get_random_index(&self) -> usize {
         let mut rng = rand::thread_rng();
         let mut random_index = self.current_track_index;
+        // TODO: is this not a infinite loop if there is only 1 element?
         while self.current_track_index == random_index {
             random_index = rng.gen_range(0..self.len());
         }
@@ -533,8 +546,10 @@ impl Playlist {
         random_index
     }
 
+    /// Remove all tracks from the playlist that dont exist on the disk.
     pub fn remove_deleted_items(&mut self) {
         if let Some(current_track_file) = self.get_current_track() {
+            // TODO: dosnt this remove radio and podcast episodes?
             self.tracks
                 .retain(|x| x.file().is_some_and(|p| Path::new(p).exists()));
             match self.find_index_from_file(&current_track_file) {
