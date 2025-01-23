@@ -203,6 +203,12 @@ impl Playlist {
         let path = get_playlist_path()?;
 
         let file = File::create(&path)?;
+
+        // If the playlist is empty, truncate the file, but dont write anything else (like a index number)
+        if self.is_empty() {
+            return Ok(());
+        }
+
         let mut writer = BufWriter::new(file);
         writer.write_all(self.current_track_index.to_string().as_bytes())?;
         writer.write_all(b"\n")?;
