@@ -381,7 +381,7 @@ impl GeneralPlayer {
         }
     }
     pub fn enqueue_next_from_playlist(&mut self) {
-        if self.playlist.next_track().is_some() {
+        if self.playlist.has_next_track() {
             return;
         }
 
