@@ -536,9 +536,13 @@ impl Playlist {
 
     /// Get a random index in the playlist.
     fn get_random_index(&self) -> usize {
-        let mut rng = rand::thread_rng();
         let mut random_index = self.current_track_index;
-        // TODO: is this not a infinite loop if there is only 1 element?
+
+        if self.len() <= 1 {
+            return 0;
+        }
+
+        let mut rng = rand::thread_rng();
         while self.current_track_index == random_index {
             random_index = rng.gen_range(0..self.len());
         }
