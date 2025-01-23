@@ -134,12 +134,11 @@ impl Playlist {
         };
 
         let reader = BufReader::new(file);
-        let mut lines = reader
-            .lines()
-            .map(|line| line.unwrap_or_else(|_| "Error".to_string()));
+        let mut lines = reader.lines();
 
         let mut current_track_index = 0;
-        if let Some(index_line) = lines.next() {
+        if let Some(line) = lines.next() {
+            let index_line = line?;
             if let Ok(index) = index_line.trim().parse() {
                 current_track_index = index;
             }
@@ -155,6 +154,7 @@ impl Playlist {
             .get_podcasts()
             .with_context(|| "failed to get podcasts from db.")?;
         for line in lines {
+            let line = line?;
             if let Ok(track) = Track::read_from_path(&line, false) {
                 playlist_items.push(track);
                 continue;
