@@ -114,23 +114,25 @@ impl Playlist {
         self.need_proceed_to_next = false;
     }
 
-    /// Load the playlist from the file
+    /// Load the playlist from the file.
     ///
-    /// Path in `$config$/playlist.log`
+    /// Path in `$config$/playlist.log`.
+    ///
+    /// Returns `(Position, Tracks[])`.
     ///
     /// # Errors
-    /// errors could happen when reading file
-    /// # Panics
-    /// panics when error loading podcasts from db
+    /// - When the playlist path is not write-able
+    /// - When podcasts cannot be loaded
     pub fn load() -> Result<(usize, Vec<Track>)> {
         let path = get_playlist_path()?;
 
-        let file = if let Ok(f) = File::open(path.as_path()) {
-            f
-        } else {
-            File::create(path.as_path())?;
-            File::open(path)?
+        let Ok(file) = File::open(&path) else {
+            // new file, nothing to parse from it
+            File::create(&path)?;
+
+            return Ok((0, Vec::new()));
         };
+
         let reader = BufReader::new(file);
         let mut lines = reader
             .lines()
@@ -141,6 +143,9 @@ impl Playlist {
             if let Ok(index) = index_line.trim().parse() {
                 current_track_index = index;
             }
+        } else {
+            // empty file, nothing to parse from it
+            return Ok((0, Vec::new()));
         }
 
         let mut playlist_items = Vec::new();
