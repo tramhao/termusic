@@ -157,7 +157,7 @@ pub trait Indexable {
     fn meta_album(&self) -> Option<&str>;
     fn meta_artist(&self) -> Option<&str>;
     fn meta_genre(&self) -> Option<&str>;
-    fn duration(&self) -> Duration;
+    fn meta_duration(&self) -> Duration;
 }
 
 impl Indexable for Track {
@@ -176,7 +176,7 @@ impl Indexable for Track {
     fn meta_genre(&self) -> Option<&str> {
         self.genre()
     }
-    fn duration(&self) -> Duration {
+    fn meta_duration(&self) -> Duration {
         self.duration()
     }
 }
