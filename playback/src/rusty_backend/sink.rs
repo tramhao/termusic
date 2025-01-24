@@ -329,6 +329,9 @@ impl Sink {
     // Spawns a new thread to sleep until the sound ends, and then sends the SoundEnded
     // message through the given Sender.
     pub fn message_on_end(&self) {
+        // TODO: we should not expose this function to be called outside of rusty-mod and always just have it active as we always need it
+        // NOTE: (in addition to the todo), we always use "message_on_end" to rely on EOS, so it is basically always set, so it should not be necessary
+        // to be set by commands every time, and worst, forget to call it or have race conditions that enqueue multiple things and wait on the wrong thing.
         if let Some(sleep_until_end) = self.sleep_until_end.lock().take() {
             let pcmd_tx = self.pcmd_tx.clone();
             let picmd_tx = self.picmd_tx.clone();

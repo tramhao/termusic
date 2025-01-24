@@ -259,14 +259,19 @@ impl Model {
         self.playlist_sync();
     }
 
+    /// Add a playlist (like m3u) to the playlist.
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
         let vec = playlist_get_vec(current_node)?;
-        self.playlist.add_playlist(&vec)?;
+        // "add_playlist" will still add all possible things, but return errors for which did not work
+        // so sync still needs to happen
+        let res = self.playlist.add_playlist(&vec);
         self.player_sync_playlist()?;
         self.playlist_sync();
+        res?;
         Ok(())
     }
 
+    /// Add a podcast episode to the playlist.
     pub fn playlist_add_episode(&mut self, episode_index: usize) -> Result<()> {
         if self.podcast.podcasts.is_empty() {
             return Ok(());
@@ -286,6 +291,9 @@ impl Model {
         Ok(())
     }
 
+    /// Add the `current_node`, regardless if it is a Track, dir, playlist, etc.
+    ///
+    /// See [`Model::playlist_add_episode`] for podcast episode adding
     pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {
         let p: &Path = Path::new(&current_node);
         if !p.exists() {
@@ -293,9 +301,12 @@ impl Model {
         }
         if p.is_dir() {
             let new_items_vec = Self::library_dir_children(p);
-            self.playlist.add_playlist(&new_items_vec)?;
+            // "add_playlist" will still add all possible things, but return errors for which did not work
+            // so sync still needs to happen
+            let res = self.playlist.add_playlist(&new_items_vec);
             self.player_sync_playlist()?;
             self.playlist_sync();
+            res?;
             return Ok(());
         }
         self.playlist_add_item(current_node)?;
@@ -303,27 +314,33 @@ impl Model {
         Ok(())
     }
 
+    /// Add a Track or a Playlist to the playlist
     fn playlist_add_item(&mut self, current_node: &str) -> Result<()> {
         if is_playlist(current_node) {
             self.playlist_add_playlist(current_node)?;
             return Ok(());
         }
-        self.playlist.add_playlist(&[current_node])?;
+        self.playlist.add_track(&current_node)?;
         self.player_sync_playlist()?;
         Ok(())
     }
 
+    /// Add [`TrackDB`] to the playlist
     pub fn playlist_add_all_from_db(&mut self, vec: &[TrackDB]) {
         let vec2: Vec<&str> = vec.iter().map(|f| f.file.as_str()).collect();
-        if let Err(e) = self.playlist.add_playlist(&vec2) {
-            self.mount_error_popup(e.context("add all to playlist from database"));
-        }
+        // "add_playlist" will still add all possible things, but return errors for which did not work
+        // so sync still needs to happen
+        let res = self.playlist.add_playlist(&vec2);
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
+        if let Err(e) = res {
+            self.mount_error_popup(anyhow!(e).context("add all to playlist from database"));
+        }
     }
 
+    /// Add random album(s) from the database to the playlist
     pub fn playlist_add_random_album(&mut self) {
         let playlist_select_random_album_quantity = self
             .config_server
@@ -336,6 +353,7 @@ impl Model {
         self.playlist_add_all_from_db(&vec);
     }
 
+    /// Add random tracks from the database to the playlist
     pub fn playlist_add_random_tracks(&mut self) {
         let playlist_select_random_track_quantity = self
             .config_server

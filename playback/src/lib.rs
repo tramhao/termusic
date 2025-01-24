@@ -216,7 +216,7 @@ impl GeneralPlayer {
         let db = DataBase::new(&config)?;
 
         let config = new_shared_server_settings(config);
-        let playlist = Playlist::new(config.clone()).unwrap_or_default();
+        let playlist = Playlist::new(&config).unwrap_or_default();
         let mpris = if config.read().settings.player.use_mediacontrols {
             Some(mpris::Mpris::new(cmd_tx.clone()))
         } else {
@@ -381,7 +381,7 @@ impl GeneralPlayer {
         }
     }
     pub fn enqueue_next_from_playlist(&mut self) {
-        if self.playlist.next_track().is_some() {
+        if self.playlist.has_next_track() {
             return;
         }
 
@@ -390,7 +390,6 @@ impl GeneralPlayer {
             None => return,
         };
 
-        self.playlist.set_next_track(Some(&track));
         self.enqueue_next(&track);
 
         info!("Next track enqueued: {:#?}", track);
