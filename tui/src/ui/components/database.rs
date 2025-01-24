@@ -628,49 +628,54 @@ impl Model {
         self.database_sync_results();
     }
 
-    pub fn update_search<'a, T: Indexable>(indexable_songs: &'a Vec<T>, input: &str) -> Vec<&'a T> {
-        // cr note: we could mabye make indexable_songs mut to avoid allocating another Vec
-        // or we could just allocate the full size of indexable to the new vec to avoid reallocations
-        let mut filtered_records = vec![];
-        let search = format!("*{}*", input.to_lowercase());
-        for record in indexable_songs {
-            let artist_match: bool = if let Some(artist) = record.meta_artist() {
-                wildmatch::WildMatch::new(&search).matches(&artist.to_lowercase())
-            } else {
-                false
-            };
-            let title_match: bool = if let Some(title) = record.meta_title() {
-                wildmatch::WildMatch::new(&search).matches(&title.to_lowercase())
-            } else {
-                false
-            };
-            let album_match: bool = if let Some(album) = record.meta_album() {
-                wildmatch::WildMatch::new(&search).matches(&album.to_lowercase())
-            } else {
-                false
-            };
-            if artist_match || title_match || album_match {
-                filtered_records.push(record);
-            }
-        }
-        filtered_records
+    fn match_record<T: Indexable>(record: &T, search: &str) -> bool {
+        let artist_match: bool = if let Some(artist) = record.meta_artist() {
+            wildmatch::WildMatch::new(search).matches(&artist.to_lowercase())
+        } else {
+            false
+        };
+        let title_match: bool = if let Some(title) = record.meta_title() {
+            wildmatch::WildMatch::new(search).matches(&title.to_lowercase())
+        } else {
+            false
+        };
+        let album_match: bool = if let Some(album) = record.meta_album() {
+            wildmatch::WildMatch::new(search).matches(&album.to_lowercase())
+        } else {
+            false
+        };
+        artist_match || title_match || album_match
     }
 
-    pub fn build_table<T: Indexable>(data: &[&T]) -> Table {
+    pub fn update_search<'a, T: Indexable>(
+        indexable_songs: &'a [T],
+        input: &'a str,
+    ) -> impl Iterator<Item = &'a T> {
+        // cr note: we could mabye make indexable_songs mut to avoid allocating another Vec
+        // or we could just allocate the full size of indexable to the new vec to avoid reallocations
+        let search = format!("*{}*", input.to_lowercase());
+        indexable_songs
+            .iter()
+            .filter(move |&record| Model::match_record(record, &search))
+    }
+
+    pub fn build_table<T: Indexable, I: Iterator<Item = T>>(data: I) -> Table {
+        let mut peekable_data = data.peekable();
         let mut table: TableBuilder = TableBuilder::default();
-        if data.is_empty() {
+        if peekable_data.peek().is_none() {
             table.add_col(TextSpan::from("0"));
             table.add_col(TextSpan::from("empty tracks from db/playlist"));
             table.add_col(TextSpan::from(""));
             return table.build();
         }
 
-        for (idx, record) in data.iter().enumerate() {
+        for (idx, record) in peekable_data.enumerate() {
             if idx > 0 {
                 table.add_row();
             }
 
-            let duration = termusiclib::track::Track::duration_formatted_short(&record.duration());
+            let duration =
+                termusiclib::track::Track::duration_formatted_short(&record.meta_duration());
             let duration_string = format!("[{duration:^6.6}]");
 
             table
@@ -692,6 +697,6 @@ impl Model {
         }
 
         let filtered_music = Model::update_search(&db_tracks, input);
-        self.general_search_update_show(Model::build_table(&filtered_music));
+        self.general_search_update_show(Model::build_table(filtered_music));
     }
 }
