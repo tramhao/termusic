@@ -651,8 +651,6 @@ impl Model {
         indexable_songs: &'a [T],
         input: &'a str,
     ) -> impl Iterator<Item = &'a T> {
-        // cr note: we could mabye make indexable_songs mut to avoid allocating another Vec
-        // or we could just allocate the full size of indexable to the new vec to avoid reallocations
         let search = format!("*{}*", input.to_lowercase());
         indexable_songs
             .iter()
