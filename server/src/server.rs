@@ -103,6 +103,7 @@ async fn actual_main() -> Result<()> {
 
     info!("Server starting...");
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
+    let cmd_tx = PlayerCmdSender::new(cmd_tx);
     let (stream_tx, _) = broadcast::channel(3);
 
     let music_player_service: MusicPlayerService =
@@ -176,7 +177,7 @@ fn player_loop(
     stream_tx: termusicplayback::StreamTX,
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx)?;
-    while let Some(cmd) = cmd_rx.blocking_recv() {
+    while let Some((cmd, cb)) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {
             PlayerCmd::AboutToFinish => {
@@ -369,6 +370,8 @@ fn player_loop(
                 player.resume();
             }
         }
+
+        cb.call();
     }
 
     Ok(())
