@@ -4,8 +4,8 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::{
-    stream_updates, Empty, GetProgressResponse, PlayState, PlayerTime, SpeedReply, StreamUpdates,
-    ToggleGaplessReply, UpdateMissedEvents, VolumeReply,
+    stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime, SpeedReply,
+    StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdSender, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
@@ -144,12 +144,12 @@ impl MusicPlayer for MusicPlayerService {
     async fn toggle_gapless(
         &self,
         _request: Request<Empty>,
-    ) -> Result<Response<ToggleGaplessReply>, Status> {
+    ) -> Result<Response<GaplessState>, Status> {
         self.command(&PlayerCmd::ToggleGapless);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.player_stats.lock();
-        let reply = ToggleGaplessReply { gapless: r.gapless };
+        let reply = GaplessState { gapless: r.gapless };
 
         Ok(Response::new(reply))
     }

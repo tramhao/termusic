@@ -12,7 +12,8 @@ service MusicPlayer {
   rpc VolumeDown(Empty) returns (VolumeReply);
   rpc SpeedUp(Empty) returns (SpeedReply);
   rpc SpeedDown(Empty) returns (SpeedReply);
-  rpc ToggleGapless(Empty) returns (ToggleGaplessReply);
+  // Toggle the gapless mdoe, returns the new state.
+  rpc ToggleGapless(Empty) returns (GaplessState);
   rpc SeekForward(Empty) returns (PlayerTime);
   rpc SeekBackward(Empty) returns (PlayerTime);
 
@@ -60,7 +61,8 @@ message SpeedReply {
   int32 speed = 1;
 }
 
-message ToggleGaplessReply {
+// A Gapless state.
+message GaplessState {
   bool gapless = 1;
 }
 
