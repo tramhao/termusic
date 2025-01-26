@@ -374,6 +374,9 @@ impl UI {
                         self.model.lyric_update_for_radio(title);
                     }
                 }
+                UpdateEvents::GaplessChanged { gapless } => {
+                    self.model.config_server.write().settings.player.gapless = gapless;
+                }
             }
         }
 

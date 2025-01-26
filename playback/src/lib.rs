@@ -668,6 +668,7 @@ impl PlayerTrait for GeneralPlayer {
 
     fn set_gapless(&mut self, to: bool) {
         self.get_player_mut().set_gapless(to);
+        self.send_stream_ev(UpdateEvents::GaplessChanged { gapless: to });
     }
 
     fn skip_one(&mut self) {

@@ -82,6 +82,7 @@ message StreamUpdates {
     UpdateSpeedChanged speed_changed = 3;
     UpdatePlayStateChanged play_state_changed = 4;
     UpdateTrackChanged track_changed = 5;
+    UpdateGaplessChanged gapless_changed = 6;
   }
 }
 
@@ -107,6 +108,12 @@ message UpdateSpeedChanged {
 message UpdatePlayStateChanged {
   // reuse the existing message
   PlayState msg = 1;
+}
+
+// The Gapless state changed, send new information.
+message UpdateGaplessChanged {
+  // reuse the existing message
+  GaplessState msg = 1;
 }
 
 // The track changed in some way, send new information
