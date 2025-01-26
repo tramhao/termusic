@@ -311,8 +311,8 @@ impl GeneralPlayer {
     }
 
     pub fn toggle_gapless(&mut self) -> bool {
-        let new_gapless = !self.backend.as_player().gapless();
-        self.backend.as_player_mut().set_gapless(new_gapless);
+        let new_gapless = !<Self as PlayerTrait>::gapless(self);
+        <Self as PlayerTrait>::set_gapless(self, new_gapless);
         self.config.write().settings.player.gapless = new_gapless;
         new_gapless
     }
