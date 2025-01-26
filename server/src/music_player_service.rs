@@ -4,8 +4,8 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::{
-    stream_updates, Empty, GetProgressResponse, PlayerTime, SpeedReply, StreamUpdates,
-    ToggleGaplessReply, TogglePauseResponse, UpdateMissedEvents, VolumeReply,
+    stream_updates, Empty, GetProgressResponse, PlayState, PlayerTime, SpeedReply, StreamUpdates,
+    ToggleGaplessReply, UpdateMissedEvents, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdSender, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
@@ -154,14 +154,11 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
-    async fn toggle_pause(
-        &self,
-        _request: Request<Empty>,
-    ) -> Result<Response<TogglePauseResponse>, Status> {
+    async fn toggle_pause(&self, _request: Request<Empty>) -> Result<Response<PlayState>, Status> {
         self.command(&PlayerCmd::TogglePause);
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.player_stats.lock();
-        let reply = TogglePauseResponse { status: r.status };
+        let reply = PlayState { status: r.status };
 
         Ok(Response::new(reply))
     }

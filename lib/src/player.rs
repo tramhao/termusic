@@ -96,7 +96,7 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
             }),
             UpdateEvents::PlayStateChanged { playing } => {
                 StreamTypes::PlayStateChanged(UpdatePlayStateChanged {
-                    msg: Some(TogglePauseResponse { status: playing }),
+                    msg: Some(PlayState { status: playing }),
                 })
             }
             UpdateEvents::TrackChanged(info) => StreamTypes::TrackChanged(UpdateTrackChanged {

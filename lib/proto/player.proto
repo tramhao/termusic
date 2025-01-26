@@ -3,7 +3,8 @@ package player;
 
 service MusicPlayer {
   // Player Commands
-  rpc TogglePause(Empty) returns (TogglePauseResponse);
+  // Toggle Pause/Play, returns the new state
+  rpc TogglePause(Empty) returns (PlayState);
   rpc SkipNext(Empty) returns (Empty);
   rpc SkipPrevious(Empty) returns (Empty);
   rpc GetProgress(Empty) returns (GetProgressResponse);
@@ -27,7 +28,9 @@ service MusicPlayer {
 
 message Empty {}
 
-message TogglePauseResponse {
+// A play status.
+message PlayState {
+  // The actual status, mapped to [`playback::playlist::Status`]
   uint32 status = 1;
 }
 
@@ -101,7 +104,7 @@ message UpdateSpeedChanged {
 // TODO: is play-state (playing / paused / ??) the only things this should do?
 message UpdatePlayStateChanged {
   // reuse the existing message
-  TogglePauseResponse msg = 1;
+  PlayState msg = 1;
 }
 
 // The track changed in some way, send new information
