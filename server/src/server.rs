@@ -37,7 +37,7 @@ pub const SPEED_STEP: SpeedSigned = 1;
 #[derive(Debug, Clone, PartialEq)]
 struct PlayerStats {
     pub progress: PlayerProgress,
-    pub current_track_index: u32,
+    pub current_track_index: u64,
     pub status: u32,
     pub volume: u16,
     pub speed: i32,
@@ -299,7 +299,8 @@ fn player_loop(
                     player.mpris_update_progress(&p_tick.progress);
                 }
                 if player.current_track_updated {
-                    p_tick.current_track_index = player.playlist.get_current_track_index() as u32;
+                    p_tick.current_track_index =
+                        u64::try_from(player.playlist.get_current_track_index()).unwrap();
                     p_tick.current_track_updated = player.current_track_updated;
                     player.current_track_updated = false;
                 }

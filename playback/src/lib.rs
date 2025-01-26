@@ -360,7 +360,7 @@ impl GeneralPlayer {
             }
 
             self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
-                current_track_index: u32::try_from(self.playlist.get_current_track_index())
+                current_track_index: u64::try_from(self.playlist.get_current_track_index())
                     .unwrap(),
                 current_track_updated: self.current_track_updated,
                 title: self.media_info().media_title,

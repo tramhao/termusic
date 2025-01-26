@@ -57,7 +57,7 @@ impl From<PlayerProgress> for protobuf::PlayerTime {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrackChangedInfo {
     /// Current track index in the playlist
-    pub current_track_index: u32,
+    pub current_track_index: u64,
     /// Indicate if the track changed to another track
     pub current_track_updated: bool,
     /// Title of the current track / radio

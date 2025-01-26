@@ -42,7 +42,7 @@ message PlayerTime {
 
 message GetProgressResponse {
   PlayerTime progress = 1;
-  uint32 current_track_index = 3;
+  uint64 current_track_index = 3;
   uint32 status = 4;
   // actually a u16, but protobuf does not support types lower than 32 bits
   uint32 volume = 5;
@@ -122,7 +122,7 @@ message UpdateGaplessChanged {
 // NOTE: this may or may not be sent for the initial track after startup as the client may connect after the track started
 message UpdateTrackChanged {
   // The index into the playlist of which track changed.
-  uint32 current_track_index = 1;
+  uint64 current_track_index = 1;
   // Indicates if this update is a change to a new track (not just metadata change)
   bool current_track_updated = 2;
 
