@@ -66,13 +66,12 @@ pub struct LabelSpan {
 }
 
 impl LabelSpan {
-    pub fn new(config: &TuiOverlay, span: &[TextSpan]) -> Self {
+    pub fn new(_config: &TuiOverlay, span: &[TextSpan]) -> Self {
         Self {
+            // dont style the Span itself, style the TextSpan's themself
             component: Span::default()
                 .spans(span)
                 .alignment(Alignment::Left)
-                .background(config.settings.theme.library_background())
-                .foreground(config.settings.theme.library_highlight())
                 .modifiers(TextModifiers::BOLD),
             default_span: span.to_vec(),
             active_message_start_time: None,
