@@ -80,7 +80,7 @@ serde_yaml = "0.9"
 shellexpand = { version = "3.1", features = ["path"] }
 soundtouch = "0.4.2"
 souvlaki = { version = "0.8.0", default-features=false, features = ["use_zbus"] }
-stream-download = { version = "0.14.0", features = ["reqwest-rustls"] }
+stream-download = { version = "0.14.1", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
     "aac",
     "mp3",
