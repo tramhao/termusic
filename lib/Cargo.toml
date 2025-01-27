@@ -71,6 +71,7 @@ tokio.workspace = true
 tokio-util = { workspace = true, features = ["rt"] }
 tonic.workspace = true
 prost.workspace = true
+alphanumeric-sort.workspace = true
 
 [build-dependencies]
 cc.workspace = true
