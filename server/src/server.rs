@@ -108,7 +108,7 @@ async fn actual_main() -> Result<()> {
     let (stream_tx, _) = broadcast::channel(3);
 
     let music_player_service: MusicPlayerService =
-        MusicPlayerService::new(cmd_tx.clone(), stream_tx.clone());
+        MusicPlayerService::new(cmd_tx.clone(), stream_tx.clone(), config.clone());
     let playerstats = music_player_service.player_stats.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();

@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
+use termusiclib::config::v2::server::LoopMode;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::{Empty, GetProgressResponse, PlayerProgress};
 use termusicplayback::Status;
@@ -57,12 +58,15 @@ impl Playback {
         Ok(response.volume.min(u32::from(u16::MAX)) as u16)
     }
 
-    pub async fn cycle_loop(&mut self) -> Result<()> {
+    pub async fn cycle_loop(&mut self) -> Result<LoopMode> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.cycle_loop(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
-        Ok(())
+        let as_u8 = u8::try_from(response.mode).context("Failed to convert u32 to u8")?;
+        let loop_mode =
+            LoopMode::tryfrom_discriminant(as_u8).context("Failed to get LoopMode from u8")?;
+        Ok(loop_mode)
     }
 
     pub async fn speed_up(&mut self) -> Result<i32> {

@@ -263,7 +263,10 @@ impl UI {
                     self.handle_status(Status::from_u32(response.status));
                 }
 
-                PlayerCmd::CycleLoop => self.playback.cycle_loop().await?,
+                PlayerCmd::CycleLoop => {
+                    let res = self.playback.cycle_loop().await?;
+                    self.model.config_server.write().settings.player.loop_mode = res;
+                }
                 PlayerCmd::PlaySelected => {
                     self.playback.play_selected().await?;
                     // self.model.playlist.clear_current_track();

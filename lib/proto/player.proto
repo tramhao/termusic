@@ -19,7 +19,8 @@ service MusicPlayer {
 
   // Playlist Commands
   rpc PlaySelected(Empty) returns (Empty);
-  rpc CycleLoop(Empty) returns (Empty);
+  // Cycle the playlist loop mode, returns the new mode.
+  rpc CycleLoop(Empty) returns (PlaylistLoopMode);
   rpc ReloadPlaylist(Empty) returns (Empty);
 
   // Misc Commands
@@ -136,4 +137,10 @@ message UpdateTrackChanged {
     string title = 3;
   }
   PlayerTime progress = 4;
+}
+
+// The current Loop mode for the playlist
+message PlaylistLoopMode {
+  // The actual mode, mapped to [`config::v2::server::LoopMode`]
+  uint32 mode = 1;
 }

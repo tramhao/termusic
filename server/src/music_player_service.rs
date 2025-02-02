@@ -2,10 +2,11 @@ use anyhow::Result;
 use parking_lot::Mutex;
 use std::pin::Pin;
 use std::sync::Arc;
+use termusiclib::config::SharedServerSettings;
 use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::{
-    stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime, SpeedReply,
-    StreamUpdates, UpdateMissedEvents, VolumeReply,
+    stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
+    PlaylistLoopMode, SpeedReply, StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
@@ -19,17 +20,19 @@ use crate::PlayerStats;
 pub struct MusicPlayerService {
     cmd_tx: PlayerCmdSender,
     stream_tx: StreamTX,
+    config: SharedServerSettings,
     pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
 impl MusicPlayerService {
-    pub fn new(cmd_tx: PlayerCmdSender, stream_tx: StreamTX) -> Self {
+    pub fn new(cmd_tx: PlayerCmdSender, stream_tx: StreamTX, config: SharedServerSettings) -> Self {
         let player_stats = Arc::new(Mutex::new(PlayerStats::new()));
 
         Self {
             cmd_tx,
             player_stats,
             stream_tx,
+            config,
         }
     }
 }
@@ -53,9 +56,18 @@ impl MusicPlayerService {
 
 #[tonic::async_trait]
 impl MusicPlayer for MusicPlayerService {
-    async fn cycle_loop(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let reply = Empty {};
-        self.command(PlayerCmd::CycleLoop);
+    async fn cycle_loop(
+        &self,
+        _request: Request<Empty>,
+    ) -> Result<Response<PlaylistLoopMode>, Status> {
+        let rx = self.command_cb(PlayerCmd::CycleLoop)?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let config = self.config.read();
+
+        let reply = PlaylistLoopMode {
+            mode: u32::from(config.settings.player.loop_mode.discriminant()),
+        };
 
         Ok(Response::new(reply))
     }
