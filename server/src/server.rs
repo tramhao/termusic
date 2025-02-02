@@ -369,6 +369,12 @@ fn player_loop(
             PlayerCmd::Play => {
                 player.resume();
             }
+
+            PlayerCmd::PlaylistAddTrack(info) => {
+                if let Err(err) = player.playlist.add_tracks(info, &player.db_podcast) {
+                    error!("Error adding tracks: {err}");
+                }
+            }
         }
 
         cb.call();

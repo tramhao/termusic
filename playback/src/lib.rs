@@ -8,6 +8,7 @@ pub use playlist::{Playlist, Status};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::library_db::DataBase;
+use termusiclib::player::playlist_helpers::PlaylistAddTrack;
 use termusiclib::player::{PlayerProgress, PlayerTimeUnit, TrackChangedInfo, UpdateEvents};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaType, Track};
@@ -110,6 +111,8 @@ pub enum PlayerCmd {
     TogglePause,
     VolumeDown,
     VolumeUp,
+
+    PlaylistAddTrack(PlaylistAddTrack),
 }
 
 pub type StreamTX = broadcast::Sender<UpdateEvents>;
@@ -149,7 +152,8 @@ impl GeneralPlayer {
         let db_podcast = DBPod::new(&db_path).with_context(|| "error connecting to podcast db.")?;
         let db = DataBase::new(&config_read)?;
 
-        let playlist = Playlist::new(&config).context("Failed to load playlist")?;
+        let playlist =
+            Playlist::new(&config, stream_tx.clone()).context("Failed to load playlist")?;
         let mpris = if config.read().settings.player.use_mediacontrols {
             Some(mpris::Mpris::new(cmd_tx.clone()))
         } else {

@@ -38,12 +38,14 @@ use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::PlayerProgress;
 use termusiclib::player::StreamUpdates;
 use termusiclib::player::UpdateEvents;
+use termusiclib::player::UpdatePlaylistEvents;
 pub use termusiclib::types::*;
 use termusicplayback::Status;
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use tonic::transport::Channel;
+use tui_cmd::PlaylistCmd;
 use tui_cmd::TuiCmd;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -301,8 +303,23 @@ impl UI {
                     self.model.config_server.write().settings.player.volume = volume;
                     self.model.progress_update_title();
                 }
+                TuiCmd::Playlist(ev) => self.run_playback_playlist(ev).await?,
             }
         }
+
+        Ok(())
+    }
+
+    /// Handle Playlist requests.
+    ///
+    /// Less nesting.
+    async fn run_playback_playlist(&mut self, ev: PlaylistCmd) -> Result<()> {
+        match ev {
+            PlaylistCmd::AddTrack(tracks) => {
+                self.playback.add_to_playlist(tracks).await?;
+            }
+        }
+
         Ok(())
     }
 
@@ -365,6 +382,18 @@ impl UI {
                 UpdateEvents::GaplessChanged { gapless } => {
                     self.model.config_server.write().settings.player.gapless = gapless;
                 }
+                UpdateEvents::PlaylistChanged(ev) => self.handle_playlist_events(ev)?,
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Handle Playlist Update Events, separately from [`Self::handle_stream_events`] to lessen clutter.
+    fn handle_playlist_events(&mut self, ev: UpdatePlaylistEvents) -> Result<()> {
+        match ev {
+            UpdatePlaylistEvents::PlaylistAddTrack(playlist_add_track) => {
+                self.model.handle_playlist_add(playlist_add_track)?;
             }
         }
 

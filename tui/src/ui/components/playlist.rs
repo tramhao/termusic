@@ -1,5 +1,5 @@
 use crate::ui::model::TermusicLayout;
-use crate::ui::tui_cmd::TuiCmd;
+use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use rand::seq::IndexedRandom;
@@ -10,6 +10,8 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
+use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistTrackSource};
+use termusiclib::player::PlaylistAddTrackInfo;
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
@@ -262,12 +264,22 @@ impl Model {
     /// Add a playlist (like m3u) to the playlist.
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
         let vec = playlist_get_vec(current_node)?;
-        // "add_playlist" will still add all possible things, but return errors for which did not work
-        // so sync still needs to happen
-        let res = self.playlist.add_playlist(&vec);
-        self.player_sync_playlist()?;
-        self.playlist_sync();
-        res?;
+
+        let sources = vec
+            .into_iter()
+            .map(|v| {
+                if v.starts_with("http") {
+                    PlaylistTrackSource::Url(v)
+                } else {
+                    PlaylistTrackSource::Path(v)
+                }
+            })
+            .collect();
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+            PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+        )));
+
         Ok(())
     }
 
@@ -285,9 +297,12 @@ impl Model {
             .episodes
             .get(episode_index)
             .ok_or_else(|| anyhow!("get episode selected failed."))?;
-        self.playlist.add_episode(episode_selected);
-        self.player_sync_playlist()?;
-        self.playlist_sync();
+
+        let source = PlaylistTrackSource::PodcastUrl(episode_selected.url.clone());
+        self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+            PlaylistAddTrack::new_single(u64::try_from(self.playlist.len()).unwrap(), source),
+        )));
+
         Ok(())
     }
 
@@ -301,12 +316,16 @@ impl Model {
         }
         if p.is_dir() {
             let new_items_vec = Self::library_dir_children(p);
-            // "add_playlist" will still add all possible things, but return errors for which did not work
-            // so sync still needs to happen
-            let res = self.playlist.add_playlist(&new_items_vec);
-            self.player_sync_playlist()?;
-            self.playlist_sync();
-            res?;
+
+            let sources = new_items_vec
+                .into_iter()
+                .map(PlaylistTrackSource::Path)
+                .collect();
+
+            self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+                PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+            )));
+
             return Ok(());
         }
         self.playlist_add_item(current_node)?;
@@ -320,24 +339,29 @@ impl Model {
             self.playlist_add_playlist(current_node)?;
             return Ok(());
         }
-        self.playlist.add_track(&current_node)?;
-        self.player_sync_playlist()?;
+        let source = if current_node.starts_with("http") {
+            PlaylistTrackSource::Url(current_node.to_string())
+        } else {
+            PlaylistTrackSource::Path(current_node.to_string())
+        };
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+            PlaylistAddTrack::new_single(u64::try_from(self.playlist.len()).unwrap(), source),
+        )));
+
         Ok(())
     }
 
     /// Add [`TrackDB`] to the playlist
     pub fn playlist_add_all_from_db(&mut self, vec: &[TrackDB]) {
-        let vec2: Vec<&str> = vec.iter().map(|f| f.file.as_str()).collect();
-        // "add_playlist" will still add all possible things, but return errors for which did not work
-        // so sync still needs to happen
-        let res = self.playlist.add_playlist(&vec2);
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.playlist_sync();
-        if let Err(e) = res {
-            self.mount_error_popup(anyhow!(e).context("add all to playlist from database"));
-        }
+        let sources = vec
+            .iter()
+            .map(|f| PlaylistTrackSource::Path(f.file.clone()))
+            .collect();
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+            PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+        )));
     }
 
     /// Add random album(s) from the database to the playlist
@@ -364,6 +388,22 @@ impl Model {
             .get();
         let vec = self.playlist_get_random_tracks(playlist_select_random_track_quantity);
         self.playlist_add_all_from_db(&vec);
+    }
+
+    /// Handle when a playlist has added a track
+    pub fn handle_playlist_add(&mut self, items: PlaylistAddTrackInfo) -> Result<()> {
+        // piggyback off-of the server side implementation for now by re-parsing everything.
+        self.playlist.add_tracks(
+            PlaylistAddTrack {
+                at_index: items.at_index,
+                tracks: vec![items.trackid],
+            },
+            &self.podcast.db_podcast,
+        )?;
+
+        self.playlist_sync();
+
+        Ok(())
     }
 
     fn playlist_sync_podcasts(&mut self) {

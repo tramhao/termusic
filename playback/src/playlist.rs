@@ -10,12 +10,19 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
+use termusiclib::player::playlist_helpers::PlaylistAddTrack;
+use termusiclib::player::playlist_helpers::PlaylistTrackSource;
+use termusiclib::player::PlaylistAddTrackInfo;
+use termusiclib::player::UpdateEvents;
+use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::MediaType;
 use termusiclib::{
     track::Track,
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
+
+use crate::StreamTX;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub enum Status {
@@ -73,12 +80,13 @@ pub struct Playlist {
     played_index: Vec<usize>,
     /// Indicator if the playlist should advance the `current_*` and `next_*` values
     need_proceed_to_next: bool,
+    stream_tx: StreamTX,
 }
 
 impl Playlist {
     /// # Errors
     /// errors could happen when reading files
-    pub fn new(config: &SharedServerSettings) -> Result<Self> {
+    pub fn new(config: &SharedServerSettings, stream_tx: StreamTX) -> Result<Self> {
         let (current_track_index, tracks) = Self::load()?;
         // TODO: shouldnt "loop_mode" be combined with the config ones?
         let loop_mode = config.read().settings.player.loop_mode;
@@ -93,6 +101,7 @@ impl Playlist {
             played_index: Vec::new(),
             next_track_index: None,
             need_proceed_to_next: false,
+            stream_tx,
         })
     }
 
@@ -421,8 +430,23 @@ impl Playlist {
     }
 
     /// Add a podcast episode to the playlist.
+    ///
+    /// # Panics
+    ///
+    /// This should never happen as a podcast url has already been a string, so conversion should not fail
     pub fn add_episode(&mut self, ep: &Episode) {
         let track = Track::from_episode(ep);
+
+        self.send_stream_ev(UpdatePlaylistEvents::PlaylistAddTrack(
+            PlaylistAddTrackInfo {
+                at_index: u64::try_from(self.tracks.len()).unwrap(),
+                title: track.title().map(ToOwned::to_owned),
+                duration: track.duration(),
+                // Note: Safe unwrap, as a podcast uri is always a uri, not a path (which has been a string before)
+                trackid: PlaylistTrackSource::PodcastUrl(track.file().unwrap().to_owned()),
+            },
+        ));
+
         self.tracks.push(track);
     }
 
@@ -451,30 +475,128 @@ impl Playlist {
     ///
     /// # Errors
     /// - When invalid inputs are given (non-existing path, unsupported file types, etc)
+    ///
+    /// # Panics
+    ///
+    /// If `usize` cannot be converted to `u64`
     pub fn add_track<T: AsRef<str>>(&mut self, track: &T) -> Result<(), PlaylistAddError> {
-        let track = track.as_ref();
-        if track.starts_with("http") {
-            let track = Track::new_radio(track);
+        let track_str = track.as_ref();
+        if track_str.starts_with("http") {
+            let track = Self::track_from_uri(track_str);
             self.tracks.push(track);
             return Ok(());
         }
-        let path = Path::new(track);
-        if !filetype_supported(track) {
-            error!("unsupported filetype: {track:#?}");
-            let p = path.to_path_buf();
-            let ext = p.extension().map(|v| v.to_string_lossy().to_string());
-            return Err(PlaylistAddError::UnsupportedFileType(ext, p));
-        }
-        if !path.exists() {
-            return Err(PlaylistAddError::PathDoesNotExist(path.to_path_buf()));
-        }
 
-        let track = Track::read_from_path(track, false)
-            .map_err(|err| PlaylistAddError::ReadError(err, path.to_path_buf()))?;
+        let track = Self::track_from_path(track_str)?;
+
+        self.send_stream_ev(UpdatePlaylistEvents::PlaylistAddTrack(
+            PlaylistAddTrackInfo {
+                at_index: u64::try_from(self.tracks.len()).unwrap(),
+                title: track.title().map(ToOwned::to_owned),
+                duration: track.duration(),
+                trackid: PlaylistTrackSource::Path(track_str.to_string()),
+            },
+        ));
 
         self.tracks.push(track);
 
         Ok(())
+    }
+
+    /// Add Paths / Urls from the music service
+    ///
+    /// # Errors
+    ///
+    /// see [`Self::add_track`]
+    ///
+    /// # Panics
+    ///
+    /// If `usize` cannot be converted to `u64`
+    pub fn add_tracks(&mut self, tracks: PlaylistAddTrack, db_pod: &DBPod) -> Result<()> {
+        self.tracks.reserve(tracks.tracks.len());
+        let at_index = usize::try_from(tracks.at_index).unwrap();
+        if at_index >= self.len() {
+            // insert tracks at the end
+            for track_location in tracks.tracks {
+                let track = match &track_location {
+                    PlaylistTrackSource::Path(path) => Self::track_from_path(path)?,
+                    PlaylistTrackSource::Url(uri) => Self::track_from_uri(uri),
+                    PlaylistTrackSource::PodcastUrl(uri) => {
+                        Self::track_from_podcasturi(uri, db_pod)?
+                    }
+                };
+
+                self.send_stream_ev(UpdatePlaylistEvents::PlaylistAddTrack(
+                    PlaylistAddTrackInfo {
+                        at_index: u64::try_from(self.tracks.len()).unwrap(),
+                        title: track.title().map(ToOwned::to_owned),
+                        duration: track.duration(),
+                        trackid: track_location,
+                    },
+                ));
+
+                self.tracks.push(track);
+            }
+
+            return Ok(());
+        }
+        let mut at_index = at_index;
+        // insert tracks at position
+        for track_location in tracks.tracks {
+            let track = match &track_location {
+                PlaylistTrackSource::Path(path) => Self::track_from_path(path)?,
+                PlaylistTrackSource::Url(uri) => Self::track_from_uri(uri),
+                PlaylistTrackSource::PodcastUrl(uri) => Self::track_from_podcasturi(uri, db_pod)?,
+            };
+
+            self.send_stream_ev(UpdatePlaylistEvents::PlaylistAddTrack(
+                PlaylistAddTrackInfo {
+                    at_index: u64::try_from(at_index).unwrap(),
+                    title: track.title().map(ToOwned::to_owned),
+                    duration: track.duration(),
+                    trackid: track_location,
+                },
+            ));
+
+            self.tracks.insert(at_index, track);
+            at_index += 1;
+        }
+
+        Ok(())
+    }
+
+    /// Create a Track from a given Path
+    fn track_from_path(path_str: &str) -> Result<Track, PlaylistAddError> {
+        let path = Path::new(path_str);
+
+        if !filetype_supported(path_str) {
+            error!("unsupported filetype: {path:#?}");
+            let p = path.to_path_buf();
+            let ext = path.extension().map(|v| v.to_string_lossy().to_string());
+            return Err(PlaylistAddError::UnsupportedFileType(ext, p));
+        }
+
+        if !path.exists() {
+            return Err(PlaylistAddError::PathDoesNotExist(path.to_path_buf()));
+        }
+
+        let track = Track::read_from_path(path, false)
+            .map_err(|err| PlaylistAddError::ReadError(err, path.to_path_buf()))?;
+
+        Ok(track)
+    }
+
+    /// Create a Track from a given uri (radio only)
+    fn track_from_uri(uri: &str) -> Track {
+        Track::new_radio(uri)
+    }
+
+    /// Create a Track from a given podcast uri
+    fn track_from_podcasturi(uri: &str, db_pod: &DBPod) -> Result<Track> {
+        let ep = db_pod.get_episode_by_url(uri)?;
+        let track = Track::from_episode(&ep);
+
+        Ok(track)
     }
 
     #[must_use]
@@ -603,6 +725,18 @@ impl Playlist {
     #[must_use]
     pub fn has_next_track(&self) -> bool {
         self.next_track_index.is_some()
+    }
+
+    /// Send stream events with consistent error handling
+    fn send_stream_ev(&self, ev: UpdatePlaylistEvents) {
+        // there is only one error case: no receivers
+        if self
+            .stream_tx
+            .send(UpdateEvents::PlaylistChanged(ev))
+            .is_err()
+        {
+            debug!("Stream Event not send: No Receivers");
+        }
     }
 }
 

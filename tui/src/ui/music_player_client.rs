@@ -1,7 +1,8 @@
 use anyhow::{Context, Result};
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::player::music_player_client::MusicPlayerClient;
-use termusiclib::player::{Empty, GetProgressResponse, PlayerProgress};
+use termusiclib::player::playlist_helpers::PlaylistAddTrack;
+use termusiclib::player::{Empty, GetProgressResponse, PlayerProgress, PlaylistTracksToAdd};
 use termusicplayback::Status;
 use tokio_stream::{Stream, StreamExt as _};
 use tonic::transport::Channel;
@@ -152,5 +153,13 @@ impl Playback {
         let response = response.into_inner().map(|res| res.map_err(Into::into));
         info!("Got response from server: {response:?}");
         Ok(response)
+    }
+
+    pub async fn add_to_playlist(&mut self, info: PlaylistAddTrack) -> Result<()> {
+        let request = tonic::Request::new(PlaylistTracksToAdd::from(info));
+        let response = self.client.add_to_playlist(request).await?;
+        info!("Got response from server: {response:?}");
+
+        Ok(())
     }
 }

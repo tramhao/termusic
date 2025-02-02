@@ -51,6 +51,7 @@ use termusiclib::songtag::SongTag;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::utils::get_app_config_path;
 use termusicplayback::Playlist;
+use tokio::sync::broadcast;
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -262,7 +263,10 @@ impl Model {
         ));
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        let playlist = Playlist::new(&config_server).expect("Failed to load playlist");
+        // I dont like this workaround, but until the tui has its own playlist impl, this has to do.
+        let (stream_tx, _stream_rx) = broadcast::channel(1);
+
+        let playlist = Playlist::new(&config_server, stream_tx).expect("Failed to load playlist");
         let app = Self::init_app(&tree, &config_tui);
 
         // This line is required, in order to show the playing message for the first track
