@@ -41,7 +41,6 @@ pub mod playlist;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 pub use playlist::{Playlist, Status};
-use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::{ServerOverlay, SharedServerSettings};
@@ -203,7 +202,7 @@ impl Backend {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
     CycleLoop,

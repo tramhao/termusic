@@ -35,7 +35,6 @@ parking_lot.workspace = true
 pathdiff.workspace = true #  = { version = "0.2", features = ["camino"] }
 rand.workspace = true #  = "0.8"
 reqwest.workspace = true
-serde.workspace = true
 soundtouch = { workspace = true, optional = true }
 souvlaki.workspace = true
 stream-download.workspace = true
