@@ -213,7 +213,6 @@ pub enum PlayerCmd {
     SkipPrevious,
     Pause,
     Play,
-    ProcessID,
     Quit,
     ReloadConfig,
     ReloadPlaylist,

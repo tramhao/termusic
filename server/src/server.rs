@@ -223,7 +223,7 @@ fn player_loop(
                     player.playlist.get_current_track_index()
                 );
             }
-            PlayerCmd::GetProgress | PlayerCmd::ProcessID => {}
+            PlayerCmd::GetProgress => {}
             PlayerCmd::PlaySelected => {
                 info!("play selected");
                 player.player_save_last_position();
