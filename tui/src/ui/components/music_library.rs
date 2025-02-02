@@ -1,3 +1,4 @@
+use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
 use anyhow::{bail, Context, Result};
@@ -6,7 +7,6 @@ use std::path::{Path, PathBuf};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::SharedTuiSettings;
-use termusicplayback::PlayerCmd;
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -547,7 +547,7 @@ impl Model {
         drop(config_server);
 
         res.context("Error while saving config")?;
-        self.command(&PlayerCmd::ReloadConfig);
+        self.command(TuiCmd::ReloadConfig);
         Ok(())
     }
 

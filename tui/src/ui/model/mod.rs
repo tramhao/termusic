@@ -49,11 +49,13 @@ use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed};
 use termusiclib::songtag::SongTag;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::utils::get_app_config_path;
-use termusicplayback::{PlayerCmd, Playlist};
+use termusicplayback::Playlist;
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
+
+use super::tui_cmd::TuiCmd;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TermusicLayout {
@@ -143,7 +145,7 @@ pub struct Model {
     pub tx_to_main: Sender<Msg>,
     pub rx_to_main: Receiver<Msg>,
     /// Sender for Player Commands
-    pub cmd_tx: UnboundedSender<PlayerCmd>,
+    pub cmd_to_server_tx: UnboundedSender<TuiCmd>,
 
     pub config_tui: SharedTuiSettings,
     pub config_server: SharedServerSettings,
@@ -207,7 +209,7 @@ fn get_viuer_support() -> ViuerSupported {
 }
 
 impl Model {
-    pub async fn new(config: CombinedSettings, cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
+    pub async fn new(config: CombinedSettings, cmd_to_server_tx: UnboundedSender<TuiCmd>) -> Self {
         let CombinedSettings {
             server: config_server,
             tui: config_tui,
@@ -308,7 +310,7 @@ impl Model {
             rx_to_main,
             download_tracker: DownloadTracker::default(),
             playlist,
-            cmd_tx,
+            cmd_to_server_tx,
             current_song: None,
             xywh,
         }
@@ -375,14 +377,14 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        self.command(&PlayerCmd::GetProgress);
+        self.command(TuiCmd::GetProgress);
         self.progress_update_title();
         self.lyric_update_title();
     }
 
     pub fn player_sync_playlist(&mut self) -> Result<()> {
         self.playlist.save()?;
-        self.command(&PlayerCmd::ReloadPlaylist);
+        self.command(TuiCmd::ReloadPlaylist);
         Ok(())
     }
 
@@ -401,17 +403,17 @@ impl Model {
             return;
         }
 
-        self.command(&PlayerCmd::TogglePause);
-        // self.progress_update_title();
+        self.command(TuiCmd::TogglePause);
     }
 
     pub fn player_previous(&mut self) {
-        self.command(&PlayerCmd::SkipPrevious);
+        self.command(TuiCmd::SkipPrevious);
     }
 
-    pub fn command(&mut self, cmd: &PlayerCmd) {
-        if let Err(e) = self.cmd_tx.send(cmd.clone()) {
-            self.mount_error_popup((anyhow!(e)).context(format!("{cmd:?}")));
+    /// Send a command to the `MusicPlayerService` (via the Client)
+    pub fn command(&mut self, cmd: TuiCmd) {
+        if let Err(e) = self.cmd_to_server_tx.send(cmd) {
+            self.mount_error_popup(anyhow!(e));
         }
     }
 
