@@ -357,6 +357,41 @@ impl Database {
         Ok(episodes)
     }
 
+    /// Find a single Episode by its Url.
+    pub fn get_episode_by_url(&self, ep_uri: &str) -> Result<Episode> {
+        let mut stmt = self.conn.prepare_cached(
+            "SELECT episodes.id as epid, files.id as fileid, * FROM episodes
+                    LEFT JOIN files ON episodes.id = files.episode_id
+                    WHERE episodes.url = ?
+                    ORDER BY pubdate DESC;",
+        )?;
+
+        let episode = stmt
+            .query_map(params![ep_uri], |row| {
+                let episode = EpisodeDB::try_from_row_named_alias_id(row)?;
+                let file = FileDB::try_from_row_named_alias_id(row).ok();
+
+                Ok(Episode {
+                    id: episode.id,
+                    pod_id: episode.pod_id,
+                    title: episode.title,
+                    url: episode.url,
+                    guid: episode.guid,
+                    description: episode.description,
+                    pubdate: episode.pubdate,
+                    duration: episode.duration,
+                    path: file.map(|v| v.path),
+                    played: episode.played,
+                    last_position: episode.last_position,
+                    image_url: episode.image_url,
+                })
+            })?
+            .flatten()
+            .next();
+
+        episode.ok_or(anyhow!("No Episode found with url \"{ep_uri}\""))
+    }
+
     /// Deletes all rows in all tables
     pub fn clear_db(&self) -> Result<()> {
         self.conn.execute("DELETE FROM files;", [])?;
