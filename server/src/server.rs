@@ -12,7 +12,7 @@ use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
-use termusiclib::config::ServerOverlay;
+use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime};
 use termusiclib::track::MediaType;
@@ -102,6 +102,7 @@ async fn actual_main() -> Result<()> {
     }
 
     info!("Server starting...");
+    let config = new_shared_server_settings(config);
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
     let cmd_tx = PlayerCmdSender::new(cmd_tx);
     let (stream_tx, _) = broadcast::channel(3);
@@ -120,7 +121,7 @@ async fn actual_main() -> Result<()> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let addr = std::net::SocketAddr::from(config.settings.com);
+    let addr = std::net::SocketAddr::from(config.read().settings.com);
 
     // workaround to print address once sever "actually" is started and address is known
     // see https://github.com/hyperium/tonic/issues/351
@@ -172,7 +173,7 @@ fn player_loop(
     backend: BackendSelect,
     cmd_tx: PlayerCmdSender,
     mut cmd_rx: PlayerCmdReciever,
-    config: ServerOverlay,
+    config: SharedServerSettings,
     playerstats: Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
 ) -> Result<()> {

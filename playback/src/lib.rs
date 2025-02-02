@@ -44,7 +44,7 @@ pub use playlist::{Playlist, Status};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
+use termusiclib::config::{ServerOverlay, SharedServerSettings};
 use termusiclib::library_db::DataBase;
 use termusiclib::player::{PlayerProgress, PlayerTimeUnit, TrackChangedInfo, UpdateEvents};
 use termusiclib::podcast::db::Database as DBPod;
@@ -254,18 +254,18 @@ impl GeneralPlayer {
     /// - if config path creation fails
     pub fn new_backend(
         backend: BackendSelect,
-        config: ServerOverlay,
+        config: SharedServerSettings,
         cmd_tx: PlayerCmdSender,
         stream_tx: StreamTX,
     ) -> Result<Self> {
-        let backend = Backend::new_select(backend, &config, cmd_tx.clone());
+        let config_read = config.read();
+        let backend = Backend::new_select(backend, &config_read, cmd_tx.clone());
 
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
         let db_podcast = DBPod::new(&db_path).with_context(|| "error connecting to podcast db.")?;
-        let db = DataBase::new(&config)?;
+        let db = DataBase::new(&config_read)?;
 
-        let config = new_shared_server_settings(config);
         let playlist = Playlist::new(&config).unwrap_or_default();
         let mpris = if config.read().settings.player.use_mediacontrols {
             Some(mpris::Mpris::new(cmd_tx.clone()))
@@ -277,6 +277,8 @@ impl GeneralPlayer {
         } else {
             None
         };
+
+        drop(config_read);
 
         Ok(Self {
             backend,
@@ -299,7 +301,7 @@ impl GeneralPlayer {
     /// - if connecting to the database fails
     /// - if config path creation fails
     pub fn new(
-        config: ServerOverlay,
+        config: SharedServerSettings,
         cmd_tx: PlayerCmdSender,
         stream_tx: StreamTX,
     ) -> Result<Self> {
