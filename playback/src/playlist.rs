@@ -55,7 +55,7 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Playlist {
     /// All tracks in the playlist
     tracks: Vec<Track>,

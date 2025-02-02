@@ -247,7 +247,7 @@ impl Model {
         ));
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        let playlist = Playlist::new(&config_server).unwrap_or_default();
+        let playlist = Playlist::new(&config_server).expect("Failed to load playlist");
         let app = Self::init_app(&tree, &config_tui);
 
         // This line is required, in order to show the playing message for the first track

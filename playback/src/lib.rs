@@ -264,7 +264,7 @@ impl GeneralPlayer {
         let db_podcast = DBPod::new(&db_path).with_context(|| "error connecting to podcast db.")?;
         let db = DataBase::new(&config_read)?;
 
-        let playlist = Playlist::new(&config).unwrap_or_default();
+        let playlist = Playlist::new(&config).context("Failed to load playlist")?;
         let mpris = if config.read().settings.player.use_mediacontrols {
             Some(mpris::Mpris::new(cmd_tx.clone()))
         } else {
