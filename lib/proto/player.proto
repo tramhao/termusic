@@ -18,10 +18,14 @@ service MusicPlayer {
   rpc SeekBackward(Empty) returns (PlayerTime);
 
   // Playlist Commands
+  // Skip to a specific track in the playlist
+  // at the momemnt, the one set via "current_track_index"
   rpc PlaySelected(Empty) returns (Empty);
   // Cycle the playlist loop mode, returns the new mode.
   rpc CycleLoop(Empty) returns (PlaylistLoopMode);
   rpc ReloadPlaylist(Empty) returns (Empty);
+  // Add one or multiple tracks to the playlist
+  rpc AddToPlaylist(PlaylistTracksToAdd) returns (Empty);
 
   // Misc Commands
   rpc ReloadConfig(Empty) returns (Empty);
@@ -84,6 +88,8 @@ message StreamUpdates {
     UpdatePlayStateChanged play_state_changed = 4;
     UpdateTrackChanged track_changed = 5;
     UpdateGaplessChanged gapless_changed = 6;
+
+    UpdatePlaylist playlist_changed = 7;
   }
 }
 
@@ -139,8 +145,58 @@ message UpdateTrackChanged {
   PlayerTime progress = 4;
 }
 
+message UpdatePlaylist {
+  oneof type {
+    PlaylistAddTrack add_track = 1;
+  }
+}
+
+// A Track got added to the playlist, this message contains where it was added and all the metadata required for display.
+message PlaylistAddTrack {
+  // The index the track was added to the playlist.
+  // If this is not at the end, all tracks at that index and after need to be shifted to make place for this new one.
+  uint64 at_index = 1;
+
+  // all values below should be moved into their own "Track" message at some point
+  // instead of having the TUI fetch everything from the file itself
+  // radio title, track title
+  // the following is (linux protobuf) 3.15, ubuntu 2204 still has (linux protobuf) 3.12
+  // optional string title = 3;
+  // the following "oneof" is wire equivalent to the above "optional"
+  oneof optional_title {
+    string title = 2;
+  }
+  Duration duration = 3;
+
+  // The Id of the track that was added
+  TrackId id = 4;
+}
+
 // The current Loop mode for the playlist
 message PlaylistLoopMode {
   // The actual mode, mapped to [`config::v2::server::LoopMode`]
   uint32 mode = 1;
+}
+
+// Add multiple tracks to a Playlist
+message PlaylistTracksToAdd {
+  // The index the track(s) are added at.
+  // If this is not at the end, all tracks at that index and after need to be shifted to make place for this new one.
+  uint64 at_index = 1;
+
+  // All the Tracks to add at the index
+  repeated TrackId tracks = 2;
+}
+
+// A Identifier for a track.
+message TrackId {
+  oneof source {
+    // Path on the system
+    // bytes *could* be used, but it way more complex and platform dependant
+    string path = 1;
+    // Url (ex. radio)
+    string url = 2;
+    // A podcast episode
+    string podcastUrl = 3;
+  }
 }
