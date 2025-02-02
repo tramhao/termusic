@@ -127,19 +127,19 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
         let value = unwrap_msg(value.r#type, "StreamUpdates.type")?;
 
         let res = match value {
-            stream_updates::Type::VolumeChanged(ev) => Self::VolumeChanged {
+            StreamTypes::VolumeChanged(ev) => Self::VolumeChanged {
                 volume: clamp_u16(
                     unwrap_msg(ev.msg, "StreamUpdates.types.volume_changed.msg")?.volume,
                 ),
             },
-            stream_updates::Type::SpeedChanged(ev) => Self::SpeedChanged {
+            StreamTypes::SpeedChanged(ev) => Self::SpeedChanged {
                 speed: unwrap_msg(ev.msg, "StreamUpdates.types.speed_changed.msg")?.speed,
             },
-            stream_updates::Type::PlayStateChanged(ev) => Self::PlayStateChanged {
+            StreamTypes::PlayStateChanged(ev) => Self::PlayStateChanged {
                 playing: unwrap_msg(ev.msg, "StreamUpdates.types.play_state_changed.msg")?.status,
             },
-            stream_updates::Type::MissedEvents(ev) => Self::MissedEvents { amount: ev.amount },
-            stream_updates::Type::TrackChanged(ev) => Self::TrackChanged(TrackChangedInfo {
+            StreamTypes::MissedEvents(ev) => Self::MissedEvents { amount: ev.amount },
+            StreamTypes::TrackChanged(ev) => Self::TrackChanged(TrackChangedInfo {
                 current_track_index: ev.current_track_index,
                 current_track_updated: ev.current_track_updated,
                 title: ev.optional_title.map(|v| {
@@ -148,7 +148,7 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
                 }),
                 progress: ev.progress.map(Into::into),
             }),
-            stream_updates::Type::GaplessChanged(ev) => Self::GaplessChanged {
+            StreamTypes::GaplessChanged(ev) => Self::GaplessChanged {
                 gapless: unwrap_msg(ev.msg, "StreamUpdates.types.gapless_changed.msg")?.gapless,
             },
         };
