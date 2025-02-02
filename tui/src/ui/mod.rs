@@ -23,14 +23,14 @@
  */
 pub mod components;
 pub mod model;
-mod playback;
+mod music_player_client;
 pub mod utils;
 
 use anyhow::Context;
 use anyhow::Result;
 use futures::future::FutureExt;
 use model::{Model, TermusicLayout};
-use playback::Playback;
+use music_player_client::Playback;
 use std::time::Duration;
 use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
