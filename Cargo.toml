@@ -30,7 +30,7 @@ async-channel = "2.2"
 async-trait = "0.1"
 base64 = "0.22"
 bytes = "1.9"
-chrono = "^0.4.23"
+chrono = "0.4.39"
 clap = { version = "4.5", features = ["derive", "env"] }
 ctrlc = { version = "3.4", features = ["termination"] }
 dirs = "5.0"
@@ -48,10 +48,10 @@ include_dir = "0.7"
 lazy_static = "1.4"
 libaes = "0.7"
 libmpv-sirno = "2.0.2-fork.1"
-lofty = "0.22"
+lofty = "0.22.1"
 log = "0.4"
-flexi_logger = "0.29"
-colored = "2.0"
+flexi_logger = "0.29.8"
+colored = "2.2"
 md5 = "0.7"
 num-bigint = "0.4"
 opml = "1.1"
@@ -80,7 +80,7 @@ serde_yaml = "0.9"
 shellexpand = { version = "3.1", features = ["path"] }
 soundtouch = "0.4.2"
 souvlaki = { version = "0.8.0", default-features=false, features = ["use_zbus"] }
-stream-download = { version = "0.14.0", features = ["reqwest-rustls"] }
+stream-download = { version = "0.14.1", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
     "aac",
     "mp3",
@@ -99,10 +99,10 @@ tokio-util = "0.7"
 tokio-stream = { version = "0.1", features = ["sync"] }
 toml = "0.8"
 # only update prost and tonic major versions together
-prost = "0.13.3"
+prost = "0.13.4"
 tonic = "0.12.3"
 tonic-build = "0.12.3"
-tuirealm = { version = "~2.0.3", features = ["serialize"] }
+tuirealm = "~2.0.3"
 tui-realm-stdlib = "~2.0"
 tui-realm-treeview = "~2.0"
 unicode-segmentation = "1.12"
@@ -113,7 +113,7 @@ wildmatch = "2.4"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures = "0.3"
 # transistive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
-cc = "1.1"
+cc = "1.2"
 
 [profile.release]
 lto = true
