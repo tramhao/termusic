@@ -157,7 +157,7 @@ pub trait Indexable {
     fn meta_album(&self) -> Option<&str>;
     fn meta_artist(&self) -> Option<&str>;
     fn meta_genre(&self) -> Option<&str>;
-    fn duration(&self) -> Duration;
+    fn meta_duration(&self) -> Duration;
 }
 
 impl Indexable for Track {
@@ -176,7 +176,7 @@ impl Indexable for Track {
     fn meta_genre(&self) -> Option<&str> {
         self.genre()
     }
-    fn duration(&self) -> Duration {
+    fn meta_duration(&self) -> Duration {
         self.duration()
     }
 }
@@ -213,7 +213,65 @@ impl Indexable for TrackDB {
         Some(&self.genre)
     }
 
-    fn duration(&self) -> Duration {
+    fn meta_duration(&self) -> Duration {
+        self.duration
+    }
+}
+
+impl Indexable for &Track {
+    fn meta_file(&self) -> Option<&str> {
+        self.file()
+    }
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+    fn meta_album(&self) -> Option<&str> {
+        self.album()
+    }
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+    fn meta_genre(&self) -> Option<&str> {
+        self.genre()
+    }
+    fn meta_duration(&self) -> Duration {
+        self.duration()
+    }
+}
+
+impl Indexable for &TrackDB {
+    fn meta_file(&self) -> Option<&str> {
+        if self.file == UNKNOWN_FILE {
+            return None;
+        }
+        Some(&self.file)
+    }
+    fn meta_title(&self) -> Option<&str> {
+        if self.title == UNKNOWN_TITLE {
+            return None;
+        }
+        Some(&self.title)
+    }
+    fn meta_album(&self) -> Option<&str> {
+        if self.album == UNKNOWN_ALBUM {
+            return None;
+        }
+        Some(&self.album)
+    }
+    fn meta_artist(&self) -> Option<&str> {
+        if self.artist == UNKNOWN_ARTIST {
+            return None;
+        }
+        Some(&self.artist)
+    }
+    fn meta_genre(&self) -> Option<&str> {
+        if self.genre == UNKNOWN_GENRE {
+            return None;
+        }
+        Some(&self.genre)
+    }
+
+    fn meta_duration(&self) -> Duration {
         self.duration
     }
 }
