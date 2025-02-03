@@ -57,7 +57,7 @@ impl From<PlayerProgress> for protobuf::PlayerTime {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrackChangedInfo {
     /// Current track index in the playlist
-    pub current_track_index: u32,
+    pub current_track_index: u64,
     /// Indicate if the track changed to another track
     pub current_track_updated: bool,
     /// Title of the current track / radio
@@ -73,6 +73,7 @@ pub enum UpdateEvents {
     SpeedChanged { speed: i32 },
     PlayStateChanged { playing: u32 },
     TrackChanged(TrackChangedInfo),
+    GaplessChanged { gapless: bool },
 }
 
 type StreamTypes = protobuf::stream_updates::Type;
@@ -96,7 +97,7 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
             }),
             UpdateEvents::PlayStateChanged { playing } => {
                 StreamTypes::PlayStateChanged(UpdatePlayStateChanged {
-                    msg: Some(TogglePauseResponse { status: playing }),
+                    msg: Some(PlayState { status: playing }),
                 })
             }
             UpdateEvents::TrackChanged(info) => StreamTypes::TrackChanged(UpdateTrackChanged {
@@ -107,6 +108,11 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
                     .map(protobuf::update_track_changed::OptionalTitle::Title),
                 progress: info.progress.map(Into::into),
             }),
+            UpdateEvents::GaplessChanged { gapless } => {
+                StreamTypes::GaplessChanged(UpdateGaplessChanged {
+                    msg: Some(GaplessState { gapless }),
+                })
+            }
         };
 
         Self { r#type: Some(val) }
@@ -142,6 +148,9 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
                 }),
                 progress: ev.progress.map(Into::into),
             }),
+            stream_updates::Type::GaplessChanged(ev) => Self::GaplessChanged {
+                gapless: unwrap_msg(ev.msg, "StreamUpdates.types.gapless_changed.msg")?.gapless,
+            },
         };
 
         Ok(res)

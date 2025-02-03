@@ -4,10 +4,10 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::{
-    stream_updates, Empty, GetProgressResponse, PlayerTime, SpeedReply, StreamUpdates,
-    ToggleGaplessReply, TogglePauseResponse, UpdateMissedEvents, VolumeReply,
+    stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime, SpeedReply,
+    StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdSender, StreamTX};
+use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::{Stream, StreamExt};
@@ -35,10 +35,19 @@ impl MusicPlayerService {
 }
 
 impl MusicPlayerService {
-    fn command(&self, cmd: &PlayerCmd) {
+    fn command(&self, cmd: PlayerCmd) {
         if let Err(e) = self.cmd_tx.send(cmd.clone()) {
             error!("error {cmd:?}: {e}");
         }
+    }
+
+    fn command_cb(&self, cmd: PlayerCmd) -> Result<PlayerCmdCallback, Status> {
+        let rx = self.cmd_tx.send_cb(cmd.clone()).map_err(|err| {
+            error!("error {cmd:?}: {err}");
+            Status::from_error(err.into())
+        })?;
+
+        Ok(rx)
     }
 }
 
@@ -46,7 +55,7 @@ impl MusicPlayerService {
 impl MusicPlayer for MusicPlayerService {
     async fn cycle_loop(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
-        self.command(&PlayerCmd::CycleLoop);
+        self.command(PlayerCmd::CycleLoop);
 
         Ok(Response::new(reply))
     }
@@ -65,21 +74,21 @@ impl MusicPlayer for MusicPlayerService {
 
     async fn play_selected(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
-        self.command(&PlayerCmd::PlaySelected);
+        self.command(PlayerCmd::PlaySelected);
 
         Ok(Response::new(reply))
     }
 
     async fn reload_config(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
-        self.command(&PlayerCmd::ReloadConfig);
+        self.command(PlayerCmd::ReloadConfig);
 
         Ok(Response::new(reply))
     }
 
     async fn reload_playlist(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
-        self.command(&PlayerCmd::ReloadPlaylist);
+        self.command(PlayerCmd::ReloadPlaylist);
 
         Ok(Response::new(reply))
     }
@@ -88,9 +97,9 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<Empty>,
     ) -> Result<Response<PlayerTime>, Status> {
-        self.command(&PlayerCmd::SeekBackward);
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(20));
+        let rx = self.command_cb(PlayerCmd::SeekBackward)?;
+        // wait until the event was processed
+        let _ = rx.await;
         let s = self.player_stats.lock();
         let reply = s.as_playertime();
 
@@ -98,9 +107,9 @@ impl MusicPlayer for MusicPlayerService {
     }
 
     async fn seek_forward(&self, _request: Request<Empty>) -> Result<Response<PlayerTime>, Status> {
-        self.command(&PlayerCmd::SeekForward);
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(20));
+        let rx = self.command_cb(PlayerCmd::SeekForward)?;
+        // wait until the event was processed
+        let _ = rx.await;
         let s = self.player_stats.lock();
 
         let reply = s.as_playertime();
@@ -110,21 +119,21 @@ impl MusicPlayer for MusicPlayerService {
 
     async fn skip_next(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
-        self.command(&PlayerCmd::SkipNext);
+        self.command(PlayerCmd::SkipNext);
 
         Ok(Response::new(reply))
     }
     async fn skip_previous(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
-        self.command(&PlayerCmd::SkipPrevious);
+        self.command(PlayerCmd::SkipPrevious);
 
         Ok(Response::new(reply))
     }
 
     async fn speed_down(&self, _request: Request<Empty>) -> Result<Response<SpeedReply>, Status> {
-        self.command(&PlayerCmd::SpeedDown);
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(20));
+        let rx = self.command_cb(PlayerCmd::SpeedDown)?;
+        // wait until the event was processed
+        let _ = rx.await;
         let s = self.player_stats.lock();
         let reply = SpeedReply { speed: s.speed };
 
@@ -132,9 +141,9 @@ impl MusicPlayer for MusicPlayerService {
     }
 
     async fn speed_up(&self, _request: Request<Empty>) -> Result<Response<SpeedReply>, Status> {
-        self.command(&PlayerCmd::SpeedUp);
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(20));
+        let rx = self.command_cb(PlayerCmd::SpeedUp)?;
+        // wait until the event was processed
+        let _ = rx.await;
         let s = self.player_stats.lock();
         let reply = SpeedReply { speed: s.speed };
 
@@ -144,32 +153,30 @@ impl MusicPlayer for MusicPlayerService {
     async fn toggle_gapless(
         &self,
         _request: Request<Empty>,
-    ) -> Result<Response<ToggleGaplessReply>, Status> {
-        self.command(&PlayerCmd::ToggleGapless);
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(20));
+    ) -> Result<Response<GaplessState>, Status> {
+        let rx = self.command_cb(PlayerCmd::ToggleGapless)?;
+        // wait until the event was processed
+        let _ = rx.await;
         let r = self.player_stats.lock();
-        let reply = ToggleGaplessReply { gapless: r.gapless };
+        let reply = GaplessState { gapless: r.gapless };
 
         Ok(Response::new(reply))
     }
 
-    async fn toggle_pause(
-        &self,
-        _request: Request<Empty>,
-    ) -> Result<Response<TogglePauseResponse>, Status> {
-        self.command(&PlayerCmd::TogglePause);
-        std::thread::sleep(std::time::Duration::from_millis(20));
+    async fn toggle_pause(&self, _request: Request<Empty>) -> Result<Response<PlayState>, Status> {
+        let rx = self.command_cb(PlayerCmd::TogglePause)?;
+        // wait until the event was processed
+        let _ = rx.await;
         let r = self.player_stats.lock();
-        let reply = TogglePauseResponse { status: r.status };
+        let reply = PlayState { status: r.status };
 
         Ok(Response::new(reply))
     }
 
     async fn volume_down(&self, _request: Request<Empty>) -> Result<Response<VolumeReply>, Status> {
-        self.command(&PlayerCmd::VolumeDown);
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(20));
+        let rx = self.command_cb(PlayerCmd::VolumeDown)?;
+        // wait until the event was processed
+        let _ = rx.await;
         let r = self.player_stats.lock();
         let reply = VolumeReply {
             volume: u32::from(r.volume),
@@ -179,9 +186,9 @@ impl MusicPlayer for MusicPlayerService {
     }
 
     async fn volume_up(&self, _request: Request<Empty>) -> Result<Response<VolumeReply>, Status> {
-        self.command(&PlayerCmd::VolumeUp);
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(20));
+        let rx = self.command_cb(PlayerCmd::VolumeUp)?;
+        // wait until the event was processed
+        let _ = rx.await;
         let r = self.player_stats.lock();
         let reply = VolumeReply {
             volume: u32::from(r.volume),

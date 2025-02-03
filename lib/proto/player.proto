@@ -3,7 +3,8 @@ package player;
 
 service MusicPlayer {
   // Player Commands
-  rpc TogglePause(Empty) returns (TogglePauseResponse);
+  // Toggle Pause/Play, returns the new state
+  rpc TogglePause(Empty) returns (PlayState);
   rpc SkipNext(Empty) returns (Empty);
   rpc SkipPrevious(Empty) returns (Empty);
   rpc GetProgress(Empty) returns (GetProgressResponse);
@@ -11,7 +12,8 @@ service MusicPlayer {
   rpc VolumeDown(Empty) returns (VolumeReply);
   rpc SpeedUp(Empty) returns (SpeedReply);
   rpc SpeedDown(Empty) returns (SpeedReply);
-  rpc ToggleGapless(Empty) returns (ToggleGaplessReply);
+  // Toggle the gapless mdoe, returns the new state.
+  rpc ToggleGapless(Empty) returns (GaplessState);
   rpc SeekForward(Empty) returns (PlayerTime);
   rpc SeekBackward(Empty) returns (PlayerTime);
 
@@ -27,7 +29,9 @@ service MusicPlayer {
 
 message Empty {}
 
-message TogglePauseResponse {
+// A play status.
+message PlayState {
+  // The actual status, mapped to [`playback::playlist::Status`]
   uint32 status = 1;
 }
 
@@ -38,7 +42,7 @@ message PlayerTime {
 
 message GetProgressResponse {
   PlayerTime progress = 1;
-  uint32 current_track_index = 3;
+  uint64 current_track_index = 3;
   uint32 status = 4;
   // actually a u16, but protobuf does not support types lower than 32 bits
   uint32 volume = 5;
@@ -57,7 +61,8 @@ message SpeedReply {
   int32 speed = 1;
 }
 
-message ToggleGaplessReply {
+// A Gapless state.
+message GaplessState {
   bool gapless = 1;
 }
 
@@ -77,6 +82,7 @@ message StreamUpdates {
     UpdateSpeedChanged speed_changed = 3;
     UpdatePlayStateChanged play_state_changed = 4;
     UpdateTrackChanged track_changed = 5;
+    UpdateGaplessChanged gapless_changed = 6;
   }
 }
 
@@ -101,7 +107,13 @@ message UpdateSpeedChanged {
 // TODO: is play-state (playing / paused / ??) the only things this should do?
 message UpdatePlayStateChanged {
   // reuse the existing message
-  TogglePauseResponse msg = 1;
+  PlayState msg = 1;
+}
+
+// The Gapless state changed, send new information.
+message UpdateGaplessChanged {
+  // reuse the existing message
+  GaplessState msg = 1;
 }
 
 // The track changed in some way, send new information
@@ -109,7 +121,9 @@ message UpdatePlayStateChanged {
 // This is *not* used for regular track progress updates
 // NOTE: this may or may not be sent for the initial track after startup as the client may connect after the track started
 message UpdateTrackChanged {
-  uint32 current_track_index = 1;
+  // The index into the playlist of which track changed.
+  uint64 current_track_index = 1;
+  // Indicates if this update is a change to a new track (not just metadata change)
   bool current_track_updated = 2;
 
   // all values below should be moved into their own "Track" message at some point

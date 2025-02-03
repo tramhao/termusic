@@ -51,8 +51,9 @@ use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
 use tokio::runtime::Handle;
-use tokio::sync::broadcast;
+use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::sync::{broadcast, oneshot};
 
 #[macro_use]
 extern crate log;
@@ -83,8 +84,57 @@ pub enum Backend {
     GStreamer(gstreamer_backend::GStreamerBackend),
 }
 
-pub type PlayerCmdReciever = UnboundedReceiver<PlayerCmd>;
-pub type PlayerCmdSender = UnboundedSender<PlayerCmd>;
+pub type PlayerCmdCallback = oneshot::Receiver<()>;
+pub type PlayerCmdReciever = UnboundedReceiver<(PlayerCmd, PlayerCmdCallbackSender)>;
+
+/// Wrapper around the potential oneshot sender to implement convenience functions.
+#[derive(Debug)]
+pub struct PlayerCmdCallbackSender(Option<oneshot::Sender<()>>);
+
+impl PlayerCmdCallbackSender {
+    /// Send on the oneshot, if there is any.
+    pub fn call(self) {
+        let Some(sender) = self.0 else {
+            return;
+        };
+        let _ = sender.send(());
+    }
+}
+
+/// Wrapper for the actual sender, to make it easier to implement new functions.
+#[derive(Debug, Clone)]
+pub struct PlayerCmdSender(UnboundedSender<(PlayerCmd, PlayerCmdCallbackSender)>);
+
+impl PlayerCmdSender {
+    /// Send a given [`PlayerCmd`] without any callback.
+    ///
+    /// # Errors
+    /// Also see [`oneshot::Sender::send`].
+    pub fn send(
+        &self,
+        cmd: PlayerCmd,
+    ) -> Result<(), SendError<(PlayerCmd, PlayerCmdCallbackSender)>> {
+        self.0.send((cmd, PlayerCmdCallbackSender(None)))
+    }
+
+    /// Send a given [`PlayerCmd`] with a callback, returning the receiver.
+    ///
+    /// # Errors
+    /// Also see [`oneshot::Sender::send`].
+    pub fn send_cb(
+        &self,
+        cmd: PlayerCmd,
+    ) -> Result<PlayerCmdCallback, SendError<(PlayerCmd, PlayerCmdCallbackSender)>> {
+        let (tx, rx) = oneshot::channel();
+        self.0.send((cmd, PlayerCmdCallbackSender(Some(tx))))?;
+        Ok(rx)
+    }
+
+    #[must_use]
+    pub fn new(tx: UnboundedSender<(PlayerCmd, PlayerCmdCallbackSender)>) -> Self {
+        Self(tx)
+    }
+}
 
 impl Backend {
     /// Create a new Backend based on `backend`([`BackendSelect`])
@@ -311,8 +361,8 @@ impl GeneralPlayer {
     }
 
     pub fn toggle_gapless(&mut self) -> bool {
-        let new_gapless = !self.backend.as_player().gapless();
-        self.backend.as_player_mut().set_gapless(new_gapless);
+        let new_gapless = !<Self as PlayerTrait>::gapless(self);
+        <Self as PlayerTrait>::set_gapless(self, new_gapless);
         self.config.write().settings.player.gapless = new_gapless;
         new_gapless
     }
@@ -360,7 +410,7 @@ impl GeneralPlayer {
             }
 
             self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
-                current_track_index: u32::try_from(self.playlist.get_current_track_index())
+                current_track_index: u64::try_from(self.playlist.get_current_track_index())
                     .unwrap(),
                 current_track_updated: self.current_track_updated,
                 title: self.media_info().media_title,
@@ -668,6 +718,7 @@ impl PlayerTrait for GeneralPlayer {
 
     fn set_gapless(&mut self, to: bool) {
         self.get_player_mut().set_gapless(to);
+        self.send_stream_ev(UpdateEvents::GaplessChanged { gapless: to });
     }
 
     fn skip_one(&mut self) {

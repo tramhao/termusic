@@ -37,7 +37,7 @@ pub const SPEED_STEP: SpeedSigned = 1;
 #[derive(Debug, Clone, PartialEq)]
 struct PlayerStats {
     pub progress: PlayerProgress,
-    pub current_track_index: u32,
+    pub current_track_index: u64,
     pub status: u32,
     pub volume: u16,
     pub speed: i32,
@@ -103,6 +103,7 @@ async fn actual_main() -> Result<()> {
 
     info!("Server starting...");
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
+    let cmd_tx = PlayerCmdSender::new(cmd_tx);
     let (stream_tx, _) = broadcast::channel(3);
 
     let music_player_service: MusicPlayerService =
@@ -176,7 +177,7 @@ fn player_loop(
     stream_tx: termusicplayback::StreamTX,
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx)?;
-    while let Some(cmd) = cmd_rx.blocking_recv() {
+    while let Some((cmd, cb)) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {
             PlayerCmd::AboutToFinish => {
@@ -299,7 +300,8 @@ fn player_loop(
                     player.mpris_update_progress(&p_tick.progress);
                 }
                 if player.current_track_updated {
-                    p_tick.current_track_index = player.playlist.get_current_track_index() as u32;
+                    p_tick.current_track_index =
+                        u64::try_from(player.playlist.get_current_track_index()).unwrap();
                     p_tick.current_track_updated = player.current_track_updated;
                     player.current_track_updated = false;
                 }
@@ -368,6 +370,8 @@ fn player_loop(
                 player.resume();
             }
         }
+
+        cb.call();
     }
 
     Ok(())
