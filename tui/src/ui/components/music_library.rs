@@ -1,7 +1,7 @@
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
 use anyhow::{bail, Context, Result};
-use std::fs::{remove_dir_all, remove_file, rename};
+use std::fs::{remove_dir_all, remove_file, rename, DirEntry};
 use std::path::{Path, PathBuf};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
@@ -266,17 +266,16 @@ impl Model {
 
         if depth > 0 && p.is_dir() {
             if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<_> = paths
+                let mut paths: Vec<(String, PathBuf)> = paths
                     .filter_map(std::result::Result::ok)
                     .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
+                    .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v.path()))
                     .collect();
 
-                paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
+                paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
+
                 for p in paths {
-                    node.add_child(Self::library_dir_tree(
-                        p.path().as_path(),
-                        ScanDepth::Limited(depth - 1),
-                    ));
+                    node.add_child(Self::library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
                 }
             }
         }
@@ -286,10 +285,14 @@ impl Model {
         let mut children: Vec<String> = vec![];
         if p.is_dir() {
             if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
+                let mut paths: Vec<(String, DirEntry)> = paths
+                    .filter_map(std::result::Result::ok)
+                    .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v))
+                    .collect();
 
-                paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
-                for p in paths {
+                paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
+
+                for (_, p) in paths {
                     if !p.path().is_dir() {
                         children.push(String::from(p.path().to_string_lossy()));
                     }

@@ -58,6 +58,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
 
 [[package]]
+name = "alphanumeric-sort"
+version = "1.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d67c60c5f10f11c6ee04de72b2dd98bb9d2548cbc314d22a609bfa8bd9e87e8f"
+
+[[package]]
 name = "alsa"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4497,6 +4503,7 @@ dependencies = [
 name = "termusic"
 version = "0.9.1"
 dependencies = [
+ "alphanumeric-sort",
  "anyhow",
  "bytes",
  "clap",
@@ -4542,6 +4549,7 @@ name = "termusic-lib"
 version = "0.9.1"
 dependencies = [
  "ahash",
+ "alphanumeric-sort",
  "anyhow",
  "base64",
  "bytes",

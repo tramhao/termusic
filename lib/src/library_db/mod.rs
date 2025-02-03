@@ -246,9 +246,10 @@ impl DataBase {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
-        let mut vec_records: Vec<TrackDB> = stmt
+        let mut vec_records: Vec<(String, TrackDB)> = stmt
             .query_map([criteria_val], TrackDB::try_from_row_named)?
             .flatten()
+            .map(|v| (get_pin_yin(&v.name), v))
             .collect();
 
         // Left for debug
@@ -256,7 +257,11 @@ impl DataBase {
         // error!("criteria: {}", criteria);
         // error!("vec: {:?}", vec_records);
 
-        vec_records.sort_by_cached_key(|k| get_pin_yin(&k.name));
+        // TODO: if SearchCriteria is "Album", maybe we should sort by album track index
+        // TODO: should we really do the search here in the libary?
+        vec_records.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
+
+        let vec_records = vec_records.into_iter().map(|v| v.1).collect();
         Ok(vec_records)
     }
 
@@ -266,15 +271,20 @@ impl DataBase {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
-        let mut vec: Vec<String> = stmt
+        // tuple.0 is the sort key, and tuple.1 is the actual value
+        let mut vec: Vec<(String, String)> = stmt
             .query_map([], |row| {
                 let criteria: String = row.get(0)?;
                 Ok(criteria)
             })?
             .flatten()
+            .map(|v| (get_pin_yin(&v), v))
             .collect();
 
-        vec.sort_by_cached_key(|k| get_pin_yin(k));
+        // TODO: should we really do the search here in the libary?
+        vec.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
+
+        let vec = vec.into_iter().map(|v| v.1).collect();
         Ok(vec)
     }
 
