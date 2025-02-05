@@ -35,6 +35,7 @@ use music_player_client::Playback;
 use std::time::Duration;
 use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
+use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use termusiclib::player::PlayerProgress;
 use termusiclib::player::StreamUpdates;
 use termusiclib::player::UpdateEvents;
@@ -334,7 +335,14 @@ impl UI {
                 self.playback.add_to_playlist(tracks).await?;
             }
             PlaylistCmd::RemoveTrack(tracks) => {
-                self.playback.remove_from_playlist(tracks).await?;
+                self.playback
+                    .remove_from_playlist(PlaylistRemoveTrackType::Indexed(tracks))
+                    .await?;
+            }
+            PlaylistCmd::Clear => {
+                self.playback
+                    .remove_from_playlist(PlaylistRemoveTrackType::Clear)
+                    .await?;
             }
         }
 
@@ -415,6 +423,9 @@ impl UI {
             }
             UpdatePlaylistEvents::PlaylistRemoveTrack(playlist_remove_track) => {
                 self.model.handle_playlist_remove(&playlist_remove_track);
+            }
+            UpdatePlaylistEvents::PlaylistCleared => {
+                self.model.handle_playlist_clear();
             }
         }
 

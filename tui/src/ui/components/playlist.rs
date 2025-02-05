@@ -11,7 +11,7 @@ use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
 use termusiclib::player::playlist_helpers::{
-    PlaylistAddTrack, PlaylistRemoveTrack, PlaylistTrackSource,
+    PlaylistAddTrack, PlaylistRemoveTrackIndexed, PlaylistTrackSource,
 };
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::track::Track;
@@ -417,6 +417,13 @@ impl Model {
         self.playlist_sync();
     }
 
+    /// Handle when a playlist was cleared
+    pub fn handle_playlist_clear(&mut self) {
+        self.playlist.clear();
+
+        self.playlist_sync();
+    }
+
     fn playlist_sync_podcasts(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
@@ -550,16 +557,17 @@ impl Model {
         };
 
         self.command(TuiCmd::Playlist(PlaylistCmd::RemoveTrack(
-            PlaylistRemoveTrack::new_single(u64::try_from(index).unwrap(), id),
+            PlaylistRemoveTrackIndexed::new_single(u64::try_from(index).unwrap(), id),
         )));
     }
 
+    /// Clear a entire playlist
     pub fn playlist_clear(&mut self) {
-        self.playlist.clear();
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
+        if self.playlist.is_empty() {
+            return;
         }
-        self.playlist_sync();
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::Clear));
     }
 
     pub fn playlist_shuffle(&mut self) {
