@@ -10,8 +10,10 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
-use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistTrackSource};
-use termusiclib::player::PlaylistAddTrackInfo;
+use termusiclib::player::playlist_helpers::{
+    PlaylistAddTrack, PlaylistRemoveTrack, PlaylistTrackSource,
+};
+use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
@@ -406,6 +408,15 @@ impl Model {
         Ok(())
     }
 
+    /// Handle when a playlist has removed a track
+    pub fn handle_playlist_remove(&mut self, items: &PlaylistRemoveTrackInfo) {
+        // piggyback off-of the server side implementation.
+        self.playlist
+            .remove(usize::try_from(items.at_index).unwrap());
+
+        self.playlist_sync();
+    }
+
     fn playlist_sync_podcasts(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
@@ -516,15 +527,31 @@ impl Model {
         self.playlist_update_title();
     }
 
+    /// Delete a track at `index` from the playlist
     pub fn playlist_delete_item(&mut self, index: usize) {
-        if self.playlist.is_empty() {
+        if self.playlist.is_empty() || index >= self.playlist.len() {
             return;
         }
-        self.playlist.remove(index);
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.playlist_sync();
+
+        let Some(item) = self.playlist.tracks().get(index) else {
+            return;
+        };
+
+        let Some(file) = item.file() else {
+            return;
+        };
+
+        let id = match item.media_type {
+            termusiclib::track::MediaType::Music => PlaylistTrackSource::Path(file.to_string()),
+            termusiclib::track::MediaType::Podcast => {
+                PlaylistTrackSource::PodcastUrl(file.to_string())
+            }
+            termusiclib::track::MediaType::LiveRadio => PlaylistTrackSource::Url(file.to_string()),
+        };
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::RemoveTrack(
+            PlaylistRemoveTrack::new_single(u64::try_from(index).unwrap(), id),
+        )));
     }
 
     pub fn playlist_clear(&mut self) {

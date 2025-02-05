@@ -26,6 +26,8 @@ service MusicPlayer {
   rpc ReloadPlaylist(Empty) returns (Empty);
   // Add one or multiple tracks to the playlist
   rpc AddToPlaylist(PlaylistTracksToAdd) returns (Empty);
+  // Remove one or multiple tracks from the playlist
+  rpc RemoveFromPlaylist(PlaylistTracksToRemove) returns (Empty);
 
   // Misc Commands
   rpc ReloadConfig(Empty) returns (Empty);
@@ -148,6 +150,7 @@ message UpdateTrackChanged {
 message UpdatePlaylist {
   oneof type {
     PlaylistAddTrack add_track = 1;
+    PlaylistRemoveTrack remove_track = 2;
   }
 }
 
@@ -172,6 +175,15 @@ message PlaylistAddTrack {
   TrackId id = 4;
 }
 
+// A Track got removed from the playlist.
+message PlaylistRemoveTrack {
+  // The index of the track that was removed.
+  uint64 at_index = 1;
+
+  // The Id of the track that was removed
+  TrackId id = 2;
+}
+
 // The current Loop mode for the playlist
 message PlaylistLoopMode {
   // The actual mode, mapped to [`config::v2::server::LoopMode`]
@@ -185,6 +197,16 @@ message PlaylistTracksToAdd {
   uint64 at_index = 1;
 
   // All the Tracks to add at the index
+  repeated TrackId tracks = 2;
+}
+
+/// Remove multiple tracks from a playlist
+message PlaylistTracksToRemove {
+  // The index the track(s) that are removed
+  // This is the starting index, and x amount of elements are removed after
+  uint64 at_index = 1;
+
+  // All the Tracks to remove at the index
   repeated TrackId tracks = 2;
 }
 

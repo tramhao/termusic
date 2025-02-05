@@ -6,8 +6,8 @@ use termusiclib::config::SharedServerSettings;
 use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::{
     stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
-    PlaylistLoopMode, PlaylistTracksToAdd, SpeedReply, StreamUpdates, UpdateMissedEvents,
-    VolumeReply,
+    PlaylistLoopMode, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply, StreamUpdates,
+    UpdateMissedEvents, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
@@ -245,6 +245,22 @@ impl MusicPlayer for MusicPlayerService {
             .try_into()
             .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
         let rx = self.command_cb(PlayerCmd::PlaylistAddTrack(converted))?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
+
+    async fn remove_from_playlist(
+        &self,
+        request: Request<PlaylistTracksToRemove>,
+    ) -> Result<Response<Empty>, Status> {
+        let converted = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
+        let rx = self.command_cb(PlayerCmd::PlaylistRemoveTrack(converted))?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = Empty {};
