@@ -318,6 +318,9 @@ impl UI {
             PlaylistCmd::AddTrack(tracks) => {
                 self.playback.add_to_playlist(tracks).await?;
             }
+            PlaylistCmd::RemoveTrack(tracks) => {
+                self.playback.remove_from_playlist(tracks).await?;
+            }
         }
 
         Ok(())
@@ -394,6 +397,9 @@ impl UI {
         match ev {
             UpdatePlaylistEvents::PlaylistAddTrack(playlist_add_track) => {
                 self.model.handle_playlist_add(playlist_add_track)?;
+            }
+            UpdatePlaylistEvents::PlaylistRemoveTrack(playlist_remove_track) => {
+                self.model.handle_playlist_remove(&playlist_remove_track);
             }
         }
 

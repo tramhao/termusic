@@ -174,10 +174,19 @@ pub struct PlaylistAddTrackInfo {
     pub trackid: playlist_helpers::PlaylistTrackSource,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlaylistRemoveTrackInfo {
+    /// The Index at which a track was removed at.
+    pub at_index: u64,
+    /// The Id of the removed track.
+    pub trackid: playlist_helpers::PlaylistTrackSource,
+}
+
 /// Separate nested enum to handle all playlist related events
 #[derive(Debug, Clone, PartialEq)]
 pub enum UpdatePlaylistEvents {
     PlaylistAddTrack(PlaylistAddTrackInfo),
+    PlaylistRemoveTrack(PlaylistRemoveTrackInfo),
 }
 
 type PPlaylistTypes = protobuf::update_playlist::Type;
@@ -193,6 +202,12 @@ impl From<UpdatePlaylistEvents> for protobuf::UpdatePlaylist {
                         .title
                         .map(protobuf::playlist_add_track::OptionalTitle::Title),
                     duration: Some(vals.duration.into()),
+                    id: Some(vals.trackid.into()),
+                })
+            }
+            UpdatePlaylistEvents::PlaylistRemoveTrack(vals) => {
+                PPlaylistTypes::RemoveTrack(protobuf::PlaylistRemoveTrack {
+                    at_index: vals.at_index,
                     id: Some(vals.trackid.into()),
                 })
             }
@@ -220,6 +235,14 @@ impl TryFrom<protobuf::UpdatePlaylist> for UpdatePlaylistEvents {
                 trackid: unwrap_msg(
                     unwrap_msg(ev.id, "UpdatePlaylist.type.add_track.id")?.source,
                     "UpdatePlaylist.type.add_track.id.source",
+                )?
+                .try_into()?,
+            }),
+            PPlaylistTypes::RemoveTrack(ev) => Self::PlaylistRemoveTrack(PlaylistRemoveTrackInfo {
+                at_index: ev.at_index,
+                trackid: unwrap_msg(
+                    unwrap_msg(ev.id, "UpdatePlaylist.type.remove_track.id")?.source,
+                    "UpdatePlaylist.type.remove_track.id.source",
                 )?
                 .try_into()?,
             }),
@@ -323,6 +346,57 @@ pub mod playlist_helpers {
                 .into_iter()
                 .map(|v| {
                     unwrap_msg(v.source, "PlaylistTracksToAdd.tracks")
+                        .and_then(PlaylistTrackSource::try_from)
+                })
+                .collect::<Result<Vec<_>, anyhow::Error>>()?;
+
+            Ok(Self {
+                at_index: value.at_index,
+                tracks,
+            })
+        }
+    }
+
+    /// Data for requesting some tracks to be removed in the server
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct PlaylistRemoveTrack {
+        pub at_index: u64,
+        pub tracks: Vec<PlaylistTrackSource>,
+    }
+
+    impl PlaylistRemoveTrack {
+        #[must_use]
+        pub fn new_single(at_index: u64, track: PlaylistTrackSource) -> Self {
+            Self {
+                at_index,
+                tracks: vec![track],
+            }
+        }
+
+        #[must_use]
+        pub fn new_vec(at_index: u64, tracks: Vec<PlaylistTrackSource>) -> Self {
+            Self { at_index, tracks }
+        }
+    }
+
+    impl From<PlaylistRemoveTrack> for protobuf::PlaylistTracksToRemove {
+        fn from(value: PlaylistRemoveTrack) -> Self {
+            Self {
+                at_index: value.at_index,
+                tracks: value.tracks.into_iter().map(Into::into).collect(),
+            }
+        }
+    }
+
+    impl TryFrom<protobuf::PlaylistTracksToRemove> for PlaylistRemoveTrack {
+        type Error = anyhow::Error;
+
+        fn try_from(value: protobuf::PlaylistTracksToRemove) -> Result<Self, Self::Error> {
+            let tracks = value
+                .tracks
+                .into_iter()
+                .map(|v| {
+                    unwrap_msg(v.source, "PlaylistTracksToRemove.tracks")
                         .and_then(PlaylistTrackSource::try_from)
                 })
                 .collect::<Result<Vec<_>, anyhow::Error>>()?;

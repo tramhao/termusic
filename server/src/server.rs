@@ -375,6 +375,11 @@ fn player_loop(
                     error!("Error adding tracks: {err}");
                 }
             }
+            PlayerCmd::PlaylistRemoveTrack(info) => {
+                if let Err(err) = player.playlist.remove_tracks(info) {
+                    error!("Error removing tracks: {err}");
+                }
+            }
         }
 
         cb.call();

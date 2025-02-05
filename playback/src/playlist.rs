@@ -10,11 +10,11 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
-use termusiclib::player::playlist_helpers::PlaylistAddTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
-use termusiclib::player::PlaylistAddTrackInfo;
+use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrack};
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
+use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::MediaType;
 use termusiclib::{
@@ -560,6 +560,69 @@ impl Playlist {
 
             self.tracks.insert(at_index, track);
             at_index += 1;
+        }
+
+        Ok(())
+    }
+
+    /// Remove Tracks from the music service
+    ///
+    /// # Errors
+    ///
+    /// - if the `at_index` is not within `self.tracks` bounds
+    /// - if `at_index + tracks.len` is not within bounds
+    /// - if the tracks type and URI mismatch
+    ///
+    /// # Panics
+    ///
+    /// If `usize` cannot be converted to `u64`
+    pub fn remove_tracks(&mut self, tracks: PlaylistRemoveTrack) -> Result<()> {
+        let at_index = usize::try_from(tracks.at_index).unwrap();
+
+        if at_index >= self.tracks.len() {
+            bail!("at_index is higher than the length of the playlist! at_index is \"{at_index}\" and playlist length is \"{}\"", self.tracks.len());
+        }
+
+        if at_index + tracks.tracks.len().saturating_sub(1) >= self.tracks.len() {
+            bail!("at_index + tracks to remove is higher than the length of the playlist! playlist lenght is \"{}\"", self.tracks.len());
+        }
+
+        for input_track in tracks.tracks {
+            // verify that it is the track to be removed via id matching
+            let Some(track_at_idx) = self.tracks.get(at_index) else {
+                // this should not happen as it is verified before the loop, but just in case
+                bail!("Failed to get track at index \"{at_index}\"");
+            };
+
+            // this unwrap could be handled better, but this should never actually happen
+            let id = track_at_idx.file().unwrap();
+
+            // Note: clippy suggested this instead of a match block
+            let ((PlaylistTrackSource::Path(file_url), MediaType::Music)
+            | (PlaylistTrackSource::PodcastUrl(file_url), MediaType::Podcast)
+            | (PlaylistTrackSource::Url(file_url), MediaType::LiveRadio)) =
+                (&input_track, track_at_idx.media_type)
+            else {
+                bail!(
+                    "Type mismatch, expected \"{:#?}\" at \"{at_index}\" found \"{:#?}\"",
+                    input_track,
+                    track_at_idx
+                );
+            };
+
+            if file_url != id {
+                bail!("URI mismatch, expected \"{id}\" at \"{at_index}\", found \"{file_url}\"");
+            }
+
+            // verified that at index "at_index" the track is of the type and has the URI that was requested to be removed
+            self.remove(at_index);
+
+            self.send_stream_ev(UpdatePlaylistEvents::PlaylistRemoveTrack(
+                PlaylistRemoveTrackInfo {
+                    at_index: u64::try_from(at_index).unwrap(),
+                    trackid: input_track,
+                },
+            ));
         }
 
         Ok(())
