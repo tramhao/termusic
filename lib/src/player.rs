@@ -187,6 +187,7 @@ pub struct PlaylistRemoveTrackInfo {
 pub enum UpdatePlaylistEvents {
     PlaylistAddTrack(PlaylistAddTrackInfo),
     PlaylistRemoveTrack(PlaylistRemoveTrackInfo),
+    PlaylistCleared,
 }
 
 type PPlaylistTypes = protobuf::update_playlist::Type;
@@ -211,6 +212,7 @@ impl From<UpdatePlaylistEvents> for protobuf::UpdatePlaylist {
                     id: Some(vals.trackid.into()),
                 })
             }
+            UpdatePlaylistEvents::PlaylistCleared => PPlaylistTypes::Cleared(PlaylistCleared {}),
         };
 
         Self { r#type: Some(val) }
@@ -246,6 +248,7 @@ impl TryFrom<protobuf::UpdatePlaylist> for UpdatePlaylistEvents {
                 )?
                 .try_into()?,
             }),
+            PPlaylistTypes::Cleared(_) => Self::PlaylistCleared,
         };
 
         Ok(res)
@@ -266,7 +269,7 @@ fn clamp_u16(val: u32) -> u16 {
 }
 
 pub mod playlist_helpers {
-    use super::{protobuf, unwrap_msg};
+    use super::{protobuf, unwrap_msg, PlaylistTracksToRemoveClear};
 
     /// A Id / Source for a given Track
     #[derive(Debug, Clone, PartialEq)]
@@ -359,12 +362,12 @@ pub mod playlist_helpers {
 
     /// Data for requesting some tracks to be removed in the server
     #[derive(Debug, Clone, PartialEq)]
-    pub struct PlaylistRemoveTrack {
+    pub struct PlaylistRemoveTrackIndexed {
         pub at_index: u64,
         pub tracks: Vec<PlaylistTrackSource>,
     }
 
-    impl PlaylistRemoveTrack {
+    impl PlaylistRemoveTrackIndexed {
         #[must_use]
         pub fn new_single(at_index: u64, track: PlaylistTrackSource) -> Self {
             Self {
@@ -379,8 +382,8 @@ pub mod playlist_helpers {
         }
     }
 
-    impl From<PlaylistRemoveTrack> for protobuf::PlaylistTracksToRemove {
-        fn from(value: PlaylistRemoveTrack) -> Self {
+    impl From<PlaylistRemoveTrackIndexed> for protobuf::PlaylistTracksToRemoveIndexed {
+        fn from(value: PlaylistRemoveTrackIndexed) -> Self {
             Self {
                 at_index: value.at_index,
                 tracks: value.tracks.into_iter().map(Into::into).collect(),
@@ -388,15 +391,15 @@ pub mod playlist_helpers {
         }
     }
 
-    impl TryFrom<protobuf::PlaylistTracksToRemove> for PlaylistRemoveTrack {
+    impl TryFrom<protobuf::PlaylistTracksToRemoveIndexed> for PlaylistRemoveTrackIndexed {
         type Error = anyhow::Error;
 
-        fn try_from(value: protobuf::PlaylistTracksToRemove) -> Result<Self, Self::Error> {
+        fn try_from(value: protobuf::PlaylistTracksToRemoveIndexed) -> Result<Self, Self::Error> {
             let tracks = value
                 .tracks
                 .into_iter()
                 .map(|v| {
-                    unwrap_msg(v.source, "PlaylistTracksToRemove.tracks")
+                    unwrap_msg(v.source, "PlaylistTracksToRemoveIndexed.tracks")
                         .and_then(PlaylistTrackSource::try_from)
                 })
                 .collect::<Result<Vec<_>, anyhow::Error>>()?;
@@ -404,6 +407,41 @@ pub mod playlist_helpers {
             Ok(Self {
                 at_index: value.at_index,
                 tracks,
+            })
+        }
+    }
+
+    /// Data for requesting some tracks to be removed in the server
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum PlaylistRemoveTrackType {
+        Indexed(PlaylistRemoveTrackIndexed),
+        Clear,
+    }
+
+    type PToRemoveTypes = protobuf::playlist_tracks_to_remove::Type;
+
+    impl From<PlaylistRemoveTrackType> for protobuf::PlaylistTracksToRemove {
+        fn from(value: PlaylistRemoveTrackType) -> Self {
+            Self {
+                r#type: Some(match value {
+                    PlaylistRemoveTrackType::Indexed(v) => PToRemoveTypes::Indexed(v.into()),
+                    PlaylistRemoveTrackType::Clear => {
+                        PToRemoveTypes::Clear(PlaylistTracksToRemoveClear {})
+                    }
+                }),
+            }
+        }
+    }
+
+    impl TryFrom<protobuf::PlaylistTracksToRemove> for PlaylistRemoveTrackType {
+        type Error = anyhow::Error;
+
+        fn try_from(value: protobuf::PlaylistTracksToRemove) -> Result<Self, Self::Error> {
+            let value = unwrap_msg(value.r#type, "PlaylistTracksToRemove.type")?;
+
+            Ok(match value {
+                PToRemoveTypes::Indexed(v) => Self::Indexed(v.try_into()?),
+                PToRemoveTypes::Clear(_) => Self::Clear,
             })
         }
     }

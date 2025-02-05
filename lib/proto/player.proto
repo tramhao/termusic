@@ -151,6 +151,7 @@ message UpdatePlaylist {
   oneof type {
     PlaylistAddTrack add_track = 1;
     PlaylistRemoveTrack remove_track = 2;
+    PlaylistCleared cleared = 3;
   }
 }
 
@@ -184,6 +185,11 @@ message PlaylistRemoveTrack {
   TrackId id = 2;
 }
 
+/// The Playlist got completely cleared
+message PlaylistCleared {
+  // empty as there are no values, but not using "Empty" to have a unique message id
+}
+
 // The current Loop mode for the playlist
 message PlaylistLoopMode {
   // The actual mode, mapped to [`config::v2::server::LoopMode`]
@@ -200,14 +206,27 @@ message PlaylistTracksToAdd {
   repeated TrackId tracks = 2;
 }
 
-/// Remove multiple tracks from a playlist
+/// Remove multiple track or clear the playlist
 message PlaylistTracksToRemove {
+  oneof type {
+    PlaylistTracksToRemoveIndexed indexed = 1;
+    PlaylistTracksToRemoveClear clear = 2;
+  }
+}
+
+/// Remove multiple tracks from a playlist
+message PlaylistTracksToRemoveIndexed {
   // The index the track(s) that are removed
   // This is the starting index, and x amount of elements are removed after
   uint64 at_index = 1;
 
   // All the Tracks to remove at the index
   repeated TrackId tracks = 2;
+}
+
+/// Clear the entire playlist
+message PlaylistTracksToRemoveClear {
+  // empty as there are no values, but not using "Empty" to have a unique message id
 }
 
 // A Identifier for a track.

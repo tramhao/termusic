@@ -11,7 +11,7 @@ use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
-use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrack};
+use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
@@ -576,7 +576,7 @@ impl Playlist {
     /// # Panics
     ///
     /// If `usize` cannot be converted to `u64`
-    pub fn remove_tracks(&mut self, tracks: PlaylistRemoveTrack) -> Result<()> {
+    pub fn remove_tracks(&mut self, tracks: PlaylistRemoveTrackIndexed) -> Result<()> {
         let at_index = usize::try_from(tracks.at_index).unwrap();
 
         if at_index >= self.tracks.len() {
@@ -687,6 +687,8 @@ impl Playlist {
         self.next_track_index.take();
         self.current_track_index = 0;
         self.need_proceed_to_next = false;
+
+        self.send_stream_ev(UpdatePlaylistEvents::PlaylistCleared);
     }
 
     /// Shuffle the playlist

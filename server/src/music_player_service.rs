@@ -4,6 +4,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::music_player_server::MusicPlayer;
+use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use termusiclib::player::{
     stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
     PlaylistLoopMode, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply, StreamUpdates,
@@ -256,11 +257,17 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         request: Request<PlaylistTracksToRemove>,
     ) -> Result<Response<Empty>, Status> {
-        let converted = request
+        let converted: PlaylistRemoveTrackType = request
             .into_inner()
             .try_into()
             .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
-        let rx = self.command_cb(PlayerCmd::PlaylistRemoveTrack(converted))?;
+
+        let ev = match converted {
+            PlaylistRemoveTrackType::Indexed(v) => PlayerCmd::PlaylistRemoveTrack(v),
+            PlaylistRemoveTrackType::Clear => PlayerCmd::PlaylistClear,
+        };
+
+        let rx = self.command_cb(ev)?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = Empty {};

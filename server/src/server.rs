@@ -380,6 +380,9 @@ fn player_loop(
                     error!("Error removing tracks: {err}");
                 }
             }
+            PlayerCmd::PlaylistClear => {
+                player.playlist.clear();
+            }
         }
 
         cb.call();

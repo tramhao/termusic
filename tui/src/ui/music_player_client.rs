@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::player::music_player_client::MusicPlayerClient;
-use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrack};
+use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackType};
 use termusiclib::player::{
     Empty, GetProgressResponse, PlayerProgress, PlaylistTracksToAdd, PlaylistTracksToRemove,
 };
@@ -165,7 +165,7 @@ impl Playback {
         Ok(())
     }
 
-    pub async fn remove_from_playlist(&mut self, info: PlaylistRemoveTrack) -> Result<()> {
+    pub async fn remove_from_playlist(&mut self, info: PlaylistRemoveTrackType) -> Result<()> {
         let request = tonic::Request::new(PlaylistTracksToRemove::from(info));
         let response = self.client.remove_from_playlist(request).await?;
         info!("Got response from server: {response:?}");

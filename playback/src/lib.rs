@@ -8,7 +8,7 @@ pub use playlist::{Playlist, Status};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::library_db::DataBase;
-use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrack};
+use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
 use termusiclib::player::{PlayerProgress, PlayerTimeUnit, TrackChangedInfo, UpdateEvents};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaType, Track};
@@ -113,7 +113,8 @@ pub enum PlayerCmd {
     VolumeUp,
 
     PlaylistAddTrack(PlaylistAddTrack),
-    PlaylistRemoveTrack(PlaylistRemoveTrack),
+    PlaylistRemoveTrack(PlaylistRemoveTrackIndexed),
+    PlaylistClear,
 }
 
 pub type StreamTX = broadcast::Sender<UpdateEvents>;
