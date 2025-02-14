@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::{model::TermusicLayout, Model};
 use anyhow::anyhow;
 use std::path::Path;
@@ -31,7 +32,6 @@ use termusiclib::track::MediaType;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
 };
-use termusicplayback::PlayerCmd;
 use tokio::runtime::Handle;
 use tokio::time::sleep;
 use tuirealm::props::{AttrValue, Attribute};
@@ -428,7 +428,7 @@ impl Model {
                     );
                     return None;
                 }
-                self.command(&PlayerCmd::SeekForward);
+                self.command(TuiCmd::SeekForward);
             }
             Msg::PlayerSeekBackward => {
                 if self.is_radio() {
@@ -440,22 +440,22 @@ impl Model {
                     );
                     return None;
                 }
-                self.command(&PlayerCmd::SeekBackward);
+                self.command(TuiCmd::SeekBackward);
             }
             Msg::PlayerSpeedUp => {
-                self.command(&PlayerCmd::SpeedUp);
+                self.command(TuiCmd::SpeedUp);
             }
             Msg::PlayerSpeedDown => {
-                self.command(&PlayerCmd::SpeedDown);
+                self.command(TuiCmd::SpeedDown);
             }
             Msg::PlayerVolumeUp => {
-                self.command(&PlayerCmd::VolumeUp);
+                self.command(TuiCmd::VolumeUp);
             }
             Msg::PlayerVolumeDown => {
-                self.command(&PlayerCmd::VolumeDown);
+                self.command(TuiCmd::VolumeDown);
             }
             Msg::PlayerToggleGapless => {
-                self.command(&PlayerCmd::ToggleGapless);
+                self.command(TuiCmd::ToggleGapless);
             }
             _ => {}
         }
@@ -845,7 +845,7 @@ impl Model {
                 self.playlist_play_selected(*index);
             }
             PLMsg::LoopModeCycle => {
-                self.command(&PlayerCmd::CycleLoop);
+                self.command(TuiCmd::CycleLoop);
                 self.config_server.write().settings.player.loop_mode =
                     self.playlist.cycle_loop_mode();
                 self.playlist_update_title();
@@ -856,7 +856,7 @@ impl Model {
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
             },
             PLMsg::NextSong => {
-                self.command(&PlayerCmd::SkipNext);
+                self.command(TuiCmd::SkipNext);
             }
 
             PLMsg::PrevSong => {

@@ -1,3 +1,4 @@
+use crate::ui::tui_cmd::TuiCmd;
 /**
  * MIT License
  *
@@ -31,7 +32,6 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
 use termusiclib::utils::get_app_config_path;
-use termusicplayback::PlayerCmd;
 
 impl Model {
     #[allow(clippy::too_many_lines)]
@@ -170,7 +170,7 @@ impl Model {
                         }
 
                         if both_ok {
-                            self.command(&PlayerCmd::ReloadConfig);
+                            self.command(TuiCmd::ReloadConfig);
 
                             // only exit config editor if saving was successful
                             self.umount_config_editor();

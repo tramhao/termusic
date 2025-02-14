@@ -4625,7 +4625,6 @@ dependencies = [
  "rand",
  "reqwest",
  "rodio",
- "serde",
  "soundtouch",
  "souvlaki",
  "stream-download",

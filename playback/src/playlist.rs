@@ -3,7 +3,6 @@ use pathdiff::diff_paths;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt::Display;
 use std::fs::File;
@@ -18,7 +17,7 @@ use termusiclib::{
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
 
-#[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub enum Status {
     #[default]
     Stopped,
@@ -56,7 +55,7 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Playlist {
     /// All tracks in the playlist
     tracks: Vec<Track>,

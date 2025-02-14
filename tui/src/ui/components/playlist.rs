@@ -1,4 +1,5 @@
 use crate::ui::model::TermusicLayout;
+use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
@@ -12,7 +13,6 @@ use termusiclib::library_db::TrackDB;
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
-use termusicplayback::PlayerCmd;
 
 use tui_realm_stdlib::Table;
 use tuirealm::props::Borders;
@@ -541,7 +541,7 @@ impl Model {
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(e.context("player sync playlist"));
         }
-        self.command(&PlayerCmd::PlaySelected);
+        self.command(TuiCmd::PlaySelected);
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {

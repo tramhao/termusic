@@ -296,14 +296,15 @@ impl Default for PlayerSettings {
 /// Playlist loop modes
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
+#[repr(u8)]
 pub enum LoopMode {
     /// Loop one track
-    Single,
+    Single = 0,
     /// Loop the entire Playlist (after last index comes the first)
     #[default]
-    Playlist,
+    Playlist = 1,
     /// Select a random track on each next track
-    Random,
+    Random = 2,
 }
 
 impl LoopMode {
@@ -321,6 +322,21 @@ impl LoopMode {
                 Self::Random => "random",
             }
         }
+    }
+
+    /// Convert the current enum variant into its number representation
+    pub fn discriminant(&self) -> u8 {
+        (*self) as u8
+    }
+
+    /// Try to convert the input number representation to a variant
+    pub fn tryfrom_discriminant(num: u8) -> Option<Self> {
+        Some(match num {
+            0 => Self::Single,
+            1 => Self::Playlist,
+            2 => Self::Random,
+            _ => return None,
+        })
     }
 }
 
