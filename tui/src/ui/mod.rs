@@ -412,6 +412,9 @@ impl UI {
             UpdatePlaylistEvents::PlaylistCleared => {
                 self.model.handle_playlist_clear();
             }
+            UpdatePlaylistEvents::PlaylistLoopMode(loop_mode) => {
+                self.model.handle_playlist_loopmode(&loop_mode)?;
+            }
         }
 
         Ok(())

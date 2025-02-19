@@ -1,11 +1,12 @@
 use crate::ui::model::TermusicLayout;
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 use crate::ui::Model;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context as _, Result};
 use rand::seq::IndexedRandom;
 use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
+use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
@@ -13,7 +14,7 @@ use termusiclib::library_db::TrackDB;
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistRemoveTrackIndexed, PlaylistTrackSource,
 };
-use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
+use termusiclib::player::{PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo};
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
@@ -422,6 +423,21 @@ impl Model {
         self.playlist.clear();
 
         self.playlist_sync();
+    }
+
+    /// Handle when the playlist loop-mode was changed
+    pub fn handle_playlist_loopmode(&mut self, loop_mode: &PlaylistLoopModeInfo) -> Result<()> {
+        let as_u8 = u8::try_from(loop_mode.mode).context("Failed to convert u32 to u8")?;
+        let loop_mode =
+            LoopMode::tryfrom_discriminant(as_u8).context("Failed to get LoopMode from u8")?;
+        self.playlist.set_loop_mode(loop_mode);
+        self.config_server.write().settings.player.loop_mode = loop_mode;
+        self.playlist_update_title();
+        // Force a redraw as stream updates are not part of the "tick" event and so cant send "Msg"
+        // but need a redraw because ofthe title change
+        self.force_redraw();
+
+        Ok(())
     }
 
     fn playlist_sync_podcasts(&mut self) {

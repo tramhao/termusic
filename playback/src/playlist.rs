@@ -12,6 +12,7 @@ use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
+use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
@@ -379,18 +380,30 @@ impl Playlist {
     /// [Playlist](LoopMode::Playlist) -> [Single](LoopMode::Single)
     /// [Single](LoopMode::Single) -> [Random](LoopMode::Random)
     pub fn cycle_loop_mode(&mut self) -> LoopMode {
-        match self.loop_mode {
-            LoopMode::Random => {
-                self.loop_mode = LoopMode::Playlist;
-            }
-            LoopMode::Playlist => {
-                self.loop_mode = LoopMode::Single;
-            }
-            LoopMode::Single => {
-                self.loop_mode = LoopMode::Random;
-            }
-        }
+        let new_mode = match self.loop_mode {
+            LoopMode::Random => LoopMode::Playlist,
+            LoopMode::Playlist => LoopMode::Single,
+            LoopMode::Single => LoopMode::Random,
+        };
+
+        self.set_loop_mode(new_mode);
+
         self.loop_mode
+    }
+
+    /// Set a specific [`LoopMode`], also sends a event that the mode changed.
+    /// Only sets & sends a event if the new mode is not the same as the old one.
+    pub fn set_loop_mode(&mut self, new_mode: LoopMode) {
+        // dont set and dont send a event if the mode is the same
+        if new_mode == self.loop_mode {
+            return;
+        }
+
+        self.loop_mode = new_mode;
+
+        self.send_stream_ev(UpdatePlaylistEvents::PlaylistLoopMode(
+            PlaylistLoopModeInfo::from(self.loop_mode),
+        ));
     }
 
     /// Export the current playlist to a `.m3u` playlist file.

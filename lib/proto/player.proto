@@ -152,6 +152,7 @@ message UpdatePlaylist {
     PlaylistAddTrack add_track = 1;
     PlaylistRemoveTrack remove_track = 2;
     PlaylistCleared cleared = 3;
+    PlaylistLoopMode loop_mode = 4;
   }
 }
 
