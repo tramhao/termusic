@@ -17,6 +17,7 @@
 - Change: updated MSRV to 1.79.
 - Change: update some dependencies.
 - Change: remove unused dependencies from all packages.
+- Change: move many playlist operations to be executed by the server and listend to by clients. (see #152)
 - Change(server): on rusty backend, use upstream rodio again.
 - Feat: more immediate event changes (Example: updated via mpris)
 - Feat(server): on rusty backend, enable `aiff` codec support.
