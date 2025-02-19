@@ -9,6 +9,8 @@ mod protobuf {
 
 pub use protobuf::*;
 
+use crate::config::v2::server::LoopMode;
+
 // implement transform function for easy use
 impl From<protobuf::Duration> for std::time::Duration {
     fn from(value: protobuf::Duration) -> Self {
@@ -182,12 +184,27 @@ pub struct PlaylistRemoveTrackInfo {
     pub trackid: playlist_helpers::PlaylistTrackSource,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlaylistLoopModeInfo {
+    /// The actual mode, mapped to [`LoopMode`](crate::config::v2::server::LoopMode)
+    pub mode: u32,
+}
+
+impl From<LoopMode> for PlaylistLoopModeInfo {
+    fn from(value: LoopMode) -> Self {
+        Self {
+            mode: u32::from(value.discriminant()),
+        }
+    }
+}
+
 /// Separate nested enum to handle all playlist related events
 #[derive(Debug, Clone, PartialEq)]
 pub enum UpdatePlaylistEvents {
     PlaylistAddTrack(PlaylistAddTrackInfo),
     PlaylistRemoveTrack(PlaylistRemoveTrackInfo),
     PlaylistCleared,
+    PlaylistLoopMode(PlaylistLoopModeInfo),
 }
 
 type PPlaylistTypes = protobuf::update_playlist::Type;
@@ -213,6 +230,9 @@ impl From<UpdatePlaylistEvents> for protobuf::UpdatePlaylist {
                 })
             }
             UpdatePlaylistEvents::PlaylistCleared => PPlaylistTypes::Cleared(PlaylistCleared {}),
+            UpdatePlaylistEvents::PlaylistLoopMode(vals) => {
+                PPlaylistTypes::LoopMode(PlaylistLoopMode { mode: vals.mode })
+            }
         };
 
         Self { r#type: Some(val) }
@@ -249,6 +269,9 @@ impl TryFrom<protobuf::UpdatePlaylist> for UpdatePlaylistEvents {
                 .try_into()?,
             }),
             PPlaylistTypes::Cleared(_) => Self::PlaylistCleared,
+            PPlaylistTypes::LoopMode(ev) => {
+                Self::PlaylistLoopMode(PlaylistLoopModeInfo { mode: ev.mode })
+            }
         };
 
         Ok(res)
