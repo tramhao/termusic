@@ -383,6 +383,11 @@ fn player_loop(
             PlayerCmd::PlaylistClear => {
                 player.playlist.clear();
             }
+            PlayerCmd::PlaylistSwapTrack(info) => {
+                if let Err(err) = player.playlist.swap_tracks(&info) {
+                    error!("Error swapping tracks: {err}");
+                }
+            }
         }
 
         cb.call();

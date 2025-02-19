@@ -1,9 +1,12 @@
 use anyhow::{Context, Result};
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::player::music_player_client::MusicPlayerClient;
-use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackType};
+use termusiclib::player::playlist_helpers::{
+    PlaylistAddTrack, PlaylistRemoveTrackType, PlaylistSwapTrack,
+};
 use termusiclib::player::{
-    Empty, GetProgressResponse, PlayerProgress, PlaylistTracksToAdd, PlaylistTracksToRemove,
+    Empty, GetProgressResponse, PlayerProgress, PlaylistSwapTracks, PlaylistTracksToAdd,
+    PlaylistTracksToRemove,
 };
 use termusicplayback::Status;
 use tokio_stream::{Stream, StreamExt as _};
@@ -168,6 +171,14 @@ impl Playback {
     pub async fn remove_from_playlist(&mut self, info: PlaylistRemoveTrackType) -> Result<()> {
         let request = tonic::Request::new(PlaylistTracksToRemove::from(info));
         let response = self.client.remove_from_playlist(request).await?;
+        info!("Got response from server: {response:?}");
+
+        Ok(())
+    }
+
+    pub async fn swap_tracks(&mut self, info: PlaylistSwapTrack) -> Result<()> {
+        let request = tonic::Request::new(PlaylistSwapTracks::from(info));
+        let response = self.client.swap_tracks(request).await?;
         info!("Got response from server: {response:?}");
 
         Ok(())

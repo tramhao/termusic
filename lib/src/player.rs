@@ -198,6 +198,12 @@ impl From<LoopMode> for PlaylistLoopModeInfo {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlaylistSwapInfo {
+    pub index_a: u64,
+    pub index_b: u64,
+}
+
 /// Separate nested enum to handle all playlist related events
 #[derive(Debug, Clone, PartialEq)]
 pub enum UpdatePlaylistEvents {
@@ -205,6 +211,7 @@ pub enum UpdatePlaylistEvents {
     PlaylistRemoveTrack(PlaylistRemoveTrackInfo),
     PlaylistCleared,
     PlaylistLoopMode(PlaylistLoopModeInfo),
+    PlaylistSwapTracks(PlaylistSwapInfo),
 }
 
 type PPlaylistTypes = protobuf::update_playlist::Type;
@@ -232,6 +239,12 @@ impl From<UpdatePlaylistEvents> for protobuf::UpdatePlaylist {
             UpdatePlaylistEvents::PlaylistCleared => PPlaylistTypes::Cleared(PlaylistCleared {}),
             UpdatePlaylistEvents::PlaylistLoopMode(vals) => {
                 PPlaylistTypes::LoopMode(PlaylistLoopMode { mode: vals.mode })
+            }
+            UpdatePlaylistEvents::PlaylistSwapTracks(vals) => {
+                PPlaylistTypes::SwapTracks(protobuf::PlaylistSwapTracks {
+                    index_a: vals.index_a,
+                    index_b: vals.index_b,
+                })
             }
         };
 
@@ -272,6 +285,10 @@ impl TryFrom<protobuf::UpdatePlaylist> for UpdatePlaylistEvents {
             PPlaylistTypes::LoopMode(ev) => {
                 Self::PlaylistLoopMode(PlaylistLoopModeInfo { mode: ev.mode })
             }
+            PPlaylistTypes::SwapTracks(ev) => Self::PlaylistSwapTracks(PlaylistSwapInfo {
+                index_a: ev.index_a,
+                index_b: ev.index_b,
+            }),
         };
 
         Ok(res)
@@ -465,6 +482,33 @@ pub mod playlist_helpers {
             Ok(match value {
                 PToRemoveTypes::Indexed(v) => Self::Indexed(v.try_into()?),
                 PToRemoveTypes::Clear(_) => Self::Clear,
+            })
+        }
+    }
+
+    /// Data for requesting some tracks to be swapped in the server
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct PlaylistSwapTrack {
+        pub index_a: u64,
+        pub index_b: u64,
+    }
+
+    impl From<PlaylistSwapTrack> for protobuf::PlaylistSwapTracks {
+        fn from(value: PlaylistSwapTrack) -> Self {
+            Self {
+                index_a: value.index_a,
+                index_b: value.index_b,
+            }
+        }
+    }
+
+    impl TryFrom<protobuf::PlaylistSwapTracks> for PlaylistSwapTrack {
+        type Error = anyhow::Error;
+
+        fn try_from(value: protobuf::PlaylistSwapTracks) -> Result<Self, Self::Error> {
+            Ok(Self {
+                index_a: value.index_a,
+                index_b: value.index_b,
             })
         }
     }

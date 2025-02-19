@@ -329,6 +329,9 @@ impl UI {
                     .remove_from_playlist(PlaylistRemoveTrackType::Clear)
                     .await?;
             }
+            PlaylistCmd::SwapTrack(info) => {
+                self.playback.swap_tracks(info).await?;
+            }
         }
 
         Ok(())
@@ -414,6 +417,9 @@ impl UI {
             }
             UpdatePlaylistEvents::PlaylistLoopMode(loop_mode) => {
                 self.model.handle_playlist_loopmode(&loop_mode)?;
+            }
+            UpdatePlaylistEvents::PlaylistSwapTracks(swapped_tracks) => {
+                self.model.handle_playlist_swap_tracks(&swapped_tracks)?;
             }
         }
 

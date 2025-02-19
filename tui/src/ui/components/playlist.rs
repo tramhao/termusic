@@ -12,9 +12,11 @@ use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
 use termusiclib::player::playlist_helpers::{
-    PlaylistAddTrack, PlaylistRemoveTrackIndexed, PlaylistTrackSource,
+    PlaylistAddTrack, PlaylistRemoveTrackIndexed, PlaylistSwapTrack, PlaylistTrackSource,
 };
-use termusiclib::player::{PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo};
+use termusiclib::player::{
+    PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistSwapInfo,
+};
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
@@ -440,6 +442,20 @@ impl Model {
         Ok(())
     }
 
+    /// Handle when the playlist had swapped some tracks
+    pub fn handle_playlist_swap_tracks(&mut self, swapped_tracks: &PlaylistSwapInfo) -> Result<()> {
+        let index_a = usize::try_from(swapped_tracks.index_a)
+            .context("Failed to convert index_a to usize")?;
+        let index_b = usize::try_from(swapped_tracks.index_b)
+            .context("Failed to convert index_b to usize")?;
+
+        self.playlist.swap(index_a, index_b)?;
+
+        self.playlist_sync();
+
+        Ok(())
+    }
+
     fn playlist_sync_podcasts(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
@@ -592,6 +608,48 @@ impl Model {
             self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
+    }
+
+    /// Send command to swap 2 indexes. Does nothing if either index is out-of-bounds.
+    ///
+    /// # Panics
+    ///
+    /// if `usize` cannot be converted to `u64`
+    fn playlist_swap(&mut self, index_a: usize, index_b: usize) {
+        let len = self.playlist.tracks().len();
+        if index_a.max(index_b) >= len {
+            error!(
+                "Index out-of-bounds, not executing swap: {}",
+                index_a.max(index_b)
+            );
+            return;
+        }
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::SwapTrack(
+            PlaylistSwapTrack {
+                index_a: u64::try_from(index_a).unwrap(),
+                index_b: u64::try_from(index_b).unwrap(),
+            },
+        )));
+    }
+
+    /// Swap the given index upwards, does nothing if out-of-bounds or would result in itself.
+    pub fn playlist_swap_up(&mut self, index: usize) {
+        if index == 0 {
+            return;
+        }
+
+        // always guranteed to be above 0, no saturated necessary
+        self.playlist_swap(index, index - 1);
+    }
+
+    /// Swap the given index downwards, does nothing if out-of-bounds.
+    pub fn playlist_swap_down(&mut self, index: usize) {
+        if index >= self.playlist.len().saturating_sub(1) {
+            return;
+        }
+
+        self.playlist_swap(index, index.saturating_add(1));
     }
 
     pub fn playlist_update_library_delete(&mut self) {

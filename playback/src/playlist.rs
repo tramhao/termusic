@@ -10,9 +10,11 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
+use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
 use termusiclib::player::PlaylistLoopModeInfo;
+use termusiclib::player::PlaylistSwapInfo;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
@@ -319,6 +321,34 @@ impl Playlist {
                 self.current_track_index += 1;
             }
         }
+    }
+
+    /// Swap specific indexes, sends swap event.
+    ///
+    /// # Errors
+    ///
+    /// - if either index `a` or `b` are out-of-bounds
+    ///
+    /// # Panics
+    ///
+    /// If `usize` cannot be converted to `u64`
+    pub fn swap(&mut self, index_a: usize, index_b: usize) -> Result<()> {
+        // "swap" panics if a index is out-of-bounds
+        if index_a.max(index_b) >= self.tracks.len() {
+            bail!("Index {} not within tracks bounds", index_a.max(index_b));
+        }
+
+        self.tracks.swap(index_a, index_b);
+
+        let index_a = u64::try_from(index_a).unwrap();
+        let index_b = u64::try_from(index_b).unwrap();
+
+        self.send_stream_ev(UpdatePlaylistEvents::PlaylistSwapTracks(PlaylistSwapInfo {
+            index_a,
+            index_b,
+        }));
+
+        Ok(())
     }
 
     /// Get the current track's Path/Url.
@@ -673,6 +703,27 @@ impl Playlist {
         let track = Track::from_episode(&ep);
 
         Ok(track)
+    }
+
+    /// Swap tracks based on [`PlaylistSwapTrack`]
+    ///
+    /// # Errors
+    ///
+    /// - if either the `a` or `b` indexes are not within bounds
+    /// - if the indexes cannot be converted to `usize`
+    ///
+    /// # Panics
+    ///
+    /// If `usize` cannot be converted to `u64`
+    pub fn swap_tracks(&mut self, info: &PlaylistSwapTrack) -> Result<()> {
+        let index_a =
+            usize::try_from(info.index_a).context("Failed to convert index_a to usize")?;
+        let index_b =
+            usize::try_from(info.index_b).context("Failed to convert index_b to usize")?;
+
+        self.swap(index_a, index_b)?;
+
+        Ok(())
     }
 
     #[must_use]
