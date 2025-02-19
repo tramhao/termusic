@@ -1,4 +1,6 @@
-use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
+use termusiclib::player::playlist_helpers::{
+    PlaylistAddTrack, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
+};
 
 #[allow(clippy::doc_link_with_quotes)]
 /// Enum for Commands to send to the [`MusicPlayerClient` "Actor"](crate::ui::music_player_client).
@@ -34,4 +36,5 @@ pub enum PlaylistCmd {
     AddTrack(PlaylistAddTrack),
     RemoveTrack(PlaylistRemoveTrackIndexed),
     Clear,
+    SwapTrack(PlaylistSwapTrack),
 }

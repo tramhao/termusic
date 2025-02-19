@@ -28,6 +28,8 @@ service MusicPlayer {
   rpc AddToPlaylist(PlaylistTracksToAdd) returns (Empty);
   // Remove one or multiple tracks from the playlist
   rpc RemoveFromPlaylist(PlaylistTracksToRemove) returns (Empty);
+  // Swap some tracks.
+  rpc SwapTracks(PlaylistSwapTracks) returns (Empty);
 
   // Misc Commands
   rpc ReloadConfig(Empty) returns (Empty);
@@ -153,6 +155,7 @@ message UpdatePlaylist {
     PlaylistRemoveTrack remove_track = 2;
     PlaylistCleared cleared = 3;
     PlaylistLoopMode loop_mode = 4;
+    PlaylistSwapTracks swap_tracks = 5;
   }
 }
 
@@ -195,6 +198,14 @@ message PlaylistCleared {
 message PlaylistLoopMode {
   // The actual mode, mapped to [`config::v2::server::LoopMode`]
   uint32 mode = 1;
+}
+
+// Some track needs to be swapped.
+message PlaylistSwapTracks {
+  // The first index to swap
+  uint64 index_a = 1;
+  // The second index to swap
+  uint64 index_b = 2;
 }
 
 // Add multiple tracks to a Playlist

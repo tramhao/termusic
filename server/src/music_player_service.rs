@@ -7,8 +7,8 @@ use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use termusiclib::player::{
     stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
-    PlaylistLoopMode, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply, StreamUpdates,
-    UpdateMissedEvents, VolumeReply,
+    PlaylistLoopMode, PlaylistSwapTracks, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply,
+    StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
@@ -268,6 +268,23 @@ impl MusicPlayer for MusicPlayerService {
         };
 
         let rx = self.command_cb(ev)?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
+
+    async fn swap_tracks(
+        &self,
+        request: Request<PlaylistSwapTracks>,
+    ) -> Result<Response<Empty>, Status> {
+        let converted = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
+
+        let rx = self.command_cb(PlayerCmd::PlaylistSwapTrack(converted))?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = Empty {};
