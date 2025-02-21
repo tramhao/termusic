@@ -8,6 +8,8 @@ use termusiclib::track::Track;
 
 const APP_ID: &str = "968407067889131520";
 
+/// Handle for communicating with the discord ipc client
+#[derive(Debug)]
 pub struct Rpc {
     tx: Sender<RpcCommand>,
 }
