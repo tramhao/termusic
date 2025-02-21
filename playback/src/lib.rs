@@ -379,9 +379,7 @@ impl GeneralPlayer {
 
         self.playlist.proceed();
 
-        if let Some(track) = self.playlist.current_track() {
-            let track = track.clone();
-
+        if let Some(track) = self.playlist.current_track().cloned() {
             info!("Starting Track {:#?}", track);
 
             if self.playlist.has_next_track() {
@@ -435,9 +433,8 @@ impl GeneralPlayer {
             return;
         }
 
-        let track = match self.playlist.fetch_next_track() {
-            Some(t) => t.clone(),
-            None => return,
+        let Some(track) = self.playlist.fetch_next_track().cloned() else {
+            return;
         };
 
         self.enqueue_next(&track);
@@ -445,6 +442,7 @@ impl GeneralPlayer {
         info!("Next track enqueued: {:#?}", track);
     }
 
+    /// Skip to the next track, if there is one
     pub fn next(&mut self) {
         if self.playlist.current_track().is_some() {
             info!("skip route 1 which is in most cases.");
@@ -453,11 +451,10 @@ impl GeneralPlayer {
         } else {
             info!("skip route 2 cause no current track.");
             self.stop();
-            // if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::StartPlay, false) {
-            //     debug!("Error in skip route 2: {e}");
-            // }
         }
     }
+
+    /// Switch & Play the previous track in the playlist
     pub fn previous(&mut self) {
         self.playlist.previous();
         self.playlist.proceed_false();
