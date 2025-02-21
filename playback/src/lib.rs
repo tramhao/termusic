@@ -699,9 +699,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn stop(&mut self) {
-        self.playlist.set_status(Status::Stopped);
-        self.playlist.set_next_track(None);
-        self.playlist.clear_current_track();
+        self.playlist.stop();
         self.get_player_mut().stop();
     }
 
