@@ -1,4 +1,4 @@
-use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
+use std::sync::mpsc::{self, Receiver, RecvError, Sender};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -66,12 +66,11 @@ impl Rpc {
         let mut title = String::new();
 
         loop {
-            let msg = match rx.try_recv() {
-                Err(TryRecvError::Empty) => {
-                    sleep(Duration::from_secs(1));
-                    continue;
+            let msg = match rx.recv() {
+                Err(RecvError) => {
+                    info!("No senders for discord updates anymore, closing discord connection");
+                    break;
                 }
-                Err(_) => break,
                 Ok(v) => v,
             };
 
