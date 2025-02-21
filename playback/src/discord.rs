@@ -37,19 +37,19 @@ impl Default for Rpc {
 
 impl Rpc {
     /// Update the discord status track information
-    pub fn update(&mut self, track: &Track) {
+    pub fn update(&self, track: &Track) {
         let artist = track.artist().unwrap_or(UNKNOWN_ARTIST).to_string();
         let title = track.title().unwrap_or(UNKNOWN_TITLE).to_string();
         self.tx.send(RpcCommand::Update(artist, title)).ok();
     }
 
     /// Update the discord status to show that it is paused
-    pub fn pause(&mut self) {
+    pub fn pause(&self) {
         self.tx.send(RpcCommand::Pause).ok();
     }
 
     /// Update the discord status to show that it is playing
-    pub fn resume(&mut self, time_pos: Option<PlayerTimeUnit>) {
+    pub fn resume(&self, time_pos: Option<PlayerTimeUnit>) {
         // ignore clippy here, this should not be a problem, maybe rich presence will support duration in the future
         #[allow(clippy::cast_possible_wrap)]
         if let Some(time_pos) = time_pos {

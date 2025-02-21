@@ -334,7 +334,7 @@ impl GeneralPlayer {
 
         if config.get_discord_status_enable() && self.discord.is_none() {
             // start discord ipc if new config has it enabled, but is not active yet
-            let mut discord = discord::Rpc::default();
+            let discord = discord::Rpc::default();
 
             // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
             if let Some(track) = self.playlist.current_track() {
@@ -423,7 +423,7 @@ impl GeneralPlayer {
                 mpris.add_and_play(track);
             }
 
-            if let Some(ref mut discord) = self.discord {
+            if let Some(ref discord) = self.discord {
                 discord.update(track);
             }
         }
@@ -646,7 +646,7 @@ impl PlayerTrait for GeneralPlayer {
         if let Some(ref mut mpris) = self.mpris {
             mpris.pause();
         }
-        if let Some(ref mut discord) = self.discord {
+        if let Some(ref discord) = self.discord {
             discord.pause();
         }
 
@@ -662,7 +662,7 @@ impl PlayerTrait for GeneralPlayer {
             mpris.resume();
         }
         let time_pos = self.get_player().position();
-        if let Some(ref mut discord) = self.discord {
+        if let Some(ref discord) = self.discord {
             discord.resume(time_pos);
         }
 
