@@ -32,7 +32,7 @@ service MusicPlayer {
   // Get all tracks of the playlist.
   rpc GetPlaylist(Empty) returns (PlaylistTracks);
   // Shuffle the playlist, returns the new playlist tracks.
-  rpc ShufflePlaylist(Empty) returns (PlaylistTracks);
+  rpc ShufflePlaylist(Empty) returns (Empty);
   // Check for and remove deleted items from the playlist.
   // Unlike shuffle, this will send Removal events
   rpc RemoveDeletedTracks(Empty) returns (Empty);
@@ -263,7 +263,7 @@ message PlaylistTracksToRemoveClear {
 
 /// Indicate that the playlist has been shuffled and should be re-fetched
 message PlaylistShuffled {
-  // empty as there are no values, but not using "Empty" to have a unique message id
+  PlaylistTracks shuffled = 1;
 }
 
 // A Identifier for a track.

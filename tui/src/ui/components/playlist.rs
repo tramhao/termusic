@@ -16,7 +16,8 @@ use termusiclib::player::playlist_helpers::{
     PlaylistTrackSource,
 };
 use termusiclib::player::{
-    PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistSwapInfo,
+    PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
+    PlaylistSwapInfo,
 };
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
@@ -452,6 +453,15 @@ impl Model {
 
         self.playlist.swap(index_a, index_b)?;
 
+        self.playlist_sync();
+
+        Ok(())
+    }
+
+    /// Handle when the playlist has been shuffled and so has new order of tracks
+    pub fn handle_playlist_shuffled(&mut self, shuffled: PlaylistShuffledInfo) -> Result<()> {
+        self.playlist
+            .load_from_grpc(shuffled.tracks, &self.podcast.db_podcast)?;
         self.playlist_sync();
 
         Ok(())

@@ -12,11 +12,13 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
+use termusiclib::player;
 use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
 use termusiclib::player::PlaylistLoopModeInfo;
+use termusiclib::player::PlaylistShuffledInfo;
 use termusiclib::player::PlaylistSwapInfo;
 use termusiclib::player::PlaylistTracks;
 use termusiclib::player::UpdateEvents;
@@ -905,18 +907,71 @@ impl Playlist {
     }
 
     /// Shuffle the playlist
+    ///
+    /// # Panics
+    ///
+    /// see [`as_grpc_playlist_tracks#Errors`](Self::as_grpc_playlist_tracks)
     pub fn shuffle(&mut self) {
         let current_track_file = self.get_current_track();
 
         self.tracks.shuffle(&mut rand::rng());
-
-        self.send_stream_ev(UpdatePlaylistEvents::PlaylistShuffled);
 
         if let Some(current_track_file) = current_track_file {
             if let Some(index) = self.find_index_from_file(&current_track_file) {
                 self.current_track_index = index;
             }
         }
+
+        self.send_stream_ev(UpdatePlaylistEvents::PlaylistShuffled(
+            PlaylistShuffledInfo {
+                tracks: self.as_grpc_playlist_tracks().unwrap(),
+            },
+        ));
+    }
+
+    /// Get the current tracks and state as a GRPC [`PlaylistTracks`] object.
+    ///
+    /// # Errors
+    ///
+    /// - if some track does not have a file-id
+    /// - converting usize to u64 fails
+    pub fn as_grpc_playlist_tracks(&self) -> Result<PlaylistTracks> {
+        let tracks = self
+            .tracks()
+            .iter()
+            .enumerate()
+            .map(|(idx, track)| {
+                let at_index = u64::try_from(idx).context("track index(usize) to u64")?;
+                // TODO: refactor Track::file to be always existing
+                let Some(file) = track.file() else {
+                    bail!("Track {idx} did not have a file(id), skipping!");
+                };
+                // TODO: this should likely be a function on "Track"
+                let id = match track.media_type {
+                    termusiclib::track::MediaType::Music => {
+                        PlaylistTrackSource::Path(file.to_string())
+                    }
+                    termusiclib::track::MediaType::Podcast => {
+                        PlaylistTrackSource::PodcastUrl(file.to_string())
+                    }
+                    termusiclib::track::MediaType::LiveRadio => {
+                        PlaylistTrackSource::Url(file.to_string())
+                    }
+                };
+                Ok(player::PlaylistAddTrack {
+                    at_index,
+                    duration: Some(track.duration().into()),
+                    id: Some(id.into()),
+                    optional_title: None,
+                })
+            })
+            .collect::<Result<_>>()?;
+
+        Ok(PlaylistTracks {
+            current_track_index: u64::try_from(self.get_current_track_index())
+                .context("current_track_index(usize) to u64")?,
+            tracks,
+        })
     }
 
     /// Find the index in the playlist for `item`, if it exists there.

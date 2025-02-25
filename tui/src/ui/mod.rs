@@ -331,12 +331,7 @@ impl UI {
                 self.playback.swap_tracks(info).await?;
             }
             PlaylistCmd::Shuffle => {
-                let new_tracks = self.playback.shuffle_playlist().await?;
-                self.model
-                    .playlist
-                    .load_from_grpc(new_tracks, &self.model.podcast.db_podcast)?;
-
-                self.model.playlist_sync();
+                self.playback.shuffle_playlist().await?;
             }
             PlaylistCmd::PlaySpecific(info) => {
                 self.playback.play_specific(info).await?;
@@ -436,11 +431,8 @@ impl UI {
             UpdatePlaylistEvents::PlaylistSwapTracks(swapped_tracks) => {
                 self.model.handle_playlist_swap_tracks(&swapped_tracks)?;
             }
-            UpdatePlaylistEvents::PlaylistShuffled => {
-                // NOTE: the current implementation will reload the playlist on this client, even if this client was
-                // the one that had requested the shuffle and already applied the returned playlist values
-                self.model
-                    .command(TuiCmd::Playlist(PlaylistCmd::SelfReloadPlaylist));
+            UpdatePlaylistEvents::PlaylistShuffled(shuffled) => {
+                self.model.handle_playlist_shuffled(shuffled)?;
             }
         }
 
