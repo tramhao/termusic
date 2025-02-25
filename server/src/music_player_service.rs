@@ -122,13 +122,6 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
-    async fn reload_playlist(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let reply = Empty {};
-        self.command(PlayerCmd::ReloadPlaylist);
-
-        Ok(Response::new(reply))
-    }
-
     async fn seek_backward(
         &self,
         _request: Request<Empty>,

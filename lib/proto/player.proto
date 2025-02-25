@@ -23,7 +23,6 @@ service MusicPlayer {
   rpc PlaySpecific(PlaylistPlaySpecific) returns (Empty);
   // Cycle the playlist loop mode, returns the new mode.
   rpc CycleLoop(Empty) returns (PlaylistLoopMode);
-  rpc ReloadPlaylist(Empty) returns (Empty);
   // Add one or multiple tracks to the playlist
   rpc AddToPlaylist(PlaylistTracksToAdd) returns (Empty);
   // Remove one or multiple tracks from the playlist

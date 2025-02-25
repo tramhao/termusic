@@ -23,7 +23,6 @@ pub enum TuiCmd {
 
     GetProgress,
     ReloadConfig,
-    ReloadPlaylist,
 
     Playlist(PlaylistCmd),
 }
