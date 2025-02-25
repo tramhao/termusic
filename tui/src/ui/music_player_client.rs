@@ -201,4 +201,12 @@ impl Playback {
 
         Ok(response.into_inner())
     }
+
+    pub async fn remove_deleted_tracks(&mut self) -> Result<()> {
+        let request = tonic::Request::new(Empty {});
+        let response = self.client.remove_deleted_tracks(request).await?;
+        info!("Got response from server: {response:?}");
+
+        Ok(())
+    }
 }

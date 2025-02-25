@@ -420,6 +420,9 @@ fn player_loop(
             PlayerCmd::PlaylistShuffle => {
                 player.playlist.write().shuffle();
             }
+            PlayerCmd::PlaylistRemoveDeletedTracks => {
+                player.playlist.write().remove_deleted_items();
+            }
         }
 
         cb.call();

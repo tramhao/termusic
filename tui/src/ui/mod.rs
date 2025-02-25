@@ -342,6 +342,9 @@ impl UI {
             PlaylistCmd::PlaySpecific(info) => {
                 self.playback.play_specific(info).await?;
             }
+            PlaylistCmd::RemoveDeletedItems => {
+                self.playback.remove_deleted_tracks().await?;
+            }
         }
 
         Ok(())

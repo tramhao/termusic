@@ -336,6 +336,15 @@ impl MusicPlayer for MusicPlayerService {
 
         Ok(Response::new(reply))
     }
+
+    async fn remove_deleted_tracks(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
+        let rx = self.command_cb(PlayerCmd::PlaylistRemoveDeletedTracks)?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
 }
 
 /// Common function to map [`Playlist`] tracks to the GRPC message types
