@@ -910,6 +910,8 @@ impl Playlist {
 
         self.tracks.shuffle(&mut rand::rng());
 
+        self.send_stream_ev(UpdatePlaylistEvents::PlaylistShuffled);
+
         if let Some(current_track_file) = current_track_file {
             if let Some(index) = self.find_index_from_file(&current_track_file) {
                 self.current_track_index = index;

@@ -212,6 +212,7 @@ pub enum UpdatePlaylistEvents {
     PlaylistCleared,
     PlaylistLoopMode(PlaylistLoopModeInfo),
     PlaylistSwapTracks(PlaylistSwapInfo),
+    PlaylistShuffled,
 }
 
 type PPlaylistTypes = protobuf::update_playlist::Type;
@@ -245,6 +246,9 @@ impl From<UpdatePlaylistEvents> for protobuf::UpdatePlaylist {
                     index_a: vals.index_a,
                     index_b: vals.index_b,
                 })
+            }
+            UpdatePlaylistEvents::PlaylistShuffled => {
+                PPlaylistTypes::Shuffled(protobuf::PlaylistShuffled {})
             }
         };
 
@@ -289,6 +293,7 @@ impl TryFrom<protobuf::UpdatePlaylist> for UpdatePlaylistEvents {
                 index_a: ev.index_a,
                 index_b: ev.index_b,
             }),
+            PPlaylistTypes::Shuffled(_) => Self::PlaylistShuffled,
         };
 
         Ok(res)
