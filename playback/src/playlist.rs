@@ -908,9 +908,11 @@ impl Playlist {
 
     /// Shuffle the playlist
     pub fn shuffle(&mut self) {
-        // TODO: why does this only shuffle if there is a current track?
-        if let Some(current_track_file) = self.get_current_track() {
-            self.tracks.shuffle(&mut thread_rng());
+        let current_track_file = self.get_current_track();
+
+        self.tracks.shuffle(&mut thread_rng());
+
+        if let Some(current_track_file) = current_track_file {
             if let Some(index) = self.find_index_from_file(&current_track_file) {
                 self.current_track_index = index;
             }
