@@ -37,4 +37,5 @@ pub enum PlaylistCmd {
     RemoveTrack(PlaylistRemoveTrackIndexed),
     Clear,
     SwapTrack(PlaylistSwapTrack),
+    Shuffle,
 }

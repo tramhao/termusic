@@ -411,6 +411,9 @@ fn player_loop(
                     error!("Error swapping tracks: {err}");
                 }
             }
+            PlayerCmd::PlaylistShuffle => {
+                player.playlist.write().shuffle();
+            }
         }
 
         cb.call();

@@ -334,6 +334,14 @@ impl UI {
             PlaylistCmd::SwapTrack(info) => {
                 self.playback.swap_tracks(info).await?;
             }
+            PlaylistCmd::Shuffle => {
+                let new_tracks = self.playback.shuffle_playlist().await?;
+                self.model
+                    .playlist
+                    .load_from_grpc(new_tracks, &self.model.podcast.db_podcast)?;
+
+                self.model.playlist_sync();
+            }
         }
 
         Ok(())

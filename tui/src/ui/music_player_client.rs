@@ -192,4 +192,13 @@ impl Playback {
 
         Ok(response.into_inner())
     }
+
+    pub async fn shuffle_playlist(&mut self) -> Result<PlaylistTracks> {
+        let request = tonic::Request::new(Empty {});
+        let response = self.client.shuffle_playlist(request).await?;
+        // This might be massively spamming the log
+        info!("Got response from server: {response:?}");
+
+        Ok(response.into_inner())
+    }
 }

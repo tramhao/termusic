@@ -10,7 +10,9 @@ use termusiclib::player::{
     PlaylistAddTrack, PlaylistLoopMode, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
     PlaylistTracksToRemove, SpeedReply, StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, StreamTX};
+use termusicplayback::{
+    PlayerCmd, PlayerCmdCallback, PlayerCmdSender, Playlist, SharedPlaylist, StreamTX,
+};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::{Stream, StreamExt};
@@ -301,43 +303,62 @@ impl MusicPlayer for MusicPlayerService {
 
     async fn get_playlist(&self, _: Request<Empty>) -> Result<Response<PlaylistTracks>, Status> {
         let playlist = self.playlist.read();
-        let tracks = playlist
-            .tracks()
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, track)| {
-                let at_index = u64::try_from(idx).unwrap();
-                // TODO: refactor Track::file to be always existing
-                let Some(file) = track.file() else {
-                    error!("Track did not have a file(id), skipping!");
-                    return None;
-                };
-                // TODO: this should likely be a function on "Track"
-                let id = match track.media_type {
-                    termusiclib::track::MediaType::Music => {
-                        PlaylistTrackSource::Path(file.to_string())
-                    }
-                    termusiclib::track::MediaType::Podcast => {
-                        PlaylistTrackSource::PodcastUrl(file.to_string())
-                    }
-                    termusiclib::track::MediaType::LiveRadio => {
-                        PlaylistTrackSource::Url(file.to_string())
-                    }
-                };
-                Some(PlaylistAddTrack {
-                    at_index,
-                    duration: Some(track.duration().into()),
-                    id: Some(id.into()),
-                    optional_title: None,
-                })
-            })
-            .collect();
-
-        let reply = PlaylistTracks {
-            current_track_index: u64::try_from(playlist.get_current_track_index()).unwrap(),
-            tracks,
-        };
+        let reply = playlist_to_grpc_tracks(&playlist);
 
         Ok(Response::new(reply))
+    }
+
+    async fn shuffle_playlist(
+        &self,
+        _: Request<Empty>,
+    ) -> Result<Response<PlaylistTracks>, Status> {
+        // execute shuffle in the player thread instead of the service thread
+        // this does not necessarily need to be done, but its better to have the service read-only
+        let rx = self.command_cb(PlayerCmd::PlaylistShuffle)?;
+        // wait until the event was processed
+        let _ = rx.await;
+
+        let playlist = self.playlist.read();
+        let reply = playlist_to_grpc_tracks(&playlist);
+
+        Ok(Response::new(reply))
+    }
+}
+
+/// Common function to map [`Playlist`] tracks to the GRPC message types
+fn playlist_to_grpc_tracks(playlist: &Playlist) -> PlaylistTracks {
+    let tracks = playlist
+        .tracks()
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, track)| {
+            let at_index = u64::try_from(idx).unwrap();
+            // TODO: refactor Track::file to be always existing
+            let Some(file) = track.file() else {
+                error!("Track did not have a file(id), skipping!");
+                return None;
+            };
+            // TODO: this should likely be a function on "Track"
+            let id = match track.media_type {
+                termusiclib::track::MediaType::Music => PlaylistTrackSource::Path(file.to_string()),
+                termusiclib::track::MediaType::Podcast => {
+                    PlaylistTrackSource::PodcastUrl(file.to_string())
+                }
+                termusiclib::track::MediaType::LiveRadio => {
+                    PlaylistTrackSource::Url(file.to_string())
+                }
+            };
+            Some(PlaylistAddTrack {
+                at_index,
+                duration: Some(track.duration().into()),
+                id: Some(id.into()),
+                optional_title: None,
+            })
+        })
+        .collect();
+
+    PlaylistTracks {
+        current_track_index: u64::try_from(playlist.get_current_track_index()).unwrap(),
+        tracks,
     }
 }

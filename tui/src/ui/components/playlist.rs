@@ -602,12 +602,9 @@ impl Model {
         self.command(TuiCmd::Playlist(PlaylistCmd::Clear));
     }
 
+    /// Shuffle the whole playlist
     pub fn playlist_shuffle(&mut self) {
-        self.playlist.shuffle();
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.playlist_sync();
+        self.command(TuiCmd::Playlist(PlaylistCmd::Shuffle));
     }
 
     /// Send command to swap 2 indexes. Does nothing if either index is out-of-bounds.
