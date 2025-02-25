@@ -9,6 +9,7 @@
 - Fix(tui): set `ueberzug` command to `--silent`.
 - Fix(tui): force viuer to use the terminal image protocol that was probed at the beginning.
 - Fix(tui): add CTRL+C handler for when TUI key-reading is not active yet or not active anymore.
+- Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
 
 ### [V0.10.0]
 - Released on: March 8, 2025.
@@ -29,7 +30,7 @@
 - Fix: change Lyric::adjust_offset to not work invertedly for below 10 seconds anymore.
 - Fix: fix accidental invertion of `is_absolute` for path playlist values causing items to not have the correct path.
 - Fix: create and save config if it does not exist, without needing a successful connect first.
-- Fix: in `rusty` backen, correctly track the time before speed change.
+- Fix: in `rusty` backend, correctly track the time before speed change.
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
 - Fix(tui): not being able to parse themes that use `0x` as the prefix.
 - Fix(tui): change that the default Theme is not using bad colors.

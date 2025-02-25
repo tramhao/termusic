@@ -945,11 +945,58 @@ impl Playlist {
     }
 
     /// Remove all tracks from the playlist that dont exist on the disk.
+    ///
+    /// # Panics
+    ///
+    /// if usize cannot be converted to u64
     pub fn remove_deleted_items(&mut self) {
         if let Some(current_track_file) = self.get_current_track() {
-            // TODO: dosnt this remove radio and podcast episodes?
-            self.tracks
-                .retain(|x| x.file().is_some_and(|p| Path::new(p).exists()));
+            let len = self.tracks.len();
+            let old_tracks = std::mem::replace(&mut self.tracks, Vec::with_capacity(len));
+
+            for track in old_tracks {
+                // TODO: refactor Track::file to be always existing
+                let Some(file) = track.file() else {
+                    continue;
+                };
+
+                if track.media_type != MediaType::Music {
+                    continue;
+                }
+
+                if Path::new(file).exists() {
+                    self.tracks.push(track);
+                    continue;
+                }
+
+                // TODO: this should likely be a function on "Track"
+                let trackid = match track.media_type {
+                    termusiclib::track::MediaType::Music => {
+                        PlaylistTrackSource::Path(file.to_string())
+                    }
+                    termusiclib::track::MediaType::Podcast => {
+                        PlaylistTrackSource::PodcastUrl(file.to_string())
+                    }
+                    termusiclib::track::MediaType::LiveRadio => {
+                        PlaylistTrackSource::Url(file.to_string())
+                    }
+                };
+
+                // the index of the playlist where this item is deleted
+                // this must be the index after other indexes might have been already deleted
+                // ie if 0 is deleted, then the next element is also index 0
+                // also ".len" is safe to use here as it is always 1 higher than the max index of the retained elements
+                let deleted_idx = self.tracks.len();
+
+                // NOTE: this function may send many events very quickly (for example on a folder delete), which could overwhelm the broadcast channel on a low capacity value
+                self.send_stream_ev(UpdatePlaylistEvents::PlaylistRemoveTrack(
+                    PlaylistRemoveTrackInfo {
+                        at_index: u64::try_from(deleted_idx).unwrap(),
+                        trackid,
+                    },
+                ));
+            }
+
             match self.find_index_from_file(&current_track_file) {
                 Some(new_index) => self.current_track_index = new_index,
                 None => self.current_track_index = 0,
