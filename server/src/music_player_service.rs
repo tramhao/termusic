@@ -4,11 +4,11 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::music_player_server::MusicPlayer;
-use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
+use termusiclib::player::playlist_helpers::{PlaylistRemoveTrackType, PlaylistTrackSource};
 use termusiclib::player::{
     stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
-    PlaylistLoopMode, PlaylistSwapTracks, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply,
-    StreamUpdates, UpdateMissedEvents, VolumeReply,
+    PlaylistAddTrack, PlaylistLoopMode, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
+    PlaylistTracksToRemove, SpeedReply, StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
@@ -23,7 +23,7 @@ pub struct MusicPlayerService {
     cmd_tx: PlayerCmdSender,
     stream_tx: StreamTX,
     config: SharedServerSettings,
-    _playlist: SharedPlaylist,
+    playlist: SharedPlaylist,
     pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
@@ -40,7 +40,7 @@ impl MusicPlayerService {
             cmd_tx,
             player_stats,
             stream_tx,
-            _playlist: playlist,
+            playlist,
             config,
         }
     }
@@ -295,6 +295,48 @@ impl MusicPlayer for MusicPlayerService {
         // wait until the event was processed
         let _ = rx.await;
         let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
+
+    async fn get_playlist(&self, _: Request<Empty>) -> Result<Response<PlaylistTracks>, Status> {
+        let playlist = self.playlist.read();
+        let tracks = playlist
+            .tracks()
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, track)| {
+                let at_index = u64::try_from(idx).unwrap();
+                // TODO: refactor Track::file to be always existing
+                let Some(file) = track.file() else {
+                    error!("Track did not have a file(id), skipping!");
+                    return None;
+                };
+                // TODO: this should likely be a function on "Track"
+                let id = match track.media_type {
+                    termusiclib::track::MediaType::Music => {
+                        PlaylistTrackSource::Path(file.to_string())
+                    }
+                    termusiclib::track::MediaType::Podcast => {
+                        PlaylistTrackSource::PodcastUrl(file.to_string())
+                    }
+                    termusiclib::track::MediaType::LiveRadio => {
+                        PlaylistTrackSource::Url(file.to_string())
+                    }
+                };
+                Some(PlaylistAddTrack {
+                    at_index,
+                    duration: Some(track.duration().into()),
+                    id: Some(id.into()),
+                    optional_title: None,
+                })
+            })
+            .collect();
+
+        let reply = PlaylistTracks {
+            current_track_index: u64::try_from(playlist.get_current_track_index()).unwrap(),
+            tracks,
+        };
 
         Ok(Response::new(reply))
     }

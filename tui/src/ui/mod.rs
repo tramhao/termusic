@@ -102,6 +102,8 @@ impl UI {
     async fn run_inner(&mut self) -> Result<()> {
         let mut stream_updates = self.playback.subscribe_to_stream_updates().await?;
 
+        self.load_playlist().await?;
+
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
@@ -422,6 +424,16 @@ impl UI {
                 self.model.handle_playlist_swap_tracks(&swapped_tracks)?;
             }
         }
+
+        Ok(())
+    }
+
+    /// Load the playlist from the server
+    async fn load_playlist(&mut self) -> Result<()> {
+        let tracks = self.playback.get_playlist().await?;
+        self.model
+            .playlist
+            .load_from_grpc(tracks, &self.model.podcast.db_podcast)?;
 
         Ok(())
     }

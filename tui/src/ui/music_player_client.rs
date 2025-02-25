@@ -5,8 +5,8 @@ use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistRemoveTrackType, PlaylistSwapTrack,
 };
 use termusiclib::player::{
-    Empty, GetProgressResponse, PlayerProgress, PlaylistSwapTracks, PlaylistTracksToAdd,
-    PlaylistTracksToRemove,
+    Empty, GetProgressResponse, PlayerProgress, PlaylistSwapTracks, PlaylistTracks,
+    PlaylistTracksToAdd, PlaylistTracksToRemove,
 };
 use termusicplayback::Status;
 use tokio_stream::{Stream, StreamExt as _};
@@ -182,5 +182,14 @@ impl Playback {
         info!("Got response from server: {response:?}");
 
         Ok(())
+    }
+
+    pub async fn get_playlist(&mut self) -> Result<PlaylistTracks> {
+        let request = tonic::Request::new(Empty {});
+        let response = self.client.get_playlist(request).await?;
+        // This might be massively spamming the log
+        info!("Got response from server: {response:?}");
+
+        Ok(response.into_inner())
     }
 }

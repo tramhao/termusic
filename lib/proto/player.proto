@@ -30,6 +30,8 @@ service MusicPlayer {
   rpc RemoveFromPlaylist(PlaylistTracksToRemove) returns (Empty);
   // Swap some tracks.
   rpc SwapTracks(PlaylistSwapTracks) returns (Empty);
+  // Get all tracks of the playlist.
+  rpc GetPlaylist(Empty) returns (PlaylistTracks);
 
   // Misc Commands
   rpc ReloadConfig(Empty) returns (Empty);
@@ -147,6 +149,12 @@ message UpdateTrackChanged {
     string title = 3;
   }
   PlayerTime progress = 4;
+}
+
+// All tracks in the current playlist, they *should* be ordered from lowest to highest index.
+message PlaylistTracks {
+  uint64 current_track_index = 1;
+  repeated PlaylistAddTrack tracks = 2;
 }
 
 message UpdatePlaylist {

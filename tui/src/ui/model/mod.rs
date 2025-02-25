@@ -266,12 +266,7 @@ impl Model {
         // I dont like this workaround, but until the tui has its own playlist impl, this has to do.
         let (stream_tx, _stream_rx) = broadcast::channel(1);
 
-        let playlist = {
-            let mut playlist = Playlist::new(&config_server, stream_tx);
-            playlist.load_apply().expect("Failed to load playlist");
-
-            playlist
-        };
+        let playlist = Playlist::new(&config_server, stream_tx);
         let app = Self::init_app(&tree, &config_tui);
 
         // This line is required, in order to show the playing message for the first track

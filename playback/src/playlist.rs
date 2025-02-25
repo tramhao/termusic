@@ -17,6 +17,7 @@ use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistSwapInfo;
+use termusiclib::player::PlaylistTracks;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
@@ -215,6 +216,51 @@ impl Playlist {
         let (current_track_index, tracks) = Self::load()?;
         self.current_track_index = current_track_index;
         self.tracks = tracks;
+
+        Ok(())
+    }
+
+    /// Load Tracks from a GRPC response.
+    ///
+    /// Returns `(Position, Tracks[])`.
+    ///
+    /// # Errors
+    ///
+    /// - when converting from u64 grpc values to usize fails
+    /// - when there is no track-id
+    /// - when reading a Track from path or podcast database fails
+    pub fn load_from_grpc(&mut self, info: PlaylistTracks, podcast_db: &DBPod) -> Result<()> {
+        let current_track_index = usize::try_from(info.current_track_index)
+            .context("convert current_track_index(u64) to usize")?;
+        let mut playlist_items = Vec::with_capacity(info.tracks.len());
+
+        for (idx, track) in info.tracks.into_iter().enumerate() {
+            let at_index_usize =
+                usize::try_from(track.at_index).context("convert at_index(u64) to usize")?;
+            // assume / require that the tracks are ordered correctly, if not just log a error for now
+            if idx != at_index_usize {
+                error!("Non-matching \"index\" and \"at_index\"!");
+            }
+
+            // this case should never happen with "termusic-server", but grpc marks them as "optional"
+            let Some(id) = track.id else {
+                bail!("Track does not have a id, which is required to load!");
+            };
+
+            let track = match PlaylistTrackSource::try_from(id)? {
+                PlaylistTrackSource::Path(v) => Track::read_from_path(v, false)?,
+                PlaylistTrackSource::Url(v) => Track::new_radio(&v),
+                PlaylistTrackSource::PodcastUrl(v) => {
+                    let episode = podcast_db.get_episode_by_url(&v)?;
+                    Track::from_episode(&episode)
+                }
+            };
+
+            playlist_items.push(track);
+        }
+
+        self.current_track_index = current_track_index;
+        self.tracks = playlist_items;
 
         Ok(())
     }

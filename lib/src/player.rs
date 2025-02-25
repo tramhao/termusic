@@ -309,6 +309,8 @@ fn clamp_u16(val: u32) -> u16 {
 }
 
 pub mod playlist_helpers {
+    use anyhow::Context;
+
     use super::{protobuf, unwrap_msg, PlaylistTracksToRemoveClear};
 
     /// A Id / Source for a given Track
@@ -346,6 +348,14 @@ pub mod playlist_helpers {
                 protobuf::track_id::Source::Url(v) => Self::Url(v),
                 protobuf::track_id::Source::PodcastUrl(v) => Self::PodcastUrl(v),
             })
+        }
+    }
+
+    impl TryFrom<protobuf::TrackId> for PlaylistTrackSource {
+        type Error = anyhow::Error;
+
+        fn try_from(value: protobuf::TrackId) -> Result<Self, Self::Error> {
+            unwrap_msg(value.source, "TrackId.source").and_then(Self::try_from)
         }
     }
 
@@ -387,10 +397,7 @@ pub mod playlist_helpers {
             let tracks = value
                 .tracks
                 .into_iter()
-                .map(|v| {
-                    unwrap_msg(v.source, "PlaylistTracksToAdd.tracks")
-                        .and_then(PlaylistTrackSource::try_from)
-                })
+                .map(|v| PlaylistTrackSource::try_from(v).context("PlaylistTracksToAdd.tracks"))
                 .collect::<Result<Vec<_>, anyhow::Error>>()?;
 
             Ok(Self {
@@ -439,8 +446,7 @@ pub mod playlist_helpers {
                 .tracks
                 .into_iter()
                 .map(|v| {
-                    unwrap_msg(v.source, "PlaylistTracksToRemoveIndexed.tracks")
-                        .and_then(PlaylistTrackSource::try_from)
+                    PlaylistTrackSource::try_from(v).context("PlaylistTracksToRemoveIndexed.tracks")
                 })
                 .collect::<Result<Vec<_>, anyhow::Error>>()?;
 
