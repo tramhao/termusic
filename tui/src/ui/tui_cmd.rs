@@ -39,5 +39,6 @@ pub enum PlaylistCmd {
     RemoveDeletedItems,
 
     /// Re-Request the playlist tracks and state
+    #[allow(dead_code)] // replace with "expect" on 1.81 upgrade
     SelfReloadPlaylist,
 }

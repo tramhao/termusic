@@ -204,6 +204,11 @@ pub struct PlaylistSwapInfo {
     pub index_b: u64,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlaylistShuffledInfo {
+    pub tracks: PlaylistTracks,
+}
+
 /// Separate nested enum to handle all playlist related events
 #[derive(Debug, Clone, PartialEq)]
 pub enum UpdatePlaylistEvents {
@@ -212,7 +217,7 @@ pub enum UpdatePlaylistEvents {
     PlaylistCleared,
     PlaylistLoopMode(PlaylistLoopModeInfo),
     PlaylistSwapTracks(PlaylistSwapInfo),
-    PlaylistShuffled,
+    PlaylistShuffled(PlaylistShuffledInfo),
 }
 
 type PPlaylistTypes = protobuf::update_playlist::Type;
@@ -247,8 +252,10 @@ impl From<UpdatePlaylistEvents> for protobuf::UpdatePlaylist {
                     index_b: vals.index_b,
                 })
             }
-            UpdatePlaylistEvents::PlaylistShuffled => {
-                PPlaylistTypes::Shuffled(protobuf::PlaylistShuffled {})
+            UpdatePlaylistEvents::PlaylistShuffled(vals) => {
+                PPlaylistTypes::Shuffled(protobuf::PlaylistShuffled {
+                    shuffled: Some(vals.tracks),
+                })
             }
         };
 
@@ -293,7 +300,10 @@ impl TryFrom<protobuf::UpdatePlaylist> for UpdatePlaylistEvents {
                 index_a: ev.index_a,
                 index_b: ev.index_b,
             }),
-            PPlaylistTypes::Shuffled(_) => Self::PlaylistShuffled,
+            PPlaylistTypes::Shuffled(ev) => {
+                let shuffled = unwrap_msg(ev.shuffled, "UpdatePlaylist.type.shuffled.shuffled")?;
+                Self::PlaylistShuffled(PlaylistShuffledInfo { tracks: shuffled })
+            }
         };
 
         Ok(res)
