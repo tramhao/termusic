@@ -651,11 +651,7 @@ impl Model {
     }
 
     pub fn playlist_update_library_delete(&mut self) {
-        self.playlist.remove_deleted_items();
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.playlist_sync();
+        self.command(TuiCmd::Playlist(PlaylistCmd::RemoveDeletedItems));
     }
 
     pub fn playlist_update_title(&mut self) {

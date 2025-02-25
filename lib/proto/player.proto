@@ -34,6 +34,9 @@ service MusicPlayer {
   rpc GetPlaylist(Empty) returns (PlaylistTracks);
   // Shuffle the playlist, returns the new playlist tracks.
   rpc ShufflePlaylist(Empty) returns (PlaylistTracks);
+  // Check for and remove deleted items from the playlist.
+  // Unlike shuffle, this will send Removal events
+  rpc RemoveDeletedTracks(Empty) returns (Empty);
 
   // Misc Commands
   rpc ReloadConfig(Empty) returns (Empty);
