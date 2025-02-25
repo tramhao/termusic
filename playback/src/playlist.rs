@@ -90,37 +90,38 @@ pub struct Playlist {
 }
 
 impl Playlist {
-    /// # Errors
-    /// errors could happen when reading files
-    pub fn new(config: &SharedServerSettings, stream_tx: StreamTX) -> Result<Self> {
-        let (current_track_index, tracks) = Self::load()?;
+    /// Create a new playlist instance with 0 tracks
+    pub fn new(config: &SharedServerSettings, stream_tx: StreamTX) -> Self {
         // TODO: shouldnt "loop_mode" be combined with the config ones?
         let loop_mode = config.read().settings.player.loop_mode;
         let current_track = None;
 
-        Ok(Self {
-            tracks,
+        Self {
+            tracks: Vec::new(),
             status: Status::Stopped,
             loop_mode,
-            current_track_index,
+            current_track_index: 0,
             current_track,
             played_index: Vec::new(),
             next_track_index: None,
             need_proceed_to_next: false,
             stream_tx,
-        })
+        }
     }
 
     /// Create a new Playlist instance that is directly shared
     ///
     /// # Errors
     ///
-    /// see [`new`](Self::new)
+    /// see [`load`](Self::load)
     pub fn new_shared(
         config: &SharedServerSettings,
         stream_tx: StreamTX,
     ) -> Result<SharedPlaylist> {
-        Ok(Arc::new(RwLock::new(Self::new(config, stream_tx)?)))
+        let mut playlist = Self::new(config, stream_tx);
+        playlist.load_apply()?;
+
+        Ok(Arc::new(RwLock::new(playlist)))
     }
 
     /// Advance the playlist to the next track.
@@ -203,6 +204,19 @@ impl Playlist {
         }
 
         Ok((current_track_index, playlist_items))
+    }
+
+    /// Run [`load`](Self::load), but also apply the values directly to the current instance
+    ///
+    /// # Errors
+    ///
+    /// see [`load`](Self::load)
+    pub fn load_apply(&mut self) -> Result<()> {
+        let (current_track_index, tracks) = Self::load()?;
+        self.current_track_index = current_track_index;
+        self.tracks = tracks;
+
+        Ok(())
     }
 
     /// Reload the current playlist from the file. This function does not save beforehand.
