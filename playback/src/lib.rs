@@ -235,6 +235,7 @@ pub enum PlayerCmd {
     PlaylistRemoveTrack(PlaylistRemoveTrackIndexed),
     PlaylistClear,
     PlaylistSwapTrack(PlaylistSwapTrack),
+    PlaylistShuffle,
 }
 
 pub type StreamTX = broadcast::Sender<UpdateEvents>;
