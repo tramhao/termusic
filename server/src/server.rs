@@ -19,7 +19,7 @@ use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerTrait, SpeedSigned, Status, VolumeSigned,
+    PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Status, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::sync::{broadcast, oneshot};
@@ -107,8 +107,15 @@ async fn actual_main() -> Result<()> {
     let cmd_tx = PlayerCmdSender::new(cmd_tx);
     let (stream_tx, _) = broadcast::channel(3);
 
-    let music_player_service: MusicPlayerService =
-        MusicPlayerService::new(cmd_tx.clone(), stream_tx.clone(), config.clone());
+    let playlist =
+        Playlist::new_shared(&config, stream_tx.clone()).context("Failed to load playlist")?;
+
+    let music_player_service: MusicPlayerService = MusicPlayerService::new(
+        cmd_tx.clone(),
+        stream_tx.clone(),
+        config.clone(),
+        playlist.clone(),
+    );
     let playerstats = music_player_service.player_stats.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
@@ -144,6 +151,7 @@ async fn actual_main() -> Result<()> {
                 config,
                 playerstats,
                 stream_tx,
+                playlist,
             );
             let _ = player_handle_os_tx.send(res);
         })?;
@@ -175,8 +183,9 @@ fn player_loop(
     config: SharedServerSettings,
     playerstats: Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
+    playlist: SharedPlaylist,
 ) -> Result<()> {
-    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx)?;
+    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
     while let Some((cmd, cb)) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {

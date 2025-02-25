@@ -151,6 +151,7 @@ impl GeneralPlayer {
         config: SharedServerSettings,
         cmd_tx: PlayerCmdSender,
         stream_tx: StreamTX,
+        playlist: SharedPlaylist,
     ) -> Result<Self> {
         let config_read = config.read();
         let backend = Backend::new_select(backend, &config_read, cmd_tx.clone());
@@ -160,9 +161,6 @@ impl GeneralPlayer {
         let db_podcast = DBPod::new(&db_path).with_context(|| "error connecting to podcast db.")?;
         let db = DataBase::new(&config_read)?;
 
-        let playlist = Arc::new(RwLock::new(
-            Playlist::new(&config, stream_tx.clone()).context("Failed to load playlist")?,
-        ));
         let mpris = if config.read().settings.player.use_mediacontrols {
             Some(mpris::Mpris::new(cmd_tx.clone()))
         } else {
@@ -200,8 +198,9 @@ impl GeneralPlayer {
         config: SharedServerSettings,
         cmd_tx: PlayerCmdSender,
         stream_tx: StreamTX,
+        playlist: SharedPlaylist,
     ) -> Result<Self> {
-        Self::new_backend(BackendSelect::Rusty, config, cmd_tx, stream_tx)
+        Self::new_backend(BackendSelect::Rusty, config, cmd_tx, stream_tx, playlist)
     }
 
     /// Reload the config from file, on fail continue to use the old

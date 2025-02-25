@@ -10,7 +10,7 @@ use termusiclib::player::{
     PlaylistLoopMode, PlaylistSwapTracks, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply,
     StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, StreamTX};
+use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::{Stream, StreamExt};
@@ -23,17 +23,24 @@ pub struct MusicPlayerService {
     cmd_tx: PlayerCmdSender,
     stream_tx: StreamTX,
     config: SharedServerSettings,
+    _playlist: SharedPlaylist,
     pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
 impl MusicPlayerService {
-    pub fn new(cmd_tx: PlayerCmdSender, stream_tx: StreamTX, config: SharedServerSettings) -> Self {
+    pub fn new(
+        cmd_tx: PlayerCmdSender,
+        stream_tx: StreamTX,
+        config: SharedServerSettings,
+        playlist: SharedPlaylist,
+    ) -> Self {
         let player_stats = Arc::new(Mutex::new(PlayerStats::new()));
 
         Self {
             cmd_tx,
             player_stats,
             stream_tx,
+            _playlist: playlist,
             config,
         }
     }
