@@ -850,8 +850,39 @@ impl Playlist {
     }
 
     /// Remove the track at `index`. Does not modify `current_track`.
+    ///
+    /// # Panics
+    ///
+    /// if usize cannot be converted to u64
     pub fn remove(&mut self, index: usize) {
+        let Some(track) = self.tracks.get(index) else {
+            error!("Index {index} out of bound {}", self.tracks.len());
+            return;
+        };
+
+        // TODO: refactor Track::file to be always existing
+        let Some(file) = track.file() else {
+            error!("Track did not have a file(id), skipping!");
+            return;
+        };
+        // TODO: this should likely be a function on "Track"
+        let trackid = match track.media_type {
+            termusiclib::track::MediaType::Music => PlaylistTrackSource::Path(file.to_string()),
+            termusiclib::track::MediaType::Podcast => {
+                PlaylistTrackSource::PodcastUrl(file.to_string())
+            }
+            termusiclib::track::MediaType::LiveRadio => PlaylistTrackSource::Url(file.to_string()),
+        };
+
         self.tracks.remove(index);
+
+        self.send_stream_ev(UpdatePlaylistEvents::PlaylistRemoveTrack(
+            PlaylistRemoveTrackInfo {
+                at_index: u64::try_from(index).unwrap(),
+                trackid,
+            },
+        ));
+
         // Handle index
         if index <= self.current_track_index {
             // nothing needs to be done if the index is already 0
