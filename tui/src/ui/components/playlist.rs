@@ -12,7 +12,8 @@ use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
 use termusiclib::player::playlist_helpers::{
-    PlaylistAddTrack, PlaylistRemoveTrackIndexed, PlaylistSwapTrack, PlaylistTrackSource,
+    PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
+    PlaylistTrackSource,
 };
 use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistSwapInfo,
@@ -682,12 +683,34 @@ impl Model {
             )
             .ok();
     }
+
+    /// Play the currently selected item in the playlist list
     pub fn playlist_play_selected(&mut self, index: usize) {
-        self.playlist.set_current_track_index(index);
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.command(TuiCmd::PlaySelected);
+        let Some(track) = self.playlist.tracks().get(index) else {
+            error!("Track {index} not in playlist!");
+            return;
+        };
+
+        // TODO: refactor Track::file to be always existing
+        let Some(file) = track.file() else {
+            error!("Track {index} did not have a file(id), skipping!");
+            return;
+        };
+        // TODO: this should likely be a function on "Track"
+        let id = match track.media_type {
+            termusiclib::track::MediaType::Music => PlaylistTrackSource::Path(file.to_string()),
+            termusiclib::track::MediaType::Podcast => {
+                PlaylistTrackSource::PodcastUrl(file.to_string())
+            }
+            termusiclib::track::MediaType::LiveRadio => PlaylistTrackSource::Url(file.to_string()),
+        };
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::PlaySpecific(
+            PlaylistPlaySpecific {
+                track_index: u64::try_from(index).unwrap(),
+                id,
+            },
+        )));
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {

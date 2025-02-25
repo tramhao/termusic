@@ -20,7 +20,7 @@ service MusicPlayer {
   // Playlist Commands
   // Skip to a specific track in the playlist
   // at the momemnt, the one set via "current_track_index"
-  rpc PlaySelected(Empty) returns (Empty);
+  rpc PlaySpecific(PlaylistPlaySpecific) returns (Empty);
   // Cycle the playlist loop mode, returns the new mode.
   rpc CycleLoop(Empty) returns (PlaylistLoopMode);
   rpc ReloadPlaylist(Empty) returns (Empty);
@@ -151,6 +151,13 @@ message UpdateTrackChanged {
     string title = 3;
   }
   PlayerTime progress = 4;
+}
+
+// Play a specific track in the playlist
+message PlaylistPlaySpecific {
+  uint64 track_index = 1;
+
+  TrackId id = 2;
 }
 
 // All tracks in the current playlist, they *should* be ordered from lowest to highest index.
