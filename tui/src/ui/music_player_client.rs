@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::playlist_helpers::{
-    PlaylistAddTrack, PlaylistRemoveTrackType, PlaylistSwapTrack,
+    PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackType, PlaylistSwapTrack,
 };
 use termusiclib::player::{
     Empty, GetProgressResponse, PlayerProgress, PlaylistSwapTracks, PlaylistTracks,
@@ -134,9 +134,9 @@ impl Playback {
         Ok(())
     }
 
-    pub async fn play_selected(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.play_selected(request).await?;
+    pub async fn play_specific(&mut self, info: PlaylistPlaySpecific) -> Result<()> {
+        let request = tonic::Request::new(info.into());
+        let response = self.client.play_specific(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(())

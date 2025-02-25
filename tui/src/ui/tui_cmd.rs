@@ -1,5 +1,5 @@
 use termusiclib::player::playlist_helpers::{
-    PlaylistAddTrack, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
+    PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
 
 #[allow(clippy::doc_link_with_quotes)]
@@ -24,8 +24,6 @@ pub enum TuiCmd {
     GetProgress,
     ReloadConfig,
     ReloadPlaylist,
-    /// Play the selected track in the playlist (`current_track_index`)
-    PlaySelected,
 
     Playlist(PlaylistCmd),
 }
@@ -33,6 +31,7 @@ pub enum TuiCmd {
 /// Enum for Commands to send specificly for Playlist
 #[derive(Clone, Debug)]
 pub enum PlaylistCmd {
+    PlaySpecific(PlaylistPlaySpecific),
     AddTrack(PlaylistAddTrack),
     RemoveTrack(PlaylistRemoveTrackIndexed),
     Clear,

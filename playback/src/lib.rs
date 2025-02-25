@@ -11,7 +11,7 @@ use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulte
 use termusiclib::config::SharedServerSettings;
 use termusiclib::library_db::DataBase;
 use termusiclib::player::playlist_helpers::{
-    PlaylistAddTrack, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
+    PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
 use termusiclib::player::{PlayerProgress, PlayerTimeUnit, TrackChangedInfo, UpdateEvents};
 use termusiclib::podcast::db::Database as DBPod;
@@ -98,7 +98,6 @@ pub enum PlayerCmd {
     CycleLoop,
     Eos,
     GetProgress,
-    PlaySelected,
     SkipPrevious,
     Pause,
     Play,
@@ -116,6 +115,7 @@ pub enum PlayerCmd {
     VolumeDown,
     VolumeUp,
 
+    PlaylistPlaySpecific(PlaylistPlaySpecific),
     PlaylistAddTrack(PlaylistAddTrack),
     PlaylistRemoveTrack(PlaylistRemoveTrackIndexed),
     PlaylistClear,

@@ -12,6 +12,7 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
+use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
@@ -317,6 +318,48 @@ impl Playlist {
             return;
         }
         self.current_track_index = self.get_next_track_index();
+    }
+
+    /// Skip to a specific track in the playlist
+    ///
+    /// # Errors
+    ///
+    /// if converting u64 to usize fails
+    pub fn play_specific(&mut self, info: &PlaylistPlaySpecific) -> Result<()> {
+        let new_index =
+            usize::try_from(info.track_index).context("convert track_index(u64) to usize")?;
+
+        let Some(track_at_idx) = self.tracks.get(new_index) else {
+            bail!("Index {new_index} is out of bound {}", self.tracks.len())
+        };
+
+        let Some(id) = track_at_idx.file() else {
+            bail!("Track {new_index} does not have a file-id!");
+        };
+
+        // Note: clippy suggested this instead of a match block
+        let ((PlaylistTrackSource::Path(file_url), MediaType::Music)
+        | (PlaylistTrackSource::PodcastUrl(file_url), MediaType::Podcast)
+        | (PlaylistTrackSource::Url(file_url), MediaType::LiveRadio)) =
+            (&info.id, track_at_idx.media_type)
+        else {
+            bail!(
+                "Type mismatch, expected \"{:#?}\" at \"{new_index}\" found \"{:#?}\"",
+                info.id,
+                track_at_idx
+            );
+        };
+
+        if file_url != id {
+            bail!("URI mismatch, expected \"{id}\" at \"{new_index}\", found \"{file_url}\"");
+        }
+
+        self.played_index.push(self.current_track_index);
+        self.set_next_track(None);
+        self.set_current_track_index(new_index);
+        self.proceed_false();
+
+        Ok(())
     }
 
     /// Get the next track index based on the [`LoopMode`] used.

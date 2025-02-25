@@ -238,12 +238,6 @@ fn player_loop(
                 );
             }
             PlayerCmd::GetProgress => {}
-            PlayerCmd::PlaySelected => {
-                info!("play selected");
-                player.player_save_last_position();
-                player.playlist.write().proceed_false();
-                player.next();
-            }
             PlayerCmd::SkipPrevious => {
                 info!("skip to previous track");
                 player.player_save_last_position();
@@ -393,6 +387,17 @@ fn player_loop(
                 player.resume();
             }
 
+            PlayerCmd::PlaylistPlaySpecific(info) => {
+                info!(
+                    "play specific track, idx: {} id: {:#?}",
+                    info.track_index, info.id
+                );
+                player.player_save_last_position();
+                if let Err(err) = player.playlist.write().play_specific(&info) {
+                    error!("Error setting specific track to play: {err}");
+                }
+                player.next();
+            }
             PlayerCmd::PlaylistAddTrack(info) => {
                 if let Err(err) = player.playlist.write().add_tracks(info, &player.db_podcast) {
                     error!("Error adding tracks: {err}");

@@ -260,9 +260,6 @@ impl UI {
                     let res = self.playback.cycle_loop().await?;
                     self.model.config_server.write().settings.player.loop_mode = res;
                 }
-                TuiCmd::PlaySelected => {
-                    self.playback.play_selected().await?;
-                }
                 TuiCmd::ReloadConfig => self.playback.reload_config().await?,
                 TuiCmd::ReloadPlaylist => self.playback.reload_playlist().await?,
                 TuiCmd::SeekBackward => {
@@ -341,6 +338,9 @@ impl UI {
                     .load_from_grpc(new_tracks, &self.model.podcast.db_podcast)?;
 
                 self.model.playlist_sync();
+            }
+            PlaylistCmd::PlaySpecific(info) => {
+                self.playback.play_specific(info).await?;
             }
         }
 

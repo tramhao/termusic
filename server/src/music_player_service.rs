@@ -4,9 +4,11 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::music_player_server::MusicPlayer;
-use termusiclib::player::playlist_helpers::{PlaylistRemoveTrackType, PlaylistTrackSource};
+use termusiclib::player::playlist_helpers::{
+    PlaylistPlaySpecific, PlaylistRemoveTrackType, PlaylistTrackSource,
+};
 use termusiclib::player::{
-    stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
+    self, stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
     PlaylistAddTrack, PlaylistLoopMode, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
     PlaylistTracksToRemove, SpeedReply, StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
@@ -95,9 +97,20 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
-    async fn play_selected(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
+    async fn play_specific(
+        &self,
+        request: Request<player::PlaylistPlaySpecific>,
+    ) -> Result<Response<Empty>, Status> {
+        let converted: PlaylistPlaySpecific = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
+        let rx = self.command_cb(PlayerCmd::PlaylistPlaySpecific(converted))?;
+
+        // wait until the event was processed
+        let _ = rx.await;
+
         let reply = Empty {};
-        self.command(PlayerCmd::PlaySelected);
 
         Ok(Response::new(reply))
     }

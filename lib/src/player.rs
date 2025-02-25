@@ -518,4 +518,33 @@ pub mod playlist_helpers {
             })
         }
     }
+
+    /// Data for requesting to skip / play a specific track
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct PlaylistPlaySpecific {
+        pub track_index: u64,
+        pub id: PlaylistTrackSource,
+    }
+
+    impl From<PlaylistPlaySpecific> for protobuf::PlaylistPlaySpecific {
+        fn from(value: PlaylistPlaySpecific) -> Self {
+            Self {
+                track_index: value.track_index,
+                id: Some(value.id.into()),
+            }
+        }
+    }
+
+    impl TryFrom<protobuf::PlaylistPlaySpecific> for PlaylistPlaySpecific {
+        type Error = anyhow::Error;
+
+        fn try_from(value: protobuf::PlaylistPlaySpecific) -> Result<Self, Self::Error> {
+            Ok(Self {
+                track_index: value.track_index,
+                id: unwrap_msg(value.id, "PlaylistPlaySpecific.id").and_then(|v| {
+                    PlaylistTrackSource::try_from(v).context("PlaylistPlaySpecific.id")
+                })?,
+            })
+        }
+    }
 }
