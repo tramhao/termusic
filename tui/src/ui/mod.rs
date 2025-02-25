@@ -359,6 +359,9 @@ impl UI {
             PlaylistCmd::RemoveDeletedItems => {
                 self.playback.remove_deleted_tracks().await?;
             }
+            PlaylistCmd::SelfReloadPlaylist => {
+                self.load_playlist().await?;
+            }
         }
 
         Ok(())
@@ -448,6 +451,12 @@ impl UI {
             UpdatePlaylistEvents::PlaylistSwapTracks(swapped_tracks) => {
                 self.model.handle_playlist_swap_tracks(&swapped_tracks)?;
             }
+            UpdatePlaylistEvents::PlaylistShuffled => {
+                // NOTE: the current implementation will reload the playlist on this client, even if this client was
+                // the one that had requested the shuffle and already applied the returned playlist values
+                self.model
+                    .command(TuiCmd::Playlist(PlaylistCmd::SelfReloadPlaylist));
+            }
         }
 
         Ok(())
@@ -455,6 +464,7 @@ impl UI {
 
     /// Load the playlist from the server
     async fn load_playlist(&mut self) -> Result<()> {
+        info!("Requesting Playlist from server");
         let tracks = self.playback.get_playlist().await?;
         self.model
             .playlist

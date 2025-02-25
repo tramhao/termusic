@@ -37,4 +37,7 @@ pub enum PlaylistCmd {
     SwapTrack(PlaylistSwapTrack),
     Shuffle,
     RemoveDeletedItems,
+
+    /// Re-Request the playlist tracks and state
+    SelfReloadPlaylist,
 }

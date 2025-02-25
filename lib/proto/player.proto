@@ -175,6 +175,7 @@ message UpdatePlaylist {
     PlaylistCleared cleared = 3;
     PlaylistLoopMode loop_mode = 4;
     PlaylistSwapTracks swap_tracks = 5;
+    PlaylistShuffled shuffled = 6;
   }
 }
 
@@ -208,7 +209,7 @@ message PlaylistRemoveTrack {
   TrackId id = 2;
 }
 
-/// The Playlist got completely cleared
+// The Playlist got completely cleared
 message PlaylistCleared {
   // empty as there are no values, but not using "Empty" to have a unique message id
 }
@@ -237,7 +238,7 @@ message PlaylistTracksToAdd {
   repeated TrackId tracks = 2;
 }
 
-/// Remove multiple track or clear the playlist
+// Remove multiple track or clear the playlist
 message PlaylistTracksToRemove {
   oneof type {
     PlaylistTracksToRemoveIndexed indexed = 1;
@@ -245,7 +246,7 @@ message PlaylistTracksToRemove {
   }
 }
 
-/// Remove multiple tracks from a playlist
+// Remove multiple tracks from a playlist
 message PlaylistTracksToRemoveIndexed {
   // The index the track(s) that are removed
   // This is the starting index, and x amount of elements are removed after
@@ -257,6 +258,11 @@ message PlaylistTracksToRemoveIndexed {
 
 /// Clear the entire playlist
 message PlaylistTracksToRemoveClear {
+  // empty as there are no values, but not using "Empty" to have a unique message id
+}
+
+/// Indicate that the playlist has been shuffled and should be re-fetched
+message PlaylistShuffled {
   // empty as there are no values, but not using "Empty" to have a unique message id
 }
 
