@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Result};
+use parking_lot::RwLock;
 use pathdiff::diff_paths;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -8,6 +9,7 @@ use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
@@ -25,6 +27,7 @@ use termusiclib::{
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
 
+use crate::SharedPlaylist;
 use crate::StreamTX;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
@@ -106,6 +109,18 @@ impl Playlist {
             need_proceed_to_next: false,
             stream_tx,
         })
+    }
+
+    /// Create a new Playlist instance that is directly shared
+    ///
+    /// # Errors
+    ///
+    /// see [`new`](Self::new)
+    pub fn new_shared(
+        config: &SharedServerSettings,
+        stream_tx: StreamTX,
+    ) -> Result<SharedPlaylist> {
+        Ok(Arc::new(RwLock::new(Self::new(config, stream_tx)?)))
     }
 
     /// Advance the playlist to the next track.
