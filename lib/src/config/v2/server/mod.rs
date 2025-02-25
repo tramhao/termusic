@@ -466,7 +466,7 @@ mod v1_interop {
             };
 
             let player_settings = PlayerSettings {
-                music_dirs: value.music_dir.into_iter().map(Into::into).collect(),
+                music_dirs: value.music_dir,
                 // not converting old scan_depth as that is not stored in the config, but set via CLI, using default instead
                 // library_scan_depth: ScanDepth::Limited(value.max_depth_cli),
                 library_scan_depth: ScanDepth::Limited(10),
