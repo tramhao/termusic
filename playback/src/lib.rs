@@ -334,7 +334,7 @@ impl GeneralPlayer {
 
         if config.get_discord_status_enable() && self.discord.is_none() {
             // start discord ipc if new config has it enabled, but is not active yet
-            let mut discord = discord::Rpc::default();
+            let discord = discord::Rpc::default();
 
             // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
             if let Some(track) = self.playlist.current_track() {
@@ -379,9 +379,7 @@ impl GeneralPlayer {
 
         self.playlist.proceed();
 
-        if let Some(track) = self.playlist.current_track() {
-            let track = track.clone();
-
+        if let Some(track) = self.playlist.current_track().cloned() {
             info!("Starting Track {:#?}", track);
 
             if self.playlist.has_next_track() {
@@ -425,7 +423,7 @@ impl GeneralPlayer {
                 mpris.add_and_play(track);
             }
 
-            if let Some(ref mut discord) = self.discord {
+            if let Some(ref discord) = self.discord {
                 discord.update(track);
             }
         }
@@ -435,9 +433,8 @@ impl GeneralPlayer {
             return;
         }
 
-        let track = match self.playlist.fetch_next_track() {
-            Some(t) => t.clone(),
-            None => return,
+        let Some(track) = self.playlist.fetch_next_track().cloned() else {
+            return;
         };
 
         self.enqueue_next(&track);
@@ -445,6 +442,7 @@ impl GeneralPlayer {
         info!("Next track enqueued: {:#?}", track);
     }
 
+    /// Skip to the next track, if there is one
     pub fn next(&mut self) {
         if self.playlist.current_track().is_some() {
             info!("skip route 1 which is in most cases.");
@@ -453,11 +451,10 @@ impl GeneralPlayer {
         } else {
             info!("skip route 2 cause no current track.");
             self.stop();
-            // if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::StartPlay, false) {
-            //     debug!("Error in skip route 2: {e}");
-            // }
         }
     }
+
+    /// Switch & Play the previous track in the playlist
     pub fn previous(&mut self) {
         self.playlist.previous();
         self.playlist.proceed_false();
@@ -649,7 +646,7 @@ impl PlayerTrait for GeneralPlayer {
         if let Some(ref mut mpris) = self.mpris {
             mpris.pause();
         }
-        if let Some(ref mut discord) = self.discord {
+        if let Some(ref discord) = self.discord {
             discord.pause();
         }
 
@@ -665,7 +662,7 @@ impl PlayerTrait for GeneralPlayer {
             mpris.resume();
         }
         let time_pos = self.get_player().position();
-        if let Some(ref mut discord) = self.discord {
+        if let Some(ref discord) = self.discord {
             discord.resume(time_pos);
         }
 
@@ -702,9 +699,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn stop(&mut self) {
-        self.playlist.set_status(Status::Stopped);
-        self.playlist.set_next_track(None);
-        self.playlist.clear_current_track();
+        self.playlist.stop();
         self.get_player_mut().stop();
     }
 

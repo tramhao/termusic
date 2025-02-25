@@ -559,6 +559,14 @@ impl Playlist {
         }
     }
 
+    /// Stop the current playlist by setting [`Status::Stopped`], preventing going to the next track
+    /// and finally, stop the currently playing track.
+    pub fn stop(&mut self) {
+        self.set_status(Status::Stopped);
+        self.set_next_track(None);
+        self.clear_current_track();
+    }
+
     #[must_use]
     pub fn current_track(&self) -> Option<&Track> {
         if self.current_track.is_some() {
