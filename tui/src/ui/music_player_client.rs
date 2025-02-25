@@ -126,14 +126,6 @@ impl Playback {
         Ok(())
     }
 
-    pub async fn reload_playlist(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.reload_playlist(request).await?;
-        let response = response.into_inner();
-        info!("Got response from server: {response:?}");
-        Ok(())
-    }
-
     pub async fn play_specific(&mut self, info: PlaylistPlaySpecific) -> Result<()> {
         let request = tonic::Request::new(info.into());
         let response = self.client.play_specific(request).await?;

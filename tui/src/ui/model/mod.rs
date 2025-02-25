@@ -39,7 +39,7 @@ use termusiclib::track::{MediaType, Track};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
 
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -411,13 +411,6 @@ impl Model {
         self.command(TuiCmd::GetProgress);
         self.progress_update_title();
         self.lyric_update_title();
-    }
-
-    /// Save the playlist and have the server reload the playlist.
-    pub fn player_sync_playlist(&mut self) -> Result<()> {
-        self.playlist.save()?;
-        self.command(TuiCmd::ReloadPlaylist);
-        Ok(())
     }
 
     pub fn player_update_current_track_after(&mut self) {

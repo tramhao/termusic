@@ -261,7 +261,6 @@ impl UI {
                     self.model.config_server.write().settings.player.loop_mode = res;
                 }
                 TuiCmd::ReloadConfig => self.playback.reload_config().await?,
-                TuiCmd::ReloadPlaylist => self.playback.reload_playlist().await?,
                 TuiCmd::SeekBackward => {
                     let pprogress = self.playback.seek_backward().await?;
                     self.model.progress_update(
