@@ -1,15 +1,23 @@
 use crate::ui::model::TermusicLayout;
-use crate::ui::tui_cmd::TuiCmd;
+use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 use crate::ui::Model;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context as _, Result};
 use rand::seq::SliceRandom;
 use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
+use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
+use termusiclib::player::playlist_helpers::{
+    PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
+    PlaylistTrackSource,
+};
+use termusiclib::player::{
+    PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistSwapInfo,
+};
 use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
@@ -262,12 +270,22 @@ impl Model {
     /// Add a playlist (like m3u) to the playlist.
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
         let vec = playlist_get_vec(current_node)?;
-        // "add_playlist" will still add all possible things, but return errors for which did not work
-        // so sync still needs to happen
-        let res = self.playlist.add_playlist(&vec);
-        self.player_sync_playlist()?;
-        self.playlist_sync();
-        res?;
+
+        let sources = vec
+            .into_iter()
+            .map(|v| {
+                if v.starts_with("http") {
+                    PlaylistTrackSource::Url(v)
+                } else {
+                    PlaylistTrackSource::Path(v)
+                }
+            })
+            .collect();
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+            PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+        )));
+
         Ok(())
     }
 
@@ -285,9 +303,12 @@ impl Model {
             .episodes
             .get(episode_index)
             .ok_or_else(|| anyhow!("get episode selected failed."))?;
-        self.playlist.add_episode(episode_selected);
-        self.player_sync_playlist()?;
-        self.playlist_sync();
+
+        let source = PlaylistTrackSource::PodcastUrl(episode_selected.url.clone());
+        self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+            PlaylistAddTrack::new_single(u64::try_from(self.playlist.len()).unwrap(), source),
+        )));
+
         Ok(())
     }
 
@@ -301,12 +322,16 @@ impl Model {
         }
         if p.is_dir() {
             let new_items_vec = Self::library_dir_children(p);
-            // "add_playlist" will still add all possible things, but return errors for which did not work
-            // so sync still needs to happen
-            let res = self.playlist.add_playlist(&new_items_vec);
-            self.player_sync_playlist()?;
-            self.playlist_sync();
-            res?;
+
+            let sources = new_items_vec
+                .into_iter()
+                .map(PlaylistTrackSource::Path)
+                .collect();
+
+            self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+                PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+            )));
+
             return Ok(());
         }
         self.playlist_add_item(current_node)?;
@@ -320,24 +345,29 @@ impl Model {
             self.playlist_add_playlist(current_node)?;
             return Ok(());
         }
-        self.playlist.add_track(&current_node)?;
-        self.player_sync_playlist()?;
+        let source = if current_node.starts_with("http") {
+            PlaylistTrackSource::Url(current_node.to_string())
+        } else {
+            PlaylistTrackSource::Path(current_node.to_string())
+        };
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+            PlaylistAddTrack::new_single(u64::try_from(self.playlist.len()).unwrap(), source),
+        )));
+
         Ok(())
     }
 
     /// Add [`TrackDB`] to the playlist
     pub fn playlist_add_all_from_db(&mut self, vec: &[TrackDB]) {
-        let vec2: Vec<&str> = vec.iter().map(|f| f.file.as_str()).collect();
-        // "add_playlist" will still add all possible things, but return errors for which did not work
-        // so sync still needs to happen
-        let res = self.playlist.add_playlist(&vec2);
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.playlist_sync();
-        if let Err(e) = res {
-            self.mount_error_popup(anyhow!(e).context("add all to playlist from database"));
-        }
+        let sources = vec
+            .iter()
+            .map(|f| PlaylistTrackSource::Path(f.file.clone()))
+            .collect();
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
+            PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+        )));
     }
 
     /// Add random album(s) from the database to the playlist
@@ -364,6 +394,67 @@ impl Model {
             .get();
         let vec = self.playlist_get_random_tracks(playlist_select_random_track_quantity);
         self.playlist_add_all_from_db(&vec);
+    }
+
+    /// Handle when a playlist has added a track
+    pub fn handle_playlist_add(&mut self, items: PlaylistAddTrackInfo) -> Result<()> {
+        // piggyback off-of the server side implementation for now by re-parsing everything.
+        self.playlist.add_tracks(
+            PlaylistAddTrack {
+                at_index: items.at_index,
+                tracks: vec![items.trackid],
+            },
+            &self.podcast.db_podcast,
+        )?;
+
+        self.playlist_sync();
+
+        Ok(())
+    }
+
+    /// Handle when a playlist has removed a track
+    pub fn handle_playlist_remove(&mut self, items: &PlaylistRemoveTrackInfo) {
+        // piggyback off-of the server side implementation.
+        self.playlist
+            .remove(usize::try_from(items.at_index).unwrap());
+
+        self.playlist_sync();
+    }
+
+    /// Handle when a playlist was cleared
+    pub fn handle_playlist_clear(&mut self) {
+        self.playlist.clear();
+
+        self.playlist_sync();
+    }
+
+    /// Handle when the playlist loop-mode was changed
+    pub fn handle_playlist_loopmode(&mut self, loop_mode: &PlaylistLoopModeInfo) -> Result<()> {
+        let as_u8 = u8::try_from(loop_mode.mode).context("Failed to convert u32 to u8")?;
+        let loop_mode =
+            LoopMode::tryfrom_discriminant(as_u8).context("Failed to get LoopMode from u8")?;
+        self.playlist.set_loop_mode(loop_mode);
+        self.config_server.write().settings.player.loop_mode = loop_mode;
+        self.playlist_update_title();
+        // Force a redraw as stream updates are not part of the "tick" event and so cant send "Msg"
+        // but need a redraw because ofthe title change
+        self.force_redraw();
+
+        Ok(())
+    }
+
+    /// Handle when the playlist had swapped some tracks
+    pub fn handle_playlist_swap_tracks(&mut self, swapped_tracks: &PlaylistSwapInfo) -> Result<()> {
+        let index_a = usize::try_from(swapped_tracks.index_a)
+            .context("Failed to convert index_a to usize")?;
+        let index_b = usize::try_from(swapped_tracks.index_b)
+            .context("Failed to convert index_b to usize")?;
+
+        self.playlist.swap(index_a, index_b)?;
+
+        self.playlist_sync();
+
+        Ok(())
     }
 
     fn playlist_sync_podcasts(&mut self) {
@@ -476,39 +567,91 @@ impl Model {
         self.playlist_update_title();
     }
 
+    /// Delete a track at `index` from the playlist
     pub fn playlist_delete_item(&mut self, index: usize) {
+        if self.playlist.is_empty() || index >= self.playlist.len() {
+            return;
+        }
+
+        let Some(item) = self.playlist.tracks().get(index) else {
+            return;
+        };
+
+        let Some(file) = item.file() else {
+            return;
+        };
+
+        let id = match item.media_type {
+            termusiclib::track::MediaType::Music => PlaylistTrackSource::Path(file.to_string()),
+            termusiclib::track::MediaType::Podcast => {
+                PlaylistTrackSource::PodcastUrl(file.to_string())
+            }
+            termusiclib::track::MediaType::LiveRadio => PlaylistTrackSource::Url(file.to_string()),
+        };
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::RemoveTrack(
+            PlaylistRemoveTrackIndexed::new_single(u64::try_from(index).unwrap(), id),
+        )));
+    }
+
+    /// Clear a entire playlist
+    pub fn playlist_clear(&mut self) {
         if self.playlist.is_empty() {
             return;
         }
-        self.playlist.remove(index);
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.playlist_sync();
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::Clear));
     }
 
-    pub fn playlist_clear(&mut self) {
-        self.playlist.clear();
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.playlist_sync();
-    }
-
+    /// Shuffle the whole playlist
     pub fn playlist_shuffle(&mut self) {
-        self.playlist.shuffle();
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
+        self.command(TuiCmd::Playlist(PlaylistCmd::Shuffle));
+    }
+
+    /// Send command to swap 2 indexes. Does nothing if either index is out-of-bounds.
+    ///
+    /// # Panics
+    ///
+    /// if `usize` cannot be converted to `u64`
+    fn playlist_swap(&mut self, index_a: usize, index_b: usize) {
+        let len = self.playlist.tracks().len();
+        if index_a.max(index_b) >= len {
+            error!(
+                "Index out-of-bounds, not executing swap: {}",
+                index_a.max(index_b)
+            );
+            return;
         }
-        self.playlist_sync();
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::SwapTrack(
+            PlaylistSwapTrack {
+                index_a: u64::try_from(index_a).unwrap(),
+                index_b: u64::try_from(index_b).unwrap(),
+            },
+        )));
+    }
+
+    /// Swap the given index upwards, does nothing if out-of-bounds or would result in itself.
+    pub fn playlist_swap_up(&mut self, index: usize) {
+        if index == 0 {
+            return;
+        }
+
+        // always guranteed to be above 0, no saturated necessary
+        self.playlist_swap(index, index - 1);
+    }
+
+    /// Swap the given index downwards, does nothing if out-of-bounds.
+    pub fn playlist_swap_down(&mut self, index: usize) {
+        if index >= self.playlist.len().saturating_sub(1) {
+            return;
+        }
+
+        self.playlist_swap(index, index.saturating_add(1));
     }
 
     pub fn playlist_update_library_delete(&mut self) {
-        self.playlist.remove_deleted_items();
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.playlist_sync();
+        self.command(TuiCmd::Playlist(PlaylistCmd::RemoveDeletedItems));
     }
 
     pub fn playlist_update_title(&mut self) {
@@ -536,12 +679,34 @@ impl Model {
             )
             .ok();
     }
+
+    /// Play the currently selected item in the playlist list
     pub fn playlist_play_selected(&mut self, index: usize) {
-        self.playlist.set_current_track_index(index);
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(e.context("player sync playlist"));
-        }
-        self.command(TuiCmd::PlaySelected);
+        let Some(track) = self.playlist.tracks().get(index) else {
+            error!("Track {index} not in playlist!");
+            return;
+        };
+
+        // TODO: refactor Track::file to be always existing
+        let Some(file) = track.file() else {
+            error!("Track {index} did not have a file(id), skipping!");
+            return;
+        };
+        // TODO: this should likely be a function on "Track"
+        let id = match track.media_type {
+            termusiclib::track::MediaType::Music => PlaylistTrackSource::Path(file.to_string()),
+            termusiclib::track::MediaType::Podcast => {
+                PlaylistTrackSource::PodcastUrl(file.to_string())
+            }
+            termusiclib::track::MediaType::LiveRadio => PlaylistTrackSource::Url(file.to_string()),
+        };
+
+        self.command(TuiCmd::Playlist(PlaylistCmd::PlaySpecific(
+            PlaylistPlaySpecific {
+                track_index: u64::try_from(index).unwrap(),
+                id,
+            },
+        )));
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {

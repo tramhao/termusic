@@ -7,6 +7,7 @@
 - Change: updated MSRV to 1.79.
 - Change: update some dependencies.
 - Change: remove unused dependencies from all packages.
+- Change: move many playlist operations to be executed by the server and listend to by clients. (see #152)
 - Change(server): on rusty backend, use upstream rodio again.
 - Feat: more immediate event changes (Example: updated via mpris)
 - Feat(server): on rusty backend, enable `aiff` codec support.
@@ -17,6 +18,7 @@
 - Fix: correctly write LRC milliseconds.
 - Fix: change Lyric::adjust_offset to not work invertedly for below 10 seconds anymore.
 - Fix: fix accidental invertion of `is_absolute` for path playlist values causing items to not have the correct path.
+- Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
 - Fix(tui): not being able to parse themes that use `0x` as the prefix.
 - Fix(tui): change that the default Theme is not using bad colors.
