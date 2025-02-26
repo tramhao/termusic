@@ -774,7 +774,7 @@ impl Playlist {
             };
 
             if file_url != id {
-                bail!("URI mismatch, expected \"{id}\" at \"{at_index}\", found \"{file_url}\"");
+                bail!("URI mismatch, expected \"{file_url}\" at \"{at_index}\" in request, found \"{id}\" in playlist");
             }
 
             // verified that at index "at_index" the track is of the type and has the URI that was requested to be removed
