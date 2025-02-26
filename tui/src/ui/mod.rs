@@ -186,38 +186,6 @@ impl UI {
         Ok(())
     }
 
-    /// Handle setting the current track index in the TUI playlist and selecting the proper list item
-    fn handle_current_track_index(&mut self, current_track_index: usize, force_relocate: bool) {
-        let tui_old_current_index = self.model.playlist.get_current_track_index();
-        info!(
-            "index from player is: {current_track_index:?}, index in tui is: {:?}",
-            tui_old_current_index
-        );
-        self.model.playlist.clear_current_track();
-        self.model
-            .playlist
-            .set_current_track_index(current_track_index);
-
-        let playlist_comp_selected_index = self.model.playlist_get_selected_index();
-
-        // only re-select the current-track if the old selection was the old-current-track
-        // TODO: replace with "is_none_or" once MSRV is 1.82
-        if force_relocate || playlist_comp_selected_index.map_or(true, |v| v == tui_old_current_index) {
-            self.model.playlist_locate(current_track_index);
-        }
-
-        self.model.current_song = self.model.playlist.current_track().cloned();
-        self.model.update_layout_for_current_track();
-        self.model.player_update_current_track_after();
-
-        self.model.lyric_update_for_podcast_by_current_track();
-
-        if let Err(e) = self.model.podcast_mark_current_track_played() {
-            self.model
-                .mount_error_popup(e.context("Marking podcast track as played"));
-        }
-    }
-
     fn handle_status(&mut self, status: Status) {
         match status {
             Status::Running => match self.model.playlist.status() {
@@ -271,9 +239,9 @@ impl UI {
                         pprogress.total_duration.unwrap_or_default(),
                     );
                     if response.current_track_updated {
-                        self.handle_current_track_index(
+                        self.model.handle_current_track_index(
                             usize::try_from(response.current_track_index).unwrap(),
-                            false
+                            false,
                         );
                     }
 
@@ -420,9 +388,9 @@ impl UI {
                     }
 
                     if track_changed_info.current_track_updated {
-                        self.handle_current_track_index(
+                        self.model.handle_current_track_index(
                             usize::try_from(track_changed_info.current_track_index).unwrap(),
-                            false
+                            false,
                         );
                     }
 
@@ -477,10 +445,8 @@ impl UI {
 
         self.model.playlist_sync();
 
-        self.handle_current_track_index(
-            usize::try_from(current_track_index).unwrap(),
-            true
-        );
+        self.model
+            .handle_current_track_index(usize::try_from(current_track_index).unwrap(), true);
 
         Ok(())
     }
