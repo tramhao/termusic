@@ -29,14 +29,14 @@ use serde_json::Value;
 use reqwest::{Client, ClientBuilder, StatusCode};
 use std::time::Duration;
 
-const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
-    "https://vid.puffyan.us",
-    "https://inv.riverside.rocks",
-    "https://invidious.osi.kr",
-    "https://youtube.076.ne.jp",
+const INVIDIOUS_INSTANCE_LIST: [&str; 3] = [
+    "https://vid.inv.nadeko.net",
+    // "https://inv.riverside.rocks",
+    // "https://invidious.osi.kr",
+    // "https://youtube.076.ne.jp",
     "https://y.com.sb",
     "https://yt.artemislena.eu",
-    "https://invidious.tiekoetter.com",
+    // "https://invidious.tiekoetter.com",
     // Below lines are left for testing
     // "https://www.google.com",
     // "https://www.google.com",
