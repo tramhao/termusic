@@ -467,6 +467,34 @@ impl Model {
         Ok(())
     }
 
+    /// Handle setting the current track index in the TUI playlist and selecting the proper list item
+    pub fn handle_current_track_index(&mut self, current_track_index: usize, force_relocate: bool) {
+        let tui_old_current_index = self.playlist.get_current_track_index();
+        info!(
+            "index from player is: {current_track_index:?}, index in tui is: {tui_old_current_index:?}"
+        );
+        self.playlist.clear_current_track();
+        self.playlist.set_current_track_index(current_track_index);
+
+        let playlist_comp_selected_index = self.playlist_get_selected_index();
+
+        // only re-select the current-track if the old selection was the old-current-track
+        if force_relocate || playlist_comp_selected_index.is_none_or(|v| v == tui_old_current_index)
+        {
+            self.playlist_locate(current_track_index);
+        }
+
+        self.current_song = self.playlist.current_track().cloned();
+        self.update_layout_for_current_track();
+        self.player_update_current_track_after();
+
+        self.lyric_update_for_podcast_by_current_track();
+
+        if let Err(e) = self.podcast_mark_current_track_played() {
+            self.mount_error_popup(e.context("Marking podcast track as played"));
+        }
+    }
+
     fn playlist_sync_podcasts(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
