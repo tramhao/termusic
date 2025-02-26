@@ -401,7 +401,7 @@ impl UI {
                 self.model.handle_playlist_add(playlist_add_track)?;
             }
             UpdatePlaylistEvents::PlaylistRemoveTrack(playlist_remove_track) => {
-                self.model.handle_playlist_remove(&playlist_remove_track);
+                self.model.handle_playlist_remove(&playlist_remove_track)?;
             }
             UpdatePlaylistEvents::PlaylistCleared => {
                 self.model.handle_playlist_clear();

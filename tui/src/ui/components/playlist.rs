@@ -19,7 +19,7 @@ use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
     PlaylistSwapInfo,
 };
-use termusiclib::track::Track;
+use termusiclib::track::{MediaType, Track};
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 
@@ -414,12 +414,41 @@ impl Model {
     }
 
     /// Handle when a playlist has removed a track
-    pub fn handle_playlist_remove(&mut self, items: &PlaylistRemoveTrackInfo) {
+    pub fn handle_playlist_remove(&mut self, items: &PlaylistRemoveTrackInfo) -> Result<()> {
+        let at_index = usize::try_from(items.at_index).unwrap();
+        // verify that it is the track to be removed via id matching
+        let Some(track_at_idx) = self.playlist.tracks().get(at_index) else {
+            // this should not happen as it is verified before the loop, but just in case
+            bail!("Failed to get track at index \"{at_index}\"");
+        };
+        // this unwrap could be handled better, but this should never actually happen
+        let id = track_at_idx.file().unwrap();
+
+        let input_track = &items.trackid;
+
+        // Note: clippy suggested this instead of a match block
+        let ((PlaylistTrackSource::Path(file_url), MediaType::Music)
+        | (PlaylistTrackSource::PodcastUrl(file_url), MediaType::Podcast)
+        | (PlaylistTrackSource::Url(file_url), MediaType::LiveRadio)) =
+            (&input_track, track_at_idx.media_type)
+        else {
+            bail!(
+                "Type mismatch, expected \"{:#?}\" at \"{at_index}\" found \"{:#?}\"",
+                input_track,
+                track_at_idx
+            );
+        };
+
+        if file_url != id {
+            bail!("URI mismatch, expected \"{file_url}\" at \"{at_index}\" in request, found \"{id}\" in playlist");
+        }
+
         // piggyback off-of the server side implementation.
-        self.playlist
-            .remove(usize::try_from(items.at_index).unwrap());
+        self.playlist.remove(at_index);
 
         self.playlist_sync();
+
+        Ok(())
     }
 
     /// Handle when a playlist was cleared
