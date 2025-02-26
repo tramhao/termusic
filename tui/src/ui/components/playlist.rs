@@ -724,6 +724,7 @@ impl Model {
         self.general_search_update_show(Model::build_table(filtered_music));
     }
 
+    /// Select the given index in the playlist list component
     pub fn playlist_locate(&mut self, index: usize) {
         assert!(self
             .app
@@ -733,6 +734,17 @@ impl Model {
                 AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
             )
             .is_ok());
+    }
+
+    /// Get the current selected index in the playlist list component
+    pub fn playlist_get_selected_index(&self) -> Option<usize> {
+        // the index on a "Table" can be set via "AttrValue::Payload(PropPayload::One(PropValue::Usize(val)))", but reading that is stale
+        // as that value is only read in the "Table", not removed or updated, but "state" is
+        let Ok(State::One(StateValue::Usize(val))) = self.app.state(&Id::Playlist) else {
+            return None;
+        };
+
+        Some(val)
     }
 
     pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackDB> {
