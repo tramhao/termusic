@@ -112,7 +112,9 @@ impl UI {
             if self.model.layout != TermusicLayout::Podcast {
                 self.model.lyric_update();
             }
-            self.handle_stream_events(&mut stream_updates)?;
+            if let Err(err) = self.handle_stream_events(&mut stream_updates) {
+                self.model.mount_error_popup(err);
+            }
             if progress_interval == 0 {
                 self.model.run();
             }
