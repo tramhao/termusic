@@ -9,6 +9,7 @@
 - Fix(tui): set `ueberzug` command to `--silent`.
 - Fix(tui): force viuer to use the terminal image protocol that was probed at the beginning.
 - Fix(tui): add CTRL+C handler for when TUI key-reading is not active yet or not active anymore.
+- Fix(tui): on track change, dont select "current track" playlist item if the old "current track" was not selected.
 - Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
 
 ### [V0.10.0]
