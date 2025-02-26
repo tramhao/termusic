@@ -28,6 +28,7 @@
 - Fix(tui): actually report any errors when adding to the playlist. (Like "invalid file type")
 - Fix(tui): sort Music-Library content Alphanumerically.
 - Fix(tui): on track change, dont select "current track" playlist item if the old "current track" was not selected.
+- Fix(tui): re-select the (approximately) same playlist item after a shuffle.
 
 ### [V0.9.1]
 - Released on: August 21, 2024.

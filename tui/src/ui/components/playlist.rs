@@ -460,9 +460,26 @@ impl Model {
 
     /// Handle when the playlist has been shuffled and so has new order of tracks
     pub fn handle_playlist_shuffled(&mut self, shuffled: PlaylistShuffledInfo) -> Result<()> {
+        let playlist_comp_selected_index = self.playlist_get_selected_index();
+        // this might be fragile if there are multiple of the same track in the playlist as there is no unique identifier currently
+        let playlist_track_at_old_index = playlist_comp_selected_index
+            .and_then(|idx| self.playlist.tracks().get(idx))
+            .and_then(|track| track.file())
+            .map(ToOwned::to_owned);
+
         self.playlist
             .load_from_grpc(shuffled.tracks, &self.podcast.db_podcast)?;
         self.playlist_sync();
+
+        let found_new_index = self
+            .playlist
+            .tracks()
+            .iter()
+            .enumerate()
+            .find(|(_, track)| track.file() == playlist_track_at_old_index.as_deref());
+        if let Some((new_index, _)) = found_new_index {
+            self.playlist_locate(new_index);
+        }
 
         Ok(())
     }
