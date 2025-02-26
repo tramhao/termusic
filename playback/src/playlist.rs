@@ -778,7 +778,7 @@ impl Playlist {
             }
 
             // verified that at index "at_index" the track is of the type and has the URI that was requested to be removed
-            self.remove(at_index);
+            self.handle_remove(at_index);
 
             self.send_stream_ev(UpdatePlaylistEvents::PlaylistRemoveTrack(
                 PlaylistRemoveTrackInfo {
@@ -876,7 +876,7 @@ impl Playlist {
             termusiclib::track::MediaType::LiveRadio => PlaylistTrackSource::Url(file.to_string()),
         };
 
-        self.tracks.remove(index);
+        self.handle_remove(index);
 
         self.send_stream_ev(UpdatePlaylistEvents::PlaylistRemoveTrack(
             PlaylistRemoveTrackInfo {
@@ -884,6 +884,11 @@ impl Playlist {
                 trackid,
             },
         ));
+    }
+
+    /// Internal common `remove` handling, does not send a event
+    fn handle_remove(&mut self, index: usize) {
+        self.tracks.remove(index);
 
         // Handle index
         if index <= self.current_track_index {
