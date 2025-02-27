@@ -29,8 +29,10 @@ use serde_json::Value;
 use reqwest::{Client, ClientBuilder, StatusCode};
 use std::time::Duration;
 
-const INVIDIOUS_INSTANCE_LIST: [&str; 3] = [
-    "https://vid.inv.nadeko.net",
+const INVIDIOUS_INSTANCE_LIST: [&str; 5] = [
+    "https://inv.nadeko.net",
+    "https://invidious.nerdvpn.de",
+    "https://yewtu.be",
     // "https://inv.riverside.rocks",
     // "https://invidious.osi.kr",
     // "https://youtube.076.ne.jp",
