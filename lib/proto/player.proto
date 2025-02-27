@@ -18,10 +18,24 @@ service MusicPlayer {
   rpc SeekBackward(Empty) returns (PlayerTime);
 
   // Playlist Commands
-  rpc PlaySelected(Empty) returns (Empty);
+  // Skip to a specific track in the playlist
+  // at the momemnt, the one set via "current_track_index"
+  rpc PlaySpecific(PlaylistPlaySpecific) returns (Empty);
   // Cycle the playlist loop mode, returns the new mode.
   rpc CycleLoop(Empty) returns (PlaylistLoopMode);
-  rpc ReloadPlaylist(Empty) returns (Empty);
+  // Add one or multiple tracks to the playlist
+  rpc AddToPlaylist(PlaylistTracksToAdd) returns (Empty);
+  // Remove one or multiple tracks from the playlist
+  rpc RemoveFromPlaylist(PlaylistTracksToRemove) returns (Empty);
+  // Swap some tracks.
+  rpc SwapTracks(PlaylistSwapTracks) returns (Empty);
+  // Get all tracks of the playlist.
+  rpc GetPlaylist(Empty) returns (PlaylistTracks);
+  // Shuffle the playlist, returns the new playlist tracks.
+  rpc ShufflePlaylist(Empty) returns (Empty);
+  // Check for and remove deleted items from the playlist.
+  // Unlike shuffle, this will send Removal events
+  rpc RemoveDeletedTracks(Empty) returns (Empty);
 
   // Misc Commands
   rpc ReloadConfig(Empty) returns (Empty);
@@ -84,6 +98,8 @@ message StreamUpdates {
     UpdatePlayStateChanged play_state_changed = 4;
     UpdateTrackChanged track_changed = 5;
     UpdateGaplessChanged gapless_changed = 6;
+
+    UpdatePlaylist playlist_changed = 7;
   }
 }
 
@@ -139,8 +155,126 @@ message UpdateTrackChanged {
   PlayerTime progress = 4;
 }
 
+// Play a specific track in the playlist
+message PlaylistPlaySpecific {
+  uint64 track_index = 1;
+
+  TrackId id = 2;
+}
+
+// All tracks in the current playlist, they *should* be ordered from lowest to highest index.
+message PlaylistTracks {
+  uint64 current_track_index = 1;
+  repeated PlaylistAddTrack tracks = 2;
+}
+
+message UpdatePlaylist {
+  oneof type {
+    PlaylistAddTrack add_track = 1;
+    PlaylistRemoveTrack remove_track = 2;
+    PlaylistCleared cleared = 3;
+    PlaylistLoopMode loop_mode = 4;
+    PlaylistSwapTracks swap_tracks = 5;
+    PlaylistShuffled shuffled = 6;
+  }
+}
+
+// A Track got added to the playlist, this message contains where it was added and all the metadata required for display.
+message PlaylistAddTrack {
+  // The index the track was added to the playlist.
+  // If this is not at the end, all tracks at that index and after need to be shifted to make place for this new one.
+  uint64 at_index = 1;
+
+  // all values below should be moved into their own "Track" message at some point
+  // instead of having the TUI fetch everything from the file itself
+  // radio title, track title
+  // the following is (linux protobuf) 3.15, ubuntu 2204 still has (linux protobuf) 3.12
+  // optional string title = 3;
+  // the following "oneof" is wire equivalent to the above "optional"
+  oneof optional_title {
+    string title = 2;
+  }
+  Duration duration = 3;
+
+  // The Id of the track that was added
+  TrackId id = 4;
+}
+
+// A Track got removed from the playlist.
+message PlaylistRemoveTrack {
+  // The index of the track that was removed.
+  uint64 at_index = 1;
+
+  // The Id of the track that was removed
+  TrackId id = 2;
+}
+
+// The Playlist got completely cleared
+message PlaylistCleared {
+  // empty as there are no values, but not using "Empty" to have a unique message id
+}
+
 // The current Loop mode for the playlist
 message PlaylistLoopMode {
   // The actual mode, mapped to [`config::v2::server::LoopMode`]
   uint32 mode = 1;
+}
+
+// Some track needs to be swapped.
+message PlaylistSwapTracks {
+  // The first index to swap
+  uint64 index_a = 1;
+  // The second index to swap
+  uint64 index_b = 2;
+}
+
+// Add multiple tracks to a Playlist
+message PlaylistTracksToAdd {
+  // The index the track(s) are added at.
+  // If this is not at the end, all tracks at that index and after need to be shifted to make place for this new one.
+  uint64 at_index = 1;
+
+  // All the Tracks to add at the index
+  repeated TrackId tracks = 2;
+}
+
+// Remove multiple track or clear the playlist
+message PlaylistTracksToRemove {
+  oneof type {
+    PlaylistTracksToRemoveIndexed indexed = 1;
+    PlaylistTracksToRemoveClear clear = 2;
+  }
+}
+
+// Remove multiple tracks from a playlist
+message PlaylistTracksToRemoveIndexed {
+  // The index the track(s) that are removed
+  // This is the starting index, and x amount of elements are removed after
+  uint64 at_index = 1;
+
+  // All the Tracks to remove at the index
+  repeated TrackId tracks = 2;
+}
+
+/// Clear the entire playlist
+message PlaylistTracksToRemoveClear {
+  // empty as there are no values, but not using "Empty" to have a unique message id
+}
+
+/// Indicate that the playlist has been shuffled and should be re-fetched
+message PlaylistShuffled {
+  PlaylistTracks shuffled = 1;
+}
+
+// A Identifier for a track.
+message TrackId {
+  oneof source {
+    // Path on the system
+    // bytes *could* be used, but it way more complex and platform dependant
+    string path = 1;
+    // Url (ex. radio)
+    string url = 2;
+    // A podcast episode
+    string podcastUrl = 3;
+  }
 }
