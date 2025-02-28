@@ -110,7 +110,8 @@ impl ServerConfigVersionedDefaulted<'_> {
             settings
         };
 
-        let new_settings = ServerSettings::try_from(old_settings)?;
+        let new_settings = ServerSettings::try_from(old_settings)
+            .context("Failed to convert server config from v1 to v2 config")?;
 
         // save the file directly to not have to re-do the convertion again, even if config does not change
         Self::save_file(v2_path, &new_settings)?;
