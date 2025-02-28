@@ -1234,52 +1234,37 @@ impl CheckConflict for KeysDatabase {
 }
 
 // TODO: upgrade errors with what config-key has errored
-// TODO: consider upgrading this with "thiserror"
 /// Error for when [`Key`] parsing fails
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum KeyParseError {
     /// Error when either the string is empty, or only has modifiers.
     ///
     /// Listing (`key_bind`)
+    #[error("Failed to parse Key because no key was found in the mapping, input: {0:#?}")]
     NoKeyFound(String),
     /// The Key shortcut was formatted incorrectly (like "++" or "+control")
     ///
     /// Listing (`key_bind`)
+    #[error("Failed to parse Key because of a trailing delimiter in input: {0:#?}")]
     TrailingDelimiter(String),
     /// Error when multiple keys are found (like "Q+E")
     ///
     /// Listing (`key_bind`, (`old_key`, `new_key`))
-    MultipleKeys(String, (String, String)),
+    #[error("Failed to parse Key because multiple non-modifier keys were found, keys: [{old_key}, {new_key}], input: {input:#?}")]
+    MultipleKeys {
+        input: String,
+        old_key: String,
+        new_key: String,
+    },
     /// Error when a unknown value is found (a value that could not be parsed as a key or modifier)
     ///
     /// Example being a value that is not 1 length, starts with "f" and has numbers following or is a match against [`const_keys`].
     /// like `"    "`
     ///
     /// Listing (`key_bind`)
+    #[error("Failed to parse Key because of unknown key in mapping: {0:#?}")]
     UnknownKey(String),
 }
-
-impl Display for KeyParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Failed to parse Key because {}",
-            // "{:#?}" debug representation is explicitly used here to escape the string contents
-            match self {
-                Self::NoKeyFound(val) =>
-                    format!("no key was found in the mapping, given: {val:#?}"),
-                Self::TrailingDelimiter(val) => format!("trailing delimiter in key: {val:#?}"),
-                Self::MultipleKeys(val, keys) => format!(
-                    "multiple keys were found, keys: [{}, {}], mapping: {:#?}",
-                    keys.0, keys.1, val
-                ),
-                Self::UnknownKey(val) => format!("of unknown key in mapping: {val:#?}"),
-            }
-        )
-    }
-}
-
-impl Error for KeyParseError {}
 
 // Note: this could likely be optimized / improved when the std patters becomes available (to match "".split('')), see https://github.com/rust-lang/rust/issues/27721
 /// A [`str::split`] replacement that works similar to `str::split(_, '+')`, but can also return the delimiter if directly followed
@@ -1402,19 +1387,17 @@ impl KeyBinding {
         for val in SplitAtPlus::new(&input) {
             // make a trailing "+" as a error, like "q+"
             if val.is_empty() {
-                return Err(KeyParseError::TrailingDelimiter(input.clone()));
+                return Err(KeyParseError::TrailingDelimiter(input));
             }
 
             if let Ok(new_key) = KeyWrap::try_from(val) {
                 let opt: &mut Option<tuievents::Key> = &mut key_opt;
                 if let Some(existing_key) = opt {
-                    return Err(KeyParseError::MultipleKeys(
-                        input.clone(),
-                        (
-                            KeyWrap::from(*existing_key).to_string(),
-                            new_key.to_string(),
-                        ),
-                    ));
+                    return Err(KeyParseError::MultipleKeys {
+                        input,
+                        old_key: KeyWrap::from(*existing_key).to_string(),
+                        new_key: new_key.to_string(),
+                    });
                 }
 
                 *opt = Some(new_key.0);
@@ -1432,7 +1415,7 @@ impl KeyBinding {
         }
 
         let Some(mut code) = key_opt else {
-            return Err(KeyParseError::NoKeyFound(input.clone()));
+            return Err(KeyParseError::NoKeyFound(input));
         };
 
         // transform the key to be upper-case if "Shift" is enabled, as that is what tuirealm will provide (and we cannot modify that)
@@ -2507,10 +2490,11 @@ mod test {
         #[test]
         fn should_error_on_multiple_keys() {
             assert_eq!(
-                Err(KeyParseError::MultipleKeys(
-                    "q+s".to_owned(),
-                    ("q".to_owned(), "s".to_string())
-                )),
+                Err(KeyParseError::MultipleKeys {
+                    input: "q+s".to_string(),
+                    old_key: "q".to_string(),
+                    new_key: "s".to_string()
+                }),
                 KeyBinding::try_from("Q+S")
             );
         }
