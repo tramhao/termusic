@@ -1,6 +1,6 @@
 #![allow(clippy::module_name_repetitions)]
 
-use std::{error::Error, fmt::Display, fs::File, io::BufReader, num::ParseIntError, path::Path};
+use std::{fs::File, io::BufReader, num::ParseIntError, path::Path};
 
 use serde::{Deserialize, Serialize};
 use tuirealm::props::Color;
@@ -157,37 +157,16 @@ impl ThemeWrap {
     }
 }
 
-// TODO: consider upgrading this with "thiserror"
 /// Error for when [`ThemeColor`] parsing fails
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ThemeColorParseError {
-    ParseIntError(ParseIntError),
+    #[error("Failed to parse color because of {0}")]
+    ParseIntError(#[from] ParseIntError),
+    #[error("Failed to parse color because of incorrect length {0}, expected prefix \"#\" or \"0x\" and length 6")]
     IncorrectLength(usize),
+    #[error("Failed to parse color becazse of unknown prefix \"{0}\", expected \"#\" or \"0x\"")]
     UnknownPrefix(String),
 }
-
-impl Display for ThemeColorParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let alternate = f.alternate();
-        write!(
-            f,
-            "Failed to parse color because of {}",
-            match self {
-                Self::ParseIntError(v) =>
-                    if alternate {
-                        format!("{v:#}")
-                    } else {
-                        format!("{v}")
-                    },
-                Self::IncorrectLength(length) => format!("Incorrect length {length}, expected 6"),
-                Self::UnknownPrefix(value) =>
-                    format!("Value does not start with \"#\" or \"0x\" \"{value}\""),
-            }
-        )
-    }
-}
-
-impl Error for ThemeColorParseError {}
 
 /// The rgb colors
 #[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -315,37 +294,11 @@ impl ThemeColors {
     }
 }
 
-// TODO: consider upgrading this with "thiserror"
 /// Error for when [`ThemeColors`] parsing fails
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ThemeColorsParseError {
-    ThemeColor(ThemeColorParseError),
-}
-
-impl Display for ThemeColorsParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let alternate = f.alternate();
-        write!(
-            f,
-            "Failed to parse Theme because of {}",
-            match self {
-                Self::ThemeColor(v) =>
-                    if alternate {
-                        format!("{v:#}")
-                    } else {
-                        format!("{v}")
-                    },
-            }
-        )
-    }
-}
-
-impl Error for ThemeColorsParseError {}
-
-impl From<ThemeColorParseError> for ThemeColorsParseError {
-    fn from(value: ThemeColorParseError) -> Self {
-        Self::ThemeColor(value)
-    }
+    #[error("Failed to parse Theme: {0}")]
+    ThemeColor(#[from] ThemeColorParseError),
 }
 
 impl TryFrom<YAMLTheme> for ThemeColors {
