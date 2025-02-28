@@ -1,7 +1,5 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
-use std::fmt::Display;
 use std::fs::File;
 use std::io::BufReader;
 use std::num::ParseIntError;
@@ -239,11 +237,12 @@ impl StyleColorSymbol {
     }
 }
 
-// TODO: consider upgrading this with "thiserror"
 /// Error for when [`ThemeColor`] parsing fails
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ColorParseError {
-    ParseIntError(ParseIntError),
+    #[error("Failed to parse color because of {0}")]
+    ParseIntError(#[from] ParseIntError),
+    #[error("Failed to parse color. Incorrect length {0}, expected 1(prefix) + 6")]
     IncorrectLength(usize),
 }
 
@@ -253,28 +252,6 @@ impl ColorParseError {
         matches!(self, Self::ParseIntError(_))
     }
 }
-
-impl Display for ColorParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let alternate = f.alternate();
-        write!(
-            f,
-            "Failed to parse color because of {}",
-            match self {
-                Self::ParseIntError(v) =>
-                    if alternate {
-                        format!("{v:#}")
-                    } else {
-                        format!("{v}")
-                    },
-                Self::IncorrectLength(length) =>
-                    format!("Incorrect length {length}, expected 1(prefix) + 6"),
-            }
-        )
-    }
-}
-
-impl Error for ColorParseError {}
 
 /// The rgb colors
 #[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -298,12 +275,9 @@ impl AlacrittyColor {
             return Err(ColorParseError::IncorrectLength(without_prefix.len()));
         }
 
-        let r = u8::from_str_radix(&without_prefix[0..=1], 16)
-            .map_err(ColorParseError::ParseIntError)?;
-        let g = u8::from_str_radix(&without_prefix[2..=3], 16)
-            .map_err(ColorParseError::ParseIntError)?;
-        let b = u8::from_str_radix(&without_prefix[4..=5], 16)
-            .map_err(ColorParseError::ParseIntError)?;
+        let r = u8::from_str_radix(&without_prefix[0..=1], 16)?;
+        let g = u8::from_str_radix(&without_prefix[2..=3], 16)?;
+        let b = u8::from_str_radix(&without_prefix[4..=5], 16)?;
 
         Ok(Self { r, g, b })
     }
