@@ -22,6 +22,7 @@ doctest = false
 [dependencies]
 ahash.workspace = true #   = "^0.8"
 anyhow.workspace = true
+thiserror.workspace = true
 base64.workspace = true
 bytes.workspace = true #   = "1"
 chrono.workspace = true #   = "^0.4.23"

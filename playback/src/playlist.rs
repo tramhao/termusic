@@ -617,7 +617,7 @@ fn get_playlist_path() -> Result<PathBuf> {
     Ok(path)
 }
 
-// TODO: consider upgrading this with "thiserror"
+// NOTE: this is not "thiserror" due to custom "Display" impl (the "Option" handling)
 /// Error for when [`Playlist::add_track`] fails
 #[derive(Debug)]
 pub enum PlaylistAddError {
@@ -655,9 +655,16 @@ impl Display for PlaylistAddError {
     }
 }
 
-impl Error for PlaylistAddError {}
+impl Error for PlaylistAddError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        if let Self::ReadError(orig, _) = self {
+            return Some(orig.as_ref());
+        }
 
-// TODO: consider upgrading this with "thiserror"
+        None
+    }
+}
+
 /// Error for when [`Playlist::add_playlist`] fails
 #[derive(Debug, Default)]
 pub struct PlaylistAddErrorVec(Vec<PlaylistAddError>);

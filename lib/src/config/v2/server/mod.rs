@@ -367,7 +367,7 @@ impl From<ComSettings> for SocketAddr {
 }
 
 mod v1_interop {
-    use std::{error::Error, fmt::Display, num::TryFromIntError};
+    use std::num::TryFromIntError;
 
     use super::{
         ComSettings, LoopMode, NonZeroU32, NonZeroU8, PlayerSettings, PodcastSettings,
@@ -413,30 +413,18 @@ mod v1_interop {
         }
     }
 
-    // TODO: consider upgrading this with "thiserror"
     /// Error for when [`ServerSettings`] convertion fails
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq, thiserror::Error)]
     pub enum ServerSettingsConvertError {
         /// Recieved a zero value expecting a non-zero value
-        ///
-        /// (old key, new key, error)
-        ZeroValue(&'static str, &'static str, TryFromIntError),
+        #[error("Zero value where expecting a non-zero value. old-config key: '{old_key}', new-config key: '{new_key}', error: {source}")]
+        ZeroValue {
+            old_key: &'static str,
+            new_key: &'static str,
+            #[source]
+            source: TryFromIntError,
+        },
     }
-
-    impl Display for ServerSettingsConvertError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            // let alternate = f.alternate();
-            write!(
-                f,
-                "Failed to convert from v1 to v2 config because of {}",
-                match self {
-                    Self::ZeroValue(old_key, new_key, err) => format!("zero value where expecting a non-zero value, old-config key: '{old_key}', new-config key: '{new_key}', error: {err:#}")
-                }
-            )
-        }
-    }
-
-    impl Error for ServerSettingsConvertError {}
 
     impl TryFrom<v1::Settings> for ServerSettings {
         type Error = ServerSettingsConvertError;
@@ -454,12 +442,10 @@ mod v1_interop {
                         .podcast_simultanious_download
                         .clamp(0, u8::MAX as usize) as u8,
                 )
-                .map_err(|err| {
-                    ServerSettingsConvertError::ZeroValue(
-                        "podcast_simultanious_download",
-                        "podcast.concurrent_downloads_max",
-                        err,
-                    )
+                .map_err(|err| ServerSettingsConvertError::ZeroValue {
+                    old_key: "podcast_simultanious_download",
+                    new_key: "podcast.concurrent_downloads_max",
+                    source: err,
                 })?,
                 max_download_retries: value.podcast_max_retries.clamp(0, u8::MAX as usize) as u8,
                 download_dir: value.podcast_dir,
@@ -483,22 +469,18 @@ mod v1_interop {
                 random_track_quantity: NonZeroU32::try_from(
                     value.playlist_select_random_track_quantity,
                 )
-                .map_err(|err| {
-                    ServerSettingsConvertError::ZeroValue(
-                        "playlist_select_random_track_quantity",
-                        "player.random_track_quantity",
-                        err,
-                    )
+                .map_err(|err| ServerSettingsConvertError::ZeroValue {
+                    old_key: "playlist_select_random_track_quantity",
+                    new_key: "player.random_track_quantity",
+                    source: err,
                 })?,
                 random_album_min_quantity: NonZeroU32::try_from(
                     value.playlist_select_random_album_quantity,
                 )
-                .map_err(|err| {
-                    ServerSettingsConvertError::ZeroValue(
-                        "playlist_select_random_album_quantity",
-                        "player.random_album_min_quantity",
-                        err,
-                    )
+                .map_err(|err| ServerSettingsConvertError::ZeroValue {
+                    old_key: "playlist_select_random_album_quantity",
+                    new_key: "player.random_album_min_quantity",
+                    source: err,
                 })?,
             };
 

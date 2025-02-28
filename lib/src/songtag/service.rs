@@ -4,7 +4,7 @@ use lofty::picture::Picture;
 
 use super::SongTag;
 
-#[allow(dead_code)]
+#[allow(dead_code)] // TODO: change this to "expected" if MSRV is 1.81
 #[derive(Debug, Clone, Copy)]
 pub enum SongTagServiceErrorWhere {
     SearchRecording,
@@ -26,48 +26,23 @@ impl Display for SongTagServiceErrorWhere {
     }
 }
 
-// TODO: use thiserror
-#[allow(dead_code)]
-#[derive(Debug)]
+/// General [`SongTag`] Error with common variants
+#[derive(Debug, thiserror::Error)]
 pub enum SongTagServiceError<T> {
     /// Indicate a method is not supported to be called
     ///
     /// (which function, service name)
+    #[error("Function \"{0}\" is not supported by service \"{1}\"")]
     NotSupported(SongTagServiceErrorWhere, &'static str),
     /// Indicate that a given [`SongTag`] was for a different service
     ///
     /// (file was for, actual service)
+    #[error("Given song was for service \"{0}\", but given to \"{1}\"")]
     IncorrectService(String, &'static str),
 
     /// Any other error like broken connection
-    Other(T),
-}
-
-impl<T> Display for SongTagServiceError<T>
-where
-    T: Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SongTagServiceError::NotSupported(error_where, service_name) => write!(
-                f,
-                "Function \"{error_where}\" is not supported by service \"{service_name}\""
-            ),
-            SongTagServiceError::IncorrectService(origin, service_name) => write!(
-                f,
-                "Given song was for service \"{origin}\", but given to \"{service_name}\""
-            ),
-            SongTagServiceError::Other(err) => Display::fmt(err, f),
-        }
-    }
-}
-
-impl<T> std::error::Error for SongTagServiceError<T> where T: std::error::Error {}
-
-impl<T> From<T> for SongTagServiceError<T> {
-    fn from(value: T) -> Self {
-        Self::Other(value)
-    }
+    #[error(transparent)]
+    Other(#[from] T),
 }
 
 #[allow(clippy::module_name_repetitions)]
