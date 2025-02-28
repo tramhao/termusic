@@ -22,7 +22,7 @@ pub struct KeysCheckError {
 
 impl Display for KeysCheckError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
+        writeln!(
             f,
             "There are {} Key Conflict Errors: [",
             self.errored_keys.len()
