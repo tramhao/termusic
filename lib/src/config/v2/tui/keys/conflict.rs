@@ -1,5 +1,3 @@
-use std::{error::Error, fmt::Display};
-
 use ahash::HashMap;
 
 use super::KeyBinding;
@@ -41,27 +39,14 @@ impl KeyPath {
     }
 }
 
-// TODO: upgrade errors with what config-key has errored
-// TODO: consider upgrading this with "thiserror"
 /// Error for when [`Key`] parsing fails
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
+#[error("Key Conflict: '{key_path_first}' and '{key_path_second}', key: '{key}'")]
 pub struct KeyConflictError {
     pub key_path_first: String,
     pub key_path_second: String,
     pub key: KeyBinding,
 }
-
-impl Display for KeyConflictError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Key Conflict: '{}' and '{}', key: '{}'",
-            self.key_path_first, self.key_path_second, self.key
-        )
-    }
-}
-
-impl Error for KeyConflictError {}
 
 pub(super) type KeyHashMap = HashMap<&'static KeyBinding, &'static str>;
 pub(super) type KeyHashMapOwned = HashMap<KeyBinding, String>;
