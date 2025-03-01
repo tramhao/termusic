@@ -17,6 +17,7 @@
 - Fix: correctly write LRC milliseconds.
 - Fix: change Lyric::adjust_offset to not work invertedly for below 10 seconds anymore.
 - Fix: fix accidental invertion of `is_absolute` for path playlist values causing items to not have the correct path.
+- Fix: create and save config if it does not exist, without needing a successful connect first.
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
 - Fix(tui): not being able to parse themes that use `0x` as the prefix.
 - Fix(tui): change that the default Theme is not using bad colors.

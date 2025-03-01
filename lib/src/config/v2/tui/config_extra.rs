@@ -86,6 +86,11 @@ impl TuiConfigVersionedDefaulted<'_> {
 
         let mut data: Self = if let Some(data) = data {
             data
+        } else if !path.exists() {
+            // if path does not exist, create default instance and save it
+            let config = TuiSettings::default();
+            Self::save_file(path, &config)?;
+            Self::Unversioned(config)
         } else {
             Figment::new().merge(Toml::file(path)).extract()?
         };
