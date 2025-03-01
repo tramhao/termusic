@@ -61,10 +61,7 @@ fn check_status(value: &Value, expected: usize) -> Result<()> {
         return Err(KugouParseError::MissingProperty(FIELD));
     };
     if !status.eq(&expected) {
-        let errcode = value
-            .get("errcode")
-            .and_then(Value::as_str)
-            .map(ToString::to_string);
+        let errcode = value.get("errcode").map(Value::to_string);
 
         return Err(KugouParseError::UnexpectedStatus {
             field: FIELD,

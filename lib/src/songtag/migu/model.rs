@@ -60,11 +60,11 @@ fn check_msg(value: &Value) -> Result<()> {
 
     // english for the chinese characters: "success"
     if !msg.eq(&"成功") {
-        let message = msg.as_str().unwrap_or("<none>");
+        let message = msg.to_string();
 
         return Err(MiguParseError::UnexpectedStatus {
             field: "msg",
-            got: message.to_string(),
+            got: message,
             errmsg: None,
             expected: "成功",
         });
