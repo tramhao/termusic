@@ -170,7 +170,11 @@ impl UeInstance {
         let child = match self.ueberzug {
             UeInstanceState::New => self.spawn_cmd(args)?,
             UeInstanceState::Child(ref mut v) => v,
-            UeInstanceState::Error => return on_error().map(|()| None),
+            UeInstanceState::Error => {
+                trace!("Not re-trying ueberzug, because it has a permanent error!");
+
+                return Ok(None);
+            }
         };
 
         if let Some(exit_status) = child.try_wait()? {
@@ -212,15 +216,6 @@ impl UeInstance {
         // even though that branch never reaches here
         Ok(Some(self.ueberzug.unwrap_child_mut()))
     }
-}
-
-/// Small helper to always print a message and return a consistent return
-#[inline]
-#[allow(clippy::unnecessary_wraps)]
-fn on_error() -> Result<()> {
-    trace!("Not re-trying ueberzug, because it has a permanent error!");
-
-    Ok(())
 }
 
 /// Map a given error to include extra context
