@@ -172,7 +172,7 @@ impl SongTagService for Api {
         let result = response.text().await.map_err(anyhow::Error::from)?;
 
         to_song_info(&result).map_err(|err| {
-            SongTagServiceError::Other(err.context("convert result to songtag array"))
+            SongTagServiceError::Other(anyhow!(err).context("Parse result into SongTag Array"))
         })
     }
 
@@ -207,8 +207,9 @@ impl SongTagService for Api {
 
         let result = response.text().await.map_err(anyhow::Error::from)?;
 
-        to_lyric(&result)
-            .map_err(|err| SongTagServiceError::Other(err.context("get lyric text from response")))
+        to_lyric(&result).map_err(|err| {
+            SongTagServiceError::Other(anyhow!(err).context("Extract Lyric text from result"))
+        })
     }
 
     async fn get_picture(
@@ -273,7 +274,9 @@ impl SongTagService for Api {
         let result = response.text().await.map_err(anyhow::Error::from)?;
 
         to_song_url(&result).map_err(|err| {
-            SongTagServiceError::Other(err.context("get download url from response"))
+            SongTagServiceError::Other(
+                anyhow!(err).context("Extract recording download url from result"),
+            )
         })
     }
 }
