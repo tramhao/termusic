@@ -220,7 +220,6 @@ impl UeInstance {
 
 /// Map a given error to include extra context
 #[inline]
-#[allow(clippy::needless_pass_by_value)]
 fn map_err(err: anyhow::Error) -> anyhow::Error {
     err.context("Failed to run Ueberzug")
 }
