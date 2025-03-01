@@ -1,3 +1,5 @@
+use std::string::FromUtf8Error;
+
 use crate::songtag::UrlTypes;
 
 /**
@@ -24,28 +26,67 @@ use crate::songtag::UrlTypes;
  * SOFTWARE.
  */
 use super::super::{ServiceProvider, SongTag};
-use anyhow::{anyhow, bail, Result};
 use base64::{engine::general_purpose, Engine as _};
 use serde_json::{from_str, json, Value};
 
-/// Try to get the lyric lrc content from the given result
-pub fn to_lyric(json: &str) -> Result<String> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+#[derive(Debug, thiserror::Error)]
+pub enum KugouParseError {
+    #[error("Expected field \"{field}\" to have code \"{expected}\", got \"{got}\", errcode: \"{errcode:#?}\"")]
+    UnexpectedStatus {
+        field: &'static str,
+        got: String,
+        errcode: Option<String>,
+        expected: usize,
+    },
 
-    if value.get("status").is_none() || !value.get("status").is_some_and(|v| v.eq(&200)) {
+    #[error("Expected property \"{0}\" to exist")]
+    MissingProperty(&'static str),
+
+    #[error(transparent)]
+    ParseError(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    Base64DecodeError(#[from] base64::DecodeError),
+
+    #[error(transparent)]
+    FromUtf8Error(#[from] FromUtf8Error),
+}
+
+type Result<T> = std::result::Result<T, KugouParseError>;
+
+/// Check the `status` field against `expected`, if `status` does not exist or does not match, return [`Err`]
+fn check_status(value: &Value, expected: usize) -> Result<()> {
+    const FIELD: &str = "status";
+    let Some(status) = value.get(FIELD) else {
+        return Err(KugouParseError::MissingProperty(FIELD));
+    };
+    if !status.eq(&expected) {
         let errcode = value
             .get("errcode")
             .and_then(Value::as_str)
-            .unwrap_or("<none>");
-        bail!(
-            "Failed to get lyric text, \"status\" does not exist or is not 200 Errcode: {errcode}"
-        );
+            .map(ToString::to_string);
+
+        return Err(KugouParseError::UnexpectedStatus {
+            field: FIELD,
+            got: status.to_string(),
+            errcode,
+            expected,
+        });
     }
+
+    Ok(())
+}
+
+/// Try to get the lyric lrc content from the given result
+pub fn to_lyric(json: &str) -> Result<String> {
+    let value = from_str::<Value>(json)?;
+
+    check_status(&value, 200)?;
 
     let lyric = value
         .get("content")
         .and_then(Value::as_str)
-        .ok_or(anyhow!("property \"content\" does not exist in result!"))?
+        .ok_or(KugouParseError::MissingProperty("content"))?
         .to_owned();
     let lyric_decoded = general_purpose::STANDARD.decode(lyric)?;
     let lyric_str = String::from_utf8(lyric_decoded)?;
@@ -55,35 +96,36 @@ pub fn to_lyric(json: &str) -> Result<String> {
 
 /// Try to get the `accesskey` and lyric `id` from the given json response
 pub fn to_lyric_id_accesskey(json: &str) -> Result<(String, String)> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    if value.get("errcode").is_none() || !value.get("errcode").is_some_and(|v| v.eq(&200)) {
-        let errcode = value
-            .get("errcode")
-            .and_then(Value::as_str)
-            .unwrap_or("<none>");
-        bail!("Failed to get lyric id and accesskey, \"errcode\" does not exist or is not 200. Errcode: {errcode}");
+    // TODO: confirm that there is only "errcode" and not "status" like the others
+    {
+        let Some(errcode) = value.get("errcode") else {
+            return Err(KugouParseError::MissingProperty("errcode"));
+        };
+        if !errcode.eq(&200) {
+            return Err(KugouParseError::UnexpectedStatus {
+                field: "errocode",
+                got: errcode.to_string(),
+                errcode: None,
+                expected: 200,
+            });
+        }
     }
 
     let v = value
         .get("candidates")
         .and_then(|v| v.get(0))
-        .ok_or(anyhow!(
-            "property \"candidates.0\" does not exist in result!"
-        ))?;
+        .ok_or(KugouParseError::MissingProperty("candidates.0"))?;
     let accesskey = v
         .get("accesskey")
         .and_then(Value::as_str)
-        .ok_or(anyhow!(
-            "property \"candidates.0.accesskey\" does not exist in result!"
-        ))?
+        .ok_or(KugouParseError::MissingProperty("candidates.0.accesskey"))?
         .to_owned();
     let id = v
         .get("id")
         .and_then(Value::as_str)
-        .ok_or(anyhow!(
-            "property \"candidates.0.id\" does not exist in result!"
-        ))?
+        .ok_or(KugouParseError::MissingProperty("candidates.0.id"))?
         .to_owned();
 
     Ok((accesskey, id))
@@ -91,23 +133,15 @@ pub fn to_lyric_id_accesskey(json: &str) -> Result<(String, String)> {
 
 /// Try to get the play (download) url from the result
 pub fn to_song_url(json: &str) -> Result<String> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    if value.get("status").is_none() || !value.get("status").is_some_and(|v| v.eq(&200)) {
-        let errcode = value
-            .get("errcode")
-            .and_then(Value::as_str)
-            .unwrap_or("<none>");
-        bail!("Failed to get download url, \"status\" does not exist or is not 200. Errcode: {errcode}");
-    }
+    check_status(&value, 200)?;
 
     let url = value
         .get("data")
         .and_then(|v| v.get("play_url"))
         .and_then(Value::as_str)
-        .ok_or(anyhow!(
-            "property \"data.play_url\" does not exist in result!"
-        ))?
+        .ok_or(KugouParseError::MissingProperty("data.play_url"))?
         .to_owned();
 
     Ok(url)
@@ -115,17 +149,15 @@ pub fn to_song_url(json: &str) -> Result<String> {
 
 /// Try to get the picture url from the json response
 pub fn to_pic_url(json: &str) -> Result<String> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    if value.get("status").is_none() || !value.get("status").is_some_and(|v| v.eq(&1)) {
-        bail!("Failed to get picture url, \"status\" does not exist or is not 200");
-    }
+    check_status(&value, 1)?;
 
     let url = value
         .get("data")
         .and_then(|v| v.get("img"))
         .and_then(Value::as_str)
-        .ok_or(anyhow!("property \"data.img\" does not exist in result!"))?
+        .ok_or(KugouParseError::MissingProperty("data.img"))?
         .to_owned();
 
     Ok(url)
@@ -133,18 +165,16 @@ pub fn to_pic_url(json: &str) -> Result<String> {
 
 /// Try to get individual [`SongTag`]s from the json response
 pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    if value.get("status").is_none() || !value.get("status").is_some_and(|v| v.eq(&1)) {
-        bail!("Failed to get picture url, \"status\" does not exist or is not 200");
-    }
+    check_status(&value, 1)?;
 
     let array = value
         .get("data")
         .and_then(Value::as_object)
         .and_then(|v| v.get("info"))
         .and_then(Value::as_array)
-        .ok_or(anyhow!("property \"data.info\" does not exist in result!"))?;
+        .ok_or(KugouParseError::MissingProperty("data.info"))?;
 
     let mut vec: Vec<SongTag> = Vec::new();
 
