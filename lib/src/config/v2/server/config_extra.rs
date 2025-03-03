@@ -84,6 +84,13 @@ impl ServerConfigVersionedDefaulted<'_> {
             }
         }
 
+        // if path does not exist, create default instance and save it
+        if !path.exists() {
+            let config = ServerSettings::default();
+            Self::save_file(path, &config)?;
+            return Ok(Self::Unversioned(config));
+        }
+
         let data: Self = Figment::new().merge(Toml::file(path)).extract()?;
 
         Ok(data)
