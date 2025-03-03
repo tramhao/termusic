@@ -4590,6 +4590,7 @@ dependencies = [
  "serde_yaml",
  "shellexpand",
  "textwrap",
+ "thiserror 2.0.10",
  "tokio",
  "tokio-util",
  "toml",
