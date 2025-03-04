@@ -308,6 +308,7 @@ impl Track {
         bail!("cycle lyrics error")
     }
 
+    #[must_use]
     pub const fn parsed_lyric(&self) -> Option<&Lyric> {
         self.parsed_lyric.as_ref()
     }
@@ -324,10 +325,12 @@ impl Track {
         self.lyric_selected_index = index;
     }
 
+    #[must_use]
     pub const fn lyric_selected_index(&self) -> usize {
         self.lyric_selected_index
     }
 
+    #[must_use]
     pub fn lyric_selected(&self) -> Option<&Id3Lyrics> {
         if self.lyric_frames.is_empty() {
             return None;
@@ -338,10 +341,12 @@ impl Track {
         None
     }
 
+    #[must_use]
     pub fn lyric_frames_is_empty(&self) -> bool {
         self.lyric_frames.is_empty()
     }
 
+    #[must_use]
     pub fn lyric_frames_len(&self) -> usize {
         if self.lyric_frames.is_empty() {
             return 0;
@@ -349,6 +354,7 @@ impl Track {
         self.lyric_frames.len()
     }
 
+    #[must_use]
     pub fn lyric_frames(&self) -> Option<Vec<Id3Lyrics>> {
         if self.lyric_frames.is_empty() {
             return None;
@@ -356,15 +362,18 @@ impl Track {
         Some(self.lyric_frames.clone())
     }
 
+    #[must_use]
     pub const fn picture(&self) -> Option<&Picture> {
         self.picture.as_ref()
     }
+    #[must_use]
     pub fn album_photo(&self) -> Option<&str> {
         self.album_photo.as_deref()
     }
 
     /// Optionally return the artist of the song
     /// If `None` it wasn't able to read the tags
+    #[must_use]
     pub fn artist(&self) -> Option<&str> {
         self.artist.as_deref()
     }
@@ -375,6 +384,7 @@ impl Track {
 
     /// Optionally return the song's album
     /// If `None` failed to read the tags
+    #[must_use]
     pub fn album(&self) -> Option<&str> {
         self.album.as_deref()
     }
@@ -383,6 +393,7 @@ impl Track {
         self.album = Some(album.to_string());
     }
 
+    #[must_use]
     pub fn genre(&self) -> Option<&str> {
         self.genre.as_deref()
     }
@@ -394,6 +405,7 @@ impl Track {
 
     /// Optionally return the title of the song
     /// If `None` it wasn't able to read the tags
+    #[must_use]
     pub fn title(&self) -> Option<&str> {
         self.title.as_deref()
     }
@@ -403,6 +415,7 @@ impl Track {
     }
 
     /// Get the full Path or URI of the track, if its a local file
+    #[must_use]
     pub fn file(&self) -> Option<&str> {
         match &self.location {
             LocationType::Path(path_buf) => path_buf.to_str(),
@@ -429,14 +442,17 @@ impl Track {
         }
     }
 
+    #[must_use]
     pub const fn duration(&self) -> Duration {
         self.duration
     }
 
+    #[must_use]
     pub fn duration_formatted(&self) -> String {
         Self::duration_formatted_short(&self.duration)
     }
 
+    #[must_use]
     pub fn duration_formatted_short(d: &Duration) -> String {
         let duration_hour = d.as_secs() / 3600;
         let duration_min = (d.as_secs() % 3600) / 60;

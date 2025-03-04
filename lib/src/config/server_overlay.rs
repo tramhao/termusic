@@ -23,6 +23,7 @@ pub struct ServerOverlay {
 
 impl ServerOverlay {
     /// Get the Library scan depth, either the overwrite if present, otherwise the config itself
+    #[must_use]
     pub fn get_library_scan_depth(&self) -> ScanDepth {
         if let Some(v) = self.library_scan_depth {
             v
@@ -32,6 +33,7 @@ impl ServerOverlay {
     }
 
     /// Get whether to enable the discord status
+    #[must_use]
     pub fn get_discord_status_enable(&self) -> bool {
         if self.disable_discord_status {
             false

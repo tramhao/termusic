@@ -72,6 +72,7 @@ impl Lyric {
     /// # Panics
     ///
     /// if `time` cannot be represented as a [`i64`]
+    #[must_use]
     pub fn get_text(&self, time: Duration) -> Option<&str> {
         if self.captions.is_empty() {
             return None;
@@ -102,6 +103,7 @@ impl Lyric {
     /// Get a index for the next lowest caption from `time` (in milliseconds)
     ///
     /// This function takes `self.offset` into account.
+    #[must_use]
     pub fn get_index(&self, time: i64) -> Option<usize> {
         if self.captions.is_empty() {
             return None;
@@ -150,6 +152,7 @@ impl Lyric {
     }
 
     /// Format current [`Lyric`] as a LRC file
+    #[must_use]
     pub fn as_lrc_text(&self) -> String {
         let mut result: String = String::new();
         if self.offset != 0 {

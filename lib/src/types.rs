@@ -761,6 +761,7 @@ impl YoutubeOptions {
         Ok(())
     }
 
+    #[must_use]
     pub const fn page(&self) -> u32 {
         self.page
     }

@@ -3,7 +3,8 @@
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
+// TODO: work to remove the following lints
+#![allow(clippy::missing_errors_doc)]
 
 pub mod config;
 pub mod invidious;
