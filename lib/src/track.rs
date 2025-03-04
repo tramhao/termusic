@@ -109,6 +109,7 @@ pub enum MediaType {
 impl Track {
     /// Create a new [`MediaType::Podcast`] track
     #[allow(clippy::cast_sign_loss)]
+    #[must_use]
     pub fn from_episode(ep: &Episode) -> Self {
         let lyric_frames: Vec<Id3Lyrics> = Vec::new();
         let mut podcast_localfile: Option<String> = None;
@@ -232,6 +233,7 @@ impl Track {
     }
 
     /// Create a new [`MediaType::LiveRadio`] track
+    #[must_use]
     pub fn new_radio(url: &str) -> Self {
         let mut track = Self::new(LocationType::Uri(url.to_string()), MediaType::LiveRadio);
         track.artist = Some("Radio".to_string());
@@ -240,6 +242,7 @@ impl Track {
         track
     }
 
+    #[must_use]
     fn new(location: LocationType, media_type: MediaType) -> Self {
         let duration = Duration::from_secs(0);
         let lyric_frames: Vec<Id3Lyrics> = Vec::new();

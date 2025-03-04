@@ -21,12 +21,14 @@ pub type SharedTuiSettings = Arc<RwLock<TuiOverlay>>;
 
 /// Create a new [`SharedServerSettings`] without having to also depend on [`parking_lot`]
 #[inline]
+#[must_use]
 pub fn new_shared_server_settings(settings: ServerOverlay) -> SharedServerSettings {
     Arc::new(RwLock::new(settings))
 }
 
 /// Create a new [`SharedTuiSettings`] without having to also depend on [`parking_lot`]
 #[inline]
+#[must_use]
 pub fn new_shared_tui_settings(settings: TuiOverlay) -> SharedTuiSettings {
     Arc::new(RwLock::new(settings))
 }
