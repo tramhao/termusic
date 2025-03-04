@@ -125,7 +125,7 @@ lto = true
 
 [workspace.lints.rust]
 rust_2018_idioms = { level = "warn", priority = -1 }
-unsafe_code = "forbid"
+unsafe_code = "deny"
 
 [workspace.lints.clippy]
 correctness = { level = "warn", priority = -1 }
