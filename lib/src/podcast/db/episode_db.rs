@@ -1,5 +1,3 @@
-use std::path::{Path, PathBuf};
-
 use chrono::{DateTime, Utc};
 use rusqlite::{named_params, params, Connection, Row};
 
@@ -19,6 +17,7 @@ pub struct EpisodeDB {
     pub pubdate: Option<DateTime<Utc>>,
     pub duration: Option<i64>,
     pub played: bool,
+    #[allow(dead_code)]
     pub hidden: bool,
     pub last_position: Option<i64>,
     pub image_url: Option<String>,
@@ -26,6 +25,7 @@ pub struct EpisodeDB {
 
 impl EpisodeDB {
     /// Try to convert a given row to a [`EpisodeDB`] instance, using column names to resolve the values
+    #[allow(dead_code)]
     pub fn try_from_row_named(row: &Row<'_>) -> Result<Self, rusqlite::Error> {
         // NOTE: all the names in "get" below are the *column names* as defined in migrations/001.sql#table_episodes (pseudo link)
         Ok(Self {
@@ -159,6 +159,7 @@ impl<'a> EpisodeDBInsertable<'a> {
 /// Delete a episode by id
 ///
 /// This also deletes all associated files (not removing the actual files)!
+#[allow(dead_code)]
 pub fn delete_episode(id: PodcastDBId, con: &Connection) -> Result<usize, rusqlite::Error> {
     let mut stmt = con.prepare_cached("DELETE FROM episodes WHERE id = ?;")?;
     stmt.execute(params![id])
