@@ -39,7 +39,7 @@ use crate::ui::{Model, Msg, TEMsg, TFMsg};
 #[derive(Default)]
 struct Counter {
     props: Props,
-    states: OwnStates,
+    states: CounterState,
 }
 
 #[allow(unused)]
@@ -175,20 +175,8 @@ impl MockComponent for Counter {
 }
 
 #[derive(Default)]
-struct OwnStates {
+struct CounterState {
     counter: isize,
-}
-
-// impl Default for OwnStates {
-//     fn default() -> Self {
-//         Self { counter: 0 }
-//     }
-// }
-#[allow(unused)]
-impl OwnStates {
-    fn incr(&mut self) {
-        self.counter += 1;
-    }
 }
 
 // -- Counter components
