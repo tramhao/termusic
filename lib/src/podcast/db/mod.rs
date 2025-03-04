@@ -128,7 +128,7 @@ impl Database {
     pub fn update_podcast(&self, pod_id: PodcastDBId, podcast: &PodcastNoId) -> Result<SyncResult> {
         PodcastDBInsertable::from(podcast).update_podcast(pod_id, &self.conn)?;
 
-        let result = self.update_episodes(pod_id, &podcast.title, &podcast.episodes)?;
+        let result = self.update_episodes(pod_id, &podcast.episodes)?;
         Ok(result)
     }
 
@@ -143,7 +143,6 @@ impl Database {
     fn update_episodes(
         &self,
         podcast_id: PodcastDBId,
-        podcast_title: &str,
         episodes: &[EpisodeNoId],
     ) -> Result<SyncResult> {
         let old_episodes = self.get_episodes(podcast_id, true)?;
