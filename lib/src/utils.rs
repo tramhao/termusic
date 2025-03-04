@@ -287,7 +287,6 @@ pub fn display_with(
 }
 
 #[cfg(test)]
-#[allow(clippy::non_ascii_literal)]
 mod tests {
     use std::fmt::{Display, Write};
 
