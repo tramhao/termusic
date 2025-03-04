@@ -22,8 +22,6 @@
  * SOFTWARE.
  */
 
-#![recursion_limit = "2048"]
-
 #[cfg(feature = "gst")]
 mod gstreamer_backend;
 #[cfg(feature = "mpv")]

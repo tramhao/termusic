@@ -1,4 +1,3 @@
-#![recursion_limit = "2048"]
 // TODO: work to remove the following lints
 #![allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 

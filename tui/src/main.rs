@@ -1,4 +1,3 @@
-#![recursion_limit = "2048"]
 /**
  * MIT License
  *
