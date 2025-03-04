@@ -185,6 +185,8 @@ impl Model {
             Arg::new("--add-metadata"),
             Arg::new("--embed-thumbnail"),
             Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
+            #[cfg(target_os = "windows")]
+            Arg::new("--restrict-filenames"),
             Arg::new("--write-sub"),
             Arg::new("--all-subs"),
             Arg::new_with_arg("--convert-subs", "lrc"),
