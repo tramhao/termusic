@@ -39,7 +39,6 @@ use crate::ui::{Model, Msg, TEMsg, TFMsg};
 #[derive(Default)]
 struct Counter {
     props: Props,
-    states: CounterState,
 }
 
 #[allow(unused)]
@@ -84,6 +83,12 @@ impl Counter {
         self.attr(Attribute::Borders, AttrValue::Borders(b));
         self
     }
+
+    pub fn get_state(&self) -> isize {
+        self.props
+            .get_or(Attribute::Value, AttrValue::Number(99))
+            .unwrap_number()
+    }
 }
 
 impl MockComponent for Counter {
@@ -91,10 +96,7 @@ impl MockComponent for Counter {
         // Check if visible
         if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
             // Get properties
-            let value = self
-                .props
-                .get_or(Attribute::Value, AttrValue::Number(99))
-                .unwrap_number();
+            let value = self.get_state();
             let text = format!("Delete ({value})");
 
             let alignment = self
@@ -160,7 +162,7 @@ impl MockComponent for Counter {
     }
 
     fn state(&self) -> State {
-        State::One(StateValue::Isize(self.states.counter))
+        State::One(StateValue::Isize(self.get_state()))
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
@@ -172,11 +174,6 @@ impl MockComponent for Counter {
             _ => CmdResult::None,
         }
     }
-}
-
-#[derive(Default)]
-struct CounterState {
-    counter: isize,
 }
 
 // -- Counter components
