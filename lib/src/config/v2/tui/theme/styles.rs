@@ -52,6 +52,7 @@ impl AsRef<str> for ColorTermusic {
 }
 
 impl ColorTermusic {
+    #[must_use]
     pub const fn as_usize(self) -> usize {
         self as usize
     }

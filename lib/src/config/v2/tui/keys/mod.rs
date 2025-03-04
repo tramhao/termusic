@@ -1432,12 +1432,14 @@ impl KeyBinding {
 
     /// Get the inner key
     #[inline]
+    #[must_use]
     pub fn get(&self) -> tuievents::KeyEvent {
         self.key_event
     }
 
     /// Get the Current Modifier, and the string representation of the key
     #[inline]
+    #[must_use]
     pub fn mod_key(&self) -> (tuievents::KeyModifiers, String) {
         (
             self.key_event.modifiers,
