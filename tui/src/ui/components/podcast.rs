@@ -428,7 +428,7 @@ impl Model {
     }
 
     pub fn podcast_add(&mut self, url: &str) {
-        let feed = PodcastFeed::new(None, url, None);
+        let feed = PodcastFeed::new(None, url.to_string(), None);
 
         crate::podcast::check_feed(
             feed,
@@ -627,7 +627,7 @@ impl Model {
                     .ok_or_else(|| anyhow!("get podcast selected failed."))?;
                 let pcf = PodcastFeed::new(
                     Some(pod_selected.id),
-                    &pod_selected.url.clone(),
+                    pod_selected.url.clone(),
                     Some(pod_selected.title.clone()),
                 );
                 pod_data.push(pcf);
@@ -640,7 +640,7 @@ impl Model {
                     .podcasts
                     .iter()
                     .map(|pod| {
-                        PodcastFeed::new(Some(pod.id), &pod.url.clone(), Some(pod.title.clone()))
+                        PodcastFeed::new(Some(pod.id), pod.url.clone(), Some(pod.title.clone()))
                     })
                     .collect();
             }

@@ -71,12 +71,8 @@ pub struct PodcastFeed {
 
 impl PodcastFeed {
     #[must_use]
-    pub fn new(id: Option<i64>, url: &str, title: Option<String>) -> Self {
-        Self {
-            id,
-            url: url.to_string(),
-            title,
-        }
+    pub const fn new(id: Option<i64>, url: String, title: Option<String>) -> Self {
+        Self { id, url, title }
     }
 }
 
@@ -394,7 +390,7 @@ fn import_opml_feeds(xml: &str) -> Result<Vec<PodcastFeed>> {
                     Some(pod.text)
                 }
             });
-            feeds.push(PodcastFeed::new(None, &pod.xml_url.unwrap(), title));
+            feeds.push(PodcastFeed::new(None, pod.xml_url.unwrap(), title));
         }
     }
     Ok(feeds)
