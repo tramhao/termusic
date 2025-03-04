@@ -24,25 +24,83 @@ use crate::songtag::UrlTypes;
  * SOFTWARE.
  */
 use super::super::{ServiceProvider, SongTag};
-use anyhow::{anyhow, bail, Result};
 use serde_json::{from_str, json, Value};
+
+#[derive(Debug, thiserror::Error)]
+pub enum MiguParseError {
+    #[error("Expected field \"{field}\" to have value \"{expected}\", got \"{got}\", error message: \"{errmsg:#?}\"")]
+    UnexpectedStatus {
+        field: &'static str,
+        got: String,
+        errmsg: Option<String>,
+        expected: &'static str,
+    },
+
+    #[error("Expected property \"{0}\" to exist")]
+    MissingProperty(&'static str),
+
+    #[error(transparent)]
+    ParseError(#[from] serde_json::Error),
+}
+
+type Result<T> = std::result::Result<T, MiguParseError>;
+
+/// Get the given `field`, otherwise return as [`MissingProperty`](MiguParseError::MissingProperty) Error
+fn get_code_prop<'a>(value: &'a Value, field: &'static str) -> Result<&'a Value> {
+    let Some(value) = value.get(field) else {
+        return Err(MiguParseError::MissingProperty(field));
+    };
+
+    Ok(value)
+}
+
+/// Check the `msg` property for if there was a error
+fn check_msg(value: &Value) -> Result<()> {
+    let msg = get_code_prop(value, "msg")?;
+
+    // english for the chinese characters: "success"
+    if !msg.eq(&"成功") {
+        let message = msg.to_string();
+
+        return Err(MiguParseError::UnexpectedStatus {
+            field: "msg",
+            got: message,
+            errmsg: None,
+            expected: "成功",
+        });
+    }
+
+    Ok(())
+}
+
+/// Check the `success` property for if there was a error
+fn check_success(value: &Value) -> Result<()> {
+    let success = get_code_prop(value, "success")?;
+
+    if !success.eq(&true) {
+        let message = success.to_string();
+
+        return Err(MiguParseError::UnexpectedStatus {
+            field: "success",
+            got: message,
+            errmsg: None,
+            expected: "true",
+        });
+    }
+
+    Ok(())
+}
 
 /// Try to get the lyric lrc content from the given result
 pub fn to_lyric(json: &str) -> Result<String> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    // english for the chinese characters: "success"
-    if value.get("msg").is_none() || !value.get("msg").is_some_and(|v| v.eq(&"成功")) {
-        let message = value.get("msg").and_then(Value::as_str).unwrap_or("<none>");
-        bail!(
-            "Failed to get lyric text, \"msg\" does not exist or is not \"sucess\" Errcode: {message}"
-        );
-    }
+    check_msg(&value)?;
 
     let lyric = value
         .get("lyric")
         .and_then(Value::as_str)
-        .ok_or(anyhow!("property \"lyric\" does not exist in result!"))?
+        .ok_or(MiguParseError::MissingProperty("lyric"))?
         .to_owned();
 
     Ok(lyric)
@@ -50,20 +108,14 @@ pub fn to_lyric(json: &str) -> Result<String> {
 
 /// Try to get the picture url from the json response
 pub fn to_pic_url(json: &str) -> Result<String> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    // english for the chinese characters: "success"
-    if value.get("msg").is_none() || !value.get("msg").is_some_and(|v| v.eq(&"成功")) {
-        let message = value.get("msg").and_then(Value::as_str).unwrap_or("<none>");
-        bail!(
-            "Failed to get picure url, \"msg\" does not exist or is not \"sucess\" Errcode: {message}"
-        );
-    }
+    check_msg(&value)?;
 
     let pic_url = value
         .get("largePic")
         .and_then(Value::as_str)
-        .ok_or(anyhow!("property \"largePic\" does not exist in result!"))?
+        .ok_or(MiguParseError::MissingProperty("largePic"))?
         .to_owned();
 
     Ok(pic_url)
@@ -71,22 +123,14 @@ pub fn to_pic_url(json: &str) -> Result<String> {
 
 /// Try to get individual [`SongTag`]s from the json response
 pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    if value.get("success").is_none() || !value.get("success").is_some_and(|v| v.eq(&true)) {
-        let message = value
-            .get("success")
-            .and_then(Value::as_str)
-            .unwrap_or("<none>");
-        bail!(
-            "Failed to get songinfo, \"success\" does not exist or is not \"true\" Errcode: {message}"
-        );
-    }
+    check_success(&value)?;
 
     let array = value
         .get("musics")
         .and_then(Value::as_array)
-        .ok_or(anyhow!("property \"musics\" does not exist in result!"))?;
+        .ok_or(MiguParseError::MissingProperty("musics"))?;
 
     let mut vec: Vec<SongTag> = Vec::new();
 

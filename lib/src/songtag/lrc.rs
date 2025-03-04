@@ -257,7 +257,7 @@ fn time_lrc(time_stamp: u64) -> impl std::fmt::Display {
 }
 
 impl FromStr for Lyric {
-    type Err = anyhow::Error;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut offset: i64 = 0;

@@ -1,24 +1,52 @@
 use super::super::{ServiceProvider, SongTag};
 use crate::songtag::UrlTypes;
-use anyhow::{anyhow, bail, Result};
 use serde_json::{from_str, Value};
+
+#[derive(Debug, thiserror::Error)]
+pub enum NeteaseParseError {
+    #[error("Expected field \"code\" to have value \"{expected}\", got \"{got}\"")]
+    UnexpectedStatus { got: String, expected: &'static str },
+
+    #[error("Expected property \"{0}\" to exist")]
+    MissingProperty(&'static str),
+
+    #[error("Expected non-empty Array for \"{0}\"")]
+    EmptyArray(&'static str),
+
+    #[error(transparent)]
+    ParseError(#[from] serde_json::Error),
+}
+
+type Result<T> = std::result::Result<T, NeteaseParseError>;
+
+/// Check property `code` for value `200`, otherwise error
+fn check_code(value: &Value) -> Result<()> {
+    let Some(code) = value.get("code") else {
+        return Err(NeteaseParseError::MissingProperty("code"));
+    };
+
+    if !code.eq(&200) {
+        let code = code.to_string();
+
+        return Err(NeteaseParseError::UnexpectedStatus {
+            got: code,
+            expected: "200",
+        });
+    }
+
+    Ok(())
+}
 
 /// Try to get the lyric lrc content from the given result
 pub fn to_lyric(json: &str) -> Result<String> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    if value.get("code").is_none() || !value.get("code").is_some_and(|v| v.eq(&200)) {
-        let code = value
-            .get("code")
-            .and_then(Value::as_str)
-            .unwrap_or("<none>");
-        bail!("Failed to get lyric text, \"code\" does not exist or is not 200 code: {code}");
-    }
+    check_code(&value)?;
 
     let lyric = value
         .get("lrc")
         .and_then(Value::as_str)
-        .ok_or(anyhow!("property \"lrc\" does not exist in result!"))?
+        .ok_or(NeteaseParseError::MissingProperty("lrc"))?
         .to_owned();
 
     Ok(lyric)
@@ -26,24 +54,18 @@ pub fn to_lyric(json: &str) -> Result<String> {
 
 /// Try to get the play (download) url from the result
 pub fn to_song_url(json: &str) -> Result<String> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    if value.get("code").is_none() || !value.get("code").is_some_and(|v| v.eq(&200)) {
-        let errcode = value
-            .get("code")
-            .and_then(Value::as_str)
-            .unwrap_or("<none>");
-        bail!("Failed to get download url, \"code\" does not exist or is not 200 code: {errcode}");
-    }
+    check_code(&value)?;
 
     let first_url = value
         .get("data")
         .and_then(Value::as_array)
-        .ok_or(anyhow!("property \"data\" does not exist in result!"))?
+        .ok_or(NeteaseParseError::MissingProperty("data"))?
         .iter()
         // only get one for now
         .find_map(parse_song_url)
-        .ok_or(anyhow!("no urls in \"data\"!"))?;
+        .ok_or(NeteaseParseError::EmptyArray("data"))?;
 
     Ok(first_url.to_owned())
 }
@@ -60,24 +82,16 @@ fn parse_song_url(value: &Value) -> Option<&str> {
 
 /// Try to get individual [`SongTag`]s from the json response
 pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
-    let value = from_str::<Value>(json).map_err(anyhow::Error::from)?;
+    let value = from_str::<Value>(json)?;
 
-    if value.get("code").is_none() || !value.get("code").is_some_and(|v| v.eq(&200)) {
-        let code = value
-            .get("code")
-            .and_then(Value::as_str)
-            .unwrap_or("<none>");
-        bail!("Failed to get lyric text, \"code\" does not exist or is not 200 code: {code}");
-    }
+    check_code(&value)?;
 
     let array = value
         .get("result")
         .and_then(Value::as_object)
         .and_then(|v| v.get("songs"))
         .and_then(Value::as_array)
-        .ok_or(anyhow!(
-            "property \"result.songs\" does not exist in result!"
-        ))?;
+        .ok_or(NeteaseParseError::MissingProperty("result.songs"))?;
 
     let mut vec: Vec<SongTag> = Vec::new();
 
