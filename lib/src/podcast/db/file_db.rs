@@ -6,6 +6,7 @@ use super::PodcastDBId;
 
 /// A struct representing a episode file (downloaded) in the database
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct FileDB {
     pub id: PodcastDBId,
     pub episode_id: PodcastDBId,
@@ -14,6 +15,7 @@ pub struct FileDB {
 
 impl FileDB {
     /// Try to convert a given row to a [`FileDB`] instance, using column names to resolve the values
+    #[allow(dead_code)]
     pub fn try_from_row_named(row: &Row<'_>) -> Result<Self, rusqlite::Error> {
         // NOTE: all the names in "get" below are the *column names* as defined in migrations/001.sql#table_files (pseudo link)
         let path = PathBuf::from(row.get::<_, String>("path")?);
