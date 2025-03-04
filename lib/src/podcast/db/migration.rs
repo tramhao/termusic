@@ -4,10 +4,6 @@ use semver::Version;
 
 /// The Current Database schema version this application is meant to run against
 pub(super) const DB_VERSION: u32 = 1;
-/// The Lowest Database schema version this application supports migration up against
-///
-/// Expection being "0" as that indicates a fresh database
-const LOWEST_MIGRATEABLE_VERSION: u32 = 1;
 
 /// Helper function to get the `user_version` with a single function call
 #[inline]
@@ -31,19 +27,13 @@ fn set_user_version(conn: &Connection, version: u32) -> Result<u32> {
 
 /// Create / Migrate everything in the database, if necessary
 pub(super) fn migrate(conn: &Connection) -> Result<()> {
-    let mut user_version: u32 = get_user_version(conn)?;
+    let user_version: u32 = get_user_version(conn)?;
 
     if user_version > DB_VERSION {
         bail!(
             "Expected Database version to be lower or equal to {DB_VERSION}, found {user_version}!"
         );
     }
-
-    // if user_version < LOWEST_MIGRATEABLE_VERSION && user_version != 0 {
-    //     warn!("Found Database, but had lower than lowest migrateable version, resetting! Version: {user_version}");
-
-    //     bail!("Incompatible Database version: {user_version}");
-    // }
 
     // only execute migrations if not already done so
     if user_version != DB_VERSION {
@@ -57,7 +47,7 @@ pub(super) fn migrate(conn: &Connection) -> Result<()> {
 
 /// The Function that actually applies creations / migrations, checks / preparation is done in the function above
 ///
-/// Migrates from [`LOWEST_MIGRATEABLE_VERSION`] / `0` to [`DB_VERSION`]
+/// Migrates from `0` to [`DB_VERSION`]
 #[allow(unused_assignments)] // for future possible migrations
 fn apply_migrations(conn: &Connection, mut user_version: u32) -> Result<()> {
     // do all migrations in steps, this way everyone is in the same state and had the same things applied, even for new things
