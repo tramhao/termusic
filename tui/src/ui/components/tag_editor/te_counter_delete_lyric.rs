@@ -41,8 +41,8 @@ struct Counter {
     props: Props,
 }
 
-#[allow(unused)]
 impl Counter {
+    #[allow(dead_code)]
     pub fn label<S>(mut self, label: S) -> Self
     where
         S: AsRef<str>,
