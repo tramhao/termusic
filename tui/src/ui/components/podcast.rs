@@ -427,8 +427,8 @@ impl Model {
         });
     }
 
-    pub fn podcast_add(&mut self, url: &str) {
-        let feed = PodcastFeed::new(None, url.to_string(), None);
+    pub fn podcast_add(&mut self, url: String) {
+        let feed = PodcastFeed::new(None, url, None);
 
         crate::podcast::check_feed(
             feed,

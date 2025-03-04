@@ -167,7 +167,7 @@ impl Update<Msg> for Model {
                 self.umount_save_playlist_confirm();
                 None
             }
-            Msg::Podcast(m) => self.update_podcast(&m),
+            Msg::Podcast(m) => self.update_podcast(m),
             Msg::LyricMessage(m) => self.update_lyric_textarea(m),
             Msg::Download(m) => self.update_download_msg(&m),
             Msg::Xywh(m) => self.update_xywh_msg(m),
@@ -215,7 +215,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn update_podcast(&mut self, msg: &PCMsg) -> Option<Msg> {
+    fn update_podcast(&mut self, msg: PCMsg) -> Option<Msg> {
         match msg {
             PCMsg::PodcastBlurDown => {
                 self.app.active(&Id::Episode).ok();
@@ -236,7 +236,7 @@ impl Model {
                 if url.starts_with("http") {
                     self.podcast_add(url);
                 } else {
-                    self.podcast_search_itunes(url);
+                    self.podcast_search_itunes(&url);
                     self.mount_podcast_search_table();
                 }
             }
@@ -249,7 +249,7 @@ impl Model {
                     None,
                     None,
                 );
-                if let Err(e) = self.add_or_sync_data(pod, Some(*id)) {
+                if let Err(e) = self.add_or_sync_data(&pod, Some(id)) {
                     self.mount_error_popup(e.context("add or sync data"));
                 };
             }
@@ -261,12 +261,12 @@ impl Model {
                     None,
                     None,
                 );
-                if let Err(e) = self.add_or_sync_data(pod, None) {
+                if let Err(e) = self.add_or_sync_data(&pod, None) {
                     self.mount_error_popup(e.context("add or sync data"));
                 }
             }
             PCMsg::Error(url, feed) => {
-                self.download_tracker.decrease_one(url);
+                self.download_tracker.decrease_one(&url);
                 self.mount_error_popup(anyhow!("Error happened with feed: {:?}", feed.title));
                 self.show_message_timeout_label_help(
                     self.download_tracker.message_feed_sync_failed(),
@@ -276,19 +276,19 @@ impl Model {
                 );
             }
             PCMsg::PodcastSelected(index) => {
-                self.podcast.podcasts_index = *index;
+                self.podcast.podcasts_index = index;
                 if let Err(e) = self.podcast_sync_episodes() {
                     self.mount_error_popup(e.context("podcast sync episodes"));
                 }
             }
             PCMsg::DescriptionUpdate => self.lyric_update(),
             PCMsg::EpisodeAdd(index) => {
-                if let Err(e) = self.playlist_add_episode(*index) {
+                if let Err(e) = self.playlist_add_episode(index) {
                     self.mount_error_popup(e.context("podcast playlist add episode"));
                 }
             }
             PCMsg::EpisodeMarkPlayed(index) => {
-                if let Err(e) = self.episode_mark_played(*index) {
+                if let Err(e) = self.episode_mark_played(index) {
                     self.mount_error_popup(e.context("podcast episode mark played"));
                 }
             }
@@ -298,7 +298,7 @@ impl Model {
                 }
             }
             PCMsg::PodcastRefreshOne(index) => {
-                if let Err(e) = self.podcast_refresh_feeds(Some(*index)) {
+                if let Err(e) = self.podcast_refresh_feeds(Some(index)) {
                     self.mount_error_popup(e.context("podcast refresh feeds one"));
                 }
             }
@@ -317,7 +317,7 @@ impl Model {
                 );
             }
             PCMsg::EpisodeDownload(index) => {
-                if let Err(e) = self.episode_download(Some(*index)) {
+                if let Err(e) = self.episode_download(Some(index)) {
                     self.mount_error_popup(e.context("podcast episode download"));
                 }
             }
@@ -376,7 +376,7 @@ impl Model {
                 );
             }
             PCMsg::EpisodeDeleteFile(index) => {
-                if let Err(e) = self.episode_delete_file(*index) {
+                if let Err(e) = self.episode_delete_file(index) {
                     self.mount_error_popup(e.context("podcast episode delete"));
                 }
             }
@@ -399,9 +399,8 @@ impl Model {
             PCMsg::SearchItunesCloseCancel => self.umount_podcast_search_table(),
             PCMsg::SearchItunesCloseOk(index) => {
                 if let Some(vec) = &self.podcast.search_results {
-                    if let Some(pod) = vec.get(*index) {
-                        let url = pod.url.clone();
-                        self.podcast_add(&url);
+                    if let Some(pod) = vec.get(index) {
+                        self.podcast_add(pod.url.clone());
                     }
                 }
             }
@@ -409,7 +408,7 @@ impl Model {
                 self.podcast.search_results = Some(vec.clone());
                 self.update_podcast_search_table();
             }
-            PCMsg::SearchError(e) => self.mount_error_popup(anyhow!(e.to_owned())),
+            PCMsg::SearchError(e) => self.mount_error_popup(anyhow!(e)),
         }
         None
     }
@@ -964,7 +963,7 @@ impl Model {
         self.redraw = true;
         match msg {
             DLMsg::DownloadRunning(url, title) => {
-                self.download_tracker.increase_one(url);
+                self.download_tracker.increase_one(&**url);
                 self.show_message_timeout_label_help(
                     self.download_tracker.message_download_start(title),
                     None,
