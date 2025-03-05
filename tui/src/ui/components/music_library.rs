@@ -473,7 +473,7 @@ impl Model {
         let root = self.library.tree.root();
         let p: &Path = Path::new(root.id());
         let all_items = walkdir::WalkDir::new(p).follow_links(true);
-        let mut idx = 0;
+        let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
         let search = wildmatch::WildMatch::new(&search);
         for record in all_items.into_iter().filter_map(std::result::Result::ok) {

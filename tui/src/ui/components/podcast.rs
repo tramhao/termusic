@@ -977,7 +977,7 @@ impl Model {
 
     pub fn podcast_update_search_episode(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
-        let mut idx = 0;
+        let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
         let mut db_tracks = vec![];
         // Get all episodes
@@ -997,11 +997,11 @@ impl Model {
                     if idx > 0 {
                         table.add_row();
                     }
+                    idx += 1;
                     table
                         .add_col(TextSpan::new(idx.to_string()))
                         .add_col(TextSpan::new(record.title).bold())
                         .add_col(TextSpan::new(format!("{}", record.id)));
-                    idx += 1;
                 }
             }
         }
@@ -1012,7 +1012,7 @@ impl Model {
 
     pub fn podcast_update_search_podcast(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
-        let mut idx = 0;
+        let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
         // Get all episodes
         let db_tracks = &self.podcast.podcasts;
@@ -1027,11 +1027,11 @@ impl Model {
                     if idx > 0 {
                         table.add_row();
                     }
+                    idx += 1;
                     table
                         .add_col(TextSpan::new(idx.to_string()))
                         .add_col(TextSpan::new(&record.title).bold())
                         .add_col(TextSpan::new(format!("{}", record.id)));
-                    idx += 1;
                 }
             }
         }

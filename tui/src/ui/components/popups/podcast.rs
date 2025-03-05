@@ -277,12 +277,14 @@ impl Model {
 
     pub fn update_podcast_search_table(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
-        let mut idx = 0;
+        let mut idx: usize = 0;
         if let Some(vec) = &self.podcast.search_results {
             for record in vec {
                 if idx > 0 {
                     table.add_row();
                 }
+
+                idx += 1;
 
                 let title = record
                     .title
@@ -293,7 +295,6 @@ impl Model {
                     .add_col(TextSpan::new(title).bold())
                     .add_col(TextSpan::new(record.url.clone()));
                 // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
-                idx += 1;
             }
             // if self.player.playlist.is_empty() {
             //     table.add_col(TextSpan::from("0"));
