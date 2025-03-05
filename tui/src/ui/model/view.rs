@@ -441,122 +441,52 @@ impl Model {
         }
     }
 
+    /// Mount / Remount a search popup for the provided source
+    fn mount_search(&mut self, source: Source) {
+        self.app
+            .remount(
+                Id::GeneralSearchInput,
+                Box::new(GSInputPopup::new(source, &self.config_tui.read())),
+                Vec::new(),
+            )
+            .unwrap();
+        self.app
+            .remount(
+                Id::GeneralSearchTable,
+                Box::new(GSTablePopup::new(source, self.config_tui.clone())),
+                Vec::new(),
+            )
+            .unwrap();
+
+        self.app.active(&Id::GeneralSearchInput).unwrap();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
+    }
+
+    #[inline]
     pub fn mount_search_library(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Library, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Library, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Library);
     }
 
+    #[inline]
     pub fn mount_search_playlist(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Playlist, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Playlist, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Playlist);
     }
 
+    #[inline]
     pub fn mount_search_database(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Database, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Database, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Database);
     }
 
+    #[inline]
     pub fn mount_search_episode(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Episode, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Episode, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Episode);
     }
 
+    #[inline]
     pub fn mount_search_podcast(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Podcast, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Podcast, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Podcast);
     }
 
     pub fn mount_label_help(&mut self) {
