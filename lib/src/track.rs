@@ -478,7 +478,6 @@ impl Track {
                     if !self.lyric_frames_is_empty() {
                         if let Some(lyric_frames) = self.lyric_frames() {
                             for l in lyric_frames {
-                                eprintln! {"lyrics are: {l:?}"};
                                 let l_frame =
                                     Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
                                         lofty::TextEncoding::UTF8,
