@@ -398,7 +398,7 @@ pub enum PCMsg {
     PodcastAddPopupCloseCancel,
     SyncData((i64, PodcastNoId)),
     NewData(PodcastNoId),
-    Error(String, PodcastFeed),
+    Error(PodcastFeed),
     PodcastSelected(usize),
     DescriptionUpdate,
     EpisodeAdd(usize),

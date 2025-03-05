@@ -265,8 +265,8 @@ impl Model {
                     self.mount_error_popup(e.context("add or sync data"));
                 }
             }
-            PCMsg::Error(url, feed) => {
-                self.download_tracker.decrease_one(&url);
+            PCMsg::Error(feed) => {
+                self.download_tracker.decrease_one(&feed.url);
                 self.mount_error_popup(anyhow!("Error happened with feed: {:?}", feed.title));
                 self.show_message_timeout_label_help(
                     self.download_tracker.message_feed_sync_failed(),

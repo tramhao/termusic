@@ -93,7 +93,7 @@ pub fn check_feed(feed: PodcastFeed, max_retries: usize, tp: &TaskPool, tx_to_ma
             },
             Err(err) => {
                 error!("get_feed_data had a Error: {:#?}", err);
-                let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed.url.to_string(), feed)));
+                let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed)));
             }
         }
     });
@@ -324,7 +324,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
                 }
             }
 
-            Msg::Podcast(PCMsg::Error(_, feed)) => {
+            Msg::Podcast(PCMsg::Error(feed)) => {
                 msg_counter += 1;
                 failure = true;
                 if let Some(t) = feed.title {
