@@ -342,7 +342,7 @@ impl Model {
                 .mount(
                     Id::Library,
                     Box::new(MusicLibrary::new(
-                        &self.library.tree.clone(),
+                        &self.library.tree,
                         current_node,
                         self.config_tui.clone(),
                     ),),
@@ -358,7 +358,7 @@ impl Model {
             .remount(
                 Id::Library,
                 Box::new(MusicLibrary::new(
-                    &self.library.tree.clone(),
+                    &self.library.tree,
                     current_node,
                     self.config_tui.clone(),
                 ),),
