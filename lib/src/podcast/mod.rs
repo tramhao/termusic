@@ -1,6 +1,5 @@
 // Thanks to the author of shellcaster(https://github.com/jeff-hughes/shellcaster). Most parts of following code are taken from it.
 
-#[allow(unused)]
 pub mod db;
 #[allow(clippy::module_name_repetitions)]
 pub mod episode;

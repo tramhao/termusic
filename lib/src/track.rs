@@ -39,13 +39,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
-// TODO: use this for database migration
-/// This is the old string that was used as default for "artist" & "album"
-///
-/// this value is currently unused, but this will stay here as a reminder until the database is migrated
-#[allow(unused)]
-pub const UNSUPPORTED: &str = "Unsupported?";
-
 /// Location types for a Track, could be a local file with [`LocationType::Path`] or a remote URI with [`LocationType::Uri`]
 #[derive(Clone, Debug, PartialEq)]
 pub enum LocationType {

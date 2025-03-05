@@ -67,7 +67,6 @@ pub enum Loop {
     Random,
 }
 
-#[allow(clippy::non_ascii_literal)]
 impl Loop {
     pub fn display(self, display_symbol: bool) -> String {
         if display_symbol {

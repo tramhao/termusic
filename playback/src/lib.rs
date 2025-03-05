@@ -22,12 +22,6 @@
  * SOFTWARE.
  */
 
-// #![forbid(unsafe_code)]
-#![recursion_limit = "2048"]
-#![warn(clippy::all, clippy::correctness)]
-#![warn(rust_2018_idioms)]
-#![warn(clippy::pedantic)]
-
 #[cfg(feature = "gst")]
 mod gstreamer_backend;
 #[cfg(feature = "mpv")]

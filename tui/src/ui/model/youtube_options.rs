@@ -355,7 +355,6 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
 }
 
 #[cfg(test)]
-#[allow(clippy::non_ascii_literal)]
 mod tests {
 
     use crate::ui::model::youtube_options::extract_filepath;

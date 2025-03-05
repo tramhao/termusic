@@ -39,11 +39,10 @@ use crate::ui::{Model, Msg, TEMsg, TFMsg};
 #[derive(Default)]
 struct Counter {
     props: Props,
-    states: OwnStates,
 }
 
-#[allow(unused)]
 impl Counter {
+    #[allow(dead_code)]
     pub fn label<S>(mut self, label: S) -> Self
     where
         S: AsRef<str>,
@@ -84,6 +83,12 @@ impl Counter {
         self.attr(Attribute::Borders, AttrValue::Borders(b));
         self
     }
+
+    pub fn get_state(&self) -> isize {
+        self.props
+            .get_or(Attribute::Value, AttrValue::Number(99))
+            .unwrap_number()
+    }
 }
 
 impl MockComponent for Counter {
@@ -91,10 +96,7 @@ impl MockComponent for Counter {
         // Check if visible
         if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
             // Get properties
-            let value = self
-                .props
-                .get_or(Attribute::Value, AttrValue::Number(99))
-                .unwrap_number();
+            let value = self.get_state();
             let text = format!("Delete ({value})");
 
             let alignment = self
@@ -160,7 +162,7 @@ impl MockComponent for Counter {
     }
 
     fn state(&self) -> State {
-        State::One(StateValue::Isize(self.states.counter))
+        State::One(StateValue::Isize(self.get_state()))
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
@@ -171,23 +173,6 @@ impl MockComponent for Counter {
             }
             _ => CmdResult::None,
         }
-    }
-}
-
-#[derive(Default)]
-struct OwnStates {
-    counter: isize,
-}
-
-// impl Default for OwnStates {
-//     fn default() -> Self {
-//         Self { counter: 0 }
-//     }
-// }
-#[allow(unused)]
-impl OwnStates {
-    fn incr(&mut self) {
-        self.counter += 1;
     }
 }
 

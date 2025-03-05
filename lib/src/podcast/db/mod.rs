@@ -3,11 +3,10 @@ use std::time::Duration;
 
 use ahash::AHashMap;
 use anyhow::{anyhow, Context, Result};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use episode_db::{EpisodeDB, EpisodeDBInsertable};
 use file_db::{FileDB, FileDBInsertable};
 use rusqlite::{params, Connection};
-use semver::Version;
 
 use super::{Episode, EpisodeNoId, Podcast, PodcastNoId, RE_ARTICLES};
 use crate::track::Track;
@@ -129,7 +128,7 @@ impl Database {
     pub fn update_podcast(&self, pod_id: PodcastDBId, podcast: &PodcastNoId) -> Result<SyncResult> {
         PodcastDBInsertable::from(podcast).update_podcast(pod_id, &self.conn)?;
 
-        let result = self.update_episodes(pod_id, &podcast.title, &podcast.episodes)?;
+        let result = self.update_episodes(pod_id, &podcast.episodes)?;
         Ok(result)
     }
 
@@ -144,7 +143,6 @@ impl Database {
     fn update_episodes(
         &self,
         podcast_id: PodcastDBId,
-        podcast_title: &str,
         episodes: &[EpisodeNoId],
     ) -> Result<SyncResult> {
         let old_episodes = self.get_episodes(podcast_id, true)?;

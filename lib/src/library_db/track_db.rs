@@ -97,6 +97,16 @@ pub mod const_unknown {
         UNKNOWN_GENRE "no type",
         UNKNOWN_FILE "Unknown File",
     }
+
+    // TODO: use this for database migration
+    /// This is the old string that was used as default for "artist" & "album"
+    ///
+    /// this value is currently unused, but this will stay here as a reminder until the database is migrated to use NULL values
+    #[allow(unused)]
+    pub const OLD_UNSUPPORTED: &str = "Unsupported?";
+
+    // NOTE: previously artist & album were `OLD_UNSUPPORTED`, but now they are `UNKNOWN_ARTIST` or `UNKNOWN_ALBUM`, these values will stay until the database is migrated to use NULL instead
+    // even after, it is likely the `UNKNOWN_` values will continue to exist for display purposes
 }
 use const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_GENRE, UNKNOWN_TITLE};
 
