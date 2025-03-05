@@ -311,15 +311,15 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
         match message {
             Msg::Podcast(PCMsg::NewData(pod)) => {
                 msg_counter += 1;
-                let title = pod.title.clone();
+                let title = &pod.title;
                 let db_result = db_inst.insert_podcast(&pod);
                 match db_result {
                     Ok(_) => {
                         println!("Added {title}");
                     }
-                    Err(_err) => {
+                    Err(err) => {
                         failure = true;
-                        error!("Error adding {title}");
+                        error!("Error adding {title}, err: {err}");
                     }
                 }
             }
@@ -327,11 +327,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
             Msg::Podcast(PCMsg::Error(feed)) => {
                 msg_counter += 1;
                 failure = true;
-                if let Some(t) = feed.title {
-                    error!("Error retrieving RSS feed: {t}");
-                } else {
-                    error!("Error retrieving RSS feed");
-                }
+                error!("Error retrieving RSS feed: {}", feed.url);
             }
 
             Msg::Podcast(PCMsg::SyncData((_id, _pod))) => {
