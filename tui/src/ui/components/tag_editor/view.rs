@@ -343,7 +343,6 @@ impl Model {
         if let Some(lf) = s.lyric_frames() {
             vec_lang = lf.into_iter().map(|lyric| lyric.description).collect();
         }
-        vec_lang.sort();
 
         assert!(self
             .app

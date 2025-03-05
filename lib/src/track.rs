@@ -604,6 +604,11 @@ fn create_lyrics(tag: &mut LoftyTag, lyric_frames: &mut Vec<Id3Lyrics>) {
                 description: lyric.description().to_string(),
                 text: lyrics_text.to_string(),
             });
+            lyric_frames.sort_by(|a, b| {
+                a.description
+                    .to_lowercase()
+                    .cmp(&b.description.to_lowercase())
+            });
         }
     }
 }
