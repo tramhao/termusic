@@ -30,7 +30,6 @@ mod view;
 use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::{ConfigEditorMsg, Msg};
 use anyhow::Result;
-pub use color::*;
 pub use key_combo::*;
 
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};

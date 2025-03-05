@@ -413,7 +413,7 @@ impl Model {
         let mut config = self.config_tui.read().clone();
         config.settings.theme = self.config_editor.theme.clone();
         let config = new_shared_tui_settings(config);
-        self.remount_config_color(&config, Some(index));
+        self.remount_config_color(&config, Some(index)).unwrap();
     }
 
     #[allow(clippy::too_many_lines)]
