@@ -325,13 +325,13 @@ impl DataBase {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(search_str)?;
 
-        let vec_records: Vec<TrackDB> = stmt
+        let maybe_record: Option<TrackDB> = stmt
             .query_map([file_path], TrackDB::try_from_row_named)?
             .flatten()
-            .collect();
+            .next();
 
-        if let Some(record) = vec_records.first() {
-            return Ok(record.clone());
+        if let Some(record) = maybe_record {
+            return Ok(record);
         }
 
         Err(Error::QueryReturnedNoRows)
