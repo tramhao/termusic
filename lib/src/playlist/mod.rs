@@ -59,7 +59,7 @@ impl PlaylistValue {
             let as_path = url
                 .to_file_path()
                 .map_err(|()| anyhow!("Failed to convert URL to Path!"))
-                .context(url.to_string())?;
+                .with_context(|| url.to_string())?;
             *self = Self::Path(as_path);
         }
 
