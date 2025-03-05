@@ -845,9 +845,9 @@ impl MockComponent for KeyCombo {
             }
             Cmd::Cancel => {
                 self.states.cancel_tab();
-                let prev_input = self.states_input.input.clone();
+                let prev_len = self.states_input.input.len();
                 self.states_input.delete();
-                if prev_input == self.states_input.input {
+                if prev_len == self.states_input.input.len() {
                     CmdResult::None
                 } else {
                     CmdResult::Changed(self.state())
@@ -866,9 +866,9 @@ impl MockComponent for KeyCombo {
 
             Cmd::Delete => {
                 // Backspace and None
-                let prev_input = self.states_input.input.clone();
+                let prev_len = self.states_input.input.len();
                 self.states_input.backspace();
-                if prev_input == self.states_input.input {
+                if prev_len == self.states_input.input.len() {
                     CmdResult::None
                 } else {
                     CmdResult::Changed(self.state())
@@ -892,10 +892,10 @@ impl MockComponent for KeyCombo {
             }
             Cmd::Type(ch) => {
                 // Push char to input
-                let prev_input = self.states_input.input.clone();
+                let prev_len = self.states_input.input.len();
                 self.states_input.append(ch, self.get_input_len());
                 // Message on change
-                if prev_input == self.states_input.input {
+                if prev_len == self.states_input.input.len() {
                     CmdResult::None
                 } else {
                     CmdResult::Changed(self.state())
