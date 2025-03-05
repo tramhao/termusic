@@ -143,7 +143,6 @@ pub struct SelectStates {
     pub tab_open: bool,
 }
 
-#[allow(unused)]
 impl SelectStates {
     /// ### `next_choice`
     ///
@@ -228,7 +227,6 @@ pub struct InputStates {
     pub cursor: usize,    // Input position
 }
 
-#[allow(unused)]
 impl InputStates {
     /// ### `append`
     ///
@@ -326,8 +324,8 @@ pub struct KeyCombo {
     pub states_input: InputStates,
 }
 
-#[allow(unused)]
 impl KeyCombo {
+    #[allow(dead_code)]
     pub fn input_len(mut self, ilen: usize) -> Self {
         self.attr(Attribute::InputLength, AttrValue::Length(ilen));
         self
@@ -368,6 +366,7 @@ impl KeyCombo {
         self
     }
 
+    #[allow(dead_code)]
     pub fn background(mut self, bg: Color) -> Self {
         self.attr(Attribute::Background, AttrValue::Color(bg));
         self
@@ -399,6 +398,7 @@ impl KeyCombo {
         self
     }
 
+    #[allow(dead_code)]
     pub fn inactive(mut self, s: Style) -> Self {
         self.attr(Attribute::FocusStyle, AttrValue::Style(s));
         self
@@ -589,19 +589,25 @@ impl KeyCombo {
         render.render_stateful_widget(list, chunks[1], &mut state);
     }
 
+    /// Get the style for the closed normal, focused, non-invalid color
+    fn get_normal_closed_style(&self) -> Style {
+        let foreground = self
+            .props
+            .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
+            .unwrap_color();
+        let background = self
+            .props
+            .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
+            .unwrap_color();
+
+        Style::default().bg(background).fg(foreground)
+    }
+
     /// ### `render_closed_tab`
     ///
     /// Render component when tab is closed
     fn render_closed_tab(&self, render: &mut Frame<'_>, area: Rect) {
         // Render select
-        let mut foreground = self
-            .props
-            .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
-            .unwrap_color();
-        let mut background = self
-            .props
-            .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
-            .unwrap_color();
         let inactive_style = self
             .props
             .get(Attribute::FocusStyle)
@@ -611,7 +617,7 @@ impl KeyCombo {
             .get_or(Attribute::Focus, AttrValue::Flag(false))
             .unwrap_flag();
         let mut style = if focus {
-            Style::default().bg(background).fg(foreground)
+            self.get_normal_closed_style()
         } else {
             inactive_style.unwrap_or_default()
         };
@@ -647,8 +653,6 @@ impl KeyCombo {
                 .map(AttrValue::unwrap_style)
             {
                 block = block.border_style(style_invalid);
-                foreground = style_invalid.fg.unwrap_or(Color::Reset);
-                background = style_invalid.bg.unwrap_or(Color::Reset);
                 style = style_invalid;
             }
         }

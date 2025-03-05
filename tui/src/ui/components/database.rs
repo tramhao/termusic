@@ -583,7 +583,6 @@ impl Model {
         self.app.active(&Id::DBListSearchTracks).ok();
     }
 
-    #[allow(unused)]
     pub fn database_reload(&mut self) {
         assert!(self
             .app

@@ -87,7 +87,6 @@ impl Default for Instance {
     }
 }
 
-#[allow(unused)]
 impl Instance {
     pub async fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
         let client = ClientBuilder::new()
