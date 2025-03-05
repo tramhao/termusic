@@ -1,3 +1,4 @@
+use crate::ui::model::Model;
 /**
  * MIT License
  *
@@ -24,8 +25,10 @@
 use crate::ui::{ConfigEditorMsg, Msg};
 use crate::CombinedSettings;
 
+use anyhow::Result;
 use termusiclib::config::v2::tui::{keys::Keys, Alignment as XywhAlign};
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::types::{Id, IdConfigEditor};
 use tui_realm_stdlib::{Input, Radio};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{
@@ -865,5 +868,149 @@ impl Component<Msg, NoUserEvent> for PlayerPort {
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
         )
+    }
+}
+
+impl Model {
+    /// Mount / Remount the Config-Editor's First Page, the General Options
+    pub(super) fn remount_config_general(&mut self) -> Result<()> {
+        // Mount general page
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::MusicDir),
+            Box::new(MusicDir::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
+            Box::new(ExitConfirmation::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
+            Box::new(PlaylistDisplaySymbol::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
+            Box::new(PlaylistRandomTrack::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
+            Box::new(PlaylistRandomAlbum::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PodcastDir),
+            Box::new(PodcastDir::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
+            Box::new(PodcastSimulDownload::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
+            Box::new(PodcastMaxRetries::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
+            Box::new(AlbumPhotoAlign::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
+            Box::new(SaveLastPosition::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::SeekStep),
+            Box::new(ConfigSeekStep::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::KillDamon),
+            Box::new(KillDaemon::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
+            Box::new(PlayerUseMpris::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
+            Box::new(PlayerUseDiscord::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlayerPort),
+            Box::new(PlayerPort::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's First Page, the General Options
+    pub(super) fn umount_config_general(&mut self) -> Result<()> {
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::MusicDir))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastDir))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::SeekStep))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KillDamon))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerPort))?;
+
+        Ok(())
     }
 }

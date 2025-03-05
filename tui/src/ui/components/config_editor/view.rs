@@ -1,26 +1,26 @@
 use crate::ui::components::{
-    AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
-    ConfigDatabaseAddAll, ConfigDatabaseAddSelected, ConfigFallbackBackground,
-    ConfigFallbackBorder, ConfigFallbackForeground, ConfigFallbackHighlight, ConfigFallbackTitle,
-    ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop,
-    ConfigGlobalHelp, ConfigGlobalLayoutDatabase, ConfigGlobalLayoutPodcast,
-    ConfigGlobalLayoutTreeview, ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward,
-    ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle, ConfigGlobalPlayerNext,
-    ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward,
-    ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless,
-    ConfigGlobalPlayerTogglePause, ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist,
-    ConfigGlobalUp, ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigGlobalXywhHide,
-    ConfigGlobalXywhMoveDown, ConfigGlobalXywhMoveLeft, ConfigGlobalXywhMoveRight,
-    ConfigGlobalXywhMoveUp, ConfigGlobalXywhZoomIn, ConfigGlobalXywhZoomOut,
-    ConfigImportantPopupBackground, ConfigImportantPopupBorder, ConfigImportantPopupForeground,
-    ConfigImportantPopupTitle, ConfigLibraryAddRoot, ConfigLibraryBackground, ConfigLibraryBorder,
-    ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
-    ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
-    ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
-    ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
-    ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
-    ConfigPlaylistAddRandomAlbum, ConfigPlaylistAddRandomTracks, ConfigPlaylistBackground,
-    ConfigPlaylistBorder, ConfigPlaylistDelete, ConfigPlaylistDeleteAll, ConfigPlaylistForeground,
+    CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol, ConfigDatabaseAddAll,
+    ConfigDatabaseAddSelected, ConfigFallbackBackground, ConfigFallbackBorder,
+    ConfigFallbackForeground, ConfigFallbackHighlight, ConfigFallbackTitle, ConfigGlobalConfig,
+    ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp,
+    ConfigGlobalLayoutDatabase, ConfigGlobalLayoutPodcast, ConfigGlobalLayoutTreeview,
+    ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward,
+    ConfigGlobalLyricCycle, ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious,
+    ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown,
+    ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause,
+    ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp,
+    ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigGlobalXywhHide, ConfigGlobalXywhMoveDown,
+    ConfigGlobalXywhMoveLeft, ConfigGlobalXywhMoveRight, ConfigGlobalXywhMoveUp,
+    ConfigGlobalXywhZoomIn, ConfigGlobalXywhZoomOut, ConfigImportantPopupBackground,
+    ConfigImportantPopupBorder, ConfigImportantPopupForeground, ConfigImportantPopupTitle,
+    ConfigLibraryAddRoot, ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryDelete,
+    ConfigLibraryForeground, ConfigLibraryHighlight, ConfigLibraryHighlightSymbol,
+    ConfigLibraryLoadDir, ConfigLibraryPaste, ConfigLibraryRemoveRoot, ConfigLibrarySearch,
+    ConfigLibrarySearchYoutube, ConfigLibrarySwitchRoot, ConfigLibraryTagEditor,
+    ConfigLibraryTitle, ConfigLibraryYank, ConfigLyricBackground, ConfigLyricBorder,
+    ConfigLyricForeground, ConfigLyricTitle, ConfigPlaylistAddRandomAlbum,
+    ConfigPlaylistAddRandomTracks, ConfigPlaylistBackground, ConfigPlaylistBorder,
+    ConfigPlaylistDelete, ConfigPlaylistDeleteAll, ConfigPlaylistForeground,
     ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol, ConfigPlaylistModeCycle,
     ConfigPlaylistPlaySelected, ConfigPlaylistSearch, ConfigPlaylistShuffle,
     ConfigPlaylistSwapDown, ConfigPlaylistSwapUp, ConfigPlaylistTitle, ConfigPodcastDeleteAllFeeds,
@@ -28,9 +28,7 @@ use crate::ui::components::{
     ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed, ConfigPodcastRefreshAllFeeds,
     ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed, ConfigProgressBackground,
     ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle, ConfigSavePopup,
-    ConfigSeekStep, ExitConfirmation, GlobalListener, KillDaemon, MusicDir, PlayerPort,
-    PlayerUseDiscord, PlayerUseMpris, PlaylistDisplaySymbol, PlaylistRandomAlbum,
-    PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
+    GlobalListener,
 };
 use include_dir::DirEntry;
 use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
@@ -1736,141 +1734,8 @@ impl Model {
 
         self.remount_config_header_footer().unwrap();
 
-        // Mount general page
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::MusicDir),
-                Box::new(MusicDir::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
+        self.remount_config_general().unwrap();
 
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
-                Box::new(ExitConfirmation::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
-                Box::new(PlaylistDisplaySymbol::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
-                Box::new(PlaylistRandomTrack::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
-                Box::new(PlaylistRandomAlbum::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PodcastDir),
-                Box::new(PodcastDir::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
-                Box::new(PodcastSimulDownload::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
-                Box::new(PodcastMaxRetries::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
-                Box::new(AlbumPhotoAlign::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
-                Box::new(SaveLastPosition::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::SeekStep),
-                Box::new(ConfigSeekStep::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::KillDamon),
-                Box::new(KillDaemon::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
-                Box::new(PlayerUseMpris::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
-                Box::new(PlayerUseDiscord::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlayerPort),
-                Box::new(PlayerPort::new(self.get_combined_settings())),
-                vec![]
-            )
-            .is_ok());
         let config = self.config_tui.clone();
         self.remount_config_color(&config, None);
 
@@ -2708,76 +2573,7 @@ impl Model {
 
         self.umount_config_header_footer().unwrap();
 
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::MusicDir))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
-            .is_ok());
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
-            .is_ok());
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
-            .is_ok());
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
-            .is_ok());
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::SeekStep))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::KillDamon))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
-            .is_ok());
+        self.umount_config_general().unwrap();
 
         assert!(self
             .app
