@@ -27,6 +27,7 @@ pub struct Podcast {
 
 impl Podcast {
     // Counts and returns the number of unplayed episodes in the podcast.
+    #[must_use]
     pub fn num_unplayed(&self) -> usize {
         self.episodes
             .iter()

@@ -87,11 +87,13 @@ pub enum SeekStep {
 
 impl SeekStep {
     #[allow(clippy::missing_panics_doc)] // const unwrap
+    #[must_use]
     pub fn default_both() -> Self {
         Self::Both(NonZeroU32::new(5).unwrap())
     }
 
     #[allow(clippy::missing_panics_doc)] // const unwrap
+    #[must_use]
     pub fn default_depends() -> Self {
         Self::Depends {
             short_tracks: NonZeroU32::new(5).unwrap(),
@@ -102,6 +104,7 @@ impl SeekStep {
     /// Get Seek Step, depending on track-length
     ///
     /// directly returns a i64, though the value is never negative returned from here
+    #[must_use]
     pub fn get_step(&self, track_len: u64) -> i64 {
         match self {
             SeekStep::Both(v) => v.get().into(),
@@ -152,6 +155,7 @@ pub enum PositionYesNo {
 
 impl PositionYesNo {
     /// Get the time before saving the track position, if enabled
+    #[must_use]
     pub fn get_time(&self, media_type: MediaType) -> Option<u64> {
         match self {
             PositionYesNo::Simple(v) => match v {
@@ -167,6 +171,7 @@ impl PositionYesNo {
     }
 
     /// Get if the current value means "it is enabled"
+    #[must_use]
     pub fn is_enabled(&self) -> bool {
         match self {
             PositionYesNo::Simple(v) => *v == PositionYesNoLower::Yes,
@@ -189,6 +194,7 @@ pub enum RememberLastPosition {
 
 impl RememberLastPosition {
     /// Get the time before saving the track position, if enabled
+    #[must_use]
     pub fn get_time(&self, media_type: MediaType) -> Option<u64> {
         match self {
             RememberLastPosition::All(v) => v.get_time(media_type),
@@ -204,6 +210,7 @@ impl RememberLastPosition {
     ///
     /// use case is in the restore of the last position
     #[allow(clippy::needless_pass_by_value)] // "MediaType" is a 1-byte copy
+    #[must_use]
     pub fn is_enabled_for(&self, media_type: MediaType) -> bool {
         match self {
             RememberLastPosition::All(v) => v.is_enabled(),
@@ -308,6 +315,7 @@ pub enum LoopMode {
 }
 
 impl LoopMode {
+    #[must_use]
     pub fn display(self, display_symbol: bool) -> &'static str {
         if display_symbol {
             match self {
@@ -325,11 +333,13 @@ impl LoopMode {
     }
 
     /// Convert the current enum variant into its number representation
+    #[must_use]
     pub fn discriminant(&self) -> u8 {
         (*self) as u8
     }
 
     /// Try to convert the input number representation to a variant
+    #[must_use]
     pub fn tryfrom_discriminant(num: u8) -> Option<Self> {
         Some(match num {
             0 => Self::Single,

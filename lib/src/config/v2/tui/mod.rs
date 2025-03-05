@@ -56,6 +56,7 @@ impl TuiSettings {
     }
 
     /// Get the resolved com-settings, if resolved
+    #[must_use]
     pub fn get_com(&self) -> Option<&ComSettings> {
         self.com_resolved.as_ref()
     }

@@ -27,6 +27,7 @@ pub struct ThemeWrap {
 }
 
 impl ThemeWrap {
+    #[must_use]
     pub fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
         match color {
             ColorTermusic::Reset => Color::Reset,
@@ -52,106 +53,127 @@ impl ThemeWrap {
     }
 
     #[inline]
+    #[must_use]
     pub fn library_foreground(&self) -> Color {
         self.get_color_from_theme(self.style.library.foreground_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn library_background(&self) -> Color {
         self.get_color_from_theme(self.style.library.background_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn library_highlight(&self) -> Color {
         self.get_color_from_theme(self.style.library.highlight_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn library_border(&self) -> Color {
         self.get_color_from_theme(self.style.library.border_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn playlist_foreground(&self) -> Color {
         self.get_color_from_theme(self.style.playlist.foreground_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn playlist_background(&self) -> Color {
         self.get_color_from_theme(self.style.playlist.background_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn playlist_highlight(&self) -> Color {
         self.get_color_from_theme(self.style.playlist.highlight_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn playlist_border(&self) -> Color {
         self.get_color_from_theme(self.style.playlist.border_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn progress_foreground(&self) -> Color {
         self.get_color_from_theme(self.style.progress.foreground_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn progress_background(&self) -> Color {
         self.get_color_from_theme(self.style.progress.background_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn progress_border(&self) -> Color {
         self.get_color_from_theme(self.style.progress.border_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn lyric_foreground(&self) -> Color {
         self.get_color_from_theme(self.style.lyric.foreground_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn lyric_background(&self) -> Color {
         self.get_color_from_theme(self.style.lyric.background_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn lyric_border(&self) -> Color {
         self.get_color_from_theme(self.style.lyric.border_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn important_popup_foreground(&self) -> Color {
         self.get_color_from_theme(self.style.important_popup.foreground_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn important_popup_background(&self) -> Color {
         self.get_color_from_theme(self.style.important_popup.background_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn important_popup_border(&self) -> Color {
         self.get_color_from_theme(self.style.important_popup.border_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn fallback_foreground(&self) -> Color {
         self.get_color_from_theme(self.style.fallback.foreground_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn fallback_background(&self) -> Color {
         self.get_color_from_theme(self.style.fallback.background_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn fallback_highlight(&self) -> Color {
         self.get_color_from_theme(self.style.fallback.highlight_color)
     }
 
     #[inline]
+    #[must_use]
     pub fn fallback_border(&self) -> Color {
         self.get_color_from_theme(self.style.fallback.border_color)
     }
@@ -180,6 +202,7 @@ pub struct ThemeColor {
 
 impl ThemeColor {
     /// Create a new instance with those values
+    #[must_use]
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
@@ -207,6 +230,7 @@ impl ThemeColor {
 
     /// Convert to hex prefix + 6 length string
     #[inline]
+    #[must_use]
     pub fn to_hex(&self) -> String {
         format!("#{:02x}{:02x}{:02x}", self.r, self.g, self.b)
     }
@@ -285,6 +309,7 @@ impl ThemeColors {
     /// Get the full default theme, including names.
     ///
     /// This function is different from [`Self::default`] as the trait impl is also used for filling empty places
+    #[must_use]
     pub fn full_default() -> Self {
         Self {
             name: "Termusic Default".to_string(),

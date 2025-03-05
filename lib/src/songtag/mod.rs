@@ -129,28 +129,34 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 }
 
 impl SongTag {
+    #[must_use]
     pub fn artist(&self) -> Option<&str> {
         self.artist.as_deref()
     }
 
+    #[must_use]
     pub fn album(&self) -> Option<&str> {
         self.album.as_deref()
     }
 
     /// Optionally return the title of the song
     /// If `None` it wasn't able to read the tags
+    #[must_use]
     pub fn title(&self) -> Option<&str> {
         self.title.as_deref()
     }
 
+    #[must_use]
     pub fn lang_ext(&self) -> Option<&str> {
         self.lang_ext.as_deref()
     }
 
+    #[must_use]
     pub const fn service_provider(&self) -> ServiceProvider {
         self.service_provider
     }
 
+    #[must_use]
     pub const fn url(&self) -> Option<&UrlTypes> {
         self.url.as_ref()
     }

@@ -70,6 +70,7 @@ pub struct PodcastFeed {
 }
 
 impl PodcastFeed {
+    #[must_use]
     pub fn new(id: Option<i64>, url: &str, title: Option<String>) -> Self {
         Self {
             id,

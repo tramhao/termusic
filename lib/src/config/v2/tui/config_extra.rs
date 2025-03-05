@@ -168,6 +168,7 @@ impl TuiConfigVersionedDefaulted<'_> {
     /// Convert Into the type used by the application, instead of what is parsed
     ///
     /// Will convert any version into the latest
+    #[must_use]
     pub fn into_settings(self) -> ApplicationType {
         let versioned = match self {
             TuiConfigVersionedDefaulted::Versioned(versioned) => versioned,
@@ -193,6 +194,7 @@ impl TuiConfigVersioned<'_> {
     /// Convert Into the type used by the application, instead of what is parsed
     ///
     /// Will convert any version into the latest
+    #[must_use]
     pub fn into_settings(self) -> ApplicationType {
         match self {
             TuiConfigVersioned::V2(v) => v.into_owned(),

@@ -12,6 +12,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::config::ServerOverlay;
 
+#[must_use]
 pub fn get_pin_yin(input: &str) -> String {
     let mut b = String::new();
     for (index, f) in input.to_pinyin().enumerate() {
@@ -30,6 +31,7 @@ pub fn get_pin_yin(input: &str) -> String {
 }
 
 // TODO: decide filetype supported by backend instead of in library
+#[must_use]
 pub fn filetype_supported(current_node: &str) -> bool {
     let p = Path::new(current_node);
 
@@ -52,6 +54,7 @@ pub fn filetype_supported(current_node: &str) -> bool {
     }
 }
 
+#[must_use]
 pub fn is_playlist(current_node: &str) -> bool {
     let p = Path::new(current_node);
 
@@ -66,6 +69,7 @@ pub fn is_playlist(current_node: &str) -> bool {
 }
 
 /// Get the parent path of the given `path`, if there is none use the tempdir
+#[must_use]
 pub fn get_parent_folder(path: &Path) -> Cow<'_, Path> {
     if path.is_dir() {
         return path.into();
@@ -233,6 +237,7 @@ pub fn absolute_path(path: &Path) -> std::io::Result<Cow<'_, Path>> {
 /// `.\somewhere` -> `C:\somewhere`
 ///
 /// in the future consider replacing with [`std::path::absolute`] once stable
+#[must_use]
 pub fn absolute_path_base<'a>(path: &'a Path, base: &Path) -> Cow<'a, Path> {
     if path.is_absolute() {
         Cow::Borrowed(path)
@@ -242,6 +247,7 @@ pub fn absolute_path_base<'a>(path: &'a Path, base: &Path) -> Cow<'a, Path> {
 }
 
 /// Generate `len` random ascii character (a-z0-9)
+#[must_use]
 pub fn random_ascii(len: usize) -> String {
     rand::thread_rng()
         .sample_iter(&rand::distributions::Alphanumeric)

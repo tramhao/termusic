@@ -7,6 +7,7 @@ use tokio_util::sync::CancellationToken;
 /// Manages a taskpool of a given size of how many task to execute at once.
 ///
 /// Also cancels all tasks spawned by this pool on [`Drop`]
+#[must_use]
 pub struct TaskPool {
     /// Semaphore to manage how many active tasks there at a time
     semaphore: Arc<Semaphore>,

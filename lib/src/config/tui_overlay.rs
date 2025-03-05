@@ -17,6 +17,7 @@ impl TuiOverlay {
     /// Get whether the coverart should be hidden or not, either the overwrite if present, otherwise the config itself
     ///
     /// true => hidden
+    #[must_use]
     pub fn get_coverart_hidden(&self) -> bool {
         if let Some(overwrite) = self.coverart_hidden_overwrite {
             overwrite

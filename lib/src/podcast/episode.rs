@@ -28,6 +28,7 @@ pub struct Episode {
 
 impl Episode {
     /// Formats the duration in seconds into an HH:MM:SS format.
+    #[must_use]
     pub fn format_duration(&self) -> String {
         match self.duration {
             Some(dur) => {
