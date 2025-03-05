@@ -79,3 +79,6 @@ pretty_assertions.workspace = true # = "1"
 # hound = "3.4"
 # ringbuf = "0.3"
 # clap = { version = "3.1", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true

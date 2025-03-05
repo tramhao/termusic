@@ -122,3 +122,12 @@ lto = true
 # panic = 'abort'
 # opt-level = 'z'
 # codegen-units = 1
+
+[workspace.lints.rust]
+rust_2018_idioms = { level = "warn", priority = -1 }
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+correctness = { level = "warn", priority = -1 }
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }

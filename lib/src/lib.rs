@@ -1,8 +1,4 @@
-#![forbid(unsafe_code)]
-#![recursion_limit = "2048"]
-#![warn(clippy::all, clippy::correctness)]
-#![warn(rust_2018_idioms)]
-#![warn(clippy::pedantic)]
+// TODO: work to remove the following lints
 #![allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 
 pub mod config;
