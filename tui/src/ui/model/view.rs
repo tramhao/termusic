@@ -492,7 +492,7 @@ impl Model {
     pub fn mount_label_help(&mut self) {
         let config = self.config_tui.read();
         self.app
-            .remount(Id::Label, Box::new(Footer::new(&config)), Vec::default())
+            .remount(Id::Label, Box::new(Footer::new(&config)), Vec::new())
             .expect("Expected to remount without error");
     }
 
@@ -528,7 +528,7 @@ impl Model {
                             .bold(),
                     ],
                 )),
-                Vec::default(),
+                Vec::new(),
             )
             .expect("Expected to remount without error");
         Ok(())

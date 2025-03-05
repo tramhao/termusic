@@ -178,7 +178,7 @@ impl Model {
         self.app.remount(
             Id::Label,
             Box::new(TEFooter::new(&self.config_tui.read())),
-            Vec::default(),
+            Vec::new(),
         )?;
         self.app.remount(
             Id::TagEditor(IdTagEditor::LabelHint),
