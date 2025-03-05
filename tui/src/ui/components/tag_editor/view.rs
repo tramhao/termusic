@@ -28,6 +28,7 @@ use crate::ui::components::{
 };
 use crate::ui::model::Model;
 use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
+use anyhow::Result;
 use std::convert::TryFrom;
 use std::path::Path;
 use termusiclib::track::Track;
@@ -172,6 +173,65 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
+    /// Mount / Remount the Tag Editor
+    fn remount_tageditor(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::Label,
+            Box::new(TEFooter::new(&self.config_tui.read())),
+            Vec::default(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::LabelHint),
+            Box::new(LabelGeneric::new(
+                &self.config_tui.read(),
+                "Press <ENTER> to search:",
+            )),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::InputArtist),
+            Box::new(TEInputArtist::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::InputTitle),
+            Box::new(TEInputTitle::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::InputAlbum),
+            Box::new(TEInputAlbum::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::InputGenre),
+            Box::new(TEInputGenre::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::TableLyricOptions),
+            Box::new(TETableLyricOptions::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::SelectLyric),
+            Box::new(TESelectLyric::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::CounterDelete),
+            Box::new(TECounterDelete::new(5, self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::TextareaLyric),
+            Box::new(TETextareaLyric::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
     #[allow(clippy::too_many_lines)]
     pub fn mount_tageditor(&mut self, node_id: &str) {
         let node_path: &Path = Path::new(node_id);
@@ -188,89 +248,7 @@ impl Model {
             }
         };
 
-        assert!(self
-            .app
-            .remount(
-                Id::Label,
-                Box::new(TEFooter::new(&self.config_tui.read())),
-                Vec::default(),
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::LabelHint),
-                Box::new(LabelGeneric::new(
-                    &self.config_tui.read(),
-                    "Press <ENTER> to search:"
-                )),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::InputArtist),
-                Box::new(TEInputArtist::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::InputTitle),
-                Box::new(TEInputTitle::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::InputAlbum),
-                Box::new(TEInputAlbum::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::InputGenre),
-                Box::new(TEInputGenre::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::TableLyricOptions),
-                Box::new(TETableLyricOptions::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::SelectLyric),
-                Box::new(TESelectLyric::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::CounterDelete),
-                Box::new(TECounterDelete::new(5, self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::TextareaLyric),
-                Box::new(TETextareaLyric::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
+        self.remount_tageditor().unwrap();
 
         self.app
             .active(&Id::TagEditor(IdTagEditor::InputArtist))
@@ -282,34 +260,27 @@ impl Model {
         }
     }
 
+    /// Unmount the Tag Editor
+    fn umount_tageditor_inner(&mut self) -> Result<()> {
+        self.app.umount(&Id::TagEditor(IdTagEditor::LabelHint))?;
+        self.app.umount(&Id::TagEditor(IdTagEditor::InputArtist))?;
+        self.app.umount(&Id::TagEditor(IdTagEditor::InputTitle))?;
+        self.app.umount(&Id::TagEditor(IdTagEditor::InputAlbum))?;
+        self.app.umount(&Id::TagEditor(IdTagEditor::InputGenre))?;
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TableLyricOptions))?;
+        self.app.umount(&Id::TagEditor(IdTagEditor::SelectLyric))?;
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::CounterDelete))?;
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TextareaLyric))?;
+
+        Ok(())
+    }
+
     pub fn umount_tageditor(&mut self) {
         self.mount_label_help();
-        self.app.umount(&Id::TagEditor(IdTagEditor::LabelHint)).ok();
-        self.app
-            .umount(&Id::TagEditor(IdTagEditor::InputArtist))
-            .ok();
-        self.app
-            .umount(&Id::TagEditor(IdTagEditor::InputTitle))
-            .ok();
-        self.app
-            .umount(&Id::TagEditor(IdTagEditor::InputAlbum))
-            .ok();
-        self.app
-            .umount(&Id::TagEditor(IdTagEditor::InputGenre))
-            .ok();
-        // self.app.umount(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
-        self.app
-            .umount(&Id::TagEditor(IdTagEditor::TableLyricOptions))
-            .ok();
-        self.app
-            .umount(&Id::TagEditor(IdTagEditor::SelectLyric))
-            .ok();
-        self.app
-            .umount(&Id::TagEditor(IdTagEditor::CounterDelete))
-            .ok();
-        self.app
-            .umount(&Id::TagEditor(IdTagEditor::TextareaLyric))
-            .ok();
+        self.umount_tageditor_inner().unwrap();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
