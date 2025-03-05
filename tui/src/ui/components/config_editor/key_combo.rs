@@ -469,7 +469,7 @@ impl KeyCombo {
             .states
             .choices
             .iter()
-            .map(|x| ListItem::new(Span::from(x.clone())))
+            .map(|x| ListItem::new(Span::from(x)))
             .collect();
         let mut foreground = self
             .props
@@ -490,9 +490,9 @@ impl KeyCombo {
             .constraints([Constraint::Length(2), Constraint::Min(1)].as_ref())
             .split(area);
         // Render like "closed" tab in chunk 0
-        let selected_text: String = match self.states.choices.get(self.states.selected) {
-            None => String::default(),
-            Some(s) => s.clone(),
+        let selected_text = match self.states.choices.get(self.states.selected) {
+            None => "",
+            Some(s) => s.as_str(),
         };
         let borders = self
             .props
@@ -656,9 +656,9 @@ impl KeyCombo {
                 style = style_invalid;
             }
         }
-        let selected_text: String = match self.states.choices.get(self.states.selected) {
-            None => String::default(),
-            Some(s) => s.clone(),
+        let selected_text = match self.states.choices.get(self.states.selected) {
+            None => "",
+            Some(s) => s.as_str(),
         };
         let p: Paragraph<'_> = Paragraph::new(selected_text).style(style).block(block);
 
