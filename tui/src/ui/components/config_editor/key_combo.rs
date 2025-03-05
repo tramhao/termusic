@@ -301,9 +301,9 @@ impl InputStates {
 
     /// ### `render_value_chars`
     ///
-    /// Render value as a vec of chars
-    pub fn render_value_chars(&self) -> Vec<char> {
-        self.input.clone()
+    /// Get the current input as a slice
+    pub fn render_value_chars(&self) -> &[char] {
+        &self.input
     }
 
     /// ### `get_value`
