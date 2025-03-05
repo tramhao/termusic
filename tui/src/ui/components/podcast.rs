@@ -843,7 +843,7 @@ impl Model {
 
             for ep in &mut podcast_selected.episodes {
                 if ep.path.is_some() {
-                    match std::fs::remove_file(ep.path.clone().unwrap()) {
+                    match std::fs::remove_file(ep.path.as_ref().unwrap()) {
                         Ok(()) => {
                             eps_to_remove.push(ep.id);
                             ep.path = None;
@@ -981,8 +981,7 @@ impl Model {
         let search = format!("*{}*", input.to_lowercase());
         let mut db_tracks = vec![];
         // Get all episodes
-        let podcasts = self.podcast.podcasts.clone();
-        for podcast in podcasts {
+        for podcast in &self.podcast.podcasts {
             if let Ok(episodes) = self.podcast.db_podcast.get_episodes(podcast.id, true) {
                 db_tracks.extend(episodes);
             }
@@ -1016,7 +1015,7 @@ impl Model {
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
         // Get all episodes
-        let db_tracks = self.podcast.podcasts.clone();
+        let db_tracks = &self.podcast.podcasts;
 
         if db_tracks.is_empty() {
             table.add_col(TextSpan::from("0"));
@@ -1030,7 +1029,7 @@ impl Model {
                     }
                     table
                         .add_col(TextSpan::new(idx.to_string()))
-                        .add_col(TextSpan::new(record.title).bold())
+                        .add_col(TextSpan::new(&record.title).bold())
                         .add_col(TextSpan::new(format!("{}", record.id)));
                     idx += 1;
                 }
