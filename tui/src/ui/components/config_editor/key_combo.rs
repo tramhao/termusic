@@ -971,7 +971,7 @@ mod test {
         states.set_choices(choices);
         assert_eq!(states.selected, 1); // Move to first index available
         assert_eq!(states.choices.len(), 2);
-        let choices = vec![];
+        let choices = Vec::new();
         states.set_choices(&choices);
         assert_eq!(states.selected, 0); // Move to first index available
         assert_eq!(states.choices.len(), 0);
@@ -1104,7 +1104,7 @@ impl KEModifierSelect {
     ) -> Self {
         let config_r = config.read();
         let (init_select, init_key) = Self::init_modifier_select(id, &config_r.settings.keys);
-        let mut choices = vec![];
+        let mut choices = Vec::new();
         for modifier in MyModifiers::LIST {
             choices.push(modifier.as_str());
         }
@@ -3073,180 +3073,180 @@ impl Model {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)),
             Box::new(ConfigGlobalQuit::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)),
             Box::new(ConfigGlobalLeft::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)),
             Box::new(ConfigGlobalRight::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)),
             Box::new(ConfigGlobalUp::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)),
             Box::new(ConfigGlobalDown::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)),
             Box::new(ConfigGlobalGotoTop::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoBottom)),
             Box::new(ConfigGlobalGotoBottom::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerTogglePause)),
             Box::new(ConfigGlobalPlayerTogglePause::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerNext)),
             Box::new(ConfigGlobalPlayerNext::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerPrevious)),
             Box::new(ConfigGlobalPlayerPrevious::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)),
             Box::new(ConfigGlobalHelp::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeUp)),
             Box::new(ConfigGlobalVolumeUp::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeDown)),
             Box::new(ConfigGlobalVolumeDown::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekForward)),
             Box::new(ConfigGlobalPlayerSeekForward::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekBackward)),
             Box::new(ConfigGlobalPlayerSeekBackward::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedUp)),
             Box::new(ConfigGlobalPlayerSpeedUp::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedDown)),
             Box::new(ConfigGlobalPlayerSpeedDown::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustForward)),
             Box::new(ConfigGlobalLyricAdjustForward::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustBackward)),
             Box::new(ConfigGlobalLyricAdjustBackward::new(
                 self.config_tui.clone(),
             )),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricCycle)),
             Box::new(ConfigGlobalLyricCycle::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerToggleGapless)),
             Box::new(ConfigGlobalPlayerToggleGapless::new(
                 self.config_tui.clone(),
             )),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutTreeview)),
             Box::new(ConfigGlobalLayoutTreeview::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutDatabase)),
             Box::new(ConfigGlobalLayoutDatabase::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)),
             Box::new(ConfigGlobalConfig::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalSavePlaylist)),
             Box::new(ConfigGlobalSavePlaylist::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutPodcast)),
             Box::new(ConfigGlobalLayoutPodcast::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft)),
             Box::new(ConfigGlobalXywhMoveLeft::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveRight)),
             Box::new(ConfigGlobalXywhMoveRight::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveUp)),
             Box::new(ConfigGlobalXywhMoveUp::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveDown)),
             Box::new(ConfigGlobalXywhMoveDown::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomIn)),
             Box::new(ConfigGlobalXywhZoomIn::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomOut)),
             Box::new(ConfigGlobalXywhZoomOut::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhHide)),
             Box::new(ConfigGlobalXywhHide::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         Ok(())
@@ -3257,55 +3257,55 @@ impl Model {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)),
             Box::new(ConfigLibraryDelete::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryLoadDir)),
             Box::new(ConfigLibraryLoadDir::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)),
             Box::new(ConfigLibraryYank::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)),
             Box::new(ConfigLibraryPaste::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)),
             Box::new(ConfigLibrarySearch::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearchYoutube)),
             Box::new(ConfigLibrarySearchYoutube::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryTagEditor)),
             Box::new(ConfigLibraryTagEditor::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySwitchRoot)),
             Box::new(ConfigLibrarySwitchRoot::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryAddRoot)),
             Box::new(ConfigLibraryAddRoot::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryRemoveRoot)),
             Box::new(ConfigLibraryRemoveRoot::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         Ok(())
@@ -3316,53 +3316,53 @@ impl Model {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDelete)),
             Box::new(ConfigPlaylistDelete::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDeleteAll)),
             Box::new(ConfigPlaylistDeleteAll::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistShuffle)),
             Box::new(ConfigPlaylistShuffle::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSearch)),
             Box::new(ConfigPlaylistSearch::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistPlaySelected)),
             Box::new(ConfigPlaylistPlaySelected::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistModeCycle)),
             Box::new(ConfigPlaylistModeCycle::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapDown)),
             Box::new(ConfigPlaylistSwapDown::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapUp)),
             Box::new(ConfigPlaylistSwapUp::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
             Box::new(ConfigPlaylistAddRandomAlbum::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomTracks)),
             Box::new(ConfigPlaylistAddRandomTracks::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         Ok(())
@@ -3373,13 +3373,13 @@ impl Model {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
             Box::new(ConfigDatabaseAddAll::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddSelected)),
             Box::new(ConfigDatabaseAddSelected::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         Ok(())
@@ -3390,47 +3390,47 @@ impl Model {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkPlayed)),
             Box::new(ConfigPodcastMarkPlayed::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed)),
             Box::new(ConfigPodcastMarkAllPlayed::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDownload)),
             Box::new(ConfigPodcastEpDownload::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDeleteFile)),
             Box::new(ConfigPodcastEpDeleteFile::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteFeed)),
             Box::new(ConfigPodcastDeleteFeed::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds)),
             Box::new(ConfigPodcastDeleteAllFeeds::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshFeed)),
             Box::new(ConfigPodcastRefreshFeed::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds)),
             Box::new(ConfigPodcastRefreshAllFeeds::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastSearchAddFeed)),
             Box::new(ConfigPodcastSearchAddFeed::new(self.config_tui.clone())),
-            vec![],
+            Vec::new(),
         )?;
 
         Ok(())
