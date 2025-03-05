@@ -219,7 +219,7 @@ impl Model {
                         extract_filepath(result.output(), &path.to_string_lossy())
                     {
                         tx.send(Msg::Download(DLMsg::DownloadCompleted(
-                            url.clone(),
+                            url,
                             Some(file_fullname.clone()),
                         )))
                         .ok();
@@ -229,7 +229,7 @@ impl Model {
 
                         embed_downloaded_lrc(&path, &file_fullname);
                     } else {
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(url, None)))
                             .ok();
                     }
                 }
@@ -241,7 +241,7 @@ impl Model {
                     )))
                     .ok();
                     sleep(Duration::from_secs(5));
-                    tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
+                    tx.send(Msg::Download(DLMsg::DownloadCompleted(url, None)))
                         .ok();
                 }
             }
