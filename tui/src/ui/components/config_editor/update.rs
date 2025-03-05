@@ -350,16 +350,13 @@ impl Model {
 
                 match id {
                     IdConfigEditor::LibraryHighlightSymbol => {
-                        self.config_editor.theme.style.library.highlight_symbol =
-                            symbol.to_string();
+                        self.config_editor.theme.style.library.highlight_symbol = symbol;
                     }
                     IdConfigEditor::PlaylistHighlightSymbol => {
-                        self.config_editor.theme.style.playlist.highlight_symbol =
-                            symbol.to_string();
+                        self.config_editor.theme.style.playlist.highlight_symbol = symbol;
                     }
                     IdConfigEditor::CurrentlyPlayingTrackSymbol => {
-                        self.config_editor.theme.style.playlist.current_track_symbol =
-                            symbol.to_string();
+                        self.config_editor.theme.style.playlist.current_track_symbol = symbol;
                     }
                     _ => {}
                 };

@@ -136,8 +136,7 @@ impl Model {
                 table.add_row();
             }
             let duration =
-                Track::duration_formatted_short(&Duration::from_secs(record.length_seconds))
-                    .to_string();
+                Track::duration_formatted_short(&Duration::from_secs(record.length_seconds));
             let duration_string = format!("[{duration:^10.10}]");
 
             let title = record.title.as_str();
