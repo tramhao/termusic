@@ -27,13 +27,15 @@ mod key_combo;
 mod update;
 mod view;
 
-use crate::ui::model::ConfigEditorLayout;
+use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::{ConfigEditorMsg, Msg};
+use anyhow::Result;
 pub use color::*;
 pub use general::*;
 pub use key_combo::*;
 
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
+use termusiclib::types::{Id, IdConfigEditor};
 use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Style, TextSpan};
 use tuirealm::{event::NoUserEvent, Component, Event, MockComponent};
@@ -145,5 +147,35 @@ impl Component<Msg, NoUserEvent> for ConfigSavePopup {
             Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveOk),
             Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveCancel),
         )
+    }
+}
+
+impl Model {
+    /// Mount / Remount the Config-Editor's Header & Footer
+    fn remount_config_header_footer(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Header),
+            Box::new(CEHeader::new(
+                self.config_editor.layout,
+                &self.config_tui.read(),
+            )),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Footer),
+            Box::new(CEFooter::new(&self.config_tui.read())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Header & Footer
+    fn umount_config_header_footer(&mut self) -> Result<()> {
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Header))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Footer))?;
+
+        Ok(())
     }
 }

@@ -1,5 +1,5 @@
 use crate::ui::components::{
-    AlbumPhotoAlign, CEFooter, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
+    AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
     ConfigDatabaseAddAll, ConfigDatabaseAddSelected, ConfigFallbackBackground,
     ConfigFallbackBorder, ConfigFallbackForeground, ConfigFallbackHighlight, ConfigFallbackTitle,
     ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop,
@@ -1734,25 +1734,7 @@ impl Model {
     pub fn mount_config_editor(&mut self) {
         self.config_editor.layout = ConfigEditorLayout::General;
 
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(
-                    self.config_editor.layout,
-                    &self.config_tui.read()
-                )),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::Footer),
-                Box::new(CEFooter::new(&self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
+        self.remount_config_header_footer().unwrap();
 
         // Mount general page
         assert!(self
@@ -2724,15 +2706,7 @@ impl Model {
         self.mount_label_help();
         self.lyric_reload();
 
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Header))
-            .is_ok());
-
-        assert!(self
-            .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Footer))
-            .is_ok());
+        self.umount_config_header_footer().unwrap();
 
         assert!(self
             .app
