@@ -301,9 +301,9 @@ impl InputStates {
 
     /// ### `render_value_chars`
     ///
-    /// Render value as a vec of chars
-    pub fn render_value_chars(&self) -> Vec<char> {
-        self.input.clone()
+    /// Get the current input as a slice
+    pub fn render_value_chars(&self) -> &[char] {
+        &self.input
     }
 
     /// ### `get_value`
@@ -469,7 +469,7 @@ impl KeyCombo {
             .states
             .choices
             .iter()
-            .map(|x| ListItem::new(Span::from(x.clone())))
+            .map(|x| ListItem::new(Span::from(x)))
             .collect();
         let mut foreground = self
             .props
@@ -490,9 +490,9 @@ impl KeyCombo {
             .constraints([Constraint::Length(2), Constraint::Min(1)].as_ref())
             .split(area);
         // Render like "closed" tab in chunk 0
-        let selected_text: String = match self.states.choices.get(self.states.selected) {
-            None => String::default(),
-            Some(s) => s.clone(),
+        let selected_text = match self.states.choices.get(self.states.selected) {
+            None => "",
+            Some(s) => s.as_str(),
         };
         let borders = self
             .props
@@ -656,9 +656,9 @@ impl KeyCombo {
                 style = style_invalid;
             }
         }
-        let selected_text: String = match self.states.choices.get(self.states.selected) {
-            None => String::default(),
-            Some(s) => s.clone(),
+        let selected_text = match self.states.choices.get(self.states.selected) {
+            None => "",
+            Some(s) => s.as_str(),
         };
         let p: Paragraph<'_> = Paragraph::new(selected_text).style(style).block(block);
 
@@ -845,9 +845,9 @@ impl MockComponent for KeyCombo {
             }
             Cmd::Cancel => {
                 self.states.cancel_tab();
-                let prev_input = self.states_input.input.clone();
+                let prev_len = self.states_input.input.len();
                 self.states_input.delete();
-                if prev_input == self.states_input.input {
+                if prev_len == self.states_input.input.len() {
                     CmdResult::None
                 } else {
                     CmdResult::Changed(self.state())
@@ -866,9 +866,9 @@ impl MockComponent for KeyCombo {
 
             Cmd::Delete => {
                 // Backspace and None
-                let prev_input = self.states_input.input.clone();
+                let prev_len = self.states_input.input.len();
                 self.states_input.backspace();
-                if prev_input == self.states_input.input {
+                if prev_len == self.states_input.input.len() {
                     CmdResult::None
                 } else {
                     CmdResult::Changed(self.state())
@@ -892,10 +892,10 @@ impl MockComponent for KeyCombo {
             }
             Cmd::Type(ch) => {
                 // Push char to input
-                let prev_input = self.states_input.input.clone();
+                let prev_len = self.states_input.input.len();
                 self.states_input.append(ch, self.get_input_len());
                 // Message on change
-                if prev_input == self.states_input.input {
+                if prev_len == self.states_input.input.len() {
                     CmdResult::None
                 } else {
                     CmdResult::Changed(self.state())

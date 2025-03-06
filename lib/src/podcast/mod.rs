@@ -71,12 +71,8 @@ pub struct PodcastFeed {
 
 impl PodcastFeed {
     #[must_use]
-    pub fn new(id: Option<i64>, url: &str, title: Option<String>) -> Self {
-        Self {
-            id,
-            url: url.to_string(),
-            title,
-        }
+    pub const fn new(id: Option<i64>, url: String, title: Option<String>) -> Self {
+        Self { id, url, title }
     }
 }
 
@@ -97,7 +93,7 @@ pub fn check_feed(feed: PodcastFeed, max_retries: usize, tp: &TaskPool, tx_to_ma
             },
             Err(err) => {
                 error!("get_feed_data had a Error: {:#?}", err);
-                let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed.url.to_string(), feed)));
+                let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed)));
             }
         }
     });
@@ -315,27 +311,23 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
         match message {
             Msg::Podcast(PCMsg::NewData(pod)) => {
                 msg_counter += 1;
-                let title = pod.title.clone();
+                let title = &pod.title;
                 let db_result = db_inst.insert_podcast(&pod);
                 match db_result {
                     Ok(_) => {
                         println!("Added {title}");
                     }
-                    Err(_err) => {
+                    Err(err) => {
                         failure = true;
-                        error!("Error adding {title}");
+                        error!("Error adding {title}, err: {err}");
                     }
                 }
             }
 
-            Msg::Podcast(PCMsg::Error(_, feed)) => {
+            Msg::Podcast(PCMsg::Error(feed)) => {
                 msg_counter += 1;
                 failure = true;
-                if let Some(t) = feed.title {
-                    error!("Error retrieving RSS feed: {t}");
-                } else {
-                    error!("Error retrieving RSS feed");
-                }
+                error!("Error retrieving RSS feed: {}", feed.url);
             }
 
             Msg::Podcast(PCMsg::SyncData((_id, _pod))) => {
@@ -394,7 +386,7 @@ fn import_opml_feeds(xml: &str) -> Result<Vec<PodcastFeed>> {
                     Some(pod.text)
                 }
             });
-            feeds.push(PodcastFeed::new(None, &pod.xml_url.unwrap(), title));
+            feeds.push(PodcastFeed::new(None, pod.xml_url.unwrap(), title));
         }
     }
     Ok(feeds)

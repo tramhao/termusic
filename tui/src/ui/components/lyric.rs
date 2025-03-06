@@ -130,8 +130,7 @@ impl Model {
             )
             .is_ok());
         self.lyric_update_title();
-        let lyric_line = self.lyric_line.clone();
-        self.lyric_set_lyric(&lyric_line);
+        self.lyric_set_lyric(self.lyric_line.clone());
     }
 
     pub fn lyric_update_for_podcast_by_current_track(&mut self) {

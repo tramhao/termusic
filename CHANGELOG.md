@@ -26,6 +26,7 @@
 - Fix(tui): not having the current theme selected when entering Theme preview tab.
 - Fix(tui): actually report any errors when adding to the playlist. (Like "invalid file type")
 - Fix(tui): sort Music-Library content Alphanumerically.
+- Fix(tui): consistent numbering of results in a search popup.
 - Fix(tui): let `ueberzug` command inherit `stdout` to display chafa.
 
 ### [V0.9.1]

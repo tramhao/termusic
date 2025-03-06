@@ -427,7 +427,7 @@ impl Model {
         });
     }
 
-    pub fn podcast_add(&mut self, url: &str) {
+    pub fn podcast_add(&mut self, url: String) {
         let feed = PodcastFeed::new(None, url, None);
 
         crate::podcast::check_feed(
@@ -627,7 +627,7 @@ impl Model {
                     .ok_or_else(|| anyhow!("get podcast selected failed."))?;
                 let pcf = PodcastFeed::new(
                     Some(pod_selected.id),
-                    &pod_selected.url.clone(),
+                    pod_selected.url.clone(),
                     Some(pod_selected.title.clone()),
                 );
                 pod_data.push(pcf);
@@ -640,7 +640,7 @@ impl Model {
                     .podcasts
                     .iter()
                     .map(|pod| {
-                        PodcastFeed::new(Some(pod.id), &pod.url.clone(), Some(pod.title.clone()))
+                        PodcastFeed::new(Some(pod.id), pod.url.clone(), Some(pod.title.clone()))
                     })
                     .collect();
             }
@@ -843,7 +843,7 @@ impl Model {
 
             for ep in &mut podcast_selected.episodes {
                 if ep.path.is_some() {
-                    match std::fs::remove_file(ep.path.clone().unwrap()) {
+                    match std::fs::remove_file(ep.path.as_ref().unwrap()) {
                         Ok(()) => {
                             eps_to_remove.push(ep.id);
                             ep.path = None;
@@ -977,12 +977,11 @@ impl Model {
 
     pub fn podcast_update_search_episode(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
-        let mut idx = 0;
+        let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
         let mut db_tracks = vec![];
         // Get all episodes
-        let podcasts = self.podcast.podcasts.clone();
-        for podcast in podcasts {
+        for podcast in &self.podcast.podcasts {
             if let Ok(episodes) = self.podcast.db_podcast.get_episodes(podcast.id, true) {
                 db_tracks.extend(episodes);
             }
@@ -998,11 +997,11 @@ impl Model {
                     if idx > 0 {
                         table.add_row();
                     }
+                    idx += 1;
                     table
                         .add_col(TextSpan::new(idx.to_string()))
                         .add_col(TextSpan::new(record.title).bold())
                         .add_col(TextSpan::new(format!("{}", record.id)));
-                    idx += 1;
                 }
             }
         }
@@ -1013,10 +1012,10 @@ impl Model {
 
     pub fn podcast_update_search_podcast(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
-        let mut idx = 0;
+        let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
         // Get all episodes
-        let db_tracks = self.podcast.podcasts.clone();
+        let db_tracks = &self.podcast.podcasts;
 
         if db_tracks.is_empty() {
             table.add_col(TextSpan::from("0"));
@@ -1028,11 +1027,11 @@ impl Model {
                     if idx > 0 {
                         table.add_row();
                     }
+                    idx += 1;
                     table
                         .add_col(TextSpan::new(idx.to_string()))
-                        .add_col(TextSpan::new(record.title).bold())
+                        .add_col(TextSpan::new(&record.title).bold())
                         .add_col(TextSpan::new(format!("{}", record.id)));
-                    idx += 1;
                 }
             }
         }

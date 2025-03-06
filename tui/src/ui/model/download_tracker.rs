@@ -18,8 +18,8 @@ impl Default for DownloadTracker {
 
 #[allow(dead_code)]
 impl DownloadTracker {
-    pub fn increase_one(&mut self, url: &str) {
-        self.items.insert(url.to_string());
+    pub fn increase_one<U: Into<String>>(&mut self, url: U) {
+        self.items.insert(url.into());
     }
 
     pub fn decrease_one(&mut self, url: &str) {
