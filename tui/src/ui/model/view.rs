@@ -62,95 +62,8 @@ impl Model {
                 .poll_timeout(Duration::from_millis(10))
                 .tick_interval(Duration::from_secs(1)),
         );
-        assert!(app
-            .mount(
-                Id::Library,
-                Box::new(MusicLibrary::new(tree, None, config.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(app
-            .mount(
-                Id::DBListCriteria,
-                Box::new(DBListCriteria::new(
-                    config.clone(),
-                    Msg::DataBase(DBMsg::CriteriaBlurDown),
-                    Msg::DataBase(DBMsg::CriteriaBlurUp)
-                )),
-                vec![]
-            )
-            .is_ok());
 
-        assert!(app
-            .mount(
-                Id::DBListSearchResult,
-                Box::new(DBListSearchResult::new(
-                    config.clone(),
-                    Msg::DataBase(DBMsg::SearchResultBlurDown),
-                    Msg::DataBase(DBMsg::SearchResultBlurUp)
-                )),
-                vec![]
-            )
-            .is_ok());
-        assert!(app
-            .mount(
-                Id::DBListSearchTracks,
-                Box::new(DBListSearchTracks::new(
-                    config.clone(),
-                    Msg::DataBase(DBMsg::SearchTracksBlurDown),
-                    Msg::DataBase(DBMsg::SearchTracksBlurUp)
-                )),
-                vec![]
-            )
-            .is_ok());
-        assert!(app
-            .mount(
-                Id::Playlist,
-                Box::new(Playlist::new(config.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(app
-            .mount(
-                Id::Progress,
-                Box::new(Progress::new(&config.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(app
-            .mount(Id::Lyric, Box::new(Lyric::new(config.clone())), vec![])
-            .is_ok());
-
-        assert!(app
-            .mount(
-                Id::Podcast,
-                Box::new(FeedsList::new(
-                    config.clone(),
-                    Msg::Podcast(PCMsg::PodcastBlurDown),
-                    Msg::Podcast(PCMsg::PodcastBlurUp)
-                )),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(app
-            .mount(
-                Id::Episode,
-                Box::new(EpisodeList::new(
-                    config.clone(),
-                    Msg::Podcast(PCMsg::EpisodeBlurDown),
-                    Msg::Podcast(PCMsg::EpisodeBlurUp)
-                )),
-                vec![]
-            )
-            .is_ok());
-        assert!(app
-            .mount(
-                Id::DownloadSpinner,
-                Box::new(DownloadSpinner::new(&config.read())),
-                vec![]
-            )
-            .is_ok());
+        Self::mount_main(&mut app, config, tree).unwrap();
 
         // Mount global hotkey listener
         assert!(app
@@ -163,6 +76,85 @@ impl Model {
         // Active library
         assert!(app.active(&Id::Library).is_ok());
         app
+    }
+
+    /// Mount the Main components for the TUI
+    fn mount_main(
+        app: &mut Application<Id, Msg, NoUserEvent>,
+        config: &SharedTuiSettings,
+        tree: &Tree<String>,
+    ) -> Result<()> {
+        app.mount(
+            Id::Library,
+            Box::new(MusicLibrary::new(tree, None, config.clone())),
+            Vec::new(),
+        )?;
+        app.mount(
+            Id::DBListCriteria,
+            Box::new(DBListCriteria::new(
+                config.clone(),
+                Msg::DataBase(DBMsg::CriteriaBlurDown),
+                Msg::DataBase(DBMsg::CriteriaBlurUp),
+            )),
+            Vec::new(),
+        )?;
+
+        app.mount(
+            Id::DBListSearchResult,
+            Box::new(DBListSearchResult::new(
+                config.clone(),
+                Msg::DataBase(DBMsg::SearchResultBlurDown),
+                Msg::DataBase(DBMsg::SearchResultBlurUp),
+            )),
+            Vec::new(),
+        )?;
+        app.mount(
+            Id::DBListSearchTracks,
+            Box::new(DBListSearchTracks::new(
+                config.clone(),
+                Msg::DataBase(DBMsg::SearchTracksBlurDown),
+                Msg::DataBase(DBMsg::SearchTracksBlurUp),
+            )),
+            Vec::new(),
+        )?;
+        app.mount(
+            Id::Playlist,
+            Box::new(Playlist::new(config.clone())),
+            Vec::new(),
+        )?;
+        app.mount(
+            Id::Progress,
+            Box::new(Progress::new(&config.read())),
+            Vec::new(),
+        )?;
+        app.mount(Id::Lyric, Box::new(Lyric::new(config.clone())), Vec::new())?;
+
+        app.mount(
+            Id::Podcast,
+            Box::new(FeedsList::new(
+                config.clone(),
+                Msg::Podcast(PCMsg::PodcastBlurDown),
+                Msg::Podcast(PCMsg::PodcastBlurUp),
+            )),
+            Vec::new(),
+        )?;
+
+        app.mount(
+            Id::Episode,
+            Box::new(EpisodeList::new(
+                config.clone(),
+                Msg::Podcast(PCMsg::EpisodeBlurDown),
+                Msg::Podcast(PCMsg::EpisodeBlurUp),
+            )),
+            Vec::new(),
+        )?;
+        app.mount(
+            Id::DownloadSpinner,
+            Box::new(DownloadSpinner::new(&config.read())),
+            Vec::new(),
+        )?;
+
+        Ok(())
     }
 
     pub fn view(&mut self) {
@@ -449,128 +441,58 @@ impl Model {
         }
     }
 
+    /// Mount / Remount a search popup for the provided source
+    fn mount_search(&mut self, source: Source) {
+        self.app
+            .remount(
+                Id::GeneralSearchInput,
+                Box::new(GSInputPopup::new(source, &self.config_tui.read())),
+                Vec::new(),
+            )
+            .unwrap();
+        self.app
+            .remount(
+                Id::GeneralSearchTable,
+                Box::new(GSTablePopup::new(source, self.config_tui.clone())),
+                Vec::new(),
+            )
+            .unwrap();
+
+        self.app.active(&Id::GeneralSearchInput).unwrap();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
+    }
+
+    #[inline]
     pub fn mount_search_library(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Library, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Library, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Library);
     }
 
+    #[inline]
     pub fn mount_search_playlist(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Playlist, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Playlist, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Playlist);
     }
 
+    #[inline]
     pub fn mount_search_database(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Database, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Database, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Database);
     }
 
+    #[inline]
     pub fn mount_search_episode(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Episode, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Episode, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Episode);
     }
 
+    #[inline]
     pub fn mount_search_podcast(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Podcast, &self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Podcast, self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
+        self.mount_search(Source::Podcast);
     }
 
     pub fn mount_label_help(&mut self) {
         let config = self.config_tui.read();
         self.app
-            .remount(Id::Label, Box::new(Footer::new(&config)), Vec::default())
+            .remount(Id::Label, Box::new(Footer::new(&config)), Vec::new())
             .expect("Expected to remount without error");
     }
 
@@ -606,7 +528,7 @@ impl Model {
                             .bold(),
                     ],
                 )),
-                Vec::default(),
+                Vec::new(),
             )
             .expect("Expected to remount without error");
         Ok(())

@@ -26,7 +26,7 @@ use std::fmt::Display;
 use anyhow::{bail, Result};
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsg, Msg};
+use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -44,6 +44,8 @@ use tuirealm::ratatui::{
     text::Span,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
+
+use crate::ui::model::Model;
 
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
@@ -969,7 +971,7 @@ mod test {
         states.set_choices(choices);
         assert_eq!(states.selected, 1); // Move to first index available
         assert_eq!(states.choices.len(), 2);
-        let choices = vec![];
+        let choices = Vec::new();
         states.set_choices(&choices);
         assert_eq!(states.selected, 0); // Move to first index available
         assert_eq!(states.choices.len(), 0);
@@ -1102,7 +1104,7 @@ impl KEModifierSelect {
     ) -> Self {
         let config_r = config.read();
         let (init_select, init_key) = Self::init_modifier_select(id, &config_r.settings.keys);
-        let mut choices = vec![];
+        let mut choices = Vec::new();
         for modifier in MyModifiers::LIST {
             choices.push(modifier.as_str());
         }
@@ -3049,5 +3051,615 @@ impl ConfigPodcastRefreshAllFeeds {
 impl Component<Msg, NoUserEvent> for ConfigPodcastRefreshAllFeeds {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
+    }
+}
+
+impl Model {
+    /// Mount / Remount the Config-Editor's Third Page, the key-combos
+    pub(super) fn remount_config_keys(&mut self) -> Result<()> {
+        self.remount_config_keys_global()?;
+        self.remount_config_keys_library()?;
+        self.remount_config_keys_playlist()?;
+        self.remount_config_keys_database()?;
+        self.remount_config_keys_podcast()?;
+
+        Ok(())
+    }
+
+    /// Mount / Remount the Config-Editor's Third Page, the Global key-combos
+    #[allow(clippy::too_many_lines)]
+    fn remount_config_keys_global(&mut self) -> Result<()> {
+        // Key 1: Global keys
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)),
+            Box::new(ConfigGlobalQuit::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)),
+            Box::new(ConfigGlobalLeft::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)),
+            Box::new(ConfigGlobalRight::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)),
+            Box::new(ConfigGlobalUp::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)),
+            Box::new(ConfigGlobalDown::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)),
+            Box::new(ConfigGlobalGotoTop::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoBottom)),
+            Box::new(ConfigGlobalGotoBottom::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerTogglePause)),
+            Box::new(ConfigGlobalPlayerTogglePause::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerNext)),
+            Box::new(ConfigGlobalPlayerNext::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerPrevious)),
+            Box::new(ConfigGlobalPlayerPrevious::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)),
+            Box::new(ConfigGlobalHelp::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeUp)),
+            Box::new(ConfigGlobalVolumeUp::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeDown)),
+            Box::new(ConfigGlobalVolumeDown::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekForward)),
+            Box::new(ConfigGlobalPlayerSeekForward::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekBackward)),
+            Box::new(ConfigGlobalPlayerSeekBackward::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedUp)),
+            Box::new(ConfigGlobalPlayerSpeedUp::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedDown)),
+            Box::new(ConfigGlobalPlayerSpeedDown::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustForward)),
+            Box::new(ConfigGlobalLyricAdjustForward::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustBackward)),
+            Box::new(ConfigGlobalLyricAdjustBackward::new(
+                self.config_tui.clone(),
+            )),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricCycle)),
+            Box::new(ConfigGlobalLyricCycle::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerToggleGapless)),
+            Box::new(ConfigGlobalPlayerToggleGapless::new(
+                self.config_tui.clone(),
+            )),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutTreeview)),
+            Box::new(ConfigGlobalLayoutTreeview::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutDatabase)),
+            Box::new(ConfigGlobalLayoutDatabase::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)),
+            Box::new(ConfigGlobalConfig::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalSavePlaylist)),
+            Box::new(ConfigGlobalSavePlaylist::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutPodcast)),
+            Box::new(ConfigGlobalLayoutPodcast::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft)),
+            Box::new(ConfigGlobalXywhMoveLeft::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveRight)),
+            Box::new(ConfigGlobalXywhMoveRight::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveUp)),
+            Box::new(ConfigGlobalXywhMoveUp::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveDown)),
+            Box::new(ConfigGlobalXywhMoveDown::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomIn)),
+            Box::new(ConfigGlobalXywhZoomIn::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomOut)),
+            Box::new(ConfigGlobalXywhZoomOut::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhHide)),
+            Box::new(ConfigGlobalXywhHide::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Mount / Remount the Config-Editor's Third Page, the Library key-combos
+    fn remount_config_keys_library(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)),
+            Box::new(ConfigLibraryDelete::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryLoadDir)),
+            Box::new(ConfigLibraryLoadDir::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)),
+            Box::new(ConfigLibraryYank::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)),
+            Box::new(ConfigLibraryPaste::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)),
+            Box::new(ConfigLibrarySearch::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearchYoutube)),
+            Box::new(ConfigLibrarySearchYoutube::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryTagEditor)),
+            Box::new(ConfigLibraryTagEditor::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySwitchRoot)),
+            Box::new(ConfigLibrarySwitchRoot::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryAddRoot)),
+            Box::new(ConfigLibraryAddRoot::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryRemoveRoot)),
+            Box::new(ConfigLibraryRemoveRoot::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Mount / Remount the Config-Editor's Third Page, the Playlist key-combos
+    fn remount_config_keys_playlist(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDelete)),
+            Box::new(ConfigPlaylistDelete::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDeleteAll)),
+            Box::new(ConfigPlaylistDeleteAll::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistShuffle)),
+            Box::new(ConfigPlaylistShuffle::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSearch)),
+            Box::new(ConfigPlaylistSearch::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistPlaySelected)),
+            Box::new(ConfigPlaylistPlaySelected::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistModeCycle)),
+            Box::new(ConfigPlaylistModeCycle::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapDown)),
+            Box::new(ConfigPlaylistSwapDown::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapUp)),
+            Box::new(ConfigPlaylistSwapUp::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
+            Box::new(ConfigPlaylistAddRandomAlbum::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomTracks)),
+            Box::new(ConfigPlaylistAddRandomTracks::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Mount / Remount the Config-Editor's Third Page, the Database key-combos
+    fn remount_config_keys_database(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
+            Box::new(ConfigDatabaseAddAll::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddSelected)),
+            Box::new(ConfigDatabaseAddSelected::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Mount / Remount the Config-Editor's Third Page, the Podcast key-combos
+    fn remount_config_keys_podcast(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkPlayed)),
+            Box::new(ConfigPodcastMarkPlayed::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed)),
+            Box::new(ConfigPodcastMarkAllPlayed::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDownload)),
+            Box::new(ConfigPodcastEpDownload::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDeleteFile)),
+            Box::new(ConfigPodcastEpDeleteFile::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteFeed)),
+            Box::new(ConfigPodcastDeleteFeed::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds)),
+            Box::new(ConfigPodcastDeleteAllFeeds::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshFeed)),
+            Box::new(ConfigPodcastRefreshFeed::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds)),
+            Box::new(ConfigPodcastRefreshAllFeeds::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastSearchAddFeed)),
+            Box::new(ConfigPodcastSearchAddFeed::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Third Page, the key-combos
+    pub(super) fn umount_config_keys(&mut self) -> Result<()> {
+        self.umount_config_keys_global()?;
+        self.umount_config_keys_library()?;
+        self.umount_config_keys_playlist()?;
+        self.umount_config_keys_database()?;
+        self.umount_config_keys_podcast()?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Third Page, the Global key-combos
+    fn umount_config_keys_global(&mut self) -> Result<()> {
+        // umount keys global
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalGotoBottom,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalPlayerTogglePause,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalPlayerNext,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalPlayerPrevious,
+        )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalVolumeUp,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalVolumeDown,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalPlayerSeekForward,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalPlayerSeekBackward,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalPlayerSpeedUp,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalPlayerSpeedDown,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalLyricAdjustForward,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalLyricAdjustBackward,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalLyricCycle,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalLayoutDatabase,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalLayoutTreeview,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalPlayerToggleGapless,
+        )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalSavePlaylist,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalLayoutPodcast,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalXywhMoveLeft,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalXywhMoveRight,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalXywhMoveUp,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalXywhMoveDown,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalXywhZoomIn,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalXywhZoomOut,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalXywhHide,
+        )))?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Third Page, the Library key-combos
+    fn umount_config_keys_library(&mut self) -> Result<()> {
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibraryLoadDir,
+        )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibrarySearchYoutube,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibraryTagEditor,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibrarySwitchRoot,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibraryAddRoot,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibraryRemoveRoot,
+        )))?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Third Page, the Playlist key-combos
+    fn umount_config_keys_playlist(&mut self) -> Result<()> {
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistDelete,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistDeleteAll,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistShuffle,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistModeCycle,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistPlaySelected,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistSearch,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistSwapDown,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistSwapUp,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistAddRandomAlbum,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistAddRandomTracks,
+        )))?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Third Page, the Database key-combos
+    fn umount_config_keys_database(&mut self) -> Result<()> {
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::DatabaseAddAll,
+        )))?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Third Page, the Podcast key-combos
+    fn umount_config_keys_podcast(&mut self) -> Result<()> {
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastMarkPlayed,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastMarkAllPlayed,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastEpDownload,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastEpDeleteFile,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastDeleteFeed,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastDeleteAllFeeds,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastRefreshFeed,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastRefreshAllFeeds,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastSearchAddFeed,
+        )))?;
+
+        Ok(())
     }
 }

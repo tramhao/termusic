@@ -1,3 +1,4 @@
+use anyhow::Result;
 /**
  * MIT License
  *
@@ -25,7 +26,7 @@ use std::convert::From;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{ConfigEditorMsg, IdConfigEditor, Msg};
+use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, Msg};
 use tui_realm_stdlib::{Input, Label, Select, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -34,6 +35,8 @@ use tuirealm::props::{
 };
 use tuirealm::ratatui::style::Modifier;
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+
+use crate::ui::model::Model;
 
 const COLOR_LIST: [ColorTermusic; 19] = [
     ColorTermusic::Reset,
@@ -194,7 +197,7 @@ impl CEColorSelect {
         on_key_backshift: Msg,
     ) -> Self {
         let init_value = Self::init_color_select(id, &config.read().settings.theme);
-        let mut choices = vec![];
+        let mut choices = Vec::new();
         for color in &COLOR_LIST {
             choices.push(color.as_ref());
         }
@@ -1305,5 +1308,286 @@ impl ConfigFallbackHighlight {
 impl Component<Msg, NoUserEvent> for ConfigFallbackHighlight {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
+    }
+}
+
+impl Model {
+    /// Mount / Remount the Config-Editor's Second Page, the Theme, Color & Symbol Options
+    #[allow(clippy::too_many_lines)]
+    pub(super) fn remount_config_color(
+        &mut self,
+        config: &SharedTuiSettings,
+        theme_idx: Option<usize>,
+    ) -> Result<()> {
+        // Mount color page
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+            Box::new(CEThemeSelectTable::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LibraryLabel),
+            Box::<ConfigLibraryTitle>::default(),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LibraryForeground),
+            Box::new(ConfigLibraryForeground::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LibraryBackground),
+            Box::new(ConfigLibraryBackground::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LibraryBorder),
+            Box::new(ConfigLibraryBorder::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
+            Box::new(ConfigLibraryHighlight::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
+            Box::<ConfigPlaylistTitle>::default(),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistForeground),
+            Box::new(ConfigPlaylistForeground::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistBackground),
+            Box::new(ConfigPlaylistBackground::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistBorder),
+            Box::new(ConfigPlaylistBorder::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistHighlight),
+            Box::new(ConfigPlaylistHighlight::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ProgressLabel),
+            Box::<ConfigProgressTitle>::default(),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ProgressForeground),
+            Box::new(ConfigProgressForeground::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ProgressBackground),
+            Box::new(ConfigProgressBackground::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ProgressBorder),
+            Box::new(ConfigProgressBorder::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LyricLabel),
+            Box::<ConfigLyricTitle>::default(),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LyricForeground),
+            Box::new(ConfigLyricForeground::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LyricBackground),
+            Box::new(ConfigLyricBackground::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LyricBorder),
+            Box::new(ConfigLyricBorder::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel),
+            Box::<ConfigImportantPopupTitle>::default(),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground),
+            Box::new(ConfigImportantPopupForeground::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground),
+            Box::new(ConfigImportantPopupBackground::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder),
+            Box::new(ConfigImportantPopupBorder::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::FallbackLabel),
+            Box::<ConfigFallbackTitle>::default(),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::FallbackForeground),
+            Box::new(ConfigFallbackForeground::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::FallbackBackground),
+            Box::new(ConfigFallbackBackground::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::FallbackBorder),
+            Box::new(ConfigFallbackBorder::new(config.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::FallbackHighlight),
+            Box::new(ConfigFallbackHighlight::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.remount_config_color_symbols(config)?;
+
+        self.theme_select_sync(theme_idx);
+
+        Ok(())
+    }
+
+    /// Mount / Remount the Config-Editor's Second Page, Symbols
+    fn remount_config_color_symbols(&mut self, config: &SharedTuiSettings) -> Result<()> {
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
+            Box::new(ConfigLibraryHighlightSymbol::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
+            Box::new(ConfigPlaylistHighlightSymbol::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
+            Box::new(ConfigCurrentlyPlayingTrackSymbol::new(config.clone())),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Second Page, the Theme, Color & Symbol Options
+    pub(super) fn umount_config_color(&mut self) -> Result<()> {
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryLabel))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistLabel))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistForeground))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistBackground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistBorder))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlight))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ProgressLabel))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ProgressBackground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LyricLabel))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LyricForeground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LyricBackground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LyricBorder))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackLabel))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))?;
+
+        self.umount_config_color_symbols()?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config-Editor's Second Page, Symbols
+    pub fn umount_config_color_symbols(&mut self) -> Result<()> {
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol))?;
+        self.app.umount(&Id::ConfigEditor(
+            IdConfigEditor::CurrentlyPlayingTrackSymbol,
+        ))?;
+
+        Ok(())
     }
 }
