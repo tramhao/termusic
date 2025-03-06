@@ -31,6 +31,7 @@
 - Fix(tui): in Tag-Editor, show index of lyric frame and either description or as fallback the set language. (no more empty "Select Lyric" texts)
 - Fix(tui): in Tag-Editor, properly reflect selected index in the "Delete" Lyric option. (no more 0/99 if empty; no more always maxed)
 - Fix(tui): in Tag-Editor, fix messed-up lyric text display if the text contains `\r`(carriage returns).
+- Fix(tui): in Tag-Editor, change "Search" to not be blocking anymore and give feedback that something is happening.
 
 ### [V0.9.1]
 - Released on: August 21, 2024.
