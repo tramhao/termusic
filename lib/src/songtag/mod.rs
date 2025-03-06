@@ -161,6 +161,11 @@ impl SongTag {
         self.url.as_ref()
     }
 
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.song_id
+    }
+
     // get lyric by lyric_id
     pub async fn fetch_lyric(&self) -> Result<Option<String>> {
         let lyric_string = match self.service_provider {
