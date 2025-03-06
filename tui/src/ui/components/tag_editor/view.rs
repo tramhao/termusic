@@ -375,7 +375,7 @@ impl Model {
         let vec_lyric = vec_lang_selected
             .text
             .lines()
-            .map(|line| PropValue::TextSpan(TextSpan::from(line)))
+            .map(|line| PropValue::TextSpan(TextSpan::from(line.trim())))
             .collect();
 
         assert!(self
