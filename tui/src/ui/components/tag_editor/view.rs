@@ -354,10 +354,10 @@ impl Model {
             .map(PropValue::Str)
             .collect();
 
-        let vec_lang_len = vec_lang.len();
+        let selected_index = s.lyric_selected_index();
         // get access to "Lyric" instance for text and modified description for display
         let (Some(vec_lang_selected), Some(selected_desc)) =
-            (s.lyric_selected(), vec_lang.get(s.lyric_selected_index()))
+            (s.lyric_selected(), vec_lang.get(selected_index))
         else {
             // this should not happen as if it is Some above, there should be at least one entry in the vec.
             self.init_by_song_no_lyric();
@@ -368,6 +368,7 @@ impl Model {
             unreachable!()
         };
         let selected_description = format!("Lyrics for {selected_desc}");
+        let selected_index_display = selected_index + 1;
 
         let vec_lyric = vec_lang_selected
             .text
@@ -388,7 +389,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::CounterDelete),
                 Attribute::Value,
-                AttrValue::Length(vec_lang_len),
+                AttrValue::Length(selected_index_display),
             )
             .is_ok());
         assert!(self
