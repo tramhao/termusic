@@ -333,27 +333,38 @@ impl Model {
                 .is_ok());
         }
 
-        if s.lyric_frames_is_empty() {
+        let Some(lf) = s.lyric_frames() else {
             self.init_by_song_no_lyric();
             return;
-        }
+        };
 
-        let mut vec_lang: Vec<String> = Vec::new();
-        if let Some(lf) = s.lyric_frames() {
-            vec_lang = lf.into_iter().map(|lyric| lyric.description).collect();
-        }
+        let lyric_selected_idx = s.lyric_selected_index();
+        let mut vec_lang_selected = None;
+        let vec_lang: Vec<PropValue> = lf
+            .into_iter()
+            .enumerate()
+            .map(|(idx, lyric)| {
+                if idx == lyric_selected_idx {
+                    vec_lang_selected = Some(lyric.description.clone());
+                }
+
+                PropValue::Str(lyric.description)
+            })
+            .collect();
+
+        let vec_lang_len = vec_lang.len();
+        let Some(vec_lang_selected) = vec_lang_selected else {
+            // this should not happen as if it is Some above, there should be at least one entry in the vec.
+            self.init_by_song_no_lyric();
+            return;
+        };
 
         assert!(self
             .app
             .attr(
                 &Id::TagEditor(IdTagEditor::SelectLyric),
                 Attribute::Content,
-                AttrValue::Payload(PropPayload::Vec(
-                    vec_lang
-                        .iter()
-                        .map(|x| PropValue::Str((*x).to_string()))
-                        .collect(),
-                )),
+                AttrValue::Payload(PropPayload::Vec(vec_lang)),
             )
             .is_ok());
         assert!(self
@@ -361,7 +372,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::CounterDelete),
                 Attribute::Value,
-                AttrValue::Length(vec_lang.len()),
+                AttrValue::Length(vec_lang_len),
             )
             .is_ok());
         let mut vec_lyric: Vec<TextSpan> = vec![];
@@ -375,10 +386,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::TextareaLyric),
                 Attribute::Title,
-                AttrValue::Title((
-                    format!("{} Lyrics", vec_lang[s.lyric_selected_index()]),
-                    Alignment::Left
-                ))
+                AttrValue::Title((format!("{vec_lang_selected} Lyrics"), Alignment::Left))
             )
             .is_ok());
 
