@@ -29,7 +29,6 @@ use crate::ui::components::{
 use crate::ui::model::Model;
 use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 use anyhow::Result;
-use std::convert::TryFrom;
 use std::path::Path;
 use termusiclib::track::Track;
 use termusiclib::types::{Id, IdTagEditor};
@@ -357,16 +356,14 @@ impl Model {
                 )),
             )
             .is_ok());
-        if let Ok(vec_lang_len_isize) = isize::try_from(vec_lang.len()) {
-            assert!(self
-                .app
-                .attr(
-                    &Id::TagEditor(IdTagEditor::CounterDelete),
-                    Attribute::Value,
-                    AttrValue::Number(vec_lang_len_isize),
-                )
-                .is_ok());
-        }
+        assert!(self
+            .app
+            .attr(
+                &Id::TagEditor(IdTagEditor::CounterDelete),
+                Attribute::Value,
+                AttrValue::Length(vec_lang.len()),
+            )
+            .is_ok());
         let mut vec_lyric: Vec<TextSpan> = vec![];
         if let Some(f) = s.lyric_selected() {
             for line in f.text.split('\n') {
@@ -416,7 +413,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::CounterDelete),
                 Attribute::Value,
-                AttrValue::Number(0),
+                AttrValue::Length(0),
             )
             .is_ok());
 

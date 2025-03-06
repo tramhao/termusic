@@ -54,8 +54,8 @@ impl Counter {
         self
     }
 
-    pub fn value(mut self, n: isize) -> Self {
-        self.attr(Attribute::Value, AttrValue::Number(n));
+    pub fn value(mut self, n: usize) -> Self {
+        self.attr(Attribute::Value, AttrValue::Length(n));
         self
     }
 
@@ -84,10 +84,10 @@ impl Counter {
         self
     }
 
-    pub fn get_state(&self) -> isize {
+    pub fn get_state(&self) -> usize {
         self.props
-            .get_or(Attribute::Value, AttrValue::Number(99))
-            .unwrap_number()
+            .get_or(Attribute::Value, AttrValue::Length(99))
+            .unwrap_length()
     }
 }
 
@@ -162,7 +162,7 @@ impl MockComponent for Counter {
     }
 
     fn state(&self) -> State {
-        State::One(StateValue::Isize(self.get_state()))
+        State::One(StateValue::Usize(self.get_state()))
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
@@ -185,7 +185,7 @@ pub struct TECounterDelete {
 }
 
 impl TECounterDelete {
-    pub fn new(initial_value: isize, config: SharedTuiSettings) -> Self {
+    pub fn new(initial_value: usize, config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Counter::default()
