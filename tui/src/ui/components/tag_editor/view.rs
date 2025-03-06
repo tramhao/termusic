@@ -219,7 +219,7 @@ impl Model {
         )?;
         self.app.remount(
             Id::TagEditor(IdTagEditor::CounterDelete),
-            Box::new(TECounterDelete::new(5, self.config_tui.clone())),
+            Box::new(TECounterDelete::new(None, self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
@@ -389,7 +389,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::CounterDelete),
                 Attribute::Value,
-                AttrValue::Length(selected_index_display),
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(selected_index_display))),
             )
             .is_ok());
         assert!(self
@@ -430,7 +430,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::CounterDelete),
                 Attribute::Value,
-                AttrValue::Length(0),
+                AttrValue::Payload(PropPayload::None),
             )
             .is_ok());
 

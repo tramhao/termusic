@@ -25,7 +25,7 @@ use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
-use tuirealm::props::{Alignment, Borders, Color, Style, TextModifiers};
+use tuirealm::props::{Alignment, Borders, Color, PropPayload, PropValue, Style, TextModifiers};
 use tuirealm::ratatui::layout::Rect;
 use tuirealm::ratatui::widgets::{BorderType, Paragraph};
 use tuirealm::{
@@ -54,8 +54,15 @@ impl Counter {
         self
     }
 
-    pub fn value(mut self, n: usize) -> Self {
-        self.attr(Attribute::Value, AttrValue::Length(n));
+    pub fn value(mut self, n: Option<usize>) -> Self {
+        if let Some(n) = n {
+            self.attr(
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(n))),
+            );
+        } else {
+            self.attr(Attribute::Value, AttrValue::Payload(PropPayload::None));
+        }
         self
     }
 
@@ -84,10 +91,15 @@ impl Counter {
         self
     }
 
-    pub fn get_state(&self) -> usize {
-        self.props
-            .get_or(Attribute::Value, AttrValue::Length(99))
-            .unwrap_length()
+    pub fn get_state(&self) -> Option<usize> {
+        match self
+            .props
+            .get(Attribute::Value)
+            .map(|v| v.unwrap_payload())?
+        {
+            PropPayload::One(PropValue::Usize(v)) => Some(v),
+            _ => None,
+        }
     }
 }
 
@@ -97,7 +109,11 @@ impl MockComponent for Counter {
         if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
             // Get properties
             let value = self.get_state();
-            let text = format!("Delete ({value})");
+            let text = if let Some(value) = value {
+                format!("Delete Selected ({value})")
+            } else {
+                "Delete Selected (-)".to_string()
+            };
 
             let alignment = self
                 .props
@@ -162,7 +178,11 @@ impl MockComponent for Counter {
     }
 
     fn state(&self) -> State {
-        State::One(StateValue::Usize(self.get_state()))
+        let Some(state) = self.get_state() else {
+            return State::None;
+        };
+
+        State::One(StateValue::Usize(state))
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
@@ -185,7 +205,7 @@ pub struct TECounterDelete {
 }
 
 impl TECounterDelete {
-    pub fn new(initial_value: usize, config: SharedTuiSettings) -> Self {
+    pub fn new(initial_value: Option<usize>, config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Counter::default()

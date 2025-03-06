@@ -29,6 +29,7 @@
 - Fix(tui): consistent numbering of results in a search popup.
 - Fix(tui): let `ueberzug` command inherit `stdout` to display chafa.
 - Fix(tui): in Tag-Editor, show index of lyric frame and either description or as fallback the set language. (no more empty "Select Lyric" texts)
+- Fix(tui): in Tag-Editor, properly reflect selected index in the "Delete" Lyric option. (no more 0/99 if empty; no more always maxed)
 
 ### [V0.9.1]
 - Released on: August 21, 2024.
