@@ -259,7 +259,7 @@ impl Model {
             self.lyric_set_lyric("Stopped.");
             return;
         }
-        if let Some(song) = self.playlist.current_track() {
+        if let Some(song) = &self.current_song {
             if MediaType::LiveRadio == song.media_type {
                 return;
             }
@@ -312,7 +312,7 @@ impl Model {
     }
 
     pub fn lyric_cycle(&mut self) {
-        if let Some(track) = self.playlist.current_track_as_mut() {
+        if let Some(track) = &mut self.current_song {
             if let Ok(f) = track.cycle_lyrics() {
                 let lang_ext = f.description.clone();
                 self.update_show_message_timeout(
