@@ -259,7 +259,7 @@ impl Model {
             self.lyric_set_lyric("Stopped.");
             return;
         }
-        if let Some(song) = &self.current_song {
+        if let Some(song) = self.playlist.current_track() {
             if MediaType::LiveRadio == song.media_type {
                 return;
             }
