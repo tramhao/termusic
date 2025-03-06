@@ -340,6 +340,10 @@ impl Model {
                 song.set_album(album);
             }
 
+            let tracker_id = song_tag.id();
+            self.download_tracker.increase_one(tracker_id);
+
+            // TODO: consider a way to not do it "block_on"
             // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
             // though i am not fully sure if that is 100% the case, this avoid the panic though
             let (lyric_string, artwork) = tokio::task::block_in_place(move || {
@@ -347,6 +351,8 @@ impl Model {
                     tokio::join!(song_tag.fetch_lyric(), song_tag.fetch_photo())
                 })
             });
+
+            self.download_tracker.decrease_one(tracker_id);
 
             if let Ok(Some(lyric_string)) = lyric_string {
                 song.set_lyric(&lyric_string, lang_ext);
