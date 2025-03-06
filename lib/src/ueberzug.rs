@@ -96,8 +96,6 @@ impl UeInstance {
     }
 
     fn run_ueberzug_cmd(&mut self, cmd: &str) -> Result<()> {
-        // error!("using x11 output for ueberzugpp");
-
         let Some(ueberzug) = self.try_wait_spawn(["layer"])? else {
             return Ok(());
         };
@@ -111,7 +109,7 @@ impl UeInstance {
     }
 
     fn run_ueberzug_cmd_sixel(&mut self, cmd: &str) -> Result<()> {
-        // error!("using sixel output for ueberzugpp");
+        // debug!("ueberzug forced sixel");
 
         let Some(ueberzug) = self.try_wait_spawn(
             ["layer"],
@@ -142,7 +140,7 @@ impl UeInstance {
         let mut cmd = Command::new("ueberzug");
         cmd.args(args)
             .stdin(Stdio::piped())
-            .stdout(Stdio::null()) // ueberzug does not output to stdout
+            .stdout(Stdio::inherit()) // ueberzug may need this for chafa output
             .stderr(Stdio::piped());
 
         match cmd.spawn() {
