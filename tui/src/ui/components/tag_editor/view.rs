@@ -372,7 +372,7 @@ impl Model {
 
         let vec_lyric = vec_lang_selected
             .text
-            .split('\n')
+            .lines()
             .map(|line| PropValue::TextSpan(TextSpan::from(line)))
             .collect();
 
