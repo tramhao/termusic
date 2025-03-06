@@ -338,26 +338,24 @@ impl Model {
             return;
         };
 
-        let lyric_selected_idx = s.lyric_selected_index();
-        let mut vec_lang_selected = None;
         let vec_lang: Vec<PropValue> = lf
             .into_iter()
-            .enumerate()
-            .map(|(idx, lyric)| {
-                if idx == lyric_selected_idx {
-                    vec_lang_selected = Some(lyric.description.clone());
-                }
-
-                PropValue::Str(lyric.description)
-            })
+            .map(|lyric| PropValue::Str(lyric.description))
             .collect();
 
         let vec_lang_len = vec_lang.len();
-        let Some(vec_lang_selected) = vec_lang_selected else {
+        let Some(vec_lang_selected) = s.lyric_selected() else {
             // this should not happen as if it is Some above, there should be at least one entry in the vec.
             self.init_by_song_no_lyric();
             return;
         };
+        let selected_description = &vec_lang_selected.description;
+
+        let vec_lyric = vec_lang_selected
+            .text
+            .split('\n')
+            .map(|line| PropValue::TextSpan(TextSpan::from(line)))
+            .collect();
 
         assert!(self
             .app
@@ -375,18 +373,12 @@ impl Model {
                 AttrValue::Length(vec_lang_len),
             )
             .is_ok());
-        let mut vec_lyric: Vec<TextSpan> = vec![];
-        if let Some(f) = s.lyric_selected() {
-            for line in f.text.split('\n') {
-                vec_lyric.push(TextSpan::from(line));
-            }
-        }
         assert!(self
             .app
             .attr(
                 &Id::TagEditor(IdTagEditor::TextareaLyric),
                 Attribute::Title,
-                AttrValue::Title((format!("{vec_lang_selected} Lyrics"), Alignment::Left))
+                AttrValue::Title((format!("{selected_description} Lyrics"), Alignment::Left))
             )
             .is_ok());
 
@@ -395,9 +387,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::TextareaLyric),
                 Attribute::Text,
-                AttrValue::Payload(PropPayload::Vec(
-                    vec_lyric.iter().cloned().map(PropValue::TextSpan).collect()
-                ))
+                AttrValue::Payload(PropPayload::Vec(vec_lyric))
             )
             .is_ok());
     }
