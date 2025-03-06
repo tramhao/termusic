@@ -252,7 +252,7 @@ impl Model {
         self.app
             .active(&Id::TagEditor(IdTagEditor::InputArtist))
             .ok();
-        self.init_by_song(&track);
+        self.init_by_song(track);
 
         if let Err(err) = self.update_photo() {
             self.mount_error_popup(err.context("update_photo"));
@@ -285,10 +285,12 @@ impl Model {
         }
     }
 
-    // initialize the value in tageditor based on info from Song
+    /// Set the Lyric section of the tag-editor to the Lyrics based on the provided Track
     #[allow(clippy::too_many_lines)]
-    pub fn init_by_song(&mut self, s: &Track) {
-        self.tageditor_song = Some(s.clone());
+    pub fn init_by_song(&mut self, s: Track) {
+        self.tageditor_song = Some(s);
+        // Unwrap safe as we literally just assigned it
+        let s = self.tageditor_song.as_ref().unwrap();
         if let Some(artist) = s.artist() {
             assert!(self
                 .app
@@ -411,6 +413,7 @@ impl Model {
             .is_ok());
     }
 
+    /// Set the Lyric section of the tag-editor to "No Lyrics" (ie clear state)
     fn init_by_song_no_lyric(&mut self) {
         assert!(self
             .app

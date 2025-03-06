@@ -288,7 +288,7 @@ impl Model {
                 song.set_lyric_selected_index(song.lyric_selected_index() - 1);
             }
             match song.save_tag() {
-                Ok(()) => self.init_by_song(&song),
+                Ok(()) => self.init_by_song(song),
                 Err(e) => {
                     self.mount_error_popup(e);
                 }

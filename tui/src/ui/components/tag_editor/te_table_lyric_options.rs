@@ -291,7 +291,7 @@ impl Model {
                 song.set_genre(&genre);
             }
             song.save_tag()?;
-            self.init_by_song(&song);
+            self.init_by_song(song);
             self.playlist_update_library_delete();
         }
         Ok(())
@@ -333,7 +333,7 @@ impl Model {
             }
 
             song.save_tag()?;
-            self.init_by_song(&song);
+            self.init_by_song(song);
             self.playlist_update_library_delete();
             // self.library_sync(song.file());
         }
