@@ -340,16 +340,34 @@ impl Model {
 
         let vec_lang: Vec<PropValue> = lf
             .into_iter()
-            .map(|lyric| PropValue::Str(lyric.description))
+            .enumerate()
+            .map(|(idx, v)| {
+                let val = v.description;
+                // match idx with Delete counter
+                let idx = idx + 1;
+                if val.is_empty() {
+                    format!("{idx} - {}", v.lang)
+                } else {
+                    format!("{idx} - {val}")
+                }
+            })
+            .map(PropValue::Str)
             .collect();
 
         let vec_lang_len = vec_lang.len();
-        let Some(vec_lang_selected) = s.lyric_selected() else {
+        // get access to "Lyric" instance for text and modified description for display
+        let (Some(vec_lang_selected), Some(selected_desc)) =
+            (s.lyric_selected(), vec_lang.get(s.lyric_selected_index()))
+        else {
             // this should not happen as if it is Some above, there should be at least one entry in the vec.
             self.init_by_song_no_lyric();
             return;
         };
-        let selected_description = &vec_lang_selected.description;
+        // TODO: replace with tui-realm "as_str" once available
+        let PropValue::Str(selected_desc) = selected_desc else {
+            unreachable!()
+        };
+        let selected_description = format!("Lyrics for {selected_desc}");
 
         let vec_lyric = vec_lang_selected
             .text
@@ -378,7 +396,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::TextareaLyric),
                 Attribute::Title,
-                AttrValue::Title((format!("{selected_description} Lyrics"), Alignment::Left))
+                AttrValue::Title((selected_description, Alignment::Left))
             )
             .is_ok());
 
@@ -420,7 +438,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::TextareaLyric),
                 Attribute::Title,
-                AttrValue::Title(("Empty Lyric".to_string(), Alignment::Left))
+                AttrValue::Title(("Empty Lyrics".to_string(), Alignment::Left))
             )
             .is_ok());
         assert!(self
