@@ -48,6 +48,9 @@ gst:
 all-backends:
 	cargo build  --features cover,all-backends --release --all
 
+all-backends-test:
+	cargo build  --features cover,all-backends --all
+
 test: 
 	cargo test --features cover,all-backends --release --all
 
@@ -76,3 +79,7 @@ winpost:
 	cp -f target/release/$(server) "$(install_to)"
 
 wininstall: winrelease winpost
+
+wintest: win winpost
+
+fulltest: all-backends-test post
