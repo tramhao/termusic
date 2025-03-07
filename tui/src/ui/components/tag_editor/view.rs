@@ -29,7 +29,6 @@ use crate::ui::components::{
 use crate::ui::model::Model;
 use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 use anyhow::Result;
-use std::convert::TryFrom;
 use std::path::Path;
 use termusiclib::track::Track;
 use termusiclib::types::{Id, IdTagEditor};
@@ -220,7 +219,7 @@ impl Model {
         )?;
         self.app.remount(
             Id::TagEditor(IdTagEditor::CounterDelete),
-            Box::new(TECounterDelete::new(5, self.config_tui.clone())),
+            Box::new(TECounterDelete::new(None, self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
@@ -253,7 +252,7 @@ impl Model {
         self.app
             .active(&Id::TagEditor(IdTagEditor::InputArtist))
             .ok();
-        self.init_by_song(&track);
+        self.init_by_song(track);
 
         if let Err(err) = self.update_photo() {
             self.mount_error_popup(err.context("update_photo"));
@@ -286,10 +285,12 @@ impl Model {
         }
     }
 
-    // initialize the value in tageditor based on info from Song
+    /// Set the Lyric section of the tag-editor to the Lyrics based on the provided Track
     #[allow(clippy::too_many_lines)]
-    pub fn init_by_song(&mut self, s: &Track) {
-        self.tageditor_song = Some(s.clone());
+    pub fn init_by_song(&mut self, s: Track) {
+        self.tageditor_song = Some(s);
+        // Unwrap safe as we literally just assigned it
+        let s = self.tageditor_song.as_ref().unwrap();
         if let Some(artist) = s.artist() {
             assert!(self
                 .app
@@ -334,54 +335,71 @@ impl Model {
                 .is_ok());
         }
 
-        if s.lyric_frames_is_empty() {
+        let Some(lf) = s.lyric_frames() else {
             self.init_by_song_no_lyric();
             return;
-        }
+        };
 
-        let mut vec_lang: Vec<String> = Vec::new();
-        if let Some(lf) = s.lyric_frames() {
-            vec_lang = lf.into_iter().map(|lyric| lyric.description).collect();
-        }
+        let vec_lang: Vec<PropValue> = lf
+            .into_iter()
+            .enumerate()
+            .map(|(idx, v)| {
+                let val = v.description;
+                // match idx with Delete counter
+                let idx = idx + 1;
+                if val.is_empty() {
+                    format!("{idx} - {}", v.lang)
+                } else {
+                    format!("{idx} - {val}")
+                }
+            })
+            .map(PropValue::Str)
+            .collect();
+
+        let selected_index = s.lyric_selected_index();
+        // get access to "Lyric" instance for text and modified description for display
+        let (Some(vec_lang_selected), Some(selected_desc)) =
+            (s.lyric_selected(), vec_lang.get(selected_index))
+        else {
+            // this should not happen as if it is Some above, there should be at least one entry in the vec.
+            self.init_by_song_no_lyric();
+            return;
+        };
+        // TODO: replace with tui-realm "as_str" once available
+        let PropValue::Str(selected_desc) = selected_desc else {
+            unreachable!()
+        };
+        let selected_description = format!("Lyrics for {selected_desc}");
+        let selected_index_display = selected_index + 1;
+
+        let vec_lyric = vec_lang_selected
+            .text
+            .lines()
+            .map(|line| PropValue::TextSpan(TextSpan::from(line.trim())))
+            .collect();
 
         assert!(self
             .app
             .attr(
                 &Id::TagEditor(IdTagEditor::SelectLyric),
                 Attribute::Content,
-                AttrValue::Payload(PropPayload::Vec(
-                    vec_lang
-                        .iter()
-                        .map(|x| PropValue::Str((*x).to_string()))
-                        .collect(),
-                )),
+                AttrValue::Payload(PropPayload::Vec(vec_lang)),
             )
             .is_ok());
-        if let Ok(vec_lang_len_isize) = isize::try_from(vec_lang.len()) {
-            assert!(self
-                .app
-                .attr(
-                    &Id::TagEditor(IdTagEditor::CounterDelete),
-                    Attribute::Value,
-                    AttrValue::Number(vec_lang_len_isize),
-                )
-                .is_ok());
-        }
-        let mut vec_lyric: Vec<TextSpan> = vec![];
-        if let Some(f) = s.lyric_selected() {
-            for line in f.text.split('\n') {
-                vec_lyric.push(TextSpan::from(line));
-            }
-        }
+        assert!(self
+            .app
+            .attr(
+                &Id::TagEditor(IdTagEditor::CounterDelete),
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(selected_index_display))),
+            )
+            .is_ok());
         assert!(self
             .app
             .attr(
                 &Id::TagEditor(IdTagEditor::TextareaLyric),
                 Attribute::Title,
-                AttrValue::Title((
-                    format!("{} Lyrics", vec_lang[s.lyric_selected_index()]),
-                    Alignment::Left
-                ))
+                AttrValue::Title((selected_description, Alignment::Left))
             )
             .is_ok());
 
@@ -390,13 +408,12 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::TextareaLyric),
                 Attribute::Text,
-                AttrValue::Payload(PropPayload::Vec(
-                    vec_lyric.iter().cloned().map(PropValue::TextSpan).collect()
-                ))
+                AttrValue::Payload(PropPayload::Vec(vec_lyric))
             )
             .is_ok());
     }
 
+    /// Set the Lyric section of the tag-editor to "No Lyrics" (ie clear state)
     fn init_by_song_no_lyric(&mut self) {
         assert!(self
             .app
@@ -416,7 +433,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::CounterDelete),
                 Attribute::Value,
-                AttrValue::Number(0),
+                AttrValue::Payload(PropPayload::None),
             )
             .is_ok());
 
@@ -425,7 +442,7 @@ impl Model {
             .attr(
                 &Id::TagEditor(IdTagEditor::TextareaLyric),
                 Attribute::Title,
-                AttrValue::Title(("Empty Lyric".to_string(), Alignment::Left))
+                AttrValue::Title(("Empty Lyrics".to_string(), Alignment::Left))
             )
             .is_ok());
         assert!(self

@@ -1,49 +1,54 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
+use parking_lot::RwLock;
+
+/// A way to keep track of what downloads are currently happening
+///
+/// As long as items is above 0, a Download-spinner should play
+#[derive(Debug, Clone)]
 pub struct DownloadTracker {
-    items: HashSet<String>,
-    // pub time_stamp_for_cache: Instant,
+    items: Arc<RwLock<HashSet<String>>>,
 }
 
 impl Default for DownloadTracker {
     fn default() -> Self {
         let items = HashSet::new();
-        // let time_stamp_for_cache = Instant::now();
-        Self {
-            items,
-            // time_stamp_for_cache,
-        }
+        let items = Arc::new(RwLock::new(items));
+        Self { items }
     }
 }
 
 #[allow(dead_code)]
 impl DownloadTracker {
-    pub fn increase_one<U: Into<String>>(&mut self, url: U) {
-        self.items.insert(url.into());
+    /// Add a new entry with key `url`
+    pub fn increase_one<U: Into<String>>(&self, url: U) {
+        self.items.write().insert(url.into());
     }
 
-    pub fn decrease_one(&mut self, url: &str) {
-        self.items.remove(url);
+    /// Remove a entry with key `url`
+    pub fn decrease_one(&self, url: &str) {
+        self.items.write().remove(url);
     }
 
     pub fn contains(&self, url: &str) -> bool {
-        self.items.contains(url)
+        self.items.read().contains(url)
     }
 
+    /// Should the download spinner be visible?
     pub fn visible(&self) -> bool {
-        !self.items.is_empty()
+        !self.items.read().is_empty()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.items.is_empty()
+        self.items.read().is_empty()
     }
 
     pub fn len(&self) -> usize {
-        self.items.len()
+        self.items.read().len()
     }
 
     pub fn message_sync_success(&self) -> String {
-        let len = self.items.len();
+        let len = self.len();
         if len > 0 {
             format!(
                 " 1 of {} feeds was synced successfully! {len} are still running.",
@@ -54,7 +59,7 @@ impl DownloadTracker {
         }
     }
     pub fn message_feeds_added(&self) -> String {
-        let len = self.items.len();
+        let len = self.len();
         if len > 0 {
             format!(
                 " 1 of {} feeds was added successfully! {len} are still running.",
@@ -66,7 +71,7 @@ impl DownloadTracker {
     }
 
     pub fn message_feed_sync_failed(&self) -> String {
-        let len = self.items.len();
+        let len = self.len();
         if len > 0 {
             format!(" 1 feed sync failed. {len} are still running. ",)
         } else {
@@ -75,7 +80,7 @@ impl DownloadTracker {
     }
 
     pub fn message_sync_start(&self) -> String {
-        let len = self.items.len();
+        let len = self.len();
         if len > 1 {
             format!(" {len} feeds are being fetching... ",)
         } else {
@@ -84,7 +89,7 @@ impl DownloadTracker {
     }
 
     pub fn message_download_start(&self, title: &str) -> String {
-        let len = self.items.len();
+        let len = self.len();
         if len > 1 {
             format!(" {len} items downloading... ")
         } else {
@@ -93,7 +98,7 @@ impl DownloadTracker {
     }
 
     pub fn message_download_complete(&self) -> String {
-        let len = self.items.len();
+        let len = self.len();
         if len > 0 {
             format!(
                 " 1 of {} Downloads Completed! {len} are still being processed.",
@@ -104,7 +109,7 @@ impl DownloadTracker {
         }
     }
     pub fn message_download_error_response(&self, title: &str) -> String {
-        let len = self.items.len();
+        let len = self.len();
         if len > 0 {
             format!(" Failed to download item: {title:^.10}! No response from website. {len} downloads are still running. ",)
         } else {
@@ -112,7 +117,7 @@ impl DownloadTracker {
         }
     }
     pub fn message_download_error_file_create(&self, title: &str) -> String {
-        let len = self.items.len();
+        let len = self.len();
 
         if len > 0 {
             format!(
@@ -124,7 +129,7 @@ impl DownloadTracker {
     }
 
     pub fn message_download_error_file_write(&self, title: &str) -> String {
-        let len = self.items.len();
+        let len = self.len();
 
         if len > 0 {
             format!(
@@ -136,7 +141,7 @@ impl DownloadTracker {
     }
 
     pub fn message_download_error_embed_data(&self, title: &str) -> String {
-        let len = self.items.len();
+        let len = self.len();
 
         if len > 0 {
             format!(

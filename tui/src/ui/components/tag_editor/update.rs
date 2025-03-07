@@ -42,7 +42,7 @@ impl Model {
             TEMsg::TESelectLyricOk(index) => {
                 if let Some(mut song) = self.tageditor_song.clone() {
                     song.set_lyric_selected_index(*index);
-                    self.init_by_song(&song);
+                    self.init_by_song(song);
                 }
             }
             TEMsg::TESearch => {
