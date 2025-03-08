@@ -1,7 +1,7 @@
 ## ChangeLog
 
-### next
-- Unreleased
+### [V0.10.0]
+- Released on: March 8, 2025.
 - Change: move the "no backend selected" compile error to the "-server" package instead of "-playback" (no need to specify a feature when compiling "termusic"(tui) now)
 - Change: enable `lto` (Link Time Optimizations) for the `release` profile.
 - Change: updated MSRV to 1.79.
