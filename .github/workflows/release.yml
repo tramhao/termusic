@@ -99,7 +99,7 @@ jobs:
 
       - name: Build release binary (cargo x86_64-windows)
         if: matrix.build == 'x86_64-windows'
-        run: cargo build --release --no-default-features --features rusty --all --target ${{ matrix.target }}
+        run: cargo build --release --all --target ${{ matrix.target }}
 
       - name: Install cross (cross)
         if: matrix.cross
