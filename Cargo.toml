@@ -112,7 +112,7 @@ urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.4"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
-futures = "0.3"
+futures = "0.3.31"
 alphanumeric-sort = "1.5"
 # transistive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
 cc = "1.2"
