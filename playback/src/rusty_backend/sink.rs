@@ -122,8 +122,8 @@ impl Sink {
 
         let progress_tx = self.picmd_tx.clone();
         let source = source
-            .speed(1.0)
             .track_position()
+            .speed(1.0)
             .pausable(false)
             .amplify(1.0)
             .skippable()
@@ -131,7 +131,7 @@ impl Sink {
             .periodic_access(Duration::from_millis(500), move |src| {
                 progress_tx
                     .send(PlayerInternalCmd::Progress(
-                        src.inner().inner().inner().inner().get_pos(),
+                        src.inner().inner().inner().inner().inner().get_pos(),
                     ))
                     .ok();
             })
@@ -154,7 +154,8 @@ impl Sink {
                             *controls.position.write() = Duration::ZERO;
                         }
                     }
-                    *controls.position.write() = src.inner().inner().inner().inner().get_pos();
+                    *controls.position.write() =
+                        src.inner().inner().inner().inner().inner().get_pos();
 
                     let amp = src.inner_mut().inner_mut();
                     amp.set_factor(*controls.volume.lock());
@@ -164,7 +165,6 @@ impl Sink {
                     #[cfg(not(feature = "rusty-soundtouch"))]
                     {
                         amp.inner_mut()
-                            .inner_mut()
                             .inner_mut()
                             .set_factor(*controls.speed.lock());
                     }
