@@ -29,7 +29,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::thread::{self, sleep};
+use std::thread;
 use std::time::Duration;
 use termusiclib::invidious::Instance;
 use termusiclib::track::Track;
@@ -212,7 +212,6 @@ impl Model {
                 Ok(result) => {
                     tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
                         .ok();
-                    sleep(Duration::from_secs(5));
                     // here we extract the full file name from download output
                     if let Some(file_fullname) =
                         extract_filepath(result.output(), &path.to_string_lossy())
@@ -239,7 +238,6 @@ impl Model {
                         e.to_string(),
                     )))
                     .ok();
-                    sleep(Duration::from_secs(5));
                     tx.send(Msg::Download(DLMsg::DownloadCompleted(url, None)))
                         .ok();
                 }
