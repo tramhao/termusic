@@ -96,7 +96,7 @@ impl UeInstance {
     }
 
     fn run_ueberzug_cmd(&mut self, cmd: &str) -> Result<()> {
-        let Some(ueberzug) = self.try_wait_spawn(["layer"])? else {
+        let Some(ueberzug) = self.try_wait_spawn(["layer", "--silent"])? else {
             return Ok(());
         };
 
@@ -112,7 +112,7 @@ impl UeInstance {
         // debug!("ueberzug forced sixel");
 
         let Some(ueberzug) = self.try_wait_spawn(
-            ["layer"],
+            ["layer", "--silent"],
             // ["layer", "--silent", "--no-cache", "--output", "sixel"]
             // ["layer", "--sixel"]
             // ["--sixel"]
