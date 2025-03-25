@@ -6,6 +6,8 @@ use termusicplayback::Status;
 use tokio_stream::{Stream, StreamExt as _};
 use tonic::transport::Channel;
 
+/// Handle TUI Requests to the server.
+#[derive(Debug)]
 pub struct Playback {
     client: MusicPlayerClient<Channel>,
 }
@@ -14,6 +16,7 @@ impl Playback {
     pub fn new(client: MusicPlayerClient<Channel>) -> Self {
         Self { client }
     }
+
     pub async fn toggle_pause(&mut self) -> Result<Status> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.toggle_pause(request).await?;
