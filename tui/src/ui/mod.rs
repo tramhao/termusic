@@ -63,14 +63,13 @@ pub struct UI {
 }
 
 impl UI {
-    fn check_force_redraw(&mut self) {
-        // If source are loading and at least 100ms has elapsed since last redraw...
-        // if self.model.status == Status::Running {
+    /// Force a redraw if [`FORCED_REDRAW_INTERVAL`] has passed.
+    fn exec_interval_redraw(&mut self) {
         if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
             self.model.force_redraw();
         }
-        // }
     }
+
     /// Instantiates a new Ui
     pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
@@ -144,7 +143,7 @@ impl UI {
             self.model.ensure_quit_popup_top_most_focus();
 
             // Check whether to force redraw
-            self.check_force_redraw();
+            self.exec_interval_redraw();
             self.model.view();
         }
 
