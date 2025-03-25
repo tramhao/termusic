@@ -49,13 +49,11 @@ use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
 
 use crate::CombinedSettings;
-// -- internal
 
+/// The Interval in which to force a redraw, if no redraw happened in that time.
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 
-// Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
-
-// Let's define the component ids for our application
+/// The main TUI struct which handles message passing and the main-loop.
 pub struct UI {
     model: Model,
     playback: Playback,
