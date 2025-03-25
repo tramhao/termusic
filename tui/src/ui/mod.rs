@@ -63,14 +63,7 @@ pub struct UI {
 }
 
 impl UI {
-    /// Force a redraw if [`FORCED_REDRAW_INTERVAL`] has passed.
-    fn exec_interval_redraw(&mut self) {
-        if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
-            self.model.force_redraw();
-        }
-    }
-
-    /// Instantiates a new Ui
+    /// Create a new [`UI`] instance
     pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx).await;
@@ -83,9 +76,14 @@ impl UI {
         })
     }
 
-    /// ### run
-    ///
-    /// Main loop for Ui thread
+    /// Force a redraw if [`FORCED_REDRAW_INTERVAL`] has passed.
+    fn exec_interval_redraw(&mut self) {
+        if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
+            self.model.force_redraw();
+        }
+    }
+
+    /// Handle terminal init & finalize and start the UI Loop.
     pub async fn run(&mut self) -> Result<()> {
         self.model.init_terminal();
 
@@ -97,9 +95,9 @@ impl UI {
         res
     }
 
-    /// Main Loop function
+    /// Main Loop function.
     ///
-    /// This function does NOT handle initializing and finializing the terminal
+    /// This function does NOT handle initializing and finializing the terminal.
     async fn run_inner(&mut self) -> Result<()> {
         let mut stream_updates = self.playback.subscribe_to_stream_updates().await?;
 
@@ -180,6 +178,7 @@ impl UI {
         Ok(())
     }
 
+    /// Handle `current_track_index` possibly being changed
     fn handle_current_track_index(&mut self, current_track_index: usize) {
         info!(
             "index from player is:{current_track_index:?}, index in tui is:{:?}",
@@ -202,6 +201,7 @@ impl UI {
         }
     }
 
+    /// Handle running [`Status`] having possibly changed.
     fn handle_status(&mut self, status: Status) {
         match status {
             Status::Running => match self.model.playlist.status() {
@@ -234,6 +234,7 @@ impl UI {
         }
     }
 
+    /// Execute a TUI-Server Request from the channel.
     async fn run_playback(&mut self) -> Result<()> {
         if let Ok(cmd) = self.cmd_rx.try_recv() {
             match cmd {
