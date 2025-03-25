@@ -202,35 +202,29 @@ impl UI {
     }
 
     /// Handle running [`Status`] having possibly changed.
-    fn handle_status(&mut self, status: Status) {
-        match status {
-            Status::Running => match self.model.playlist.status() {
-                Status::Running => {}
-                Status::Stopped => {
-                    self.model.playlist.set_status(status);
-                    // This is to show the first album photo
+    fn handle_status(&mut self, new_status: Status) {
+        let old_status = self.model.playlist.status();
+        // nothing needs to be done as the status is the same
+        if new_status == old_status {
+            return;
+        }
+
+        self.model.playlist.set_status(new_status);
+
+        match new_status {
+            Status::Running => {
+                // This is to show the first album photo
+                if old_status == Status::Stopped {
                     self.model.player_update_current_track_after();
                 }
-                Status::Paused => {
-                    self.model.playlist.set_status(status);
+            }
+            Status::Stopped => {
+                // This is to clear the photo shown when stopped
+                if self.model.playlist.is_empty() {
+                    self.model.player_update_current_track_after();
                 }
-            },
-            Status::Stopped => match self.model.playlist.status() {
-                Status::Running | Status::Paused => {
-                    self.model.playlist.set_status(status);
-                    // This is to clear the photo shown when stopped
-                    if self.model.playlist.is_empty() {
-                        self.model.player_update_current_track_after();
-                    }
-                }
-                Status::Stopped => {}
-            },
-            Status::Paused => match self.model.playlist.status() {
-                Status::Running | Status::Stopped => {
-                    self.model.playlist.set_status(status);
-                }
-                Status::Paused => {}
-            },
+            }
+            Status::Paused => {}
         }
     }
 
