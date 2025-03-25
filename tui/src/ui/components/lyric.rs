@@ -331,39 +331,36 @@ impl Model {
         }
     }
 
+    /// Update the Lyric Component's title.
     pub fn lyric_update_title(&mut self) {
-        let mut lyric_title = " No track is playing ".to_string();
-        // error!("current track is: {:?}", self.playlist.get_current_track());
+        let track = self.current_song.as_ref();
 
-        if self.playlist.is_stopped() {
-            self.lyric_title_set(&lyric_title);
+        if self.playlist.is_stopped() || track.is_none() {
+            self.lyric_title_set(" No track is playing ".to_string());
             return;
         }
 
-        if let Some(track) = &self.current_song {
-            match track.media_type {
-                MediaType::Music => {
-                    let artist = track.artist().unwrap_or(UNKNOWN_ARTIST);
-                    let title = track.title().unwrap_or(UNKNOWN_TITLE);
-                    lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
-                }
-                MediaType::Podcast => {
-                    lyric_title = " Details: ".to_string();
-                }
-                MediaType::LiveRadio => {
-                    lyric_title = " Live Radio ".to_string();
-                }
+        let track = track.unwrap();
+
+        let lyric_title = match track.media_type {
+            MediaType::Music => {
+                let artist = track.artist().unwrap_or(UNKNOWN_ARTIST);
+                let title = track.title().unwrap_or(UNKNOWN_TITLE);
+                format!(" Lyrics of {artist:^.20} - {title:^.20} ")
             }
-        }
-        self.lyric_title_set(&lyric_title);
+            MediaType::Podcast => " Details: ".to_string(),
+            MediaType::LiveRadio => " Live Radio ".to_string(),
+        };
+        self.lyric_title_set(lyric_title);
     }
 
-    fn lyric_title_set(&mut self, lyric_title: &str) {
+    /// Set a Title for the Lyric Component.
+    fn lyric_title_set(&mut self, lyric_title: String) {
         self.app
             .attr(
                 &Id::Lyric,
                 Attribute::Title,
-                AttrValue::Title((lyric_title.to_string(), Alignment::Center)),
+                AttrValue::Title((lyric_title, Alignment::Center)),
             )
             .ok();
     }
