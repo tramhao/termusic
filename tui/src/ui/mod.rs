@@ -105,7 +105,6 @@ impl UI {
         let mut progress_interval = 0;
         while !self.model.quit {
             self.model.te_update_lyric_options();
-            // self.model.update_player_msg();
             self.model.update_outside_msg();
             if self.model.layout != TermusicLayout::Podcast {
                 self.model.lyric_update();
@@ -145,12 +144,6 @@ impl UI {
             self.model.view();
         }
 
-        // if let Err(e) = self.model.playlist.save() {
-        //     error!("error when saving playlist: {e}");
-        // };
-        // if let Err(e) = self.model.config.save() {
-        //     error!("error when saving config: {e}");
-        // };
         if self
             .model
             .config_tui
