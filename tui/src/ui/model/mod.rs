@@ -368,20 +368,25 @@ impl Model {
         let _drop = self.terminal.disable_raw_mode();
         let _drop = self.terminal.leave_alternate_screen();
     }
+
     /// Returns elapsed time since last redraw
     pub fn since_last_redraw(&self) -> Duration {
         self.last_redraw.elapsed()
     }
+
+    /// Force a redraw of the entire model
     pub fn force_redraw(&mut self) {
         self.redraw = true;
     }
 
+    /// Send a command to request the Track Progress and set the titles to the current state.
     pub fn run(&mut self) {
         self.command(TuiCmd::GetProgress);
         self.progress_update_title();
         self.lyric_update_title();
     }
 
+    /// Save the playlist and have the server reload the playlist.
     pub fn player_sync_playlist(&mut self) -> Result<()> {
         self.playlist.save()?;
         self.command(TuiCmd::ReloadPlaylist);
@@ -398,6 +403,7 @@ impl Model {
         self.update_playing_song();
     }
 
+    /// Send a [`TogglePause`](TuiCmd::TogglePause) command, if the conditions are right.
     pub fn player_toggle_pause(&mut self) {
         if self.playlist.is_empty() && self.playlist.current_track().is_none() {
             return;
@@ -406,6 +412,7 @@ impl Model {
         self.command(TuiCmd::TogglePause);
     }
 
+    /// Send a [`SkipPrevious`](TuiCmd::SkipPrevious) command.
     pub fn player_previous(&mut self) {
         self.command(TuiCmd::SkipPrevious);
     }

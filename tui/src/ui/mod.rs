@@ -49,13 +49,11 @@ use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
 
 use crate::CombinedSettings;
-// -- internal
 
+/// The Interval in which to force a redraw, if no redraw happened in that time.
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 
-// Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
-
-// Let's define the component ids for our application
+/// The main TUI struct which handles message passing and the main-loop.
 pub struct UI {
     model: Model,
     playback: Playback,
@@ -63,15 +61,7 @@ pub struct UI {
 }
 
 impl UI {
-    fn check_force_redraw(&mut self) {
-        // If source are loading and at least 100ms has elapsed since last redraw...
-        // if self.model.status == Status::Running {
-        if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
-            self.model.force_redraw();
-        }
-        // }
-    }
-    /// Instantiates a new Ui
+    /// Create a new [`UI`] instance
     pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx).await;
@@ -84,9 +74,14 @@ impl UI {
         })
     }
 
-    /// ### run
-    ///
-    /// Main loop for Ui thread
+    /// Force a redraw if [`FORCED_REDRAW_INTERVAL`] has passed.
+    fn exec_interval_redraw(&mut self) {
+        if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
+            self.model.force_redraw();
+        }
+    }
+
+    /// Handle terminal init & finalize and start the UI Loop.
     pub async fn run(&mut self) -> Result<()> {
         self.model.init_terminal();
 
@@ -98,9 +93,9 @@ impl UI {
         res
     }
 
-    /// Main Loop function
+    /// Main Loop function.
     ///
-    /// This function does NOT handle initializing and finializing the terminal
+    /// This function does NOT handle initializing and finializing the terminal.
     async fn run_inner(&mut self) -> Result<()> {
         let mut stream_updates = self.playback.subscribe_to_stream_updates().await?;
 
@@ -108,7 +103,6 @@ impl UI {
         let mut progress_interval = 0;
         while !self.model.quit {
             self.model.te_update_lyric_options();
-            // self.model.update_player_msg();
             self.model.update_outside_msg();
             if self.model.layout != TermusicLayout::Podcast {
                 self.model.lyric_update();
@@ -144,16 +138,10 @@ impl UI {
             self.model.ensure_quit_popup_top_most_focus();
 
             // Check whether to force redraw
-            self.check_force_redraw();
+            self.exec_interval_redraw();
             self.model.view();
         }
 
-        // if let Err(e) = self.model.playlist.save() {
-        //     error!("error when saving playlist: {e}");
-        // };
-        // if let Err(e) = self.model.config.save() {
-        //     error!("error when saving config: {e}");
-        // };
         if self
             .model
             .config_tui
@@ -181,6 +169,7 @@ impl UI {
         Ok(())
     }
 
+    /// Handle `current_track_index` possibly being changed
     fn handle_current_track_index(&mut self, current_track_index: usize) {
         info!(
             "index from player is:{current_track_index:?}, index in tui is:{:?}",
@@ -203,38 +192,34 @@ impl UI {
         }
     }
 
-    fn handle_status(&mut self, status: Status) {
-        match status {
-            Status::Running => match self.model.playlist.status() {
-                Status::Running => {}
-                Status::Stopped => {
-                    self.model.playlist.set_status(status);
-                    // This is to show the first album photo
+    /// Handle running [`Status`] having possibly changed.
+    fn handle_status(&mut self, new_status: Status) {
+        let old_status = self.model.playlist.status();
+        // nothing needs to be done as the status is the same
+        if new_status == old_status {
+            return;
+        }
+
+        self.model.playlist.set_status(new_status);
+
+        match new_status {
+            Status::Running => {
+                // This is to show the first album photo
+                if old_status == Status::Stopped {
                     self.model.player_update_current_track_after();
                 }
-                Status::Paused => {
-                    self.model.playlist.set_status(status);
+            }
+            Status::Stopped => {
+                // This is to clear the photo shown when stopped
+                if self.model.playlist.is_empty() {
+                    self.model.player_update_current_track_after();
                 }
-            },
-            Status::Stopped => match self.model.playlist.status() {
-                Status::Running | Status::Paused => {
-                    self.model.playlist.set_status(status);
-                    // This is to clear the photo shown when stopped
-                    if self.model.playlist.is_empty() {
-                        self.model.player_update_current_track_after();
-                    }
-                }
-                Status::Stopped => {}
-            },
-            Status::Paused => match self.model.playlist.status() {
-                Status::Running | Status::Stopped => {
-                    self.model.playlist.set_status(status);
-                }
-                Status::Paused => {}
-            },
+            }
+            Status::Paused => {}
         }
     }
 
+    /// Execute a TUI-Server Request from the channel.
     async fn run_playback(&mut self) -> Result<()> {
         if let Ok(cmd) = self.cmd_rx.try_recv() {
             match cmd {
