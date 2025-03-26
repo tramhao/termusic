@@ -165,7 +165,7 @@ pub struct Model {
     pub playlist: Playlist,
 
     #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
-    pub ueberzug_instance: UeInstance,
+    pub ueberzug_instance: Option<UeInstance>,
     pub viuer_supported: ViuerSupported,
     pub xywh: xywh::Xywh,
 
@@ -209,6 +209,7 @@ fn get_viuer_support() -> ViuerSupported {
 }
 
 impl Model {
+    #[allow(clippy::too_many_lines)]
     pub async fn new(config: CombinedSettings, cmd_to_server_tx: UnboundedSender<TuiCmd>) -> Self {
         let CombinedSettings {
             server: config_server,
@@ -223,7 +224,11 @@ impl Model {
 
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
-        let viuer_supported = get_viuer_support();
+        let viuer_supported = if config_tui.read().cover_features_enabled() {
+            get_viuer_support()
+        } else {
+            ViuerSupported::NotSupported
+        };
 
         info!("Using viuer protocol {:#?}", viuer_supported);
 
@@ -232,7 +237,13 @@ impl Model {
         let terminal = TerminalBridge::new_crossterm().expect("Could not initialize terminal");
 
         #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
-        let ueberzug_instance = UeInstance::default();
+        let ueberzug_instance = if config_tui.read().cover_features_enabled()
+            && viuer_supported == ViuerSupported::NotSupported
+        {
+            Some(UeInstance::default())
+        } else {
+            None
+        };
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 
         let db_podcast = DBPod::new(&db_path).expect("error connecting to podcast db.");
