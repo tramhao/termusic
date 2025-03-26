@@ -45,6 +45,8 @@ pub struct UeInstance {
 
 impl Default for UeInstance {
     fn default() -> Self {
+        info!("Potentially using ueberzug");
+
         Self {
             ueberzug: UeInstanceState::New,
         }
