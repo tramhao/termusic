@@ -6,6 +6,7 @@
 - Feat(tui): add new cli option `--disable-cover` which actually disables all cover probing and behaves as if no cover features are enabled.
 - Fix(tui): set `ueberzug` command to `--silent`.
 - Fix(tui): force viuer to use the terminal image protocol that was probed at the beginning.
+- Fix(tui): add CTRL+C handler for when TUI key-reading is not active yet or not active anymore.
 
 ### [V0.10.0]
 - Released on: March 8, 2025.
