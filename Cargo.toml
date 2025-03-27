@@ -73,7 +73,7 @@ rfc822_sanitizer = "0.3"
 rss = "2.0.12"
 rusqlite = { version = "0.34", features = ["bundled"] }
 sanitize-filename = "0.6"
-semver = "1.0"
+semver = "1.0.26"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 serde_yaml = "0.9"
