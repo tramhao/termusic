@@ -2416,7 +2416,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -4177,9 +4177,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "stream-download"
-version = "0.15.1"
+version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "362de077b3b098490975fa0d3086a16f881ba96923ea2b12e4c039bad4caaca6"
+checksum = "75ffdb71547d4dd19e9b727f90b0745b0fc2ffa4f86c4c9f36264ae6dec7432d"
 dependencies = [
  "bytes",
  "educe",
@@ -4188,7 +4188,6 @@ dependencies = [
  "parking_lot",
  "rangemap",
  "reqwest",
- "tap",
  "tempfile",
  "thiserror 2.0.10",
  "tokio",
@@ -4503,12 +4502,6 @@ dependencies = [
  "toml",
  "version-compare",
 ]
-
-[[package]]
-name = "tap"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "target-lexicon"
