@@ -129,8 +129,7 @@ async fn actual_main() -> Result<()> {
         .await
         .with_context(|| format!("Error binding address: {}", addr))?;
     info!("Server listening on {}", tcp_listener.local_addr().unwrap());
-    let tcp_stream =
-        TcpIncoming::from_listener(tcp_listener, true, None).map_err(|e| anyhow::anyhow!(e))?;
+    let tcp_stream = TcpIncoming::from(tcp_listener).with_nodelay(Some(true));
 
     let tokio_handle = Handle::current();
     let (player_handle_os_tx, player_handle_os_rx) = oneshot::channel();
