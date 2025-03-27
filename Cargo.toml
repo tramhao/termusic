@@ -30,7 +30,7 @@ thiserror = "2.0"
 async-channel = "2.2"
 async-trait = "0.1"
 base64 = "0.22"
-bytes = "1.9"
+bytes = "1.10"
 chrono = "0.4.39"
 clap = { version = "4.5", features = ["derive", "env"] }
 ctrlc = { version = "3.4", features = ["termination"] }
