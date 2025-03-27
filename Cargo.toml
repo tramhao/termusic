@@ -59,7 +59,7 @@ parking_lot = "^0.12"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
-pretty_assertions = "1.4"
+pretty_assertions = "1.4.1"
 quick-xml = "0.37"
 rand = "0.9"
 regex = "^1.11.1"
