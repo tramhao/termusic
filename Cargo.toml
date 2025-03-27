@@ -70,7 +70,7 @@ reqwest = { version = "0.12.15", features = [
     "stream",
 ] }
 rfc822_sanitizer = "0.3"
-rss = "2.0.11"
+rss = "2.0.12"
 rusqlite = { version = "0.34", features = ["bundled"] }
 sanitize-filename = "0.6"
 semver = "1.0"
