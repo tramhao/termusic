@@ -27,15 +27,12 @@ pub fn decode(content: &str) -> Vec<M3UItem> {
         let mut p_value = match PlaylistValue::try_from_str(line) {
             Ok(v) => v,
             Err(err) => {
-                warn!("Failed to parse url / path, ignoring! Error: {:#?}", err);
+                warn!("Failed to parse url / path, ignoring! Error: {err:#?}");
                 continue;
             }
         };
         if let Err(err) = p_value.file_url_to_path() {
-            warn!(
-                "Failed to convert file:// url to path, ignoring! Error: {:#?}",
-                err
-            );
+            warn!("Failed to convert file:// url to path, ignoring! Error: {err:#?}");
             continue;
         }
 

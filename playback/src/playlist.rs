@@ -461,7 +461,7 @@ impl Playlist {
         }
         let path = Path::new(track);
         if !filetype_supported(track) {
-            error!("unsupported filetype: {:#?}", track);
+            error!("unsupported filetype: {track:#?}");
             let p = path.to_path_buf();
             let ext = p.extension().map(|v| v.to_string_lossy().to_string());
             return Err(PlaylistAddError::UnsupportedFileType(ext, p));

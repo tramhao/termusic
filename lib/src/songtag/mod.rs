@@ -112,17 +112,17 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 
     match netease_res {
         Ok(vec) => results.extend(vec),
-        Err(err) => error!("Netease Error: {:#}", err),
+        Err(err) => error!("Netease Error: {err:#}"),
     }
 
     match migu_res {
         Ok(vec) => results.extend(vec),
-        Err(err) => error!("Migu Error: {:#}", err),
+        Err(err) => error!("Migu Error: {err:#}"),
     }
 
     match kugou_res {
         Ok(vec) => results.extend(vec),
-        Err(err) => error!("Kogou Error: {:#}", err),
+        Err(err) => error!("Kogou Error: {err:#}"),
     }
 
     tx_tageditor.send(SearchLyricState::Finish(results)).ok();

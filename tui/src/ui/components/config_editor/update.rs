@@ -390,12 +390,12 @@ impl Model {
                             self.preview_theme_apply(theme, index);
                         }
                         Err(e) => {
-                            error!("Failed to load theme colors: {:?}", e);
+                            error!("Failed to load theme colors: {e:?}");
                         }
                     }
                 }
                 Err(e) => {
-                    error!("Error getting config path: {:?}", e);
+                    error!("Error getting config path: {e:?}");
                 }
             }
         }

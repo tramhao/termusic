@@ -91,7 +91,7 @@ pub fn check_feed(feed: PodcastFeed, max_retries: usize, tp: &TaskPool, tx_to_ma
                 }
             },
             Err(err) => {
-                error!("get_feed_data had a Error: {:#?}", err);
+                error!("get_feed_data had a Error: {err:#?}");
                 let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed)));
             }
         }

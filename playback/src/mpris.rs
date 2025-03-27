@@ -203,7 +203,7 @@ impl GeneralPlayer {
                 let _ = self.seek(offset);
             }
             MediaControlEvent::SetVolume(volume) => {
-                debug!("got souvlaki SetVolume: {:#}", volume);
+                debug!("got souvlaki SetVolume: {volume:#}");
                 // volume can be anything above 0; 1.0 means a sensible max; termusic currently does not support more than 100 volume
                 // warn users trying to set higher than max via logging
                 if volume > 1.0 {
