@@ -94,10 +94,10 @@ impl Counter {
     pub fn get_state(&self) -> Option<usize> {
         match self
             .props
-            .get(Attribute::Value)
-            .map(|v| v.unwrap_payload())?
+            .get_ref(Attribute::Value)
+            .and_then(AttrValue::as_payload)?
         {
-            PropPayload::One(PropValue::Usize(v)) => Some(v),
+            PropPayload::One(PropValue::Usize(v)) => Some(*v),
             _ => None,
         }
     }
@@ -106,7 +106,12 @@ impl Counter {
 impl MockComponent for Counter {
     fn view(&mut self, frame: &mut Frame<'_>, area: Rect) {
         // Check if visible
-        if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
+        if self
+            .props
+            .get_ref(Attribute::Display)
+            .and_then(AttrValue::as_flag)
+            .unwrap_or(true)
+        {
             // Get properties
             let value = self.get_state();
             let text = if let Some(value) = value {
@@ -117,43 +122,46 @@ impl MockComponent for Counter {
 
             let alignment = self
                 .props
-                .get_or(Attribute::TextAlign, AttrValue::Alignment(Alignment::Left))
-                .unwrap_alignment();
+                .get_ref(Attribute::TextAlign)
+                .and_then(AttrValue::as_alignment)
+                .unwrap_or(Alignment::Left);
             let foreground = self
                 .props
-                .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
-                .unwrap_color();
+                .get_ref(Attribute::Foreground)
+                .and_then(AttrValue::as_color)
+                .unwrap_or(Color::Reset);
             let background = self
                 .props
-                .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
-                .unwrap_color();
+                .get_ref(Attribute::Background)
+                .and_then(AttrValue::as_color)
+                .unwrap_or(Color::Reset);
             let modifiers = self
                 .props
-                .get_or(
-                    Attribute::TextProps,
-                    AttrValue::TextModifiers(TextModifiers::empty()),
-                )
-                .unwrap_text_modifiers();
+                .get_ref(Attribute::TextProps)
+                .and_then(AttrValue::as_text_modifiers)
+                .unwrap_or(TextModifiers::empty());
             let title = self
                 .props
-                .get_or(
-                    Attribute::Title,
-                    AttrValue::Title((String::default(), Alignment::Center)),
-                )
-                .unwrap_title();
+                .get_ref(Attribute::Title)
+                .and_then(AttrValue::as_title)
+                // NOTE: clone should not be necessary anymore with tui-realm-stdlib next version
+                .map_or((String::new(), Alignment::Center), Clone::clone);
             let borders = self
                 .props
-                .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
-                .unwrap_borders();
+                .get_ref(Attribute::Borders)
+                .and_then(AttrValue::as_borders)
+                // Note: Borders should be copy-able
+                .map_or(Borders::default(), Clone::clone);
             let focus = self
                 .props
-                .get_or(Attribute::Focus, AttrValue::Flag(false))
-                .unwrap_flag();
+                .get_ref(Attribute::Focus)
+                .and_then(AttrValue::as_flag)
+                .unwrap_or(false);
 
             let inactive_style = self
                 .props
-                .get(Attribute::FocusStyle)
-                .map(tuirealm::AttrValue::unwrap_style);
+                .get_ref(Attribute::FocusStyle)
+                .and_then(AttrValue::as_style);
             frame.render_widget(
                 Paragraph::new(text)
                     .block(get_block(borders, Some(title), focus, inactive_style))

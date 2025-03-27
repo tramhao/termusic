@@ -322,10 +322,10 @@ impl InputStates {
 pub struct KeyCombo {
     props: Props,
     pub states: SelectStates,
-    hg_str: Option<String>, // CRAP CRAP CRAP
     pub states_input: InputStates,
 }
 
+// TODO: refactor the draw code to be less duplicated across functions
 impl KeyCombo {
     #[allow(dead_code)]
     pub fn input_len(mut self, ilen: usize) -> Self {
@@ -352,8 +352,8 @@ impl KeyCombo {
 
     fn get_input_len(&self) -> Option<usize> {
         self.props
-            .get(Attribute::InputLength)
-            .map(AttrValue::unwrap_length)
+            .get_ref(Attribute::InputLength)
+            .and_then(AttrValue::as_length)
     }
 
     /// ### `is_valid`
@@ -475,16 +475,19 @@ impl KeyCombo {
             .collect();
         let mut foreground = self
             .props
-            .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
-            .unwrap_color();
+            .get_ref(Attribute::Foreground)
+            .and_then(AttrValue::as_color)
+            .unwrap_or(Color::Reset);
         let mut background = self
             .props
-            .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
-            .unwrap_color();
+            .get_ref(Attribute::Background)
+            .and_then(AttrValue::as_color)
+            .unwrap_or(Color::Reset);
         let hg: Color = self
             .props
-            .get_or(Attribute::HighlightedColor, AttrValue::Color(foreground))
-            .unwrap_color();
+            .get_ref(Attribute::HighlightedColor)
+            .and_then(AttrValue::as_color)
+            .unwrap_or(foreground);
         // Prepare layout
         let chunks = Layout::default()
             .direction(LayoutDirection::Vertical)
@@ -498,8 +501,10 @@ impl KeyCombo {
         };
         let borders = self
             .props
-            .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
-            .unwrap_borders();
+            .get_ref(Attribute::Borders)
+            .and_then(AttrValue::as_borders)
+            // Note: Borders should be copy-able
+            .map_or(Borders::default(), Clone::clone);
         let block: Block<'_> = Block::default()
             .borders(BorderSides::LEFT | BorderSides::TOP | BorderSides::RIGHT)
             .border_style(borders.style())
@@ -507,20 +512,21 @@ impl KeyCombo {
             .style(Style::default().bg(background));
         let title = self
             .props
-            .get(Attribute::Title)
-            .map(tuirealm::AttrValue::unwrap_title);
+            .get_ref(Attribute::Title)
+            .and_then(AttrValue::as_title);
         let mut block = match title {
-            Some((text, alignment)) => block.title(text).title_alignment(alignment),
+            Some((text, alignment)) => block.title(text.as_str()).title_alignment(*alignment),
             None => block,
         };
         let focus = self
             .props
-            .get_or(Attribute::Focus, AttrValue::Flag(false))
-            .unwrap_flag();
+            .get_ref(Attribute::Focus)
+            .and_then(AttrValue::as_flag)
+            .unwrap_or(false);
         let inactive_style = self
             .props
-            .get(Attribute::FocusStyle)
-            .map(tuirealm::AttrValue::unwrap_style);
+            .get_ref(Attribute::FocusStyle)
+            .and_then(AttrValue::as_style);
 
         let mut style = if focus {
             borders.style()
@@ -532,8 +538,8 @@ impl KeyCombo {
         if !self.is_valid() {
             if let Some(style_invalid) = self
                 .props
-                .get(Attribute::Custom(INPUT_INVALID_STYLE))
-                .map(AttrValue::unwrap_style)
+                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+                .and_then(AttrValue::as_style)
             {
                 block = block.border_style(style_invalid);
                 foreground = style_invalid.fg.unwrap_or(Color::Reset);
@@ -558,11 +564,10 @@ impl KeyCombo {
 
         // Apply invalid style
         if !self.is_valid() {
-            // if focus && !self.is_valid() {
             if let Some(style) = self
                 .props
-                .get(Attribute::Custom(INPUT_INVALID_STYLE))
-                .map(AttrValue::unwrap_style)
+                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+                .and_then(AttrValue::as_style)
             {
                 block = block.border_style(style);
                 foreground = style.fg.unwrap_or(Color::Reset);
@@ -579,11 +584,11 @@ impl KeyCombo {
                     .add_modifier(TextModifiers::REVERSED),
             );
         // Highlighted symbol
-        self.hg_str = self
+        let hg_str = self
             .props
-            .get(Attribute::HighlightedStr)
-            .map(tuirealm::AttrValue::unwrap_string);
-        if let Some(hg_str) = &self.hg_str {
+            .get_ref(Attribute::HighlightedStr)
+            .and_then(AttrValue::as_string);
+        if let Some(hg_str) = hg_str {
             list = list.highlight_symbol(hg_str);
         }
         let mut state: ListState = ListState::default();
@@ -595,12 +600,14 @@ impl KeyCombo {
     fn get_normal_closed_style(&self) -> Style {
         let foreground = self
             .props
-            .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
-            .unwrap_color();
+            .get_ref(Attribute::Foreground)
+            .and_then(AttrValue::as_color)
+            .unwrap_or(Color::Reset);
         let background = self
             .props
-            .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
-            .unwrap_color();
+            .get_ref(Attribute::Background)
+            .and_then(AttrValue::as_color)
+            .unwrap_or(Color::Reset);
 
         Style::default().bg(background).fg(foreground)
     }
@@ -612,12 +619,13 @@ impl KeyCombo {
         // Render select
         let inactive_style = self
             .props
-            .get(Attribute::FocusStyle)
-            .map(tuirealm::AttrValue::unwrap_style);
+            .get_ref(Attribute::FocusStyle)
+            .and_then(AttrValue::as_style);
         let focus = self
             .props
-            .get_or(Attribute::Focus, AttrValue::Flag(false))
-            .unwrap_flag();
+            .get_ref(Attribute::Focus)
+            .and_then(AttrValue::as_flag)
+            .unwrap_or(false);
         let mut style = if focus {
             self.get_normal_closed_style()
         } else {
@@ -625,8 +633,10 @@ impl KeyCombo {
         };
         let borders = self
             .props
-            .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
-            .unwrap_borders();
+            .get_ref(Attribute::Borders)
+            .and_then(AttrValue::as_borders)
+            // Note: Borders should be copy-able
+            .map_or(Borders::default(), Clone::clone);
         let borders_style = if focus {
             borders.style()
         } else {
@@ -639,11 +649,11 @@ impl KeyCombo {
             .style(style);
         let title = self
             .props
-            .get(Attribute::Title)
-            .map(AttrValue::unwrap_title);
+            .get_ref(Attribute::Title)
+            .and_then(AttrValue::as_title);
 
         let mut block = match title {
-            Some((text, alignment)) => block.title(text).title_alignment(alignment),
+            Some((text, alignment)) => block.title(text.as_str()).title_alignment(*alignment),
             None => block,
         };
         // Apply invalid style
@@ -651,8 +661,8 @@ impl KeyCombo {
             // if focus && !self.is_valid() {
             if let Some(style_invalid) = self
                 .props
-                .get(Attribute::Custom(INPUT_INVALID_STYLE))
-                .map(AttrValue::unwrap_style)
+                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+                .and_then(AttrValue::as_style)
             {
                 block = block.border_style(style_invalid);
                 style = style_invalid;
@@ -676,40 +686,43 @@ impl KeyCombo {
 
         let mut foreground = self
             .props
-            .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
-            .unwrap_color();
+            .get_ref(Attribute::Foreground)
+            .and_then(AttrValue::as_color)
+            .unwrap_or(Color::Reset);
         let mut background = self
             .props
-            .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
-            .unwrap_color();
+            .get_ref(Attribute::Background)
+            .and_then(AttrValue::as_color)
+            .unwrap_or(Color::Reset);
         let modifiers = self
             .props
-            .get_or(
-                Attribute::TextProps,
-                AttrValue::TextModifiers(TextModifiers::empty()),
-            )
-            .unwrap_text_modifiers();
+            .get_ref(Attribute::TextProps)
+            .and_then(AttrValue::as_text_modifiers)
+            .unwrap_or(TextModifiers::empty());
         let borders = self
             .props
-            .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
-            .unwrap_borders()
+            .get_ref(Attribute::Borders)
+            .and_then(AttrValue::as_borders)
+            // Note: Borders should be copy-able
+            .map_or(Borders::default(), Clone::clone)
             .sides(BorderSides::NONE);
 
         let focus = self
             .props
-            .get_or(Attribute::Focus, AttrValue::Flag(false))
-            .unwrap_flag();
+            .get_ref(Attribute::Focus)
+            .and_then(AttrValue::as_flag)
+            .unwrap_or(false);
         let inactive_style = self
             .props
-            .get(Attribute::FocusStyle)
-            .map(AttrValue::unwrap_style);
+            .get_ref(Attribute::FocusStyle)
+            .and_then(AttrValue::as_style);
         let mut block = get_block(borders, None, focus, inactive_style);
         // Apply invalid style
         if focus && !self.is_valid() {
             if let Some(style) = self
                 .props
-                .get(Attribute::Custom(INPUT_INVALID_STYLE))
-                .map(AttrValue::unwrap_style)
+                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+                .and_then(AttrValue::as_style)
             {
                 block = block.borders(BorderSides::NONE);
                 foreground = style.fg.unwrap_or(Color::Reset);
@@ -719,15 +732,13 @@ impl KeyCombo {
         let text_to_display = self.states_input.render_value();
         let show_placeholder = text_to_display.is_empty();
         // Choose whether to show placeholder; if placeholder is unset, show nothing
-        let text_to_display = if show_placeholder {
+        let text_to_display: &str = if show_placeholder {
             self.props
-                .get_or(
-                    Attribute::Custom(INPUT_PLACEHOLDER),
-                    AttrValue::String(String::new()),
-                )
-                .unwrap_string()
+                .get_ref(Attribute::Custom(INPUT_PLACEHOLDER))
+                .and_then(AttrValue::as_string)
+                .map_or("", |v| v.as_str())
         } else {
-            text_to_display
+            &text_to_display
         };
         // Choose paragraph style based on whether is valid or not and if has focus and if should show placeholder
         let paragraph_style = if focus {
@@ -740,11 +751,9 @@ impl KeyCombo {
         };
         let paragraph_style = if show_placeholder && focus {
             self.props
-                .get_or(
-                    Attribute::Custom(INPUT_PLACEHOLDER_STYLE),
-                    AttrValue::Style(paragraph_style),
-                )
-                .unwrap_style()
+                .get_ref(Attribute::Custom(INPUT_PLACEHOLDER_STYLE))
+                .and_then(AttrValue::as_style)
+                .unwrap_or(paragraph_style)
         } else {
             paragraph_style
         };
@@ -765,14 +774,20 @@ impl KeyCombo {
 
     fn rewindable(&self) -> bool {
         self.props
-            .get_or(Attribute::Rewind, AttrValue::Flag(false))
-            .unwrap_flag()
+            .get_ref(Attribute::Rewind)
+            .and_then(AttrValue::as_flag)
+            .unwrap_or(false)
     }
 }
 
 impl MockComponent for KeyCombo {
     fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
-        if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
+        if self
+            .props
+            .get_ref(Attribute::Display)
+            .and_then(AttrValue::as_flag)
+            .unwrap_or(true)
+        {
             if self.states.is_tab_open() {
                 self.render_input(render, area);
                 self.render_open_tab(render, area);
@@ -794,8 +809,8 @@ impl MockComponent for KeyCombo {
                 let choices: Vec<String> = value
                     .unwrap_payload()
                     .unwrap_vec()
-                    .iter()
-                    .map(|x| x.clone().unwrap_str())
+                    .into_iter()
+                    .map(PropValue::unwrap_str)
                     .collect();
                 self.states.set_choices(&choices);
             }
