@@ -2,7 +2,7 @@ use crate::ui::model::TermusicLayout;
 use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
@@ -565,7 +565,7 @@ impl Model {
         if let Ok(vec) = self.db.get_all_records() {
             let mut i = 0;
             loop {
-                if let Some(record) = vec.choose(&mut rand::thread_rng()) {
+                if let Some(record) = vec.choose(&mut rand::rng()) {
                     if record.title.contains("Unknown Title") {
                         continue;
                     }
@@ -586,7 +586,7 @@ impl Model {
         let mut result = vec![];
         if let Ok(vec) = self.db.get_all_records() {
             loop {
-                if let Some(v) = vec.choose(&mut rand::thread_rng()) {
+                if let Some(v) = vec.choose(&mut rand::rng()) {
                     if v.album.contains("empty") {
                         continue;
                     }

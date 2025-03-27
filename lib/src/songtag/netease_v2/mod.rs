@@ -7,7 +7,7 @@ use libaes::Cipher;
 use lofty::picture::Picture;
 use model::{to_lyric, to_song_info, to_song_url};
 use num_bigint::BigUint;
-use rand::{rngs::OsRng, RngCore};
+use rand::{rngs::OsRng, TryRngCore};
 use reqwest::{Client, ClientBuilder, RequestBuilder};
 
 use crate::songtag::ServiceProvider;
@@ -91,7 +91,9 @@ impl Api {
         const PRESET_KEY: &[u8; 16] = b"0CoJUm6Qyw8W8jud";
 
         let mut random_bytes = [0u8; 16];
-        OsRng.fill_bytes(&mut random_bytes);
+        OsRng
+            .try_fill_bytes(&mut random_bytes)
+            .expect("Random bytes from the os");
 
         let mut key = [0u8; 16];
         random_bytes.iter().enumerate().for_each(|(idx, value)| {

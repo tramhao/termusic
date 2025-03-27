@@ -249,8 +249,8 @@ pub fn absolute_path_base<'a>(path: &'a Path, base: &Path) -> Cow<'a, Path> {
 /// Generate `len` random ascii character (a-z0-9)
 #[must_use]
 pub fn random_ascii(len: usize) -> String {
-    rand::thread_rng()
-        .sample_iter(&rand::distributions::Alphanumeric)
+    rand::rng()
+        .sample_iter(&rand::distr::Alphanumeric)
         .take(len)
         .map(|v| char::from(v).to_ascii_lowercase())
         .collect()
