@@ -177,8 +177,8 @@ impl SelectStates {
     /// Set `SelectStates` choices from a vector of str
     /// In addition resets current selection and keep index if possible or set it to the first value
     /// available
-    pub fn set_choices(&mut self, choices: &[String]) {
-        self.choices = choices.to_vec();
+    pub fn set_choices(&mut self, choices: Vec<String>) {
+        self.choices = choices;
         // Keep index if possible
         if self.selected >= self.choices.len() {
             self.selected = match self.choices.len() {
@@ -812,7 +812,7 @@ impl MockComponent for KeyCombo {
                     .into_iter()
                     .map(PropValue::unwrap_str)
                     .collect();
-                self.states.set_choices(&choices);
+                self.states.set_choices(choices);
             }
             Attribute::Value => {
                 self.states
@@ -948,12 +948,13 @@ mod test {
         assert_eq!(states.selected, 0);
         assert_eq!(states.choices.len(), 0);
         assert_eq!(states.tab_open, false);
-        let choices: &[String] = &[
+        let choices = [
             "lemon".to_string(),
             "strawberry".to_string(),
             "vanilla".to_string(),
             "chocolate".to_string(),
-        ];
+        ]
+        .to_vec();
         states.set_choices(choices);
         assert_eq!(states.selected, 0);
         assert_eq!(states.choices.len(), 4);
@@ -982,21 +983,22 @@ mod test {
         states.prev_choice(false);
         assert_eq!(states.selected, 2);
         // Update
-        let choices: &[String] = &["lemon".to_string(), "strawberry".to_string()];
+        let choices = ["lemon".to_string(), "strawberry".to_string()].to_vec();
         states.set_choices(choices);
         assert_eq!(states.selected, 1); // Move to first index available
         assert_eq!(states.choices.len(), 2);
         let choices = Vec::new();
-        states.set_choices(&choices);
+        states.set_choices(choices);
         assert_eq!(states.selected, 0); // Move to first index available
         assert_eq!(states.choices.len(), 0);
         // Rewind
-        let choices: &[String] = &[
+        let choices = [
             "lemon".to_string(),
             "strawberry".to_string(),
             "vanilla".to_string(),
             "chocolate".to_string(),
-        ];
+        ]
+        .to_vec();
         states.set_choices(choices);
         states.open_tab();
         assert_eq!(states.selected, 0);
