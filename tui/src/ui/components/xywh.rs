@@ -271,6 +271,11 @@ impl Model {
                     y: xywh.y as i16,
                     width: Some(xywh.width),
                     height: None,
+                    // Force the specific protocol we probed for earlier
+                    use_iterm: self.viuer_supported == ViuerSupported::ITerm,
+                    use_kitty: self.viuer_supported == ViuerSupported::Kitty,
+                    #[cfg(feature = "cover-viuer-sixel")]
+                    use_sixel: self.viuer_supported == ViuerSupported::Sixel,
                     ..viuer::Config::default()
                 };
                 viuer::print(img, &config).context("viuer::print")?;
