@@ -11,6 +11,11 @@ pub struct TuiOverlay {
     ///
     /// (disables ueberzug, sixel, iterm, kitty image displaying)
     pub coverart_hidden_overwrite: Option<bool>,
+
+    /// Enable/Disable checking for cover support.
+    ///
+    /// If `false`, will treat as if no cover features are compiled-in.
+    pub cover_features: bool,
 }
 
 impl TuiOverlay {
@@ -24,5 +29,11 @@ impl TuiOverlay {
         } else {
             self.settings.coverart.hidden
         }
+    }
+
+    /// Get whether cover features should be enabled or not, regardless if they are compiled-in or not.
+    #[must_use]
+    pub fn cover_features_enabled(&self) -> bool {
+        self.cover_features
     }
 }

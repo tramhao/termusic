@@ -1,5 +1,11 @@
 ## ChangeLog
 
+### next
+
+- Change(tui): rename cli option `--disable-cover`  to `--hide-cover`
+- Feat(tui): add new cli option `--disable-cover` which actually disables all cover probing and behaves as if no cover features are enabled.
+- Fix(tui): set `ueberzug` command to `--silent`.
+
 ### [V0.10.0]
 - Released on: March 8, 2025.
 - Change: move the "no backend selected" compile error to the "-server" package instead of "-playback" (no need to specify a feature when compiling "termusic"(tui) now)

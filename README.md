@@ -84,7 +84,7 @@ You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmp
 #### Album cover support
 
 To display covers in the terminal itself, feature `cover` can be enabled.
-To only enable specific protocols for cover support, see [Cargo.toml#features](./Cargo.toml).
+To only enable specific protocols for cover support, see [tui/Cargo.toml#features](./tui/Cargo.toml).
 
 Feature `cover-ueberzug` will require some ueberzug implementation to be present at runtime.
 

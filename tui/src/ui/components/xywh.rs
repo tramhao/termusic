@@ -242,7 +242,7 @@ impl Model {
         match self.viuer_supported {
             ViuerSupported::NotSupported => {
                 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
-                {
+                if let Some(instance) = self.ueberzug_instance.as_mut() {
                     let mut cache_file = dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
                     cache_file.push("termusic");
                     if !cache_file.exists() {
@@ -254,8 +254,7 @@ impl Model {
                         anyhow::bail!("cover file is not saved correctly");
                     }
                     if let Some(file) = cache_file.as_path().to_str() {
-                        self.ueberzug_instance
-                            .draw_cover_ueberzug(file, &xywh, false)?;
+                        instance.draw_cover_ueberzug(file, &xywh, false)?;
                     }
                 }
             }
@@ -304,7 +303,9 @@ impl Model {
             }
             ViuerSupported::NotSupported => {
                 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
-                self.ueberzug_instance.clear_cover_ueberzug()?;
+                if let Some(instance) = self.ueberzug_instance.as_mut() {
+                    instance.clear_cover_ueberzug()?;
+                }
             }
         }
         Ok(())

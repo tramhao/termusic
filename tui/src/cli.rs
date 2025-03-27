@@ -34,8 +34,11 @@ pub struct Args {
     /// With no `MUSIC_DIRECTORY`, use config in `~/.config/termusic/config.toml`,
     /// default is ~/Music.
     pub music_directory: Option<PathBuf>,
-    /// Not showing album cover. default is showing.  
+    /// Not showing album cover. default is showing.
     #[arg(short = 'c', long)]
+    pub hide_cover: bool,
+    /// Disable cover support, even if compiled-in.
+    #[arg(long)]
     pub disable_cover: bool,
     /// Not showing discord representation. default is showing.
     #[arg(short, long)]

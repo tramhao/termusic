@@ -59,8 +59,8 @@ impl Default for Xywh {
         let width = 20_u32;
         let height = 20_u32;
         let (term_width, term_height) = Self::get_terminal_size_u32();
-        let x = term_width - 1;
-        let y = term_height - 9;
+        let x = term_width.saturating_sub(1);
+        let y = term_height.saturating_sub(9);
 
         Self {
             x_between_1_100: 100,
