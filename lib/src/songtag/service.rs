@@ -4,7 +4,7 @@ use lofty::picture::Picture;
 
 use super::SongTag;
 
-#[allow(dead_code)] // TODO: change this to "expected" if MSRV is 1.81
+#[expect(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub enum SongTagServiceErrorWhere {
     SearchRecording,

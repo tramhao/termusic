@@ -1,7 +1,7 @@
 ## ChangeLog
 
 ### next
-
+- Change: updated MSRV to 1.82.
 - Change(tui): rename cli option `--disable-cover`  to `--hide-cover`
 - Feat(tui): add new cli option `--disable-cover` which actually disables all cover probing and behaves as if no cover features are enabled.
 - Fix(tui): set `ueberzug` command to `--silent`.

@@ -284,7 +284,7 @@ impl FromStr for Lyric {
             }
 
             // skip all lines that do not start with "["
-            if !line.as_bytes().iter().next().is_some_and(|v| *v == b'[') {
+            if line.as_bytes().iter().next().is_none_or(|v| *v != b'[') {
                 continue;
             }
 
