@@ -14,7 +14,7 @@ use tuirealm::ratatui::layout::{Constraint, Direction, Layout, Rect};
 //         .title_alignment(title.1)
 // }
 
-// Draw an area (WxH / 3) in the middle of the parent area
+/// Draw an area (`WxH / 3`) in the middle of the parent area
 pub fn draw_area_in_relative(parent: Rect, width: u16, height: u16) -> Rect {
     let new_area = Layout::default()
         .direction(Direction::Vertical)
@@ -93,14 +93,12 @@ pub fn draw_area_top_right_absolute(parent: Rect, width: u16, height: u16) -> Re
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_utils_ui_draw_area_in() {
         let area: Rect = Rect::new(0, 0, 1024, 512);
         let child: Rect = draw_area_in_relative(area, 75, 30);
-        assert_eq!(child.x, 43);
-        assert_eq!(child.y, 63);
-        assert_eq!(child.width, 272);
-        assert_eq!(child.height, 55);
+        assert_eq!(child, Rect::new(123, 179, 768, 154));
     }
 }

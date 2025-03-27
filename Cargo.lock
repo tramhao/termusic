@@ -2252,6 +2252,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "indoc"
+version = "2.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4c7245a08504955605670dbf141fceab975f15ca21570696aebe9d2e71576bd"
+
+[[package]]
 name = "instability"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3515,23 +3521,23 @@ checksum = "f60fcc7d6849342eff22c4350c8b9a989ee8ceabc4b481253e8946b9fe83d684"
 
 [[package]]
 name = "ratatui"
-version = "0.28.1"
+version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdef7f9be5c0122f890d58bdf4d964349ba6a6161f705907526d891efabba57d"
+checksum = "eabd94c2f37801c20583fc49dd5cd6b0ba68c716787c2dd6ed18571e1e63117b"
 dependencies = [
  "bitflags 2.6.0",
  "cassowary",
  "compact_str",
  "crossterm",
+ "indoc",
  "instability",
  "itertools 0.13.0",
  "lru",
  "paste",
  "strum",
- "strum_macros",
  "unicode-segmentation",
  "unicode-truncate",
- "unicode-width 0.1.13",
+ "unicode-width 0.2.0",
 ]
 
 [[package]]
@@ -5111,15 +5117,15 @@ dependencies = [
 
 [[package]]
 name = "tuirealm"
-version = "2.0.3"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d3865c9f0e84c07c991c24c853f095bb764859fa3806fe6e00b559f40f1253f"
+checksum = "435d695a72ceae83f149a0241aad72ae8d3e680ab4d2ed86adb50df611ac026c"
 dependencies = [
  "bitflags 2.6.0",
  "crossterm",
  "lazy-regex",
  "ratatui",
- "thiserror 1.0.63",
+ "thiserror 2.0.10",
  "tuirealm_derive",
 ]
 
