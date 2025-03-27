@@ -41,7 +41,7 @@ figment = { version = "0.10", features = ["toml"] }
 glib = { version = "0.20" }
 gstreamer = { version = "0.23" }
 hex = "0.4"
-id3 = "1.16"
+id3 = "1.16.2"
 # image must be upgraded together with viuer
 image = "0.25"
 viuer = "0.9"
