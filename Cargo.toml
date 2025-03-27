@@ -56,7 +56,7 @@ md5 = "0.7"
 num-bigint = "0.4"
 opml = "1.1"
 parking_lot = "^0.12"
-pathdiff = { version = "0.2", features = ["camino"] }
+pathdiff = { version = "0.2.3", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
 pretty_assertions = "1.4"
