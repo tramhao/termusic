@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 use crate::ui::{model::TermusicLayout, Model};
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::podcast::episode::Episode;
@@ -5,7 +7,6 @@ use termusiclib::track::MediaType;
 use termusiclib::types::{Id, LyricMsg, Msg};
 
 use anyhow::{anyhow, Result};
-use lazy_static::lazy_static;
 use regex::Regex;
 use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Textarea;
@@ -16,17 +17,17 @@ use tuirealm::props::{
 };
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
-lazy_static! {
-    /// Regex for finding <br/> tags -- also captures any surrounding
-    /// line breaks
-    static ref RE_BR_TAGS: Regex = Regex::new(r"((\r\n)|\r|\n)*<br */?>((\r\n)|\r|\n)*").expect("Regex error");
+/// Regex for finding <br/> tags -- also captures any surrounding
+/// line breaks
+static RE_BR_TAGS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"((\r\n)|\r|\n)*<br */?>((\r\n)|\r|\n)*").unwrap());
 
-    /// Regex for finding HTML tags
-    static ref RE_HTML_TAGS: Regex = Regex::new(r"<[^<>]*>").expect("Regex error");
+/// Regex for finding HTML tags
+static RE_HTML_TAGS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^<>]*>").unwrap());
 
-    /// Regex for finding more than two line breaks
-    static ref RE_MULT_LINE_BREAKS: Regex = Regex::new(r"((\r\n)|\r|\n){3,}").expect("Regex error");
-}
+/// Regex for finding more than two line breaks
+static RE_MULT_LINE_BREAKS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"((\r\n)|\r|\n){3,}").unwrap());
 
 #[derive(MockComponent)]
 pub struct Lyric {

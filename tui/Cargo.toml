@@ -30,7 +30,6 @@ dirs.workspace = true
 id3.workspace = true # = "1"
 image.workspace = true # = "0.24"
 include_dir.workspace = true # = "0.7"
-lazy_static.workspace = true # = "1.4"
 log.workspace = true # = "0.4"
 flexi_logger.workspace = true
 colored.workspace = true

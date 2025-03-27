@@ -25,10 +25,9 @@ use super::Model;
 use anyhow::{bail, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
-use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 use std::thread;
 use std::time::Duration;
 use termusiclib::invidious::Instance;
@@ -41,12 +40,12 @@ use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
 use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
 
-lazy_static! {
-    static ref RE_FILENAME: Regex =
-        Regex::new(r"\[ffmpeg\] Destination: (?P<name>.*)\.mp3").unwrap();
-    static ref RE_FILENAME_YTDLP: Regex =
-        Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap();
-}
+#[expect(dead_code)]
+static RE_FILENAME: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\[ffmpeg\] Destination: (?P<name>.*)\.mp3").unwrap());
+
+static RE_FILENAME_YTDLP: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap());
 
 impl Model {
     pub fn youtube_options_download(&mut self, index: usize) -> Result<()> {

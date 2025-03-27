@@ -32,32 +32,30 @@ use figment::{
 };
 use image::DynamicImage;
 pub use key::{BindingForEvent, Keys};
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::{fs, net::IpAddr};
+use std::{path::PathBuf, sync::LazyLock};
 pub use theme::{Alacritty, AlacrittyColor, ColorTermusic, StyleColorSymbol};
 
 /// The filename of the config
 pub const FILE_NAME: &str = "config.toml";
 
-lazy_static! {
-    static ref MUSIC_DIR: Vec<PathBuf> = {
-        let mut vec = Vec::new();
-        let mut path =
-            dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
-        vec.push(path.clone());
-        path.push("mp3");
-        vec.push(path);
-        vec
-    };
-    static ref PODCAST_DIR: PathBuf = {
-        let mut path =
-            dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
-        path.push("podcast");
-        path
-    };
-}
+static MUSIC_DIR: LazyLock<Vec<PathBuf>> = LazyLock::new(|| {
+    let mut vec = Vec::new();
+    let mut path =
+        dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
+    vec.push(path.clone());
+    path.push("mp3");
+    vec.push(path);
+    vec
+});
+
+static PODCAST_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    let mut path =
+        dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
+    path.push("podcast");
+    path
+});
 
 #[derive(Clone, Copy, Default, Deserialize, Serialize, Debug)]
 pub enum Loop {

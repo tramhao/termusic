@@ -23,7 +23,6 @@ termusic-lib.workspace = true # = {path = "../lib/"}
 termusic-playback = { workspace = true, default-features = false }
 anyhow.workspace = true
 ctrlc.workspace = true
-lazy_static.workspace = true
 log.workspace = true
 flexi_logger.workspace = true
 colored.workspace = true
