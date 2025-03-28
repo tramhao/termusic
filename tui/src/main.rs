@@ -28,8 +28,10 @@ mod ui;
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use flexi_logger::LogSpecification;
+use parking_lot::Mutex;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
@@ -75,6 +77,8 @@ async fn actual_main() -> Result<()> {
     let args = cli::Args::parse();
     let mut logger_handle = logger::setup(&args);
     let config = get_config(&args)?;
+
+    ctrl_c_handler().expect("Error setting Ctrl-C handler");
 
     if let Some(action) = args.action {
         return execute_action(action, &config);
@@ -310,6 +314,44 @@ fn execute_action(action: cli::Action, config: &CombinedSettings) -> Result<()> 
             podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
         }
     };
+
+    Ok(())
+}
+
+/// Determines if the CTRL+C Handler may need to clean-up the terminal mode
+static TERMINAL_ALTERNATE_MODE: AtomicBool = AtomicBool::new(false);
+
+/// This might seem useless, but the CTRL+C handler can be invoked when the TUI is not yet or not anymore listening to key events
+/// This can happened for example when viuer is in a loop expecting a response or just before or after the TUI is fully started.
+///
+/// Setup is to press twice within 2 seconds to force a exit.
+fn ctrl_c_handler() -> Result<()> {
+    // needs to be defined outside, as otherwise a new mutex will get created each time the ctrlc handler is called
+    let last_ctrlc = Mutex::new(None);
+
+    ctrlc::set_handler(move || {
+        warn!("CTRL+C handler invoked! TUI key-handling not started or overwritten?");
+
+        let mut lock = last_ctrlc.lock();
+        let Some(val) = lock.as_ref() else {
+            *lock = Some(Instant::now());
+            return;
+        };
+
+        if val.elapsed() > Duration::from_secs(2) {
+            *lock = Some(Instant::now());
+            return;
+        }
+
+        error!("Exiting because of CTRL+C!");
+
+        // Reset the terminal mode so that the user does not have to use "reset"
+        if TERMINAL_ALTERNATE_MODE.load(Ordering::SeqCst) {
+            ui::model::Model::hook_reset_terminal();
+        }
+
+        std::process::exit(-1);
+    })?;
 
     Ok(())
 }

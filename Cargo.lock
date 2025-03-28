@@ -4508,6 +4508,7 @@ dependencies = [
  "bytes",
  "clap",
  "colored",
+ "ctrlc",
  "dirs",
  "escaper",
  "flexi_logger",
