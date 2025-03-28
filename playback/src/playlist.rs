@@ -1,7 +1,6 @@
 use anyhow::{bail, Context, Result};
 use pathdiff::diff_paths;
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 use rand::Rng;
 use std::error::Error;
 use std::fmt::Display;
@@ -462,7 +461,7 @@ impl Playlist {
         }
         let path = Path::new(track);
         if !filetype_supported(track) {
-            error!("unsupported filetype: {:#?}", track);
+            error!("unsupported filetype: {track:#?}");
             let p = path.to_path_buf();
             let ext = p.extension().map(|v| v.to_string_lossy().to_string());
             return Err(PlaylistAddError::UnsupportedFileType(ext, p));
@@ -510,7 +509,7 @@ impl Playlist {
     pub fn shuffle(&mut self) {
         // TODO: why does this only shuffle if there is a current track?
         if let Some(current_track_file) = self.get_current_track() {
-            self.tracks.shuffle(&mut thread_rng());
+            self.tracks.shuffle(&mut rand::rng());
             if let Some(index) = self.find_index_from_file(&current_track_file) {
                 self.current_track_index = index;
             }
@@ -538,9 +537,9 @@ impl Playlist {
             return 0;
         }
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         while self.current_track_index == random_index {
-            random_index = rng.gen_range(0..self.len());
+            random_index = rng.random_range(0..self.len());
         }
 
         random_index

@@ -53,15 +53,12 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
             let mut p_value = match PlaylistValue::try_from_str(url) {
                 Ok(v) => v,
                 Err(err) => {
-                    warn!("Failed to parse url / path, ignoring! Error: {:#?}", err);
+                    warn!("Failed to parse url / path, ignoring! Error: {err:#?}");
                     continue;
                 }
             };
             if let Err(err) = p_value.file_url_to_path() {
-                warn!(
-                    "Failed to convert file:// url to path, ignoring! Error: {:#?}",
-                    err
-                );
+                warn!("Failed to convert file:// url to path, ignoring! Error: {err:#?}");
                 continue;
             }
 
@@ -69,7 +66,7 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
                 Entry::Occupied(mut o) => {
                     let val = o.get_mut();
                     if val.url.is_some() {
-                        warn!("Entry {} already had a URL set, overwriting!", num);
+                        warn!("Entry {num} already had a URL set, overwriting!");
                     }
                     val.url.replace(p_value);
                 }
@@ -91,7 +88,7 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
                 Entry::Occupied(mut o) => {
                     let val = o.get_mut();
                     if val.title.is_some() {
-                        warn!("Entry {} already had a Title set, overwriting!", num);
+                        warn!("Entry {num} already had a Title set, overwriting!");
                     }
                     val.title.replace(title.to_string());
                 }
@@ -106,12 +103,12 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
 
         if let Some(remainder) = line.strip_prefix("NumberOfEntries") {
             let Some((_, remainder)) = remainder.split_once('=') else {
-                warn!("Malformed line: {:#?}", line);
+                warn!("Malformed line: {line:#?}");
                 continue;
             };
 
             let Ok(num) = remainder.parse::<u16>() else {
-                warn!("Couldnt parse NumberOfEntries number! line: {:#?}", line);
+                warn!("Couldnt parse NumberOfEntries number! line: {line:#?}");
                 continue;
             };
 
@@ -164,7 +161,7 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
 fn parse_id<'a>(val: &'a str, line: &str) -> Option<(u16, &'a str)> {
     if let Some((id, remainder)) = val.split_once('=') {
         let Ok(num) = id.parse::<u16>() else {
-            error!("Couldnt parse PLS entry id for line {:#?}", line);
+            error!("Couldnt parse PLS entry id for line {line:#?}");
             return None;
         };
 

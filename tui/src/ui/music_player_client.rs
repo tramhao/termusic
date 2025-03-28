@@ -22,14 +22,14 @@ impl Playback {
         let response = self.client.toggle_pause(request).await?;
         let response = response.into_inner();
         let status = Status::from_u32(response.status);
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(status)
     }
 
     pub async fn skip_next(&mut self) -> Result<()> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.skip_next(request).await?;
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(())
     }
 
@@ -45,7 +45,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.volume_up(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         // clamped to u16::MAX, also send is a u16, but protobuf does not support u16 directly
         #[allow(clippy::cast_possible_truncation)]
         Ok(response.volume.min(u32::from(u16::MAX)) as u16)
@@ -55,7 +55,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.volume_down(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         // clamped to u16::MAX, also send is a u16, but protobuf does not support u16 directly
         #[allow(clippy::cast_possible_truncation)]
         Ok(response.volume.min(u32::from(u16::MAX)) as u16)
@@ -65,7 +65,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.cycle_loop(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         let as_u8 = u8::try_from(response.mode).context("Failed to convert u32 to u8")?;
         let loop_mode =
             LoopMode::tryfrom_discriminant(as_u8).context("Failed to get LoopMode from u8")?;
@@ -76,7 +76,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.speed_up(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(response.speed)
     }
 
@@ -84,7 +84,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.speed_down(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(response.speed)
     }
 
@@ -92,7 +92,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.toggle_gapless(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(response.gapless)
     }
 
@@ -100,7 +100,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.seek_forward(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(response.into())
     }
 
@@ -108,7 +108,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.seek_backward(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(response.into())
     }
 
@@ -116,7 +116,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.reload_config(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(())
     }
 
@@ -124,7 +124,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.reload_playlist(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(())
     }
 
@@ -132,7 +132,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.play_selected(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(())
     }
 
@@ -140,7 +140,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.skip_previous(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(())
     }
 
@@ -150,7 +150,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.subscribe_server_updates(request).await?;
         let response = response.into_inner().map(|res| res.map_err(Into::into));
-        info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(response)
     }
 }

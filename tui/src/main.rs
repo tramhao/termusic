@@ -64,7 +64,7 @@ pub struct CombinedSettings {
 fn main() -> Result<()> {
     // print error to the log and then throw it
     if let Err(err) = actual_main() {
-        error!("Error: {:?}", err);
+        error!("Error: {err:?}");
         return Err(err);
     }
 
@@ -148,7 +148,7 @@ async fn actual_main() -> Result<()> {
     } else if let Err(err) =
         logger_handle.adapt_duplication_to_stderr(flexi_logger::Duplicate::None)
     {
-        warn!("flexi_logger error: {}", err);
+        warn!("flexi_logger error: {err}");
     }
 
     info!("Waiting until connected");

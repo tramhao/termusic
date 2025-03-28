@@ -17,7 +17,7 @@ categories = [
 ]
 readme = "./README.md"
 version = "0.10.0"
-rust-version = "1.79"
+rust-version = "1.82"
 
 [workspace.dependencies]
 # "version" key is required, as per https://github.com/rust-lang/cargo/issues/11133
@@ -25,63 +25,62 @@ termusic-lib = { path = "lib/", version = "0.10.0" }
 # need to disable "default-features" here for "termusic-server", otherwise the "default-features" in "termusic-server" have no effect
 termusic-playback = { path = "playback/", version = "0.10.0", default-features = false }
 ahash = "^0.8"
-anyhow = { version = "1.0", features = ["backtrace"] }
-thiserror = "2.0"
+anyhow = { version = "1.0.97", features = ["backtrace"] }
+thiserror = "2.0.12"
 async-channel = "2.2"
-async-trait = "0.1"
+async-trait = "0.1.88"
 base64 = "0.22"
-bytes = "1.9"
-chrono = "0.4.39"
-clap = { version = "4.5", features = ["derive", "env"] }
+bytes = "1.10"
+chrono = "0.4.40"
+clap = { version = "4.5.34", features = ["derive", "env"] }
 ctrlc = { version = "3.4", features = ["termination"] }
-dirs = "5.0"
+dirs = "6.0"
 discord-rich-presence = "0.2.5"
 escaper = "0.1.1"
 figment = { version = "0.10", features = ["toml"] }
-glib = { version = "0.20" }
-gstreamer = { version = "0.23" }
+glib = { version = "0.20.9" }
+gstreamer = { version = "0.23.5" }
 hex = "0.4"
-id3 = "1.16"
+id3 = "1.16.2"
 # image must be upgraded together with viuer
-image = "0.25"
+image = "0.25.6"
 viuer = "0.9"
 include_dir = "0.7"
-lazy_static = "1.4"
 libaes = "0.7"
 libmpv-sirno = "2.0.2-fork.1"
-lofty = "0.22.1"
-log = "0.4"
+lofty = "0.22.2"
+log = "0.4.27"
 flexi_logger = "0.29.8"
-colored = "2.2"
+colored = "3.0"
 md5 = "0.7"
 num-bigint = "0.4"
 opml = "1.1"
 parking_lot = "^0.12"
-pathdiff = { version = "0.2", features = ["camino"] }
+pathdiff = { version = "0.2.3", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
-pretty_assertions = "1.4"
-quick-xml = "0.37"
-rand = "0.8"
-regex = "^1.11.0"
-reqwest = { version = "0.12", features = [
+pretty_assertions = "1.4.1"
+quick-xml = "0.37.3"
+rand = "0.9"
+regex = "^1.11.1"
+reqwest = { version = "0.12.15", features = [
     "cookies",
     "gzip",
     "json",
     "stream",
 ] }
 rfc822_sanitizer = "0.3"
-rss = "2.0.11"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rss = "2.0.12"
+rusqlite = { version = "0.34", features = ["bundled"] }
 sanitize-filename = "0.6"
-semver = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+semver = "1.0.26"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 serde_yaml = "0.9"
 shellexpand = { version = "3.1", features = ["path"] }
 soundtouch = "0.4.2"
-souvlaki = { version = "0.8.0", default-features=false, features = ["use_zbus"] }
-stream-download = { version = "0.14.1", features = ["reqwest-rustls"] }
+souvlaki = { version = "0.8.2", default-features=false, features = ["use_zbus"] }
+stream-download = { version = "0.16.1", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
     "aac",
     "mp3",
@@ -94,16 +93,16 @@ symphonia = { version = "0.5.1", features = [
 ] }
 rodio = { version = "0.20", default-features = false }
 sysinfo = { version = "^0.33", default-features = false, features = ["system"] }
-textwrap = "0.16"
-tokio = { version = "1.43", features = ["sync", "macros", "rt","rt-multi-thread"] }
-tokio-util = "0.7"
-tokio-stream = { version = "0.1", features = ["sync"] }
-toml = "0.8"
+textwrap = "0.16.2"
+tokio = { version = "1.44", features = ["sync", "macros", "rt","rt-multi-thread"] }
+tokio-util = "0.7.14"
+tokio-stream = { version = "0.1.17", features = ["sync"] }
+toml = "0.8.20"
 # only update prost and tonic major versions together
-prost = "0.13.4"
-tonic = "0.12.3"
-tonic-build = "0.12.3"
-tuirealm = "~2.0.3"
+prost = "0.13.5"
+tonic = "0.13.0"
+tonic-build = "0.13.0"
+tuirealm = "~2.1.0"
 tui-realm-stdlib = "~2.0"
 tui-realm-treeview = "~2.0"
 unicode-segmentation = "1.12"

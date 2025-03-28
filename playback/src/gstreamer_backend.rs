@@ -457,7 +457,7 @@ impl PlayerTrait for GStreamerBackend {
             gst::State::Playing => false,
             gst::State::Paused => true,
             state => {
-                debug!("Bad GStreamer state {:#?}", state);
+                debug!("Bad GStreamer state {state:#?}");
                 // fallback to saying it is paused, even in other states
                 true
             }

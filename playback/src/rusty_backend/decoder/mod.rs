@@ -439,7 +439,7 @@ fn decode_loop(
                 break (audio_buf, elapsed);
             }
             Err(Error::DecodeError(err)) => {
-                info!("Non-fatal Decoder Error: {}", err);
+                info!("Non-fatal Decoder Error: {err}");
             }
             Err(err) => return Err(err),
         }

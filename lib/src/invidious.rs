@@ -105,7 +105,7 @@ impl Instance {
             }
         }
 
-        domains.shuffle(&mut rand::thread_rng());
+        domains.shuffle(&mut rand::rng());
 
         let mut video_result: Vec<YoutubeVideo> = Vec::new();
         for v in domains {

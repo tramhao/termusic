@@ -446,7 +446,7 @@ async fn player_thread(
                 )
                 .await
                 {
-                    error!("Failed to play track: {:#?}", err);
+                    error!("Failed to play track: {err:#?}");
                 }
             }
             PlayerInternalCmd::TogglePause => {
@@ -466,7 +466,7 @@ async fn player_thread(
                 )
                 .await
                 {
-                    error!("Failed to queue next track: {:#?}", err);
+                    error!("Failed to queue next track: {err:#?}");
                 }
             }
             PlayerInternalCmd::Resume => {

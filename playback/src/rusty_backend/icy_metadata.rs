@@ -56,7 +56,7 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
         // self.total_read += 1;
         // trace!("at position {:08x}", self.total_read);
         let length = (length[0] as usize) * 16;
-        trace!("ICY METADATA LENGTH {}", length);
+        trace!("ICY-Metadata Length: {length}");
 
         // dont try to do any metadata parsing if there is none
         if length != 0 {
@@ -79,7 +79,7 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
             trace!("buffer {:#?}", String::from_utf8_lossy(&metadata));
 
             if let Some(title) = find_title_metadata(&metadata) {
-                debug!("Found a new Radio Title: {:#?}", title);
+                debug!("Found a new Radio Title: {title:#?}");
                 (self.cb)(title);
             }
         }

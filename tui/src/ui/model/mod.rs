@@ -231,7 +231,7 @@ impl Model {
             ViuerSupported::NotSupported
         };
 
-        info!("Using viuer protocol {:#?}", viuer_supported);
+        info!("Using viuer protocol {viuer_supported:#?}");
 
         let db = DataBase::new(&config_server.read()).expect("Open Library Database");
         let db_criteria = SearchCriteria::Artist;

@@ -374,7 +374,7 @@ impl GeneralPlayer {
         self.playlist.proceed();
 
         if let Some(track) = self.playlist.current_track().cloned() {
-            info!("Starting Track {:#?}", track);
+            info!("Starting Track {track:#?}");
 
             if self.playlist.has_next_track() {
                 self.playlist.set_next_track(None);
@@ -433,7 +433,7 @@ impl GeneralPlayer {
 
         self.enqueue_next(&track);
 
-        info!("Next track enqueued: {:#?}", track);
+        info!("Next track enqueued: {track:#?}");
     }
 
     /// Skip to the next track, if there is one
@@ -542,12 +542,12 @@ impl GeneralPlayer {
             match track.media_type {
                 MediaType::Music => {
                     if let Err(err) = self.db.set_last_position(track, position) {
-                        error!("Saving last_position for music failed, Error: {:#?}", err);
+                        error!("Saving last_position for music failed, Error: {err:#?}");
                     }
                 }
                 MediaType::Podcast => {
                     if let Err(err) = self.db_podcast.set_last_position(track, position) {
-                        error!("Saving last_position for podcast failed, Error: {:#?}", err);
+                        error!("Saving last_position for podcast failed, Error: {err:#?}");
                     }
                 }
                 MediaType::LiveRadio => (),
@@ -598,7 +598,7 @@ impl GeneralPlayer {
         if restored {
             if let Some(track) = self.playlist.current_track() {
                 if let Err(err) = self.db.set_last_position(track, Duration::from_secs(0)) {
-                    error!("Resetting last_position failed, Error: {:#?}", err);
+                    error!("Resetting last_position failed, Error: {err:#?}");
                 }
             }
         }

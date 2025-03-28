@@ -18,7 +18,6 @@ pub use podcast::{Podcast, PodcastNoId};
 use anyhow::{bail, Context, Result};
 use bytes::Buf;
 use chrono::{DateTime, Utc};
-use lazy_static::lazy_static;
 use opml::{Body, Head, Outline, OPML};
 use regex::Regex;
 use reqwest::ClientBuilder;
@@ -29,6 +28,7 @@ use std::fs::File;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Sender};
+use std::sync::LazyLock;
 use std::time::Duration;
 
 // How many columns we need, minimum, before we display the
@@ -43,15 +43,14 @@ pub const EPISODE_DURATION_LENGTH: usize = 45;
 // of the episode
 pub const EPISODE_PUBDATE_LENGTH: usize = 60;
 
-lazy_static! {
-    /// Regex for parsing an episode "duration", which could take the form
-    /// of HH:MM:SS, MM:SS, or SS.
-    static ref RE_DURATION: Regex = Regex::new(r"(\d+)(?::(\d+))?(?::(\d+))?").expect("Regex error");
+/// Regex for parsing an episode "duration", which could take the form
+/// of HH:MM:SS, MM:SS, or SS.
+static RE_DURATION: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(\d+)(?::(\d+))?(?::(\d+))?").unwrap());
 
-    /// Regex for removing "A", "An", and "The" from the beginning of
-    /// podcast titles
-    static ref RE_ARTICLES: Regex = Regex::new(r"^(a|an|the) ").expect("Regex error");
-}
+/// Regex for removing "A", "An", and "The" from the beginning of
+/// podcast titles
+static RE_ARTICLES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(a|an|the) ").unwrap());
 
 /// Defines interface used for both podcasts and episodes, to be
 /// used and displayed in menus.
@@ -92,7 +91,7 @@ pub fn check_feed(feed: PodcastFeed, max_retries: usize, tp: &TaskPool, tx_to_ma
                 }
             },
             Err(err) => {
-                error!("get_feed_data had a Error: {:#?}", err);
+                error!("get_feed_data had a Error: {err:#?}");
                 let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed)));
             }
         }

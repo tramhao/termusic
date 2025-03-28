@@ -28,7 +28,6 @@ base64.workspace = true
 discord-rich-presence.workspace = true
 glib = { workspace = true, optional = true }
 gstreamer = { workspace = true, optional = true}
-lazy_static.workspace = true
 libmpv-sirno = { workspace = true, optional = true }
 log.workspace = true # = "0.4"
 parking_lot.workspace = true
