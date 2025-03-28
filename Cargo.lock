@@ -4512,6 +4512,7 @@ dependencies = [
  "clap",
  "colored",
  "dirs 6.0.0",
+ "ctrlc",
  "escaper",
  "flexi_logger",
  "futures",

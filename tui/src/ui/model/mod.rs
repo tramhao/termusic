@@ -41,6 +41,7 @@ use termusiclib::ueberzug::UeInstance;
 
 use anyhow::{anyhow, Result};
 use std::path::PathBuf;
+use std::sync::atomic::Ordering;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
@@ -364,10 +365,7 @@ impl Model {
     pub fn init_terminal(&mut self) {
         let original_hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |panic| {
-            let mut terminal_clone =
-                TerminalBridge::new_crossterm().expect("Could not initialize terminal");
-            let _drop = terminal_clone.disable_raw_mode();
-            let _drop = terminal_clone.leave_alternate_screen();
+            Self::hook_reset_terminal();
             original_hook(panic);
         }));
         let _drop = self.terminal.enable_raw_mode();
@@ -375,12 +373,23 @@ impl Model {
         // required as "enter_alternate_screen" always enabled mouse-capture
         let _drop = self.terminal.disable_mouse_capture();
         let _drop = self.terminal.clear_screen();
+        crate::TERMINAL_ALTERNATE_MODE.store(true, Ordering::SeqCst);
+    }
+
+    /// Finalize terminal for hooks like panic or CTRL+C
+    pub fn hook_reset_terminal() {
+        let mut terminal_clone =
+            TerminalBridge::new_crossterm().expect("Could not initialize terminal");
+        let _drop = terminal_clone.disable_raw_mode();
+        let _drop = terminal_clone.leave_alternate_screen();
+        crate::TERMINAL_ALTERNATE_MODE.store(false, Ordering::SeqCst);
     }
 
     /// Finalize terminal
     pub fn finalize_terminal(&mut self) {
         let _drop = self.terminal.disable_raw_mode();
         let _drop = self.terminal.leave_alternate_screen();
+        crate::TERMINAL_ALTERNATE_MODE.store(false, Ordering::SeqCst);
     }
 
     /// Returns elapsed time since last redraw
