@@ -629,7 +629,7 @@ impl SaveLastPosition {
                     .color(config_tui.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["Unspported", "No", "Yes"])
+            .choices(&["Unsupported", "No", "Yes"])
             .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
             .title(" Remember last played position: ", Alignment::Left)
