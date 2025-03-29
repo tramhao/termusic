@@ -94,8 +94,16 @@ impl MpvBackend {
                     .expect("failed to watch media-title");
                 loop {
                     if let Some(ev) = ev_ctx.wait_event(0.0) {
+                        let ev = match ev {
+                            Ok(v) => v,
+                            Err(err) => {
+                                error!("Event Error: {err:?}");
+                                continue;
+                            }
+                        };
+
                         match ev {
-                            Ok(Event::EndFile(e)) => {
+                            Event::EndFile(e) => {
                                 // error!("event end file {:?} received", e);
                                 if e == 0 {
                                     let _ = cmd_tx_inside.send(PlayerInternalCmd::Eos);
@@ -104,14 +112,14 @@ impl MpvBackend {
                                 // clear stored title on end
                                 media_title_inside.lock().clear();
                             }
-                            Ok(Event::StartFile) => {
+                            Event::StartFile => {
                                 // let _ = message_tx.send(PlayerMsg::CurrentTrackUpdated);
                             }
-                            Ok(Event::PropertyChange {
+                            Event::PropertyChange {
                                 name,
                                 change,
                                 reply_userdata: _,
-                            }) => match name {
+                            } => match name {
                                 "duration" => {
                                     if let PropertyData::Double(dur) = change {
                                         // using "dur.max" because mpv *may* return a negative number
@@ -154,8 +162,9 @@ impl MpvBackend {
                                     // )
                                 }
                             },
-                            Ok(_e) => {}  //error!("Event triggered: {:?}", e),
-                            Err(_e) => {} //error!("Event errored: {:?}", e),
+                            _ev => {
+                                // debug!("Event triggered: {:?}", ev),
+                            }
                         }
                     }
 
