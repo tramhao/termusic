@@ -76,7 +76,6 @@ impl MpvBackend {
             .expect("gapless setting failed");
 
         let cmd_tx_inside = command_tx.clone();
-        // let mut time_pos: i64 = 0;
         std::thread::Builder::new()
             .name("mpv event loop".into())
             .spawn(move || {
@@ -94,7 +93,6 @@ impl MpvBackend {
                     .observe_property("media-title", Format::String, 2)
                     .expect("failed to watch media-title");
                 loop {
-                    // if let Some(ev) = ev_ctx.wait_event(600.) {
                     if let Some(ev) = ev_ctx.wait_event(0.0) {
                         match ev {
                             Ok(Event::EndFile(e)) => {
@@ -168,17 +166,14 @@ impl MpvBackend {
                                 *duration_inside.lock() = Duration::default();
                                 mpv.command("loadfile", &[&format!("\"{new}\""), "replace"])
                                     .ok();
-                                // .expect("Error loading file");
                                 // error!("add and play {} ok", new);
                             }
                             PlayerInternalCmd::QueueNext(next) => {
                                 mpv.command("loadfile", &[&format!("\"{next}\""), "append"])
                                     .ok();
-                                // .expect("Error loading file");
                             }
                             PlayerInternalCmd::Volume(volume) => {
                                 mpv.set_property("volume", i64::from(volume)).ok();
-                                // .expect("Error increase volume");
                             }
                             PlayerInternalCmd::Pause => {
                                 mpv.set_property("pause", true).ok();
