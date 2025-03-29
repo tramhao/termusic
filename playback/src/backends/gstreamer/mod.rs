@@ -6,14 +6,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use async_channel::Receiver;
+use async_channel::{Receiver, Sender};
 use async_trait::async_trait;
-use glib::FlagsClass;
-use gst::bus::BusWatchGuard;
-use gst::{event::Seek, Element, SeekFlags, SeekType};
-use gst::{ClockTime, StateChangeError, StateChangeSuccess};
+use glib::{ControlFlow, FlagsClass};
 use gstreamer as gst;
+use gstreamer::bus::BusWatchGuard;
 use gstreamer::prelude::*;
+use gstreamer::{event::Seek, Element, SeekFlags, SeekType};
+use gstreamer::{ClockTime, StateChangeError, StateChangeSuccess};
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaType, Track};
@@ -168,7 +168,6 @@ pub struct GStreamerBackend {
 }
 
 impl GStreamerBackend {
-    #[allow(clippy::too_many_lines)]
     pub fn new(config: &ServerOverlay, cmd_tx: crate::PlayerCmdSender) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let ctx = glib::MainContext::default();
@@ -256,74 +255,13 @@ impl GStreamerBackend {
             .bus()
             .expect("Failed to get GStreamer message bus")
             .add_watch(move |_bus, msg| {
-                match msg.view() {
-                    gst::MessageView::Eos(_) => {
-                        // debug tracking, as gapless interferes with it
-                        debug!("gstreamer message EOS");
-                        main_tx_watcher
-                            .send_blocking(PlayerInternalCmd::Eos)
-                            .expect("Unable to send message to main()");
-                        eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
-
-                        // clear stored title on end
-                        media_title_internal.lock().clear();
-                    }
-                    gst::MessageView::StreamStart(_e) => {
-                        if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
-                            trace!("Sending EOS because it was not sent since last StreamStart");
-                            main_tx_watcher
-                                .send_blocking(PlayerInternalCmd::Eos)
-                                .expect("Unable to send message to main()");
-                        }
-
-                        eos_watcher.store(false, std::sync::atomic::Ordering::SeqCst);
-
-                        // clear stored title on stream start (should work without conflicting in ::Tag)
-                        media_title_internal.lock().clear();
-
-                        // HACK: gstreamer does not handle seek events before some undocumented time, see other note in main_rx handler
-                        let _ = main_tx_watcher.send_blocking(PlayerInternalCmd::ReloadSpeed);
-                    }
-                    gst::MessageView::Error(e) => error!("GStreamer Error: {}", e.error()),
-                    gst::MessageView::Tag(tag) => {
-                        if let Some(title) = tag.tags().get::<gst::tags::Title>() {
-                            info!("  Title: {}", title.get());
-                            *media_title_internal.lock() = title.get().into();
-                        }
-                        // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
-                        //     info!("  Artist: {}", artist.get());
-                        //     // *media_title_internal.lock() = artist.get().to_string();
-                        // }
-                        // if let Some(album) = tag.tags().get::<gst::tags::Album>() {
-                        //     info!("  Album: {}", album.get());
-                        //     // *media_title_internal.lock() = album.get().to_string();
-                        // }
-                    }
-                    gst::MessageView::Buffering(buffering) => {
-                        // let (mode,_, _, left) = buffering.buffering_stats();
-                        // info!("mode is: {mode:?}, and left is: {left}");
-                        let percent = buffering.percent();
-                        // according to the documentation, the application (we) need to set the playbin state according tothe buffering state
-                        // see https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#buffering
-                        if percent < 100 {
-                            let _ = playbin_clone.pause();
-                        } else {
-                            let _ = playbin_clone.play();
-                        }
-                        // Left for debug
-                        // let msg = buffering.message();
-                        // info!("message is: {msg:?}");
-                    }
-                    gst::MessageView::Warning(warning) => {
-                        info!("GStreamer Warning: {}", warning.error());
-                    }
-                    // Left for debug
-                    // msg => {
-                    //     info!("msg: {msg:?}");
-                    // }
-                    _ => (),
-                }
-                glib::ControlFlow::Continue
+                Self::watch_fn(
+                    msg,
+                    &playbin_clone,
+                    &main_tx_watcher,
+                    &eos_watcher,
+                    &media_title_internal,
+                )
             })
             .expect("Failed to connect to GStreamer message bus");
 
@@ -362,6 +300,84 @@ impl GStreamerBackend {
         });
 
         this
+    }
+
+    /// Check the given events(Messages) and process them
+    fn watch_fn(
+        msg: &gst::Message,
+        playbin: &PlaybinWrap,
+        main_tx: &Sender<PlayerInternalCmd>,
+        eos_watcher: &Arc<AtomicBool>,
+        media_title: &Arc<Mutex<String>>,
+    ) -> ControlFlow {
+        match msg.view() {
+            gst::MessageView::Eos(_) => {
+                // debug tracking, as gapless interferes with it
+                debug!("gstreamer message EOS");
+                main_tx
+                    .send_blocking(PlayerInternalCmd::Eos)
+                    .expect("Unable to send message to main()");
+                eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
+
+                // clear stored title on end
+                media_title.lock().clear();
+            }
+            gst::MessageView::StreamStart(_e) => {
+                if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
+                    trace!("Sending EOS because it was not sent since last StreamStart");
+                    main_tx
+                        .send_blocking(PlayerInternalCmd::Eos)
+                        .expect("Unable to send message to main()");
+                }
+
+                eos_watcher.store(false, std::sync::atomic::Ordering::SeqCst);
+
+                // clear stored title on stream start (should work without conflicting in ::Tag)
+                media_title.lock().clear();
+
+                // HACK: gstreamer does not handle seek events before some undocumented time, see other note in main_rx handler
+                let _ = main_tx.send_blocking(PlayerInternalCmd::ReloadSpeed);
+            }
+            gst::MessageView::Error(e) => error!("GStreamer Error: {}", e.error()),
+            gst::MessageView::Tag(tag) => {
+                if let Some(title) = tag.tags().get::<gst::tags::Title>() {
+                    info!("  Title: {}", title.get());
+                    *media_title.lock() = title.get().into();
+                }
+                // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
+                //     info!("  Artist: {}", artist.get());
+                //     // *media_title.lock() = artist.get().to_string();
+                // }
+                // if let Some(album) = tag.tags().get::<gst::tags::Album>() {
+                //     info!("  Album: {}", album.get());
+                //     // *media_title.lock() = album.get().to_string();
+                // }
+            }
+            gst::MessageView::Buffering(buffering) => {
+                // let (mode,_, _, left) = buffering.buffering_stats();
+                // info!("mode is: {mode:?}, and left is: {left}");
+                let percent = buffering.percent();
+                // according to the documentation, the application (we) need to set the playbin state according tothe buffering state
+                // see https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#buffering
+                if percent < 100 {
+                    let _ = playbin.pause();
+                } else {
+                    let _ = playbin.play();
+                }
+                // Left for debug
+                // let msg = buffering.message();
+                // info!("message is: {msg:?}");
+            }
+            gst::MessageView::Warning(warning) => {
+                info!("GStreamer Warning: {}", warning.error());
+            }
+            // Left for debug
+            // msg => {
+            //     info!("msg: {msg:?}");
+            // }
+            _ => (),
+        }
+        glib::ControlFlow::Continue
     }
 
     /// Code for the Event Proxy Task / Thread.
