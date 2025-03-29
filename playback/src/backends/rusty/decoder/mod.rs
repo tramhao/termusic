@@ -1,8 +1,5 @@
-pub mod buffered_source;
-pub mod read_seek_source;
-
-use super::Source;
 use std::{fmt, num::NonZeroU64, time::Duration};
+
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
@@ -17,6 +14,11 @@ use symphonia::{
     default::get_probe,
 };
 use tokio::sync::mpsc;
+
+use super::Source;
+
+pub mod buffered_source;
+pub mod read_seek_source;
 
 fn is_codec_null(track: &Track) -> bool {
     track.codec_params.codec == CODEC_TYPE_NULL
@@ -80,7 +82,6 @@ pub struct Symphonia {
     buffer: SampleBuffer<i16>,
     spec: SignalSpec,
     duration: Option<Duration>,
-    elapsed: Duration,
     track_id: u32,
     time_base: Option<TimeBase>,
     seek_required_ts: Option<NonZeroU64>,
@@ -179,7 +180,7 @@ impl Symphonia {
 
         // decode the first part, to get the spec and initial buffer
         let mut buffer = None;
-        let DecodeLoopResult { spec, elapsed } = decode_loop(
+        let DecodeLoopResult { spec } = decode_loop(
             &mut *probed.format,
             &mut *decoder,
             BufferInputType::New(&mut buffer),
@@ -191,7 +192,6 @@ impl Symphonia {
         )?;
         // safe to unwrap because "decode_loop" ensures it will be set
         let buffer = buffer.unwrap();
-        let elapsed = elapsed.unwrap_or_default();
 
         Ok(Some((
             Self {
@@ -201,7 +201,6 @@ impl Symphonia {
                 buffer,
                 spec,
                 duration,
-                elapsed,
                 track_id,
                 time_base,
                 seek_required_ts: None,
@@ -308,7 +307,7 @@ impl Iterator for Symphonia {
     #[inline]
     fn next(&mut self) -> Option<i16> {
         if self.current_frame_offset == self.buffer.len() {
-            let DecodeLoopResult { spec, elapsed } = decode_loop(
+            let DecodeLoopResult { spec } = decode_loop(
                 &mut *self.probed.format,
                 &mut *self.decoder,
                 BufferInputType::Existing(&mut self.buffer),
@@ -321,9 +320,6 @@ impl Iterator for Symphonia {
             .ok()?;
 
             self.spec = spec;
-            if let Some(elapsed) = elapsed {
-                self.elapsed = elapsed;
-            }
 
             self.current_frame_offset = 0;
         }
@@ -380,7 +376,6 @@ impl std::error::Error for SymphoniaDecoderError {}
 #[derive(Debug)]
 struct DecodeLoopResult {
     spec: SignalSpec,
-    elapsed: Option<Duration>,
 }
 
 // is there maybe a better option for this?
@@ -469,7 +464,7 @@ fn decode_loop(
         }
     }
 
-    Ok(DecodeLoopResult { spec, elapsed })
+    Ok(DecodeLoopResult { spec })
 }
 
 /// Do container metadata / track start metadata
