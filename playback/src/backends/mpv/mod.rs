@@ -74,50 +74,19 @@ impl MpvBackend {
         mpv.set_property("gapless-audio", gapless_setting)
             .expect("gapless setting failed");
 
-        let cmd_tx_inside = command_tx.clone();
+        let icmd_tx = command_tx.clone();
         std::thread::Builder::new()
             .name("mpv event loop".into())
             .spawn(move || {
-                let mut ev_ctx = mpv.create_event_context();
-                ev_ctx
-                    .disable_deprecated_events()
-                    .expect("failed to disable deprecated events.");
-                ev_ctx
-                    .observe_property("duration", Format::Double, 0)
-                    .expect("failed to watch duration");
-                ev_ctx
-                    .observe_property("time-pos", Format::Double, 1)
-                    .expect("failed to watch time_pos");
-                ev_ctx
-                    .observe_property("media-title", Format::String, 2)
-                    .expect("failed to watch media-title");
-                loop {
-                    if let Some(ev) = ev_ctx.wait_event(0.0) {
-                        match ev {
-                            Ok(ev) => {
-                                Self::handle_mpv_event(
-                                    ev,
-                                    &cmd_tx_inside,
-                                    &cmd_tx,
-                                    &media_title_inside,
-                                    &position_inside,
-                                    &duration_inside,
-                                );
-                            }
-                            Err(err) => {
-                                error!("Event Error: {err:?}");
-                                continue;
-                            }
-                        };
-                    }
-
-                    if let Ok(cmd) = command_rx.try_recv() {
-                        Self::handle_internal_cmd(cmd, &mpv, &duration_inside, &cmd_tx);
-                    }
-
-                    // This is important to keep the mpv running, otherwise it cannot play.
-                    std::thread::sleep(std::time::Duration::from_millis(20));
-                }
+                Self::event_handler(
+                    &mpv,
+                    &icmd_tx,
+                    &command_rx,
+                    &cmd_tx,
+                    &media_title_inside,
+                    &position_inside,
+                    &duration_inside,
+                );
             })
             .expect("failed to start mpv event loop thread");
 
@@ -129,6 +98,58 @@ impl MpvBackend {
             position,
             duration,
             media_title,
+        }
+    }
+
+    /// The Event handler thread code
+    fn event_handler(
+        mpv: &Mpv,
+        icmd_tx: &Sender<PlayerInternalCmd>,
+        icmd_rx: &Receiver<PlayerInternalCmd>,
+        cmd_tx: &crate::PlayerCmdSender,
+        media_title: &Arc<Mutex<String>>,
+        position: &Arc<Mutex<Duration>>,
+        duration: &Arc<Mutex<Duration>>,
+    ) {
+        let mut ev_ctx = mpv.create_event_context();
+        ev_ctx
+            .disable_deprecated_events()
+            .expect("failed to disable deprecated events.");
+        ev_ctx
+            .observe_property("duration", Format::Double, 0)
+            .expect("failed to watch duration");
+        ev_ctx
+            .observe_property("time-pos", Format::Double, 1)
+            .expect("failed to watch time_pos");
+        ev_ctx
+            .observe_property("media-title", Format::String, 2)
+            .expect("failed to watch media-title");
+        loop {
+            if let Some(ev) = ev_ctx.wait_event(0.0) {
+                match ev {
+                    Ok(ev) => {
+                        Self::handle_mpv_event(
+                            ev,
+                            icmd_tx,
+                            cmd_tx,
+                            media_title,
+                            position,
+                            duration,
+                        );
+                    }
+                    Err(err) => {
+                        error!("Event Error: {err:?}");
+                        continue;
+                    }
+                };
+            }
+
+            if let Ok(cmd) = icmd_rx.try_recv() {
+                Self::handle_internal_cmd(cmd, mpv, duration, cmd_tx);
+            }
+
+            // This is important to keep the mpv running, otherwise it cannot play.
+            std::thread::sleep(std::time::Duration::from_millis(20));
         }
     }
 
