@@ -1,18 +1,19 @@
 //# This File is a modified version of "rodio::Sink" which is licensed under MIT
 
-use parking_lot::{Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
 
+use parking_lot::{Mutex, RwLock};
+use rodio::cpal::FromSample;
+use rodio::{queue, source::Done, Sample, Source};
+use rodio::{OutputStreamHandle, PlayError};
+
 #[allow(unused_imports)] // used for "rusty-soundtouch"
 use super::source::SourceExt as _;
 use super::PlayerInternalCmd;
 use crate::PlayerCmd;
-use rodio::cpal::FromSample;
-use rodio::{queue, source::Done, Sample, Source};
-use rodio::{OutputStreamHandle, PlayError};
 
 /// Handle to an device that outputs sounds.
 ///

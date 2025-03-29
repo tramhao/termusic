@@ -1,19 +1,10 @@
 //! SPDX-License-Identifier: MIT
 
-#[cfg(feature = "gst")]
-mod gstreamer_backend;
-#[cfg(feature = "mpv")]
-mod mpv_backend;
-mod rusty_backend;
-
-mod discord;
-mod mpris;
-pub mod playlist;
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 pub use playlist::{Playlist, Status};
-use std::time::Duration;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::{ServerOverlay, SharedServerSettings};
 use termusiclib::library_db::DataBase;
@@ -25,6 +16,16 @@ use tokio::runtime::Handle;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::{broadcast, oneshot};
+
+#[cfg(feature = "gst")]
+mod gstreamer_backend;
+#[cfg(feature = "mpv")]
+mod mpv_backend;
+mod rusty_backend;
+
+mod discord;
+mod mpris;
+pub mod playlist;
 
 #[macro_use]
 extern crate log;

@@ -1,7 +1,10 @@
 //! SPDX-License-Identifier: MIT
 
-use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use crate::{MediaInfo, Speed, Volume};
+use std::path::Path;
+use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
+use std::time::Duration;
+
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
@@ -11,12 +14,10 @@ use gst::{ClockTime, StateChangeError, StateChangeSuccess};
 use gstreamer as gst;
 use gstreamer::prelude::*;
 use parking_lot::Mutex;
-use std::path::Path;
-use std::sync::atomic::AtomicBool;
-use std::sync::Arc;
-use std::time::Duration;
 use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaType, Track};
+
+use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 
 /// This trait allows for easy conversion of a path to a URI
 pub trait PathToURI {

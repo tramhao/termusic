@@ -1,8 +1,5 @@
-pub mod buffered_source;
-pub mod read_seek_source;
-
-use super::Source;
 use std::{fmt, num::NonZeroU64, time::Duration};
+
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
@@ -17,6 +14,11 @@ use symphonia::{
     default::get_probe,
 };
 use tokio::sync::mpsc;
+
+use super::Source;
+
+pub mod buffered_source;
+pub mod read_seek_source;
 
 fn is_codec_null(track: &Track) -> bool {
     track.codec_params.codec == CODEC_TYPE_NULL

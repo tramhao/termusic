@@ -1,7 +1,10 @@
 //! SPDX-License-Identifier: MIT
 
-use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use crate::{MediaInfo, Speed, Volume};
+use std::cmp;
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::Arc;
+use std::time::Duration;
+
 use anyhow::Result;
 use async_trait::async_trait;
 use libmpv::Mpv;
@@ -10,12 +13,10 @@ use libmpv::{
     Format,
 };
 use parking_lot::Mutex;
-use std::cmp;
-use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::Arc;
-use std::time::Duration;
 use termusiclib::config::ServerOverlay;
 use termusiclib::track::Track;
+
+use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 
 pub struct MpvBackend {
     // player: Mpv,
