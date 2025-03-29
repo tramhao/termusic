@@ -188,8 +188,8 @@ impl GStreamerBackend {
         let message_tx = main_tx.clone();
         std::thread::Builder::new()
             .name("gstreamer event loop".into())
-            .spawn(move || loop {
-                if let Ok(msg) = main_rx.try_recv() {
+            .spawn(move || {
+                while let Ok(msg) = main_rx.recv_blocking() {
                     match msg {
                         PlayerInternalCmd::Eos => {
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
@@ -216,7 +216,6 @@ impl GStreamerBackend {
                         }
                     }
                 }
-                std::thread::sleep(std::time::Duration::from_millis(100));
             })
             .expect("failed to start gstreamer event loop thread");
         let playbin = Box::new(gst::ElementFactory::make("playbin3"))
