@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
+use async_channel::Receiver;
 use async_trait::async_trait;
 use glib::FlagsClass;
 use gst::bus::BusWatchGuard;
@@ -188,35 +189,7 @@ impl GStreamerBackend {
         let message_tx = main_tx.clone();
         std::thread::Builder::new()
             .name("gstreamer event loop".into())
-            .spawn(move || {
-                while let Ok(msg) = main_rx.recv_blocking() {
-                    match msg {
-                        PlayerInternalCmd::Eos => {
-                            if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
-                                error!("error in sending Eos: {e}");
-                            }
-                        }
-                        PlayerInternalCmd::AboutToFinish => {
-                            info!("about to finish received by gstreamer internal !!!!!");
-                            if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
-                                error!("error in sending AboutToFinish: {e}");
-                            }
-                        }
-                        PlayerInternalCmd::SkipNext => {
-                            // store it here, as there will be no EOS event send by gst
-                            eos_watcher_clone.store(true, std::sync::atomic::Ordering::SeqCst);
-                            if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
-                                error!("error in sending SkipNext: {e}");
-                            }
-                        }
-                        PlayerInternalCmd::ReloadSpeed => {
-                            // HACK: currently gstreamer does not have any internal events to be send, and there is no global "re-apply speed property", this also means that if using max speed, it will not actually use full-speed
-                            let _ = cmd_tx.send(PlayerCmd::SpeedUp);
-                            let _ = cmd_tx.send(PlayerCmd::SpeedDown);
-                        }
-                    }
-                }
-            })
+            .spawn(move || Self::channel_proxy_task(&main_rx, &cmd_tx, &eos_watcher_clone))
             .expect("failed to start gstreamer event loop thread");
         let playbin = Box::new(gst::ElementFactory::make("playbin3"))
             .build()
@@ -394,6 +367,46 @@ impl GStreamerBackend {
         });
 
         this
+    }
+
+    /// Code for the Event Proxy Task / Thread.
+    ///
+    /// This extra event proxy is necessary as the playbin itself may need to some extra events done (like `ReloadSpeed`)
+    /// or set some extra values like on `SkipNext`.
+    ///
+    /// TODO: This extra proxy could likely be avoided.
+    fn channel_proxy_task(
+        main_rx: &Receiver<PlayerInternalCmd>,
+        cmd_tx: &crate::PlayerCmdSender,
+        eos_watcher: &Arc<AtomicBool>,
+    ) {
+        while let Ok(msg) = main_rx.recv_blocking() {
+            match msg {
+                PlayerInternalCmd::Eos => {
+                    if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
+                        error!("error in sending Eos: {e}");
+                    }
+                }
+                PlayerInternalCmd::AboutToFinish => {
+                    info!("about to finish received by gstreamer internal !!!!!");
+                    if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
+                        error!("error in sending AboutToFinish: {e}");
+                    }
+                }
+                PlayerInternalCmd::SkipNext => {
+                    // store it here, as there will be no EOS event send by gst
+                    eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
+                    if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
+                        error!("error in sending SkipNext: {e}");
+                    }
+                }
+                PlayerInternalCmd::ReloadSpeed => {
+                    // HACK: currently gstreamer does not have any internal events to be send, and there is no global "re-apply speed property", this also means that if using max speed, it will not actually use full-speed
+                    let _ = cmd_tx.send(PlayerCmd::SpeedUp);
+                    let _ = cmd_tx.send(PlayerCmd::SpeedDown);
+                }
+            }
+        }
     }
 }
 
