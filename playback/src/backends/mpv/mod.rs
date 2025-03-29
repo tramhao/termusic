@@ -222,10 +222,10 @@ impl MpvBackend {
                 let _ = mpv.set_property("volume", i64::from(volume));
             }
             PlayerInternalCmd::Pause => {
-                let _ = mpv.set_property("pause", true);
+                let _ = mpv.pause();
             }
             PlayerInternalCmd::Resume => {
-                let _ = mpv.set_property("pause", false);
+                let _ = mpv.unpause();
             }
             PlayerInternalCmd::Speed(speed) => {
                 let _ = mpv.set_property("speed", f64::from(speed) / 10.0);
