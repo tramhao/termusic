@@ -94,78 +94,22 @@ impl MpvBackend {
                     .expect("failed to watch media-title");
                 loop {
                     if let Some(ev) = ev_ctx.wait_event(0.0) {
-                        let ev = match ev {
-                            Ok(v) => v,
+                        match ev {
+                            Ok(ev) => {
+                                Self::handle_mpv_event(
+                                    ev,
+                                    &cmd_tx_inside,
+                                    &cmd_tx,
+                                    &media_title_inside,
+                                    &position_inside,
+                                    &duration_inside,
+                                );
+                            }
                             Err(err) => {
                                 error!("Event Error: {err:?}");
                                 continue;
                             }
                         };
-
-                        match ev {
-                            Event::EndFile(e) => {
-                                // error!("event end file {:?} received", e);
-                                if e == 0 {
-                                    let _ = cmd_tx_inside.send(PlayerInternalCmd::Eos);
-                                }
-
-                                // clear stored title on end
-                                media_title_inside.lock().clear();
-                            }
-                            Event::StartFile => {
-                                // let _ = message_tx.send(PlayerMsg::CurrentTrackUpdated);
-                            }
-                            Event::PropertyChange {
-                                name,
-                                change,
-                                reply_userdata: _,
-                            } => match name {
-                                "duration" => {
-                                    if let PropertyData::Double(dur) = change {
-                                        // using "dur.max" because mpv *may* return a negative number
-                                        *duration_inside.lock() =
-                                            Duration::from_secs_f64(dur.max(0.0));
-                                    }
-                                }
-                                "time-pos" => {
-                                    if let PropertyData::Double(time_pos) = change {
-                                        // using "dur.max" because mpv *may* return a negative number
-                                        let time_pos = Duration::from_secs_f64(time_pos.max(0.0));
-                                        *position_inside.lock() = time_pos;
-
-                                        // About to finish signal is a simulation of gstreamer, and used for gapless
-                                        let dur = duration_inside.lock();
-                                        let progress = time_pos.as_secs_f64() / dur.as_secs_f64();
-                                        if progress >= 0.5
-                                            && (*dur - time_pos) < Duration::from_secs(2)
-                                        {
-                                            if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
-                                                error!("command AboutToFinish sent failed: {e}");
-                                            }
-                                        }
-                                    }
-                                }
-                                "media-title" => {
-                                    if let PropertyData::Str(title) = change {
-                                        *media_title_inside.lock() = title.to_string();
-                                    }
-                                }
-                                &_ => {
-                                    // left for debug
-                                    // error!(
-                                    //     "Event not handled {:?}",
-                                    //     Event::PropertyChange {
-                                    //         name,
-                                    //         change,
-                                    //         reply_userdata
-                                    //     }
-                                    // )
-                                }
-                            },
-                            _ev => {
-                                // debug!("Event triggered: {:?}", ev),
-                            }
-                        }
                     }
 
                     if let Ok(cmd) = command_rx.try_recv() {
@@ -247,6 +191,75 @@ impl MpvBackend {
             position,
             duration,
             media_title,
+        }
+    }
+
+    /// Handle a given [`Event`].
+    fn handle_mpv_event(
+        ev: Event<'_>,
+        icmd_tx: &Sender<PlayerInternalCmd>,
+        cmd_tx: &crate::PlayerCmdSender,
+        media_title: &Arc<Mutex<String>>,
+        position: &Arc<Mutex<Duration>>,
+        duration: &Arc<Mutex<Duration>>,
+    ) {
+        match ev {
+            Event::EndFile(e) => {
+                // error!("event end file {:?} received", e);
+                if e == 0 {
+                    let _ = icmd_tx.send(PlayerInternalCmd::Eos);
+                }
+
+                // clear stored title on end
+                media_title.lock().clear();
+            }
+            Event::PropertyChange {
+                name,
+                change,
+                reply_userdata: _,
+            } => match name {
+                "duration" => {
+                    if let PropertyData::Double(dur) = change {
+                        // using "dur.max" because mpv *may* return a negative number
+                        *duration.lock() = Duration::from_secs_f64(dur.max(0.0));
+                    }
+                }
+                "time-pos" => {
+                    if let PropertyData::Double(time_pos) = change {
+                        // using "dur.max" because mpv *may* return a negative number
+                        let time_pos = Duration::from_secs_f64(time_pos.max(0.0));
+                        *position.lock() = time_pos;
+
+                        // About to finish signal is a simulation of gstreamer, and used for gapless
+                        let dur = duration.lock();
+                        let progress = time_pos.as_secs_f64() / dur.as_secs_f64();
+                        if progress >= 0.5 && (*dur - time_pos) < Duration::from_secs(2) {
+                            if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
+                                error!("command AboutToFinish sent failed: {e}");
+                            }
+                        }
+                    }
+                }
+                "media-title" => {
+                    if let PropertyData::Str(title) = change {
+                        *media_title.lock() = title.to_string();
+                    }
+                }
+                &_ => {
+                    // left for debug
+                    // error!(
+                    //     "Event not handled {:?}",
+                    //     Event::PropertyChange {
+                    //         name,
+                    //         change,
+                    //         reply_userdata
+                    //     }
+                    // )
+                }
+            },
+            _ev => {
+                // debug!("Event triggered: {:?}", ev),
+            }
         }
     }
 }
