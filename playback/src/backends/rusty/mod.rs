@@ -1,34 +1,19 @@
 #![cfg_attr(test, deny(missing_docs))]
 
-mod decoder;
-mod icy_metadata;
-mod sink;
-mod source;
-
-use async_trait::async_trait;
-use decoder::Symphonia;
-use rodio::OutputStream;
-use rodio::Source;
-use sink::Sink;
-use std::num::{NonZeroU16, NonZeroUsize};
-use termusiclib::config::ServerOverlay;
-use tokio::runtime::Handle;
-
-use crate::{MediaInfo, Speed, Volume};
-
-use self::decoder::buffered_source::BufferedSource;
-use self::decoder::read_seek_source::ReadSeekSource;
-use self::decoder::{MediaTitleRx, MediaTitleType};
-
-use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use anyhow::{anyhow, Context, Result};
-use parking_lot::Mutex;
 use std::fs::File;
 use std::path::Path;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
+
+use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
+use parking_lot::Mutex;
+use rodio::OutputStream;
+use rodio::Source;
+use sink::Sink;
+use std::num::{NonZeroU16, NonZeroUsize};
 use stream_download::http::{
     reqwest::{
         header::{HeaderMap, HeaderValue},
@@ -44,7 +29,19 @@ use stream_download::{Settings as StreamSettings, StreamDownload};
 use symphonia::core::io::{
     MediaSource, MediaSourceStream, MediaSourceStreamOptions, ReadOnlySource,
 };
+use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaType, Track};
+use tokio::runtime::Handle;
+
+use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
+use decoder::buffered_source::BufferedSource;
+use decoder::read_seek_source::ReadSeekSource;
+use decoder::{MediaTitleRx, MediaTitleType, Symphonia};
+
+mod decoder;
+mod icy_metadata;
+mod sink;
+mod source;
 
 pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;

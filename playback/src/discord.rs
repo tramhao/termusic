@@ -2,10 +2,11 @@ use std::sync::mpsc::{self, Receiver, RecvError, Sender};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::PlayerTimeUnit;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::track::Track;
+
+use crate::PlayerTimeUnit;
 
 const APP_ID: &str = "968407067889131520";
 

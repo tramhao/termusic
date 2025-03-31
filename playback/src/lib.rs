@@ -1,43 +1,12 @@
-/*
- * MIT License
- *
- * termusic - Copyright (c) 2021 Larry Hao
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+//! SPDX-License-Identifier: MIT
 
-#[cfg(feature = "gst")]
-mod gstreamer_backend;
-#[cfg(feature = "mpv")]
-mod mpv_backend;
-mod rusty_backend;
-
-mod discord;
-mod mpris;
-pub mod playlist;
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 pub use playlist::{Playlist, Status};
-use std::time::Duration;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use termusiclib::config::{ServerOverlay, SharedServerSettings};
+use termusiclib::config::SharedServerSettings;
 use termusiclib::library_db::DataBase;
 use termusiclib::player::{PlayerProgress, PlayerTimeUnit, TrackChangedInfo, UpdateEvents};
 use termusiclib::podcast::db::Database as DBPod;
@@ -48,34 +17,16 @@ use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::{broadcast, oneshot};
 
+pub use backends::{Backend, BackendSelect};
+
+mod discord;
+mod mpris;
+pub mod playlist;
+
 #[macro_use]
 extern crate log;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum BackendSelect {
-    #[cfg(feature = "mpv")]
-    Mpv,
-    #[cfg(feature = "gst")]
-    GStreamer,
-    /// Create a new Backend with default backend ordering
-    ///
-    /// Order:
-    /// - [`GstreamerBackend`](gstreamer_backend::GStreamerBackend) (feature `gst`)
-    /// - [`MpvBackend`](mpv_backend::MpvBackend) (feature `mpv`)
-    /// - [`RustyBackend`](rusty_backend::RustyBackend) (default)
-    #[default]
-    Rusty,
-}
-
-/// Enum to choose backend at runtime
-#[non_exhaustive]
-pub enum Backend {
-    #[cfg(feature = "mpv")]
-    Mpv(mpv_backend::MpvBackend),
-    Rusty(rusty_backend::RustyBackend),
-    #[cfg(feature = "gst")]
-    GStreamer(gstreamer_backend::GStreamerBackend),
-}
+mod backends;
 
 pub type PlayerCmdCallback = oneshot::Receiver<()>;
 pub type PlayerCmdReciever = UnboundedReceiver<(PlayerCmd, PlayerCmdCallbackSender)>;
@@ -126,73 +77,6 @@ impl PlayerCmdSender {
     #[must_use]
     pub fn new(tx: UnboundedSender<(PlayerCmd, PlayerCmdCallbackSender)>) -> Self {
         Self(tx)
-    }
-}
-
-impl Backend {
-    /// Create a new Backend based on `backend`([`BackendSelect`])
-    fn new_select(backend: BackendSelect, config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
-        match backend {
-            #[cfg(feature = "mpv")]
-            BackendSelect::Mpv => Self::new_mpv(config, cmd_tx),
-            #[cfg(feature = "gst")]
-            BackendSelect::GStreamer => Self::new_gstreamer(config, cmd_tx),
-            BackendSelect::Rusty => Self::new_rusty(config, cmd_tx),
-        }
-    }
-
-    // /// Create a new Backend with default backend ordering
-    // ///
-    // /// For the order see [`BackendSelect::Default`]
-    // #[allow(unreachable_code)]
-    // fn new_default(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
-    //     #[cfg(feature = "gst")]
-    //     return Self::new_gstreamer(config, cmd_tx);
-    //     #[cfg(feature = "mpv")]
-    //     return Self::new_mpv(config, cmd_tx);
-    //     return Self::new_rusty(config, cmd_tx);
-    // }
-
-    /// Explicitly choose Backend [`RustyBackend`](rusty_backend::RustyBackend)
-    fn new_rusty(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
-        info!("Using Backend \"rusty\"");
-        Self::Rusty(rusty_backend::RustyBackend::new(config, cmd_tx))
-    }
-
-    /// Explicitly choose Backend [`GstreamerBackend`](gstreamer_backend::GStreamerBackend)
-    #[cfg(feature = "gst")]
-    fn new_gstreamer(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
-        info!("Using Backend \"GStreamer\"");
-        Self::GStreamer(gstreamer_backend::GStreamerBackend::new(config, cmd_tx))
-    }
-
-    /// Explicitly choose Backend [`MpvBackend`](mpv_backend::MpvBackend)
-    #[cfg(feature = "mpv")]
-    fn new_mpv(config: &ServerOverlay, cmd_tx: PlayerCmdSender) -> Self {
-        info!("Using Backend \"mpv\"");
-        Self::Mpv(mpv_backend::MpvBackend::new(config, cmd_tx))
-    }
-
-    #[must_use]
-    pub fn as_player(&self) -> &dyn PlayerTrait {
-        match self {
-            #[cfg(feature = "mpv")]
-            Backend::Mpv(v) => v,
-            #[cfg(feature = "gst")]
-            Backend::GStreamer(v) => v,
-            Backend::Rusty(v) => v,
-        }
-    }
-
-    #[must_use]
-    pub fn as_player_mut(&mut self) -> &mut (dyn PlayerTrait + Send) {
-        match self {
-            #[cfg(feature = "mpv")]
-            Backend::Mpv(v) => v,
-            #[cfg(feature = "gst")]
-            Backend::GStreamer(v) => v,
-            Backend::Rusty(v) => v,
-        }
     }
 }
 
