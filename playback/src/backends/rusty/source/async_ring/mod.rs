@@ -1,16 +1,24 @@
 use std::{fmt::Debug, time::Duration, u8};
 
+use anyhow::anyhow;
 use async_ringbuf::{
     traits::{AsyncConsumer, AsyncProducer, Consumer, Observer, Split},
     AsyncHeapRb,
 };
-use rodio::{source::SeekError, Source};
+use rodio::Source;
 use symphonia::core::audio::SignalSpec;
 
-use tokio::runtime::Handle;
+use tokio::{
+    runtime::Handle,
+    sync::{mpsc, oneshot},
+};
 use wrap::{ConsWrap, ProdWrap};
 
 mod wrap;
+
+/// Seek Channel data, the first is the point to seek to in the decoder
+/// the second is a callback that the seek is done and how many elements to skip until new data.
+type SeekData = (Duration, oneshot::Sender<usize>);
 
 #[derive(Debug)]
 struct ProviderData {
@@ -25,14 +33,16 @@ const MIN_SIZE: usize = 192000 * 2;
 #[derive(Debug)]
 pub struct AsyncRingSourceProvider {
     inner: ProdWrap,
+    seek_rx: mpsc::Receiver<SeekData>,
 
     data: Option<ProviderData>,
 }
 
 impl AsyncRingSourceProvider {
-    fn new(wrap: ProdWrap) -> Self {
+    fn new(wrap: ProdWrap, seek_rx: mpsc::Receiver<SeekData>) -> Self {
         AsyncRingSourceProvider {
             inner: wrap,
+            seek_rx,
             data: None,
         }
     }
@@ -45,7 +55,7 @@ impl AsyncRingSourceProvider {
     /// Write a new spec.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
-    async fn new_spec(&mut self, spec: SignalSpec) -> Result<usize, ()> {
+    pub async fn new_spec(&mut self, spec: SignalSpec) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite::get_msg_size(MessageSpec::MESSAGE_SIZE)];
         let mut msg = RingMsgWrite::new_spec(spec);
 
@@ -58,7 +68,7 @@ impl AsyncRingSourceProvider {
     /// Write a new data message, without the buffer yet.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
-    async fn new_data_new(&mut self, length: u32) -> Result<usize, ()> {
+    async fn new_data(&mut self, length: usize) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite::get_msg_size(MessageDataFirst::MESSAGE_SIZE)];
         let mut msg = RingMsgWrite::new_data(length);
 
@@ -105,8 +115,7 @@ impl AsyncRingSourceProvider {
     pub async fn write_data(&mut self, data: &[u8]) -> Result<usize, ()> {
         let mut written = 0;
         if self.data.is_none() {
-            let len = u32::try_from(data.len().min(u32::MAX as usize)).unwrap();
-            written += self.new_data_new(len).await?
+            written += self.new_data(data.len()).await?
         }
 
         while !self.data.as_mut().unwrap().msg.is_done() && !self.inner.is_closed() {
@@ -117,16 +126,47 @@ impl AsyncRingSourceProvider {
 
         Ok(written)
     }
+
+    /// Write a EOS message.
+    ///
+    /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
+    pub async fn new_eos(&mut self) -> Result<usize, ()> {
+        let mut msg_buf = [0; RingMsgWrite::get_msg_size(0)];
+        let mut msg = RingMsgWrite::new_eos();
+
+        msg.try_write(&mut msg_buf);
+        self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
+
+        Ok(msg_buf.len())
+    }
+
+    /// Wait until the seek channel is dropped([`None`]) or a seek is requested([`Some`]).
+    pub async fn wait_seek(&mut self) -> Option<SeekData> {
+        self.seek_rx.recv().await
+    }
+
+    /// Process a seek and call the Consumer to resume.
+    ///
+    /// This clear all data state, calls the consumer to resume with how many bytes to skip
+    /// and sends the new spec (in case it changed in the seek).
+    pub async fn process_seek(&mut self, spec: SignalSpec, cb: oneshot::Sender<usize>) {
+        self.data.take();
+        let bytes_to_skip = self.inner.occupied_len();
+        let _ = cb.send(bytes_to_skip);
+        let _ = self.new_spec(spec).await;
+    }
 }
 
-// TODO: implement writing data to the provider instead of doing manually like in playground
 // TODO: hook-up provider & consumer in the decode-rodio chain
-// TODO: do seek
-// TODO: EOS message?
+// TODO: test producer & consumer
 
 #[derive(Debug)]
 pub struct AsyncRingSource {
     inner: ConsWrap,
+    /// Send a seek-to value to the producer.
+    /// Also used to indicate to the producer that it should keep active.
+    seek_tx: Option<mpsc::Sender<SeekData>>,
+
     buf: StaticBuf<32>,
     last_msg: Option<RingMsgParse>,
     handle: Handle,
@@ -148,10 +188,12 @@ impl AsyncRingSource {
         let size = size.max(MIN_SIZE);
         let ringbuf = AsyncHeapRb::<u8>::new(size);
         let (prod, cons) = ringbuf.split();
+        let (tx, rx) = mpsc::channel(1);
 
-        let async_prod = AsyncRingSourceProvider::new(ProdWrap::new(prod));
+        let async_prod = AsyncRingSourceProvider::new(ProdWrap::new(prod), rx);
         let async_cons = Self {
             inner: ConsWrap::new(cons),
+            seek_tx: Some(tx),
             channels: u16::try_from(spec.channels.count())
                 .expect("Channel size to be within u16::MAX"),
             rate: spec.rate,
@@ -165,34 +207,26 @@ impl AsyncRingSource {
     }
 
     /// Ensure there is a complete message in `last_msg`.
+    ///
+    /// This function assumes there is no current message.
     #[must_use]
     async fn read_msg(&mut self) -> Option<()> {
         error!("READING MSG");
-        let msg = match &mut self.last_msg {
-            Some(v) => v,
-            None => {
-                // Process a new message, wait for at least 5 bytes as that is the common least size
-                // size_of::<u32> + size_of::<u8>
-                if self.buf.is_empty() {
-                    self.inner.wait_occupied(5).await;
-                }
-                let detect_byte = if self.buf.is_empty() {
-                    self.inner.pop().await?
-                } else {
-                    let byte = self.buf.get_ref()[0];
-                    self.buf.advance_beginning(1);
-                    byte
-                };
-                let Some((parser, _)) = RingMsgParse::new(&[detect_byte]) else {
-                    unimplemented!(
-                        "There is always one byte provided and one is enough for detection"
-                    );
-                };
-                self.last_msg = Some(parser);
-                self.last_msg.as_mut().unwrap()
-            }
+        let msg = {
+            let detect_byte = if self.buf.is_empty() {
+                self.inner.pop().await?
+            } else {
+                let byte = self.buf.get_ref()[0];
+                self.buf.advance_beginning(1);
+                byte
+            };
+            let Some((parser, _)) = RingMsgParse::new(&[detect_byte]) else {
+                unimplemented!("There is always one byte provided and one is enough for detection");
+            };
+            self.last_msg = Some(parser);
+            self.last_msg.as_mut().unwrap()
         };
-        error!("GOT MSG");
+        debug!("GOT MSG");
 
         if !msg.is_fillable() {
             return Some(());
@@ -303,6 +337,7 @@ impl AsyncRingSource {
         let mut value = MessageDataValue::new();
 
         let read = value.try_fill(self.buf.get_ref());
+        msg.advance_read(read);
         self.buf.advance_beginning(read);
 
         assert!(value.is_done());
@@ -343,7 +378,26 @@ impl Source for AsyncRingSource {
 
     #[inline]
     fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
-        todo!();
+        debug!("TRY_SEEK");
+
+        // clear the ringbuffer before sending, to potentially unblock the writer.
+        self.inner.clear();
+        self.last_msg.take();
+        self.buf.clear();
+
+        let (cb_tx, cb_rx) = oneshot::channel();
+        let _ = self.seek_tx.as_mut().unwrap().blocking_send((pos, cb_tx));
+        let to_skip = cb_rx.blocking_recv().map_err(|_| {
+            rodio::source::SeekError::Other(
+                anyhow!("Seek Callback channel exited unexpectedly").into(),
+            )
+        })?;
+
+        // skip possible new elements
+        let skipped = self.inner.skip(to_skip);
+        debug!("AFTER SEEK {:#?}", skipped);
+
+        Ok(())
     }
 }
 
@@ -370,6 +424,10 @@ impl Iterator for AsyncRingSource {
                 }
                 RingMsgParse::Spec(_) => {
                     self.apply_spec_msg();
+                }
+                RingMsgParse::EOS => {
+                    self.seek_tx.take();
+                    return None;
                 }
             }
         }
@@ -490,6 +548,7 @@ impl<const N: usize> StaticBuf<N> {
 enum RingMessages {
     Data = 1,
     Spec = 2,
+    EOS = 3,
 }
 
 impl RingMessages {
@@ -507,6 +566,7 @@ impl RingMessages {
         match byte {
             1 => Self::Data,
             2 => Self::Spec,
+            3 => Self::EOS,
             v => unimplemented!(
                 "This should never happen, unless there is de-sync. byte: {}",
                 v
@@ -541,10 +601,17 @@ impl RingMsgWrite {
         }
     }
 
-    fn new_data(length: u32) -> Self {
+    fn new_data(length: usize) -> Self {
         Self {
             id_written: false,
             msg: RingMsgParse::DataFirst(MessageDataFirst::new_write(length)),
+        }
+    }
+
+    fn new_eos() -> Self {
+        Self {
+            id_written: false,
+            msg: RingMsgParse::EOS,
         }
     }
 
@@ -557,6 +624,7 @@ impl RingMsgWrite {
             RingMsgParse::DataFirst(message_data_first) => message_data_first.is_done(),
             RingMsgParse::DataActual(message_data_actual) => message_data_actual.is_done(),
             RingMsgParse::Spec(message_spec) => message_spec.is_done(),
+            RingMsgParse::EOS => true,
         }
     }
 
@@ -572,6 +640,7 @@ impl RingMsgWrite {
                 RingMsgParse::DataFirst(_) => RingMessages::Data.as_u8(),
                 RingMsgParse::DataActual(_) => unreachable!(),
                 RingMsgParse::Spec(_) => RingMessages::Spec.as_u8(),
+                RingMsgParse::EOS => RingMessages::EOS.as_u8(),
             };
 
             self.id_written = true;
@@ -583,6 +652,7 @@ impl RingMsgWrite {
             RingMsgParse::DataFirst(message_data_first) => message_data_first.try_write(buf),
             RingMsgParse::DataActual(_message_data_actual) => 0,
             RingMsgParse::Spec(message_spec) => message_spec.try_write(buf),
+            RingMsgParse::EOS => 0,
         };
 
         written
@@ -615,6 +685,7 @@ enum RingMsgParse {
     DataFirst(MessageDataFirst),
     DataActual(MessageDataActual),
     Spec(MessageSpec),
+    EOS,
 }
 
 impl RingMsgParse {
@@ -624,6 +695,7 @@ impl RingMsgParse {
         let new = match detected {
             RingMessages::Data => Self::DataFirst(MessageDataFirst::new()),
             RingMessages::Spec => Self::Spec(MessageSpec::new()),
+            RingMessages::EOS => Self::EOS,
         };
 
         Some((new, read))
@@ -634,6 +706,7 @@ impl RingMsgParse {
             RingMsgParse::DataFirst(message_data_first) => message_data_first.is_done(),
             RingMsgParse::DataActual(message_data_actual) => message_data_actual.is_done(),
             RingMsgParse::Spec(message_spec) => message_spec.is_done(),
+            RingMsgParse::EOS => true,
         }
     }
 
@@ -642,6 +715,7 @@ impl RingMsgParse {
             RingMsgParse::DataFirst(_) => true,
             RingMsgParse::DataActual(_) => false,
             RingMsgParse::Spec(_) => true,
+            RingMsgParse::EOS => false,
         }
     }
 
@@ -658,6 +732,7 @@ impl RingMsgParse {
             RingMsgParse::DataFirst(message_data_first) => message_data_first.try_fill(buf),
             RingMsgParse::DataActual(_message_data_actual) => 0,
             RingMsgParse::Spec(message_spec) => message_spec.try_fill(buf),
+            RingMsgParse::EOS => 0,
         }
     }
 
@@ -784,7 +859,7 @@ struct MessageDataFirst {
 
 // TODO: maybe use nom or similar?
 impl MessageDataFirst {
-    const MESSAGE_SIZE: usize = size_of::<u32>();
+    const MESSAGE_SIZE: usize = size_of::<usize>();
 
     fn new() -> Self {
         Self {
@@ -793,7 +868,7 @@ impl MessageDataFirst {
         }
     }
 
-    fn new_write(length: u32) -> Self {
+    fn new_write(length: usize) -> Self {
         let mut buf = [0; Self::MESSAGE_SIZE];
         buf.copy_from_slice(&length.to_ne_bytes());
         Self {
@@ -822,8 +897,8 @@ impl MessageDataFirst {
 
     /// Read the current buffer into the resulting type
     fn finish(&self) -> MessageDataActual {
-        // read u32
-        let length = u32::from_ne_bytes(self.buffer);
+        // read usize
+        let length = usize::from_ne_bytes(self.buffer);
 
         MessageDataActual::new(length)
     }
@@ -850,25 +925,23 @@ struct MessageDataActual {
 }
 
 impl MessageDataActual {
-    fn new(length: u32) -> Self {
-        Self {
-            length: usize::try_from(length).unwrap(),
-            read: 0,
-        }
+    fn new(length: usize) -> Self {
+        Self { length, read: 0 }
     }
 
-    fn new_write(length: u32) -> Self {
+    fn new_write(length: usize) -> Self {
         Self::new(length)
     }
 
     fn is_done(&self) -> bool {
-        self.read == self.length
+        self.read >= self.length
     }
 
     /// Try to read from the given buffer into a given out-buffer.
     /// This function will put new data into the out-buffer from the beginning.
     ///
     /// This function will always return how many bytes have been consumed from the buffer.
+    // TODO: move code to "try_write" and remove "try_read"
     fn try_read(&mut self, in_buf: &[u8], out_buf: &mut [u8]) -> usize {
         if self.is_done() || in_buf.is_empty() || out_buf.is_empty() {
             return 0;
@@ -881,6 +954,12 @@ impl MessageDataActual {
         self.read += read;
 
         read
+    }
+
+    /// Advance the read size when copied outside of [`try_read`](Self::try_read)
+    fn advance_read(&mut self, by: usize) {
+        self.read += by;
+        assert!(self.read <= self.length);
     }
 
     /// Try to write the current buffer into the given buffer.
@@ -1155,7 +1234,7 @@ mod tests {
 
         #[test]
         fn should_read_complete_once() {
-            let input: Vec<u8> = 44000u32.to_ne_bytes().into_iter().collect();
+            let input: Vec<u8> = 2usize.to_ne_bytes().into_iter().collect();
             assert_eq!(input.len(), MessageDataFirst::MESSAGE_SIZE);
 
             let mut msg_data = MessageDataFirst::new();
@@ -1177,12 +1256,12 @@ mod tests {
             assert_eq!(msg_data.is_done(), true);
 
             assert_eq!(read, MessageDataFirst::MESSAGE_SIZE);
-            assert_eq!(res, MessageDataActual::new(44000));
+            assert_eq!(res, MessageDataActual::new(2));
         }
 
         #[test]
         fn should_resume_across_calls() {
-            let input: Vec<u8> = 44000u32.to_ne_bytes().into_iter().collect();
+            let input: Vec<u8> = 2usize.to_ne_bytes().into_iter().collect();
             assert_eq!(input.len(), MessageDataFirst::MESSAGE_SIZE);
 
             let mut msg_data = MessageDataFirst::new();
@@ -1240,7 +1319,7 @@ mod tests {
             assert_eq!(msg_data.is_done(), true);
 
             assert_eq!(read, MessageDataFirst::MESSAGE_SIZE - 2);
-            assert_eq!(res, MessageDataActual::new(44000));
+            assert_eq!(res, MessageDataActual::new(2));
         }
     }
 
@@ -1257,7 +1336,7 @@ mod tests {
             assert_eq!(msg_spec.is_done(), false);
 
             let written = msg_spec.try_write(out_buf);
-            let expected: Vec<u8> = 4u32.to_ne_bytes().to_vec();
+            let expected: Vec<u8> = 4usize.to_ne_bytes().to_vec();
 
             assert_eq!(written, MessageDataFirst::MESSAGE_SIZE);
             assert_eq!(out_buf, expected.as_slice());
@@ -1273,12 +1352,13 @@ mod tests {
 
             assert_eq!(msg_spec.is_done(), false);
 
+            let usize_bytes = 0usize.to_le_bytes().len();
             let written = msg_spec.try_write(&mut out_buf[..=1]);
-            let expected: Vec<u8> = 4u32
+            let expected: Vec<u8> = 4usize
                 .to_ne_bytes()
                 .into_iter()
                 .take(2)
-                .chain([0; 2].into_iter())
+                .chain([0u8; 1].repeat(usize_bytes - 2))
                 .collect();
 
             assert_eq!(written, 2);
@@ -1293,9 +1373,9 @@ mod tests {
 
             // finish with the last bytes
             let written = msg_spec.try_write(&mut out_buf[2..]);
-            let expected: Vec<u8> = 4u32.to_ne_bytes().to_vec();
+            let expected: Vec<u8> = 4usize.to_ne_bytes().to_vec();
 
-            assert_eq!(written, 2);
+            assert_eq!(written, usize_bytes - 2);
             assert_eq!(out_buf, expected.as_slice());
             assert_eq!(msg_spec.is_done(), true);
         }
@@ -1616,7 +1696,7 @@ mod tests {
         fn should_read_complete_once_data() {
             let input: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2u32.to_ne_bytes().into_iter())
+                .chain(2usize.to_ne_bytes().into_iter())
                 .chain([1; 2].into_iter())
                 .collect();
             assert_eq!(input.len(), MessageDataFirst::MESSAGE_SIZE + 2 + 1);
@@ -1636,7 +1716,7 @@ mod tests {
             assert_eq!(
                 parser,
                 RingMsgParse::DataFirst(MessageDataFirst {
-                    buffer: 2u32.to_ne_bytes(),
+                    buffer: 2usize.to_ne_bytes(),
                     read: MessageDataFirst::MESSAGE_SIZE
                 })
             );
@@ -1669,7 +1749,7 @@ mod tests {
 
         #[test]
         fn should_write_complete_once_spec() {
-            let out_buf = &mut [0; MessageSpec::MESSAGE_SIZE + 1];
+            let out_buf = &mut [0; RingMsgWrite::get_msg_size(MessageSpec::MESSAGE_SIZE)];
             assert_eq!(out_buf.len(), MessageSpec::MESSAGE_SIZE + 1);
 
             let mut writer = RingMsgWrite::new_spec(SignalSpec::new(
@@ -1696,7 +1776,7 @@ mod tests {
 
         #[test]
         fn should_write_complete_once_data() {
-            let out_buf = &mut [0; MessageDataFirst::MESSAGE_SIZE + 2 + 1];
+            let out_buf = &mut [0; RingMsgWrite::get_msg_size(MessageDataFirst::MESSAGE_SIZE + 2)];
             assert_eq!(out_buf.len(), MessageDataFirst::MESSAGE_SIZE + 2 + 1);
 
             let input_data = &[2; 2];
@@ -1709,7 +1789,7 @@ mod tests {
             let written = writer.try_write(out_buf);
             let expected: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2u32.to_ne_bytes().into_iter())
+                .chain(2usize.to_ne_bytes().into_iter())
                 .chain([0; 2].into_iter())
                 .collect();
 
@@ -1726,13 +1806,33 @@ mod tests {
             let written = writer.try_write_data(input_data, &mut out_buf[written..]);
             let expected: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2u32.to_ne_bytes().into_iter())
+                .chain(2usize.to_ne_bytes().into_iter())
                 .chain([2; 2].into_iter())
                 .collect();
 
             assert_eq!(written, 2);
             assert_eq!(writer.is_done(), true);
             assert_eq!(out_buf, expected.as_slice());
+        }
+
+        #[test]
+        fn should_write_complete_once_eos() {
+            let out_buf = &mut [0; RingMsgWrite::ID_SIZE];
+            assert_eq!(out_buf.len(), RingMsgWrite::ID_SIZE);
+
+            let mut writer = RingMsgWrite::new_eos();
+
+            assert_eq!(writer.id_written, false);
+            assert_eq!(writer.is_done(), false);
+
+            let written = writer.try_write(out_buf);
+
+            assert_eq!(written, RingMsgWrite::ID_SIZE);
+            assert_eq!(writer.id_written, true);
+            assert_eq!(writer.is_done(), true);
+
+            let expected: &[u8] = &[RingMessages::EOS.as_u8()];
+            assert_eq!(out_buf, expected);
         }
     }
 
@@ -1816,6 +1916,8 @@ pub async fn playground() {
         tokio::runtime::Handle::current(),
     );
 
+    const REPEAT: usize = 20;
+
     tokio::task::spawn_blocking(move || {
         error!("SPAWNED");
         let mut old_spec = cons.rate;
@@ -1824,11 +1926,19 @@ pub async fn playground() {
             info!("NUM: {:#?}", num);
             total_nums += 1;
 
-            assert_eq!(num, 10, "not 10, at {}", total_nums);
+            if total_nums <= REPEAT / 2 {
+                assert_eq!(num, 10, "not 10, at {}", total_nums);
+            } else {
+                assert_eq!(num, 20, "not 20, at {}", total_nums);
+            }
 
             if old_spec != cons.rate {
                 error!("NEW SPEC: {:#?}", cons);
                 old_spec = cons.rate;
+            }
+
+            if total_nums == REPEAT / 2 {
+                let _ = cons.try_seek(Duration::from_secs(1));
             }
         }
         error!("EXITED total: {:#?}", total_nums);
@@ -1839,14 +1949,39 @@ pub async fn playground() {
     let written = prod.new_spec(new_spec).await.unwrap();
     debug!("Written SPEC {:#?}", written);
 
-    let data_buf = 10i16.to_ne_bytes().repeat(128);
+    let data_buf = 10i16.to_ne_bytes().repeat(REPEAT / 2 + 10);
 
     let written = prod.write_data(&data_buf).await.unwrap();
     debug!("Written DATA {:#?}", written);
 
-    drop(prod);
+    let written = prod.new_eos().await.unwrap();
+    debug!("Written EOS {:#?}", written);
 
-    tokio::time::sleep(Duration::from_secs(2)).await;
+    // drop(prod);
+
+    // tokio::time::sleep(Duration::from_secs(2)).await;
 
     debug!("ORDER {:#?}", 10i16.to_ne_bytes());
+
+    let res = prod.wait_seek().await.unwrap();
+
+    debug!("AFTER SEEK RECV: {:#?}", res);
+
+    let new_spec = SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT);
+
+    prod.process_seek(new_spec, res.1).await;
+
+    debug!("Written SPEC again");
+
+    let data_buf = 20i16.to_ne_bytes().repeat(REPEAT / 2);
+
+    let written = prod.write_data(&data_buf).await.unwrap();
+    debug!("Written DATA {:#?}", written);
+
+    let written = prod.new_eos().await.unwrap();
+    debug!("Written EOS {:#?}", written);
+
+    let res = prod.wait_seek().await;
+
+    debug!("AFTER SEEK RECV: {:#?}", res);
 }
