@@ -267,44 +267,47 @@ impl AsyncRingSource {
             unimplemented!("This should be checked outside of the function");
         };
 
-        // size_of::<i16>, wait until we have enough data to parse a number
-        while self.buf.len() < 2 {
-            if self.inner.is_closed() && self.inner.is_empty() && self.buf.len() < 2 {
+        // wait until we have enough data to parse a value
+        while self.buf.len() < MessageDataValue::MESSAGE_SIZE {
+            if self.inner.is_closed()
+                && self.inner.is_empty()
+                && self.buf.len() < MessageDataValue::MESSAGE_SIZE
+            {
                 return None;
             }
 
             self.buf.maybe_need_move();
 
-            let mut written = 0;
-            if self.buf.is_empty() || self.buf.len() < 2 {
-                // wait for at least one element being occupied,
-                // more elements would mean to wait until they all are there, regardless if they are part of the message or not
-                self.inner.wait_occupied(1).await;
-                debug!("occupied {:#?}", self.inner.occupied_len());
+            // wait for at least one element being occupied,
+            // more elements would mean to wait until they all are there, regardless if they are part of the message or not
+            self.inner.wait_occupied(1).await;
+            debug!("occupied {:#?}", self.inner.occupied_len());
 
-                // dont overwrite data that may still be in there
-                let write_from = self.buf.len();
-                written += self.inner.pop_slice(&mut self.buf.get_mut()[write_from..]);
-                debug!("written? {:#?}", written);
-                self.buf.set_len(written + write_from);
+            // dont overwrite data that may still be in there
+            let write_from = self.buf.len();
+            let written = self.inner.pop_slice(&mut self.buf.get_mut()[write_from..]);
+            debug!("written? {:#?}", written);
+            self.buf.set_len(written + write_from);
 
-                // DEBUG: Sanity
-                assert!(self.buf.len() == written + write_from);
-            }
+            // DEBUG: Sanity
+            assert!(self.buf.len() == written + write_from);
 
             // Sanity, there may be infinite loop because of bad implementation
             debug_assert!(written > 0);
         }
 
-        if self.buf.len() < 2 {
+        if self.buf.len() < MessageDataValue::MESSAGE_SIZE {
             return None;
         }
 
-        // read i16
-        let sample_bytes: [u8; 2] = self.buf.get_ref()[0..=1].try_into().unwrap();
-        self.buf.advance_beginning(sample_bytes.len());
+        let mut value = MessageDataValue::new();
 
-        let sample = i16::from_le_bytes(sample_bytes);
+        let read = value.try_fill(self.buf.get_ref());
+        self.buf.advance_beginning(read);
+
+        assert!(value.is_done());
+
+        let sample = value.finish();
 
         if msg.is_done() {
             self.last_msg.take();
@@ -345,10 +348,10 @@ impl Source for AsyncRingSource {
 }
 
 impl Iterator for AsyncRingSource {
-    type Item = i16;
+    type Item = ValueType;
 
     #[inline]
-    fn next(&mut self) -> Option<i16> {
+    fn next(&mut self) -> Option<Self::Item> {
         loop {
             let msg = match self.last_msg.as_ref() {
                 Some(v) => v,
@@ -683,6 +686,16 @@ impl RingMsgParse {
     }
 }
 
+/// Copy from `in_buf` into `out_buf`, returning the bytes copied
+fn copy_buffers(in_buf: &[u8], out_buf: &mut [u8]) -> usize {
+    // the position to copy to, exclusive
+    let copy_to_pos = in_buf.len().min(out_buf.len());
+
+    out_buf[..copy_to_pos].copy_from_slice(&in_buf[..copy_to_pos]);
+
+    copy_to_pos
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct MessageSpecResult {
     rate: u32,
@@ -708,9 +721,9 @@ impl MessageSpec {
 
     fn new_write(spec: SignalSpec) -> Self {
         let mut buf = [0; Self::MESSAGE_SIZE];
-        (buf[..=3]).copy_from_slice(&spec.rate.to_le_bytes());
+        (buf[..=3]).copy_from_slice(&spec.rate.to_ne_bytes());
         let channels_u16 = u16::try_from(spec.channels.count()).unwrap();
-        (buf[4..]).copy_from_slice(&channels_u16.to_le_bytes());
+        (buf[4..]).copy_from_slice(&channels_u16.to_ne_bytes());
         Self {
             buffer: buf,
             read: 0,
@@ -729,14 +742,7 @@ impl MessageSpec {
             return 0;
         }
 
-        // the length left to copy until we can construct a result
-        let to_copy = Self::MESSAGE_SIZE - self.read;
-        // the position to copy to, exclusive
-        let copy_to_pos = buf.len().min(to_copy);
-
-        let buf_to = self.read + copy_to_pos;
-        self.buffer[self.read..buf_to].copy_from_slice(&buf[..copy_to_pos]);
-        let read = copy_to_pos;
+        let read = copy_buffers(buf, &mut self.buffer[self.read..]);
         self.read += read;
 
         read
@@ -749,8 +755,8 @@ impl MessageSpec {
         // read u16
         let channels: [u8; 2] = self.buffer[4..=5].try_into().unwrap();
 
-        let rate = u32::from_le_bytes(rate);
-        let channels = u16::from_le_bytes(channels);
+        let rate = u32::from_ne_bytes(rate);
+        let channels = u16::from_ne_bytes(channels);
 
         MessageSpecResult { rate, channels }
     }
@@ -763,17 +769,10 @@ impl MessageSpec {
             return 0;
         }
 
-        // the length left to copy until we are done
-        let to_copy = Self::MESSAGE_SIZE - self.read;
-        // the position to copy to, exclusive
-        let copy_to_pos = buf.len().min(to_copy);
+        let written = copy_buffers(&self.buffer[self.read..], buf);
+        self.read += written;
 
-        let buf_to = self.read + copy_to_pos;
-        buf[..copy_to_pos].copy_from_slice(&self.buffer[self.read..buf_to]);
-        let read = copy_to_pos;
-        self.read += read;
-
-        read
+        written
     }
 }
 
@@ -796,7 +795,7 @@ impl MessageDataFirst {
 
     fn new_write(length: u32) -> Self {
         let mut buf = [0; Self::MESSAGE_SIZE];
-        buf.copy_from_slice(&length.to_le_bytes());
+        buf.copy_from_slice(&length.to_ne_bytes());
         Self {
             buffer: buf,
             read: 0,
@@ -815,14 +814,7 @@ impl MessageDataFirst {
             return 0;
         }
 
-        // the length left to copy until we can construct a result
-        let to_copy = Self::MESSAGE_SIZE - self.read;
-        // the position to copy to, exclusive
-        let copy_to_pos = buf.len().min(to_copy);
-
-        let buf_to = self.read + copy_to_pos;
-        self.buffer[self.read..buf_to].copy_from_slice(&buf[..copy_to_pos]);
-        let read = copy_to_pos;
+        let read = copy_buffers(buf, &mut self.buffer[self.read..]);
         self.read += read;
 
         read
@@ -831,9 +823,7 @@ impl MessageDataFirst {
     /// Read the current buffer into the resulting type
     fn finish(&self) -> MessageDataActual {
         // read u32
-        let length: [u8; 4] = self.buffer[0..=3].try_into().unwrap();
-
-        let length = u32::from_le_bytes(length);
+        let length = u32::from_ne_bytes(self.buffer);
 
         MessageDataActual::new(length)
     }
@@ -846,17 +836,10 @@ impl MessageDataFirst {
             return 0;
         }
 
-        // the length left to copy until we are done
-        let to_copy = Self::MESSAGE_SIZE - self.read;
-        // the position to copy to, exclusive
-        let copy_to_pos = buf.len().min(to_copy);
+        let written = copy_buffers(&self.buffer[self.read..], buf);
+        self.read += written;
 
-        let buf_to = self.read + copy_to_pos;
-        buf[..copy_to_pos].copy_from_slice(&self.buffer[self.read..buf_to]);
-        let read = copy_to_pos;
-        self.read += read;
-
-        read
+        written
     }
 }
 
@@ -891,14 +874,10 @@ impl MessageDataActual {
             return 0;
         }
 
-        // the length left to copy until we can construct a result
+        // the length left to copy until the message has ended
         let remainder = self.length - self.read;
-        // the position to copy to, exclusive
-        let copy_to_pos = in_buf.len().min(out_buf.len()).min(remainder);
-
-        // let buf_to = self.read + copy_to_pos;
-        out_buf[..copy_to_pos].copy_from_slice(&in_buf[..copy_to_pos]);
-        let read = copy_to_pos;
+        let remainder = remainder.min(in_buf.len());
+        let read = copy_buffers(&in_buf[..remainder], out_buf);
         self.read += read;
 
         read
@@ -912,6 +891,77 @@ impl MessageDataActual {
     }
 }
 
+/// The Value type we have in the actual data
+type ValueType = i16;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct MessageDataValue {
+    buffer: [u8; Self::MESSAGE_SIZE],
+    read: usize,
+}
+
+// TODO: maybe use nom or similar?
+impl MessageDataValue {
+    const MESSAGE_SIZE: usize = size_of::<ValueType>();
+
+    fn new() -> Self {
+        Self {
+            buffer: [0; Self::MESSAGE_SIZE],
+            read: 0,
+        }
+    }
+
+    fn new_write(value: ValueType) -> Self {
+        let mut buf = [0; Self::MESSAGE_SIZE];
+        buf.copy_from_slice(&value.to_ne_bytes());
+        Self {
+            buffer: buf,
+            read: 0,
+        }
+    }
+
+    fn is_done(&self) -> bool {
+        self.read == Self::MESSAGE_SIZE
+    }
+
+    /// Try to read from the given buffer into a [`MessageDataActual`].
+    ///
+    /// This function will always return how many bytes have been consumed from the buffer.
+    fn try_fill(&mut self, buf: &[u8]) -> usize {
+        if self.is_done() || buf.is_empty() {
+            return 0;
+        }
+
+        let read = copy_buffers(buf, &mut self.buffer[self.read..]);
+        self.read += read;
+
+        read
+    }
+
+    /// Read the current buffer into the resulting type
+    fn finish(&self) -> ValueType {
+        // read ValueType
+        let value = ValueType::from_ne_bytes(self.buffer);
+
+        value
+    }
+
+    /// Try to write the current buffer into the given buffer.
+    ///
+    /// This function will always return how many bytes have been writter to the buffer.
+    #[expect(dead_code)] // data is directly copied from the incoming buffer
+    fn try_write(&mut self, buf: &mut [u8]) -> usize {
+        if self.is_done() || buf.is_empty() {
+            return 0;
+        }
+
+        let written = copy_buffers(&self.buffer[self.read..], buf);
+        self.read += written;
+
+        written
+    }
+}
+
 #[cfg(test)]
 mod tests {
     mod parse_message_spec {
@@ -920,9 +970,9 @@ mod tests {
         #[test]
         fn should_read_complete_once() {
             let input: Vec<u8> = 44000u32
-                .to_le_bytes()
+                .to_ne_bytes()
                 .into_iter()
-                .chain(2u16.to_le_bytes().into_iter())
+                .chain(2u16.to_ne_bytes().into_iter())
                 .collect();
             assert_eq!(input.len(), MessageSpec::MESSAGE_SIZE);
 
@@ -957,9 +1007,9 @@ mod tests {
         #[test]
         fn should_resume_across_calls() {
             let input: Vec<u8> = 44000u32
-                .to_le_bytes()
+                .to_ne_bytes()
                 .into_iter()
-                .chain(2u16.to_le_bytes().into_iter())
+                .chain(2u16.to_ne_bytes().into_iter())
                 .collect();
             assert_eq!(input.len(), MessageSpec::MESSAGE_SIZE);
 
@@ -1047,9 +1097,9 @@ mod tests {
 
             let written = msg_spec.try_write(out_buf);
             let expected: Vec<u8> = 44000u32
-                .to_le_bytes()
+                .to_ne_bytes()
                 .into_iter()
-                .chain(2u16.to_le_bytes().into_iter())
+                .chain(2u16.to_ne_bytes().into_iter())
                 .collect();
 
             assert_eq!(written, MessageSpec::MESSAGE_SIZE);
@@ -1071,9 +1121,9 @@ mod tests {
 
             let written = msg_spec.try_write(&mut out_buf[..=3]);
             let expected: Vec<u8> = 44000u32
-                .to_le_bytes()
+                .to_ne_bytes()
                 .into_iter()
-                .chain(0u16.to_le_bytes().into_iter())
+                .chain(0u16.to_ne_bytes().into_iter())
                 .collect();
 
             assert_eq!(written, 4);
@@ -1089,9 +1139,9 @@ mod tests {
             // finish with the last bytes
             let written = msg_spec.try_write(&mut out_buf[4..]);
             let expected: Vec<u8> = 44000u32
-                .to_le_bytes()
+                .to_ne_bytes()
                 .into_iter()
-                .chain(2u16.to_le_bytes().into_iter())
+                .chain(2u16.to_ne_bytes().into_iter())
                 .collect();
 
             assert_eq!(written, 2);
@@ -1105,7 +1155,7 @@ mod tests {
 
         #[test]
         fn should_read_complete_once() {
-            let input: Vec<u8> = 44000u32.to_le_bytes().into_iter().collect();
+            let input: Vec<u8> = 44000u32.to_ne_bytes().into_iter().collect();
             assert_eq!(input.len(), MessageDataFirst::MESSAGE_SIZE);
 
             let mut msg_data = MessageDataFirst::new();
@@ -1132,7 +1182,7 @@ mod tests {
 
         #[test]
         fn should_resume_across_calls() {
-            let input: Vec<u8> = 44000u32.to_le_bytes().into_iter().collect();
+            let input: Vec<u8> = 44000u32.to_ne_bytes().into_iter().collect();
             assert_eq!(input.len(), MessageDataFirst::MESSAGE_SIZE);
 
             let mut msg_data = MessageDataFirst::new();
@@ -1207,7 +1257,7 @@ mod tests {
             assert_eq!(msg_spec.is_done(), false);
 
             let written = msg_spec.try_write(out_buf);
-            let expected: Vec<u8> = 4u32.to_le_bytes().to_vec();
+            let expected: Vec<u8> = 4u32.to_ne_bytes().to_vec();
 
             assert_eq!(written, MessageDataFirst::MESSAGE_SIZE);
             assert_eq!(out_buf, expected.as_slice());
@@ -1225,7 +1275,7 @@ mod tests {
 
             let written = msg_spec.try_write(&mut out_buf[..=1]);
             let expected: Vec<u8> = 4u32
-                .to_le_bytes()
+                .to_ne_bytes()
                 .into_iter()
                 .take(2)
                 .chain([0; 2].into_iter())
@@ -1243,7 +1293,7 @@ mod tests {
 
             // finish with the last bytes
             let written = msg_spec.try_write(&mut out_buf[2..]);
-            let expected: Vec<u8> = 4u32.to_le_bytes().to_vec();
+            let expected: Vec<u8> = 4u32.to_ne_bytes().to_vec();
 
             assert_eq!(written, 2);
             assert_eq!(out_buf, expected.as_slice());
@@ -1364,6 +1414,157 @@ mod tests {
         }
     }
 
+    mod parse_message_value {
+        use crate::backends::rusty::source::async_ring::MessageDataValue;
+
+        #[test]
+        fn should_read_complete_once() {
+            let input: &[u8] = &10i16.to_ne_bytes();
+            assert_eq!(input.len(), MessageDataValue::MESSAGE_SIZE);
+
+            let mut msg_value = MessageDataValue::new();
+
+            let read = msg_value.try_fill(&input);
+            let res = msg_value.finish();
+            let expected = {
+                let mut buf = [0; MessageDataValue::MESSAGE_SIZE];
+                buf.copy_from_slice(&input);
+                buf
+            };
+            assert_eq!(
+                msg_value,
+                MessageDataValue {
+                    buffer: expected,
+                    read: MessageDataValue::MESSAGE_SIZE
+                }
+            );
+            assert_eq!(msg_value.is_done(), true);
+
+            assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
+            assert_eq!(res, 10);
+        }
+
+        #[test]
+        fn should_resume_across_calls() {
+            let input: &[u8] = &10i16.to_ne_bytes();
+            assert_eq!(input.len(), MessageDataValue::MESSAGE_SIZE);
+
+            let mut msg_value = MessageDataValue::new();
+
+            let read = msg_value.try_fill(&input[0..1]);
+            let expected = {
+                let mut buf = [0; MessageDataValue::MESSAGE_SIZE];
+                (buf[..1]).copy_from_slice(&input[0..1]);
+                buf
+            };
+            assert_eq!(
+                msg_value,
+                MessageDataValue {
+                    buffer: expected,
+                    read: 1
+                }
+            );
+
+            assert_eq!(read, 1);
+            assert_eq!(msg_value.is_done(), false);
+
+            // check the 0 length buffer given path
+            let read = msg_value.try_fill(&[0; 0]);
+            let expected = {
+                let mut buf = [0; MessageDataValue::MESSAGE_SIZE];
+                (buf[..1]).copy_from_slice(&input[0..1]);
+                buf
+            };
+            assert_eq!(
+                msg_value,
+                MessageDataValue {
+                    buffer: expected,
+                    read: 1
+                }
+            );
+
+            assert_eq!(read, 0);
+            assert_eq!(msg_value.is_done(), false);
+
+            // finish with the last bytes
+            let read = msg_value.try_fill(&input[1..]);
+            let res = msg_value.finish();
+            let expected = {
+                let mut buf = [0; MessageDataValue::MESSAGE_SIZE];
+                buf.copy_from_slice(&input);
+                buf
+            };
+            assert_eq!(
+                msg_value,
+                MessageDataValue {
+                    buffer: expected,
+                    read: MessageDataValue::MESSAGE_SIZE
+                }
+            );
+            assert_eq!(msg_value.is_done(), true);
+
+            assert_eq!(read, 1);
+            assert_eq!(res, 10);
+        }
+    }
+
+    mod write_message_value {
+        use crate::backends::rusty::source::async_ring::MessageDataValue;
+
+        #[test]
+        fn should_write_complete_once() {
+            let out_buf = &mut [0; MessageDataValue::MESSAGE_SIZE];
+            assert_eq!(out_buf.len(), MessageDataValue::MESSAGE_SIZE);
+
+            let mut msg_value = MessageDataValue::new_write(10);
+
+            assert_eq!(msg_value.is_done(), false);
+
+            let written = msg_value.try_write(out_buf);
+            let expected: &[u8] = &10i16.to_ne_bytes();
+
+            assert_eq!(written, MessageDataValue::MESSAGE_SIZE);
+            assert_eq!(out_buf, expected);
+            assert_eq!(msg_value.is_done(), true);
+        }
+
+        #[test]
+        fn should_write_across_calls() {
+            let out_buf = &mut [0; MessageDataValue::MESSAGE_SIZE];
+            assert_eq!(out_buf.len(), MessageDataValue::MESSAGE_SIZE);
+
+            let mut msg_spec = MessageDataValue::new_write(10);
+
+            assert_eq!(msg_spec.is_done(), false);
+
+            let written = msg_spec.try_write(&mut out_buf[..1]);
+            let expected: Vec<u8> = 10i16
+                .to_ne_bytes()
+                .into_iter()
+                .take(1)
+                .chain([0u8; 1].into_iter())
+                .collect();
+
+            assert_eq!(written, 1);
+            assert_eq!(out_buf, expected.as_slice());
+            assert_eq!(msg_spec.is_done(), false);
+
+            // check the 0 length buffer given path
+            let written = msg_spec.try_write(&mut [0; 0]);
+
+            assert_eq!(written, 0);
+            assert_eq!(msg_spec.is_done(), false);
+
+            // finish with the last bytes
+            let written = msg_spec.try_write(&mut out_buf[1..]);
+            let expected: &[u8] = &10i16.to_ne_bytes();
+
+            assert_eq!(written, 1);
+            assert_eq!(out_buf, expected);
+            assert_eq!(msg_spec.is_done(), true);
+        }
+    }
+
     mod parse_ring_messages {
         use crate::backends::rusty::source::async_ring::{
             MessageDataActual, MessageDataFirst, MessageSpec, MessageSpecResult, RingMessages,
@@ -1405,8 +1606,8 @@ mod tests {
             assert_eq!(
                 res,
                 MessageSpecResult {
-                    rate: u32::from_le_bytes([1; 4]),
-                    channels: u16::from_le_bytes([1; 2])
+                    rate: u32::from_ne_bytes([1; 4]),
+                    channels: u16::from_ne_bytes([1; 2])
                 }
             );
         }
@@ -1415,7 +1616,7 @@ mod tests {
         fn should_read_complete_once_data() {
             let input: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2u32.to_le_bytes().into_iter())
+                .chain(2u32.to_ne_bytes().into_iter())
                 .chain([1; 2].into_iter())
                 .collect();
             assert_eq!(input.len(), MessageDataFirst::MESSAGE_SIZE + 2 + 1);
@@ -1435,7 +1636,7 @@ mod tests {
             assert_eq!(
                 parser,
                 RingMsgParse::DataFirst(MessageDataFirst {
-                    buffer: 2u32.to_le_bytes(),
+                    buffer: 2u32.to_ne_bytes(),
                     read: MessageDataFirst::MESSAGE_SIZE
                 })
             );
@@ -1487,8 +1688,8 @@ mod tests {
 
             let expected: Vec<u8> = [RingMessages::Spec.as_u8()]
                 .into_iter()
-                .chain(44000u32.to_le_bytes().into_iter())
-                .chain(2u16.to_le_bytes().into_iter())
+                .chain(44000u32.to_ne_bytes().into_iter())
+                .chain(2u16.to_ne_bytes().into_iter())
                 .collect();
             assert_eq!(out_buf, expected.as_slice());
         }
@@ -1508,7 +1709,7 @@ mod tests {
             let written = writer.try_write(out_buf);
             let expected: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2u32.to_le_bytes().into_iter())
+                .chain(2u32.to_ne_bytes().into_iter())
                 .chain([0; 2].into_iter())
                 .collect();
 
@@ -1525,7 +1726,7 @@ mod tests {
             let written = writer.try_write_data(input_data, &mut out_buf[written..]);
             let expected: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2u32.to_le_bytes().into_iter())
+                .chain(2u32.to_ne_bytes().into_iter())
                 .chain([2; 2].into_iter())
                 .collect();
 
@@ -1623,9 +1824,7 @@ pub async fn playground() {
             info!("NUM: {:#?}", num);
             total_nums += 1;
 
-            if num != 10 {
-                error!("total: {}", total_nums);
-            }
+            assert_eq!(num, 10, "not 10, at {}", total_nums);
 
             if old_spec != cons.rate {
                 error!("NEW SPEC: {:#?}", cons);
@@ -1640,7 +1839,7 @@ pub async fn playground() {
     let written = prod.new_spec(new_spec).await.unwrap();
     debug!("Written SPEC {:#?}", written);
 
-    let data_buf = 10i16.to_le_bytes().repeat(MIN_SIZE);
+    let data_buf = 10i16.to_ne_bytes().repeat(128);
 
     let written = prod.write_data(&data_buf).await.unwrap();
     debug!("Written DATA {:#?}", written);
@@ -1649,5 +1848,5 @@ pub async fn playground() {
 
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    debug!("ORDER {:#?}", 10i16.to_le_bytes());
+    debug!("ORDER {:#?}", 10i16.to_ne_bytes());
 }
