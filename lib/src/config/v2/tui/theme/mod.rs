@@ -24,31 +24,56 @@ pub struct ThemeWrap {
     // this function is only used if this property does not exist at all
     #[serde(default = "ThemeColors::full_default")]
     pub theme: ThemeColors,
+    pub use_native: bool,
 }
 
 impl ThemeWrap {
     #[must_use]
     pub fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
-        match color {
-            ColorTermusic::Reset => Color::Reset,
-            ColorTermusic::Foreground => self.theme.primary.foreground.into(),
-            ColorTermusic::Background => self.theme.primary.background.into(),
-            ColorTermusic::Black => self.theme.normal.black.into(),
-            ColorTermusic::Red => self.theme.normal.red.into(),
-            ColorTermusic::Green => self.theme.normal.green.into(),
-            ColorTermusic::Yellow => self.theme.normal.yellow.into(),
-            ColorTermusic::Blue => self.theme.normal.blue.into(),
-            ColorTermusic::Magenta => self.theme.normal.magenta.into(),
-            ColorTermusic::Cyan => self.theme.normal.cyan.into(),
-            ColorTermusic::White => self.theme.normal.white.into(),
-            ColorTermusic::LightBlack => self.theme.bright.black.into(),
-            ColorTermusic::LightRed => self.theme.bright.red.into(),
-            ColorTermusic::LightGreen => self.theme.bright.green.into(),
-            ColorTermusic::LightYellow => self.theme.bright.yellow.into(),
-            ColorTermusic::LightBlue => self.theme.bright.blue.into(),
-            ColorTermusic::LightMagenta => self.theme.bright.magenta.into(),
-            ColorTermusic::LightCyan => self.theme.bright.cyan.into(),
-            ColorTermusic::LightWhite => self.theme.bright.white.into(),
+        if !self.use_native {
+            match color {
+                ColorTermusic::Reset => Color::Reset,
+                ColorTermusic::Foreground => Color::White,
+                ColorTermusic::Background => Color::Black,
+                ColorTermusic::Black => Color::Black,
+                ColorTermusic::Red => Color::Red,
+                ColorTermusic::Green => Color::Green,
+                ColorTermusic::Yellow => Color::Yellow,
+                ColorTermusic::Blue => Color::Blue,
+                ColorTermusic::Magenta => Color::Magenta,
+                ColorTermusic::Cyan => Color::Cyan,
+                ColorTermusic::White => Color::White,
+                ColorTermusic::LightBlack => Color::DarkGray,
+                ColorTermusic::LightRed => Color::LightRed,
+                ColorTermusic::LightGreen => Color::LightGreen,
+                ColorTermusic::LightYellow => Color::LightYellow,
+                ColorTermusic::LightBlue => Color::LightBlue,
+                ColorTermusic::LightMagenta => Color::LightMagenta,
+                ColorTermusic::LightCyan => Color::LightCyan,
+                ColorTermusic::LightWhite => Color::Gray,
+            }
+        } else {
+            match color {
+                ColorTermusic::Reset => Color::Reset,
+                ColorTermusic::Foreground => self.theme.primary.foreground.into(),
+                ColorTermusic::Background => self.theme.primary.background.into(),
+                ColorTermusic::Black => self.theme.normal.black.into(),
+                ColorTermusic::Red => self.theme.normal.red.into(),
+                ColorTermusic::Green => self.theme.normal.green.into(),
+                ColorTermusic::Yellow => self.theme.normal.yellow.into(),
+                ColorTermusic::Blue => self.theme.normal.blue.into(),
+                ColorTermusic::Magenta => self.theme.normal.magenta.into(),
+                ColorTermusic::Cyan => self.theme.normal.cyan.into(),
+                ColorTermusic::White => self.theme.normal.white.into(),
+                ColorTermusic::LightBlack => self.theme.bright.black.into(),
+                ColorTermusic::LightRed => self.theme.bright.red.into(),
+                ColorTermusic::LightGreen => self.theme.bright.green.into(),
+                ColorTermusic::LightYellow => self.theme.bright.yellow.into(),
+                ColorTermusic::LightBlue => self.theme.bright.blue.into(),
+                ColorTermusic::LightMagenta => self.theme.bright.magenta.into(),
+                ColorTermusic::LightCyan => self.theme.bright.cyan.into(),
+                ColorTermusic::LightWhite => self.theme.bright.white.into(),
+            }
         }
     }
 
@@ -562,6 +587,7 @@ mod v1_interop {
             Self {
                 theme: (&value.style_color_symbol.alacritty_theme).into(),
                 style: value.into(),
+                use_native: false,
             }
         }
     }
