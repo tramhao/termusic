@@ -30,19 +30,17 @@ pub struct ThemeWrap {
 impl ThemeWrap {
     #[must_use]
     pub fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
-        if !self.use_native {
+        if self.use_native {
             match color {
                 ColorTermusic::Reset => Color::Reset,
-                ColorTermusic::Foreground => Color::White,
-                ColorTermusic::Background => Color::Black,
-                ColorTermusic::Black => Color::Black,
+                ColorTermusic::Foreground | ColorTermusic::White => Color::White,
+                ColorTermusic::Background | ColorTermusic::Black => Color::Black,
                 ColorTermusic::Red => Color::Red,
                 ColorTermusic::Green => Color::Green,
                 ColorTermusic::Yellow => Color::Yellow,
                 ColorTermusic::Blue => Color::Blue,
                 ColorTermusic::Magenta => Color::Magenta,
                 ColorTermusic::Cyan => Color::Cyan,
-                ColorTermusic::White => Color::White,
                 ColorTermusic::LightBlack => Color::DarkGray,
                 ColorTermusic::LightRed => Color::LightRed,
                 ColorTermusic::LightGreen => Color::LightGreen,

@@ -146,6 +146,8 @@ pub enum ConfigEditorMsg {
     KeyFocus(KFMsg),
     MusicDirBlurDown,
     MusicDirBlurUp,
+    UseNativeBlurDown,
+    UseNativeBlurUp,
 
     PlaylistDisplaySymbolBlurDown,
     PlaylistDisplaySymbolBlurUp,
@@ -591,6 +593,7 @@ pub enum IdConfigEditor {
     Header,
     Key(IdKey),
     KillDamon,
+    UseNative,
 
     LibraryBackground,
     LibraryBorder,

@@ -871,6 +871,45 @@ impl Component<Msg, NoUserEvent> for PlayerPort {
     }
 }
 
+#[derive(MockComponent)]
+pub struct UseNativeRadio {
+    component: Radio,
+    config: SharedTuiSettings,
+}
+
+impl UseNativeRadio {
+    pub fn new(config: SharedTuiSettings) -> Self {
+        let config_r = config.read();
+        let enabled = config_r.settings.theme.use_native;
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(config_r.settings.theme.library_border())
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Yes", "No"])
+            .foreground(config_r.settings.theme.library_highlight())
+            .rewind(true)
+            .title(" Use Native Color Theme(Pywal Support)? ", Alignment::Left)
+            .value(usize::from(!enabled));
+
+        drop(config_r);
+        Self { component, config }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for UseNativeRadio {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        handle_radio_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::UseNativeBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::UseNativeBlurUp),
+        )
+    }
+}
+
 impl Model {
     /// Mount / Remount the Config-Editor's First Page, the General Options
     pub(super) fn remount_config_general(&mut self) -> Result<()> {
@@ -965,6 +1004,12 @@ impl Model {
             Vec::new(),
         )?;
 
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::UseNative),
+            Box::new(UseNativeRadio::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
         Ok(())
     }
 
@@ -1010,6 +1055,9 @@ impl Model {
 
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::PlayerPort))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::UseNative))?;
 
         Ok(())
     }

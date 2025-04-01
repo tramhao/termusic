@@ -189,6 +189,11 @@ impl Model {
                     chunks_middle_right[6],
                 );
 
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::UseNative),
+                    f,
+                    chunks_middle_right[7],
+                );
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
@@ -1989,6 +1994,13 @@ impl Model {
                 }
             }
         }
+
+        if let Ok(State::One(StateValue::Usize(use_native))) =
+            self.app.state(&Id::ConfigEditor(IdConfigEditor::UseNative))
+        {
+            config_tui.settings.theme.use_native = matches!(use_native, 0);
+        }
+
         Ok(())
     }
 
