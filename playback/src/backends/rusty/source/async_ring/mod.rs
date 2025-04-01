@@ -1,24 +1,35 @@
-use std::{fmt::Debug, time::Duration, u8};
+use std::{
+    fmt::Debug,
+    future::Future,
+    iter::FusedIterator,
+    sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc, LazyLock,
+    },
+    time::Duration,
+    u8,
+};
 
 use anyhow::anyhow;
 use async_ringbuf::{
     traits::{AsyncConsumer, AsyncProducer, Consumer, Observer, Split},
     AsyncHeapRb,
 };
+use parking_lot::RwLock;
 use rodio::Source;
 use symphonia::core::audio::SignalSpec;
-
 use tokio::{
     runtime::Handle,
     sync::{mpsc, oneshot},
 };
+
 use wrap::{ConsWrap, ProdWrap};
 
 mod wrap;
 
 /// Seek Channel data, the first is the point to seek to in the decoder
 /// the second is a callback that the seek is done and how many elements to skip until new data.
-type SeekData = (Duration, oneshot::Sender<usize>);
+pub type SeekData = (Duration, oneshot::Sender<usize>);
 
 #[derive(Debug)]
 struct ProviderData {
@@ -33,17 +44,20 @@ const MIN_SIZE: usize = 192000 * 2;
 #[derive(Debug)]
 pub struct AsyncRingSourceProvider {
     inner: ProdWrap,
-    seek_rx: mpsc::Receiver<SeekData>,
+    seek_rx: Arc<RwLock<mpsc::Receiver<SeekData>>>,
 
     data: Option<ProviderData>,
+    /// DEBUG: dont ship
+    had_EOS: Arc<AtomicBool>,
 }
 
 impl AsyncRingSourceProvider {
-    fn new(wrap: ProdWrap, seek_rx: mpsc::Receiver<SeekData>) -> Self {
+    fn new(wrap: ProdWrap, seek_rx: mpsc::Receiver<SeekData>, had_EOS: Arc<AtomicBool>) -> Self {
         AsyncRingSourceProvider {
             inner: wrap,
-            seek_rx,
+            seek_rx: Arc::new(RwLock::new(seek_rx)),
             data: None,
+            had_EOS,
         }
     }
 
@@ -55,9 +69,13 @@ impl AsyncRingSourceProvider {
     /// Write a new spec.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
-    pub async fn new_spec(&mut self, spec: SignalSpec) -> Result<usize, ()> {
+    pub async fn new_spec(
+        &mut self,
+        spec: SignalSpec,
+        current_frame_len: usize,
+    ) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite::get_msg_size(MessageSpec::MESSAGE_SIZE)];
-        let mut msg = RingMsgWrite::new_spec(spec);
+        let mut msg = RingMsgWrite::new_spec(spec, current_frame_len);
 
         msg.try_write(&mut msg_buf);
         self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
@@ -74,6 +92,7 @@ impl AsyncRingSourceProvider {
 
         // TODO: avoid extra "msg_buf" or internal msg buffer
         let written = msg.try_write(&mut msg_buf);
+        assert!(written == msg_buf.len());
         self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
 
         let msg = msg.finish_data_first();
@@ -96,23 +115,25 @@ impl AsyncRingSourceProvider {
             unimplemented!("This should be checked outside of the function");
         };
 
-        let mut msg_buf = [0u8; 32];
+        let buf = &data[msg.read..msg.length];
+        // ORIG_ACC.lock().extend_from_slice(buf);
+        if self.had_EOS.load(Ordering::SeqCst) {
+            error!("WRITING AFTER EOS!");
+        }
+        self.inner.push_exact(buf).await.map_err(|_| ())?;
+        msg.advance_read(buf.len());
 
-        let read = msg.read;
-        let length = msg.length;
-        let written = msg.try_write(&data[read..length], &mut msg_buf);
-        self.inner
-            .push_exact(&msg_buf[..written])
-            .await
-            .map_err(|_| ())?;
-
-        Ok(msg_buf.len())
+        Ok(buf.len())
     }
 
     /// Write a given buffer as a data message.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
     pub async fn write_data(&mut self, data: &[u8]) -> Result<usize, ()> {
+        if data.is_empty() {
+            return Err(());
+        }
+
         let mut written = 0;
         if self.data.is_none() {
             written += self.new_data(data.len()).await?
@@ -131,6 +152,7 @@ impl AsyncRingSourceProvider {
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
     pub async fn new_eos(&mut self) -> Result<usize, ()> {
+        self.had_EOS.store(true, Ordering::SeqCst);
         let mut msg_buf = [0; RingMsgWrite::get_msg_size(0)];
         let mut msg = RingMsgWrite::new_eos();
 
@@ -141,24 +163,40 @@ impl AsyncRingSourceProvider {
     }
 
     /// Wait until the seek channel is dropped([`None`]) or a seek is requested([`Some`]).
-    pub async fn wait_seek(&mut self) -> Option<SeekData> {
-        self.seek_rx.recv().await
+    pub fn wait_seek(&mut self) -> WaitSeek {
+        WaitSeek(self.seek_rx.clone())
     }
 
     /// Process a seek and call the Consumer to resume.
     ///
     /// This clear all data state, calls the consumer to resume with how many bytes to skip
     /// and sends the new spec (in case it changed in the seek).
-    pub async fn process_seek(&mut self, spec: SignalSpec, cb: oneshot::Sender<usize>) {
+    pub async fn process_seek(
+        &mut self,
+        spec: SignalSpec,
+        current_frame_len: usize,
+        cb: oneshot::Sender<usize>,
+    ) {
         self.data.take();
         let bytes_to_skip = self.inner.occupied_len();
         let _ = cb.send(bytes_to_skip);
-        let _ = self.new_spec(spec).await;
+        let _ = self.new_spec(spec, current_frame_len).await;
     }
 }
 
-// TODO: hook-up provider & consumer in the decode-rodio chain
-// TODO: test producer & consumer
+#[derive(Debug)]
+pub struct WaitSeek(Arc<RwLock<mpsc::Receiver<SeekData>>>);
+
+impl Future for WaitSeek {
+    type Output = Option<SeekData>;
+
+    fn poll(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        self.0.write().poll_recv(cx)
+    }
+}
 
 #[derive(Debug)]
 pub struct AsyncRingSource {
@@ -167,13 +205,14 @@ pub struct AsyncRingSource {
     /// Also used to indicate to the producer that it should keep active.
     seek_tx: Option<mpsc::Sender<SeekData>>,
 
-    buf: StaticBuf<32>,
+    buf: StaticBuf<32 /* 24000 *//* 48000 */>,
     last_msg: Option<RingMsgParse>,
     handle: Handle,
 
     // cached information on how to treat current data until a update
     channels: u16,
     rate: u32,
+    current_frame_len: usize,
     total_duration: Option<Duration>,
 }
 
@@ -182,15 +221,34 @@ impl AsyncRingSource {
     pub fn new(
         spec: SignalSpec,
         total_duration: Option<Duration>,
+        current_frame_len: usize,
         size: usize,
         handle: Handle,
+    ) -> (AsyncRingSourceProvider, Self) {
+        Self::new_eos(
+            spec,
+            total_duration,
+            current_frame_len,
+            size,
+            handle,
+            Arc::new(AtomicBool::new(false)),
+        )
+    }
+
+    pub fn new_eos(
+        spec: SignalSpec,
+        total_duration: Option<Duration>,
+        current_frame_len: usize,
+        size: usize,
+        handle: Handle,
+        had_EOS: Arc<AtomicBool>,
     ) -> (AsyncRingSourceProvider, Self) {
         let size = size.max(MIN_SIZE);
         let ringbuf = AsyncHeapRb::<u8>::new(size);
         let (prod, cons) = ringbuf.split();
         let (tx, rx) = mpsc::channel(1);
 
-        let async_prod = AsyncRingSourceProvider::new(ProdWrap::new(prod), rx);
+        let async_prod = AsyncRingSourceProvider::new(ProdWrap::new(prod), rx, had_EOS);
         let async_cons = Self {
             inner: ConsWrap::new(cons),
             seek_tx: Some(tx),
@@ -198,6 +256,7 @@ impl AsyncRingSource {
                 .expect("Channel size to be within u16::MAX"),
             rate: spec.rate,
             total_duration,
+            current_frame_len,
             last_msg: None,
             buf: StaticBuf::new(),
             handle,
@@ -211,7 +270,7 @@ impl AsyncRingSource {
     /// This function assumes there is no current message.
     #[must_use]
     async fn read_msg(&mut self) -> Option<()> {
-        error!("READING MSG");
+        debug!("READING MSG");
         let msg = {
             let detect_byte = if self.buf.is_empty() {
                 self.inner.pop().await?
@@ -355,9 +414,10 @@ impl AsyncRingSource {
 impl Source for AsyncRingSource {
     #[inline]
     fn current_frame_len(&self) -> Option<usize> {
+        Some(self.current_frame_len)
         // Some(self.buf.len())
         // TODO: implement a sample length cache.
-        None // Infinite for now
+        // None // Infinite for now
     }
 
     #[inline]
@@ -368,6 +428,9 @@ impl Source for AsyncRingSource {
 
     #[inline]
     fn sample_rate(&self) -> u32 {
+        // if self.buf.is_empty() {
+        //     // error!("RATE {:#?}", self.rate);
+        // }
         self.rate
     }
 
@@ -406,6 +469,7 @@ impl Iterator for AsyncRingSource {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
+        CALL_COUNT.fetch_add(1, Ordering::Relaxed);
         loop {
             let msg = match self.last_msg.as_ref() {
                 Some(v) => v,
@@ -426,6 +490,7 @@ impl Iterator for AsyncRingSource {
                     self.apply_spec_msg();
                 }
                 RingMsgParse::EOS => {
+                    error!("EOS");
                     self.seek_tx.take();
                     return None;
                 }
@@ -433,6 +498,8 @@ impl Iterator for AsyncRingSource {
         }
     }
 }
+
+impl FusedIterator for AsyncRingSource {}
 
 /// Static Buffer allocated on the stack, which can have a moving area of actual data within
 #[derive(Debug, Clone, Copy)]
@@ -594,10 +661,10 @@ impl RingMsgWrite {
         Self::ID_SIZE + size
     }
 
-    fn new_spec(spec: SignalSpec) -> Self {
+    fn new_spec(spec: SignalSpec, current_frame_len: usize) -> Self {
         Self {
             id_written: false,
-            msg: RingMsgParse::Spec(MessageSpec::new_write(spec)),
+            msg: RingMsgParse::Spec(MessageSpec::new_write(spec, current_frame_len)),
         }
     }
 
@@ -775,6 +842,7 @@ fn copy_buffers(in_buf: &[u8], out_buf: &mut [u8]) -> usize {
 struct MessageSpecResult {
     rate: u32,
     channels: u16,
+    current_frame_len: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -783,9 +851,11 @@ struct MessageSpec {
     read: usize,
 }
 
+const USIZE_LEN: usize = size_of::<usize>();
+
 // TODO: maybe use nom or similar?
 impl MessageSpec {
-    const MESSAGE_SIZE: usize = size_of::<u32>() + size_of::<u16>();
+    const MESSAGE_SIZE: usize = size_of::<u32>() + size_of::<u16>() + size_of::<usize>();
 
     fn new() -> Self {
         Self {
@@ -794,11 +864,12 @@ impl MessageSpec {
         }
     }
 
-    fn new_write(spec: SignalSpec) -> Self {
+    fn new_write(spec: SignalSpec, current_frame_len: usize) -> Self {
         let mut buf = [0; Self::MESSAGE_SIZE];
         (buf[..=3]).copy_from_slice(&spec.rate.to_ne_bytes());
         let channels_u16 = u16::try_from(spec.channels.count()).unwrap();
-        (buf[4..]).copy_from_slice(&channels_u16.to_ne_bytes());
+        (buf[4..=5]).copy_from_slice(&channels_u16.to_ne_bytes());
+        (buf[6..6 + USIZE_LEN]).copy_from_slice(&current_frame_len.to_ne_bytes());
         Self {
             buffer: buf,
             read: 0,
@@ -829,11 +900,18 @@ impl MessageSpec {
         let rate: [u8; 4] = self.buffer[0..=3].try_into().unwrap();
         // read u16
         let channels: [u8; 2] = self.buffer[4..=5].try_into().unwrap();
+        // read usize
+        let current_frame_len: [u8; USIZE_LEN] = self.buffer[6..6 + USIZE_LEN].try_into().unwrap();
 
         let rate = u32::from_ne_bytes(rate);
         let channels = u16::from_ne_bytes(channels);
+        let current_frame_len = usize::from_ne_bytes(current_frame_len);
 
-        MessageSpecResult { rate, channels }
+        MessageSpecResult {
+            rate,
+            channels,
+            current_frame_len,
+        }
     }
 
     /// Try to write the current buffer into the given buffer.
@@ -1052,6 +1130,7 @@ mod tests {
                 .to_ne_bytes()
                 .into_iter()
                 .chain(2u16.to_ne_bytes().into_iter())
+                .chain(10usize.to_ne_bytes().into_iter())
                 .collect();
             assert_eq!(input.len(), MessageSpec::MESSAGE_SIZE);
 
@@ -1078,7 +1157,8 @@ mod tests {
                 res,
                 MessageSpecResult {
                     rate: 44000,
-                    channels: 2
+                    channels: 2,
+                    current_frame_len: 10,
                 }
             );
         }
@@ -1089,6 +1169,7 @@ mod tests {
                 .to_ne_bytes()
                 .into_iter()
                 .chain(2u16.to_ne_bytes().into_iter())
+                .chain(10usize.to_ne_bytes().into_iter())
                 .collect();
             assert_eq!(input.len(), MessageSpec::MESSAGE_SIZE);
 
@@ -1151,7 +1232,8 @@ mod tests {
                 res,
                 MessageSpecResult {
                     rate: 44000,
-                    channels: 2
+                    channels: 2,
+                    current_frame_len: 10,
                 }
             );
         }
@@ -1160,17 +1242,17 @@ mod tests {
     mod write_message_spec {
         use symphonia::core::audio::{Channels, SignalSpec};
 
-        use crate::backends::rusty::source::async_ring::MessageSpec;
+        use crate::backends::rusty::source::async_ring::{MessageSpec, USIZE_LEN};
 
         #[test]
         fn should_write_complete_once() {
             let out_buf = &mut [0; MessageSpec::MESSAGE_SIZE];
             assert_eq!(out_buf.len(), MessageSpec::MESSAGE_SIZE);
 
-            let mut msg_spec = MessageSpec::new_write(SignalSpec::new(
-                44000,
-                Channels::FRONT_LEFT | Channels::FRONT_RIGHT,
-            ));
+            let mut msg_spec = MessageSpec::new_write(
+                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                10,
+            );
 
             assert_eq!(msg_spec.is_done(), false);
 
@@ -1179,6 +1261,7 @@ mod tests {
                 .to_ne_bytes()
                 .into_iter()
                 .chain(2u16.to_ne_bytes().into_iter())
+                .chain(10usize.to_ne_bytes().into_iter())
                 .collect();
 
             assert_eq!(written, MessageSpec::MESSAGE_SIZE);
@@ -1191,10 +1274,10 @@ mod tests {
             let out_buf = &mut [0; MessageSpec::MESSAGE_SIZE];
             assert_eq!(out_buf.len(), MessageSpec::MESSAGE_SIZE);
 
-            let mut msg_spec = MessageSpec::new_write(SignalSpec::new(
-                44000,
-                Channels::FRONT_LEFT | Channels::FRONT_RIGHT,
-            ));
+            let mut msg_spec = MessageSpec::new_write(
+                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                10,
+            );
 
             assert_eq!(msg_spec.is_done(), false);
 
@@ -1203,6 +1286,7 @@ mod tests {
                 .to_ne_bytes()
                 .into_iter()
                 .chain(0u16.to_ne_bytes().into_iter())
+                .chain(0usize.to_ne_bytes().into_iter())
                 .collect();
 
             assert_eq!(written, 4);
@@ -1221,9 +1305,10 @@ mod tests {
                 .to_ne_bytes()
                 .into_iter()
                 .chain(2u16.to_ne_bytes().into_iter())
+                .chain(10usize.to_ne_bytes().into_iter())
                 .collect();
 
-            assert_eq!(written, 2);
+            assert_eq!(written, MessageSpec::MESSAGE_SIZE - 4);
             assert_eq!(out_buf, expected.as_slice());
             assert_eq!(msg_spec.is_done(), true);
         }
@@ -1687,7 +1772,8 @@ mod tests {
                 res,
                 MessageSpecResult {
                     rate: u32::from_ne_bytes([1; 4]),
-                    channels: u16::from_ne_bytes([1; 2])
+                    channels: u16::from_ne_bytes([1; 2]),
+                    current_frame_len: usize::from_ne_bytes([1; 8])
                 }
             );
         }
@@ -1752,10 +1838,10 @@ mod tests {
             let out_buf = &mut [0; RingMsgWrite::get_msg_size(MessageSpec::MESSAGE_SIZE)];
             assert_eq!(out_buf.len(), MessageSpec::MESSAGE_SIZE + 1);
 
-            let mut writer = RingMsgWrite::new_spec(SignalSpec::new(
-                44000,
-                Channels::FRONT_LEFT | Channels::FRONT_RIGHT,
-            ));
+            let mut writer = RingMsgWrite::new_spec(
+                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                10,
+            );
 
             assert_eq!(writer.id_written, false);
             assert_eq!(writer.is_done(), false);
@@ -1770,6 +1856,7 @@ mod tests {
                 .into_iter()
                 .chain(44000u32.to_ne_bytes().into_iter())
                 .chain(2u16.to_ne_bytes().into_iter())
+                .chain(10usize.to_ne_bytes().into_iter())
                 .collect();
             assert_eq!(out_buf, expected.as_slice());
         }
@@ -1901,6 +1988,261 @@ mod tests {
             buf.advance_beginning(17);
         }
     }
+
+    mod ringbuffer {
+        use std::{sync::Arc, time::Duration};
+
+        use async_ringbuf::traits::Observer;
+        use parking_lot::Mutex;
+        use symphonia::core::audio::{Channels, SignalSpec};
+
+        use crate::backends::rusty::source::async_ring::{
+            AsyncRingSource, MessageDataFirst, MessageSpec, RingMsgWrite, ValueType, MIN_SIZE,
+        };
+
+        #[tokio::test]
+        async fn should_work() {
+            let send = Arc::new(Mutex::new(Vec::new()));
+            let recv = Arc::new(Mutex::new(Vec::new()));
+
+            let (mut prod, mut cons) = AsyncRingSource::new(
+                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                None,
+                1024,
+                0,
+                tokio::runtime::Handle::current(),
+            );
+
+            assert_eq!(prod.inner.capacity().get(), MIN_SIZE);
+
+            let recv_c = recv.clone();
+            let handle = tokio::task::spawn_blocking(move || {
+                let mut lock = recv_c.lock();
+                while let Some(num) = cons.next() {
+                    lock.extend_from_slice(&num.to_ne_bytes());
+                }
+                assert_eq!(cons.inner.occupied_len(), 0);
+            });
+
+            let mut lock = send.lock();
+            let first_data = 1i16.to_le_bytes().repeat(1024);
+            let written = prod.write_data(&first_data).await.unwrap();
+            assert_eq!(
+                written,
+                RingMsgWrite::get_msg_size(MessageDataFirst::MESSAGE_SIZE + first_data.len())
+            );
+            lock.extend_from_slice(&first_data);
+
+            let new_spec = SignalSpec::new(48000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT);
+            let written = prod.new_spec(new_spec, 1024).await.unwrap();
+            assert_eq!(
+                written,
+                RingMsgWrite::get_msg_size(MessageSpec::MESSAGE_SIZE)
+            );
+
+            let second_data = 2i16.to_le_bytes().repeat(1024);
+            let written = prod.write_data(&second_data).await.unwrap();
+            assert_eq!(
+                written,
+                RingMsgWrite::get_msg_size(MessageDataFirst::MESSAGE_SIZE + second_data.len())
+            );
+            lock.extend_from_slice(&second_data);
+
+            let written = prod.new_eos().await.unwrap();
+            assert_eq!(written, RingMsgWrite::get_msg_size(0));
+
+            prod.write_data(&[]).await.unwrap_err();
+
+            // just to prevent a inifinitely running test due to a deadlock
+            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), handle).await {
+                panic!("Read Task did not complete within 3 seconds");
+            }
+
+            assert!(prod.is_closed());
+            assert!(prod.inner.is_empty());
+
+            let send_lock = lock;
+            let recv_lock = recv.lock();
+            let value_size = size_of::<ValueType>();
+            assert_eq!(send_lock.len(), value_size * 1024 * 2);
+            assert_eq!(recv_lock.len(), value_size * 1024 * 2);
+
+            assert_eq!(*send_lock, *recv_lock);
+        }
+
+        // the producer should not exit before the consumer in a actual use-case
+        // as the producer may need to still process and output a seek request
+        #[tokio::test]
+        async fn prod_should_not_exist_before_cons() {
+            let order = Arc::new(Mutex::new(Vec::new()));
+
+            let (mut prod, mut cons) = AsyncRingSource::new(
+                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                None,
+                1024,
+                0,
+                tokio::runtime::Handle::current(),
+            );
+
+            let obsv = prod.inner.observe();
+
+            assert_eq!(obsv.read_is_held(), true);
+            assert_eq!(obsv.write_is_held(), true);
+            let order_c = order.clone();
+
+            let cons_handle = tokio::task::spawn_blocking(move || {
+                while let Some(num) = cons.next() {
+                    let _ = num;
+                }
+                assert_eq!(cons.inner.occupied_len(), 0);
+                order_c.lock().push("cons");
+            });
+
+            let obsv_c = obsv.clone();
+            let order_c = order.clone();
+
+            let prod_handle = tokio::task::spawn(async move {
+                let first_data = 1i16.to_le_bytes().repeat(1024);
+                let written = prod.write_data(&first_data).await.unwrap();
+                assert_eq!(
+                    written,
+                    RingMsgWrite::get_msg_size(MessageDataFirst::MESSAGE_SIZE + first_data.len())
+                );
+
+                assert_eq!(obsv_c.read_is_held(), true);
+                assert_eq!(obsv_c.write_is_held(), true);
+
+                let written = prod.new_eos().await.unwrap();
+                assert_eq!(written, RingMsgWrite::get_msg_size(0));
+
+                let _ = prod.wait_seek().await;
+                order_c.lock().push("prod");
+            });
+
+            // just to prevent a inifinitely running test due to a deadlock
+            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), cons_handle).await {
+                panic!("Read Task did not complete within 3 seconds");
+            }
+
+            assert_eq!(obsv.read_is_held(), false);
+
+            // just to prevent a inifinitely running test due to a deadlock
+            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), prod_handle).await {
+                panic!("Read Task did not complete within 3 seconds");
+            }
+
+            assert_eq!(obsv.write_is_held(), false);
+
+            assert_eq!(*order.lock(), &["cons", "prod"]);
+        }
+
+        // even if the producer (due to some error or otherwise) exits with eos, the consumer should consume everything still available
+        #[tokio::test]
+        async fn should_consume_on_prod_exit_eos() {
+            let recv = Arc::new(Mutex::new(Vec::new()));
+
+            let (mut prod, mut cons) = AsyncRingSource::new(
+                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                None,
+                1024,
+                0,
+                tokio::runtime::Handle::current(),
+            );
+
+            let recv_c = recv.clone();
+            let handle = tokio::task::spawn_blocking(move || {
+                let mut lock = recv_c.lock();
+                while let Some(num) = cons.next() {
+                    lock.extend_from_slice(&num.to_ne_bytes());
+                }
+                assert_eq!(cons.inner.occupied_len(), 0);
+                assert_eq!(cons.inner.write_is_held(), false);
+            });
+
+            let first_data = 1i16.to_le_bytes().repeat(1024);
+            let written = prod.write_data(&first_data).await.unwrap();
+            assert_eq!(
+                written,
+                RingMsgWrite::get_msg_size(MessageDataFirst::MESSAGE_SIZE + first_data.len())
+            );
+
+            let written = prod.new_eos().await.unwrap();
+            assert_eq!(written, RingMsgWrite::get_msg_size(0));
+
+            let obsv = prod.inner.observe();
+            drop(prod);
+
+            assert_eq!(obsv.write_is_held(), false);
+            // dont check read as that *could* have consumed and exited already
+            // assert_eq!(obsv.read_is_held(), true);
+
+            // just to prevent a inifinitely running test due to a deadlock
+            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), handle).await {
+                panic!("Read Task did not complete within 3 seconds");
+            }
+
+            assert_eq!(obsv.write_is_held(), false);
+            assert_eq!(obsv.read_is_held(), false);
+
+            let recv_lock = recv.lock();
+            let value_size = size_of::<ValueType>();
+            assert_eq!(recv_lock.len(), value_size * 1024);
+
+            assert_eq!(*recv_lock, first_data.as_slice());
+        }
+
+        // even if the producer (due to some error or otherwise) exits without, the consumer should consume everything still available
+        #[tokio::test]
+        async fn should_consume_on_prod_exit() {
+            let recv = Arc::new(Mutex::new(Vec::new()));
+
+            let (mut prod, mut cons) = AsyncRingSource::new(
+                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                None,
+                1024,
+                0,
+                tokio::runtime::Handle::current(),
+            );
+
+            let recv_c = recv.clone();
+            let handle = tokio::task::spawn_blocking(move || {
+                let mut lock = recv_c.lock();
+                while let Some(num) = cons.next() {
+                    lock.extend_from_slice(&num.to_ne_bytes());
+                }
+                assert_eq!(cons.inner.occupied_len(), 0);
+                assert_eq!(cons.inner.write_is_held(), false);
+            });
+
+            let first_data = 1i16.to_le_bytes().repeat(1024);
+            let written = prod.write_data(&first_data).await.unwrap();
+            assert_eq!(
+                written,
+                RingMsgWrite::get_msg_size(MessageDataFirst::MESSAGE_SIZE + first_data.len())
+            );
+
+            let obsv = prod.inner.observe();
+            drop(prod);
+
+            assert_eq!(obsv.write_is_held(), false);
+            // dont check read as that *could* have consumed and exited already
+            // assert_eq!(obsv.read_is_held(), true);
+
+            // just to prevent a inifinitely running test due to a deadlock
+            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), handle).await {
+                panic!("Read Task did not complete within 3 seconds");
+            }
+
+            assert_eq!(obsv.write_is_held(), false);
+            assert_eq!(obsv.read_is_held(), false);
+
+            let recv_lock = recv.lock();
+            let value_size = size_of::<ValueType>();
+            assert_eq!(recv_lock.len(), value_size * 1024);
+
+            assert_eq!(*recv_lock, first_data.as_slice());
+        }
+    }
 }
 
 /// F
@@ -1912,6 +2254,7 @@ pub async fn playground() {
     let (mut prod, mut cons) = AsyncRingSource::new(
         SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
         None,
+        REPEAT,
         MIN_SIZE,
         tokio::runtime::Handle::current(),
     );
@@ -1946,7 +2289,7 @@ pub async fn playground() {
 
     let new_spec = SignalSpec::new(48000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT);
 
-    let written = prod.new_spec(new_spec).await.unwrap();
+    let written = prod.new_spec(new_spec, REPEAT).await.unwrap();
     debug!("Written SPEC {:#?}", written);
 
     let data_buf = 10i16.to_ne_bytes().repeat(REPEAT / 2 + 10);
@@ -1969,7 +2312,7 @@ pub async fn playground() {
 
     let new_spec = SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT);
 
-    prod.process_seek(new_spec, res.1).await;
+    prod.process_seek(new_spec, REPEAT, res.1).await;
 
     debug!("Written SPEC again");
 
@@ -1985,3 +2328,5 @@ pub async fn playground() {
 
     debug!("AFTER SEEK RECV: {:#?}", res);
 }
+
+pub static CALL_COUNT: LazyLock<Arc<AtomicUsize>> = LazyLock::new(|| Arc::new(AtomicUsize::new(0)));
