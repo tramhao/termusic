@@ -191,7 +191,7 @@ pub struct AsyncRingSource {
     // random default size, 1024*32
     buf: StaticBuf<32768>,
     last_msg: Option<MessageDataActual>,
-    handle: Handle,
+    handle: Option<Handle>,
 
     // cached information on how to treat current data until a update
     channels: u16,
@@ -200,6 +200,9 @@ pub struct AsyncRingSource {
     current_frame_len: usize,
     total_duration: Option<Duration>,
 }
+
+#[derive(Debug, Clone, Copy)]
+struct NotEnoughData;
 
 impl AsyncRingSource {
     /// Create a new ringbuffer, with initial channel spec and at least [`MIN_SIZE`].
@@ -227,7 +230,7 @@ impl AsyncRingSource {
             current_frame_len: current_frame_len,
             last_msg: None,
             buf: StaticBuf::new(),
-            handle: handle,
+            handle: Some(handle),
         };
 
         (async_prod, async_cons)
@@ -359,6 +362,19 @@ impl AsyncRingSource {
 
         assert!(self.buf.len() >= MessageDataValue::MESSAGE_SIZE);
 
+        let sample = self.try_read_data_sync().unwrap();
+
+        Some(sample)
+    }
+
+    /// Try to read data from a Data Message that has already been loaded into the buffer.
+    ///
+    /// This function assumes the current message is a non-finished [`MessageDataActual`].
+    fn try_read_data_sync(&mut self) -> Result<i16, NotEnoughData> {
+        if self.buf.len() < MessageDataValue::MESSAGE_SIZE {
+            return Err(NotEnoughData);
+        }
+
         let msg = self.last_msg.as_mut().unwrap();
 
         // unwrap: should never panic as we explicitly load at least the required amount above.
@@ -369,7 +385,7 @@ impl AsyncRingSource {
             self.last_msg.take();
         }
 
-        Some(sample)
+        Ok(sample)
     }
 }
 
@@ -434,9 +450,25 @@ impl Iterator for AsyncRingSource {
 
         loop {
             if self.last_msg.is_some() {
-                let sample = self.handle.clone().block_on(self.read_data());
+                // Avoid having to call async stuff for as long as possible, as that can heavily increase CPU load in a hot path
+                // Try to avoid using async as long as the already extracted buffer contains enough data
+                // When not doing this, cpu load can be 1.0~1.4 on average
+                match self.try_read_data_sync() {
+                    Ok(v) => return Some(v),
+                    Err(_) => {
+                        // Avoid cloning the handle, as that also reduces the cpu load a bit
+                        // - with this being taken, termusic-server cpu load is 0.5~0.6 on average
+                        // - without doing this, termusic-server cpu load is 0.7~0.9 on average
+                        // For context, using the decoder(symphonia) directly has a cpu load of 0.4~0.5 on average.
 
-                return sample;
+                        // TODO: wrap AsyncRingSource so that data and handle can be differentiated in the compiler without having to take and unwrap or clone
+                        let handle = self.handle.take().unwrap();
+                        let sample = handle.block_on(self.read_data());
+                        self.handle = Some(handle);
+
+                        return sample;
+                    }
+                }
             }
 
             if self.inner.is_empty() && self.inner.is_closed() {
@@ -444,7 +476,10 @@ impl Iterator for AsyncRingSource {
                 return None;
             }
 
-            let msg = self.handle.clone().block_on(self.read_msg())?;
+            // See above comment for similar code
+            let handle = self.handle.take().unwrap();
+            let msg = handle.block_on(self.read_msg())?;
+            self.handle = Some(handle);
 
             match msg {
                 RingMsgParse2::Spec => {}
@@ -610,6 +645,8 @@ impl RingMessages {
         *self as u8
     }
 }
+
+// TODO: refactor RingMsgWrite to use less buffers and less unimplemented
 
 /// Writer for Ringbuffer messages.
 #[derive(Debug, Clone, Copy, PartialEq)]
