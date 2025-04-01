@@ -2,7 +2,7 @@
 
 use std::fs::File;
 use std::path::Path;
-use std::sync::atomic::{AtomicU16, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
@@ -264,14 +264,13 @@ fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
             func(&mut decoder, rx);
 
             // let handle = tokio::runtime::Handle::current();
-            // let handle_c = handle.clone();
             // let (spec, current_frame_len) = decoder.get_spec();
             // let total_duration = decoder.total_duration();
             // let (prod, cons) =
-            //     AsyncRingSource::new(spec, total_duration, current_frame_len, 0, handle);
+            //     AsyncRingSource::new(spec, total_duration, current_frame_len, 0, handle.clone());
 
-            // let handle1 = tokio::task::spawn_blocking(move || {
-            //     handle_c.block_on(decode_task(decoder, prod));
+            // tokio::task::spawn_blocking(move || {
+            //     handle.block_on(decode_task(decoder, prod));
             // });
 
             // sink.append(cons);
@@ -281,8 +280,8 @@ fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
     }
 }
 
+/// The task that runs the decoder and writes to the ringbuffer, until a error or the consumer closes.
 async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) -> Option<()> {
-    static TOTOAL_WRITTEN: AtomicUsize = AtomicUsize::new(0);
     loop {
         // will always write the full buffer as long as the consumer is connected
         let seek_fut = prod.wait_seek();
@@ -297,8 +296,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
         select! {
             // if there is nothing to write, this future may exit immediately, causing a fast-loop until seek or dropped.
             written = write_fut, if !exhausted_buffer => {
-                let written = written.unwrap();
-                TOTOAL_WRITTEN.fetch_add(/* decoder.get_buffer().len() */written, Ordering::AcqRel);
+                written.ok()?;
                 decoder.advance_offset(decoder.get_buffer().len());
             },
             seek = seek_fut => {
@@ -309,8 +307,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
 
         let spec_len = decoder.get_spec();
         if None == decoder.decode_once() {
-            debug!("Sending EOS");
-            debug!("WRITTEN: {:#?}", TOTOAL_WRITTEN.load(Ordering::SeqCst));
+            trace!("Sending EOS");
             prod.new_eos().await.ok()?;
         }
         let new_spec = decoder.get_spec();
@@ -320,12 +317,17 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
     }
 }
 
+/// Handle the result of the seek future.
+///
+/// This is a non-inlined function, because writing inside a macro(`select!`) is a pain.
+///
+/// Return [`Some`] if seek was successful, [`None`] otherwise.
 async fn decode_task_seek_fut(
     decoder: &mut Symphonia,
     prod: &mut AsyncRingSourceProvider,
     seek_data: SeekData,
 ) -> Option<()> {
-    debug!("seek");
+    trace!("Seeking Decoder");
     decoder.try_seek(seek_data.0).ok()?;
 
     let spec = decoder.get_spec();
