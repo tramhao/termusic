@@ -1,4 +1,4 @@
-use std::{fmt::Debug, future::Future, iter::FusedIterator, sync::Arc, time::Duration, u8};
+use std::{fmt::Debug, future::Future, iter::FusedIterator, sync::Arc, time::Duration};
 
 use anyhow::anyhow;
 use async_ringbuf::{
@@ -24,7 +24,7 @@ pub type SeekData = (Duration, oneshot::Sender<usize>);
 /// The minimal size a decode-ringbuffer should have.
 ///
 /// Currently the size is based on 192kHz * 2 seconds, equating to ~375kb buffer
-const MIN_RING_SIZE: usize = 192000 * 2;
+const MIN_RING_SIZE: usize = 192_000 * 2;
 
 #[derive(Debug)]
 pub struct AsyncRingSourceProvider {
@@ -108,7 +108,7 @@ impl AsyncRingSourceProvider {
 
         let mut written = 0;
         if self.data.is_none() {
-            written += self.new_data(data.len()).await?
+            written += self.new_data(data.len()).await?;
         }
 
         while !self.data.as_mut().unwrap().is_done() && !self.inner.is_closed() {
@@ -199,7 +199,6 @@ impl AsyncRingSource {
         size: usize,
         handle: Handle,
     ) -> (AsyncRingSourceProvider, Self) {
-        let size = size;
         let size = size.max(MIN_RING_SIZE);
         let ringbuf = AsyncHeapRb::<u8>::new(size);
         let (prod, cons) = ringbuf.split();
@@ -212,8 +211,8 @@ impl AsyncRingSource {
             channels: u16::try_from(spec.channels.count())
                 .expect("Channel size to be within u16::MAX"),
             rate: spec.rate,
-            total_duration: total_duration,
-            current_frame_len: current_frame_len,
+            total_duration,
+            current_frame_len,
             last_msg: None,
             buf: StaticBuf::new(),
             handle,
@@ -231,7 +230,7 @@ impl AsyncRingSource {
 
         self.load_more_data(1)?;
 
-        assert!(self.buf.len() > 0);
+        assert!(!self.buf.is_empty());
 
         let detected_type = {
             let detect_byte = {
@@ -245,7 +244,7 @@ impl AsyncRingSource {
         };
 
         // Eos event does not have more than the id itself
-        if detected_type == RingMessages::EOS {
+        if detected_type == RingMessages::Eos {
             return Some(RingMsgParse2::Eos);
         }
 
@@ -289,7 +288,7 @@ impl AsyncRingSource {
 
                     (RingMsgParse2::Spec, read)
                 }
-                RingMessages::EOS => unreachable!("Message EOS is returned earlier"),
+                RingMessages::Eos => unreachable!("Message EOS is returned earlier"),
             };
 
             assert!(read > 0);
@@ -452,7 +451,7 @@ impl Iterator for AsyncRingSource {
                     self.last_msg = Some(message_data_actual);
                 }
                 RingMsgParse2::Eos => {
-                    if let Some(_) = self.seek_tx {
+                    if self.seek_tx.take().is_some() {
                         // only write the message once
                         trace!("Reached EOS message");
                     }
@@ -515,7 +514,7 @@ impl<const N: usize> StaticBuf<N> {
         // self.buf.fill(u8::MAX);
     }
 
-    /// Get a mutable reference to the slice from data_start until end.
+    /// Get a mutable reference to the slice from `data_start` until end.
     ///
     /// May contain bad data.
     /// And [`advance_len`](Self::advance_len) needs to be called afterward with the written size.
@@ -531,7 +530,7 @@ impl<const N: usize> StaticBuf<N> {
     /// Move the data to the beginning, if start is above half the capacity
     fn maybe_need_move(&mut self) {
         // Fast-path: clear if start idx is above 0 and there are no good elements
-        if self.data_start_idx > 0 && self.len() == 0 {
+        if self.data_start_idx > 0 && self.is_empty() {
             self.clear();
             return;
         }
@@ -586,7 +585,7 @@ enum RingMessages {
     // dont use 0 to differentiate from default buffer values.
     Data = 1,
     Spec = 2,
-    EOS = 3,
+    Eos = 3,
 }
 
 impl RingMessages {
@@ -597,7 +596,7 @@ impl RingMessages {
         match byte {
             1 => Self::Data,
             2 => Self::Spec,
-            3 => Self::EOS,
+            3 => Self::Eos,
             v => unimplemented!(
                 "This should never happen, unless there is de-sync. byte: {}",
                 v
@@ -606,8 +605,8 @@ impl RingMessages {
     }
 
     /// Get the current instance's [`u8`] representation
-    fn as_u8(&self) -> u8 {
-        *self as u8
+    fn as_u8(self) -> u8 {
+        self as u8
     }
 }
 
@@ -646,17 +645,17 @@ impl RingMsgWrite2 {
             return Err(size - buf.len());
         }
 
-        let (_, written) = Self::write_id(RingMessages::Spec, buf).unwrap();
+        let ((), written) = Self::write_id(RingMessages::Spec, buf).unwrap();
         let buf = &mut buf[written..];
 
-        let (_, _written) = MessageSpec::try_write_buf(spec, current_frame_len, buf).unwrap();
+        let ((), _written) = MessageSpec::try_write_buf(spec, current_frame_len, buf).unwrap();
 
         Ok(((), size))
     }
 
     /// Try to write a full [`RingMessages::EOS`] to the buffer, or return how many more bytes are necessary.
     fn try_write_eos(buf: &mut [u8]) -> PResult<()> {
-        let (_, written) = Self::write_id(RingMessages::EOS, buf)?;
+        let ((), written) = Self::write_id(RingMessages::Eos, buf)?;
 
         Ok(((), written))
     }
@@ -670,7 +669,7 @@ impl RingMsgWrite2 {
             return Err(size - buf.len());
         }
 
-        let (_, written) = Self::write_id(RingMessages::Data, buf).unwrap();
+        let ((), written) = Self::write_id(RingMessages::Data, buf).unwrap();
         let buf = &mut buf[written..];
 
         let (data, _written) = MessageDataFirst::try_write_buf(length, buf).unwrap();
@@ -841,7 +840,7 @@ impl MessageDataActual {
             return Err(0);
         }
 
-        let (_, written) = MessageDataValue::try_write_buf(val, buf)?;
+        let ((), written) = MessageDataValue::try_write_buf(val, buf)?;
         self.read += written;
 
         Ok(((), written))
@@ -887,6 +886,7 @@ impl MessageDataValue {
 }
 
 #[cfg(test)]
+#[allow(clippy::assertions_on_constants)] // make sure that tests fail if expectations change
 mod tests {
     mod parse_message_spec {
         use crate::backends::rusty::source::async_ring::{MessageSpec, MessageSpecResult};
@@ -896,8 +896,8 @@ mod tests {
             let input: Vec<u8> = 44000u32
                 .to_ne_bytes()
                 .into_iter()
-                .chain(2u16.to_ne_bytes().into_iter())
-                .chain(10usize.to_ne_bytes().into_iter())
+                .chain(2u16.to_ne_bytes())
+                .chain(10usize.to_ne_bytes())
                 .collect();
             assert_eq!(input.len(), MessageSpec::MESSAGE_SIZE);
 
@@ -919,8 +919,8 @@ mod tests {
             let input: Vec<u8> = 44000u32
                 .to_ne_bytes()
                 .into_iter()
-                .chain(2u16.to_ne_bytes().into_iter())
-                .chain(10usize.to_ne_bytes().into_iter())
+                .chain(2u16.to_ne_bytes())
+                .chain(10usize.to_ne_bytes())
                 .collect();
             assert_eq!(input.len(), MessageSpec::MESSAGE_SIZE);
 
@@ -967,8 +967,8 @@ mod tests {
             let expected: Vec<u8> = 44000u32
                 .to_ne_bytes()
                 .into_iter()
-                .chain(2u16.to_ne_bytes().into_iter())
-                .chain(10usize.to_ne_bytes().into_iter())
+                .chain(2u16.to_ne_bytes())
+                .chain(10usize.to_ne_bytes())
                 .collect();
 
             assert_eq!(out_buf, expected.as_slice());
@@ -1008,8 +1008,8 @@ mod tests {
             let expected: Vec<u8> = 44000u32
                 .to_ne_bytes()
                 .into_iter()
-                .chain(2u16.to_ne_bytes().into_iter())
-                .chain(10usize.to_ne_bytes().into_iter())
+                .chain(2u16.to_ne_bytes())
+                .chain(10usize.to_ne_bytes())
                 .collect();
 
             assert_eq!(out_buf, expected.as_slice());
@@ -1103,7 +1103,7 @@ mod tests {
             assert_eq!(res, i16::from_ne_bytes([1; 2]));
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(msg.read, MessageDataValue::MESSAGE_SIZE);
-            assert_eq!(msg.is_done(), true);
+            assert!(msg.is_done());
         }
 
         #[test]
@@ -1113,14 +1113,14 @@ mod tests {
             let additional = msg.try_read_buf(&[]).unwrap_err();
             assert_eq!(additional, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(msg.read, 0);
-            assert_eq!(msg.is_done(), false);
+            assert!(!msg.is_done());
 
             // some actual partial data
             let mut msg = MessageDataActual::new(6);
             let additional = msg.try_read_buf(&[1; 1]).unwrap_err();
             assert_eq!(additional, MessageDataValue::MESSAGE_SIZE - 1);
             assert_eq!(msg.read, 0);
-            assert_eq!(msg.is_done(), false);
+            assert!(!msg.is_done());
         }
 
         #[test]
@@ -1133,14 +1133,14 @@ mod tests {
             assert_eq!(res, i16::from_ne_bytes([1; 2]));
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(msg.read, MessageDataValue::MESSAGE_SIZE);
-            assert_eq!(msg.is_done(), false);
+            assert!(!msg.is_done());
 
             // finish with the last bytes
             let (res, read) = msg.try_read_buf(&input).unwrap();
             assert_eq!(res, i16::from_ne_bytes([1; 2]));
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(msg.read, MessageDataValue::MESSAGE_SIZE * 2);
-            assert_eq!(msg.is_done(), true);
+            assert!(msg.is_done());
         }
     }
 
@@ -1154,7 +1154,7 @@ mod tests {
 
             let mut msg_data = MessageDataActual::new_write(2);
 
-            assert_eq!(msg_data.is_done(), false);
+            assert!(!msg_data.is_done());
 
             let res = msg_data.try_write_buf(1, out_buf);
 
@@ -1173,13 +1173,13 @@ mod tests {
             let res = msg_data.try_write_buf(1, &mut out_buf[0..1]);
 
             assert_eq!(res, Err(MessageDataValue::MESSAGE_SIZE - 1));
-            assert_eq!(msg_data.is_done(), false);
+            assert!(!msg_data.is_done());
 
             // check the 0 length buffer given path
             let res = msg_data.try_write_buf(1, &mut []);
 
             assert_eq!(res, Err(MessageDataValue::MESSAGE_SIZE));
-            assert_eq!(msg_data.is_done(), false);
+            assert!(!msg_data.is_done());
 
             // finish with the last bytes
             let res = msg_data.try_write_buf(1, out_buf);
@@ -1198,7 +1198,7 @@ mod tests {
             let input: &[u8] = &10i16.to_ne_bytes();
             assert_eq!(input.len(), MessageDataValue::MESSAGE_SIZE);
 
-            let (res, read) = MessageDataValue::try_read_buf(&input).unwrap();
+            let (res, read) = MessageDataValue::try_read_buf(input).unwrap();
 
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(res, 10);
@@ -1219,7 +1219,7 @@ mod tests {
             assert_eq!(additional, MessageDataValue::MESSAGE_SIZE);
 
             // finish with the last bytes
-            let (res, read) = MessageDataValue::try_read_buf(&input).unwrap();
+            let (res, read) = MessageDataValue::try_read_buf(input).unwrap();
 
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(res, 10);
@@ -1292,9 +1292,9 @@ mod tests {
 
             let expected: Vec<u8> = [RingMessages::Spec.as_u8()]
                 .into_iter()
-                .chain(44000u32.to_ne_bytes().into_iter())
-                .chain(2u16.to_ne_bytes().into_iter())
-                .chain(10usize.to_ne_bytes().into_iter())
+                .chain(44000u32.to_ne_bytes())
+                .chain(2u16.to_ne_bytes())
+                .chain(10usize.to_ne_bytes())
                 .collect();
             assert_eq!(out_buf, expected.as_slice());
         }
@@ -1318,14 +1318,14 @@ mod tests {
             );
             let expected: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2usize.to_ne_bytes().into_iter())
-                .chain([0; 2].into_iter())
+                .chain(2usize.to_ne_bytes())
+                .chain([0; 2])
                 .collect();
             assert_eq!(out_buf, expected.as_slice());
 
             let (mut data, written) = res.unwrap();
 
-            assert_eq!(data.is_done(), false);
+            assert!(!data.is_done());
 
             let res = data.try_write_buf(1, &mut out_buf[written..]);
 
@@ -1334,8 +1334,8 @@ mod tests {
 
             let expected: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2usize.to_ne_bytes().into_iter())
-                .chain(1i16.to_ne_bytes().into_iter())
+                .chain(2usize.to_ne_bytes())
+                .chain(1i16.to_ne_bytes())
                 .collect();
 
             assert_eq!(out_buf, expected.as_slice());
@@ -1350,7 +1350,7 @@ mod tests {
 
             assert_eq!(res, Ok(((), RingMsgWrite2::ID_SIZE)));
 
-            let expected: &[u8] = &[RingMessages::EOS.as_u8()];
+            let expected: &[u8] = &[RingMessages::Eos.as_u8()];
             assert_eq!(out_buf, expected);
         }
     }
@@ -1434,7 +1434,7 @@ mod tests {
 
         #[tokio::test]
         async fn should_work() {
-            let send = Arc::new(Mutex::new(Vec::new()));
+            let mut send = Vec::new();
             let recv = Arc::new(Mutex::new(Vec::new()));
 
             let (mut prod, mut cons) = AsyncRingSource::new(
@@ -1450,20 +1450,19 @@ mod tests {
             let recv_c = recv.clone();
             let handle = tokio::task::spawn_blocking(move || {
                 let mut lock = recv_c.lock();
-                while let Some(num) = cons.next() {
+                for num in cons.by_ref() {
                     lock.extend_from_slice(&num.to_ne_bytes());
                 }
                 assert_eq!(cons.inner.occupied_len(), 0);
             });
 
-            let mut lock = send.lock();
             let first_data = 1i16.to_le_bytes().repeat(1024);
             let written = prod.write_data(&first_data).await.unwrap();
             assert_eq!(
                 written,
                 RingMsgWrite2::get_msg_size(MessageDataFirst::MESSAGE_SIZE + first_data.len())
             );
-            lock.extend_from_slice(&first_data);
+            send.extend_from_slice(&first_data);
 
             let new_spec = SignalSpec::new(48000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT);
             let written = prod.new_spec(new_spec, 1024).await.unwrap();
@@ -1478,7 +1477,7 @@ mod tests {
                 written,
                 RingMsgWrite2::get_msg_size(MessageDataFirst::MESSAGE_SIZE + second_data.len())
             );
-            lock.extend_from_slice(&second_data);
+            send.extend_from_slice(&second_data);
 
             let written = prod.new_eos().await.unwrap();
             assert_eq!(written, RingMsgWrite2::get_msg_size(0));
@@ -1486,20 +1485,20 @@ mod tests {
             prod.write_data(&[]).await.unwrap_err();
 
             // just to prevent a inifinitely running test due to a deadlock
-            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), handle).await {
-                panic!("Read Task did not complete within 3 seconds");
-            }
+            let res = tokio::time::timeout(Duration::from_secs(3), handle)
+                .await
+                .is_ok();
+            assert!(res, "Read Task did not complete within 3 seconds");
 
             assert!(prod.is_closed());
             assert!(prod.inner.is_empty());
 
-            let send_lock = lock;
             let recv_lock = recv.lock();
             let value_size = size_of::<ValueType>();
-            assert_eq!(send_lock.len(), value_size * 1024 * 2);
+            assert_eq!(send.len(), value_size * 1024 * 2);
             assert_eq!(recv_lock.len(), value_size * 1024 * 2);
 
-            assert_eq!(*send_lock, *recv_lock);
+            assert_eq!(*send, *recv_lock);
         }
 
         // the producer should not exit before the consumer in a actual use-case
@@ -1518,12 +1517,12 @@ mod tests {
 
             let obsv = prod.inner.observe();
 
-            assert_eq!(obsv.read_is_held(), true);
-            assert_eq!(obsv.write_is_held(), true);
+            assert!(obsv.read_is_held());
+            assert!(obsv.write_is_held());
             let order_c = order.clone();
 
             let cons_handle = tokio::task::spawn_blocking(move || {
-                while let Some(num) = cons.next() {
+                for num in cons.by_ref() {
                     let _ = num;
                 }
                 assert_eq!(cons.inner.occupied_len(), 0);
@@ -1541,8 +1540,8 @@ mod tests {
                     RingMsgWrite2::get_msg_size(MessageDataFirst::MESSAGE_SIZE + first_data.len())
                 );
 
-                assert_eq!(obsv_c.read_is_held(), true);
-                assert_eq!(obsv_c.write_is_held(), true);
+                assert!(obsv_c.read_is_held());
+                assert!(obsv_c.write_is_held());
 
                 let written = prod.new_eos().await.unwrap();
                 assert_eq!(written, RingMsgWrite2::get_msg_size(0));
@@ -1552,18 +1551,20 @@ mod tests {
             });
 
             // just to prevent a inifinitely running test due to a deadlock
-            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), cons_handle).await {
-                panic!("Read Task did not complete within 3 seconds");
-            }
+            let res = tokio::time::timeout(Duration::from_secs(3), cons_handle)
+                .await
+                .is_ok();
+            assert!(res, "Read Task did not complete within 3 seconds");
 
-            assert_eq!(obsv.read_is_held(), false);
+            assert!(!obsv.read_is_held());
 
             // just to prevent a inifinitely running test due to a deadlock
-            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), prod_handle).await {
-                panic!("Read Task did not complete within 3 seconds");
-            }
+            let res = tokio::time::timeout(Duration::from_secs(3), prod_handle)
+                .await
+                .is_ok();
+            assert!(res, "Write Task did not complete within 3 seconds");
 
-            assert_eq!(obsv.write_is_held(), false);
+            assert!(!obsv.write_is_held());
 
             assert_eq!(*order.lock(), &["cons", "prod"]);
         }
@@ -1584,11 +1585,11 @@ mod tests {
             let recv_c = recv.clone();
             let handle = tokio::task::spawn_blocking(move || {
                 let mut lock = recv_c.lock();
-                while let Some(num) = cons.next() {
+                for num in cons.by_ref() {
                     lock.extend_from_slice(&num.to_ne_bytes());
                 }
                 assert_eq!(cons.inner.occupied_len(), 0);
-                assert_eq!(cons.inner.write_is_held(), false);
+                assert!(!cons.inner.write_is_held());
             });
 
             let first_data = 1i16.to_le_bytes().repeat(1024);
@@ -1604,17 +1605,18 @@ mod tests {
             let obsv = prod.inner.observe();
             drop(prod);
 
-            assert_eq!(obsv.write_is_held(), false);
+            assert!(!obsv.write_is_held());
             // dont check read as that *could* have consumed and exited already
             // assert_eq!(obsv.read_is_held(), true);
 
             // just to prevent a inifinitely running test due to a deadlock
-            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), handle).await {
-                panic!("Read Task did not complete within 3 seconds");
-            }
+            let res = tokio::time::timeout(Duration::from_secs(3), handle)
+                .await
+                .is_ok();
+            assert!(res, "Read Task did not complete within 3 seconds");
 
-            assert_eq!(obsv.write_is_held(), false);
-            assert_eq!(obsv.read_is_held(), false);
+            assert!(!obsv.write_is_held());
+            assert!(!obsv.read_is_held());
 
             let recv_lock = recv.lock();
             let value_size = size_of::<ValueType>();
@@ -1639,11 +1641,11 @@ mod tests {
             let recv_c = recv.clone();
             let handle = tokio::task::spawn_blocking(move || {
                 let mut lock = recv_c.lock();
-                while let Some(num) = cons.next() {
+                for num in cons.by_ref() {
                     lock.extend_from_slice(&num.to_ne_bytes());
                 }
                 assert_eq!(cons.inner.occupied_len(), 0);
-                assert_eq!(cons.inner.write_is_held(), false);
+                assert!(!cons.inner.write_is_held());
             });
 
             let first_data = 1i16.to_le_bytes().repeat(1024);
@@ -1656,17 +1658,18 @@ mod tests {
             let obsv = prod.inner.observe();
             drop(prod);
 
-            assert_eq!(obsv.write_is_held(), false);
+            assert!(!obsv.write_is_held());
             // dont check read as that *could* have consumed and exited already
             // assert_eq!(obsv.read_is_held(), true);
 
             // just to prevent a inifinitely running test due to a deadlock
-            if let Err(_) = tokio::time::timeout(Duration::from_secs(3), handle).await {
-                panic!("Read Task did not complete within 3 seconds");
-            }
+            let res = tokio::time::timeout(Duration::from_secs(3), handle)
+                .await
+                .is_ok();
+            assert!(res, "Read Task did not complete within 3 seconds");
 
-            assert_eq!(obsv.write_is_held(), false);
-            assert_eq!(obsv.read_is_held(), false);
+            assert!(!obsv.write_is_held());
+            assert!(!obsv.read_is_held());
 
             let recv_lock = recv.lock();
             let value_size = size_of::<ValueType>();
