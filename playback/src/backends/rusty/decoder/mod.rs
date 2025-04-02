@@ -245,7 +245,7 @@ impl Symphonia {
         }
     }
 
-    /// Run a potential decode, if the buffer is exhausted
+    /// Run a potential decode, if the buffer is exhausted.
     pub fn decode_once(&mut self) -> Option<()> {
         if self.exhausted_buffer() {
             let DecodeLoopResult { spec } = decode_loop(
@@ -272,22 +272,22 @@ impl Symphonia {
         Some(())
     }
 
-    /// Get whether the current buffer is used up
+    /// Get whether the current buffer is used up.
     pub fn exhausted_buffer(&self) -> bool {
         self.buffer.samples().is_empty() || self.current_frame_offset == self.buffer.len()
     }
 
-    /// Increase the offset from which to read the buffer from
+    /// Increase the offset from which to read the buffer from.
     pub fn advance_offset(&mut self, by: usize) {
         self.current_frame_offset += by;
     }
 
-    /// Get the current spec plus frame length
+    /// Get the current spec plus frame length.
     pub fn get_spec(&self) -> (SignalSpec, usize) {
         (self.spec, self.current_frame_len().unwrap())
     }
 
-    /// Get the current buffer interpreted as u8(bytes)
+    /// Get the current buffer interpreted as u8(bytes) in native encoding.
     pub fn get_buffer_u8<'a>(&'a self) -> &'a [u8] {
         #[allow(unsafe_code)]
         unsafe {
@@ -301,7 +301,7 @@ impl Symphonia {
         }
     }
 
-    /// Get the current buffer, but only the part has not been read yet
+    /// Get the current buffer, but only the part has not been read yet.
     pub fn get_buffer(&self) -> &[i16] {
         &self.buffer.samples()[self.current_frame_offset..]
     }
