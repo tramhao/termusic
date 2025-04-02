@@ -288,13 +288,15 @@ impl Symphonia {
     }
 
     /// Get the current buffer interpreted as u8(bytes) in native encoding.
-    pub fn get_buffer_u8<'a>(&'a self) -> &'a [u8] {
+    pub fn get_buffer_u8(&self) -> &[u8] {
         #[allow(unsafe_code)]
         unsafe {
             // re-interpret the i16 slice as a u8 slice with the same byte-length.
-            let len = self.buffer.samples().len() * size_of::<i16>();
+            let len = size_of_val(self.buffer.samples());
             let ret = std::slice::from_raw_parts(
-                self.buffer.samples()[self.current_frame_offset..].as_ptr() as *const u8,
+                self.buffer.samples()[self.current_frame_offset..]
+                    .as_ptr()
+                    .cast::<u8>(),
                 len,
             );
             ret

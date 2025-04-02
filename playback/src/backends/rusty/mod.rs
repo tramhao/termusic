@@ -286,10 +286,10 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
         // will always write the full buffer as long as the consumer is connected
         let seek_fut = prod.wait_seek();
         let exhausted_buffer = decoder.exhausted_buffer();
-        let buffer = if !exhausted_buffer {
-            decoder.get_buffer_u8()
-        } else {
+        let buffer = if exhausted_buffer {
             &[]
+        } else {
+            decoder.get_buffer_u8()
         };
         let write_fut = prod.write_data(buffer);
 
@@ -306,7 +306,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
         }
 
         let spec_len = decoder.get_spec();
-        if None == decoder.decode_once() {
+        if decoder.decode_once().is_none() {
             trace!("Sending EOS");
             prod.new_eos().await.ok()?;
         }
