@@ -13,7 +13,7 @@ use parking_lot::Mutex;
 use rodio::OutputStream;
 use rodio::Source;
 use sink::Sink;
-use source::async_ring::{AsyncRingSourceProvider, SeekData};
+use source::async_ring::{AsyncRingSource, AsyncRingSourceProvider, SeekData};
 use std::num::{NonZeroU16, NonZeroUsize};
 use stream_download::http::{
     reqwest::{
@@ -263,18 +263,18 @@ fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
         Ok((mut decoder, rx)) => {
             func(&mut decoder, rx);
 
-            // let handle = tokio::runtime::Handle::current();
-            // let (spec, current_frame_len) = decoder.get_spec();
-            // let total_duration = decoder.total_duration();
-            // let (prod, cons) =
-            //     AsyncRingSource::new(spec, total_duration, current_frame_len, 0, handle.clone());
+            let handle = tokio::runtime::Handle::current();
+            let (spec, current_frame_len) = decoder.get_spec();
+            let total_duration = decoder.total_duration();
+            let (prod, cons) =
+                AsyncRingSource::new(spec, total_duration, current_frame_len, 0, handle.clone());
 
-            // tokio::task::spawn_blocking(move || {
-            //     handle.block_on(decode_task(decoder, prod));
-            // });
+            tokio::task::spawn_blocking(move || {
+                handle.block_on(decode_task(decoder, prod));
+            });
 
-            // sink.append(cons);
-            sink.append(decoder);
+            sink.append(cons);
+            // sink.append(decoder);
         }
         Err(e) => error!("error decoding '{trace}' is: {e:?}"),
     }
