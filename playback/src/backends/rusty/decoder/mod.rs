@@ -323,8 +323,6 @@ impl Source for Symphonia {
 
     #[inline]
     fn sample_rate(&self) -> u32 {
-        // error!("RATE {:#?}", self.spec.rate);
-
         self.spec.rate
     }
 
