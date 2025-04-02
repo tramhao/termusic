@@ -191,7 +191,7 @@ pub struct AsyncRingSource {
     // random default size, 1024*32
     buf: StaticBuf<32768>,
     last_msg: Option<MessageDataActual>,
-    handle: Option<Handle>,
+    handle: Handle,
 
     // cached information on how to treat current data until a update
     channels: u16,
@@ -200,9 +200,6 @@ pub struct AsyncRingSource {
     current_frame_len: usize,
     total_duration: Option<Duration>,
 }
-
-#[derive(Debug, Clone, Copy)]
-struct NotEnoughData;
 
 impl AsyncRingSource {
     /// Create a new ringbuffer, with initial channel spec and at least [`MIN_SIZE`].
@@ -230,7 +227,7 @@ impl AsyncRingSource {
             current_frame_len: current_frame_len,
             last_msg: None,
             buf: StaticBuf::new(),
-            handle: Some(handle),
+            handle,
         };
 
         (async_prod, async_cons)
@@ -240,13 +237,16 @@ impl AsyncRingSource {
     ///
     /// This function assumes there is no current message.
     #[must_use]
-    async fn read_msg(&mut self) -> Option<RingMsgParse2> {
+    fn read_msg(&mut self) -> Option<RingMsgParse2> {
         // trace!("Reading a message from the ringbuffer");
 
+        self.load_more_data(1)?;
+
+        assert!(self.buf.len() > 0);
+
         let detected_type = {
-            let detect_byte = if self.buf.is_empty() {
-                self.inner.pop().await?
-            } else {
+            let detect_byte = {
+                // SAFETY: we loaded and asserted that there is at least one byte
                 let byte = self.buf.get_ref()[0];
                 self.buf.advance_beginning(1);
                 byte
@@ -269,7 +269,7 @@ impl AsyncRingSource {
                 return None;
             }
 
-            self.load_more_data(wait_for_bytes).await?;
+            self.load_more_data(wait_for_bytes)?;
 
             // Sanity check against infinite loop
             assert!(total < 10);
@@ -313,8 +313,10 @@ impl AsyncRingSource {
 
     /// Loads more data into the current buffer, if the current buffer does not have at least `wait_for_bytes` bytes.
     ///
+    /// This function will **not** block when there is `wait_for_bytes` available, but **will** block otherwise.
+    ///
     /// Returns [`Some`] if the current buffer now has at least `wait_for_bytes` buffered, [`None`] if the buffer closed and not enough can be loaded anymore.
-    async fn load_more_data(&mut self, wait_for_bytes: usize) -> Option<()> {
+    fn load_more_data(&mut self, wait_for_bytes: usize) -> Option<()> {
         if self.buf.len() >= wait_for_bytes {
             return Some(());
         }
@@ -323,7 +325,13 @@ impl AsyncRingSource {
 
         // wait for at least one element being occupied,
         // more elements would mean to wait until they all are there, regardless if they are part of the message or not
-        self.inner.wait_occupied(wait_for_bytes).await;
+
+        // Avoid having to call async stuff for as long as possible, as that can heavily increase CPU load in a hot path.
+        // When not doing this, cpu load can be 1.0~1.4 on average.
+        // When doing the current way, the load is ~0.5~0.6 on average, the same as if running the decoder directly as
+        // as source instead of using this ringbuffer.
+        self.handle
+            .block_on(self.inner.wait_occupied(wait_for_bytes));
 
         if self.inner.is_closed() && self.inner.is_empty() {
             return None;
@@ -354,26 +362,13 @@ impl AsyncRingSource {
     ///
     /// This function assumes the current message is a non-finished [`MessageDataActual`].
     #[must_use]
-    async fn read_data(&mut self) -> Option<i16> {
+    fn read_data(&mut self) -> Option<i16> {
         // trace!("Reading Data");
 
         // wait until we have enough data to parse a value
-        self.load_more_data(MessageDataValue::MESSAGE_SIZE).await?;
+        self.load_more_data(MessageDataValue::MESSAGE_SIZE)?;
 
         assert!(self.buf.len() >= MessageDataValue::MESSAGE_SIZE);
-
-        let sample = self.try_read_data_sync().unwrap();
-
-        Some(sample)
-    }
-
-    /// Try to read data from a Data Message that has already been loaded into the buffer.
-    ///
-    /// This function assumes the current message is a non-finished [`MessageDataActual`].
-    fn try_read_data_sync(&mut self) -> Result<i16, NotEnoughData> {
-        if self.buf.len() < MessageDataValue::MESSAGE_SIZE {
-            return Err(NotEnoughData);
-        }
 
         let msg = self.last_msg.as_mut().unwrap();
 
@@ -385,7 +380,7 @@ impl AsyncRingSource {
             self.last_msg.take();
         }
 
-        Ok(sample)
+        Some(sample)
     }
 }
 
@@ -450,25 +445,9 @@ impl Iterator for AsyncRingSource {
 
         loop {
             if self.last_msg.is_some() {
-                // Avoid having to call async stuff for as long as possible, as that can heavily increase CPU load in a hot path
-                // Try to avoid using async as long as the already extracted buffer contains enough data
-                // When not doing this, cpu load can be 1.0~1.4 on average
-                match self.try_read_data_sync() {
-                    Ok(v) => return Some(v),
-                    Err(_) => {
-                        // Avoid cloning the handle, as that also reduces the cpu load a bit
-                        // - with this being taken, termusic-server cpu load is 0.5~0.6 on average
-                        // - without doing this, termusic-server cpu load is 0.7~0.9 on average
-                        // For context, using the decoder(symphonia) directly has a cpu load of 0.4~0.5 on average.
+                let sample = self.read_data();
 
-                        // TODO: wrap AsyncRingSource so that data and handle can be differentiated in the compiler without having to take and unwrap or clone
-                        let handle = self.handle.take().unwrap();
-                        let sample = handle.block_on(self.read_data());
-                        self.handle = Some(handle);
-
-                        return sample;
-                    }
-                }
+                return sample;
             }
 
             if self.inner.is_empty() && self.inner.is_closed() {
@@ -476,10 +455,7 @@ impl Iterator for AsyncRingSource {
                 return None;
             }
 
-            // See above comment for similar code
-            let handle = self.handle.take().unwrap();
-            let msg = handle.block_on(self.read_msg())?;
-            self.handle = Some(handle);
+            let msg = self.read_msg()?;
 
             match msg {
                 RingMsgParse2::Spec => {}
