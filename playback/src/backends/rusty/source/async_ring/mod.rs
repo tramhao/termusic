@@ -566,8 +566,7 @@ impl<const N: usize> StaticBuf<N> {
     #[expect(dead_code)]
     #[inline]
     fn advance_len(&mut self, size: usize) {
-        self.used_len += size;
-        assert!(self.used_len <= self.buf.len());
+        self.set_len(self.used_len + size);
     }
 
     /// Set the length of the buffer to the written size plus data start, ie how the buffer was given from [`get_mut`](Self::get_mut)
