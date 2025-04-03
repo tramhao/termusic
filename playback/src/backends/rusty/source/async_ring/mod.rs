@@ -502,15 +502,18 @@ impl<const N: usize> StaticBuf<N> {
     }
 
     /// The length of actual data in the buffer
+    #[inline]
     fn len(&self) -> usize {
         self.get_ref().len()
     }
 
+    #[inline]
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     /// Rest good data length.
+    #[inline]
     fn clear(&mut self) {
         self.data_start_idx = 0;
         self.used_len = 0;
@@ -523,16 +526,19 @@ impl<const N: usize> StaticBuf<N> {
     ///
     /// May contain bad data.
     /// And [`advance_len`](Self::advance_len) needs to be called afterward with the written size.
+    #[inline]
     fn get_mut(&mut self) -> &mut [u8] {
         &mut self.buf[self.data_start_idx..]
     }
 
     /// Get a reference to the slice which contains good data
+    #[inline]
     fn get_ref(&self) -> &[u8] {
         &self.buf[self.data_start_idx..self.used_len]
     }
 
     /// Move the data to the beginning, if start is above half the capacity
+    #[inline]
     fn maybe_need_move(&mut self) {
         // Fast-path: clear if start idx is above 0 and there are no good elements
         if self.data_start_idx > 0 && self.is_empty() {
@@ -560,12 +566,14 @@ impl<const N: usize> StaticBuf<N> {
 
     /// Advance the initialized data length.
     #[expect(dead_code)]
+    #[inline]
     fn advance_len(&mut self, size: usize) {
         self.used_len += size;
         assert!(self.used_len <= self.buf.len());
     }
 
     /// Set the length of the buffer to the written size plus data start, ie how the buffer was given from [`get_mut`](Self::get_mut)
+    #[inline]
     fn set_len(&mut self, written: usize) {
         self.used_len = self.data_start_idx + written;
         assert!(self.used_len <= self.buf.len());
@@ -574,6 +582,7 @@ impl<const N: usize> StaticBuf<N> {
     /// Advance the start index.
     ///
     /// Use [`make_beginning`](Self::make_beginning) to move all data to the front again.
+    #[inline]
     fn advance_beginning(&mut self, by: usize) {
         self.data_start_idx += by;
         assert!(self.data_start_idx <= self.buf.len());
