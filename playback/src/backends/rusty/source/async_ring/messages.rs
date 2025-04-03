@@ -29,6 +29,7 @@ impl RingMessages {
     }
 
     /// Get the current instance's [`u8`] representation
+    #[inline]
     pub fn as_u8(self) -> u8 {
         self as u8
     }
@@ -233,14 +234,17 @@ impl MessageDataActual {
     }
 
     /// Length in bytes
+    #[inline]
     pub fn new_write(length: usize) -> Self {
         Self::new(length)
     }
 
+    #[inline]
     pub fn is_done(&self) -> bool {
         self.read >= self.length
     }
 
+    #[inline]
     pub fn get_range(&self) -> Range<usize> {
         self.read..self.length
     }
@@ -260,6 +264,7 @@ impl MessageDataActual {
     /// Advance the read size when copied outside of [`try_read_buf`](Self::try_read_buf).
     ///
     /// `by` in bytes
+    #[inline]
     pub fn advance_read(&mut self, by: usize) {
         self.read += by;
         assert!(self.read <= self.length);
