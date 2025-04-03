@@ -54,6 +54,7 @@ static RE_ARTICLES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(a|an|the) 
 
 /// Defines interface used for both podcasts and episodes, to be
 /// used and displayed in menus.
+// TODO: unused trait & functions?
 pub trait Menuable {
     fn get_id(&self) -> i64;
     fn get_title(&self, length: usize) -> String;

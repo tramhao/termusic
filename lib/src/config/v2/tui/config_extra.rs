@@ -1,4 +1,4 @@
-use std::{borrow::Cow, path::Path};
+use std::{borrow::Cow, fmt::Write as _, path::Path};
 
 use anyhow::Result;
 use figment::{
@@ -48,7 +48,9 @@ impl<'a, 'de> Deserialize<'de> for TuiConfigVersionedDefaulted<'a> {
             .map(TuiConfigVersionedDefaulted::Versioned)
         {
             Ok(val) => return Ok(val),
-            Err(err) => err_res.push_str(&format!("{err:#}")),
+            Err(err) => {
+                let _ = write!(err_res, "{err:#}");
+            }
         }
         match TuiSettings::deserialize(deserializer).map(TuiConfigVersionedDefaulted::Unversioned) {
             Ok(val) => return Ok(val),
@@ -57,7 +59,7 @@ impl<'a, 'de> Deserialize<'de> for TuiConfigVersionedDefaulted<'a> {
                 let err_str = err.to_string();
                 // only add if the error is different; otherwise you get duplicated errors
                 if err_str != err_res {
-                    err_res.push_str(&format!("\n{err_str:#}"));
+                    let _ = write!(err_res, "\n{err_str:#}");
                 }
             }
         }

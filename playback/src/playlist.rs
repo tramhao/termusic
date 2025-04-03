@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::fmt::Display;
+use std::fmt::{Display, Write as _};
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -172,7 +172,6 @@ impl Playlist {
             }
             if let Ok(track) = Track::read_from_path(&line, false) {
                 playlist_items.push(track);
-                continue;
             }
         }
 
@@ -414,8 +413,7 @@ impl Playlist {
                 let path_relative = diff_paths(file, parent_folder);
 
                 if let Some(path_relative) = path_relative {
-                    let path = format!("{}\n", path_relative.display());
-                    m3u.push_str(&path);
+                    let _ = write!(m3u, "{}\n", path_relative.display());
                 }
             }
         }
