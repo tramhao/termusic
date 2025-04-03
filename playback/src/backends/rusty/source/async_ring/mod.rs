@@ -330,12 +330,10 @@ impl AsyncRingSource {
             return None;
         }
 
-        // dont overwrite data that may still be in there
-        let write_from = self.buf.len();
-        let written = self.inner.pop_slice(&mut self.buf.get_mut()[write_from..]);
-        self.buf.set_len(written + write_from);
+        let written = self.inner.pop_slice(&mut self.buf.get_spare_mut());
+        self.buf.advance_len(written);
 
-        // Sanity, there may be infinite loop because of bad implementation
+        // Sanity, this point should never be reached if the buffer contains enough data or there is no more data to read
         debug_assert!(written > 0);
 
         Some(())
@@ -505,6 +503,7 @@ impl<const N: usize> StaticBuf<N> {
         self.get_ref().len()
     }
 
+    /// Returns `true` if there is currently no good data in the buffer
     #[inline]
     fn is_empty(&self) -> bool {
         self.len() == 0
@@ -525,8 +524,18 @@ impl<const N: usize> StaticBuf<N> {
     /// May contain bad data.
     /// And [`advance_len`](Self::advance_len) needs to be called afterward with the written size.
     #[inline]
+    #[allow(unused)]
     fn get_mut(&mut self) -> &mut [u8] {
         &mut self.buf[self.data_start_idx..]
+    }
+
+    /// Get a mutable reference to the unused portion of the buffer (starting from `len`)
+    ///
+    /// May contain bad data.
+    /// And [`advance_len`](Self::advance_len) needs to be called afterward with the written size.
+    #[inline]
+    fn get_spare_mut(&mut self) -> &mut [u8] {
+        &mut self.buf[self.used_len..]
     }
 
     /// Get a reference to the slice which contains good data
@@ -562,14 +571,21 @@ impl<const N: usize> StaticBuf<N> {
         // self.buf[range_len..].fill(u8::MAX);
     }
 
-    /// Advance the initialized data length.
-    #[expect(dead_code)]
+    /// Advance the initialized data length by the given count.
+    ///
+    /// # Panics
+    ///
+    /// If the given `by` count plus the current `length` will result in higher than `capacity`.
     #[inline]
-    fn advance_len(&mut self, size: usize) {
-        self.set_len(self.used_len + size);
+    fn advance_len(&mut self, by: usize) {
+        self.set_len(self.len() + by);
     }
 
-    /// Set the length of the buffer to the written size plus data start, ie how the buffer was given from [`get_mut`](Self::get_mut)
+    /// Set the length of the buffer to the written size plus data start, ie how the buffer was given from [`get_mut`](Self::get_mut).
+    ///
+    /// # Panics
+    ///
+    /// If the given `written` plus the current `start_idx` will result in higher than `capacity`.
     #[inline]
     fn set_len(&mut self, written: usize) {
         self.used_len = self.data_start_idx + written;
@@ -579,6 +595,10 @@ impl<const N: usize> StaticBuf<N> {
     /// Advance the start index.
     ///
     /// Use [`make_beginning`](Self::make_beginning) to move all data to the front again.
+    ///
+    /// # Panics
+    ///
+    /// If the given `by` count plus the current `start_idx` will result in higher than `capacity`.
     #[inline]
     fn advance_beginning(&mut self, by: usize) {
         self.data_start_idx += by;
@@ -601,6 +621,7 @@ mod tests {
             let mut buf = StaticBuf::<32>::new();
             assert_eq!(buf.len(), 0);
             assert_eq!(buf.get_ref().len(), 0);
+            assert_eq!(buf.len(), buf.used_len);
             assert_eq!(buf.get_mut().len(), 32);
             assert_eq!(buf.get_ref(), &[0u8; 0]);
 
@@ -609,11 +630,14 @@ mod tests {
 
             assert_eq!(buf.len(), 1);
             assert_eq!(buf.get_ref().len(), 1);
+            assert_eq!(buf.len(), buf.used_len);
             assert_eq!(buf.get_mut().len(), 32);
             assert_eq!(buf.get_ref(), &[u8::MAX; 1]);
 
             buf.advance_beginning(1);
             assert_eq!(buf.len(), 0);
+            assert_eq!(buf.used_len, 1);
+            assert_ne!(buf.len(), buf.used_len);
             assert_eq!(buf.get_mut().len(), 31);
             assert_eq!(buf.get_ref(), &[0u8; 0]);
 
@@ -621,24 +645,30 @@ mod tests {
             buf.set_len(31);
 
             assert_eq!(buf.len(), 31);
+            assert_eq!(buf.used_len, 32);
+            assert_ne!(buf.len(), buf.used_len);
             assert_eq!(buf.get_mut().len(), 31);
             assert_eq!(buf.get_ref(), &[u8::MAX; 31]);
 
             buf.make_beginning();
 
             assert_eq!(buf.len(), 31);
+            assert_eq!(buf.len(), buf.used_len);
             assert_eq!(buf.get_mut().len(), 32);
             assert_eq!(buf.get_ref(), &[u8::MAX; 31]);
 
             buf.advance_beginning(15);
 
             assert_eq!(buf.len(), 16);
+            assert_ne!(buf.len(), buf.used_len);
+            assert_eq!(buf.used_len, 31);
             assert_eq!(buf.get_mut().len(), 17);
             assert_eq!(buf.get_ref(), &[u8::MAX; 16]);
 
             buf.clear();
 
             assert_eq!(buf.len(), 0);
+            assert_eq!(buf.len(), buf.used_len);
             assert_eq!(buf.get_ref().len(), 0);
             assert_eq!(buf.get_mut().len(), 32);
             assert_eq!(buf.get_ref(), &[0u8; 0]);
@@ -656,6 +686,45 @@ mod tests {
         fn beginning_capacity() {
             let mut buf = StaticBuf::<16>::new();
             buf.advance_beginning(17);
+        }
+
+        #[test]
+        fn advance_length() {
+            let mut buf = StaticBuf::<32>::new();
+            assert_eq!(buf.len(), 0);
+            assert_eq!(buf.get_ref().len(), 0);
+            assert_eq!(buf.get_mut().len(), 32);
+            assert_eq!(buf.get_spare_mut().len(), 32);
+            assert_eq!(buf.get_ref(), &[0u8; 0]);
+
+            buf.get_mut()[..4].fill(4);
+            buf.advance_len(4);
+
+            assert_eq!(buf.len(), 4);
+            assert_eq!(buf.get_ref().len(), 4);
+            assert_eq!(buf.get_mut().len(), 32);
+            assert_eq!(buf.get_spare_mut().len(), 28);
+            let expected = &[4u8; 4];
+            assert_eq!(buf.get_ref(), expected);
+
+            buf.get_spare_mut()[..4].fill(6);
+            buf.advance_len(4);
+
+            assert_eq!(buf.len(), 8);
+            assert_eq!(buf.get_ref().len(), 8);
+            assert_eq!(buf.get_mut().len(), 32);
+            assert_eq!(buf.get_spare_mut().len(), 24);
+            let expected: Vec<_> = [4u8; 4].into_iter().chain([6u8; 4].into_iter()).collect();
+            assert_eq!(buf.get_ref(), &expected);
+
+            buf.advance_beginning(5);
+
+            assert_eq!(buf.len(), 3);
+            assert_eq!(buf.get_ref().len(), 3);
+            assert_eq!(buf.get_mut().len(), 27);
+            assert_eq!(buf.get_spare_mut().len(), 24);
+            let expected = &[6u8; 3];
+            assert_eq!(buf.get_ref(), expected);
         }
     }
 
