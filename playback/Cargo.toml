@@ -59,6 +59,7 @@ default = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sirno"]
 rusty-soundtouch = ["dep:soundtouch"]
+rusty-simd = ["symphonia/opt-simd"]
 all-backends = ["gst", "mpv"]
 
 
