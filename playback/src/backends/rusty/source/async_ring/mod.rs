@@ -31,6 +31,9 @@ pub type SeekData = (Duration, oneshot::Sender<usize>);
 /// Currently the size is based on 192kHz * 2 seconds, equating to ~375kb buffer
 const MIN_RING_SIZE: usize = 192_000 * 2;
 
+/// A ringbuffer Producer meant for wrapping [`Source`] to make decode & playback async and keep the buffer filled without having audible gaps.
+///
+/// The implementation of the Producer is meant for async code, awaiting to fully put data on the ringbuffer OR waiting for seek events.
 #[derive(Debug)]
 pub struct AsyncRingSourceProvider {
     inner: ProdWrap,
@@ -175,6 +178,9 @@ impl Future for WaitSeek {
     }
 }
 
+/// A ringbuffer Consumer meant for wrapping [`Source`] to make decode & playback async and keep the buffer filled without having audible gaps.
+///
+/// The implementation of the Consumer is meant for sync code, only blocking when having to wait for more data.
 #[derive(Debug)]
 pub struct AsyncRingSource {
     inner: ConsWrap,
