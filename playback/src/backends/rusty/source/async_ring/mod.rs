@@ -53,6 +53,7 @@ impl AsyncRingSourceProvider {
 
     /// Check if the consumer ([`AsyncRingSource`]) is still connected and writes are possible
     #[allow(dead_code)] // cant use expect as this function is used in tests
+    #[must_use]
     pub fn is_closed(&self) -> bool {
         self.inner.is_closed()
     }
@@ -60,6 +61,11 @@ impl AsyncRingSourceProvider {
     /// Write a new spec.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
+    ///
+    /// # Errors
+    ///
+    /// Ringbuffer closed and no more data available.
+    #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
     pub async fn new_spec(
         &mut self,
         spec: SignalSpec,
@@ -67,6 +73,10 @@ impl AsyncRingSourceProvider {
     ) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
         // SAFETY: we allocaed the exact necessary size, this can never fail
+        // #[expect(
+        //     clippy::missing_panics_doc,
+        //     reason = "static buffer with exact size required created above"
+        // )]
         let _ = RingMsgWrite2::try_write_spec(spec, current_frame_len, &mut msg_buf).unwrap();
 
         self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
@@ -77,9 +87,18 @@ impl AsyncRingSourceProvider {
     /// Write a new data message, without the buffer yet.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
+    ///
+    /// # Errors
+    ///
+    /// Ringbuffer closed and no more data available.
+    #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
     async fn new_data(&mut self, length: usize) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(MessageDataFirst::MESSAGE_SIZE)];
         // SAFETY: we allocaed the exact necessary size, this can never fail
+        // #[expect(
+        //     clippy::missing_panics_doc,
+        //     reason = "static buffer with exact size required created above"
+        // )]
         let (data, _written) = RingMsgWrite2::try_write_data_first(length, &mut msg_buf).unwrap();
 
         self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
@@ -94,6 +113,10 @@ impl AsyncRingSourceProvider {
     /// This functions expects a data message to be active.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
+    ///
+    /// # Errors
+    ///
+    /// Ringbuffer closed and no more data available.
     async fn write_data_inner(&mut self, data: &[u8]) -> Result<usize, ()> {
         let Some(msg) = &mut self.data else {
             unimplemented!("This should be checked outside of the function");
@@ -109,6 +132,11 @@ impl AsyncRingSourceProvider {
     /// Write a given buffer as a data message.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
+    ///
+    /// # Errors
+    ///
+    /// Ringbuffer closed and no more data available.
+    #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
     pub async fn write_data(&mut self, data: &[u8]) -> Result<usize, ()> {
         if data.is_empty() {
             return Err(());
@@ -119,6 +147,10 @@ impl AsyncRingSourceProvider {
             written += self.new_data(data.len()).await?;
         }
 
+        // #[expect(
+        //     clippy::missing_panics_doc,
+        //     reason = "it is ensured to be Some via if and `new_data` above"
+        // )]
         while !self.data.as_mut().unwrap().is_done() && !self.inner.is_closed() {
             written += self.write_data_inner(data).await?;
         }
@@ -131,9 +163,18 @@ impl AsyncRingSourceProvider {
     /// Write a EOS message.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
+    ///
+    /// # Errors
+    ///
+    /// Ringbuffer closed and no more data available.
+    #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
     pub async fn new_eos(&mut self) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(0)];
         // SAFETY: we allocaed the exact necessary size, this can never fail
+        // #[expect(
+        //     clippy::missing_panics_doc,
+        //     reason = "static buffer with exact size required created above"
+        // )]
         let _ = RingMsgWrite2::try_write_eos(&mut msg_buf).unwrap();
 
         self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
@@ -203,6 +244,11 @@ pub struct AsyncRingSource {
 
 impl AsyncRingSource {
     /// Create a new ringbuffer, with initial channel spec and at least [`MIN_SIZE`].
+    ///
+    /// # Panics
+    ///
+    /// If the given channels in `spec` cannot be converted to a u16 (which should never happen as there are only 26 defined channels)
+    #[must_use]
     pub fn new(
         spec: SignalSpec,
         total_duration: Option<Duration>,
@@ -219,6 +265,7 @@ impl AsyncRingSource {
         let async_cons = Self {
             inner: ConsWrap::new(cons),
             seek_tx: Some(tx),
+            // SAFETY: as of symphonia 0.5.4, there can only be at most 26 channels (Channels::all().count())
             channels: u16::try_from(spec.channels.count())
                 .expect("Channel size to be within u16::MAX"),
             rate: spec.rate,
@@ -336,7 +383,7 @@ impl AsyncRingSource {
             return None;
         }
 
-        let written = self.inner.pop_slice(&mut self.buf.get_spare_mut());
+        let written = self.inner.pop_slice(self.buf.get_spare_mut());
         self.buf.advance_len(written);
 
         // Sanity, this point should never be reached if the buffer contains enough data or there is no more data to read
@@ -368,6 +415,7 @@ impl AsyncRingSource {
         let msg = self.last_msg.as_mut().unwrap();
 
         // unwrap: should never panic as we explicitly load at least the required amount above.
+        #[allow(clippy::missing_panics_doc)]
         let (sample, read) = msg.try_read_buf(self.buf.get_ref()).unwrap();
         self.buf.advance_beginning(read);
 
@@ -720,7 +768,7 @@ mod tests {
             assert_eq!(buf.get_ref().len(), 8);
             assert_eq!(buf.get_mut().len(), 32);
             assert_eq!(buf.get_spare_mut().len(), 24);
-            let expected: Vec<_> = [4u8; 4].into_iter().chain([6u8; 4].into_iter()).collect();
+            let expected: Vec<_> = [4u8; 4].into_iter().chain([6u8; 4]).collect();
             assert_eq!(buf.get_ref(), &expected);
 
             buf.advance_beginning(5);
