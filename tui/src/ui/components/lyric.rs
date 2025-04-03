@@ -328,7 +328,7 @@ impl Model {
         if let Some(track) = self.playlist.current_track_as_mut() {
             if let Err(e) = track.adjust_lyric_delay(self.time_pos, offset) {
                 self.mount_error_popup(e.context("adjust lyric delay"));
-            };
+            }
         }
     }
 

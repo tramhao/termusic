@@ -198,7 +198,7 @@ impl Model {
             XYWHMsg::ToggleHidden => {
                 self.xywh_toggle_hide();
             }
-        };
+        }
         None
     }
 
@@ -251,7 +251,7 @@ impl Model {
                 );
                 if let Err(e) = self.add_or_sync_data(&pod, Some(id)) {
                     self.mount_error_popup(e.context("add or sync data"));
-                };
+                }
             }
             PCMsg::NewData(pod) => {
                 self.download_tracker.decrease_one(&pod.url);
@@ -762,12 +762,12 @@ impl Model {
             GSMsg::PopupCloseDatabaseAddPlaylist => {
                 if let Err(e) = self.general_search_after_database_add_playlist() {
                     self.mount_error_popup(e.context("add to playlist from database search"));
-                };
+                }
             }
             GSMsg::PopupCloseEpisodeAddPlaylist => {
                 if let Err(e) = self.general_search_after_episode_add_playlist() {
                     self.mount_error_popup(e.context("add to playlist from episode search"));
-                };
+                }
             }
             GSMsg::PopupCloseOkEpisodeLocate => {
                 if let Err(e) = self.general_search_after_episode_select() {
@@ -818,7 +818,7 @@ impl Model {
                 }
                 if let Err(e) = self.library_delete_node() {
                     self.mount_error_popup(e.context("library delete song"));
-                };
+                }
             }
             _ => {}
         }
@@ -1022,7 +1022,7 @@ impl Model {
             DLMsg::FetchPhotoErr(err_text) => {
                 self.show_message_timeout_label_help(err_text, None, None, None);
             }
-        };
+        }
         None
     }
 }

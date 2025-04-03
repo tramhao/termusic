@@ -76,7 +76,7 @@ impl Lyric {
     pub fn get_text(&self, time: Duration) -> Option<&str> {
         if self.captions.is_empty() {
             return None;
-        };
+        }
 
         let mut time = i64::try_from(time.as_millis()).expect("Cannot represent input time as i64");
 
@@ -107,7 +107,7 @@ impl Lyric {
     pub fn get_index(&self, time: i64) -> Option<usize> {
         if self.captions.is_empty() {
             return None;
-        };
+        }
 
         let time = (time + self.offset).abs();
 
@@ -146,7 +146,7 @@ impl Lyric {
                     0
                 };
             }
-        };
+        }
         // we sort the captions by time_stamp. This is to fix some lyrics downloaded are not sorted
         self.captions.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
     }
@@ -290,7 +290,7 @@ impl FromStr for Lyric {
 
             if let Some(caption) = Caption::parse_line(line) {
                 captions.push(caption);
-            };
+            }
         }
 
         // we sort the captions by Timestamp. This is to fix some lyrics downloaded are not sorted

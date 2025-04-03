@@ -84,7 +84,7 @@ impl UeInstance {
             self.run_ueberzug_cmd_sixel(&cmd).map_err(map_err)?;
         } else {
             self.run_ueberzug_cmd(&cmd).map_err(map_err)?;
-        };
+        }
 
         Ok(())
     }

@@ -141,7 +141,7 @@ impl MpvBackend {
                         error!("Event Error: {err:?}");
                         continue;
                     }
-                };
+                }
             }
 
             if let Ok(cmd) = icmd_rx.try_recv() {

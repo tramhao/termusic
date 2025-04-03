@@ -494,7 +494,7 @@ impl Model {
                 _ => {
                     display_name.clone_from(record);
                 }
-            };
+            }
             if !display_name.is_empty() {
                 if idx > 0 {
                     table.add_row();
@@ -575,7 +575,7 @@ impl Model {
                     .get_record_by_criteria(&self.dw.search_results[index], &self.dw.criteria)
                 {
                     self.dw.search_tracks = vec;
-                };
+                }
             }
         }
 

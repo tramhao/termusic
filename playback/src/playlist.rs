@@ -173,7 +173,7 @@ impl Playlist {
             if let Ok(track) = Track::read_from_path(&line, false) {
                 playlist_items.push(track);
                 continue;
-            };
+            }
         }
 
         Ok((current_track_index, playlist_items))
@@ -381,7 +381,7 @@ impl Playlist {
             LoopMode::Single => {
                 self.loop_mode = LoopMode::Random;
             }
-        };
+        }
         self.loop_mode
     }
 

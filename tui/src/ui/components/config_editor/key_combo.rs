@@ -1304,7 +1304,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                             return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
                                 self.id, binding,
                             )));
-                        };
+                        }
                     }
                     CmdResult::None
                 }
@@ -1322,7 +1322,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                                 return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
                                     self.id, binding,
                                 )));
-                            };
+                            }
                         }
                         CmdResult::None
                     }
@@ -1340,7 +1340,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                                 return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
                                     self.id, binding,
                                 )));
-                            };
+                            }
                         }
                         CmdResult::None
                     }
