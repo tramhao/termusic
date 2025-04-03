@@ -413,7 +413,7 @@ impl Playlist {
                 let path_relative = diff_paths(file, parent_folder);
 
                 if let Some(path_relative) = path_relative {
-                    let _ = write!(m3u, "{}\n", path_relative.display());
+                    let _ = writeln!(m3u, "{}", path_relative.display());
                 }
             }
         }
