@@ -335,8 +335,6 @@ impl AsyncRingSource {
         let written = self.inner.pop_slice(&mut self.buf.get_mut()[write_from..]);
         self.buf.set_len(written + write_from);
 
-        // Sanity
-        assert!(self.buf.len() == written + write_from);
         // Sanity, there may be infinite loop because of bad implementation
         debug_assert!(written > 0);
 
