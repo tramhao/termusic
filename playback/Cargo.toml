@@ -65,6 +65,7 @@ all-backends = ["gst", "mpv"]
 
 [dev-dependencies]
 pretty_assertions.workspace = true
+criterion.workspace = true
 
 [lints]
 workspace = true
