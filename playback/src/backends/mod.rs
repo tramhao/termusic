@@ -6,7 +6,8 @@ use crate::{PlayerCmdSender, PlayerTrait};
 mod gstreamer;
 #[cfg(feature = "mpv")]
 mod mpv;
-mod rusty;
+// public for benching lower modules
+pub(crate) mod rusty;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BackendSelect {

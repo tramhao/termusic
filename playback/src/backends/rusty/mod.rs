@@ -1,5 +1,3 @@
-#![cfg_attr(test, deny(missing_docs))]
-
 use std::fs::File;
 use std::path::Path;
 use std::sync::atomic::{AtomicU16, Ordering};
@@ -43,7 +41,8 @@ use decoder::{MediaTitleRx, MediaTitleType, Symphonia};
 mod decoder;
 mod icy_metadata;
 mod sink;
-mod source;
+// public to bench lower modules
+pub(crate) mod source;
 
 pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
