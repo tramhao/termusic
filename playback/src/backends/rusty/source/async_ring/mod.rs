@@ -372,12 +372,18 @@ impl AsyncRingSource {
         // wait for at least one element being occupied,
         // more elements would mean to wait until they all are there, regardless if they are part of the message or not
 
-        // Avoid having to call async stuff for as long as possible, as that can heavily increase CPU load in a hot path.
-        // When not doing this, cpu load can be 1.0~1.4 on average.
-        // When doing the current way, the load is ~0.5~0.6 on average, the same as if running the decoder directly as
-        // as source instead of using this ringbuffer.
-        self.handle
-            .block_on(self.inner.wait_occupied(wait_for_bytes));
+        // Avoid calling into async-runtime and async code if the ringbuffer knowingly already contains enough bytes
+        // as reading can be done sync, non-blocking for buffer copies.
+        // Also SAFETY: "occupied_len" says it "could be more or less" but we are in the consumer here, so we known it wont *decrease*
+        // between here and actually reading it.
+        if self.inner.occupied_len() < wait_for_bytes {
+            // Avoid having to call async stuff for as long as possible, as that can heavily increase CPU load in a hot path.
+            // When not doing this, cpu load can be 1.0~1.4 on average.
+            // When doing the current way, the load is ~0.5~0.6 on average, the same as if running the decoder directly as
+            // as source instead of using this ringbuffer.
+            self.handle
+                .block_on(self.inner.wait_occupied(wait_for_bytes));
+        }
 
         if self.inner.is_closed() && self.inner.is_empty() {
             return None;
