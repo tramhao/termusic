@@ -420,7 +420,7 @@ impl Model {
         self.time_pos = Duration::default();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
-        };
+        }
         self.progress_update_title();
         self.lyric_update_title();
         self.update_playing_song();

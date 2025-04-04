@@ -1,3 +1,5 @@
+use std::fmt::Write as _;
+
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::types::{Id, Msg};
@@ -24,7 +26,7 @@ impl HelpPopup {
             if idx > 0 {
                 text.push_str(", ");
             }
-            text.push_str(&format!("<{key}>"));
+            let _ = write!(text, "<{key}>");
         }
         TextSpan::from(text).bold().fg(Color::Cyan)
     }

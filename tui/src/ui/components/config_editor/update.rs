@@ -359,7 +359,7 @@ impl Model {
                         self.config_editor.theme.style.playlist.current_track_symbol = symbol;
                     }
                     _ => {}
-                };
+                }
             }
 
             ConfigEditorMsg::KeyChange(id, binding) => self.update_key(id, binding),

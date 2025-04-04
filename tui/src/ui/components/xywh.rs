@@ -280,7 +280,7 @@ impl Model {
                 };
                 viuer::print(img, &config).context("viuer::print")?;
             }
-        };
+        }
 
         Ok(())
     }

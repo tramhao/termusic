@@ -392,7 +392,7 @@ impl Model {
                         .playlist
                         .current_track_symbol
                 );
-            };
+            }
             table
                 .add_col(TextSpan::new(duration_string.as_str()))
                 .add_col(TextSpan::new(title).bold());
@@ -449,7 +449,7 @@ impl Model {
                         .current_track_symbol
                 )
                 .into();
-            };
+            }
 
             table
                 .add_col(TextSpan::new(duration_string.as_str()))

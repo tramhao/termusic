@@ -313,7 +313,7 @@ fn execute_action(action: cli::Action, config: &CombinedSettings) -> Result<()> 
                 utils::get_app_config_path().context("getting app-config-path")?;
             podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
         }
-    };
+    }
 
     Ok(())
 }
