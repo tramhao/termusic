@@ -250,6 +250,7 @@ impl MessageDataActual {
     }
 
     /// Try to read a message from the given buffer, or return how many bytes are still necessary
+    #[inline]
     pub fn try_read_buf(&mut self, buf: &[u8]) -> PResult<ValueType> {
         if self.is_done() {
             return Err(0);
@@ -296,6 +297,7 @@ impl MessageDataValue {
     pub const MESSAGE_SIZE: usize = size_of::<ValueType>();
 
     /// Try to read a message from the given buffer, or return how many bytes are still necessary
+    #[inline]
     pub fn try_read_buf(buf: &[u8]) -> PResult<ValueType> {
         if buf.len() < Self::MESSAGE_SIZE {
             return Err(Self::MESSAGE_SIZE - buf.len());
