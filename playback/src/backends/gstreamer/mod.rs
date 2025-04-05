@@ -6,7 +6,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use async_channel::{Receiver, Sender};
 use async_trait::async_trait;
 use glib::{ControlFlow, FlagsClass};
 use gstreamer as gst;
@@ -17,6 +16,7 @@ use gstreamer::{ClockTime, StateChangeError, StateChangeSuccess};
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaType, Track};
+use tokio::sync::mpsc;
 
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 
@@ -162,7 +162,7 @@ pub struct GStreamerBackend {
     volume: u16,
     speed: i32,
     gapless: bool,
-    message_tx: async_channel::Sender<PlayerInternalCmd>,
+    message_tx: mpsc::Sender<PlayerInternalCmd>,
     media_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
@@ -184,11 +184,11 @@ impl GStreamerBackend {
         let eos_watcher_clone = eos_watcher.clone();
 
         // Asynchronous channel to communicate with main() with
-        let (main_tx, main_rx) = async_channel::bounded(3);
+        let (main_tx, main_rx) = mpsc::channel(3);
         let message_tx = main_tx.clone();
         std::thread::Builder::new()
             .name("gstreamer event loop".into())
-            .spawn(move || Self::channel_proxy_task(&main_rx, &cmd_tx, &eos_watcher_clone))
+            .spawn(move || Self::channel_proxy_task(main_rx, &cmd_tx, &eos_watcher_clone))
             .expect("failed to start gstreamer event loop thread");
         let playbin = Box::new(gst::ElementFactory::make("playbin3"))
             .build()
@@ -294,7 +294,7 @@ impl GStreamerBackend {
         this.playbin.connect_about_to_finish(move |_| {
             debug!("Sending playbin AboutToFinish");
             main_tx
-                .send_blocking(PlayerInternalCmd::AboutToFinish)
+                .blocking_send(PlayerInternalCmd::AboutToFinish)
                 .unwrap();
             None
         });
@@ -306,7 +306,7 @@ impl GStreamerBackend {
     fn watch_fn(
         msg: &gst::Message,
         playbin: &PlaybinWrap,
-        main_tx: &Sender<PlayerInternalCmd>,
+        main_tx: &mpsc::Sender<PlayerInternalCmd>,
         eos_watcher: &Arc<AtomicBool>,
         media_title: &Arc<Mutex<String>>,
     ) -> ControlFlow {
@@ -315,7 +315,7 @@ impl GStreamerBackend {
                 // debug tracking, as gapless interferes with it
                 debug!("gstreamer message EOS");
                 main_tx
-                    .send_blocking(PlayerInternalCmd::Eos)
+                    .blocking_send(PlayerInternalCmd::Eos)
                     .expect("Unable to send message to main()");
                 eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
 
@@ -326,7 +326,7 @@ impl GStreamerBackend {
                 if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
                     trace!("Sending EOS because it was not sent since last StreamStart");
                     main_tx
-                        .send_blocking(PlayerInternalCmd::Eos)
+                        .blocking_send(PlayerInternalCmd::Eos)
                         .expect("Unable to send message to main()");
                 }
 
@@ -336,7 +336,7 @@ impl GStreamerBackend {
                 media_title.lock().clear();
 
                 // HACK: gstreamer does not handle seek events before some undocumented time, see other note in main_rx handler
-                let _ = main_tx.send_blocking(PlayerInternalCmd::ReloadSpeed);
+                let _ = main_tx.blocking_send(PlayerInternalCmd::ReloadSpeed);
             }
             gst::MessageView::Error(e) => error!("GStreamer Error: {}", e.error()),
             gst::MessageView::Tag(tag) => {
@@ -387,11 +387,11 @@ impl GStreamerBackend {
     ///
     /// TODO: This extra proxy could likely be avoided.
     fn channel_proxy_task(
-        main_rx: &Receiver<PlayerInternalCmd>,
+        mut main_rx: mpsc::Receiver<PlayerInternalCmd>,
         cmd_tx: &crate::PlayerCmdSender,
         eos_watcher: &Arc<AtomicBool>,
     ) {
-        while let Ok(msg) = main_rx.recv_blocking() {
+        while let Some(msg) = main_rx.blocking_recv() {
             match msg {
                 PlayerInternalCmd::Eos => {
                     if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
@@ -521,7 +521,7 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn stop(&mut self) {
-        self.playbin.set_state(gst::State::Null).ok();
+        let _ = self.playbin.set_state(gst::State::Null);
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -544,9 +544,7 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn skip_one(&mut self) {
-        self.message_tx
-            .send_blocking(PlayerInternalCmd::SkipNext)
-            .ok();
+        let _ = self.message_tx.blocking_send(PlayerInternalCmd::SkipNext);
     }
 
     fn enqueue_next(&mut self, track: &Track) {
