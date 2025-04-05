@@ -20,8 +20,8 @@ use tokio::sync::mpsc;
 
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 
-/// This trait allows for easy conversion of a path to a URI
-pub trait PathToURI {
+/// This trait allows for easy conversion of a path to a URI for gstreamer
+trait PathToURI {
     fn to_uri(&self) -> String;
 }
 
