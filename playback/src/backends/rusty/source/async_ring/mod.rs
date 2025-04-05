@@ -28,8 +28,8 @@ pub type SeekData = (Duration, oneshot::Sender<usize>);
 
 /// The minimal size a decode-ringbuffer should have.
 ///
-/// Currently the size is based on 192kHz * 2 seconds, equating to ~375kb buffer
-const MIN_RING_SIZE: usize = 192_000 * 2;
+/// Currently the size is based on 192kHz * 1 seconds, or 4 seconds of 48kHz audio.
+const MIN_RING_SIZE: usize = 192_000 * MessageDataValue::MESSAGE_SIZE;
 
 /// A ringbuffer Producer meant for wrapping [`Source`] to make decode & playback async and keep the buffer filled without having audible gaps.
 ///
@@ -259,6 +259,7 @@ impl AsyncRingSource {
         let size = size.max(MIN_RING_SIZE);
         let ringbuf = AsyncHeapRb::<u8>::new(size);
         let (prod, cons) = ringbuf.split();
+        // Channel if exactly 1 message size, as seeks should not happen often, and if they do, only one can be processed at once.
         let (tx, rx) = mpsc::channel(1);
 
         let async_prod = AsyncRingSourceProvider::new(ProdWrap::new(prod), rx);
