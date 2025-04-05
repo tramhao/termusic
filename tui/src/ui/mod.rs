@@ -29,7 +29,7 @@ pub mod utils;
 
 use anyhow::Context;
 use anyhow::Result;
-use futures::future::FutureExt;
+use futures_util::FutureExt;
 use model::{Model, TermusicLayout};
 use music_player_client::Playback;
 use std::time::Duration;
