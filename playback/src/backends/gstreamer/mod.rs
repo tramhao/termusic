@@ -186,10 +186,11 @@ impl GStreamerBackend {
         // Asynchronous channel to communicate with main() with
         let (main_tx, main_rx) = mpsc::channel(3);
         let message_tx = main_tx.clone();
-        std::thread::Builder::new()
-            .name("gstreamer event loop".into())
-            .spawn(move || Self::channel_proxy_task(main_rx, &cmd_tx, &eos_watcher_clone))
-            .expect("failed to start gstreamer event loop thread");
+
+        tokio::spawn(async move {
+            Self::channel_proxy_task(main_rx, &cmd_tx, &eos_watcher_clone).await;
+        });
+
         let playbin = Box::new(gst::ElementFactory::make("playbin3"))
             .build()
             .expect("playbin3 make error");
@@ -357,7 +358,7 @@ impl GStreamerBackend {
                 // let (mode,_, _, left) = buffering.buffering_stats();
                 // info!("mode is: {mode:?}, and left is: {left}");
                 let percent = buffering.percent();
-                // according to the documentation, the application (we) need to set the playbin state according tothe buffering state
+                // according to the documentation, the application (we) need to set the playbin state according to the buffering state
                 // see https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#buffering
                 if percent < 100 {
                     let _ = playbin.pause();
@@ -386,12 +387,12 @@ impl GStreamerBackend {
     /// or set some extra values like on `SkipNext`.
     ///
     /// TODO: This extra proxy could likely be avoided.
-    fn channel_proxy_task(
+    async fn channel_proxy_task(
         mut main_rx: mpsc::Receiver<PlayerInternalCmd>,
         cmd_tx: &crate::PlayerCmdSender,
         eos_watcher: &Arc<AtomicBool>,
     ) {
-        while let Some(msg) = main_rx.blocking_recv() {
+        while let Some(msg) = main_rx.recv().await {
             match msg {
                 PlayerInternalCmd::Eos => {
                     if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
