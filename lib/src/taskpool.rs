@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use futures::Future;
+use futures_util::Future;
 use tokio::sync::Semaphore;
 use tokio_util::sync::CancellationToken;
 

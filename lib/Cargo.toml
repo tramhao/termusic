@@ -64,7 +64,7 @@ viuer.workspace = true #   = "0.6"
 walkdir.workspace = true #   = "2"
 wildmatch.workspace = true #   = "2"
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
-futures.workspace = true
+futures-util.workspace = true
 tokio.workspace = true
 tokio-util = { workspace = true, features = ["rt"] }
 tonic.workspace = true
