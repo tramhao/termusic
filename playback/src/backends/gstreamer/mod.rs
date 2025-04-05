@@ -162,7 +162,7 @@ pub struct GStreamerBackend {
     volume: u16,
     speed: i32,
     gapless: bool,
-    message_tx: mpsc::Sender<PlayerInternalCmd>,
+    icmd_tx: mpsc::Sender<PlayerInternalCmd>,
     media_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
@@ -184,11 +184,10 @@ impl GStreamerBackend {
         let eos_watcher_clone = eos_watcher.clone();
 
         // Asynchronous channel to communicate internal events
-        let (main_tx, main_rx) = mpsc::channel(3);
-        let message_tx = main_tx.clone();
+        let (icmd_tx, icmd_rx) = mpsc::channel(3);
 
         tokio::spawn(async move {
-            Self::channel_proxy_task(main_rx, &cmd_tx, &eos_watcher_clone).await;
+            Self::channel_proxy_task(icmd_rx, &cmd_tx, &eos_watcher_clone).await;
         });
 
         let playbin = Box::new(gst::ElementFactory::make("playbin3"))
@@ -243,7 +242,7 @@ impl GStreamerBackend {
         let media_title_internal = media_title.clone();
         let playbin = PlaybinWrap::new(playbin);
         let playbin_clone = playbin.clone();
-        let main_tx_watcher = main_tx.clone();
+        let main_tx_watcher = icmd_tx.clone();
         let bus_watch = playbin
             .0
             .bus()
@@ -270,13 +269,14 @@ impl GStreamerBackend {
         let volume = config.settings.player.volume;
         let speed = config.settings.player.speed;
         let gapless = config.settings.player.gapless;
+        let icmd_tx_c = icmd_tx.clone();
 
         let mut this = Self {
             playbin,
             volume,
             speed,
             gapless,
-            message_tx,
+            icmd_tx: icmd_tx_c,
             media_title,
             _bus_watch_guard: bus_watch,
         };
@@ -287,7 +287,7 @@ impl GStreamerBackend {
         // Send a signal to enqueue the next media before the current finished
         this.playbin.connect_about_to_finish(move |_| {
             debug!("Sending playbin AboutToFinish");
-            main_tx
+            icmd_tx
                 .blocking_send(PlayerInternalCmd::AboutToFinish)
                 .unwrap();
             None
@@ -538,7 +538,7 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn skip_one(&mut self) {
-        let _ = self.message_tx.blocking_send(PlayerInternalCmd::SkipNext);
+        let _ = self.icmd_tx.blocking_send(PlayerInternalCmd::SkipNext);
     }
 
     fn enqueue_next(&mut self, track: &Track) {
