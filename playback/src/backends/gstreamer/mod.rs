@@ -183,7 +183,7 @@ impl GStreamerBackend {
 
         let eos_watcher_clone = eos_watcher.clone();
 
-        // Asynchronous channel to communicate with main() with
+        // Asynchronous channel to communicate internal events
         let (main_tx, main_rx) = mpsc::channel(3);
         let message_tx = main_tx.clone();
 
@@ -200,8 +200,6 @@ impl GStreamerBackend {
             .build()
             .expect("make scaletempo error");
 
-        // let sink = gst::ElementFactory::make_with_name("autoaudiosink",
-        // Some("autoaudiosink")).unwrap();
         let sink = gst::ElementFactory::make("autoaudiosink")
             .name("audiosink")
             .build()
@@ -224,11 +222,6 @@ impl GStreamerBackend {
         bin.add_pad(&ghost_pad).expect("bin add pad failed");
         playbin.set_property("audio-sink", &bin);
 
-        // let sink = gst::ElementFactory::make("autoaudiosink")
-        //     .build()
-        //     .expect("audio sink make error");
-
-        // playbin.set_property("audio-sink", &sink);
         // Set flags to show Audio and Video but ignore Subtitles
         let flags = playbin.property_value("flags");
         let flags_class = FlagsClass::with_type(flags.type_()).unwrap();
