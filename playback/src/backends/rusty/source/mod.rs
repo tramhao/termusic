@@ -8,6 +8,8 @@ pub use self::scaletempo::TempoStretch;
 #[cfg(feature = "rusty-soundtouch")]
 pub mod scaletempo;
 
+pub mod async_ring;
+
 /// Extension trait for [`Source`] for additional custom modifiers
 #[allow(clippy::module_name_repetitions)]
 #[allow(dead_code)] // currently only used for "rusty-soundtouch"
