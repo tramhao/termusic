@@ -335,15 +335,15 @@ impl GStreamerBackend {
             gst::MessageView::Error(e) => error!("GStreamer Error: {}", e.error()),
             gst::MessageView::Tag(tag) => {
                 if let Some(title) = tag.tags().get::<gst::tags::Title>() {
-                    info!("  Title: {}", title.get());
+                    info!("Title: {}", title.get());
                     *media_title.lock() = title.get().into();
                 }
                 // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
-                //     info!("  Artist: {}", artist.get());
+                //     info!("Artist: {}", artist.get());
                 //     // *media_title.lock() = artist.get().to_string();
                 // }
                 // if let Some(album) = tag.tags().get::<gst::tags::Album>() {
-                //     info!("  Album: {}", album.get());
+                //     info!("Album: {}", album.get());
                 //     // *media_title.lock() = album.get().to_string();
                 // }
             }
@@ -393,7 +393,7 @@ impl GStreamerBackend {
                     }
                 }
                 PlayerInternalCmd::AboutToFinish => {
-                    info!("about to finish received by gstreamer internal !!!!!");
+                    info!("about to finish received by gstreamer internal");
                     if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
                         error!("error in sending AboutToFinish: {e}");
                     }
