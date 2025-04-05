@@ -4613,7 +4613,6 @@ dependencies = [
  "num-bigint",
  "opml",
  "parking_lot",
- "percent-encoding",
  "pinyin",
  "pretty_assertions",
  "prost",

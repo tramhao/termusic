@@ -40,7 +40,6 @@ md5.workspace = true #  = "0.7"
 num-bigint.workspace = true #  = "0.4"
 opml.workspace = true #   = "1"
 parking_lot.workspace = true
-percent-encoding.workspace = true #   = "2.2"
 pinyin.workspace = true #  = "0.9"
 quick-xml.workspace = true #  = "0.28"
 rand.workspace = true #  = "0.8"
