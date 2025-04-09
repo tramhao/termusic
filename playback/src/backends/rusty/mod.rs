@@ -1,5 +1,3 @@
-#![cfg_attr(test, deny(missing_docs))]
-
 use std::fs::File;
 use std::path::Path;
 use std::sync::atomic::{AtomicU16, Ordering};
@@ -13,6 +11,7 @@ use parking_lot::Mutex;
 use rodio::OutputStream;
 use rodio::Source;
 use sink::Sink;
+use source::async_ring::{AsyncRingSource, AsyncRingSourceProvider, SeekData};
 use std::num::{NonZeroU16, NonZeroUsize};
 use stream_download::http::{
     reqwest::{
@@ -32,6 +31,7 @@ use symphonia::core::io::{
 use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaType, Track};
 use tokio::runtime::Handle;
+use tokio::select;
 
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 use decoder::buffered_source::BufferedSource;
@@ -41,7 +41,8 @@ use decoder::{MediaTitleRx, MediaTitleType, Symphonia};
 mod decoder;
 mod icy_metadata;
 mod sink;
-mod source;
+// public to bench lower modules
+pub(crate) mod source;
 
 pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
@@ -260,10 +261,78 @@ fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
     match Symphonia::new_with_media_title(mss, gapless) {
         Ok((mut decoder, rx)) => {
             func(&mut decoder, rx);
-            sink.append(decoder);
+
+            let handle = tokio::runtime::Handle::current();
+            let (spec, current_frame_len) = decoder.get_spec();
+            let total_duration = decoder.total_duration();
+            let (prod, cons) =
+                AsyncRingSource::new(spec, total_duration, current_frame_len, 0, handle.clone());
+
+            tokio::task::spawn_blocking(move || {
+                handle.block_on(decode_task(decoder, prod));
+            });
+
+            sink.append(cons);
+            // sink.append(decoder);
         }
         Err(e) => error!("error decoding '{trace}' is: {e:?}"),
     }
+}
+
+/// The task that runs the decoder and writes to the ringbuffer, until a error or the consumer closes.
+async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) -> Option<()> {
+    loop {
+        // will always write the full buffer as long as the consumer is connected
+        let seek_fut = prod.wait_seek();
+        let exhausted_buffer = decoder.exhausted_buffer();
+        let buffer = if exhausted_buffer {
+            &[]
+        } else {
+            decoder.get_buffer_u8()
+        };
+        let write_fut = prod.write_data(buffer);
+
+        select! {
+            // if there is nothing to write, this future may exit immediately, causing a fast-loop until seek or dropped.
+            written = write_fut, if !exhausted_buffer => {
+                written.ok()?;
+                decoder.advance_offset(decoder.get_buffer().len());
+            },
+            seek = seek_fut => {
+                let seek = seek?;
+                decode_task_seek_fut(&mut decoder, &mut prod, seek).await?;
+            }
+        }
+
+        let spec_len = decoder.get_spec();
+        if decoder.decode_once().is_none() {
+            trace!("Sending EOS");
+            prod.new_eos().await.ok()?;
+        }
+        let new_spec = decoder.get_spec();
+        if spec_len != new_spec {
+            prod.new_spec(new_spec.0, new_spec.1).await.ok()?;
+        }
+    }
+}
+
+/// Handle the result of the seek future.
+///
+/// This is a non-inlined function, because writing inside a macro(`select!`) is a pain.
+///
+/// Return [`Some`] if seek was successful, [`None`] otherwise.
+async fn decode_task_seek_fut(
+    decoder: &mut Symphonia,
+    prod: &mut AsyncRingSourceProvider,
+    seek_data: SeekData,
+) -> Option<()> {
+    trace!("Seeking Decoder");
+    decoder.try_seek(seek_data.0).ok()?;
+
+    let spec = decoder.get_spec();
+    prod.process_seek(spec.0, spec.1, seek_data.1).await;
+
+    Some(())
 }
 
 /// Append the `media_source` to the `sink`, while allowing different functions to run with `func`

@@ -244,6 +244,69 @@ impl Symphonia {
             *buffer = Self::get_buffer_new(decoded);
         }
     }
+
+    /// Run a potential decode, if the buffer is exhausted.
+    pub fn decode_once(&mut self) -> Option<()> {
+        if self.exhausted_buffer() {
+            let DecodeLoopResult { spec } = decode_loop(
+                &mut *self.probed.format,
+                &mut *self.decoder,
+                BufferInputType::Existing(&mut self.buffer),
+                self.track_id,
+                self.time_base,
+                &mut self.media_title_tx,
+                &mut self.probed.metadata,
+                &mut self.seek_required_ts,
+            )
+            .ok()?;
+
+            self.spec = spec;
+
+            self.current_frame_offset = 0;
+        }
+
+        if self.buffer.samples().is_empty() {
+            return None;
+        }
+
+        Some(())
+    }
+
+    /// Get whether the current buffer is used up.
+    pub fn exhausted_buffer(&self) -> bool {
+        self.buffer.samples().is_empty() || self.current_frame_offset == self.buffer.len()
+    }
+
+    /// Increase the offset from which to read the buffer from.
+    pub fn advance_offset(&mut self, by: usize) {
+        self.current_frame_offset += by;
+    }
+
+    /// Get the current spec plus frame length.
+    pub fn get_spec(&self) -> (SignalSpec, usize) {
+        (self.spec, self.current_frame_len().unwrap())
+    }
+
+    /// Get the current buffer interpreted as u8(bytes) in native encoding.
+    pub fn get_buffer_u8(&self) -> &[u8] {
+        #[allow(unsafe_code)]
+        unsafe {
+            // re-interpret the i16 slice as a u8 slice with the same byte-length.
+            let len = size_of_val(self.buffer.samples());
+            let ret = std::slice::from_raw_parts(
+                self.buffer.samples()[self.current_frame_offset..]
+                    .as_ptr()
+                    .cast::<u8>(),
+                len,
+            );
+            ret
+        }
+    }
+
+    /// Get the current buffer, but only the part has not been read yet.
+    pub fn get_buffer(&self) -> &[i16] {
+        &self.buffer.samples()[self.current_frame_offset..]
+    }
 }
 
 impl Source for Symphonia {
@@ -306,27 +369,7 @@ impl Iterator for Symphonia {
 
     #[inline]
     fn next(&mut self) -> Option<i16> {
-        if self.current_frame_offset == self.buffer.len() {
-            let DecodeLoopResult { spec } = decode_loop(
-                &mut *self.probed.format,
-                &mut *self.decoder,
-                BufferInputType::Existing(&mut self.buffer),
-                self.track_id,
-                self.time_base,
-                &mut self.media_title_tx,
-                &mut self.probed.metadata,
-                &mut self.seek_required_ts,
-            )
-            .ok()?;
-
-            self.spec = spec;
-
-            self.current_frame_offset = 0;
-        }
-
-        if self.buffer.samples().is_empty() {
-            return None;
-        }
+        self.decode_once()?;
 
         let sample = *self.buffer.samples().get(self.current_frame_offset)?;
         self.current_frame_offset += 1;

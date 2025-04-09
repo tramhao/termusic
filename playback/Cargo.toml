@@ -24,6 +24,7 @@ termusic-lib.workspace = true
 anyhow.workspace = true
 async-channel.workspace = true
 async-trait.workspace = true
+async-ringbuf.workspace = true
 base64.workspace = true
 discord-rich-presence.workspace = true
 glib = { workspace = true, optional = true }
@@ -65,6 +66,11 @@ all-backends = ["gst", "mpv"]
 
 [dev-dependencies]
 pretty_assertions.workspace = true
+criterion.workspace = true
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "async_ring"
+harness = false
