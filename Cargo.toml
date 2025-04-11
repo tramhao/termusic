@@ -69,7 +69,7 @@ reqwest = { version = "0.12.15", features = [
     "stream",
 ] }
 rfc822_sanitizer = "0.3"
-rss = "2.0.12"
+rss = { version = "2.0.12", default-features = false }
 rusqlite = { version = "0.34", features = ["bundled"] }
 sanitize-filename = "0.6"
 semver = "1.0.26"
@@ -79,7 +79,7 @@ serde_yaml = "0.9"
 shellexpand = { version = "3.1", features = ["path"] }
 soundtouch = "0.4.2"
 souvlaki = { version = "0.8.2", default-features=false, features = ["use_zbus"] }
-stream-download = { version = "0.16.1", features = ["reqwest-rustls"] }
+stream-download = { version = "0.18.0", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
     "aac",
     "mp3",
@@ -110,7 +110,7 @@ urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.4"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
-futures = "0.3.31"
+futures-util = "0.3.31"
 alphanumeric-sort = "1.5"
 # transistive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
 cc = "1.2"

@@ -108,7 +108,7 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     };
 
     let (netease_res, migu_res, kugou_res) =
-        futures::join!(handle_netease, handle_migu, handle_kugou);
+        futures_util::join!(handle_netease, handle_migu, handle_kugou);
 
     match netease_res {
         Ok(vec) => results.extend(vec),
