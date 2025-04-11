@@ -4653,7 +4653,6 @@ name = "termusic-playback"
 version = "0.10.0"
 dependencies = [
  "anyhow",
- "async-channel",
  "async-trait",
  "base64",
  "discord-rich-presence",
