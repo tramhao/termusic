@@ -3,27 +3,36 @@ use std::{collections::VecDeque, time::Duration};
 use rodio::Source;
 use soundtouch::{Setting, SoundTouch};
 
-#[allow(clippy::cast_sign_loss)]
 pub fn soundtouch<I>(mut input: I, rate: f32) -> SoundTouchSource<I>
 where
     I: Source<Item = f32>,
 {
-    let channels = input.channels();
     let mut st = SoundTouch::new();
-    st.set_channels(u32::from(channels));
+
+    let channels = u32::from(input.channels());
+    st.set_channels(channels);
     st.set_sample_rate(input.sample_rate());
     st.set_tempo(f64::from(rate));
-    let min_samples = st.get_setting(Setting::NominalInputSequence) as usize * channels as usize;
-    let initial_latency = st.get_setting(Setting::InitialLatency) as usize * channels as usize;
-    let mut out_buffer = VecDeque::new();
+
+    let min_samples =
+        u32::try_from(st.get_setting(Setting::NominalInputSequence)).unwrap() * channels;
+    let min_samples = usize::try_from(min_samples).unwrap();
+    let initial_latency =
+        u32::try_from(st.get_setting(Setting::InitialLatency)).unwrap() * channels;
+    let initial_latency = usize::try_from(initial_latency).unwrap();
+
+    let mut out_buffer = VecDeque::with_capacity(initial_latency);
     out_buffer.resize(initial_latency, 0.0);
-    out_buffer.make_contiguous();
+    // out_buffer.make_contiguous(); // not necessary as we only fill it once and dont have any other operations to wrap around
+
     let mut initial_input: VecDeque<f32> = input.by_ref().take(initial_latency).collect();
-    let num_samples = initial_input.len() / channels as usize;
+    let num_samples = initial_input.len() / usize::try_from(channels).unwrap();
     st.put_samples(initial_input.make_contiguous(), num_samples);
+
     let read = st.receive_samples(out_buffer.as_mut_slices().0, num_samples);
     out_buffer.truncate(read);
     initial_input.clear();
+
     SoundTouchSource {
         input,
         min_samples,
