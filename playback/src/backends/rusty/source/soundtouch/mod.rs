@@ -70,15 +70,26 @@ where
             return self.input.next();
         }
 
-        self.soundtouch.set_tempo(self.factor);
         if self.out_buffer.is_empty() {
+            let channels = u32::from(self.input.channels());
+
+            // in rodio and symphonia, any of these factors could have changed since the last time
+            self.soundtouch.set_tempo(self.factor);
+            self.soundtouch.set_channels(channels);
+            self.soundtouch.set_sample_rate(self.input.sample_rate());
+
+            let min_samples =
+                u32::try_from(self.soundtouch.get_setting(Setting::NominalInputSequence)).unwrap()
+                    * channels;
+            self.min_samples = usize::try_from(min_samples).unwrap();
+
+            let channels = usize::try_from(channels).unwrap();
+
             self.in_buffer.clear();
             self.input
                 .by_ref()
                 .take(self.min_samples)
                 .for_each(|x| self.in_buffer.push_back(x));
-
-            let channels = usize::from(self.input.channels());
 
             let len_input = self.in_buffer.len() / channels;
             self.soundtouch
