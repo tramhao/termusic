@@ -38,7 +38,6 @@ where
         soundtouch: st,
         out_buffer,
         in_buffer: initial_input,
-        mix: 1.0,
         factor: 1.0,
     }
 }
@@ -55,8 +54,6 @@ pub struct SoundTouchSource<I> {
     out_buffer: VecDeque<f32>,
     /// Samples we input to be processed
     in_buffer: VecDeque<f32>,
-    /// unused
-    mix: f32,
     /// The timescale factor. `1.0` means no change from the source.
     factor: f64,
 }
@@ -97,11 +94,8 @@ where
             self.out_buffer.truncate(read * channels);
         }
 
-        match (
-            self.out_buffer.pop_front().map(|x| x * self.mix),
-            self.in_buffer.pop_front().map(|x| x * (1.0 - self.mix)),
-        ) {
-            (Some(a), Some(b)) => Some(a + b),
+        match (self.out_buffer.pop_front(), self.in_buffer.pop_front()) {
+            (Some(a), Some(_b)) => Some(a),
             (None, None) => None,
             (None, Some(v)) | (Some(v), None) => Some(v),
         }
@@ -136,7 +130,6 @@ where
     }
 }
 
-#[allow(dead_code)]
 impl<I> SoundTouchSource<I>
 where
     I: Source<Item = f32>,
@@ -145,10 +138,5 @@ where
     #[inline]
     pub fn set_factor(&mut self, factor: f64) {
         self.factor = factor;
-    }
-
-    #[inline]
-    pub fn set_mix(&mut self, mix: f32) {
-        self.mix = mix;
     }
 }
