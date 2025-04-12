@@ -64,68 +64,7 @@ where
         }
 
         if self.out_buffer.is_empty() {
-            let channels = u32::from(self.input.channels());
-
-            // in rodio and symphonia, any of these factors could have changed since the last time
-            self.soundtouch.set_tempo(self.factor);
-            self.soundtouch.set_channels(channels);
-            self.soundtouch.set_sample_rate(self.input.sample_rate());
-
-            let min_samples =
-                u32::try_from(self.soundtouch.get_setting(Setting::NominalInputSequence)).unwrap()
-                    * channels;
-            self.min_samples = usize::try_from(min_samples).unwrap();
-
-            self.in_buffer.clear();
-
-            let mut take_samples = self.min_samples;
-
-            // if the input buffer has not been allocated yet, we can safely assume this is the first time non-1.0 speed is called
-            // and we need to first allocate some things and likely take more samples too
-            if self.in_buffer.capacity() == 0 {
-                let initial_latency =
-                    u32::try_from(self.soundtouch.get_setting(Setting::InitialLatency)).unwrap()
-                        * channels;
-                let initial_latency = usize::try_from(initial_latency).unwrap();
-
-                self.out_buffer.resize(initial_latency, 0.0);
-                self.in_buffer.reserve(initial_latency);
-
-                // Soundtouch may need a different amount for the initial batch of samples
-                take_samples = initial_latency;
-            }
-
-            let channels = usize::try_from(channels).unwrap();
-
-            self.input
-                .by_ref()
-                .take(take_samples)
-                .for_each(|x| self.in_buffer.push_back(x));
-
-            let len_input = self.in_buffer.len() / channels;
-            self.soundtouch
-                .put_samples(self.in_buffer.make_contiguous(), len_input);
-
-            // this could only mean the inner source has ended
-            if self.in_buffer.len() < self.min_samples {
-                // soundtouch may not output anything if there are not at least "min_samples", unless "flush" is called, which filles with empty samples
-                self.soundtouch.flush();
-            }
-
-            self.out_buffer.resize(self.min_samples, 0.0);
-
-            let len_output = self.in_buffer.len() / channels;
-            let read = self
-                .soundtouch
-                .receive_samples(self.out_buffer.make_contiguous(), len_output);
-
-            // The following check is basically just debug, but if this should ever happen, it is not fatal (hence no assert)
-            // but it would be good to know
-            if self.in_buffer.len() < self.min_samples && self.soundtouch.is_empty() != 0 {
-                error!("Soundtouch was not empty!");
-            }
-
-            self.out_buffer.truncate(read * channels);
+            self.get_new_samples();
         }
 
         match (self.out_buffer.pop_front(), self.in_buffer.pop_front()) {
@@ -172,5 +111,73 @@ where
     #[inline]
     pub fn set_factor(&mut self, factor: f64) {
         self.factor = factor;
+    }
+
+    /// Get new samples into the `out_buffer`.
+    ///
+    /// Will completely overwrite the `in_buffer` & `out_buffer`.
+    fn get_new_samples(&mut self) {
+        let channels = u32::from(self.input.channels());
+
+        // in rodio and symphonia, any of these factors could have changed since the last time
+        self.soundtouch.set_tempo(self.factor);
+        self.soundtouch.set_channels(channels);
+        self.soundtouch.set_sample_rate(self.input.sample_rate());
+
+        let min_samples = u32::try_from(self.soundtouch.get_setting(Setting::NominalInputSequence))
+            .unwrap()
+            * channels;
+        self.min_samples = usize::try_from(min_samples).unwrap();
+
+        self.in_buffer.clear();
+
+        let mut take_samples = self.min_samples;
+
+        // if the input buffer has not been allocated yet, we can safely assume this is the first time non-1.0 speed is called
+        // and we need to first allocate some things and likely take more samples too
+        if self.in_buffer.capacity() == 0 {
+            let initial_latency =
+                u32::try_from(self.soundtouch.get_setting(Setting::InitialLatency)).unwrap()
+                    * channels;
+            let initial_latency = usize::try_from(initial_latency).unwrap();
+
+            self.out_buffer.resize(initial_latency, 0.0);
+            self.in_buffer.reserve(initial_latency);
+
+            // Soundtouch may need a different amount for the initial batch of samples
+            take_samples = initial_latency;
+        }
+
+        let channels = usize::try_from(channels).unwrap();
+
+        self.input
+            .by_ref()
+            .take(take_samples)
+            .for_each(|x| self.in_buffer.push_back(x));
+
+        let len_input = self.in_buffer.len() / channels;
+        self.soundtouch
+            .put_samples(self.in_buffer.make_contiguous(), len_input);
+
+        // this could only mean the inner source has ended
+        if self.in_buffer.len() < self.min_samples {
+            // soundtouch may not output anything if there are not at least "min_samples", unless "flush" is called, which filles with empty samples
+            self.soundtouch.flush();
+        }
+
+        self.out_buffer.resize(self.min_samples, 0.0);
+
+        let len_output = self.in_buffer.len() / channels;
+        let read = self
+            .soundtouch
+            .receive_samples(self.out_buffer.make_contiguous(), len_output);
+
+        // The following check is basically just debug, but if this should ever happen, it is not fatal (hence no assert)
+        // but it would be good to know
+        if self.in_buffer.len() < self.min_samples && self.soundtouch.is_empty() != 0 {
+            error!("Soundtouch was not empty!");
+        }
+
+        self.out_buffer.truncate(read * channels);
     }
 }
