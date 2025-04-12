@@ -35,6 +35,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct SoundTouchSource<I> {
     input: I,
     soundtouch: SoundTouch,
