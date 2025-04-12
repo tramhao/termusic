@@ -3,7 +3,7 @@ use std::{collections::VecDeque, time::Duration};
 use rodio::Source;
 use soundtouch::{Setting, SoundTouch};
 
-pub fn soundtouch<I>(mut input: I, rate: f32) -> SoundTouchSource<I>
+pub fn soundtouch<I>(input: I, rate: f32) -> SoundTouchSource<I>
 where
     I: Source<Item = f32>,
 {
@@ -17,27 +17,13 @@ where
     let min_samples =
         u32::try_from(st.get_setting(Setting::NominalInputSequence)).unwrap() * channels;
     let min_samples = usize::try_from(min_samples).unwrap();
-    let initial_latency =
-        u32::try_from(st.get_setting(Setting::InitialLatency)).unwrap() * channels;
-    let initial_latency = usize::try_from(initial_latency).unwrap();
-
-    let mut out_buffer = VecDeque::with_capacity(initial_latency);
-    out_buffer.resize(initial_latency, 0.0);
-
-    let mut in_buffer: VecDeque<f32> = input.by_ref().take(initial_latency).collect();
-    let num_samples = in_buffer.len() / usize::try_from(channels).unwrap();
-    st.put_samples(in_buffer.make_contiguous(), num_samples);
-
-    let read = st.receive_samples(out_buffer.make_contiguous(), num_samples);
-    out_buffer.truncate(read);
-    in_buffer.clear();
 
     SoundTouchSource {
         input,
         min_samples,
         soundtouch: st,
-        out_buffer,
-        in_buffer,
+        out_buffer: VecDeque::new(),
+        in_buffer: VecDeque::new(),
         factor: 1.0,
     }
 }
@@ -90,12 +76,30 @@ where
                     * channels;
             self.min_samples = usize::try_from(min_samples).unwrap();
 
+            self.in_buffer.clear();
+
+            let mut take_samples = self.min_samples;
+
+            // if the input buffer has not been allocated yet, we can safely assume this is the first time non-1.0 speed is called
+            // and we need to first allocate some things and likely take more samples too
+            if self.in_buffer.capacity() == 0 {
+                let initial_latency =
+                    u32::try_from(self.soundtouch.get_setting(Setting::InitialLatency)).unwrap()
+                        * channels;
+                let initial_latency = usize::try_from(initial_latency).unwrap();
+
+                self.out_buffer.resize(initial_latency, 0.0);
+                self.in_buffer.reserve(initial_latency);
+
+                // Soundtouch may need a different amount for the initial batch of samples
+                take_samples = initial_latency;
+            }
+
             let channels = usize::try_from(channels).unwrap();
 
-            self.in_buffer.clear();
             self.input
                 .by_ref()
-                .take(self.min_samples)
+                .take(take_samples)
                 .for_each(|x| self.in_buffer.push_back(x));
 
             let len_input = self.in_buffer.len() / channels;

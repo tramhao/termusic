@@ -9,6 +9,7 @@
 - Fix(tui): set `ueberzug` command to `--silent`.
 - Fix(tui): force viuer to use the terminal image protocol that was probed at the beginning.
 - Fix(tui): add CTRL+C handler for when TUI key-reading is not active yet or not active anymore.
+- Fix(server): with `rusty-soundtouch` on `rusty` backend, dont take initial samples until necessary.
 
 ### [V0.10.0]
 - Released on: March 8, 2025.
