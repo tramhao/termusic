@@ -67,6 +67,13 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         // This is to skip calculation if speed is not changed
         if (self.factor - 1.0).abs() < 0.05 {
+            // use the samples from the in_buffer, otherwise we could be dropping samples without actually playing them
+            // when quickly changing between 1.0 and other speeds, there may still be a audible drop, but this lowers it
+            if !self.in_buffer.is_empty() {
+                let _ = self.out_buffer.pop_front();
+                return self.in_buffer.pop_front();
+            }
+
             return self.input.next();
         }
 
