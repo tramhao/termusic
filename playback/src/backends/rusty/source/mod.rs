@@ -3,10 +3,7 @@
 use rodio::{Sample, Source};
 
 #[cfg(feature = "rusty-soundtouch")]
-pub use self::scaletempo::TempoStretch;
-
-#[cfg(feature = "rusty-soundtouch")]
-pub mod scaletempo;
+pub mod soundtouch;
 
 pub mod async_ring;
 
@@ -17,13 +14,14 @@ pub trait SourceExt: Source
 where
     Self::Item: Sample,
 {
+    /// Modify samples to sound similar as 1.0 speed when sped-up or slowed-down via [`::soundtouch`] (via `libSoundTouch`)
     #[cfg(feature = "rusty-soundtouch")]
-    fn tempo_stretch(self, factor: f32) -> TempoStretch<Self>
+    fn soundtouch(self, factor: f32) -> soundtouch::SoundTouchSource<Self>
     where
         Self: Sized,
         Self: Source<Item = f32>,
     {
-        scaletempo::tempo_stretch(self, factor)
+        soundtouch::soundtouch(self, factor)
     }
 }
 

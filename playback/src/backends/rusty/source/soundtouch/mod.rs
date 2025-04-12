@@ -1,12 +1,10 @@
-// mod sonic;
-
 use std::{collections::VecDeque, time::Duration};
 
 use rodio::Source;
 use soundtouch::{Setting, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
-pub fn tempo_stretch<I>(mut input: I, rate: f32) -> TempoStretch<I>
+pub fn soundtouch<I>(mut input: I, rate: f32) -> SoundTouchSource<I>
 where
     I: Source<Item = f32>,
 {
@@ -26,7 +24,7 @@ where
     let read = st.receive_samples(out_buffer.as_mut_slices().0, num_samples);
     out_buffer.truncate(read);
     initial_input.clear();
-    TempoStretch {
+    SoundTouchSource {
         input,
         min_samples,
         soundtouch: st,
@@ -37,7 +35,7 @@ where
     }
 }
 
-pub struct TempoStretch<I> {
+pub struct SoundTouchSource<I> {
     input: I,
     soundtouch: SoundTouch,
     min_samples: usize,
@@ -47,7 +45,7 @@ pub struct TempoStretch<I> {
     factor: f64,
 }
 
-impl<I> Iterator for TempoStretch<I>
+impl<I> Iterator for SoundTouchSource<I>
 where
     I: Source<Item = f32>,
 {
@@ -93,9 +91,9 @@ where
     }
 }
 
-impl<I> ExactSizeIterator for TempoStretch<I> where I: Source<Item = f32> + ExactSizeIterator {}
+impl<I> ExactSizeIterator for SoundTouchSource<I> where I: Source<Item = f32> + ExactSizeIterator {}
 
-impl<I> Source for TempoStretch<I>
+impl<I> Source for SoundTouchSource<I>
 where
     I: Source<Item = f32>,
 {
@@ -122,7 +120,7 @@ where
 }
 
 #[allow(dead_code)]
-impl<I> TempoStretch<I>
+impl<I> SoundTouchSource<I>
 where
     I: Source<Item = f32>,
 {

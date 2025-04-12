@@ -178,7 +178,7 @@ impl Sink {
         #[cfg(feature = "rusty-soundtouch")]
         let source =
             source
-                .tempo_stretch(1.0)
+                .soundtouch(1.0)
                 .periodic_access(Duration::from_millis(500), move |src| {
                     src.set_factor(f64::from(*controls_tempo.speed.lock()));
                 });
