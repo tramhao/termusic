@@ -871,6 +871,7 @@ mod tests {
 
         // the producer should not exit before the consumer in a actual use-case
         // as the producer may need to still process and output a seek request
+        // NOTE: this test contains some debug logging as somehow on some windows CI runs, "prod" gets pushed before "cons"
         #[tokio::test]
         async fn prod_should_not_exist_before_cons() {
             let order = Arc::new(Mutex::new(Vec::new()));
@@ -894,7 +895,9 @@ mod tests {
                     let _ = num;
                 }
                 assert_eq!(cons.inner.occupied_len(), 0);
+                eprintln!("AFTER CONS EMPTY");
                 order_c.lock().push("cons");
+                eprintln!("AFTER PUSH CONS");
                 drop(cons); // explicit drop here so optimizations cannot drop it earlier before pushing "cons"
             });
 
@@ -915,8 +918,16 @@ mod tests {
                 let written = prod.new_eos().await.unwrap();
                 assert_eq!(written, RingMsgWrite2::get_msg_size(0));
 
+                // between "new_eos" and "wait_seek" it is uncertain if "read_is_held", so only checking it after "wait_seek"
+
+                // "wait_seek" can only return here if the channel gets closed, which in this test happens at "cons" drop
                 let _ = prod.wait_seek().await;
+                eprintln!("AFTER WAIT SEEK");
                 order_c.lock().push("prod");
+                assert!(!obsv_c.read_is_held());
+                assert!(obsv_c.write_is_held());
+                eprintln!("AFTER PUSH PROD");
+                drop(prod); // explicit drop here so optimizations cannot drop it earlier before pushing "prod"
             });
 
             // just to prevent a inifinitely running test due to a deadlock
@@ -935,6 +946,7 @@ mod tests {
 
             assert!(!obsv.write_is_held());
 
+            // consumer should always exit first (unless explicit tests), because the consumer may signal a seek where the producer needs to respond to, even if a EOS was already send.
             assert_eq!(*order.lock(), &["cons", "prod"]);
         }
 
