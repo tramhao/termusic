@@ -23,13 +23,12 @@ where
 
     let mut out_buffer = VecDeque::with_capacity(initial_latency);
     out_buffer.resize(initial_latency, 0.0);
-    // out_buffer.make_contiguous(); // not necessary as we only fill it once and dont have any other operations to wrap around
 
     let mut initial_input: VecDeque<f32> = input.by_ref().take(initial_latency).collect();
     let num_samples = initial_input.len() / usize::try_from(channels).unwrap();
     st.put_samples(initial_input.make_contiguous(), num_samples);
 
-    let read = st.receive_samples(out_buffer.as_mut_slices().0, num_samples);
+    let read = st.receive_samples(out_buffer.make_contiguous(), num_samples);
     out_buffer.truncate(read);
     initial_input.clear();
 
@@ -46,12 +45,19 @@ where
 
 #[derive(Debug)]
 pub struct SoundTouchSource<I> {
+    /// The inner source where we get the original samples from
     input: I,
+    /// The Soundtouch instance where we input all values and get converted values out of
     soundtouch: SoundTouch,
+    /// The approximate minimal amount of samples necessary to get new processed samples
     min_samples: usize,
+    /// Already processed samples that still need to be output
     out_buffer: VecDeque<f32>,
+    /// Samples we input to be processed
     in_buffer: VecDeque<f32>,
+    /// unused
     mix: f32,
+    /// The timescale factor. `1.0` means no change from the source.
     factor: f64,
 }
 
@@ -66,6 +72,7 @@ where
         if (self.factor - 1.0).abs() < 0.05 {
             return self.input.next();
         }
+
         self.soundtouch.set_tempo(self.factor);
         if self.out_buffer.is_empty() {
             self.in_buffer.clear();
@@ -74,20 +81,20 @@ where
                 .take(self.min_samples)
                 .for_each(|x| self.in_buffer.push_back(x));
 
-            let len_input = self.in_buffer.len() / self.input.channels() as usize;
+            let channels = usize::from(self.input.channels());
+
+            let len_input = self.in_buffer.len() / channels;
             self.soundtouch
                 .put_samples(self.in_buffer.make_contiguous(), len_input);
 
             self.out_buffer.resize(self.min_samples, 0.0);
-            self.out_buffer.make_contiguous();
 
-            let len_output = self.in_buffer.len() / self.input.channels() as usize;
+            let len_output = self.in_buffer.len() / channels;
             let read = self
                 .soundtouch
-                .receive_samples(self.out_buffer.as_mut_slices().0, len_output);
+                .receive_samples(self.out_buffer.make_contiguous(), len_output);
 
-            self.out_buffer
-                .truncate(read * self.input.channels() as usize);
+            self.out_buffer.truncate(read * channels);
         }
 
         match (
