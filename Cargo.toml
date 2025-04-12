@@ -26,6 +26,7 @@ termusic-lib = { path = "lib/", version = "0.10.0" }
 termusic-playback = { path = "playback/", version = "0.10.0", default-features = false }
 ahash = "^0.8"
 anyhow = { version = "1.0.97", features = ["backtrace"] }
+async-ringbuf = "0.3"
 thiserror = "2.0.12"
 async-trait = "0.1.88"
 base64 = "0.22"
@@ -33,6 +34,7 @@ bytes = "1.10"
 chrono = "0.4.40"
 clap = { version = "4.5.34", features = ["derive", "env"] }
 ctrlc = { version = "3.4", features = ["termination"] }
+criterion = "0.5"
 dirs = "6.0"
 discord-rich-presence = "0.2.5"
 escaper = "0.1.1"
