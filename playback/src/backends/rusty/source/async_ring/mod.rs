@@ -895,6 +895,7 @@ mod tests {
                 }
                 assert_eq!(cons.inner.occupied_len(), 0);
                 order_c.lock().push("cons");
+                drop(cons); // explicit drop here so optimizations cannot drop it earlier before pushing "cons"
             });
 
             let obsv_c = obsv.clone();
