@@ -237,7 +237,7 @@ pub struct AsyncRingSource {
     // cached information on how to treat current data until a update
     channels: u16,
     rate: u32,
-    /// Always positive, unless EOS had been reached.
+    /// Always above 0, unless EOS had been reached.
     current_frame_len: usize,
     total_duration: Option<Duration>,
 }
@@ -513,10 +513,8 @@ impl Iterator for AsyncRingSource {
                     self.last_msg = Some(message_data_actual);
                 }
                 RingMsgParse2::Eos => {
-                    if self.seek_tx.take().is_some() {
-                        // only write the message once
-                        trace!("Reached EOS message");
-                    }
+                    trace!("Reached EOS message");
+                    let _ = self.seek_tx.take();
                     // this indicates to rodio via Source::current_frame_len that there is no more data
                     // and we also use it to uphold the contract with FusedIterator.
                     self.current_frame_len = 0;
@@ -871,7 +869,6 @@ mod tests {
 
         // the producer should not exit before the consumer in a actual use-case
         // as the producer may need to still process and output a seek request
-        // NOTE: this test contains some debug logging as somehow on some windows CI runs, "prod" gets pushed before "cons"
         #[tokio::test]
         async fn prod_should_not_exist_before_cons() {
             let order = Arc::new(Mutex::new(Vec::new()));
@@ -894,11 +891,9 @@ mod tests {
                 for num in cons.by_ref() {
                     let _ = num;
                 }
+                order_c.lock().push("recv_eos");
                 assert_eq!(cons.inner.occupied_len(), 0);
-                eprintln!("AFTER CONS EMPTY");
-                order_c.lock().push("cons");
-                eprintln!("AFTER PUSH CONS");
-                drop(cons); // explicit drop here so optimizations cannot drop it earlier before pushing "cons"
+                assert!(cons.seek_tx.is_none());
             });
 
             let obsv_c = obsv.clone();
@@ -915,19 +910,14 @@ mod tests {
                 assert!(obsv_c.read_is_held());
                 assert!(obsv_c.write_is_held());
 
+                order_c.lock().push("send_eos");
                 let written = prod.new_eos().await.unwrap();
                 assert_eq!(written, RingMsgWrite2::get_msg_size(0));
 
-                // between "new_eos" and "wait_seek" it is uncertain if "read_is_held", so only checking it after "wait_seek"
-
-                // "wait_seek" can only return here if the channel gets closed, which in this test happens at "cons" drop
+                // "wait_seek" can only return here if the channel gets closed, which happens when the consumer reaches the EOS message (not just on drop)
                 let _ = prod.wait_seek().await;
-                eprintln!("AFTER WAIT SEEK");
+                assert!(prod.seek_rx.read().is_closed());
                 order_c.lock().push("prod");
-                assert!(!obsv_c.read_is_held());
-                assert!(obsv_c.write_is_held());
-                eprintln!("AFTER PUSH PROD");
-                drop(prod); // explicit drop here so optimizations cannot drop it earlier before pushing "prod"
             });
 
             // just to prevent a inifinitely running test due to a deadlock
@@ -947,7 +937,13 @@ mod tests {
             assert!(!obsv.write_is_held());
 
             // consumer should always exit first (unless explicit tests), because the consumer may signal a seek where the producer needs to respond to, even if a EOS was already send.
-            assert_eq!(*order.lock(), &["cons", "prod"]);
+            let lock = order.lock();
+            // "send_eos" is always ensured to happen before the other events
+            assert_eq!(&lock[..1], &["send_eos"]);
+            // but any other depend on the scheduling, unless the actual code is modified to send those events (which is not done)
+            assert!(lock[1..].contains(&"recv_eos"));
+            assert!(lock[1..].contains(&"prod"));
+            assert_eq!(lock.len(), 3);
         }
 
         // even if the producer (due to some error or otherwise) exits with eos, the consumer should consume everything still available
