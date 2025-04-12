@@ -24,20 +24,20 @@ where
     let mut out_buffer = VecDeque::with_capacity(initial_latency);
     out_buffer.resize(initial_latency, 0.0);
 
-    let mut initial_input: VecDeque<f32> = input.by_ref().take(initial_latency).collect();
-    let num_samples = initial_input.len() / usize::try_from(channels).unwrap();
-    st.put_samples(initial_input.make_contiguous(), num_samples);
+    let mut in_buffer: VecDeque<f32> = input.by_ref().take(initial_latency).collect();
+    let num_samples = in_buffer.len() / usize::try_from(channels).unwrap();
+    st.put_samples(in_buffer.make_contiguous(), num_samples);
 
     let read = st.receive_samples(out_buffer.make_contiguous(), num_samples);
     out_buffer.truncate(read);
-    initial_input.clear();
+    in_buffer.clear();
 
     SoundTouchSource {
         input,
         min_samples,
         soundtouch: st,
         out_buffer,
-        in_buffer: initial_input,
+        in_buffer,
         factor: 1.0,
     }
 }
