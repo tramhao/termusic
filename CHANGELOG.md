@@ -10,6 +10,9 @@
 - Fix(tui): force viuer to use the terminal image protocol that was probed at the beginning.
 - Fix(tui): add CTRL+C handler for when TUI key-reading is not active yet or not active anymore.
 - Fix(server): with `rusty-soundtouch` on `rusty` backend, dont take initial samples until necessary.
+- Fix(tui): on track change, dont select "current track" playlist item if the old "current track" was not selected.
+- Fix(tui): re-select the (approximately) same playlist item after a shuffle.
+- Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
 
 ### [V0.10.0]
 - Released on: March 8, 2025.
@@ -18,6 +21,7 @@
 - Change: updated MSRV to 1.79.
 - Change: update some dependencies.
 - Change: remove unused dependencies from all packages.
+- Change: move many playlist operations to be executed by the server and listend to by clients. (see #152)
 - Change(server): on rusty backend, use upstream rodio again.
 - Feat: more immediate event changes (Example: updated via mpris)
 - Feat(server): on rusty backend, enable `aiff` codec support.
@@ -29,7 +33,7 @@
 - Fix: change Lyric::adjust_offset to not work invertedly for below 10 seconds anymore.
 - Fix: fix accidental invertion of `is_absolute` for path playlist values causing items to not have the correct path.
 - Fix: create and save config if it does not exist, without needing a successful connect first.
-- Fix: in `rusty` backen, correctly track the time before speed change.
+- Fix: in `rusty` backend, correctly track the time before speed change.
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
 - Fix(tui): not being able to parse themes that use `0x` as the prefix.
 - Fix(tui): change that the default Theme is not using bad colors.

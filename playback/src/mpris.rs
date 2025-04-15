@@ -242,7 +242,7 @@ impl GeneralPlayer {
     #[inline]
     pub fn mpris_update_progress(&mut self, progress: &PlayerProgress) {
         if let Some(ref mut mpris) = self.mpris {
-            mpris.update_progress(progress.position, self.playlist.status());
+            mpris.update_progress(progress.position, self.playlist.read_recursive().status());
         }
     }
 

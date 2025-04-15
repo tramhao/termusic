@@ -1,3 +1,7 @@
+use termusiclib::player::playlist_helpers::{
+    PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
+};
+
 #[allow(clippy::doc_link_with_quotes)]
 /// Enum for Commands to send to the [`MusicPlayerClient` "Actor"](crate::ui::music_player_client).
 // This is completely different from playback's PlayerCmd, as the tui may need to handle stuff differently and not need all variants
@@ -19,7 +23,22 @@ pub enum TuiCmd {
 
     GetProgress,
     ReloadConfig,
-    ReloadPlaylist,
-    /// Play the selected track in the playlist (`current_track_index`)
-    PlaySelected,
+
+    Playlist(PlaylistCmd),
+}
+
+/// Enum for Commands to send specificly for Playlist
+#[derive(Clone, Debug)]
+pub enum PlaylistCmd {
+    PlaySpecific(PlaylistPlaySpecific),
+    AddTrack(PlaylistAddTrack),
+    RemoveTrack(PlaylistRemoveTrackIndexed),
+    Clear,
+    SwapTrack(PlaylistSwapTrack),
+    Shuffle,
+    RemoveDeletedItems,
+
+    /// Re-Request the playlist tracks and state
+    #[allow(dead_code)] // replace with "expect" on 1.81 upgrade
+    SelfReloadPlaylist,
 }

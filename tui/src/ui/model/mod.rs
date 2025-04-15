@@ -39,7 +39,7 @@ use termusiclib::track::{MediaType, Track};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
 
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -51,6 +51,7 @@ use termusiclib::songtag::SongTag;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::utils::get_app_config_path;
 use termusicplayback::Playlist;
+use tokio::sync::broadcast;
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -262,7 +263,10 @@ impl Model {
         ));
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        let playlist = Playlist::new(&config_server).expect("Failed to load playlist");
+        // I dont like this workaround, but until the tui has its own playlist impl, this has to do.
+        let (stream_tx, _stream_rx) = broadcast::channel(1);
+
+        let playlist = Playlist::new(&config_server, stream_tx);
         let app = Self::init_app(&tree, &config_tui);
 
         // This line is required, in order to show the playing message for the first track
@@ -407,13 +411,6 @@ impl Model {
         self.command(TuiCmd::GetProgress);
         self.progress_update_title();
         self.lyric_update_title();
-    }
-
-    /// Save the playlist and have the server reload the playlist.
-    pub fn player_sync_playlist(&mut self) -> Result<()> {
-        self.playlist.save()?;
-        self.command(TuiCmd::ReloadPlaylist);
-        Ok(())
     }
 
     pub fn player_update_current_track_after(&mut self) {
