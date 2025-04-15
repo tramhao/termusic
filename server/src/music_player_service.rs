@@ -4,11 +4,13 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::music_player_server::MusicPlayer;
+use termusiclib::player::playlist_helpers::{PlaylistPlaySpecific, PlaylistRemoveTrackType};
 use termusiclib::player::{
-    stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
-    PlaylistLoopMode, SpeedReply, StreamUpdates, UpdateMissedEvents, VolumeReply,
+    self, stream_updates, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime,
+    PlaylistLoopMode, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
+    PlaylistTracksToRemove, SpeedReply, StreamUpdates, UpdateMissedEvents, VolumeReply,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, StreamTX};
+use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, StreamTX};
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::{Stream, StreamExt};
@@ -21,17 +23,24 @@ pub struct MusicPlayerService {
     cmd_tx: PlayerCmdSender,
     stream_tx: StreamTX,
     config: SharedServerSettings,
+    playlist: SharedPlaylist,
     pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
 impl MusicPlayerService {
-    pub fn new(cmd_tx: PlayerCmdSender, stream_tx: StreamTX, config: SharedServerSettings) -> Self {
+    pub fn new(
+        cmd_tx: PlayerCmdSender,
+        stream_tx: StreamTX,
+        config: SharedServerSettings,
+        playlist: SharedPlaylist,
+    ) -> Self {
         let player_stats = Arc::new(Mutex::new(PlayerStats::new()));
 
         Self {
             cmd_tx,
             player_stats,
             stream_tx,
+            playlist,
             config,
         }
     }
@@ -84,9 +93,20 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
-    async fn play_selected(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
+    async fn play_specific(
+        &self,
+        request: Request<player::PlaylistPlaySpecific>,
+    ) -> Result<Response<Empty>, Status> {
+        let converted: PlaylistPlaySpecific = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
+        let rx = self.command_cb(PlayerCmd::PlaylistPlaySpecific(converted))?;
+
+        // wait until the event was processed
+        let _ = rx.await;
+
         let reply = Empty {};
-        self.command(PlayerCmd::PlaySelected);
 
         Ok(Response::new(reply))
     }
@@ -94,13 +114,6 @@ impl MusicPlayer for MusicPlayerService {
     async fn reload_config(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
         self.command(PlayerCmd::ReloadConfig);
-
-        Ok(Response::new(reply))
-    }
-
-    async fn reload_playlist(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let reply = Empty {};
-        self.command(PlayerCmd::ReloadPlaylist);
 
         Ok(Response::new(reply))
     }
@@ -233,5 +246,88 @@ impl MusicPlayer for MusicPlayerService {
             }
         });
         Ok(Response::new(Box::pin(receiver_stream)))
+    }
+
+    async fn add_to_playlist(
+        &self,
+        request: Request<PlaylistTracksToAdd>,
+    ) -> Result<Response<Empty>, Status> {
+        let converted = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
+        let rx = self.command_cb(PlayerCmd::PlaylistAddTrack(converted))?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
+
+    async fn remove_from_playlist(
+        &self,
+        request: Request<PlaylistTracksToRemove>,
+    ) -> Result<Response<Empty>, Status> {
+        let converted: PlaylistRemoveTrackType = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
+
+        let ev = match converted {
+            PlaylistRemoveTrackType::Indexed(v) => PlayerCmd::PlaylistRemoveTrack(v),
+            PlaylistRemoveTrackType::Clear => PlayerCmd::PlaylistClear,
+        };
+
+        let rx = self.command_cb(ev)?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
+
+    async fn swap_tracks(
+        &self,
+        request: Request<PlaylistSwapTracks>,
+    ) -> Result<Response<Empty>, Status> {
+        let converted = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
+
+        let rx = self.command_cb(PlayerCmd::PlaylistSwapTrack(converted))?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
+
+    async fn get_playlist(&self, _: Request<Empty>) -> Result<Response<PlaylistTracks>, Status> {
+        let playlist = self.playlist.read();
+        let reply = playlist.as_grpc_playlist_tracks().unwrap();
+
+        Ok(Response::new(reply))
+    }
+
+    async fn shuffle_playlist(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
+        // execute shuffle in the player thread instead of the service thread
+        // this does not necessarily need to be done, but its better to have the service read-only
+        let rx = self.command_cb(PlayerCmd::PlaylistShuffle)?;
+        // wait until the event was processed
+        let _ = rx.await;
+
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
+
+    async fn remove_deleted_tracks(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
+        let rx = self.command_cb(PlayerCmd::PlaylistRemoveDeletedTracks)?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
     }
 }

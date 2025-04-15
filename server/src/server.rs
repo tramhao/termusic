@@ -19,7 +19,7 @@ use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerTrait, SpeedSigned, Status, VolumeSigned,
+    PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Status, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::sync::{broadcast, oneshot};
@@ -105,10 +105,18 @@ async fn actual_main() -> Result<()> {
     let config = new_shared_server_settings(config);
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
     let cmd_tx = PlayerCmdSender::new(cmd_tx);
-    let (stream_tx, _) = broadcast::channel(3);
+    // Note that the channel size might quickly become too low if there is a massive delete (like removing the non-existent tracks from the playlist)
+    let (stream_tx, _) = broadcast::channel(10);
 
-    let music_player_service: MusicPlayerService =
-        MusicPlayerService::new(cmd_tx.clone(), stream_tx.clone(), config.clone());
+    let playlist =
+        Playlist::new_shared(&config, stream_tx.clone()).context("Failed to load playlist")?;
+
+    let music_player_service: MusicPlayerService = MusicPlayerService::new(
+        cmd_tx.clone(),
+        stream_tx.clone(),
+        config.clone(),
+        playlist.clone(),
+    );
     let playerstats = music_player_service.player_stats.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
@@ -144,6 +152,7 @@ async fn actual_main() -> Result<()> {
                 config,
                 playerstats,
                 stream_tx,
+                playlist,
             );
             let _ = player_handle_os_tx.send(res);
         })?;
@@ -175,24 +184,27 @@ fn player_loop(
     config: SharedServerSettings,
     playerstats: Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
+    playlist: SharedPlaylist,
 ) -> Result<()> {
-    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx)?;
+    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
     while let Some((cmd, cb)) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {
             PlayerCmd::AboutToFinish => {
                 info!("about to finish signal received");
-                if !player.playlist.is_empty()
-                    && !player.playlist.has_next_track()
+                let playlist = player.playlist.read();
+                if !playlist.is_empty()
+                    && !playlist.has_next_track()
                     && player.config.read().settings.player.gapless
                 {
+                    drop(playlist);
                     player.enqueue_next_from_playlist();
                 }
             }
             PlayerCmd::Quit => {
                 info!("PlayerCmd::Quit received");
                 player.player_save_last_position();
-                if let Err(e) = player.playlist.save() {
+                if let Err(e) = player.playlist.write().save() {
                     error!("error when saving playlist: {e}");
                 };
                 if let Err(e) =
@@ -203,32 +215,30 @@ fn player_loop(
                 std::process::exit(0);
             }
             PlayerCmd::CycleLoop => {
-                player.config.write().settings.player.loop_mode = player.playlist.cycle_loop_mode();
+                player.config.write().settings.player.loop_mode =
+                    player.playlist.write().cycle_loop_mode();
             }
             PlayerCmd::Eos => {
                 info!("Eos received");
-                if player.playlist.is_empty() {
+                let mut playlist = player.playlist.write();
+                if playlist.is_empty() {
+                    drop(playlist);
                     player.stop();
                     continue;
                 }
                 debug!(
                     "current track index: {:?}",
-                    player.playlist.get_current_track_index()
+                    playlist.get_current_track_index()
                 );
-                player.playlist.clear_current_track();
+                playlist.clear_current_track();
+                drop(playlist);
                 player.start_play();
                 debug!(
                     "playing index is: {}",
-                    player.playlist.get_current_track_index()
+                    player.playlist.read().get_current_track_index()
                 );
             }
             PlayerCmd::GetProgress => {}
-            PlayerCmd::PlaySelected => {
-                info!("play selected");
-                player.player_save_last_position();
-                player.playlist.proceed_false();
-                player.next();
-            }
             PlayerCmd::SkipPrevious => {
                 info!("skip to previous track");
                 player.player_save_last_position();
@@ -240,7 +250,7 @@ fn player_loop(
                 }
             }
             PlayerCmd::ReloadPlaylist => {
-                player.playlist.reload_tracks().ok();
+                player.playlist.write().reload_tracks().ok();
             }
             PlayerCmd::SeekBackward => {
                 player.seek_relative(false);
@@ -280,32 +290,40 @@ fn player_loop(
                 // info!("tick received");
                 player.mpris_handle_events();
                 let mut p_tick = playerstats.lock();
-                p_tick.status = player.playlist.status().as_u32();
+                let mut playlist = player.playlist.read();
+                p_tick.status = playlist.status().as_u32();
                 // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore
-                if player.playlist.status() == Status::Stopped {
-                    if player.playlist.is_empty() {
+                if playlist.status() == Status::Stopped {
+                    if playlist.is_empty() {
                         continue;
                     }
                     debug!(
                         "current track index: {:?}",
-                        player.playlist.get_current_track_index()
+                        playlist.get_current_track_index()
                     );
-                    player.playlist.clear_current_track();
-                    player.playlist.proceed_false();
+                    drop(playlist);
+                    let mut playlist = player.playlist.write();
+                    playlist.clear_current_track();
+                    playlist.proceed_false();
+                    drop(playlist);
                     player.start_play();
                     continue;
                 }
                 if let Some(progress) = player.get_progress() {
                     p_tick.progress = progress;
+                    // the following function is "mut", which does not like having the immutable borrow to "playlist"
+                    // so we have to unlock first then later re-acquire the handle for later parts
+                    drop(playlist);
                     player.mpris_update_progress(&p_tick.progress);
+                    playlist = player.playlist.read();
                 }
                 if player.current_track_updated {
                     p_tick.current_track_index =
-                        u64::try_from(player.playlist.get_current_track_index()).unwrap();
+                        u64::try_from(playlist.get_current_track_index()).unwrap();
                     p_tick.current_track_updated = player.current_track_updated;
                     player.current_track_updated = false;
                 }
-                if let Some(track) = player.playlist.current_track() {
+                if let Some(track) = playlist.current_track() {
                     // if only one backend is enabled, rust will complain that it is the only thing that happens
                     #[allow(irrefutable_let_patterns)]
                     if MediaType::LiveRadio == track.media_type {
@@ -343,7 +361,7 @@ fn player_loop(
                 info!("player toggled pause");
                 player.toggle_pause();
                 let mut p_tick = playerstats.lock();
-                p_tick.status = player.playlist.status().as_u32();
+                p_tick.status = player.playlist.read().status().as_u32();
             }
             PlayerCmd::VolumeDown => {
                 info!("before volumedown: {}", player.volume());
@@ -368,6 +386,42 @@ fn player_loop(
             }
             PlayerCmd::Play => {
                 player.resume();
+            }
+
+            PlayerCmd::PlaylistPlaySpecific(info) => {
+                info!(
+                    "play specific track, idx: {} id: {:#?}",
+                    info.track_index, info.id
+                );
+                player.player_save_last_position();
+                if let Err(err) = player.playlist.write().play_specific(&info) {
+                    error!("Error setting specific track to play: {err}");
+                }
+                player.next();
+            }
+            PlayerCmd::PlaylistAddTrack(info) => {
+                if let Err(err) = player.playlist.write().add_tracks(info, &player.db_podcast) {
+                    error!("Error adding tracks: {err}");
+                }
+            }
+            PlayerCmd::PlaylistRemoveTrack(info) => {
+                if let Err(err) = player.playlist.write().remove_tracks(info) {
+                    error!("Error removing tracks: {err}");
+                }
+            }
+            PlayerCmd::PlaylistClear => {
+                player.playlist.write().clear();
+            }
+            PlayerCmd::PlaylistSwapTrack(info) => {
+                if let Err(err) = player.playlist.write().swap_tracks(&info) {
+                    error!("Error swapping tracks: {err}");
+                }
+            }
+            PlayerCmd::PlaylistShuffle => {
+                player.playlist.write().shuffle();
+            }
+            PlayerCmd::PlaylistRemoveDeletedTracks => {
+                player.playlist.write().remove_deleted_items();
             }
         }
 

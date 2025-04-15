@@ -862,18 +862,10 @@ impl Model {
                 self.player_previous();
             }
             PLMsg::SwapDown(index) => {
-                self.playlist.swap_down(*index);
-                self.playlist_sync();
-                if let Err(e) = self.player_sync_playlist() {
-                    self.mount_error_popup(e.context("playlist sync playlist"));
-                }
+                self.playlist_swap_down(*index);
             }
             PLMsg::SwapUp(index) => {
-                self.playlist.swap_up(*index);
-                self.playlist_sync();
-                if let Err(e) = self.player_sync_playlist() {
-                    self.mount_error_popup(e.context("playlist sync playlist"));
-                }
+                self.playlist_swap_up(*index);
             }
             PLMsg::AddRandomAlbum => {
                 self.playlist_add_random_album();

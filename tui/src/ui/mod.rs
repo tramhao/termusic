@@ -35,15 +35,18 @@ use music_player_client::Playback;
 use std::time::Duration;
 use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
+use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use termusiclib::player::PlayerProgress;
 use termusiclib::player::StreamUpdates;
 use termusiclib::player::UpdateEvents;
+use termusiclib::player::UpdatePlaylistEvents;
 pub use termusiclib::types::*;
 use termusicplayback::Status;
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use tonic::transport::Channel;
+use tui_cmd::PlaylistCmd;
 use tui_cmd::TuiCmd;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -99,6 +102,8 @@ impl UI {
     async fn run_inner(&mut self) -> Result<()> {
         let mut stream_updates = self.playback.subscribe_to_stream_updates().await?;
 
+        self.load_playlist().await?;
+
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
@@ -107,7 +112,9 @@ impl UI {
             if self.model.layout != TermusicLayout::Podcast {
                 self.model.lyric_update();
             }
-            self.handle_stream_events(&mut stream_updates)?;
+            if let Err(err) = self.handle_stream_events(&mut stream_updates) {
+                self.model.mount_error_popup(err);
+            }
             if progress_interval == 0 {
                 self.model.run();
             }
@@ -169,29 +176,6 @@ impl UI {
         Ok(())
     }
 
-    /// Handle `current_track_index` possibly being changed
-    fn handle_current_track_index(&mut self, current_track_index: usize) {
-        info!(
-            "index from player is:{current_track_index:?}, index in tui is:{:?}",
-            self.model.playlist.get_current_track_index()
-        );
-        self.model.playlist.clear_current_track();
-        self.model
-            .playlist
-            .set_current_track_index(current_track_index);
-        self.model.playlist_locate(current_track_index);
-        self.model.current_song = self.model.playlist.current_track().cloned();
-        self.model.update_layout_for_current_track();
-        self.model.player_update_current_track_after();
-
-        self.model.lyric_update_for_podcast_by_current_track();
-
-        if let Err(e) = self.model.podcast_mark_current_track_played() {
-            self.model
-                .mount_error_popup(e.context("Marking podcast track as played"));
-        }
-    }
-
     /// Handle running [`Status`] having possibly changed.
     fn handle_status(&mut self, new_status: Status) {
         let old_status = self.model.playlist.status();
@@ -241,8 +225,9 @@ impl UI {
                         pprogress.total_duration.unwrap_or_default(),
                     );
                     if response.current_track_updated {
-                        self.handle_current_track_index(
+                        self.model.handle_current_track_index(
                             usize::try_from(response.current_track_index).unwrap(),
+                            false,
                         );
                     }
 
@@ -255,11 +240,7 @@ impl UI {
                     let res = self.playback.cycle_loop().await?;
                     self.model.config_server.write().settings.player.loop_mode = res;
                 }
-                TuiCmd::PlaySelected => {
-                    self.playback.play_selected().await?;
-                }
                 TuiCmd::ReloadConfig => self.playback.reload_config().await?,
-                TuiCmd::ReloadPlaylist => self.playback.reload_playlist().await?,
                 TuiCmd::SeekBackward => {
                     let pprogress = self.playback.seek_backward().await?;
                     self.model.progress_update(
@@ -301,8 +282,48 @@ impl UI {
                     self.model.config_server.write().settings.player.volume = volume;
                     self.model.progress_update_title();
                 }
+                TuiCmd::Playlist(ev) => self.run_playback_playlist(ev).await?,
             }
         }
+
+        Ok(())
+    }
+
+    /// Handle Playlist requests.
+    ///
+    /// Less nesting.
+    async fn run_playback_playlist(&mut self, ev: PlaylistCmd) -> Result<()> {
+        match ev {
+            PlaylistCmd::AddTrack(tracks) => {
+                self.playback.add_to_playlist(tracks).await?;
+            }
+            PlaylistCmd::RemoveTrack(tracks) => {
+                self.playback
+                    .remove_from_playlist(PlaylistRemoveTrackType::Indexed(tracks))
+                    .await?;
+            }
+            PlaylistCmd::Clear => {
+                self.playback
+                    .remove_from_playlist(PlaylistRemoveTrackType::Clear)
+                    .await?;
+            }
+            PlaylistCmd::SwapTrack(info) => {
+                self.playback.swap_tracks(info).await?;
+            }
+            PlaylistCmd::Shuffle => {
+                self.playback.shuffle_playlist().await?;
+            }
+            PlaylistCmd::PlaySpecific(info) => {
+                self.playback.play_specific(info).await?;
+            }
+            PlaylistCmd::RemoveDeletedItems => {
+                self.playback.remove_deleted_tracks().await?;
+            }
+            PlaylistCmd::SelfReloadPlaylist => {
+                self.load_playlist().await?;
+            }
+        }
+
         Ok(())
     }
 
@@ -353,8 +374,9 @@ impl UI {
                     }
 
                     if track_changed_info.current_track_updated {
-                        self.handle_current_track_index(
+                        self.model.handle_current_track_index(
                             usize::try_from(track_changed_info.current_track_index).unwrap(),
+                            false,
                         );
                     }
 
@@ -365,8 +387,52 @@ impl UI {
                 UpdateEvents::GaplessChanged { gapless } => {
                     self.model.config_server.write().settings.player.gapless = gapless;
                 }
+                UpdateEvents::PlaylistChanged(ev) => self.handle_playlist_events(ev)?,
             }
         }
+
+        Ok(())
+    }
+
+    /// Handle Playlist Update Events, separately from [`Self::handle_stream_events`] to lessen clutter.
+    fn handle_playlist_events(&mut self, ev: UpdatePlaylistEvents) -> Result<()> {
+        match ev {
+            UpdatePlaylistEvents::PlaylistAddTrack(playlist_add_track) => {
+                self.model.handle_playlist_add(playlist_add_track)?;
+            }
+            UpdatePlaylistEvents::PlaylistRemoveTrack(playlist_remove_track) => {
+                self.model.handle_playlist_remove(&playlist_remove_track)?;
+            }
+            UpdatePlaylistEvents::PlaylistCleared => {
+                self.model.handle_playlist_clear();
+            }
+            UpdatePlaylistEvents::PlaylistLoopMode(loop_mode) => {
+                self.model.handle_playlist_loopmode(&loop_mode)?;
+            }
+            UpdatePlaylistEvents::PlaylistSwapTracks(swapped_tracks) => {
+                self.model.handle_playlist_swap_tracks(&swapped_tracks)?;
+            }
+            UpdatePlaylistEvents::PlaylistShuffled(shuffled) => {
+                self.model.handle_playlist_shuffled(shuffled)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Load the playlist from the server
+    async fn load_playlist(&mut self) -> Result<()> {
+        info!("Requesting Playlist from server");
+        let tracks = self.playback.get_playlist().await?;
+        let current_track_index = tracks.current_track_index;
+        self.model
+            .playlist
+            .load_from_grpc(tracks, &self.model.podcast.db_podcast)?;
+
+        self.model.playlist_sync();
+
+        self.model
+            .handle_current_track_index(usize::try_from(current_track_index).unwrap(), true);
 
         Ok(())
     }
