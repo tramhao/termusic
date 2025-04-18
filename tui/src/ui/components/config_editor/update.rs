@@ -33,6 +33,9 @@ use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
 use termusiclib::utils::get_app_config_path;
 
+/// How many Themes there are without actual files and always exist
+pub const THEMES_WITHOUT_FILES: usize = 2;
+
 impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn update_config_editor(&mut self, msg: ConfigEditorMsg) -> Option<Msg> {
@@ -376,9 +379,14 @@ impl Model {
 
             return;
         }
+        if index == 1 {
+            self.preview_theme_apply(ThemeColors::full_native(), 1);
 
-        // idx - 1 as 0 table-entry is termusic default, which always exists
-        if let Some(theme_filename) = self.config_editor.themes.get(index - 1) {
+            return;
+        }
+
+        // idx - THEMES_WITHOUT_FILES as 0 until THEMES_WITHOUT_FILES table-entries are termusic themes without files, which always exists
+        if let Some(theme_filename) = self.config_editor.themes.get(index - THEMES_WITHOUT_FILES) {
             match get_app_config_path() {
                 Ok(mut theme_path) => {
                     theme_path.push("themes");
