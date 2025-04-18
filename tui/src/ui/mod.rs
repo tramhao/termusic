@@ -159,17 +159,29 @@ impl UI {
         {
             let mut system = System::new();
             system.refresh_all();
+            let mut target = None;
+            let mut clients = 0;
             for proc in system.processes().values() {
-                let Some(exe) = proc.exe().map(|v| v.display().to_string()) else {
+                let exe = proc.name().to_str().unwrap();
+                if exe == "termusic-server" {
+                    target = Some(proc);
                     continue;
-                };
-                if exe.contains("termusic-server") {
-                    #[cfg(not(target_os = "windows"))]
-                    proc.kill_with(sysinfo::Signal::Term);
-                    #[cfg(target_os = "windows")]
-                    proc.kill();
-                    break;
                 }
+                let parentistermusic = match proc.parent() {
+                    Some(s) => system.processes().get(&s).unwrap().name() == "termusic",
+                    None => false,
+                };
+                if exe == "termusic" && !parentistermusic {
+                    clients += 1;
+                }
+            }
+            if clients == 1 && target.is_some() {
+                #[cfg(not(target_os = "windows"))]
+                if let Some(s) = target {
+                    s.kill_with(sysinfo::Signal::Term);
+                }
+                #[cfg(target_os = "windows")]
+                target.unwrap().kill();
             }
         }
 
