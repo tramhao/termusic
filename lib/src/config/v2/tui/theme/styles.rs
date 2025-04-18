@@ -62,10 +62,8 @@ impl ColorTermusic {
 impl From<ColorTermusic> for Color {
     fn from(value: ColorTermusic) -> Self {
         match value {
-            ColorTermusic::Reset | ColorTermusic::Foreground | ColorTermusic::Background => {
-                Color::Reset
-            }
-            ColorTermusic::Black => Color::Black,
+            ColorTermusic::Reset => Color::Reset,
+            ColorTermusic::Background | ColorTermusic::Black => Color::Black,
             ColorTermusic::Red => Color::Red,
             ColorTermusic::Green => Color::Green,
             ColorTermusic::Yellow => Color::Yellow,
@@ -80,7 +78,7 @@ impl From<ColorTermusic> for Color {
             ColorTermusic::LightBlue => Color::LightBlue,
             ColorTermusic::LightMagenta => Color::LightMagenta,
             ColorTermusic::LightCyan => Color::LightCyan,
-            ColorTermusic::LightWhite => Color::White,
+            ColorTermusic::Foreground | ColorTermusic::LightWhite => Color::White,
         }
     }
 }
