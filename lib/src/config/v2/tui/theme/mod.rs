@@ -193,13 +193,13 @@ pub enum ThemeColorParseError {
 #[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(try_from = "String")]
 #[serde(into = "String")]
-pub struct ThemeColor {
+pub struct ThemeColorHex {
     pub r: u8,
     pub g: u8,
     pub b: u8,
 }
 
-impl ThemeColor {
+impl ThemeColorHex {
     /// Create a new instance with those values
     #[must_use]
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
@@ -235,7 +235,7 @@ impl ThemeColor {
     }
 }
 
-impl TryFrom<String> for ThemeColor {
+impl TryFrom<String> for ThemeColorHex {
     type Error = ThemeColorParseError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
@@ -243,7 +243,7 @@ impl TryFrom<String> for ThemeColor {
     }
 }
 
-impl TryFrom<&str> for ThemeColor {
+impl TryFrom<&str> for ThemeColorHex {
     type Error = ThemeColorParseError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
@@ -251,14 +251,14 @@ impl TryFrom<&str> for ThemeColor {
     }
 }
 
-impl From<ThemeColor> for String {
-    fn from(val: ThemeColor) -> Self {
-        ThemeColor::to_hex(&val)
+impl From<ThemeColorHex> for String {
+    fn from(val: ThemeColorHex) -> Self {
+        ThemeColorHex::to_hex(&val)
     }
 }
 
-impl From<ThemeColor> for Color {
-    fn from(val: ThemeColor) -> Self {
+impl From<ThemeColorHex> for Color {
+    fn from(val: ThemeColorHex) -> Self {
         Color::Rgb(val.r, val.g, val.b)
     }
 }
@@ -348,15 +348,15 @@ impl ThemeColors {
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ThemePrimary {
-    pub background: ThemeColor,
-    pub foreground: ThemeColor,
+    pub background: ThemeColorHex,
+    pub foreground: ThemeColorHex,
 }
 
 impl Default for ThemePrimary {
     fn default() -> Self {
         Self {
-            background: ThemeColor::new(0x10, 0x14, 0x21),
-            foreground: ThemeColor::new(0xff, 0xfb, 0xf6),
+            background: ThemeColorHex::new(0x10, 0x14, 0x21),
+            foreground: ThemeColorHex::new(0xff, 0xfb, 0xf6),
         }
     }
 }
@@ -375,14 +375,14 @@ impl TryFrom<YAMLThemePrimary> for ThemePrimary {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeCursor {
-    pub text: ThemeColor,
-    pub cursor: ThemeColor,
+    pub text: ThemeColorHex,
+    pub cursor: ThemeColorHex,
 }
 
 impl Default for ThemeCursor {
     fn default() -> Self {
         Self {
-            text: ThemeColor::new(0x1e, 0x1e, 0x1e),
+            text: ThemeColorHex::new(0x1e, 0x1e, 0x1e),
             cursor: default_fff(),
         }
     }
@@ -402,27 +402,27 @@ impl TryFrom<YAMLThemeCursor> for ThemeCursor {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeNormal {
-    pub black: ThemeColor,
-    pub red: ThemeColor,
-    pub green: ThemeColor,
-    pub yellow: ThemeColor,
-    pub blue: ThemeColor,
-    pub magenta: ThemeColor,
-    pub cyan: ThemeColor,
-    pub white: ThemeColor,
+    pub black: ThemeColorHex,
+    pub red: ThemeColorHex,
+    pub green: ThemeColorHex,
+    pub yellow: ThemeColorHex,
+    pub blue: ThemeColorHex,
+    pub magenta: ThemeColorHex,
+    pub cyan: ThemeColorHex,
+    pub white: ThemeColorHex,
 }
 
 impl Default for ThemeNormal {
     fn default() -> Self {
         Self {
-            black: ThemeColor::new(0x2e, 0x2e, 0x2e),
-            red: ThemeColor::new(0xeb, 0x41, 0x29),
-            green: ThemeColor::new(0xab, 0xe0, 0x47),
-            yellow: ThemeColor::new(0xf6, 0xc7, 0x44),
-            blue: ThemeColor::new(0x47, 0xa0, 0xf3),
-            magenta: ThemeColor::new(0x7b, 0x5c, 0xb0),
-            cyan: ThemeColor::new(0x64, 0xdb, 0xed),
-            white: ThemeColor::new(0xe5, 0xe9, 0xf0),
+            black: ThemeColorHex::new(0x2e, 0x2e, 0x2e),
+            red: ThemeColorHex::new(0xeb, 0x41, 0x29),
+            green: ThemeColorHex::new(0xab, 0xe0, 0x47),
+            yellow: ThemeColorHex::new(0xf6, 0xc7, 0x44),
+            blue: ThemeColorHex::new(0x47, 0xa0, 0xf3),
+            magenta: ThemeColorHex::new(0x7b, 0x5c, 0xb0),
+            cyan: ThemeColorHex::new(0x64, 0xdb, 0xed),
+            white: ThemeColorHex::new(0xe5, 0xe9, 0xf0),
         }
     }
 }
@@ -447,26 +447,26 @@ impl TryFrom<YAMLThemeNormal> for ThemeNormal {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeBright {
-    pub black: ThemeColor,
-    pub red: ThemeColor,
-    pub green: ThemeColor,
-    pub yellow: ThemeColor,
-    pub blue: ThemeColor,
-    pub magenta: ThemeColor,
-    pub cyan: ThemeColor,
-    pub white: ThemeColor,
+    pub black: ThemeColorHex,
+    pub red: ThemeColorHex,
+    pub green: ThemeColorHex,
+    pub yellow: ThemeColorHex,
+    pub blue: ThemeColorHex,
+    pub magenta: ThemeColorHex,
+    pub cyan: ThemeColorHex,
+    pub white: ThemeColorHex,
 }
 
 impl Default for ThemeBright {
     fn default() -> Self {
         Self {
-            black: ThemeColor::new(0x56, 0x56, 0x56),
-            red: ThemeColor::new(0xec, 0x53, 0x57),
-            green: ThemeColor::new(0xc0, 0xe1, 0x7d),
-            yellow: ThemeColor::new(0xf9, 0xda, 0x6a),
-            blue: ThemeColor::new(0x49, 0xa4, 0xf8),
-            magenta: ThemeColor::new(0xa4, 0x7d, 0xe9),
-            cyan: ThemeColor::new(0x99, 0xfa, 0xf2),
+            black: ThemeColorHex::new(0x56, 0x56, 0x56),
+            red: ThemeColorHex::new(0xec, 0x53, 0x57),
+            green: ThemeColorHex::new(0xc0, 0xe1, 0x7d),
+            yellow: ThemeColorHex::new(0xf9, 0xda, 0x6a),
+            blue: ThemeColorHex::new(0x49, 0xa4, 0xf8),
+            magenta: ThemeColorHex::new(0xa4, 0x7d, 0xe9),
+            cyan: ThemeColorHex::new(0x99, 0xfa, 0xf2),
             white: default_fff(),
         }
     }
@@ -500,17 +500,17 @@ fn default_author() -> String {
 }
 
 #[inline]
-fn default_fff() -> ThemeColor {
-    ThemeColor::new(0xFF, 0xFF, 0xFF)
+fn default_fff() -> ThemeColorHex {
+    ThemeColorHex::new(0xFF, 0xFF, 0xFF)
 }
 
 mod v1_interop {
     use super::{
-        ThemeBright, ThemeColor, ThemeColors, ThemeCursor, ThemeNormal, ThemePrimary, ThemeWrap,
+        ThemeBright, ThemeColorHex, ThemeColors, ThemeCursor, ThemeNormal, ThemePrimary, ThemeWrap,
     };
     use crate::config::v1;
 
-    impl From<v1::AlacrittyColor> for ThemeColor {
+    impl From<v1::AlacrittyColor> for ThemeColorHex {
         fn from(value: v1::AlacrittyColor) -> Self {
             Self {
                 r: value.r,
@@ -620,37 +620,37 @@ mod tests {
     use super::ThemeColors;
 
     mod theme_color {
-        use super::super::ThemeColor;
+        use super::super::ThemeColorHex;
 
         #[test]
         fn should_parse_hashtag() {
             assert_eq!(
-                ThemeColor::new(1, 2, 3),
-                ThemeColor::from_hex("#010203").unwrap()
+                ThemeColorHex::new(1, 2, 3),
+                ThemeColorHex::from_hex("#010203").unwrap()
             );
             assert_eq!(
-                ThemeColor::new(255, 255, 255),
-                ThemeColor::from_hex("#ffffff").unwrap()
+                ThemeColorHex::new(255, 255, 255),
+                ThemeColorHex::from_hex("#ffffff").unwrap()
             );
             assert_eq!(
-                ThemeColor::new(0, 0, 0),
-                ThemeColor::from_hex("#000000").unwrap()
+                ThemeColorHex::new(0, 0, 0),
+                ThemeColorHex::from_hex("#000000").unwrap()
             );
         }
 
         #[test]
         fn should_parse_0x() {
             assert_eq!(
-                ThemeColor::new(1, 2, 3),
-                ThemeColor::from_hex("0x010203").unwrap()
+                ThemeColorHex::new(1, 2, 3),
+                ThemeColorHex::from_hex("0x010203").unwrap()
             );
             assert_eq!(
-                ThemeColor::new(255, 255, 255),
-                ThemeColor::from_hex("0xffffff").unwrap()
+                ThemeColorHex::new(255, 255, 255),
+                ThemeColorHex::from_hex("0xffffff").unwrap()
             );
             assert_eq!(
-                ThemeColor::new(0, 0, 0),
-                ThemeColor::from_hex("0x000000").unwrap()
+                ThemeColorHex::new(0, 0, 0),
+                ThemeColorHex::from_hex("0x000000").unwrap()
             );
         }
     }
