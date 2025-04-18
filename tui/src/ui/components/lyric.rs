@@ -270,7 +270,7 @@ impl Model {
                     self.lyric_set_lyric("No lyrics available.");
                     return;
                 }
-                if let Some(l) = l.get_text(self.time_pos) {
+                if let Some(l) = l.get_text(self.playback.current_track_pos()) {
                     line = l.to_string();
                 }
             } else {
@@ -323,8 +323,9 @@ impl Model {
         }
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
+        let time_pos = self.playback.current_track_pos();
         if let Some(track) = self.playback.current_track_mut() {
-            if let Err(e) = track.adjust_lyric_delay(self.time_pos, offset) {
+            if let Err(e) = track.adjust_lyric_delay(time_pos, offset) {
                 self.mount_error_popup(e.context("adjust lyric delay"));
             }
         }

@@ -111,7 +111,7 @@ impl Model {
 
         let time_pos = time_pos.unwrap();
 
-        self.time_pos = time_pos;
+        self.playback.set_current_track_pos(time_pos);
 
         let progress = (time_pos.as_secs() * 100)
             .checked_div(total_duration.as_secs())
@@ -142,7 +142,7 @@ impl Model {
                 Attribute::Text,
                 AttrValue::String(format!(
                     "{}    -    {}",
-                    Track::duration_formatted_short(&self.time_pos),
+                    Track::duration_formatted_short(&self.playback.current_track_pos()),
                     Track::duration_formatted_short(&total_duration)
                 )),
             )

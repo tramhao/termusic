@@ -123,6 +123,7 @@ pub struct Playback {
     status: RunningStatus,
     /// The current track, if there is one. Does not need to be in the playlist.
     current_track: Option<Track>,
+    current_track_pos: Duration,
 }
 
 impl Playback {
@@ -131,6 +132,7 @@ impl Playback {
             playlist: playlist::TUIPlaylist::default(),
             status: RunningStatus::default(),
             current_track: None,
+            current_track_pos: Duration::ZERO,
         }
     }
 
@@ -175,6 +177,14 @@ impl Playback {
     /// Set the current track from the playlist, if there is one
     pub fn set_current_track_from_playlist(&mut self) {
         self.set_current_track(self.playlist.current_track().cloned());
+    }
+
+    pub fn current_track_pos(&self) -> Duration {
+        self.current_track_pos
+    }
+
+    pub fn set_current_track_pos(&mut self, pos: Duration) {
+        self.current_track_pos = pos;
     }
 
     /// Load Tracks from a GRPC response.
@@ -253,7 +263,6 @@ pub struct Model {
     pub config_editor: ConfigEditorData,
 
     pub tageditor_song: Option<Track>,
-    pub time_pos: Duration,
     pub lyric_line: String,
     pub playback: Playback,
 
@@ -370,9 +379,7 @@ impl Model {
             terminal,
             config_server,
             config_tui,
-            // current_song: None,
             tageditor_song: None,
-            time_pos: Duration::default(),
             lyric_line: String::new(),
 
             library: MusicLibraryData {
@@ -500,7 +507,7 @@ impl Model {
     }
 
     pub fn player_update_current_track_after(&mut self) {
-        self.time_pos = Duration::default();
+        self.playback.set_current_track_pos(Duration::ZERO);
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
