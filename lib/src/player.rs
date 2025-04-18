@@ -30,6 +30,44 @@ impl From<std::time::Duration> for protobuf::Duration {
 /// The primitive in which time (current position / total duration) will be stored as
 pub type PlayerTimeUnit = std::time::Duration;
 
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
+pub enum RunningStatus {
+    #[default]
+    Stopped,
+    Running,
+    Paused,
+}
+
+impl RunningStatus {
+    #[must_use]
+    pub fn as_u32(&self) -> u32 {
+        match self {
+            RunningStatus::Stopped => 0,
+            RunningStatus::Running => 1,
+            RunningStatus::Paused => 2,
+        }
+    }
+
+    #[must_use]
+    pub fn from_u32(status: u32) -> Self {
+        match status {
+            1 => RunningStatus::Running,
+            2 => RunningStatus::Paused,
+            _ => RunningStatus::Stopped,
+        }
+    }
+}
+
+impl std::fmt::Display for RunningStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Running => write!(f, "Running"),
+            Self::Stopped => write!(f, "Stopped"),
+            Self::Paused => write!(f, "Paused"),
+        }
+    }
+}
+
 /// Struct to keep both values with a name, as tuples cannot have named fields
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PlayerProgress {

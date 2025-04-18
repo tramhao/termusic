@@ -284,7 +284,10 @@ impl Model {
             .collect();
 
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-            PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+            PlaylistAddTrack::new_vec(
+                u64::try_from(self.playback.playlist.len()).unwrap(),
+                sources,
+            ),
         )));
 
         Ok(())
@@ -307,7 +310,10 @@ impl Model {
 
         let source = PlaylistTrackSource::PodcastUrl(episode_selected.url.clone());
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-            PlaylistAddTrack::new_single(u64::try_from(self.playlist.len()).unwrap(), source),
+            PlaylistAddTrack::new_single(
+                u64::try_from(self.playback.playlist.len()).unwrap(),
+                source,
+            ),
         )));
 
         Ok(())
@@ -330,7 +336,10 @@ impl Model {
                 .collect();
 
             self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-                PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+                PlaylistAddTrack::new_vec(
+                    u64::try_from(self.playback.playlist.len()).unwrap(),
+                    sources,
+                ),
             )));
 
             return Ok(());
@@ -353,7 +362,10 @@ impl Model {
         };
 
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-            PlaylistAddTrack::new_single(u64::try_from(self.playlist.len()).unwrap(), source),
+            PlaylistAddTrack::new_single(
+                u64::try_from(self.playback.playlist.len()).unwrap(),
+                source,
+            ),
         )));
 
         Ok(())
@@ -367,7 +379,10 @@ impl Model {
             .collect();
 
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-            PlaylistAddTrack::new_vec(u64::try_from(self.playlist.len()).unwrap(), sources),
+            PlaylistAddTrack::new_vec(
+                u64::try_from(self.playback.playlist.len()).unwrap(),
+                sources,
+            ),
         )));
     }
 
@@ -400,7 +415,7 @@ impl Model {
     /// Handle when a playlist has added a track
     pub fn handle_playlist_add(&mut self, items: PlaylistAddTrackInfo) -> Result<()> {
         // piggyback off-of the server side implementation for now by re-parsing everything.
-        self.playlist.add_tracks(
+        self.playback.playlist.add_tracks(
             PlaylistAddTrack {
                 at_index: items.at_index,
                 tracks: vec![items.trackid],
@@ -417,7 +432,7 @@ impl Model {
     pub fn handle_playlist_remove(&mut self, items: &PlaylistRemoveTrackInfo) -> Result<()> {
         let at_index = usize::try_from(items.at_index).unwrap();
         // verify that it is the track to be removed via id matching
-        let Some(track_at_idx) = self.playlist.tracks().get(at_index) else {
+        let Some(track_at_idx) = self.playback.playlist.tracks().get(at_index) else {
             // this should not happen as it is verified before the loop, but just in case
             bail!("Failed to get track at index \"{at_index}\"");
         };
@@ -443,8 +458,7 @@ impl Model {
             bail!("URI mismatch, expected \"{file_url}\" at \"{at_index}\" in request, found \"{id}\" in playlist");
         }
 
-        // piggyback off-of the server side implementation.
-        self.playlist.remove(at_index);
+        self.playback.playlist.remove_simple(at_index)?;
 
         self.playlist_sync();
 
@@ -453,7 +467,7 @@ impl Model {
 
     /// Handle when a playlist was cleared
     pub fn handle_playlist_clear(&mut self) {
-        self.playlist.clear();
+        self.playback.playlist.clear();
 
         self.playlist_sync();
     }
@@ -463,7 +477,7 @@ impl Model {
         let as_u8 = u8::try_from(loop_mode.mode).context("Failed to convert u32 to u8")?;
         let loop_mode =
             LoopMode::tryfrom_discriminant(as_u8).context("Failed to get LoopMode from u8")?;
-        self.playlist.set_loop_mode(loop_mode);
+        self.playback.playlist.set_loop_mode(loop_mode);
         self.config_server.write().settings.player.loop_mode = loop_mode;
         self.playlist_update_title();
         // Force a redraw as stream updates are not part of the "tick" event and so cant send "Msg"
@@ -480,7 +494,7 @@ impl Model {
         let index_b = usize::try_from(swapped_tracks.index_b)
             .context("Failed to convert index_b to usize")?;
 
-        self.playlist.swap(index_a, index_b)?;
+        self.playback.playlist.swap(index_a, index_b)?;
 
         self.playlist_sync();
 
@@ -491,21 +505,22 @@ impl Model {
     pub fn handle_playlist_shuffled(&mut self, shuffled: PlaylistShuffledInfo) -> Result<()> {
         let playlist_comp_selected_index = self.playlist_get_selected_index();
         // this might be fragile if there are multiple of the same track in the playlist as there is no unique identifier currently
-        let playlist_track_at_old_index = playlist_comp_selected_index
-            .and_then(|idx| self.playlist.tracks().get(idx))
+        let playlist_track_at_old_file = playlist_comp_selected_index
+            .and_then(|idx| self.playback.playlist.tracks().get(idx))
             .and_then(|track| track.file())
             .map(ToOwned::to_owned);
 
-        self.playlist
+        self.playback
             .load_from_grpc(shuffled.tracks, &self.podcast.db_podcast)?;
         self.playlist_sync();
 
         let found_new_index = self
+            .playback
             .playlist
             .tracks()
             .iter()
             .enumerate()
-            .find(|(_, track)| track.file() == playlist_track_at_old_index.as_deref());
+            .find(|(_, track)| track.file() == playlist_track_at_old_file.as_deref());
         if let Some((new_index, _)) = found_new_index {
             self.playlist_locate(new_index);
         }
@@ -514,23 +529,30 @@ impl Model {
     }
 
     /// Handle setting the current track index in the TUI playlist and selecting the proper list item
+    ///
+    /// Note: currently this function is called twice per track change, once for `UpdateEvents::TrackChanged` and once for `run_playback::GetProgress`
     pub fn handle_current_track_index(&mut self, current_track_index: usize, force_relocate: bool) {
-        let tui_old_current_index = self.playlist.get_current_track_index();
+        let tui_old_current_index = self.playback.playlist.current_track_index();
         info!(
             "index from player is: {current_track_index:?}, index in tui is: {tui_old_current_index:?}"
         );
-        self.playlist.clear_current_track();
-        self.playlist.set_current_track_index(current_track_index);
+        self.playback.clear_current_track();
+        let _ = self
+            .playback
+            .playlist
+            .set_current_track_index(current_track_index);
+        self.playback.set_current_track_from_playlist();
 
         let playlist_comp_selected_index = self.playlist_get_selected_index();
 
         // only re-select the current-track if the old selection was the old-current-track
-        if force_relocate || playlist_comp_selected_index.is_none_or(|v| v == tui_old_current_index)
+        if force_relocate
+            || (tui_old_current_index.is_some()
+                && playlist_comp_selected_index.is_none_or(|v| v == tui_old_current_index.unwrap()))
         {
             self.playlist_locate(current_track_index);
         }
 
-        self.current_song = self.playlist.current_track().cloned();
         self.update_layout_for_current_track();
         self.player_update_current_track_after();
 
@@ -544,7 +566,7 @@ impl Model {
     fn playlist_sync_podcasts(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.playlist.tracks().iter().enumerate() {
+        for (idx, record) in self.playback.playlist.tracks().iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -556,7 +578,7 @@ impl Model {
             if record.podcast_localfile.is_some() {
                 title = format!("[D] {title}");
             }
-            if idx == self.playlist.get_current_track_index() {
+            if Some(idx) == self.playback.playlist.current_track_index() {
                 title = format!(
                     "{}{title}",
                     self.config_tui
@@ -572,7 +594,7 @@ impl Model {
                 .add_col(TextSpan::new(duration_string.as_str()))
                 .add_col(TextSpan::new(title).bold());
         }
-        if self.playlist.is_empty() {
+        if self.playback.playlist.is_empty() {
             table.add_col(TextSpan::from("0"));
             table.add_col(TextSpan::from("empty playlist"));
         }
@@ -597,7 +619,7 @@ impl Model {
 
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.playlist.tracks().iter().enumerate() {
+        for (idx, record) in self.playback.playlist.tracks().iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -612,7 +634,7 @@ impl Model {
             let album = record.album().unwrap_or(UNKNOWN_ALBUM);
 
             // TODO: is there maybe a better option to do this on-demand instead of the whole playlist; like on draw-time?
-            if idx == self.playlist.get_current_track_index() {
+            if Some(idx) == self.playback.playlist.current_track_index() {
                 title = format!(
                     "{}{title}",
                     self.config_tui
@@ -632,7 +654,7 @@ impl Model {
                 .add_col(TextSpan::new(title).bold())
                 .add_col(TextSpan::new(album));
         }
-        if self.playlist.is_empty() {
+        if self.playback.playlist.is_empty() {
             table.add_col(TextSpan::from("0"));
             table.add_col(TextSpan::from("empty playlist"));
             table.add_col(TextSpan::from(""));
@@ -653,11 +675,11 @@ impl Model {
 
     /// Delete a track at `index` from the playlist
     pub fn playlist_delete_item(&mut self, index: usize) {
-        if self.playlist.is_empty() || index >= self.playlist.len() {
+        if self.playback.playlist.is_empty() || index >= self.playback.playlist.len() {
             return;
         }
 
-        let Some(item) = self.playlist.tracks().get(index) else {
+        let Some(item) = self.playback.playlist.tracks().get(index) else {
             return;
         };
 
@@ -680,7 +702,7 @@ impl Model {
 
     /// Clear a entire playlist
     pub fn playlist_clear(&mut self) {
-        if self.playlist.is_empty() {
+        if self.playback.playlist.is_empty() {
             return;
         }
 
@@ -698,7 +720,7 @@ impl Model {
     ///
     /// if `usize` cannot be converted to `u64`
     fn playlist_swap(&mut self, index_a: usize, index_b: usize) {
-        let len = self.playlist.tracks().len();
+        let len = self.playback.playlist.tracks().len();
         if index_a.max(index_b) >= len {
             error!(
                 "Index out-of-bounds, not executing swap: {}",
@@ -727,7 +749,7 @@ impl Model {
 
     /// Swap the given index downwards, does nothing if out-of-bounds.
     pub fn playlist_swap_down(&mut self, index: usize) {
-        if index >= self.playlist.len().saturating_sub(1) {
+        if index >= self.playback.playlist.len().saturating_sub(1) {
             return;
         }
 
@@ -739,7 +761,13 @@ impl Model {
     }
 
     pub fn playlist_update_title(&mut self) {
-        let duration = self.playlist.tracks().iter().map(Track::duration).sum();
+        let duration = self
+            .playback
+            .playlist
+            .tracks()
+            .iter()
+            .map(Track::duration)
+            .sum();
         let display_symbol = self
             .config_tui
             .read()
@@ -751,7 +779,7 @@ impl Model {
         let loop_mode = self.config_server.read().settings.player.loop_mode;
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} \u{251c}\u{2500}",
-            self.playlist.len(),
+            self.playback.playlist.len(),
             Track::duration_formatted_short(&duration),
             loop_mode.display(display_symbol),
         );
@@ -766,7 +794,7 @@ impl Model {
 
     /// Play the currently selected item in the playlist list
     pub fn playlist_play_selected(&mut self, index: usize) {
-        let Some(track) = self.playlist.tracks().get(index) else {
+        let Some(track) = self.playback.playlist.tracks().get(index) else {
             error!("Track {index} not in playlist!");
             return;
         };
@@ -794,7 +822,7 @@ impl Model {
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {
-        let filtered_music = Model::update_search(self.playlist.tracks(), input);
+        let filtered_music = Model::update_search(self.playback.playlist.tracks(), input);
         self.general_search_update_show(Model::build_table(filtered_music));
     }
 
@@ -893,7 +921,8 @@ impl Model {
 
     /// Save the current playlist as m3u in the given full path
     pub fn playlist_save_m3u(&mut self, filename: &Path) -> Result<()> {
-        self.playlist.save_m3u(filename)?;
+        // TODO: move this to server?
+        self.playback.playlist.save_m3u(filename)?;
 
         self.library_reload_with_node_focus(Some(&filename.to_string_lossy()));
 

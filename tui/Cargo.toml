@@ -22,7 +22,6 @@ doctest = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 termusic-lib.workspace = true
-termusic-playback.workspace = true # = {path = "playback/"}
 anyhow.workspace = true
 bytes.workspace = true
 clap.workspace = true
@@ -59,6 +58,7 @@ futures-util.workspace = true
 reqwest.workspace = true
 parking_lot.workspace = true
 alphanumeric-sort.workspace = true
+pathdiff.workspace = true
 
 
 [features]

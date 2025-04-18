@@ -106,7 +106,7 @@ impl Model {
             return true;
         }
 
-        if self.playlist.is_stopped() {
+        if self.playback.is_stopped() {
             return true;
         }
 
@@ -130,7 +130,7 @@ impl Model {
         if self.should_not_show_photo() {
             return Ok(());
         }
-        let Some(track) = self.playlist.current_track() else {
+        let Some(track) = self.playback.current_track() else {
             return Ok(());
         };
 
