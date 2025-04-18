@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use parking_lot::RwLock;
-pub use playlist::{Playlist, Status};
+pub use playlist::{Playlist, RunningStatus};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::library_db::DataBase;
@@ -274,7 +274,7 @@ impl GeneralPlayer {
     pub fn start_play(&mut self) {
         let mut playlist = self.playlist.write();
         if playlist.is_stopped() | playlist.is_paused() {
-            playlist.set_status(Status::Running);
+            playlist.set_status(RunningStatus::Running);
         }
 
         playlist.proceed();
@@ -373,11 +373,11 @@ impl GeneralPlayer {
         // see https://github.com/rust-lang/rust/issues/93883
         let status = self.playlist.read().status();
         match status {
-            Status::Running => {
+            RunningStatus::Running => {
                 <Self as PlayerTrait>::pause(self);
             }
-            Status::Stopped => {}
-            Status::Paused => {
+            RunningStatus::Stopped => {}
+            RunningStatus::Paused => {
                 <Self as PlayerTrait>::resume(self);
             }
         }
@@ -389,10 +389,10 @@ impl GeneralPlayer {
         // see https://github.com/rust-lang/rust/issues/93883
         let status = self.playlist.read().status();
         match status {
-            Status::Running => {
+            RunningStatus::Running => {
                 <Self as PlayerTrait>::pause(self);
             }
-            Status::Stopped | Status::Paused => {}
+            RunningStatus::Stopped | RunningStatus::Paused => {}
         }
     }
 
@@ -402,8 +402,8 @@ impl GeneralPlayer {
         // see https://github.com/rust-lang/rust/issues/93883
         let status = self.playlist.read().status();
         match status {
-            Status::Running | Status::Stopped => {}
-            Status::Paused => {
+            RunningStatus::Running | RunningStatus::Stopped => {}
+            RunningStatus::Paused => {
                 <Self as PlayerTrait>::resume(self);
             }
         }
@@ -557,7 +557,7 @@ impl PlayerTrait for GeneralPlayer {
     }
     /// This function should not be used directly, use GeneralPlayer::pause
     fn pause(&mut self) {
-        self.playlist.write().set_status(Status::Paused);
+        self.playlist.write().set_status(RunningStatus::Paused);
         self.get_player_mut().pause();
         if let Some(ref mut mpris) = self.mpris {
             mpris.pause();
@@ -567,12 +567,12 @@ impl PlayerTrait for GeneralPlayer {
         }
 
         self.send_stream_ev(UpdateEvents::PlayStateChanged {
-            playing: Status::Paused.as_u32(),
+            playing: RunningStatus::Paused.as_u32(),
         });
     }
     /// This function should not be used directly, use GeneralPlayer::play
     fn resume(&mut self) {
-        self.playlist.write().set_status(Status::Running);
+        self.playlist.write().set_status(RunningStatus::Running);
         self.get_player_mut().resume();
         if let Some(ref mut mpris) = self.mpris {
             mpris.resume();
@@ -583,7 +583,7 @@ impl PlayerTrait for GeneralPlayer {
         }
 
         self.send_stream_ev(UpdateEvents::PlayStateChanged {
-            playing: Status::Running.as_u32(),
+            playing: RunningStatus::Running.as_u32(),
         });
     }
     fn is_paused(&self) -> bool {

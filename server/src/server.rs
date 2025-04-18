@@ -19,7 +19,7 @@ use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Status, VolumeSigned,
+    PlayerTrait, Playlist, RunningStatus, SharedPlaylist, SpeedSigned, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::sync::{broadcast, oneshot};
@@ -293,7 +293,7 @@ fn player_loop(
                 let mut playlist = player.playlist.read();
                 p_tick.status = playlist.status().as_u32();
                 // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore
-                if playlist.status() == Status::Stopped {
+                if playlist.status() == RunningStatus::Stopped {
                     if playlist.is_empty() {
                         continue;
                     }

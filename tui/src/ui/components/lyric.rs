@@ -53,7 +53,7 @@ impl Lyric {
                 .highlighted_str(&config.settings.theme.style.playlist.highlight_symbol)
                 .text_rows(&[TextSpan::new(format!(
                     "{}.",
-                    termusicplayback::Status::Stopped
+                    termusicplayback::RunningStatus::Stopped
                 ))])
         };
 

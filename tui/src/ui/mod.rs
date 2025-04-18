@@ -41,7 +41,7 @@ use termusiclib::player::StreamUpdates;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 pub use termusiclib::types::*;
-use termusicplayback::Status;
+use termusicplayback::RunningStatus;
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
@@ -177,7 +177,7 @@ impl UI {
     }
 
     /// Handle running [`Status`] having possibly changed.
-    fn handle_status(&mut self, new_status: Status) {
+    fn handle_status(&mut self, new_status: RunningStatus) {
         let old_status = self.model.playlist.status();
         // nothing needs to be done as the status is the same
         if new_status == old_status {
@@ -187,19 +187,19 @@ impl UI {
         self.model.playlist.set_status(new_status);
 
         match new_status {
-            Status::Running => {
+            RunningStatus::Running => {
                 // This is to show the first album photo
-                if old_status == Status::Stopped {
+                if old_status == RunningStatus::Stopped {
                     self.model.player_update_current_track_after();
                 }
             }
-            Status::Stopped => {
+            RunningStatus::Stopped => {
                 // This is to clear the photo shown when stopped
                 if self.model.playlist.is_empty() {
                     self.model.player_update_current_track_after();
                 }
             }
-            Status::Paused => {}
+            RunningStatus::Paused => {}
         }
     }
 
@@ -233,7 +233,7 @@ impl UI {
 
                     self.model.lyric_update_for_radio(response.radio_title);
 
-                    self.handle_status(Status::from_u32(response.status));
+                    self.handle_status(RunningStatus::from_u32(response.status));
                 }
 
                 TuiCmd::CycleLoop => {
@@ -362,7 +362,9 @@ impl UI {
                     self.model.config_server.write().settings.player.speed = speed;
                 }
                 UpdateEvents::PlayStateChanged { playing } => {
-                    self.model.playlist.set_status(Status::from_u32(playing));
+                    self.model
+                        .playlist
+                        .set_status(RunningStatus::from_u32(playing));
                     self.model.progress_update_title();
                 }
                 UpdateEvents::TrackChanged(track_changed_info) => {
