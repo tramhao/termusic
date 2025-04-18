@@ -28,27 +28,31 @@ pub struct ThemeWrap {
 impl ThemeWrap {
     #[must_use]
     pub fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
-        match color {
-            ColorTermusic::Reset => Color::Reset,
-            ColorTermusic::Foreground => self.theme.primary.foreground.into(),
-            ColorTermusic::Background => self.theme.primary.background.into(),
-            ColorTermusic::Black => self.theme.normal.black.into(),
-            ColorTermusic::Red => self.theme.normal.red.into(),
-            ColorTermusic::Green => self.theme.normal.green.into(),
-            ColorTermusic::Yellow => self.theme.normal.yellow.into(),
-            ColorTermusic::Blue => self.theme.normal.blue.into(),
-            ColorTermusic::Magenta => self.theme.normal.magenta.into(),
-            ColorTermusic::Cyan => self.theme.normal.cyan.into(),
-            ColorTermusic::White => self.theme.normal.white.into(),
-            ColorTermusic::LightBlack => self.theme.bright.black.into(),
-            ColorTermusic::LightRed => self.theme.bright.red.into(),
-            ColorTermusic::LightGreen => self.theme.bright.green.into(),
-            ColorTermusic::LightYellow => self.theme.bright.yellow.into(),
-            ColorTermusic::LightBlue => self.theme.bright.blue.into(),
-            ColorTermusic::LightMagenta => self.theme.bright.magenta.into(),
-            ColorTermusic::LightCyan => self.theme.bright.cyan.into(),
-            ColorTermusic::LightWhite => self.theme.bright.white.into(),
-        }
+        // first step to get the theme path of what color to use
+        let val = match color {
+            ColorTermusic::Reset => return Color::Reset,
+            ColorTermusic::Foreground => &self.theme.primary.foreground,
+            ColorTermusic::Background => &self.theme.primary.background,
+            ColorTermusic::Black => &self.theme.normal.black,
+            ColorTermusic::Red => &self.theme.normal.red,
+            ColorTermusic::Green => &self.theme.normal.green,
+            ColorTermusic::Yellow => &self.theme.normal.yellow,
+            ColorTermusic::Blue => &self.theme.normal.blue,
+            ColorTermusic::Magenta => &self.theme.normal.magenta,
+            ColorTermusic::Cyan => &self.theme.normal.cyan,
+            ColorTermusic::White => &self.theme.normal.white,
+            ColorTermusic::LightBlack => &self.theme.bright.black,
+            ColorTermusic::LightRed => &self.theme.bright.red,
+            ColorTermusic::LightGreen => &self.theme.bright.green,
+            ColorTermusic::LightYellow => &self.theme.bright.yellow,
+            ColorTermusic::LightBlue => &self.theme.bright.blue,
+            ColorTermusic::LightMagenta => &self.theme.bright.magenta,
+            ColorTermusic::LightCyan => &self.theme.bright.cyan,
+            ColorTermusic::LightWhite => &self.theme.bright.white,
+        };
+
+        // finally resolve if that theme color is native or a rgb(hex) value
+        val.resolve_color(color)
     }
 
     #[inline]
@@ -181,6 +185,105 @@ impl ThemeWrap {
 /// Error for when [`ThemeColor`] parsing fails
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ThemeColorParseError {
+    #[error("Failed to parse hex color: {0}")]
+    HexParseError(#[from] ThemeColorHexParseError),
+    #[error("Failed to parse color, expected prefix \"#\" or \"0x\" and length 6 or \"native\"")]
+    UnknownValue(String),
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(try_from = "String")]
+#[serde(into = "String")]
+pub enum ThemeColor {
+    /// Native theme, let the terminal decide the colors
+    Native,
+    /// Set explicit RGB colors
+    Hex(ThemeColorHex),
+}
+
+impl ThemeColor {
+    /// Create a new hex instance with the given values.
+    ///
+    /// Those values are explicit as this means it can be known to work (unlike a string).
+    #[must_use]
+    pub const fn new_hex(r: u8, g: u8, b: u8) -> Self {
+        Self::Hex(ThemeColorHex::new(r, g, b))
+    }
+
+    /// Create a new instance for native colors.
+    #[must_use]
+    pub const fn new_native() -> Self {
+        Self::Native
+    }
+
+    /// Try to parse a hex or "native" string.
+    fn from_string(val: &str) -> Result<Self, ThemeColorParseError> {
+        if val == "native" {
+            return Ok(Self::Native);
+        }
+
+        let res = match ThemeColorHex::try_from(val) {
+            Ok(v) => v,
+            Err(err) => {
+                return Err(match err {
+                    // map unknown prefix error to more descriptive error for native / hex
+                    ThemeColorHexParseError::UnknownPrefix(_) => {
+                        ThemeColorParseError::UnknownValue(val.to_string())
+                    }
+                    v => ThemeColorParseError::HexParseError(v),
+                });
+            }
+        };
+
+        Ok(Self::Hex(res))
+    }
+
+    /// Output the current value as its string representation
+    #[allow(clippy::inherent_to_string)] // not wanting to implement "Display"
+    fn to_string(self) -> String {
+        match self {
+            ThemeColor::Native => "native".to_string(),
+            ThemeColor::Hex(theme_color_hex) => theme_color_hex.to_hex(),
+        }
+    }
+
+    /// Resolve the current instance to either native coloring (requires `style`) or a rgb color
+    #[must_use]
+    pub fn resolve_color(&self, style: ColorTermusic) -> Color {
+        let hex = match self {
+            ThemeColor::Native => return style.into(),
+            ThemeColor::Hex(theme_color_hex) => theme_color_hex,
+        };
+
+        (*hex).into()
+    }
+}
+
+impl TryFrom<String> for ThemeColor {
+    type Error = ThemeColorParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::from_string(&value)
+    }
+}
+
+impl TryFrom<&str> for ThemeColor {
+    type Error = ThemeColorParseError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_string(value)
+    }
+}
+
+impl From<ThemeColor> for String {
+    fn from(val: ThemeColor) -> Self {
+        ThemeColor::to_string(val)
+    }
+}
+
+/// Error for when [`ThemeColor`] parsing fails
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
+pub enum ThemeColorHexParseError {
     #[error("Failed to parse color because of {0}")]
     ParseIntError(#[from] ParseIntError),
     #[error("Failed to parse color because of incorrect length {0}, expected prefix \"#\" or \"0x\" and length 6")]
@@ -207,22 +310,24 @@ impl ThemeColorHex {
     }
 
     /// Convert from a prefix + 6 length string
-    pub fn from_hex(val: &str) -> Result<Self, ThemeColorParseError> {
+    pub fn from_hex(val: &str) -> Result<Self, ThemeColorHexParseError> {
         let Some(without_prefix) = val.strip_prefix('#').or(val.strip_prefix("0x")) else {
-            return Err(ThemeColorParseError::UnknownPrefix(val.to_string()));
+            return Err(ThemeColorHexParseError::UnknownPrefix(val.to_string()));
         };
 
         // not in a format we support
         if without_prefix.len() != 6 {
-            return Err(ThemeColorParseError::IncorrectLength(without_prefix.len()));
+            return Err(ThemeColorHexParseError::IncorrectLength(
+                without_prefix.len(),
+            ));
         }
 
         let r = u8::from_str_radix(&without_prefix[0..=1], 16)
-            .map_err(ThemeColorParseError::ParseIntError)?;
+            .map_err(ThemeColorHexParseError::ParseIntError)?;
         let g = u8::from_str_radix(&without_prefix[2..=3], 16)
-            .map_err(ThemeColorParseError::ParseIntError)?;
+            .map_err(ThemeColorHexParseError::ParseIntError)?;
         let b = u8::from_str_radix(&without_prefix[4..=5], 16)
-            .map_err(ThemeColorParseError::ParseIntError)?;
+            .map_err(ThemeColorHexParseError::ParseIntError)?;
 
         Ok(Self { r, g, b })
     }
@@ -236,7 +341,7 @@ impl ThemeColorHex {
 }
 
 impl TryFrom<String> for ThemeColorHex {
-    type Error = ThemeColorParseError;
+    type Error = ThemeColorHexParseError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_hex(&value)
@@ -244,7 +349,7 @@ impl TryFrom<String> for ThemeColorHex {
 }
 
 impl TryFrom<&str> for ThemeColorHex {
-    type Error = ThemeColorParseError;
+    type Error = ThemeColorHexParseError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::from_hex(value)
@@ -306,6 +411,20 @@ impl ThemeColors {
             ..Default::default()
         }
     }
+
+    /// Get a full native theme.
+    #[must_use]
+    pub fn full_native() -> Self {
+        Self {
+            file_name: None,
+            name: "Native".to_string(),
+            author: "Termusic Developers".to_string(),
+            primary: ThemePrimary::native(),
+            cursor: ThemeCursor::native(),
+            normal: ThemeNormal::native(),
+            bright: ThemeBright::native(),
+        }
+    }
 }
 
 /// Error for when [`ThemeColors`] parsing fails
@@ -348,15 +467,24 @@ impl ThemeColors {
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ThemePrimary {
-    pub background: ThemeColorHex,
-    pub foreground: ThemeColorHex,
+    pub background: ThemeColor,
+    pub foreground: ThemeColor,
 }
 
 impl Default for ThemePrimary {
     fn default() -> Self {
         Self {
-            background: ThemeColorHex::new(0x10, 0x14, 0x21),
-            foreground: ThemeColorHex::new(0xff, 0xfb, 0xf6),
+            background: ThemeColor::new_hex(0x10, 0x14, 0x21),
+            foreground: ThemeColor::new_hex(0xff, 0xfb, 0xf6),
+        }
+    }
+}
+
+impl ThemePrimary {
+    fn native() -> Self {
+        Self {
+            background: ThemeColor::new_native(),
+            foreground: ThemeColor::new_native(),
         }
     }
 }
@@ -375,15 +503,24 @@ impl TryFrom<YAMLThemePrimary> for ThemePrimary {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeCursor {
-    pub text: ThemeColorHex,
-    pub cursor: ThemeColorHex,
+    pub text: ThemeColor,
+    pub cursor: ThemeColor,
 }
 
 impl Default for ThemeCursor {
     fn default() -> Self {
         Self {
-            text: ThemeColorHex::new(0x1e, 0x1e, 0x1e),
+            text: ThemeColor::new_hex(0x1e, 0x1e, 0x1e),
             cursor: default_fff(),
+        }
+    }
+}
+
+impl ThemeCursor {
+    fn native() -> Self {
+        Self {
+            text: ThemeColor::new_native(),
+            cursor: ThemeColor::new_native(),
         }
     }
 }
@@ -402,27 +539,42 @@ impl TryFrom<YAMLThemeCursor> for ThemeCursor {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeNormal {
-    pub black: ThemeColorHex,
-    pub red: ThemeColorHex,
-    pub green: ThemeColorHex,
-    pub yellow: ThemeColorHex,
-    pub blue: ThemeColorHex,
-    pub magenta: ThemeColorHex,
-    pub cyan: ThemeColorHex,
-    pub white: ThemeColorHex,
+    pub black: ThemeColor,
+    pub red: ThemeColor,
+    pub green: ThemeColor,
+    pub yellow: ThemeColor,
+    pub blue: ThemeColor,
+    pub magenta: ThemeColor,
+    pub cyan: ThemeColor,
+    pub white: ThemeColor,
 }
 
 impl Default for ThemeNormal {
     fn default() -> Self {
         Self {
-            black: ThemeColorHex::new(0x2e, 0x2e, 0x2e),
-            red: ThemeColorHex::new(0xeb, 0x41, 0x29),
-            green: ThemeColorHex::new(0xab, 0xe0, 0x47),
-            yellow: ThemeColorHex::new(0xf6, 0xc7, 0x44),
-            blue: ThemeColorHex::new(0x47, 0xa0, 0xf3),
-            magenta: ThemeColorHex::new(0x7b, 0x5c, 0xb0),
-            cyan: ThemeColorHex::new(0x64, 0xdb, 0xed),
-            white: ThemeColorHex::new(0xe5, 0xe9, 0xf0),
+            black: ThemeColor::new_hex(0x2e, 0x2e, 0x2e),
+            red: ThemeColor::new_hex(0xeb, 0x41, 0x29),
+            green: ThemeColor::new_hex(0xab, 0xe0, 0x47),
+            yellow: ThemeColor::new_hex(0xf6, 0xc7, 0x44),
+            blue: ThemeColor::new_hex(0x47, 0xa0, 0xf3),
+            magenta: ThemeColor::new_hex(0x7b, 0x5c, 0xb0),
+            cyan: ThemeColor::new_hex(0x64, 0xdb, 0xed),
+            white: ThemeColor::new_hex(0xe5, 0xe9, 0xf0),
+        }
+    }
+}
+
+impl ThemeNormal {
+    fn native() -> Self {
+        Self {
+            black: ThemeColor::new_native(),
+            red: ThemeColor::new_native(),
+            green: ThemeColor::new_native(),
+            yellow: ThemeColor::new_native(),
+            blue: ThemeColor::new_native(),
+            magenta: ThemeColor::new_native(),
+            cyan: ThemeColor::new_native(),
+            white: ThemeColor::new_native(),
         }
     }
 }
@@ -447,27 +599,42 @@ impl TryFrom<YAMLThemeNormal> for ThemeNormal {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ThemeBright {
-    pub black: ThemeColorHex,
-    pub red: ThemeColorHex,
-    pub green: ThemeColorHex,
-    pub yellow: ThemeColorHex,
-    pub blue: ThemeColorHex,
-    pub magenta: ThemeColorHex,
-    pub cyan: ThemeColorHex,
-    pub white: ThemeColorHex,
+    pub black: ThemeColor,
+    pub red: ThemeColor,
+    pub green: ThemeColor,
+    pub yellow: ThemeColor,
+    pub blue: ThemeColor,
+    pub magenta: ThemeColor,
+    pub cyan: ThemeColor,
+    pub white: ThemeColor,
 }
 
 impl Default for ThemeBright {
     fn default() -> Self {
         Self {
-            black: ThemeColorHex::new(0x56, 0x56, 0x56),
-            red: ThemeColorHex::new(0xec, 0x53, 0x57),
-            green: ThemeColorHex::new(0xc0, 0xe1, 0x7d),
-            yellow: ThemeColorHex::new(0xf9, 0xda, 0x6a),
-            blue: ThemeColorHex::new(0x49, 0xa4, 0xf8),
-            magenta: ThemeColorHex::new(0xa4, 0x7d, 0xe9),
-            cyan: ThemeColorHex::new(0x99, 0xfa, 0xf2),
+            black: ThemeColor::new_hex(0x56, 0x56, 0x56),
+            red: ThemeColor::new_hex(0xec, 0x53, 0x57),
+            green: ThemeColor::new_hex(0xc0, 0xe1, 0x7d),
+            yellow: ThemeColor::new_hex(0xf9, 0xda, 0x6a),
+            blue: ThemeColor::new_hex(0x49, 0xa4, 0xf8),
+            magenta: ThemeColor::new_hex(0xa4, 0x7d, 0xe9),
+            cyan: ThemeColor::new_hex(0x99, 0xfa, 0xf2),
             white: default_fff(),
+        }
+    }
+}
+
+impl ThemeBright {
+    fn native() -> Self {
+        Self {
+            black: ThemeColor::new_native(),
+            red: ThemeColor::new_native(),
+            green: ThemeColor::new_native(),
+            yellow: ThemeColor::new_native(),
+            blue: ThemeColor::new_native(),
+            magenta: ThemeColor::new_native(),
+            cyan: ThemeColor::new_native(),
+            white: ThemeColor::new_native(),
         }
     }
 }
@@ -500,13 +667,14 @@ fn default_author() -> String {
 }
 
 #[inline]
-fn default_fff() -> ThemeColorHex {
-    ThemeColorHex::new(0xFF, 0xFF, 0xFF)
+fn default_fff() -> ThemeColor {
+    ThemeColor::new_hex(0xFF, 0xFF, 0xFF)
 }
 
 mod v1_interop {
     use super::{
-        ThemeBright, ThemeColorHex, ThemeColors, ThemeCursor, ThemeNormal, ThemePrimary, ThemeWrap,
+        ThemeBright, ThemeColor, ThemeColorHex, ThemeColors, ThemeCursor, ThemeNormal,
+        ThemePrimary, ThemeWrap,
     };
     use crate::config::v1;
 
@@ -517,6 +685,12 @@ mod v1_interop {
                 g: value.g,
                 b: value.b,
             }
+        }
+    }
+
+    impl From<v1::AlacrittyColor> for ThemeColor {
+        fn from(value: v1::AlacrittyColor) -> Self {
+            Self::Hex(value.into())
         }
     }
 
@@ -620,6 +794,36 @@ mod tests {
     use super::ThemeColors;
 
     mod theme_color {
+        use super::super::ThemeColor;
+
+        #[test]
+        fn should_parse_hex() {
+            assert_eq!(
+                ThemeColor::new_hex(1, 2, 3),
+                ThemeColor::try_from("#010203").unwrap()
+            );
+            assert_eq!(
+                ThemeColor::new_hex(1, 2, 3),
+                ThemeColor::try_from("0x010203").unwrap()
+            );
+        }
+
+        #[test]
+        fn should_parse_native() {
+            assert_eq!(
+                ThemeColor::new_native(),
+                ThemeColor::try_from("native").unwrap()
+            );
+        }
+
+        #[test]
+        fn should_serialize() {
+            assert_eq!(ThemeColor::new_hex(1, 2, 3).to_string(), "#010203");
+            assert_eq!(ThemeColor::new_native().to_string(), "native");
+        }
+    }
+
+    mod theme_color_hex {
         use super::super::ThemeColorHex;
 
         #[test]
