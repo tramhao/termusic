@@ -5,9 +5,8 @@ use std::{fs::File, io::BufReader, num::ParseIntError, path::Path};
 use serde::{Deserialize, Serialize};
 use tuirealm::props::Color;
 
-use crate::config::{
-    v1::AlacrittyColor,
-    yaml_theme::{YAMLTheme, YAMLThemeBright, YAMLThemeCursor, YAMLThemeNormal, YAMLThemePrimary},
+use crate::config::yaml_theme::{
+    YAMLTheme, YAMLThemeBright, YAMLThemeCursor, YAMLThemeNormal, YAMLThemePrimary,
 };
 
 use styles::ColorTermusic;
@@ -249,16 +248,6 @@ impl TryFrom<&str> for ThemeColor {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::from_hex(value)
-    }
-}
-
-impl From<AlacrittyColor> for ThemeColor {
-    fn from(value: AlacrittyColor) -> Self {
-        Self {
-            r: value.r,
-            g: value.g,
-            b: value.b,
-        }
     }
 }
 
@@ -516,8 +505,20 @@ fn default_fff() -> ThemeColor {
 }
 
 mod v1_interop {
-    use super::{ThemeBright, ThemeColors, ThemeCursor, ThemeNormal, ThemePrimary, ThemeWrap};
+    use super::{
+        ThemeBright, ThemeColor, ThemeColors, ThemeCursor, ThemeNormal, ThemePrimary, ThemeWrap,
+    };
     use crate::config::v1;
+
+    impl From<v1::AlacrittyColor> for ThemeColor {
+        fn from(value: v1::AlacrittyColor) -> Self {
+            Self {
+                r: value.r,
+                g: value.g,
+                b: value.b,
+            }
+        }
+    }
 
     impl From<&v1::Alacritty> for ThemeColors {
         fn from(value: &v1::Alacritty) -> Self {
