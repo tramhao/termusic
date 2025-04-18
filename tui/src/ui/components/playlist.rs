@@ -529,6 +529,8 @@ impl Model {
     }
 
     /// Handle setting the current track index in the TUI playlist and selecting the proper list item
+    ///
+    /// Note: currently this function is called twice per track change, once for `UpdateEvents::TrackChanged` and once for `run_playback::GetProgress`
     pub fn handle_current_track_index(&mut self, current_track_index: usize, force_relocate: bool) {
         let tui_old_current_index = self.playback.playlist.current_track_index();
         info!(
