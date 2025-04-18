@@ -63,7 +63,7 @@ impl Model {
             "False"
         };
         let mut progress_title = String::new();
-        if let Some(track) = &self.current_song {
+        if let Some(track) = self.playback.current_track() {
             match track.media_type {
                 MediaType::Music | MediaType::LiveRadio => {
                     progress_title = format!(

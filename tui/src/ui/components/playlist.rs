@@ -551,8 +551,6 @@ impl Model {
             self.playlist_locate(current_track_index);
         }
 
-        // TODO: remove "current_song"
-        self.current_song = self.playback.current_track().cloned();
         self.update_layout_for_current_track();
         self.player_update_current_track_after();
 

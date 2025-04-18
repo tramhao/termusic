@@ -252,8 +252,6 @@ pub struct Model {
     pub podcast: PodcastWidgetData,
     pub config_editor: ConfigEditorData,
 
-    /// Clone of `playlist.current_track`, but kept around when playlist goes empty but song is still playing
-    pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
     pub time_pos: Duration,
     pub lyric_line: String,
@@ -419,7 +417,6 @@ impl Model {
             download_tracker: DownloadTracker::default(),
             playback: Playback::new(),
             cmd_to_server_tx,
-            current_song: None,
             xywh,
         }
     }

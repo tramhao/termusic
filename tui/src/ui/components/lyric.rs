@@ -258,14 +258,14 @@ impl Model {
             self.lyric_set_lyric("Stopped.");
             return;
         }
-        if let Some(song) = &self.current_song {
-            if MediaType::LiveRadio == song.media_type {
+        if let Some(track) = self.playback.current_track() {
+            if MediaType::LiveRadio == track.media_type {
                 return;
             }
 
             let mut line = String::new();
 
-            if let Some(l) = song.parsed_lyric() {
+            if let Some(l) = track.parsed_lyric() {
                 if l.captions.is_empty() {
                     self.lyric_set_lyric("No lyrics available.");
                     return;
@@ -311,7 +311,7 @@ impl Model {
     }
 
     pub fn lyric_cycle(&mut self) {
-        if let Some(track) = &mut self.current_song {
+        if let Some(track) = self.playback.current_track_mut() {
             if let Ok(f) = track.cycle_lyrics() {
                 let lang_ext = f.description.clone();
                 self.update_show_message_timeout(
@@ -332,7 +332,7 @@ impl Model {
 
     /// Update the Lyric Component's title.
     pub fn lyric_update_title(&mut self) {
-        let track = self.current_song.as_ref();
+        let track = self.playback.current_track();
 
         if self.playback.is_stopped() || track.is_none() {
             self.lyric_title_set(" No track is playing ".to_string());
