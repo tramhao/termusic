@@ -4793,7 +4793,6 @@ dependencies = [
  "shellexpand",
  "sysinfo",
  "termusic-lib",
- "termusic-playback",
  "textwrap",
  "tokio",
  "tokio-stream",
