@@ -12,7 +12,6 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
-use termusiclib::player;
 use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
@@ -23,6 +22,7 @@ use termusiclib::player::PlaylistSwapInfo;
 use termusiclib::player::PlaylistTracks;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
+use termusiclib::player::{self, RunningStatus};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::MediaType;
@@ -33,44 +33,6 @@ use termusiclib::{
 
 use crate::SharedPlaylist;
 use crate::StreamTX;
-
-#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
-pub enum RunningStatus {
-    #[default]
-    Stopped,
-    Running,
-    Paused,
-}
-
-impl RunningStatus {
-    #[must_use]
-    pub fn as_u32(&self) -> u32 {
-        match self {
-            RunningStatus::Stopped => 0,
-            RunningStatus::Running => 1,
-            RunningStatus::Paused => 2,
-        }
-    }
-
-    #[must_use]
-    pub fn from_u32(status: u32) -> Self {
-        match status {
-            1 => RunningStatus::Running,
-            2 => RunningStatus::Paused,
-            _ => RunningStatus::Stopped,
-        }
-    }
-}
-
-impl std::fmt::Display for RunningStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Running => write!(f, "Running"),
-            Self::Stopped => write!(f, "Stopped"),
-            Self::Paused => write!(f, "Paused"),
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct Playlist {

@@ -6,14 +6,16 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use parking_lot::RwLock;
-pub use playlist::{Playlist, RunningStatus};
+pub use playlist::Playlist;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::library_db::DataBase;
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
-use termusiclib::player::{PlayerProgress, PlayerTimeUnit, TrackChangedInfo, UpdateEvents};
+use termusiclib::player::{
+    PlayerProgress, PlayerTimeUnit, RunningStatus, TrackChangedInfo, UpdateEvents,
+};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;

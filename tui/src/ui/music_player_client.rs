@@ -6,9 +6,8 @@ use termusiclib::player::playlist_helpers::{
 };
 use termusiclib::player::{
     Empty, GetProgressResponse, PlayerProgress, PlaylistSwapTracks, PlaylistTracks,
-    PlaylistTracksToAdd, PlaylistTracksToRemove,
+    PlaylistTracksToAdd, PlaylistTracksToRemove, RunningStatus,
 };
-use termusicplayback::RunningStatus;
 use tokio_stream::{Stream, StreamExt as _};
 use tonic::transport::Channel;
 

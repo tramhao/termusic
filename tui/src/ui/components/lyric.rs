@@ -2,6 +2,7 @@ use std::sync::LazyLock;
 
 use crate::ui::{model::TermusicLayout, Model};
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, LyricMsg, Msg};
@@ -51,10 +52,7 @@ impl Lyric {
                 // .wrap(true)
                 .step(4)
                 .highlighted_str(&config.settings.theme.style.playlist.highlight_symbol)
-                .text_rows(&[TextSpan::new(format!(
-                    "{}.",
-                    termusicplayback::RunningStatus::Stopped
-                ))])
+                .text_rows(&[TextSpan::new(format!("{}.", RunningStatus::Stopped))])
         };
 
         Self { component, config }

@@ -14,12 +14,12 @@ use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulte
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
 use termusiclib::player::music_player_server::MusicPlayerServer;
-use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime};
+use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
 use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerTrait, Playlist, RunningStatus, SharedPlaylist, SpeedSigned, VolumeSigned,
+    PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::sync::{broadcast, oneshot};
