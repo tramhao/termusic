@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use tuirealm::props::Color;
 
 /// All values correspond to the Theme's selected color for that
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
@@ -55,6 +56,32 @@ impl ColorTermusic {
     #[must_use]
     pub const fn as_usize(self) -> usize {
         self as usize
+    }
+}
+
+impl From<ColorTermusic> for Color {
+    fn from(value: ColorTermusic) -> Self {
+        match value {
+            ColorTermusic::Reset | ColorTermusic::Foreground | ColorTermusic::Background => {
+                Color::Reset
+            }
+            ColorTermusic::Black => Color::Black,
+            ColorTermusic::Red => Color::Red,
+            ColorTermusic::Green => Color::Green,
+            ColorTermusic::Yellow => Color::Yellow,
+            ColorTermusic::Blue => Color::Blue,
+            ColorTermusic::Magenta => Color::Magenta,
+            ColorTermusic::Cyan => Color::Cyan,
+            ColorTermusic::White => Color::Gray,
+            ColorTermusic::LightBlack => Color::DarkGray,
+            ColorTermusic::LightRed => Color::LightRed,
+            ColorTermusic::LightGreen => Color::LightGreen,
+            ColorTermusic::LightYellow => Color::LightYellow,
+            ColorTermusic::LightBlue => Color::LightBlue,
+            ColorTermusic::LightMagenta => Color::LightMagenta,
+            ColorTermusic::LightCyan => Color::LightCyan,
+            ColorTermusic::LightWhite => Color::White,
+        }
     }
 }
 
