@@ -136,7 +136,7 @@ impl Model {
         let mut need_update = false;
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
-        if let Some(track) = self.playlist.current_track().cloned() {
+        if let Some(track) = self.playback.current_track() {
             if MediaType::Podcast == track.media_type {
                 if let Some(file) = track.file() {
                     'outer: for pod in &self.podcast.podcasts {
@@ -254,7 +254,7 @@ impl Model {
             }
             return;
         }
-        if self.playlist.is_stopped() {
+        if self.playback.is_stopped() {
             self.lyric_set_lyric("Stopped.");
             return;
         }
@@ -282,7 +282,7 @@ impl Model {
     }
 
     pub fn lyric_update_for_radio<T: AsRef<str>>(&mut self, radio_title: T) {
-        if let Some(song) = self.playlist.current_track() {
+        if let Some(song) = self.playback.current_track() {
             if MediaType::LiveRadio == song.media_type {
                 let radio_title = radio_title.as_ref();
                 if radio_title.is_empty() {
@@ -323,7 +323,7 @@ impl Model {
         }
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
-        if let Some(track) = self.playlist.current_track_as_mut() {
+        if let Some(track) = self.playback.current_track_mut() {
             if let Err(e) = track.adjust_lyric_delay(self.time_pos, offset) {
                 self.mount_error_popup(e.context("adjust lyric delay"));
             }
@@ -334,7 +334,7 @@ impl Model {
     pub fn lyric_update_title(&mut self) {
         let track = self.current_song.as_ref();
 
-        if self.playlist.is_stopped() || track.is_none() {
+        if self.playback.is_stopped() || track.is_none() {
             self.lyric_title_set(" No track is playing ".to_string());
             return;
         }

@@ -68,7 +68,7 @@ impl Model {
                 MediaType::Music | MediaType::LiveRadio => {
                     progress_title = format!(
                         " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.playlist.status(),
+                        self.playback.status(),
                         config_server.settings.player.volume,
                         config_server.settings.player.speed as f32 / 10.0,
                         gapless,
@@ -77,7 +77,7 @@ impl Model {
                 MediaType::Podcast => {
                     progress_title = format!(
                         " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.playlist.status(),
+                        self.playback.status(),
                         track.title().unwrap_or("Unknown title"),
                         config_server.settings.player.volume,
                         config_server.settings.player.speed as f32 / 10.0,

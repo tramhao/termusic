@@ -920,7 +920,7 @@ impl Model {
         if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
-        if let Some(track) = self.playlist.current_track() {
+        if let Some(track) = self.playback.current_track() {
             if MediaType::Podcast == track.media_type {
                 if let Some(url) = track.file() {
                     'outer: for pod in &mut self.podcast.podcasts {

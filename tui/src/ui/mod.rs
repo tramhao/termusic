@@ -178,13 +178,13 @@ impl UI {
 
     /// Handle running [`Status`] having possibly changed.
     fn handle_status(&mut self, new_status: RunningStatus) {
-        let old_status = self.model.playlist.status();
+        let old_status = self.model.playback.status();
         // nothing needs to be done as the status is the same
         if new_status == old_status {
             return;
         }
 
-        self.model.playlist.set_status(new_status);
+        self.model.playback.set_status(new_status);
 
         match new_status {
             RunningStatus::Running => {
@@ -195,7 +195,7 @@ impl UI {
             }
             RunningStatus::Stopped => {
                 // This is to clear the photo shown when stopped
-                if self.model.playlist.is_empty() {
+                if self.model.playback.playlist.is_empty() {
                     self.model.player_update_current_track_after();
                 }
             }
@@ -209,12 +209,12 @@ impl UI {
             match cmd {
                 TuiCmd::TogglePause => {
                     let status = self.playback.toggle_pause().await?;
-                    self.model.playlist.set_status(status);
+                    self.model.playback.set_status(status);
                     self.model.progress_update_title();
                 }
                 TuiCmd::SkipNext => {
                     self.playback.skip_next().await?;
-                    self.model.playlist.clear_current_track();
+                    self.model.playback.clear_current_track();
                 }
                 TuiCmd::SkipPrevious => self.playback.skip_previous().await?,
                 TuiCmd::GetProgress => {
@@ -363,7 +363,7 @@ impl UI {
                 }
                 UpdateEvents::PlayStateChanged { playing } => {
                     self.model
-                        .playlist
+                        .playback
                         .set_status(RunningStatus::from_u32(playing));
                     self.model.progress_update_title();
                 }
@@ -428,7 +428,7 @@ impl UI {
         let tracks = self.playback.get_playlist().await?;
         let current_track_index = tracks.current_track_index;
         self.model
-            .playlist
+            .playback
             .load_from_grpc(tracks, &self.model.podcast.db_podcast)?;
 
         self.model.playlist_sync();

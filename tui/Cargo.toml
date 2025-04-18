@@ -59,6 +59,7 @@ futures-util.workspace = true
 reqwest.workspace = true
 parking_lot.workspace = true
 alphanumeric-sort.workspace = true
+pathdiff.workspace = true
 
 
 [features]

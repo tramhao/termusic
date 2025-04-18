@@ -846,7 +846,7 @@ impl Model {
             PLMsg::LoopModeCycle => {
                 self.command(TuiCmd::CycleLoop);
                 self.config_server.write().settings.player.loop_mode =
-                    self.playlist.cycle_loop_mode();
+                    self.playback.playlist.cycle_loop_mode();
                 self.playlist_update_title();
             }
             PLMsg::PlaylistTableBlurDown => match self.layout {
@@ -885,7 +885,7 @@ impl Model {
 
     // show a popup for playing song
     pub fn update_playing_song(&mut self) {
-        if let Some(track) = self.playlist.current_track() {
+        if let Some(track) = self.playback.current_track() {
             if self.layout == TermusicLayout::Podcast {
                 let title = track.title().unwrap_or("Unknown Episode");
                 self.update_show_message_timeout("Currently Playing", title, None);
@@ -925,7 +925,7 @@ impl Model {
     }
 
     pub fn update_layout_for_current_track(&mut self) {
-        if let Some(track) = self.playlist.current_track() {
+        if let Some(track) = self.playback.current_track() {
             match track.media_type {
                 MediaType::Podcast => {
                     if self.layout == TermusicLayout::Podcast {
