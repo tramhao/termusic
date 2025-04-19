@@ -119,8 +119,8 @@ impl Sink {
         let source = source
             .track_position()
             .custom_speed(1.0)
-            .pausable(false)
             .amplify(1.0)
+            .pausable(false)
             .skippable()
             // as of rodio 0.20.x, "stoppable" is the same as "skippable"
             // .stoppable()
@@ -153,9 +153,8 @@ impl Sink {
                     *controls.position.write() = src.inner().inner().inner().inner().get_pos();
 
                     let amp = src.inner_mut();
-                    amp.set_factor(*controls.volume.lock());
-                    amp.inner_mut()
-                        .set_paused(controls.pause.load(Ordering::SeqCst));
+                    amp.inner_mut().set_factor(*controls.volume.lock());
+                    amp.set_paused(controls.pause.load(Ordering::SeqCst));
 
                     amp.inner_mut()
                         .inner_mut()
