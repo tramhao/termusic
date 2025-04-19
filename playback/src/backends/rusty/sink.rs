@@ -125,11 +125,9 @@ impl Sink {
             // as of rodio 0.20.x, "stoppable" is the same as "skippable"
             // .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
-                progress_tx
-                    .send(PlayerInternalCmd::Progress(
-                        src.inner().inner().inner().inner().get_pos(),
-                    ))
-                    .ok();
+                let _ = progress_tx.send(PlayerInternalCmd::Progress(
+                    src.inner().inner().inner().inner().get_pos(),
+                ));
             })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
