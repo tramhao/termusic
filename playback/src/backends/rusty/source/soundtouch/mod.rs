@@ -3,6 +3,7 @@ use std::{collections::VecDeque, time::Duration};
 use rodio::Source;
 use soundtouch::{Setting, SoundTouch};
 
+/// Modify samples to sound similar as 1.0 speed when sped-up or slowed-down via [`::soundtouch`] (via `libSoundTouch`)
 pub fn soundtouch<I>(input: I, rate: f32) -> SoundTouchSource<I>
 where
     I: Source<Item = f32>,
@@ -107,6 +108,18 @@ impl<I> SoundTouchSource<I>
 where
     I: Source<Item = f32>,
 {
+    /// Returns a reference to the inner source.
+    #[inline]
+    pub fn inner(&self) -> &I {
+        &self.input
+    }
+
+    /// Returns a mutable reference to the inner source.
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut I {
+        &mut self.input
+    }
+
     /// Modifies the speed factor.
     #[inline]
     pub fn set_factor(&mut self, factor: f64) {
