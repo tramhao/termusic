@@ -114,13 +114,11 @@ impl Sink {
         }
 
         let controls = self.controls.clone();
-        #[cfg(feature = "rusty-soundtouch")]
-        let controls_tempo = self.controls.clone();
 
         let progress_tx = self.picmd_tx.clone();
         let source = source
             .track_position()
-            .speed(1.0)
+            .custom_speed(1.0)
             .pausable(false)
             .amplify(1.0)
             .skippable()
@@ -152,30 +150,18 @@ impl Sink {
                             *controls.position.write() = Duration::ZERO;
                         }
                     }
-                    *controls.position.write() =
-                        src.inner().inner().inner().inner().get_pos();
+                    *controls.position.write() = src.inner().inner().inner().inner().get_pos();
 
                     let amp = src.inner_mut();
                     amp.set_factor(*controls.volume.lock());
                     amp.inner_mut()
                         .set_paused(controls.pause.load(Ordering::SeqCst));
 
-                    #[cfg(not(feature = "rusty-soundtouch"))]
-                    {
-                        amp.inner_mut()
-                            .inner_mut()
-                            .set_factor(*controls.speed.lock());
-                    }
+                    amp.inner_mut()
+                        .inner_mut()
+                        .set_factor(*controls.speed.lock());
                 }
             });
-
-        #[cfg(feature = "rusty-soundtouch")]
-        let source =
-            source
-                .soundtouch(1.0)
-                .periodic_access(Duration::from_millis(500), move |src| {
-                    src.set_factor(f64::from(*controls_tempo.speed.lock()));
-                });
 
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
