@@ -148,6 +148,8 @@ impl Sink {
                             *to_clear -= 1;
                             // reset position to be at 0, otherwise the position could be stale if there is no new source
                             *controls.position.write() = Duration::ZERO;
+
+                            return;
                         }
                     }
                     *controls.position.write() = src.inner().inner().inner().inner().get_pos();
