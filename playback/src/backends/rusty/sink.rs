@@ -6,10 +6,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use parking_lot::{Mutex, RwLock};
-use rodio::cpal::FromSample;
-use rodio::{queue, source::Done, Sample, Source};
+use rodio::{queue, source::Done, Source};
 use rodio::{OutputStreamHandle, PlayError};
 
+use super::source::SampleType;
 #[allow(unused_imports)] // used for "rusty-soundtouch"
 use super::source::SourceExt as _;
 use super::PlayerInternalCmd;
@@ -103,9 +103,7 @@ impl Sink {
     #[allow(clippy::cast_possible_wrap)]
     pub fn append<S>(&self, source: S)
     where
-        S: Source + Send + 'static,
-        f32: FromSample<S::Item>,
-        S::Item: Sample + Send,
+        S: Source<Item = SampleType> + Send + 'static,
     {
         // Wait for queue to flush then resume stopped playback
         if self.controls.stopped.load(Ordering::SeqCst) {
@@ -172,8 +170,7 @@ impl Sink {
 
                     start_played.store(true, Ordering::SeqCst);
                 }
-            })
-            .convert_samples();
+            });
 
         #[cfg(feature = "rusty-soundtouch")]
         let source =

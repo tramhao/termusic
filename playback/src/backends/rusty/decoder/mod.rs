@@ -15,7 +15,7 @@ use symphonia::{
 };
 use tokio::sync::mpsc;
 
-use super::Source;
+use super::{source::SampleType, Source};
 
 pub mod buffered_source;
 pub mod read_seek_source;
@@ -79,7 +79,7 @@ pub struct Symphonia {
     decoder: Box<dyn codecs::Decoder>,
     current_frame_offset: usize,
     probed: ProbeResult,
-    buffer: SampleBuffer<i16>,
+    buffer: SampleBuffer<SampleType>,
     spec: SignalSpec,
     duration: Option<Duration>,
     track_id: u32,
@@ -224,16 +224,16 @@ impl Symphonia {
     ///
     /// also see [`Self::maybe_reuse_buffer`]
     #[inline]
-    fn get_buffer_new(decoded: AudioBufferRef<'_>) -> SampleBuffer<i16> {
+    fn get_buffer_new(decoded: AudioBufferRef<'_>) -> SampleBuffer<SampleType> {
         let duration = decoded.capacity() as u64;
-        let mut buffer = SampleBuffer::<i16>::new(duration, *decoded.spec());
+        let mut buffer = SampleBuffer::<SampleType>::new(duration, *decoded.spec());
         buffer.copy_interleaved_ref(decoded);
         buffer
     }
 
     /// Copy passed [`AudioBufferRef`] into the existing [`SampleBuffer`], if possible, otherwise create a new
     #[inline]
-    fn maybe_reuse_buffer(buffer: &mut SampleBuffer<i16>, decoded: AudioBufferRef<'_>) {
+    fn maybe_reuse_buffer(buffer: &mut SampleBuffer<SampleType>, decoded: AudioBufferRef<'_>) {
         // calculate what capacity the SampleBuffer will need (as per SampleBuffer internals)
         let required_capacity = decoded.frames() * decoded.spec().channels.count();
         // avoid a allocation if not actually necessary
@@ -291,7 +291,7 @@ impl Symphonia {
     pub fn get_buffer_u8(&self) -> &[u8] {
         #[allow(unsafe_code)]
         unsafe {
-            // re-interpret the i16 slice as a u8 slice with the same byte-length.
+            // re-interpret the SampleType slice as a u8 slice with the same byte-length.
             let len = size_of_val(self.buffer.samples());
             let ret = std::slice::from_raw_parts(
                 self.buffer.samples()[self.current_frame_offset..]
@@ -304,7 +304,7 @@ impl Symphonia {
     }
 
     /// Get the current buffer, but only the part has not been read yet.
-    pub fn get_buffer(&self) -> &[i16] {
+    pub fn get_buffer(&self) -> &[SampleType] {
         &self.buffer.samples()[self.current_frame_offset..]
     }
 }
@@ -365,10 +365,10 @@ impl Source for Symphonia {
 }
 
 impl Iterator for Symphonia {
-    type Item = i16;
+    type Item = SampleType;
 
     #[inline]
-    fn next(&mut self) -> Option<i16> {
+    fn next(&mut self) -> Option<Self::Item> {
         self.decode_once()?;
 
         let sample = *self.buffer.samples().get(self.current_frame_offset)?;
@@ -424,9 +424,9 @@ struct DecodeLoopResult {
 // is there maybe a better option for this?
 enum BufferInputType<'a> {
     /// Allocate a new [`SampleBuffer`] in the specified location (without unsafe)
-    New(&'a mut Option<SampleBuffer<i16>>),
+    New(&'a mut Option<SampleBuffer<SampleType>>),
     /// Try to re-use the provided [`SampleBuffer`]
-    Existing(&'a mut SampleBuffer<i16>),
+    Existing(&'a mut SampleBuffer<SampleType>),
 }
 
 impl std::fmt::Debug for BufferInputType<'_> {
