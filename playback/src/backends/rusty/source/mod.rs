@@ -7,6 +7,9 @@ pub mod soundtouch;
 
 pub mod async_ring;
 
+/// Our sample type we choose to use across all places
+pub type SampleType = f32;
+
 /// Extension trait for [`Source`] for additional custom modifiers
 #[allow(clippy::module_name_repetitions)]
 #[allow(dead_code)] // currently only used for "rusty-soundtouch"

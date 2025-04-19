@@ -15,9 +15,11 @@ use tokio::{
 
 use messages::{
     MessageDataActual, MessageDataFirst, MessageDataValue, MessageSpec, MessageSpecResult,
-    RingMessages, RingMsgParse2, RingMsgWrite2, ValueType,
+    RingMessages, RingMsgParse2, RingMsgWrite2,
 };
 use wrap::{ConsWrap, ProdWrap};
+
+use super::SampleType;
 
 mod messages;
 mod wrap;
@@ -411,7 +413,7 @@ impl AsyncRingSource {
     ///
     /// This function assumes the current message is a non-finished [`MessageDataActual`].
     #[must_use]
-    fn read_data(&mut self) -> Option<i16> {
+    fn read_data(&mut self) -> Option<SampleType> {
         // trace!("Reading Data");
 
         // wait until we have enough data to parse a value
@@ -485,7 +487,7 @@ impl Source for AsyncRingSource {
 }
 
 impl Iterator for AsyncRingSource {
-    type Item = ValueType;
+    type Item = SampleType;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -794,8 +796,11 @@ mod tests {
         use parking_lot::Mutex;
         use symphonia::core::audio::{Channels, SignalSpec};
 
-        use crate::backends::rusty::source::async_ring::{
-            AsyncRingSource, MessageDataFirst, MessageSpec, RingMsgWrite2, ValueType, MIN_RING_SIZE,
+        use crate::backends::rusty::source::{
+            async_ring::{
+                AsyncRingSource, MessageDataFirst, MessageSpec, RingMsgWrite2, MIN_RING_SIZE,
+            },
+            SampleType,
         };
 
         #[tokio::test]
@@ -822,7 +827,7 @@ mod tests {
                 assert_eq!(cons.inner.occupied_len(), 0);
             });
 
-            let first_data = 1i16.to_le_bytes().repeat(1024);
+            let first_data = 1f32.to_le_bytes().repeat(1024);
             let written = prod.write_data(&first_data).await.unwrap();
             assert_eq!(
                 written,
@@ -837,7 +842,7 @@ mod tests {
                 RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)
             );
 
-            let second_data = 2i16.to_le_bytes().repeat(1024);
+            let second_data = 2f32.to_le_bytes().repeat(1024);
             let written = prod.write_data(&second_data).await.unwrap();
             assert_eq!(
                 written,
@@ -860,7 +865,7 @@ mod tests {
             assert!(prod.inner.is_empty());
 
             let recv_lock = recv.lock();
-            let value_size = size_of::<ValueType>();
+            let value_size = size_of::<SampleType>();
             assert_eq!(send.len(), value_size * 1024 * 2);
             assert_eq!(recv_lock.len(), value_size * 1024 * 2);
 
@@ -900,7 +905,7 @@ mod tests {
             let order_c = order.clone();
 
             let prod_handle = tokio::task::spawn(async move {
-                let first_data = 1i16.to_le_bytes().repeat(1024);
+                let first_data = 1f32.to_le_bytes().repeat(1024);
                 let written = prod.write_data(&first_data).await.unwrap();
                 assert_eq!(
                     written,
@@ -969,7 +974,7 @@ mod tests {
                 assert!(!cons.inner.write_is_held());
             });
 
-            let first_data = 1i16.to_le_bytes().repeat(1024);
+            let first_data = 1f32.to_le_bytes().repeat(1024);
             let written = prod.write_data(&first_data).await.unwrap();
             assert_eq!(
                 written,
@@ -996,7 +1001,7 @@ mod tests {
             assert!(!obsv.read_is_held());
 
             let recv_lock = recv.lock();
-            let value_size = size_of::<ValueType>();
+            let value_size = size_of::<SampleType>();
             assert_eq!(recv_lock.len(), value_size * 1024);
 
             assert_eq!(*recv_lock, first_data.as_slice());
@@ -1025,7 +1030,7 @@ mod tests {
                 assert!(!cons.inner.write_is_held());
             });
 
-            let first_data = 1i16.to_le_bytes().repeat(1024);
+            let first_data = 1f32.to_le_bytes().repeat(1024);
             let written = prod.write_data(&first_data).await.unwrap();
             assert_eq!(
                 written,
@@ -1049,7 +1054,7 @@ mod tests {
             assert!(!obsv.read_is_held());
 
             let recv_lock = recv.lock();
-            let value_size = size_of::<ValueType>();
+            let value_size = size_of::<SampleType>();
             assert_eq!(recv_lock.len(), value_size * 1024);
 
             assert_eq!(*recv_lock, first_data.as_slice());
