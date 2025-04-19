@@ -2,6 +2,8 @@ use std::ops::Range;
 
 use symphonia::core::audio::SignalSpec;
 
+use crate::backends::rusty::source::SampleType;
+
 /// Types of messages that could appear in the ringbuffer with their id
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -229,7 +231,7 @@ impl MessageDataActual {
     /// Length in bytes
     pub fn new(length: usize) -> Self {
         // assert everything in "length" can be a full "ValueType"
-        assert_eq!(length % size_of::<ValueType>(), 0);
+        assert_eq!(length % size_of::<SampleType>(), 0);
         Self { length, read: 0 }
     }
 
@@ -251,7 +253,7 @@ impl MessageDataActual {
 
     /// Try to read a message from the given buffer, or return how many bytes are still necessary
     #[inline]
-    pub fn try_read_buf(&mut self, buf: &[u8]) -> PResult<ValueType> {
+    pub fn try_read_buf(&mut self, buf: &[u8]) -> PResult<SampleType> {
         if self.is_done() {
             return Err(0);
         }
@@ -273,7 +275,7 @@ impl MessageDataActual {
 
     /// Try to write a message to the given buffer, or return how many bytes are still necessary
     #[allow(dead_code)]
-    pub fn try_write_buf(&mut self, val: ValueType, buf: &mut [u8]) -> PResult<()> {
+    pub fn try_write_buf(&mut self, val: SampleType, buf: &mut [u8]) -> PResult<()> {
         if self.is_done() {
             return Err(0);
         }
@@ -285,8 +287,10 @@ impl MessageDataActual {
     }
 }
 
-/// The Value type we have in the actual data
-pub type ValueType = i16;
+/// The size, in bytes, of a single [`SampleType`]
+///
+/// Note that this is currently the same as [`MessageDataValue::MESSAGE_SIZE`], but has a different semantic meaning.
+pub const SAMPLE_TYPE_SIZE: usize = size_of::<SampleType>();
 
 /// Read a single Data value.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -294,11 +298,11 @@ pub struct MessageDataValue;
 
 // TODO: maybe use nom or similar?
 impl MessageDataValue {
-    pub const MESSAGE_SIZE: usize = size_of::<ValueType>();
+    pub const MESSAGE_SIZE: usize = SAMPLE_TYPE_SIZE;
 
     /// Try to read a message from the given buffer, or return how many bytes are still necessary
     #[inline]
-    pub fn try_read_buf(buf: &[u8]) -> PResult<ValueType> {
+    pub fn try_read_buf(buf: &[u8]) -> PResult<SampleType> {
         if buf.len() < Self::MESSAGE_SIZE {
             return Err(Self::MESSAGE_SIZE - buf.len());
         }
@@ -307,13 +311,13 @@ impl MessageDataValue {
         let value_bytes: [u8; Self::MESSAGE_SIZE] = buf[..Self::MESSAGE_SIZE].try_into().unwrap();
 
         // read ValueType
-        let value = ValueType::from_ne_bytes(value_bytes);
+        let value = SampleType::from_ne_bytes(value_bytes);
 
         Ok((value, Self::MESSAGE_SIZE))
     }
 
     /// Try to write a message to the given buffer, or return how many bytes are still necessary
-    pub fn try_write_buf(val: ValueType, buf: &mut [u8]) -> PResult<()> {
+    pub fn try_write_buf(val: SampleType, buf: &mut [u8]) -> PResult<()> {
         if buf.len() < Self::MESSAGE_SIZE {
             return Err(Self::MESSAGE_SIZE - buf.len());
         }
@@ -327,6 +331,13 @@ impl MessageDataValue {
 #[cfg(test)]
 #[allow(clippy::assertions_on_constants)] // make sure that tests fail if expectations change
 mod tests {
+    // Simple test to verify that the expectations have not changed, and only having one single place to change once it does
+    #[test]
+    fn expect_sampletype() {
+        use super::SAMPLE_TYPE_SIZE;
+        assert_eq!(SAMPLE_TYPE_SIZE, 4);
+    }
+
     mod parse_message_spec {
         use crate::backends::rusty::source::async_ring::{MessageSpec, MessageSpecResult};
 
@@ -456,22 +467,25 @@ mod tests {
     }
 
     mod parse_message_data_first {
-        use crate::backends::rusty::source::async_ring::{MessageDataActual, MessageDataFirst};
+        use crate::{
+            __bench::async_ring::messages::SAMPLE_TYPE_SIZE,
+            backends::rusty::source::async_ring::{MessageDataActual, MessageDataFirst},
+        };
 
         #[test]
         fn should_read_complete_once() {
-            let input: Vec<u8> = 2usize.to_ne_bytes().into_iter().collect();
+            let input: Vec<u8> = SAMPLE_TYPE_SIZE.to_ne_bytes().into_iter().collect();
             assert_eq!(input.len(), MessageDataFirst::MESSAGE_SIZE);
 
             let (res, read) = MessageDataFirst::try_read_buf(&input).unwrap();
 
             assert_eq!(read, MessageDataFirst::MESSAGE_SIZE);
-            assert_eq!(res, MessageDataActual::new(2));
+            assert_eq!(res, MessageDataActual::new(4));
         }
 
         #[test]
         fn should_report_additional() {
-            let input: Vec<u8> = 2usize.to_ne_bytes().into_iter().collect();
+            let input: Vec<u8> = SAMPLE_TYPE_SIZE.to_ne_bytes().into_iter().collect();
             assert_eq!(input.len(), MessageDataFirst::MESSAGE_SIZE);
 
             let additional = MessageDataFirst::try_read_buf(&input[0..=1]).unwrap_err();
@@ -485,7 +499,7 @@ mod tests {
             let (res, read) = MessageDataFirst::try_read_buf(&input).unwrap();
 
             assert_eq!(read, MessageDataFirst::MESSAGE_SIZE);
-            assert_eq!(res, MessageDataActual::new(2));
+            assert_eq!(res, MessageDataActual::new(SAMPLE_TYPE_SIZE));
         }
     }
 
@@ -530,16 +544,19 @@ mod tests {
     }
 
     mod parse_message_data_actual {
-        use crate::backends::rusty::source::async_ring::{MessageDataActual, MessageDataValue};
+        use crate::{
+            __bench::async_ring::messages::SAMPLE_TYPE_SIZE,
+            backends::rusty::source::async_ring::{MessageDataActual, MessageDataValue},
+        };
 
+        #[expect(clippy::float_cmp)] // we dont to arthihmatic, we store and parse bytes, which *are* exact
         #[test]
         fn should_read_complete_once() {
-            let input: Vec<u8> = vec![1; 2];
-            assert_eq!(input.len(), 2);
+            let input: Vec<u8> = vec![1; SAMPLE_TYPE_SIZE];
 
-            let mut msg = MessageDataActual::new(2);
+            let mut msg = MessageDataActual::new(SAMPLE_TYPE_SIZE);
             let (res, read) = msg.try_read_buf(&input).unwrap();
-            assert_eq!(res, i16::from_ne_bytes([1; 2]));
+            assert_eq!(res, f32::from_ne_bytes([1; SAMPLE_TYPE_SIZE]));
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(msg.read, MessageDataValue::MESSAGE_SIZE);
             assert!(msg.is_done());
@@ -548,35 +565,35 @@ mod tests {
         #[test]
         fn should_report_additional() {
             // check the 0 length buffer given path
-            let mut msg = MessageDataActual::new(6);
+            let mut msg = MessageDataActual::new(SAMPLE_TYPE_SIZE * 2);
             let additional = msg.try_read_buf(&[]).unwrap_err();
             assert_eq!(additional, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(msg.read, 0);
             assert!(!msg.is_done());
 
             // some actual partial data
-            let mut msg = MessageDataActual::new(6);
+            let mut msg = MessageDataActual::new(SAMPLE_TYPE_SIZE * 2);
             let additional = msg.try_read_buf(&[1; 1]).unwrap_err();
             assert_eq!(additional, MessageDataValue::MESSAGE_SIZE - 1);
             assert_eq!(msg.read, 0);
             assert!(!msg.is_done());
         }
 
+        #[expect(clippy::float_cmp)] // we dont to arthihmatic, we store and parse bytes, which *are* exact
         #[test]
         fn should_resume_additional() {
-            let input: Vec<u8> = vec![1; 4];
-            assert_eq!(input.len(), 4);
+            let input: Vec<u8> = vec![1; SAMPLE_TYPE_SIZE * 2];
 
-            let mut msg = MessageDataActual::new(4);
+            let mut msg = MessageDataActual::new(SAMPLE_TYPE_SIZE * 2);
             let (res, read) = msg.try_read_buf(&input).unwrap();
-            assert_eq!(res, i16::from_ne_bytes([1; 2]));
+            assert_eq!(res, f32::from_ne_bytes([1; SAMPLE_TYPE_SIZE]));
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(msg.read, MessageDataValue::MESSAGE_SIZE);
             assert!(!msg.is_done());
 
             // finish with the last bytes
             let (res, read) = msg.try_read_buf(&input).unwrap();
-            assert_eq!(res, i16::from_ne_bytes([1; 2]));
+            assert_eq!(res, f32::from_ne_bytes([1; SAMPLE_TYPE_SIZE]));
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
             assert_eq!(msg.read, MessageDataValue::MESSAGE_SIZE * 2);
             assert!(msg.is_done());
@@ -584,47 +601,48 @@ mod tests {
     }
 
     mod write_message_data_actual {
-        use crate::backends::rusty::source::async_ring::{MessageDataActual, MessageDataValue};
+        use crate::{
+            __bench::async_ring::messages::SAMPLE_TYPE_SIZE,
+            backends::rusty::source::async_ring::{MessageDataActual, MessageDataValue},
+        };
 
         #[test]
         fn should_write_complete_once() {
-            let out_buf = &mut [0; 2];
-            assert_eq!(out_buf.len(), 2);
+            let out_buf = &mut [0; SAMPLE_TYPE_SIZE];
 
-            let mut msg_data = MessageDataActual::new_write(2);
+            let mut msg_data = MessageDataActual::new_write(SAMPLE_TYPE_SIZE);
 
             assert!(!msg_data.is_done());
 
-            let res = msg_data.try_write_buf(1, out_buf);
+            let res = msg_data.try_write_buf(1f32, out_buf);
 
-            assert_eq!(res, Ok(((), 2)));
-            assert_eq!(out_buf, &1i16.to_ne_bytes());
+            assert_eq!(res, Ok(((), SAMPLE_TYPE_SIZE)));
+            assert_eq!(out_buf, &1f32.to_ne_bytes());
             assert!(msg_data.is_done());
         }
 
         #[test]
         fn should_write_across_calls() {
-            let out_buf = &mut [0; 2];
-            assert_eq!(out_buf.len(), 2);
+            let out_buf = &mut [0; SAMPLE_TYPE_SIZE];
 
-            let mut msg_data = MessageDataActual::new_write(2);
+            let mut msg_data = MessageDataActual::new_write(SAMPLE_TYPE_SIZE);
 
-            let res = msg_data.try_write_buf(1, &mut out_buf[0..1]);
+            let res = msg_data.try_write_buf(1f32, &mut out_buf[0..1]);
 
             assert_eq!(res, Err(MessageDataValue::MESSAGE_SIZE - 1));
             assert!(!msg_data.is_done());
 
             // check the 0 length buffer given path
-            let res = msg_data.try_write_buf(1, &mut []);
+            let res = msg_data.try_write_buf(1f32, &mut []);
 
             assert_eq!(res, Err(MessageDataValue::MESSAGE_SIZE));
             assert!(!msg_data.is_done());
 
             // finish with the last bytes
-            let res = msg_data.try_write_buf(1, out_buf);
+            let res = msg_data.try_write_buf(1f32, out_buf);
 
-            assert_eq!(res, Ok(((), 2)));
-            assert_eq!(out_buf, &1i16.to_ne_bytes());
+            assert_eq!(res, Ok(((), SAMPLE_TYPE_SIZE)));
+            assert_eq!(out_buf, &1f32.to_ne_bytes());
             assert!(msg_data.is_done());
         }
     }
@@ -632,20 +650,22 @@ mod tests {
     mod parse_message_value {
         use crate::backends::rusty::source::async_ring::MessageDataValue;
 
+        #[expect(clippy::float_cmp)] // we dont to arthihmatic, we store and parse bytes, which *are* exact
         #[test]
         fn should_read_complete_once() {
-            let input: &[u8] = &10i16.to_ne_bytes();
+            let input: &[u8] = &10f32.to_ne_bytes();
             assert_eq!(input.len(), MessageDataValue::MESSAGE_SIZE);
 
             let (res, read) = MessageDataValue::try_read_buf(input).unwrap();
 
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
-            assert_eq!(res, 10);
+            assert_eq!(res, 10f32);
         }
 
+        #[expect(clippy::float_cmp)] // we dont to arthihmatic, we store and parse bytes, which *are* exact
         #[test]
         fn should_report_additional() {
-            let input: &[u8] = &10i16.to_ne_bytes();
+            let input: &[u8] = &10f32.to_ne_bytes();
             assert_eq!(input.len(), MessageDataValue::MESSAGE_SIZE);
 
             assert!(MessageDataValue::MESSAGE_SIZE > 1);
@@ -661,7 +681,7 @@ mod tests {
             let (res, read) = MessageDataValue::try_read_buf(input).unwrap();
 
             assert_eq!(read, MessageDataValue::MESSAGE_SIZE);
-            assert_eq!(res, 10);
+            assert_eq!(res, 10f32);
         }
     }
 
@@ -673,11 +693,11 @@ mod tests {
             let out_buf = &mut [0; MessageDataValue::MESSAGE_SIZE];
             assert_eq!(out_buf.len(), MessageDataValue::MESSAGE_SIZE);
 
-            let res = MessageDataValue::try_write_buf(10, out_buf);
+            let res = MessageDataValue::try_write_buf(10f32, out_buf);
 
             assert_eq!(res, Ok(((), MessageDataValue::MESSAGE_SIZE)));
 
-            let expected: &[u8] = &10i16.to_ne_bytes();
+            let expected: &[u8] = &10f32.to_ne_bytes();
             assert_eq!(out_buf, expected);
         }
 
@@ -686,21 +706,21 @@ mod tests {
             let out_buf = &mut [0; MessageDataValue::MESSAGE_SIZE];
             assert_eq!(out_buf.len(), MessageDataValue::MESSAGE_SIZE);
 
-            let res = MessageDataValue::try_write_buf(10, &mut out_buf[..1]);
+            let res = MessageDataValue::try_write_buf(10f32, &mut out_buf[..1]);
 
             assert_eq!(res, Err(MessageDataValue::MESSAGE_SIZE - 1));
 
             // check the 0 length buffer given path
-            let res = MessageDataValue::try_write_buf(10, &mut []);
+            let res = MessageDataValue::try_write_buf(10f32, &mut []);
 
             assert_eq!(res, Err(MessageDataValue::MESSAGE_SIZE));
 
             // finish with the last bytes
-            let res = MessageDataValue::try_write_buf(10, out_buf);
+            let res = MessageDataValue::try_write_buf(10f32, out_buf);
 
             assert_eq!(res, Ok(((), MessageDataValue::MESSAGE_SIZE)));
 
-            let expected: &[u8] = &10i16.to_ne_bytes();
+            let expected: &[u8] = &10f32.to_ne_bytes();
             assert_eq!(out_buf, expected);
         }
     }
@@ -708,15 +728,21 @@ mod tests {
     mod write_ring_messages {
         use symphonia::core::audio::{Channels, SignalSpec};
 
-        use crate::backends::rusty::source::async_ring::{
-            MessageDataActual, MessageDataFirst, MessageDataValue, MessageSpec, RingMessages,
-            RingMsgWrite2,
+        use crate::{
+            __bench::async_ring::messages::SAMPLE_TYPE_SIZE,
+            backends::rusty::source::async_ring::{
+                MessageDataActual, MessageDataFirst, MessageDataValue, MessageSpec, RingMessages,
+                RingMsgWrite2,
+            },
         };
 
         #[test]
         fn should_write_complete_once_spec() {
             let out_buf = &mut [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
-            assert_eq!(out_buf.len(), MessageSpec::MESSAGE_SIZE + 1);
+            assert_eq!(
+                out_buf.len(),
+                MessageSpec::MESSAGE_SIZE + RingMsgWrite2::ID_SIZE
+            );
 
             let res = RingMsgWrite2::try_write_spec(
                 SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
@@ -740,25 +766,27 @@ mod tests {
 
         #[test]
         fn should_write_complete_once_data() {
-            let out_buf = &mut [0; RingMsgWrite2::get_msg_size(MessageDataFirst::MESSAGE_SIZE + 2)];
+            let out_buf = &mut [0; RingMsgWrite2::get_msg_size(
+                MessageDataFirst::MESSAGE_SIZE + SAMPLE_TYPE_SIZE,
+            )];
             assert_eq!(
                 out_buf.len(),
-                MessageDataFirst::MESSAGE_SIZE + 2 + RingMsgWrite2::ID_SIZE
+                MessageDataFirst::MESSAGE_SIZE + SAMPLE_TYPE_SIZE + RingMsgWrite2::ID_SIZE
             );
 
-            let res = RingMsgWrite2::try_write_data_first(2, out_buf);
+            let res = RingMsgWrite2::try_write_data_first(SAMPLE_TYPE_SIZE, out_buf);
 
             assert_eq!(
                 res,
                 Ok((
-                    MessageDataActual::new_write(2),
+                    MessageDataActual::new_write(4),
                     RingMsgWrite2::ID_SIZE + MessageDataFirst::MESSAGE_SIZE
                 ))
             );
             let expected: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2usize.to_ne_bytes())
-                .chain([0; 2])
+                .chain(SAMPLE_TYPE_SIZE.to_ne_bytes())
+                .chain([0; SAMPLE_TYPE_SIZE])
                 .collect();
             assert_eq!(out_buf, expected.as_slice());
 
@@ -766,15 +794,15 @@ mod tests {
 
             assert!(!data.is_done());
 
-            let res = data.try_write_buf(1, &mut out_buf[written..]);
+            let res = data.try_write_buf(1f32, &mut out_buf[written..]);
 
             assert_eq!(res, Ok(((), MessageDataValue::MESSAGE_SIZE)));
             assert!(data.is_done());
 
             let expected: Vec<u8> = [RingMessages::Data.as_u8()]
                 .into_iter()
-                .chain(2usize.to_ne_bytes())
-                .chain(1i16.to_ne_bytes())
+                .chain(SAMPLE_TYPE_SIZE.to_ne_bytes())
+                .chain(1f32.to_ne_bytes())
                 .collect();
 
             assert_eq!(out_buf, expected.as_slice());
