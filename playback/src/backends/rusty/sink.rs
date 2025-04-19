@@ -117,8 +117,6 @@ impl Sink {
         #[cfg(feature = "rusty-soundtouch")]
         let controls_tempo = self.controls.clone();
 
-        let start_played = AtomicBool::new(false);
-
         let progress_tx = self.picmd_tx.clone();
         let source = source
             .track_position()
@@ -167,8 +165,6 @@ impl Sink {
                             .inner_mut()
                             .set_factor(*controls.speed.lock());
                     }
-
-                    start_played.store(true, Ordering::SeqCst);
                 }
             });
 
