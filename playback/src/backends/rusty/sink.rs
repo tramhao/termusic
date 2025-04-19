@@ -124,18 +124,19 @@ impl Sink {
             .pausable(false)
             .amplify(1.0)
             .skippable()
-            .stoppable()
+            // as of rodio 0.20.x, "stoppable" is the same as "skippable"
+            // .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
                 progress_tx
                     .send(PlayerInternalCmd::Progress(
-                        src.inner().inner().inner().inner().inner().get_pos(),
+                        src.inner().inner().inner().inner().get_pos(),
                     ))
                     .ok();
             })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
                 if controls.stopped.load(Ordering::SeqCst) {
-                    src.stop();
+                    src.skip();
                     // reset position to be at 0, otherwise the position could be stale if there is no new source
                     *controls.position.write() = Duration::ZERO;
                 } else {
@@ -145,16 +146,16 @@ impl Sink {
                     {
                         let mut to_clear = controls.to_clear.lock();
                         if *to_clear > 0 {
-                            src.inner_mut().skip();
+                            src.skip();
                             *to_clear -= 1;
                             // reset position to be at 0, otherwise the position could be stale if there is no new source
                             *controls.position.write() = Duration::ZERO;
                         }
                     }
                     *controls.position.write() =
-                        src.inner().inner().inner().inner().inner().get_pos();
+                        src.inner().inner().inner().inner().get_pos();
 
-                    let amp = src.inner_mut().inner_mut();
+                    let amp = src.inner_mut();
                     amp.set_factor(*controls.volume.lock());
                     amp.inner_mut()
                         .set_paused(controls.pause.load(Ordering::SeqCst));
