@@ -32,6 +32,7 @@ use parking_lot::Mutex;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
@@ -70,6 +71,8 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+pub static SERVER_PID: OnceLock<Pid> = OnceLock::new();
 
 /// Handles CLI args, potentially starts termusic-server, then runs UI loop
 #[tokio::main]
@@ -140,6 +143,9 @@ async fn actual_main() -> Result<()> {
     }
 
     println!("Server process ID: {pid}");
+    SERVER_PID
+        .set(Pid::from_u32(pid))
+        .unwrap_or_else(|_| error!("Could not set SERVER_PID."));
 
     // this is a bad implementation, but there is no way to currently only shut off stderr / stdout
     // see https://github.com/emabee/flexi_logger/issues/142

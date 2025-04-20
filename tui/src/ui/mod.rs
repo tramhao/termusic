@@ -33,6 +33,7 @@ use futures_util::FutureExt;
 use model::{Model, TermusicLayout};
 use music_player_client::Playback;
 use std::time::Duration;
+use sysinfo::Pid;
 use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
@@ -162,17 +163,22 @@ impl UI {
             let mut target = None;
             let mut clients = 0;
             for proc in system.processes().values() {
-                let exe = proc.name().to_str().unwrap();
-                if exe == "termusic-server" {
-                    target = Some(proc);
-                    continue;
-                }
-                let parentistermusic = match proc.parent() {
-                    Some(s) => system.processes().get(&s).unwrap().name() == "termusic",
-                    None => false,
-                };
-                if exe == "termusic" && !parentistermusic {
-                    clients += 1;
+                if let Some(exe) = proc.name().to_str() {
+                    if exe == "termusic-server" {
+                        if &proc.pid() == crate::SERVER_PID.get().unwrap_or(&Pid::from_u32(0))
+                            || target.is_none()
+                        {
+                            target = Some(proc);
+                        }
+                        continue;
+                    }
+                    let parent_is_termusic = match proc.parent() {
+                        Some(s) => system.processes().get(&s).unwrap().name() == "termusic",
+                        None => false,
+                    };
+                    if exe == "termusic" && !parent_is_termusic {
+                        clients += 1;
+                    }
                 }
             }
             if clients <= 1 && target.is_some() {
