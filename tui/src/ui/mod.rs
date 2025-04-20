@@ -175,7 +175,7 @@ impl UI {
                     clients += 1;
                 }
             }
-            if clients == 1 && target.is_some() {
+            if clients <= 1 && target.is_some() {
                 #[cfg(not(target_os = "windows"))]
                 if let Some(s) = target {
                     s.kill_with(sysinfo::Signal::Term);
