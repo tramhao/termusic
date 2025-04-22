@@ -2,6 +2,7 @@ mod cli;
 mod logger;
 mod music_player_service;
 
+use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -129,15 +130,8 @@ async fn actual_main() -> Result<()> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let addr = std::net::SocketAddr::from(config.read().settings.com);
-
-    // workaround to print address once sever "actually" is started and address is known
-    // see https://github.com/hyperium/tonic/issues/351
-    let tcp_listener = tokio::net::TcpListener::bind(addr)
-        .await
-        .with_context(|| format!("Error binding address: {}", addr))?;
-    info!("Server listening on {}", tcp_listener.local_addr().unwrap());
-    let tcp_stream = TcpIncoming::from(tcp_listener).with_nodelay(Some(true));
+    let (tcp_stream, addr) = tcp_stream(&config).await?;
+    info!("Server listening on {}", addr);
 
     let tokio_handle = Handle::current();
     let (player_handle_os_tx, player_handle_os_rx) = oneshot::channel();
@@ -174,6 +168,24 @@ async fn actual_main() -> Result<()> {
     let _ = player_handle.join();
 
     Ok(())
+}
+
+/// Create the TCP Stream for HTTP requests.
+async fn tcp_stream(config: &SharedServerSettings) -> Result<(TcpIncoming, SocketAddr)> {
+    let addr = SocketAddr::from(&config.read().settings.com);
+
+    // workaround to print address once sever "actually" is started and address is known
+    // see https://github.com/hyperium/tonic/issues/351
+    let tcp_listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .with_context(|| format!("Error binding address: {}", addr))?;
+
+    // workaround as "TcpIncoming" does not provide a function to get the address
+    let socket_addr = tcp_listener.local_addr()?;
+
+    let stream = TcpIncoming::from(tcp_listener).with_nodelay(Some(true));
+
+    Ok((stream, socket_addr))
 }
 
 /// The main player loop where we handle all events
