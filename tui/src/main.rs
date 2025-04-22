@@ -285,7 +285,7 @@ async fn wait_till_connected_uds(
                         continue;
                     }
                     if os_err.kind() == std::io::ErrorKind::NotFound {
-                        debug!("File not found!");
+                        debug!("Socket File not found!");
                         tokio::time::sleep(WAIT_INTERVAL).await;
                         continue;
                     }
