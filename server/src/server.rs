@@ -167,6 +167,9 @@ async fn actual_main() -> Result<()> {
     // and by doing this after the oneshot we can be sure the thread is actually exited, or exiting
     let _ = player_handle.join();
 
+    // Graceful exit log
+    info!("Bye");
+
     Ok(())
 }
 
@@ -215,16 +218,21 @@ fn player_loop(
             }
             PlayerCmd::Quit => {
                 info!("PlayerCmd::Quit received");
+                // to have a consistent last position
+                player.pause();
                 player.player_save_last_position();
                 if let Err(e) = player.playlist.write().save() {
                     error!("error when saving playlist: {e}");
                 };
+                // clear out all currently queued rodio sources
+                // without this, on rusty backend, may keep the process around until the last source has been consumed
+                player.stop();
                 if let Err(e) =
                     ServerConfigVersionedDefaulted::save_config_path(&player.config.read().settings)
                 {
                     error!("error when saving config: {e}");
                 };
-                std::process::exit(0);
+                return Ok(());
             }
             PlayerCmd::CycleLoop => {
                 player.config.write().settings.player.loop_mode =

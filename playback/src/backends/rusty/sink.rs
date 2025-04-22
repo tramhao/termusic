@@ -340,11 +340,13 @@ impl Sink {
                 .name("rusty message_on_end".into())
                 .spawn(move || {
                     let _drop = sleep_until_end.recv();
-                    if let Err(e) = pcmd_tx.send(PlayerCmd::Eos) {
-                        error!("Error in message_on_end: {e}");
+                    // using ".is_err()" here as the only error that can come from this channel is "Channel Closed"
+                    if pcmd_tx.send(PlayerCmd::Eos).is_err() {
+                        // not high priority, may log this on graceful exit because stop and player loop exit are not waiting on each-other
+                        debug!("Player Channel is closed");
                     }
-                    if let Err(e) = picmd_tx.send(PlayerInternalCmd::Eos) {
-                        error!("Error in message_on_end: {e}");
+                    if picmd_tx.send(PlayerInternalCmd::Eos).is_err() {
+                        error!("Player Internal Channel is closed");
                     }
                 })
                 .expect("failed to spawn message_on_end thread");
