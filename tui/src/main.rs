@@ -35,7 +35,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use termusiclib::config::v2::server::ScanDepth;
+use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
 use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::{
     new_shared_server_settings, new_shared_tui_settings, ServerOverlay, SharedServerSettings,
@@ -167,11 +167,25 @@ const WAIT_TIMEOUT: Duration = Duration::from_secs(5);
 /// Time to sleep
 const WAIT_INTERVAL: Duration = Duration::from_millis(100);
 
+/// Wait until the [`MusicPlayerClient`] is connected on the correct transport protocol.
+async fn wait_till_connected(
+    config: &CombinedSettings,
+    pid: u32,
+) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+    let protocol = config.tui.read().settings.get_com().unwrap().protocol;
+    let player = match protocol {
+        ComProtocol::HTTP => wait_till_connected_tcp(config, pid).await?,
+        ComProtocol::UDS => wait_till_connected_uds(config, pid).await?,
+    };
+
+    Ok(player)
+}
+
 /// Wait until tonic is connected, or:
 /// - tonic errors anything other than `ConnectionRefused`
 /// - given PID does not exist anymore
 /// - timeout of [`WAIT_TIMEOUT`] reached
-async fn wait_till_connected(
+async fn wait_till_connected_tcp(
     config: &CombinedSettings,
     pid: u32,
 ) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
@@ -216,6 +230,69 @@ async fn wait_till_connected(
 
                 // return the error and stop if it is anything other than "Connection Refused"
                 anyhow::bail!(err);
+            }
+            Ok(client) => return Ok((client, addr)),
+        }
+    }
+}
+
+/// Wait until tonic is connected, or:
+/// - tonic errors anything other than `ConnectionRefused`(server not accepting the connection yet) or `NotFound`(path does not exit yet)
+/// - given PID does not exist anymore
+/// - timeout of [`WAIT_TIMEOUT`] reached
+async fn wait_till_connected_uds(
+    config: &CombinedSettings,
+    pid: u32,
+) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+    let addr = {
+        let config_read = config.tui.read();
+        let addr = config_read
+            .settings
+            .get_com()
+            .unwrap()
+            .socket_path
+            .to_string_lossy();
+        format!("unix://{addr}")
+    };
+
+    let mut sys = sysinfo::System::new();
+    let sys_pid = Pid::from_u32(pid);
+    let start_time = Instant::now();
+    loop {
+        if Instant::now() > start_time + WAIT_TIMEOUT {
+            anyhow::bail!(
+                "Could not connect within {} timeout.",
+                WAIT_TIMEOUT.as_secs()
+            );
+        }
+
+        sys.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sys_pid]), true);
+
+        let status = sys.process(sys_pid);
+
+        // dont endlessly try to connect, if the server exited / crashed
+        if status.is_none() || status.is_some_and(|v| v.status() == ProcessStatus::Zombie) {
+            anyhow::bail!("Process {pid} exited before being able to connect!");
+        }
+
+        match MusicPlayerClient::connect(addr.clone()).await {
+            Err(err) => {
+                // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
+                if let Some(os_err) = find_source::<std::io::Error>(&err) {
+                    if os_err.kind() == std::io::ErrorKind::ConnectionRefused {
+                        debug!("Connection refused found!");
+                        tokio::time::sleep(WAIT_INTERVAL).await;
+                        continue;
+                    }
+                    if os_err.kind() == std::io::ErrorKind::NotFound {
+                        debug!("File not found!");
+                        tokio::time::sleep(WAIT_INTERVAL).await;
+                        continue;
+                    }
+                }
+
+                // return the error and stop if it is anything other than "Connection Refused"
+                return Err(anyhow::anyhow!(err).context(addr));
             }
             Ok(client) => return Ok((client, addr)),
         }
