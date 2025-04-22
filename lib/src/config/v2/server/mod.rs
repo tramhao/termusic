@@ -370,8 +370,8 @@ impl Default for ComSettings {
     }
 }
 
-impl From<ComSettings> for SocketAddr {
-    fn from(value: ComSettings) -> Self {
+impl From<&ComSettings> for SocketAddr {
+    fn from(value: &ComSettings) -> Self {
         Self::new(value.address, value.port)
     }
 }

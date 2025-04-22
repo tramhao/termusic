@@ -153,17 +153,8 @@ async fn actual_main() -> Result<()> {
 
     info!("Waiting until connected");
 
-    let client = {
-        let addr = {
-            let config_read = config.tui.read();
-            SocketAddr::from(*config_read.settings.get_com().ok_or(anyhow::anyhow!(
-                "Expected tui-com settings to be resolved at this point"
-            ))?)
-        };
-
-        wait_till_connected(addr, pid).await?
-    };
-    info!("Connected!");
+    let (client, addr) = wait_till_connected(&config, pid).await?;
+    info!("Connected on {addr}");
 
     let mut ui = UI::new(config, client).await?;
     ui.run().await?;
@@ -181,9 +172,17 @@ const WAIT_INTERVAL: Duration = Duration::from_millis(100);
 /// - given PID does not exist anymore
 /// - timeout of [`WAIT_TIMEOUT`] reached
 async fn wait_till_connected(
-    socket: SocketAddr,
+    config: &CombinedSettings,
     pid: u32,
-) -> Result<MusicPlayerClient<tonic::transport::Channel>> {
+) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+    let addr = {
+        let config_read = config.tui.read();
+        SocketAddr::from(config_read.settings.get_com().ok_or(anyhow::anyhow!(
+            "Expected tui-com settings to be resolved at this point"
+        ))?)
+    };
+    let addr = format!("http://{addr}");
+
     let mut sys = sysinfo::System::new();
     let sys_pid = Pid::from_u32(pid);
     let start_time = Instant::now();
@@ -204,7 +203,7 @@ async fn wait_till_connected(
             anyhow::bail!("Process {pid} exited before being able to connect!");
         }
 
-        match MusicPlayerClient::connect(format!("http://{socket}")).await {
+        match MusicPlayerClient::connect(addr.clone()).await {
             Err(err) => {
                 // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
                 if let Some(os_err) = find_source::<std::io::Error>(&err) {
@@ -218,7 +217,7 @@ async fn wait_till_connected(
                 // return the error and stop if it is anything other than "Connection Refused"
                 anyhow::bail!(err);
             }
-            Ok(client) => return Ok(client),
+            Ok(client) => return Ok((client, addr)),
         }
     }
 }
