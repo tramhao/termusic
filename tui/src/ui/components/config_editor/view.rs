@@ -1,3 +1,4 @@
+use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
 use include_dir::DirEntry;
 use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
@@ -2054,13 +2055,17 @@ impl Model {
         table
             .add_col(TextSpan::new(0.to_string()))
             .add_col(TextSpan::new("Termusic Default"));
+        table.add_row();
+        table
+            .add_col(TextSpan::new(1.to_string()))
+            .add_col(TextSpan::new("Native"));
 
         for (idx, record) in self.config_editor.themes.iter().enumerate() {
             table.add_row();
 
-            // idx + 1 as 0 entry is termusic default
+            // idx + X as 0 until X entries are termusic default, always existing themes
             table
-                .add_col(TextSpan::new((idx + 1).to_string()))
+                .add_col(TextSpan::new((idx + THEMES_WITHOUT_FILES).to_string()))
                 .add_col(TextSpan::new(record));
         }
 
@@ -2081,8 +2086,8 @@ impl Model {
             if let Some(current_file_name) = self.config_editor.theme.theme.file_name.as_ref() {
                 for (idx, name) in self.config_editor.themes.iter().enumerate() {
                     if name == current_file_name {
-                        // idx + 1 as 0 entry is termusic default
-                        index = Some(idx + 1);
+                        // idx + X as 0 until X entries are termusic default, always existing themes
+                        index = Some(idx + THEMES_WITHOUT_FILES);
                         break;
                     }
                 }
