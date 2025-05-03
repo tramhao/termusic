@@ -231,7 +231,13 @@ impl Playback {
         }
 
         self.playlist.set_tracks(playlist_items);
-        self.playlist.set_current_track_index(current_track_index)?;
+
+        // the old server playlist implementation will send `current_track_index: 0`, even if there are not tracks
+        // but the new TUI implementation function "set_current_track_index" will refuse to set anything if the index is out-of-bounds
+        if !self.playlist.is_empty() {
+            self.playlist.set_current_track_index(current_track_index)?;
+        }
+
         self.set_current_track_from_playlist();
 
         Ok(())
