@@ -2,7 +2,8 @@
 
 ### next
 - Change: updated MSRV to 1.82.
-- Change(tui): rename cli option `--disable-cover`  to `--hide-cover`
+- Change(tui): rename cli option `--disable-cover`  to `--hide-cover`.
+- Change(tui): dont depend on `termusicplayback` anymore.
 - Feat(tui): add new cli option `--disable-cover` which actually disables all cover probing and behaves as if no cover features are enabled.
 - Feat(tui): add native theme support. Useful for example for `pywal`.
 - Feat(server): for rusty backend, add feature `rusty-simd` to enable SIMD instructions for decoding.

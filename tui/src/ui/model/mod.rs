@@ -1,63 +1,42 @@
-mod download_tracker;
-/**
- * MIT License
- *
- * termusic - Copyright (C) 2021 Larry Hao
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-mod update;
-mod view;
-mod youtube_options;
+//! SPDX-License-Identifier: MIT
 
-use crate::ui::Application;
-use crate::CombinedSettings;
-use download_tracker::DownloadTracker;
-use termusiclib::config::v2::tui::keys::Keys;
-use termusiclib::config::v2::tui::theme::ThemeWrap;
-use termusiclib::library_db::{DataBase, SearchCriteria};
-use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
-use termusiclib::xywh;
-
-use termusiclib::track::{MediaType, Track};
-#[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
-use termusiclib::ueberzug::UeInstance;
-
-use anyhow::anyhow;
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
+
+use anyhow::{anyhow, bail, Context};
+use termusiclib::config::v2::tui::keys::Keys;
+use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
 use termusiclib::library_db::TrackDB;
+use termusiclib::library_db::{DataBase, SearchCriteria};
+use termusiclib::player::playlist_helpers::PlaylistTrackSource;
+use termusiclib::player::{PlaylistTracks, RunningStatus};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed};
 use termusiclib::songtag::SongTag;
 use termusiclib::taskpool::TaskPool;
+use termusiclib::track::{MediaType, Track};
+use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
+#[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
+use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;
-use termusicplayback::Playlist;
-use tokio::sync::broadcast;
+use termusiclib::xywh;
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 
 use super::tui_cmd::TuiCmd;
+use crate::ui::Application;
+use crate::CombinedSettings;
+use download_tracker::DownloadTracker;
+
+mod download_tracker;
+mod playlist;
+mod update;
+mod view;
+mod youtube_options;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TermusicLayout {
@@ -135,6 +114,130 @@ pub struct ConfigEditorData {
     pub config_changed: bool,
 }
 
+/// Information about the playback status
+#[derive(Debug, Clone)]
+pub struct Playback {
+    /// The Playlist with all the tracks.
+    pub playlist: playlist::TUIPlaylist,
+    /// The current Running Status like Playing / Paused
+    status: RunningStatus,
+    /// The current track, if there is one. Does not need to be in the playlist.
+    current_track: Option<Track>,
+    current_track_pos: Duration,
+}
+
+impl Playback {
+    fn new() -> Self {
+        Self {
+            playlist: playlist::TUIPlaylist::default(),
+            status: RunningStatus::default(),
+            current_track: None,
+            current_track_pos: Duration::ZERO,
+        }
+    }
+
+    #[must_use]
+    pub fn is_stopped(&self) -> bool {
+        self.status == RunningStatus::Stopped
+    }
+
+    #[must_use]
+    #[expect(dead_code)]
+    pub fn is_paused(&self) -> bool {
+        self.status == RunningStatus::Paused
+    }
+
+    #[must_use]
+    pub fn status(&self) -> RunningStatus {
+        self.status
+    }
+
+    pub fn set_status(&mut self, status: RunningStatus) {
+        self.status = status;
+    }
+
+    #[must_use]
+    pub fn current_track(&self) -> Option<&Track> {
+        self.current_track.as_ref()
+    }
+
+    #[must_use]
+    pub fn current_track_mut(&mut self) -> Option<&mut Track> {
+        self.current_track.as_mut()
+    }
+
+    pub fn clear_current_track(&mut self) {
+        self.current_track.take();
+    }
+
+    pub fn set_current_track(&mut self, track: Option<Track>) {
+        self.current_track = track;
+    }
+
+    /// Set the current track from the playlist, if there is one
+    pub fn set_current_track_from_playlist(&mut self) {
+        self.set_current_track(self.playlist.current_track().cloned());
+    }
+
+    pub fn current_track_pos(&self) -> Duration {
+        self.current_track_pos
+    }
+
+    pub fn set_current_track_pos(&mut self, pos: Duration) {
+        self.current_track_pos = pos;
+    }
+
+    /// Load Tracks from a GRPC response.
+    ///
+    /// Returns `(Position, Tracks[])`.
+    ///
+    /// # Errors
+    ///
+    /// - when converting from u64 grpc values to usize fails
+    /// - when there is no track-id
+    /// - when reading a Track from path or podcast database fails
+    pub fn load_from_grpc(
+        &mut self,
+        info: PlaylistTracks,
+        podcast_db: &DBPod,
+    ) -> anyhow::Result<()> {
+        let current_track_index = usize::try_from(info.current_track_index)
+            .context("convert current_track_index(u64) to usize")?;
+        let mut playlist_items = Vec::with_capacity(info.tracks.len());
+
+        for (idx, track) in info.tracks.into_iter().enumerate() {
+            let at_index_usize =
+                usize::try_from(track.at_index).context("convert at_index(u64) to usize")?;
+            // assume / require that the tracks are ordered correctly, if not just log a error for now
+            if idx != at_index_usize {
+                error!("Non-matching \"index\" and \"at_index\"!");
+            }
+
+            // this case should never happen with "termusic-server", but grpc marks them as "optional"
+            let Some(id) = track.id else {
+                bail!("Track does not have a id, which is required to load!");
+            };
+
+            let track = match PlaylistTrackSource::try_from(id)? {
+                PlaylistTrackSource::Path(v) => Track::read_from_path(v, false)?,
+                PlaylistTrackSource::Url(v) => Track::new_radio(&v),
+                PlaylistTrackSource::PodcastUrl(v) => {
+                    let episode = podcast_db.get_episode_by_url(&v)?;
+                    Track::from_episode(&episode)
+                }
+            };
+
+            playlist_items.push(track);
+        }
+
+        self.playlist.set_tracks(playlist_items);
+        self.playlist.set_current_track_index(current_track_index)?;
+        self.set_current_track_from_playlist();
+
+        Ok(())
+    }
+}
+
 pub struct Model {
     /// Indicates that the application must quit
     pub quit: bool,
@@ -159,12 +262,9 @@ pub struct Model {
     pub podcast: PodcastWidgetData,
     pub config_editor: ConfigEditorData,
 
-    /// Clone of `playlist.current_track`, but kept around when playlist goes empty but song is still playing
-    pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
-    pub time_pos: Duration,
     pub lyric_line: String,
-    pub playlist: Playlist,
+    pub playback: Playback,
 
     #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
     pub ueberzug_instance: Option<UeInstance>,
@@ -263,10 +363,6 @@ impl Model {
         ));
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        // I dont like this workaround, but until the tui has its own playlist impl, this has to do.
-        let (stream_tx, _stream_rx) = broadcast::channel(1);
-
-        let playlist = Playlist::new(&config_server, stream_tx);
         let app = Self::init_app(&tree, &config_tui);
 
         // This line is required, in order to show the playing message for the first track
@@ -283,9 +379,7 @@ impl Model {
             terminal,
             config_server,
             config_tui,
-            // current_song: None,
             tageditor_song: None,
-            time_pos: Duration::default(),
             lyric_line: String::new(),
 
             library: MusicLibraryData {
@@ -328,9 +422,8 @@ impl Model {
             tx_to_main,
             rx_to_main,
             download_tracker: DownloadTracker::default(),
-            playlist,
+            playback: Playback::new(),
             cmd_to_server_tx,
-            current_song: None,
             xywh,
         }
     }
@@ -414,7 +507,7 @@ impl Model {
     }
 
     pub fn player_update_current_track_after(&mut self) {
-        self.time_pos = Duration::default();
+        self.playback.set_current_track_pos(Duration::ZERO);
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
@@ -425,7 +518,7 @@ impl Model {
 
     /// Send a [`TogglePause`](TuiCmd::TogglePause) command, if the conditions are right.
     pub fn player_toggle_pause(&mut self) {
-        if self.playlist.is_empty() && self.playlist.current_track().is_none() {
+        if self.playback.playlist.is_empty() && self.playback.current_track().is_none() {
             return;
         }
 
@@ -445,7 +538,7 @@ impl Model {
     }
 
     pub fn is_radio(&self) -> bool {
-        if let Some(track) = self.playlist.current_track() {
+        if let Some(track) = self.playback.current_track() {
             if track.media_type == MediaType::LiveRadio {
                 return true;
             }

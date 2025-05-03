@@ -12,7 +12,6 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
-use termusiclib::player;
 use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
@@ -23,6 +22,7 @@ use termusiclib::player::PlaylistSwapInfo;
 use termusiclib::player::PlaylistTracks;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
+use termusiclib::player::{self, RunningStatus};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::MediaType;
@@ -33,44 +33,6 @@ use termusiclib::{
 
 use crate::SharedPlaylist;
 use crate::StreamTX;
-
-#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
-pub enum Status {
-    #[default]
-    Stopped,
-    Running,
-    Paused,
-}
-
-impl Status {
-    #[must_use]
-    pub fn as_u32(&self) -> u32 {
-        match self {
-            Status::Stopped => 0,
-            Status::Running => 1,
-            Status::Paused => 2,
-        }
-    }
-
-    #[must_use]
-    pub fn from_u32(status: u32) -> Self {
-        match status {
-            1 => Status::Running,
-            2 => Status::Paused,
-            _ => Status::Stopped,
-        }
-    }
-}
-
-impl std::fmt::Display for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Running => write!(f, "Running"),
-            Self::Stopped => write!(f, "Stopped"),
-            Self::Paused => write!(f, "Paused"),
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct Playlist {
@@ -83,7 +45,7 @@ pub struct Playlist {
     /// The currently playing [`Track`]. Does not need to be in `tracks`
     current_track: Option<Track>,
     /// The current playing running status of the playlist
-    status: Status,
+    status: RunningStatus,
     /// The loop-/play-mode for the playlist
     loop_mode: LoopMode,
     /// Indexes into `tracks` that have been previously been played (for `previous`)
@@ -102,7 +64,7 @@ impl Playlist {
 
         Self {
             tracks: Vec::new(),
-            status: Status::Stopped,
+            status: RunningStatus::Stopped,
             loop_mode,
             current_track_index: 0,
             current_track,
@@ -504,22 +466,22 @@ impl Playlist {
         self.tracks.get(next_index)
     }
 
-    pub fn set_status(&mut self, status: Status) {
+    pub fn set_status(&mut self, status: RunningStatus) {
         self.status = status;
     }
 
     #[must_use]
     pub fn is_stopped(&self) -> bool {
-        self.status == Status::Stopped
+        self.status == RunningStatus::Stopped
     }
 
     #[must_use]
     pub fn is_paused(&self) -> bool {
-        self.status == Status::Paused
+        self.status == RunningStatus::Paused
     }
 
     #[must_use]
-    pub fn status(&self) -> Status {
+    pub fn status(&self) -> RunningStatus {
         self.status
     }
 
@@ -1071,7 +1033,7 @@ impl Playlist {
     /// Stop the current playlist by setting [`Status::Stopped`], preventing going to the next track
     /// and finally, stop the currently playing track.
     pub fn stop(&mut self) {
-        self.set_status(Status::Stopped);
+        self.set_status(RunningStatus::Stopped);
         self.set_next_track(None);
         self.clear_current_track();
     }

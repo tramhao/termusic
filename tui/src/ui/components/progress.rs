@@ -63,12 +63,12 @@ impl Model {
             "False"
         };
         let mut progress_title = String::new();
-        if let Some(track) = &self.current_song {
+        if let Some(track) = self.playback.current_track() {
             match track.media_type {
                 MediaType::Music | MediaType::LiveRadio => {
                     progress_title = format!(
                         " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.playlist.status(),
+                        self.playback.status(),
                         config_server.settings.player.volume,
                         config_server.settings.player.speed as f32 / 10.0,
                         gapless,
@@ -77,7 +77,7 @@ impl Model {
                 MediaType::Podcast => {
                     progress_title = format!(
                         " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.playlist.status(),
+                        self.playback.status(),
                         track.title().unwrap_or("Unknown title"),
                         config_server.settings.player.volume,
                         config_server.settings.player.speed as f32 / 10.0,
@@ -111,7 +111,7 @@ impl Model {
 
         let time_pos = time_pos.unwrap();
 
-        self.time_pos = time_pos;
+        self.playback.set_current_track_pos(time_pos);
 
         let progress = (time_pos.as_secs() * 100)
             .checked_div(total_duration.as_secs())
@@ -142,7 +142,7 @@ impl Model {
                 Attribute::Text,
                 AttrValue::String(format!(
                     "{}    -    {}",
-                    Track::duration_formatted_short(&self.time_pos),
+                    Track::duration_formatted_short(&self.playback.current_track_pos()),
                     Track::duration_formatted_short(&total_duration)
                 )),
             )

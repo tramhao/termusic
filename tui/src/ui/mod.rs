@@ -37,11 +37,11 @@ use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use termusiclib::player::PlayerProgress;
+use termusiclib::player::RunningStatus;
 use termusiclib::player::StreamUpdates;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 pub use termusiclib::types::*;
-use termusicplayback::Status;
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
@@ -177,29 +177,29 @@ impl UI {
     }
 
     /// Handle running [`Status`] having possibly changed.
-    fn handle_status(&mut self, new_status: Status) {
-        let old_status = self.model.playlist.status();
+    fn handle_status(&mut self, new_status: RunningStatus) {
+        let old_status = self.model.playback.status();
         // nothing needs to be done as the status is the same
         if new_status == old_status {
             return;
         }
 
-        self.model.playlist.set_status(new_status);
+        self.model.playback.set_status(new_status);
 
         match new_status {
-            Status::Running => {
+            RunningStatus::Running => {
                 // This is to show the first album photo
-                if old_status == Status::Stopped {
+                if old_status == RunningStatus::Stopped {
                     self.model.player_update_current_track_after();
                 }
             }
-            Status::Stopped => {
+            RunningStatus::Stopped => {
                 // This is to clear the photo shown when stopped
-                if self.model.playlist.is_empty() {
+                if self.model.playback.playlist.is_empty() {
                     self.model.player_update_current_track_after();
                 }
             }
-            Status::Paused => {}
+            RunningStatus::Paused => {}
         }
     }
 
@@ -209,12 +209,12 @@ impl UI {
             match cmd {
                 TuiCmd::TogglePause => {
                     let status = self.playback.toggle_pause().await?;
-                    self.model.playlist.set_status(status);
+                    self.model.playback.set_status(status);
                     self.model.progress_update_title();
                 }
                 TuiCmd::SkipNext => {
                     self.playback.skip_next().await?;
-                    self.model.playlist.clear_current_track();
+                    self.model.playback.clear_current_track();
                 }
                 TuiCmd::SkipPrevious => self.playback.skip_previous().await?,
                 TuiCmd::GetProgress => {
@@ -233,7 +233,7 @@ impl UI {
 
                     self.model.lyric_update_for_radio(response.radio_title);
 
-                    self.handle_status(Status::from_u32(response.status));
+                    self.handle_status(RunningStatus::from_u32(response.status));
                 }
 
                 TuiCmd::CycleLoop => {
@@ -362,7 +362,9 @@ impl UI {
                     self.model.config_server.write().settings.player.speed = speed;
                 }
                 UpdateEvents::PlayStateChanged { playing } => {
-                    self.model.playlist.set_status(Status::from_u32(playing));
+                    self.model
+                        .playback
+                        .set_status(RunningStatus::from_u32(playing));
                     self.model.progress_update_title();
                 }
                 UpdateEvents::TrackChanged(track_changed_info) => {
@@ -426,7 +428,7 @@ impl UI {
         let tracks = self.playback.get_playlist().await?;
         let current_track_index = tracks.current_track_index;
         self.model
-            .playlist
+            .playback
             .load_from_grpc(tracks, &self.model.podcast.db_podcast)?;
 
         self.model.playlist_sync();

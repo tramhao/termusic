@@ -6,9 +6,8 @@ use termusiclib::player::playlist_helpers::{
 };
 use termusiclib::player::{
     Empty, GetProgressResponse, PlayerProgress, PlaylistSwapTracks, PlaylistTracks,
-    PlaylistTracksToAdd, PlaylistTracksToRemove,
+    PlaylistTracksToAdd, PlaylistTracksToRemove, RunningStatus,
 };
-use termusicplayback::Status;
 use tokio_stream::{Stream, StreamExt as _};
 use tonic::transport::Channel;
 
@@ -23,11 +22,11 @@ impl Playback {
         Self { client }
     }
 
-    pub async fn toggle_pause(&mut self) -> Result<Status> {
+    pub async fn toggle_pause(&mut self) -> Result<RunningStatus> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.toggle_pause(request).await?;
         let response = response.into_inner();
-        let status = Status::from_u32(response.status);
+        let status = RunningStatus::from_u32(response.status);
         info!("Got response from server: {response:?}");
         Ok(status)
     }

@@ -2,6 +2,7 @@ use std::sync::LazyLock;
 
 use crate::ui::{model::TermusicLayout, Model};
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, LyricMsg, Msg};
@@ -51,10 +52,7 @@ impl Lyric {
                 // .wrap(true)
                 .step(4)
                 .highlighted_str(&config.settings.theme.style.playlist.highlight_symbol)
-                .text_rows(&[TextSpan::new(format!(
-                    "{}.",
-                    termusicplayback::Status::Stopped
-                ))])
+                .text_rows(&[TextSpan::new(format!("{}.", RunningStatus::Stopped))])
         };
 
         Self { component, config }
@@ -138,7 +136,7 @@ impl Model {
         let mut need_update = false;
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
-        if let Some(track) = self.playlist.current_track().cloned() {
+        if let Some(track) = self.playback.current_track() {
             if MediaType::Podcast == track.media_type {
                 if let Some(file) = track.file() {
                     'outer: for pod in &self.podcast.podcasts {
@@ -256,23 +254,23 @@ impl Model {
             }
             return;
         }
-        if self.playlist.is_stopped() {
+        if self.playback.is_stopped() {
             self.lyric_set_lyric("Stopped.");
             return;
         }
-        if let Some(song) = &self.current_song {
-            if MediaType::LiveRadio == song.media_type {
+        if let Some(track) = self.playback.current_track() {
+            if MediaType::LiveRadio == track.media_type {
                 return;
             }
 
             let mut line = String::new();
 
-            if let Some(l) = song.parsed_lyric() {
+            if let Some(l) = track.parsed_lyric() {
                 if l.captions.is_empty() {
                     self.lyric_set_lyric("No lyrics available.");
                     return;
                 }
-                if let Some(l) = l.get_text(self.time_pos) {
+                if let Some(l) = l.get_text(self.playback.current_track_pos()) {
                     line = l.to_string();
                 }
             } else {
@@ -284,7 +282,7 @@ impl Model {
     }
 
     pub fn lyric_update_for_radio<T: AsRef<str>>(&mut self, radio_title: T) {
-        if let Some(song) = self.playlist.current_track() {
+        if let Some(song) = self.playback.current_track() {
             if MediaType::LiveRadio == song.media_type {
                 let radio_title = radio_title.as_ref();
                 if radio_title.is_empty() {
@@ -313,7 +311,7 @@ impl Model {
     }
 
     pub fn lyric_cycle(&mut self) {
-        if let Some(track) = &mut self.current_song {
+        if let Some(track) = self.playback.current_track_mut() {
             if let Ok(f) = track.cycle_lyrics() {
                 let lang_ext = f.description.clone();
                 self.update_show_message_timeout(
@@ -325,8 +323,9 @@ impl Model {
         }
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
-        if let Some(track) = self.playlist.current_track_as_mut() {
-            if let Err(e) = track.adjust_lyric_delay(self.time_pos, offset) {
+        let time_pos = self.playback.current_track_pos();
+        if let Some(track) = self.playback.current_track_mut() {
+            if let Err(e) = track.adjust_lyric_delay(time_pos, offset) {
                 self.mount_error_popup(e.context("adjust lyric delay"));
             }
         }
@@ -334,9 +333,9 @@ impl Model {
 
     /// Update the Lyric Component's title.
     pub fn lyric_update_title(&mut self) {
-        let track = self.current_song.as_ref();
+        let track = self.playback.current_track();
 
-        if self.playlist.is_stopped() || track.is_none() {
+        if self.playback.is_stopped() || track.is_none() {
             self.lyric_title_set(" No track is playing ".to_string());
             return;
         }

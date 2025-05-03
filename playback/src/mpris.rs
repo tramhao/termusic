@@ -8,7 +8,7 @@ use termusiclib::{
 };
 
 use crate::{
-    GeneralPlayer, PlayerCmd, PlayerProgress, PlayerTimeUnit, PlayerTrait, Status, Volume,
+    GeneralPlayer, PlayerCmd, PlayerProgress, PlayerTimeUnit, PlayerTrait, RunningStatus, Volume,
 };
 
 pub struct Mpris {
@@ -110,16 +110,20 @@ impl Mpris {
     }
 
     /// Update Track position / progress, requires `playlist_status` because [`MediaControls`] only allows `set_playback`, not `set_position` or `get_playback`
-    pub fn update_progress(&mut self, position: Option<PlayerTimeUnit>, playlist_status: Status) {
+    pub fn update_progress(
+        &mut self,
+        position: Option<PlayerTimeUnit>,
+        playlist_status: RunningStatus,
+    ) {
         if let Some(position) = position {
             match playlist_status {
-                Status::Running => self
+                RunningStatus::Running => self
                     .controls
                     .set_playback(MediaPlayback::Playing {
                         progress: Some(souvlaki::MediaPosition(position)),
                     })
                     .ok(),
-                Status::Paused | Status::Stopped => self
+                RunningStatus::Paused | RunningStatus::Stopped => self
                     .controls
                     .set_playback(MediaPlayback::Paused {
                         progress: Some(souvlaki::MediaPosition(position)),
