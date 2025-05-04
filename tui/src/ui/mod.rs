@@ -33,6 +33,7 @@ use futures_util::FutureExt;
 use model::{Model, TermusicLayout};
 use music_player_client::Playback;
 use std::time::Duration;
+use sysinfo::Pid;
 use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
@@ -159,17 +160,34 @@ impl UI {
         {
             let mut system = System::new();
             system.refresh_all();
+            let mut target = None;
+            let mut clients = 0;
             for proc in system.processes().values() {
-                let Some(exe) = proc.exe().map(|v| v.display().to_string()) else {
-                    continue;
-                };
-                if exe.contains("termusic-server") {
-                    #[cfg(not(target_os = "windows"))]
-                    proc.kill_with(sysinfo::Signal::Term);
-                    #[cfg(target_os = "windows")]
-                    proc.kill();
-                    break;
+                if let Some(exe) = proc.name().to_str() {
+                    if exe == "termusic-server" {
+                        if &proc.pid() == crate::SERVER_PID.get().unwrap_or(&Pid::from_u32(0))
+                            || target.is_none()
+                        {
+                            target = Some(proc);
+                        }
+                        continue;
+                    }
+                    let parent_is_termusic = match proc.parent() {
+                        Some(s) => system.processes().get(&s).unwrap().name() == "termusic",
+                        None => false,
+                    };
+                    if exe == "termusic" && !parent_is_termusic {
+                        clients += 1;
+                    }
                 }
+            }
+            if clients <= 1 && target.is_some() {
+                #[cfg(not(target_os = "windows"))]
+                if let Some(s) = target {
+                    s.kill_with(sysinfo::Signal::Term);
+                }
+                #[cfg(target_os = "windows")]
+                target.unwrap().kill();
             }
         }
 
