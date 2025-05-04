@@ -26,9 +26,9 @@ pub struct YNConfirm {
 
 impl YNConfirm {
     /// Create a new instance with custom colors
-    pub fn new_with_cb<F: FnOnce(&TuiOverlay) -> YNConfirmStyle>(
+    pub fn new_with_cb<F: FnOnce(&TuiOverlay) -> YNConfirmStyle, T: Into<String>>(
         config: SharedTuiSettings,
-        title: &'static str,
+        title: T,
         cb: F,
     ) -> Self {
         let component = {
@@ -59,6 +59,7 @@ impl YNConfirm {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => return Some(on_n),
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => self.perform(Cmd::Move(Direction::Left)),
