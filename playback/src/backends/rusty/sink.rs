@@ -6,10 +6,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use parking_lot::{Mutex, RwLock};
-use rodio::cpal::FromSample;
-use rodio::{queue, source::Done, Sample, Source};
+use rodio::{queue, source::Done, Source};
 use rodio::{OutputStreamHandle, PlayError};
 
+use super::source::SampleType;
 #[allow(unused_imports)] // used for "rusty-soundtouch"
 use super::source::SourceExt as _;
 use super::PlayerInternalCmd;
@@ -103,9 +103,7 @@ impl Sink {
     #[allow(clippy::cast_possible_wrap)]
     pub fn append<S>(&self, source: S)
     where
-        S: Source + Send + 'static,
-        f32: FromSample<S::Item>,
-        S::Item: Sample + Send,
+        S: Source<Item = SampleType> + Send + 'static,
     {
         // Wait for queue to flush then resume stopped playback
         if self.controls.stopped.load(Ordering::SeqCst) {
@@ -116,30 +114,25 @@ impl Sink {
         }
 
         let controls = self.controls.clone();
-        #[cfg(feature = "rusty-soundtouch")]
-        let controls_tempo = self.controls.clone();
-
-        let start_played = AtomicBool::new(false);
 
         let progress_tx = self.picmd_tx.clone();
         let source = source
             .track_position()
-            .speed(1.0)
-            .pausable(false)
+            .custom_speed(1.0)
             .amplify(1.0)
+            .pausable(false)
             .skippable()
-            .stoppable()
+            // as of rodio 0.20.x, "stoppable" is the same as "skippable"
+            // .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
-                progress_tx
-                    .send(PlayerInternalCmd::Progress(
-                        src.inner().inner().inner().inner().inner().get_pos(),
-                    ))
-                    .ok();
+                let _ = progress_tx.send(PlayerInternalCmd::Progress(
+                    src.inner().inner().inner().inner().get_pos(),
+                ));
             })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
                 if controls.stopped.load(Ordering::SeqCst) {
-                    src.stop();
+                    src.skip();
                     // reset position to be at 0, otherwise the position could be stale if there is no new source
                     *controls.position.write() = Duration::ZERO;
                 } else {
@@ -149,39 +142,25 @@ impl Sink {
                     {
                         let mut to_clear = controls.to_clear.lock();
                         if *to_clear > 0 {
-                            src.inner_mut().skip();
+                            src.skip();
                             *to_clear -= 1;
                             // reset position to be at 0, otherwise the position could be stale if there is no new source
                             *controls.position.write() = Duration::ZERO;
+
+                            return;
                         }
                     }
-                    *controls.position.write() =
-                        src.inner().inner().inner().inner().inner().get_pos();
+                    *controls.position.write() = src.inner().inner().inner().inner().get_pos();
 
-                    let amp = src.inner_mut().inner_mut();
-                    amp.set_factor(*controls.volume.lock());
+                    let amp = src.inner_mut();
+                    amp.inner_mut().set_factor(*controls.volume.lock());
+                    amp.set_paused(controls.pause.load(Ordering::SeqCst));
+
                     amp.inner_mut()
-                        .set_paused(controls.pause.load(Ordering::SeqCst));
-
-                    #[cfg(not(feature = "rusty-soundtouch"))]
-                    {
-                        amp.inner_mut()
-                            .inner_mut()
-                            .set_factor(*controls.speed.lock());
-                    }
-
-                    start_played.store(true, Ordering::SeqCst);
+                        .inner_mut()
+                        .set_factor(*controls.speed.lock());
                 }
-            })
-            .convert_samples();
-
-        #[cfg(feature = "rusty-soundtouch")]
-        let source =
-            source
-                .soundtouch(1.0)
-                .periodic_access(Duration::from_millis(500), move |src| {
-                    src.set_factor(f64::from(*controls_tempo.speed.lock()));
-                });
+            });
 
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());

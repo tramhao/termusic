@@ -6,6 +6,10 @@ use rodio::{Sample, Source};
 pub mod soundtouch;
 
 pub mod async_ring;
+mod custom_speed;
+
+/// Our sample type we choose to use across all places
+pub type SampleType = f32;
 
 /// Extension trait for [`Source`] for additional custom modifiers
 #[allow(clippy::module_name_repetitions)]
@@ -14,14 +18,13 @@ pub trait SourceExt: Source
 where
     Self::Item: Sample,
 {
-    /// Modify samples to sound similar as 1.0 speed when sped-up or slowed-down via [`::soundtouch`] (via `libSoundTouch`)
-    #[cfg(feature = "rusty-soundtouch")]
-    fn soundtouch(self, factor: f32) -> soundtouch::SoundTouchSource<Self>
+    /// A custom [`Source`] implementation to abstract away which speed module gets chosen.
+    fn custom_speed(self, initial_speed: f32) -> custom_speed::CustomSpeed<Self>
     where
         Self: Sized,
         Self: Source<Item = f32>,
     {
-        soundtouch::soundtouch(self, factor)
+        custom_speed::custom_speed(self, initial_speed)
     }
 }
 
