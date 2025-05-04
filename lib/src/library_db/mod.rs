@@ -28,6 +28,7 @@ use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
 use anyhow::Context;
 use parking_lot::Mutex;
 use rusqlite::{params, Connection, Error, Result};
+use std::fmt::Debug;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -41,6 +42,15 @@ pub use track_db::{const_unknown, Indexable, TrackDB};
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
     max_depth: ScanDepth,
+}
+
+impl Debug for DataBase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DataBase")
+            .field("conn", &"<unavailable>")
+            .field("max_depth", &self.max_depth)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
