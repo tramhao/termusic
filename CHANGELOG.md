@@ -2,6 +2,8 @@
 
 ### next
 - Change: updated MSRV to 1.82.
+- Change: support Unix Domain Sockets in addition to HTTP transport. (Note that UDS is only available for `unix` targets)
+- Change: change default transport protocol to be UDS on `unix` systems.
 - Change(tui): rename cli option `--disable-cover`  to `--hide-cover`.
 - Change(tui): dont depend on `termusicplayback` anymore.
 - Feat(tui): add new cli option `--disable-cover` which actually disables all cover probing and behaves as if no cover features are enabled.

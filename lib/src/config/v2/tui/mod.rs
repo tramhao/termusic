@@ -36,7 +36,7 @@ impl TuiSettings {
         match self.com {
             MaybeComSettings::ComSettings(ref v) => {
                 // this could likely be avoided, but for simplicity this is set
-                self.com_resolved = Some(*v);
+                self.com_resolved = Some(v.clone());
                 return Ok(());
             }
             MaybeComSettings::Same => (),

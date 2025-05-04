@@ -350,11 +350,66 @@ impl LoopMode {
     }
 }
 
-/// Settings for the gRPC server (and potentially future ways to communicate)
+/// Error for when [`ComProtocol`] parsing fails
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
+pub enum ComProtocolParseError {
+    #[error("Expected \"uds\" or \"http\", found \"{0}\"")]
+    UnknownValue(String),
+}
+
+/// The Protocol to use for the server-client communication
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(try_from = "String")]
+#[serde(into = "String")]
+pub enum ComProtocol {
+    HTTP,
+    /// Unix socket
+    UDS,
+}
+
+impl TryFrom<String> for ComProtocol {
+    type Error = ComProtocolParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::try_from(value.as_str())
+    }
+}
+
+impl TryFrom<&str> for ComProtocol {
+    type Error = ComProtocolParseError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let lowercase = value.to_ascii_lowercase();
+        Ok(match lowercase.as_str() {
+            "http" => Self::HTTP,
+            "uds" => Self::UDS,
+            _ => return Err(ComProtocolParseError::UnknownValue(lowercase)),
+        })
+    }
+}
+
+impl From<ComProtocol> for String {
+    fn from(val: ComProtocol) -> Self {
+        match val {
+            ComProtocol::HTTP => "http",
+            ComProtocol::UDS => "uds",
+        }
+        .to_string()
+    }
+}
+
+/// Settings for the gRPC server (and potentially future ways to communicate)
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 // for now, require that both port and ip are specified at once
-// #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
+#[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct ComSettings {
+    // General Settings
+    pub protocol: ComProtocol,
+
+    // UDS settings
+    pub socket_path: PathBuf,
+
+    // Below are HTTP settings
     /// gRPC server Port
     pub port: u16,
     /// gRPC server interface / address
@@ -363,15 +418,25 @@ pub struct ComSettings {
 
 impl Default for ComSettings {
     fn default() -> Self {
+        // TODO: maybe default to include user id like "termusic-1000.socket"?
+        let socket_path = std::env::temp_dir().join("termusic.socket");
+
         Self {
+            #[cfg(unix)]
+            protocol: ComProtocol::UDS,
+            #[cfg(not(unix))]
+            protocol: ComProtocol::HTTP,
+
+            socket_path,
+
             port: 50101,
             address: "::1".parse().unwrap(),
         }
     }
 }
 
-impl From<ComSettings> for SocketAddr {
-    fn from(value: ComSettings) -> Self {
+impl From<&ComSettings> for SocketAddr {
+    fn from(value: &ComSettings) -> Self {
         Self::new(value.address, value.port)
     }
 }
@@ -442,8 +507,11 @@ mod v1_interop {
         #[allow(clippy::cast_possible_truncation)] // checked casts
         fn try_from(value: v1::Settings) -> Result<Self, Self::Error> {
             let com_settings = ComSettings {
+                // when coming from v1, continue using http until manually changed
+                protocol: super::ComProtocol::HTTP,
                 port: value.player_port,
                 address: value.player_interface,
+                ..Default::default()
             };
 
             let podcast_settings = PodcastSettings {
@@ -507,6 +575,8 @@ mod v1_interop {
         use pretty_assertions::assert_eq;
         use std::path::PathBuf;
 
+        use crate::config::v2::server::ComProtocol;
+
         use super::*;
 
         #[test]
@@ -532,8 +602,10 @@ mod v1_interop {
             assert_eq!(
                 converted.com,
                 ComSettings {
+                    protocol: ComProtocol::HTTP,
                     port: 50101,
-                    address: "::1".parse().unwrap()
+                    address: "::1".parse().unwrap(),
+                    ..Default::default()
                 }
             );
 

@@ -2,16 +2,17 @@ mod cli;
 mod logger;
 mod music_player_service;
 
+use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context as _, Result};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use termusiclib::config::v2::server::ScanDepth;
+use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
 use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
@@ -23,6 +24,8 @@ use termusicplayback::{
 };
 use tokio::runtime::Handle;
 use tokio::sync::{broadcast, oneshot};
+use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 use tonic::transport::server::TcpIncoming;
 use tonic::transport::Server;
 
@@ -129,15 +132,10 @@ async fn actual_main() -> Result<()> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let addr = std::net::SocketAddr::from(config.read().settings.com);
+    let service_cancel_token = CancellationToken::new();
 
-    // workaround to print address once sever "actually" is started and address is known
-    // see https://github.com/hyperium/tonic/issues/351
-    let tcp_listener = tokio::net::TcpListener::bind(addr)
-        .await
-        .with_context(|| format!("Error binding address: {}", addr))?;
-    info!("Server listening on {}", tcp_listener.local_addr().unwrap());
-    let tcp_stream = TcpIncoming::from(tcp_listener).with_nodelay(Some(true));
+    let join_handle =
+        start_service(&config, music_player_service, service_cancel_token.clone()).await?;
 
     let tokio_handle = Handle::current();
     let (player_handle_os_tx, player_handle_os_rx) = oneshot::channel();
@@ -159,13 +157,7 @@ async fn actual_main() -> Result<()> {
 
     ticker_thread(cmd_tx_ticker)?;
 
-    tokio::spawn(
-        Server::builder()
-            .add_service(MusicPlayerServer::new(music_player_service))
-            .serve_with_incoming(tcp_stream),
-    );
-
-    info!("Server started and listening on {}", addr);
+    info!("Server ready");
 
     // await the oneshot completing in a async fashion
     player_handle_os_rx.await??;
@@ -173,7 +165,162 @@ async fn actual_main() -> Result<()> {
     // and by doing this after the oneshot we can be sure the thread is actually exited, or exiting
     let _ = player_handle.join();
 
+    // ensure cleanup of the service tasks happens before main exits
+    service_cancel_token.cancel();
+    let _ = join_handle.await;
+
+    // Graceful exit log
+    info!("Bye");
+
     Ok(())
+}
+
+/// Start the [`MusicPlayerService`] with the according transport protocol.
+async fn start_service(
+    config: &SharedServerSettings,
+    music_player_service: MusicPlayerService,
+    cancel_token: CancellationToken,
+) -> Result<JoinHandle<Result<(), tonic::transport::Error>>> {
+    // otherwise the MutexGuard would be held across await points
+    let protocol = config.read().settings.com.protocol;
+    let handle = match protocol {
+        ComProtocol::HTTP => {
+            let (tcp_stream, addr) = tcp_stream(config).await?;
+            info!("Server listening on {addr}");
+
+            tokio::spawn(
+                Server::builder()
+                    .add_service(MusicPlayerServer::new(music_player_service))
+                    .serve_with_incoming_shutdown(tcp_stream, cancel_token.cancelled_owned()),
+            )
+        }
+        #[cfg(unix)]
+        ComProtocol::UDS => {
+            // TODO: unlink socket file if it already exists
+            let (uds_stream, addr) = uds::uds_stream(config).await?;
+            info!("Server listening on {addr}");
+
+            tokio::spawn(
+                Server::builder()
+                    .add_service(MusicPlayerServer::new(music_player_service))
+                    .serve_with_incoming_shutdown(uds_stream, cancel_token.cancelled_owned()),
+            )
+        }
+        #[cfg(not(unix))]
+        ComProtocol::UDS => {
+            // runtime error to not plaster "cfg(unix)" everywhere and because the default for those systems is "HTTP"
+            // and windows in tonic(and lower) will support uds soon-ish
+            unimplemented!("UDS/Unix Domain Sockets are only implemented for unix targets")
+        }
+    };
+
+    Ok(handle)
+}
+
+/// Create the TCP Stream for HTTP requests.
+async fn tcp_stream(config: &SharedServerSettings) -> Result<(TcpIncoming, SocketAddr)> {
+    let addr = SocketAddr::from(&config.read().settings.com);
+
+    // workaround to print address once sever "actually" is started and address is known
+    // see https://github.com/hyperium/tonic/issues/351
+    let tcp_listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .with_context(|| format!("Error binding address: {}", addr))?;
+
+    // workaround as "TcpIncoming" does not provide a function to get the address
+    let socket_addr = tcp_listener.local_addr()?;
+
+    let stream = TcpIncoming::from(tcp_listener).with_nodelay(Some(true));
+
+    Ok((stream, socket_addr))
+}
+
+#[cfg(unix)]
+mod uds {
+    use std::{
+        io,
+        pin::Pin,
+        task::{Context, Poll},
+    };
+
+    use anyhow::{Context as _, Result};
+    use termusiclib::config::SharedServerSettings;
+    use tokio::net::{UnixListener, UnixStream};
+    use tokio_stream::Stream;
+
+    /// Create the UDS Stream for UDS requests.
+    pub async fn uds_stream(config: &SharedServerSettings) -> Result<(UnixListenerStream, String)> {
+        let path = &config.read().settings.com.socket_path;
+
+        // if the file already exists, tokio will error with "Address already in use"
+        // not using async here because of MutexGuard and being before anything important
+        if path.exists() {
+            warn!("Socket Path {} already exists, unlinking!", path.display());
+            let _ = std::fs::remove_file(path);
+        }
+
+        let path_str = path.display().to_string();
+        let uds = UnixListener::bind(path).with_context(|| path_str.clone())?;
+
+        let stream = UnixListenerStream::new(uds);
+
+        Ok((stream, path_str))
+    }
+
+    /// A wrapper around [`UnixListener`] that implements [`Stream`].
+    ///
+    /// Copied from [`tokio_stream::wrappers::UnixListenerStream`], which is licensed MIT.
+    ///
+    /// Modified because the normal implementation does not remove the socket on drop.
+    #[derive(Debug)]
+    #[cfg_attr(docsrs, doc(cfg(all(unix, feature = "net"))))]
+    pub struct UnixListenerStream {
+        inner: UnixListener,
+    }
+
+    impl UnixListenerStream {
+        /// Create a new `UnixListenerStream`.
+        pub fn new(listener: UnixListener) -> Self {
+            Self { inner: listener }
+        }
+    }
+
+    impl Stream for UnixListenerStream {
+        type Item = io::Result<UnixStream>;
+
+        fn poll_next(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Option<io::Result<UnixStream>>> {
+            match self.inner.poll_accept(cx) {
+                Poll::Ready(Ok((stream, _))) => Poll::Ready(Some(Ok(stream))),
+                Poll::Ready(Err(err)) => Poll::Ready(Some(Err(err))),
+                Poll::Pending => Poll::Pending,
+            }
+        }
+    }
+
+    impl AsRef<UnixListener> for UnixListenerStream {
+        fn as_ref(&self) -> &UnixListener {
+            &self.inner
+        }
+    }
+
+    impl AsMut<UnixListener> for UnixListenerStream {
+        fn as_mut(&mut self) -> &mut UnixListener {
+            &mut self.inner
+        }
+    }
+
+    impl Drop for UnixListenerStream {
+        fn drop(&mut self) {
+            // unlink socket file as it is not done so by default
+            let tmp = self.inner.local_addr().ok();
+            if let Some(val) = tmp.as_ref().and_then(|v| v.as_pathname()) {
+                let _ = std::fs::remove_file(val);
+            }
+        }
+    }
 }
 
 /// The main player loop where we handle all events
@@ -203,16 +350,21 @@ fn player_loop(
             }
             PlayerCmd::Quit => {
                 info!("PlayerCmd::Quit received");
+                // to have a consistent last position
+                player.pause();
                 player.player_save_last_position();
                 if let Err(e) = player.playlist.write().save() {
                     error!("error when saving playlist: {e}");
                 };
+                // clear out all currently queued rodio sources
+                // without this, on rusty backend, may keep the process around until the last source has been consumed
+                player.stop();
                 if let Err(e) =
                     ServerConfigVersionedDefaulted::save_config_path(&player.config.read().settings)
                 {
                     error!("error when saving config: {e}");
                 };
-                std::process::exit(0);
+                return Ok(());
             }
             PlayerCmd::CycleLoop => {
                 player.config.write().settings.player.loop_mode =
