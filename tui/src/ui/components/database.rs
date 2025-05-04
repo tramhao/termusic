@@ -650,7 +650,6 @@ impl Model {
 
     /// Add all Results (from view `Result`) to the playlist.
     pub fn database_add_all_results(&mut self) {
-        // TODO: refactor this code the be on a separate thread to not block the TUI
         self.umount_results_add_confirm_database();
         if !self.dw.search_results.is_empty() {
             let mut tracks = Vec::new();
