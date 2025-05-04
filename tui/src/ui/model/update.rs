@@ -589,6 +589,29 @@ impl Model {
                 let db_search_tracks = self.dw.search_tracks.clone();
                 self.playlist_add_all_from_db(&db_search_tracks);
             }
+
+            DBMsg::AddResultToPlaylist(index) => {
+                if let Some(result) = self.dw.search_results.get(*index).cloned() {
+                    if let Some(result) =
+                        self.database_get_tracks_by_criteria(self.dw.criteria, &result)
+                    {
+                        self.playlist_add_all_from_db(&result);
+                    }
+                }
+            }
+            DBMsg::AddAllResultsToPlaylist => {
+                self.database_add_all_results();
+            }
+
+            DBMsg::AddAllResultsConfirmShow => {
+                // dont try showing the popup if there is nothing to add
+                if !self.dw.search_results.is_empty() {
+                    self.mount_results_add_confirm_database(self.dw.criteria);
+                }
+            }
+            DBMsg::AddAllResultsConfirmCancel => {
+                self.umount_results_add_confirm_database();
+            }
         }
         None
     }

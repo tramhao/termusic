@@ -428,6 +428,10 @@ impl Model {
             let popup = draw_area_in_absolute(f.area(), 65, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::PodcastAddPopup, f, popup);
+        } else if app.mounted(&Id::DatabaseAddConfirmPopup) {
+            let popup = draw_area_in_absolute(f.area(), 60, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::DatabaseAddConfirmPopup, f, popup);
         }
         if app.mounted(&Id::MessagePopup) {
             let popup = draw_area_top_right_absolute(f.area(), 25, 4);
