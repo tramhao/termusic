@@ -5,7 +5,7 @@ use rusqlite::{named_params, Connection, Row};
 use crate::track::Track;
 
 /// A struct representing a [`Track`](Track) in the database
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TrackDB {
     pub id: u64,
     pub artist: String,
