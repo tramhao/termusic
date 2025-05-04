@@ -54,6 +54,19 @@ pub enum SearchCriteria {
     Playlist,
 }
 
+impl SearchCriteria {
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SearchCriteria::Artist => "artist",
+            SearchCriteria::Album => "album",
+            SearchCriteria::Genre => "genre",
+            SearchCriteria::Directory => "directory",
+            SearchCriteria::Playlist => "playlist",
+        }
+    }
+}
+
 impl From<usize> for SearchCriteria {
     fn from(u_index: usize) -> Self {
         match u_index {
@@ -68,13 +81,7 @@ impl From<usize> for SearchCriteria {
 
 impl std::fmt::Display for SearchCriteria {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Artist => write!(f, "artist"),
-            Self::Album => write!(f, "album"),
-            Self::Genre => write!(f, "genre"),
-            Self::Directory => write!(f, "directory"),
-            Self::Playlist => write!(f, "playlist"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
