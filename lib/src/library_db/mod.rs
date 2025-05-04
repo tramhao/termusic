@@ -39,6 +39,11 @@ mod track_db;
 
 pub use track_db::{const_unknown, Indexable, TrackDB};
 
+#[allow(clippy::doc_markdown)]
+/// The SQLite Database interface.
+///
+/// This *can* be shared between threads via `clone`, **but** only one operation may occur at a time.
+#[derive(Clone)]
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
     max_depth: ScanDepth,
