@@ -311,6 +311,8 @@ impl UI {
     ///
     /// Less nesting.
     async fn run_playback_playlist(&mut self, ev: PlaylistCmd) -> Result<()> {
+        // TODO: consider refactoring at least some parts of this code to not block the TUI
+        // because currently a massive "PlaylistCmd::AddTrack" will block TUI until the server responds with done.
         match ev {
             PlaylistCmd::AddTrack(tracks) => {
                 self.playback.add_to_playlist(tracks).await?;

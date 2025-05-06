@@ -375,16 +375,27 @@ pub enum LIMsg {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DBMsg {
+    /// Add all Track Results (from view `Tracks`) to the playlist
     AddAllToPlaylist,
+    /// Add a single Track Result (from view `Tracks`) to the playlist
     AddPlaylist(usize),
+    /// Add all Results (from view `Result`) to the playlist
+    AddAllResultsToPlaylist,
+    /// Add a single result (from view `Result`) to the playlist
+    AddResultToPlaylist(usize),
     CriteriaBlurDown,
     CriteriaBlurUp,
+    /// Search Results (for view `Result`) from a `Database`(view) index
     SearchResult(usize),
     SearchResultBlurDown,
     SearchResultBlurUp,
+    /// Serarch Tracks (for view `Tracks`) from a `Result`(view) index
     SearchTrack(usize),
     SearchTracksBlurDown,
     SearchTracksBlurUp,
+
+    AddAllResultsConfirmShow,
+    AddAllResultsConfirmCancel,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -566,6 +577,7 @@ pub enum Id {
     TagEditor(IdTagEditor),
     YoutubeSearchInputPopup,
     YoutubeSearchTablePopup,
+    DatabaseAddConfirmPopup,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]

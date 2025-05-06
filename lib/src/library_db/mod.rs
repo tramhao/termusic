@@ -28,6 +28,7 @@ use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
 use anyhow::Context;
 use parking_lot::Mutex;
 use rusqlite::{params, Connection, Error, Result};
+use std::fmt::Debug;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -38,9 +39,23 @@ mod track_db;
 
 pub use track_db::{const_unknown, Indexable, TrackDB};
 
+#[allow(clippy::doc_markdown)]
+/// The SQLite Database interface.
+///
+/// This *can* be shared between threads via `clone`, **but** only one operation may occur at a time.
+#[derive(Clone)]
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
     max_depth: ScanDepth,
+}
+
+impl Debug for DataBase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DataBase")
+            .field("conn", &"<unavailable>")
+            .field("max_depth", &self.max_depth)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,6 +67,19 @@ pub enum SearchCriteria {
     Genre,
     Directory,
     Playlist,
+}
+
+impl SearchCriteria {
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SearchCriteria::Artist => "artist",
+            SearchCriteria::Album => "album",
+            SearchCriteria::Genre => "genre",
+            SearchCriteria::Directory => "directory",
+            SearchCriteria::Playlist => "playlist",
+        }
+    }
 }
 
 impl From<usize> for SearchCriteria {
@@ -68,13 +96,7 @@ impl From<usize> for SearchCriteria {
 
 impl std::fmt::Display for SearchCriteria {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Artist => write!(f, "artist"),
-            Self::Album => write!(f, "album"),
-            Self::Genre => write!(f, "genre"),
-            Self::Directory => write!(f, "directory"),
-            Self::Playlist => write!(f, "playlist"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 

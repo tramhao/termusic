@@ -1,8 +1,8 @@
-use crate::ui::Model;
 use std::path::Path;
+
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
-use termusiclib::library_db::{Indexable, SearchCriteria};
+use termusiclib::library_db::{Indexable, SearchCriteria, TrackDB};
 use termusiclib::types::{DBMsg, Id, Msg};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
@@ -13,6 +13,9 @@ use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
+
+use super::popups::{YNConfirm, YNConfirmStyle};
+use crate::ui::Model;
 
 #[derive(MockComponent)]
 pub struct DBListCriteria {
@@ -153,6 +156,39 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
     }
 }
 
+/// Component for a "Are you sure you want to add ALL found albums? Y/N" popup
+#[derive(MockComponent)]
+pub struct AddAlbumConfirm {
+    component: YNConfirm,
+}
+
+impl AddAlbumConfirm {
+    pub fn new(config: SharedTuiSettings, criteria: &str) -> Self {
+        let component = YNConfirm::new_with_cb(
+            config,
+            format!(" Are you sure you want to add EVERYTHING from {criteria}? ",),
+            |config| YNConfirmStyle {
+                foreground_color: config.settings.theme.important_popup_foreground(),
+                background_color: config.settings.theme.important_popup_background(),
+                border_color: config.settings.theme.important_popup_border(),
+                title_alignment: Alignment::Left,
+            },
+        );
+
+        Self { component }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for AddAlbumConfirm {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(
+            ev,
+            Msg::DataBase(DBMsg::AddAllResultsToPlaylist),
+            Msg::DataBase(DBMsg::AddAllResultsConfirmCancel),
+        )
+    }
+}
+
 #[derive(MockComponent)]
 pub struct DBListSearchResult {
     component: List,
@@ -197,6 +233,7 @@ impl DBListSearchResult {
 }
 
 impl Component<Msg, NoUserEvent> for DBListSearchResult {
+    #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
@@ -286,6 +323,18 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
+            }
+
+            Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_selected.get() => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    // Maybe we should also have a popup if it is anything other that "Album"?
+                    // Because things like "Genre" could be *very* big
+                    return Some(Msg::DataBase(DBMsg::AddResultToPlaylist(index)));
+                }
+                CmdResult::None
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_all.get() => {
+                return Some(Msg::DataBase(DBMsg::AddAllResultsConfirmShow))
             }
 
             _ => CmdResult::None,
@@ -554,33 +603,68 @@ impl Model {
         vec
     }
 
-    pub fn database_update_search_tracks(&mut self, index: usize) {
-        match self.dw.criteria {
+    /// Find all tracks for the given [`criteria`](SearchCriteria) which matches `val`.
+    ///
+    /// Or for the [`Playlist`](SearchCriteria::Playlist) case, `val` is the path of the playlist.
+    pub fn database_get_tracks_by_criteria(
+        &mut self,
+        criteria: SearchCriteria,
+        val: &str,
+    ) -> Option<Vec<TrackDB>> {
+        match criteria {
             SearchCriteria::Playlist => {
-                if let Some(result) = self.dw.search_results.get(index) {
-                    if let Ok(vec) = playlist_get_vec(result) {
-                        let mut vec_db = Vec::new();
-                        for item in vec {
-                            if let Ok(i) = self.db.get_record_by_path(&item) {
-                                vec_db.push(i);
-                            }
+                if let Ok(vec) = playlist_get_vec(val) {
+                    let mut vec_db = Vec::with_capacity(vec.len());
+                    for item in vec {
+                        if let Ok(i) = self.db.get_record_by_path(&item) {
+                            vec_db.push(i);
                         }
-                        self.dw.search_tracks = vec_db;
                     }
+                    return Some(vec_db);
                 }
             }
             _ => {
-                if let Ok(vec) = self
-                    .db
-                    .get_record_by_criteria(&self.dw.search_results[index], &self.dw.criteria)
-                {
-                    self.dw.search_tracks = vec;
-                }
+                return self.db.get_record_by_criteria(val, &criteria).ok();
             }
         }
 
+        None
+    }
+
+    /// Update view `Tracks` by populating it with items from the selected `Result`(view) index.
+    pub fn database_update_search_tracks(&mut self, index: usize) {
+        self.dw.search_tracks.clear();
+        let Some(at_index) = self.dw.search_results.get(index).cloned() else {
+            return;
+        };
+
+        let Some(result) = self.database_get_tracks_by_criteria(self.dw.criteria, &at_index) else {
+            return;
+        };
+
+        self.dw.search_tracks = result;
+
         self.database_sync_tracks();
         self.app.active(&Id::DBListSearchTracks).ok();
+    }
+
+    /// Add all Results (from view `Result`) to the playlist.
+    pub fn database_add_all_results(&mut self) {
+        self.umount_results_add_confirm_database();
+        if !self.dw.search_results.is_empty() {
+            let mut tracks = Vec::new();
+            // clone once instead every value in every iteration
+            let search_results = self.dw.search_results.clone();
+            for result in search_results {
+                if let Some(mut res) =
+                    self.database_get_tracks_by_criteria(self.dw.criteria, &result)
+                {
+                    tracks.append(&mut res);
+                }
+            }
+
+            self.playlist_add_all_from_db(&tracks);
+        }
     }
 
     pub fn database_reload(&mut self) {
@@ -695,5 +779,26 @@ impl Model {
 
         let filtered_music = Model::update_search(&db_tracks, input);
         self.general_search_update_show(Model::build_table(filtered_music));
+    }
+
+    /// Mount the [`AddAlbumConfirm`] popup
+    pub fn mount_results_add_confirm_database(&mut self, criteria: SearchCriteria) {
+        self.app
+            .remount(
+                Id::DatabaseAddConfirmPopup,
+                Box::new(AddAlbumConfirm::new(
+                    self.config_tui.clone(),
+                    criteria.as_str(),
+                )),
+                Vec::new(),
+            )
+            .unwrap();
+
+        self.app.active(&Id::DatabaseAddConfirmPopup).unwrap();
+    }
+
+    /// Unmount the [`AddAlbumConfirm`] popup
+    pub fn umount_results_add_confirm_database(&mut self) {
+        let _ = self.app.umount(&Id::DatabaseAddConfirmPopup);
     }
 }
