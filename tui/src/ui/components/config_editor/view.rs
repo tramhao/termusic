@@ -190,6 +190,12 @@ impl Model {
                     chunks_middle_right[6],
                 );
 
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs),
+                    f,
+                    chunks_middle_right[7],
+                );
+
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 

@@ -912,8 +912,8 @@ impl Component<Msg, NoUserEvent> for ExtraYtdlpArgs {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::ExtraYtdlpArgsBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::ExtraYtdlpArgsBlurUp),
         )
     }
 }
@@ -1012,6 +1012,12 @@ impl Model {
             Vec::new(),
         )?;
 
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs),
+            Box::new(ExtraYtdlpArgs::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
         Ok(())
     }
 
@@ -1057,6 +1063,9 @@ impl Model {
 
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::PlayerPort))?;
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))?;
 
         Ok(())
     }
