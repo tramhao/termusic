@@ -1,4 +1,5 @@
-use termusiclib::types::{Id, Msg};
+use termusiclib::ids::Id;
+use termusiclib::types::Msg;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     props::{Alignment, BorderType, Borders, Color, PropPayload, TextModifiers, TextSpan},

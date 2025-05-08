@@ -8,6 +8,7 @@ use std::ffi::OsString;
 use std::path::Path;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
@@ -20,7 +21,7 @@ use termusiclib::player::{
     PlaylistSwapInfo,
 };
 use termusiclib::track::{MediaType, Track};
-use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
+use termusiclib::types::{GSMsg, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 
 use tui_realm_stdlib::Table;

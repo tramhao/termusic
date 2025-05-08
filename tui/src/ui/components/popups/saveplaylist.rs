@@ -1,6 +1,7 @@
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::types::{Id, Msg, SavePlaylistMsg};
+use termusiclib::ids::Id;
+use termusiclib::types::{Msg, SavePlaylistMsg};
 use tui_realm_stdlib::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},

@@ -1,4 +1,5 @@
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::Id;
 /**
  * MIT License
  *
@@ -22,7 +23,7 @@ use termusiclib::config::SharedTuiSettings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::{Id, Msg};
+use termusiclib::types::Msg;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     event::{Key, KeyEvent},

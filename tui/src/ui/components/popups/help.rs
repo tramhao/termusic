@@ -2,7 +2,8 @@ use std::fmt::Write as _;
 
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{Id, Msg};
+use termusiclib::ids::Id;
+use termusiclib::types::Msg;
 use tui_realm_stdlib::Table;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},

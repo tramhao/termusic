@@ -2,6 +2,7 @@ use crate::ui::Model;
 use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::{Id, IdTagEditor};
 /**
  * MIT License
  *
@@ -26,7 +27,7 @@ use termusiclib::config::SharedTuiSettings;
  * SOFTWARE.
  */
 use termusiclib::songtag::{search, SongTag};
-use termusiclib::types::{Id, IdTagEditor, Msg, SongTagRecordingResult, TEMsg, TFMsg};
+use termusiclib::types::{Msg, SongTagRecordingResult, TEMsg, TFMsg};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};

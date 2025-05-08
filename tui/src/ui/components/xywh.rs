@@ -39,8 +39,9 @@ use lofty::picture::Picture;
     feature = "cover-viuer-sixel"
 ))]
 use std::io::Write;
+use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::track::MediaType;
-use termusiclib::types::{DLMsg, Id, IdConfigEditor, IdTagEditor, ImageWrapper, Msg};
+use termusiclib::types::{DLMsg, ImageWrapper, Msg};
 use tokio::runtime::Handle;
 
 impl Model {

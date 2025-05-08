@@ -21,7 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{Id, IdTagEditor, Model, TEMsg, TFMsg};
+use crate::ui::{Model, TEMsg, TFMsg};
+use termusiclib::ids::{Id, IdTagEditor};
 
 impl Model {
     pub fn update_tageditor(&mut self, msg: TEMsg) {

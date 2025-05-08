@@ -1,5 +1,5 @@
 use crate::ui::tui_cmd::TuiCmd;
-use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
+use crate::ui::{LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
 use anyhow::{bail, Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename, DirEntry};
@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::Id;
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

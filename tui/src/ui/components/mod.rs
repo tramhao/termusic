@@ -56,9 +56,10 @@ pub use progress::Progress;
 pub use tag_editor::*;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::types::{MainLayoutMsg, PlayerMsg, SavePlaylistMsg};
 
-use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg};
+use crate::ui::{ConfigEditorMsg, Model, Msg, PLMsg, XYWHMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};

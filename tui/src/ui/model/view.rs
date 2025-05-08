@@ -12,6 +12,7 @@ use anyhow::{bail, Result};
 use std::path::Path;
 use std::time::{Duration, Instant};
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 /**
  * MIT License
  *
@@ -35,7 +36,7 @@ use termusiclib::config::SharedTuiSettings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
+use termusiclib::types::{DBMsg, Msg, PCMsg};
 use termusiclib::utils::get_parent_folder;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;

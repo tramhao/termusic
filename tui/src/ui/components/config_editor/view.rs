@@ -30,11 +30,12 @@ use termusiclib::THEME_DIR;
 
 use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::utils::draw_area_in_absolute;
-use crate::ui::{Application, Id, IdConfigEditor, IdKey, Msg};
+use crate::ui::{Application, Msg};
 use anyhow::{bail, Result};
 use std::num::{NonZeroU32, NonZeroU8};
 use std::path::PathBuf;
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
+use termusiclib::ids::{Id, IdConfigEditor, IdKey};
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
