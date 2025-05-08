@@ -44,7 +44,7 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SongTag {
     service_provider: ServiceProvider,
     song_id: String,
@@ -60,7 +60,7 @@ pub struct SongTag {
 }
 
 /// Indicate in which way the song can be downloaded, if at all.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum UrlTypes {
     /// Download is protected by DRM or a fee, something which we dont do here
     Protected,
@@ -70,7 +70,7 @@ pub enum UrlTypes {
     FreeDownloadable(String),
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum ServiceProvider {
     Netease,
     Kugou,

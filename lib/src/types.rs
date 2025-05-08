@@ -724,6 +724,8 @@ pub enum IdKey {
     PodcastRefreshFeed,
     PodcastRefreshAllFeeds,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SearchLyricState {
     Finish(Vec<SongTag>),
 }
