@@ -66,11 +66,11 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
                 return Some(Msg::TagEditor(TEMsg::TERename))
             }
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => match self.state() {
-                State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
+                State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose)),
                 _ => self.perform(Cmd::Cancel),
             },
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => match self.state() {
-                State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
+                State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose)),
                 _ => self.perform(Cmd::Cancel),
             },
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {

@@ -78,7 +78,7 @@ impl EditField {
                 },
             ) => Some(on_key_up),
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
-                Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+                Some(Msg::TagEditor(TEMsg::TagEditorClose))
             }
 
             // Local Hotkeys

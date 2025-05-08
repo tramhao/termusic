@@ -261,10 +261,10 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
             }
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
             }
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))

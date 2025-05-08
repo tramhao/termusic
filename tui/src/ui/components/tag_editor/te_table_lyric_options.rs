@@ -100,10 +100,10 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
             }
 
             Event::Keyboard(k) if k == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
             }
             Event::Keyboard(k) if k == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..

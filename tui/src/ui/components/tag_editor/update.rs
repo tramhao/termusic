@@ -29,7 +29,7 @@ impl Model {
             TEMsg::TagEditorRun(node_id) => {
                 self.mount_tageditor(&node_id);
             }
-            TEMsg::TagEditorClose(_song) => {
+            TEMsg::TagEditorClose => {
                 if let Some(s) = self.tageditor_song.clone() {
                     self.library_reload_with_node_focus(s.file());
                 }

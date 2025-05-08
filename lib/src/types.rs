@@ -514,7 +514,7 @@ pub enum YSMsg {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TEMsg {
     TagEditorRun(String),
-    TagEditorClose(Option<String>),
+    TagEditorClose,
     TECounterDeleteOk,
     TEDownload(usize),
     TEEmbed(usize),

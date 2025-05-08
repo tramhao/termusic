@@ -74,10 +74,10 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurUp))),
             Event::Keyboard(k) if k == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
             }
             Event::Keyboard(k) if k == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
