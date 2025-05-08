@@ -20,9 +20,7 @@ pub enum Msg {
     GeneralSearch(GSMsg),
     HelpPopupShow,
     HelpPopupClose,
-    LayoutTreeView,
-    LayoutDataBase,
-    LayoutPodCast,
+    Layout(MainLayoutMsg),
     Library(LIMsg),
     LyricMessage(LyricMsg),
     LyricCycle,
@@ -45,6 +43,16 @@ pub enum Msg {
     ///
     /// For example pushing ARROW DOWN to change the selection in a table.
     ForceRedraw,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MainLayoutMsg {
+    /// Switch to the Music library view
+    TreeView,
+    /// Switch to the Database view
+    DataBase,
+    /// Switch to the Podcast view
+    Podcast,
 }
 
 /// Player relates messages

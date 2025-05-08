@@ -30,8 +30,8 @@ use std::time::Duration;
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::track::MediaType;
 use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, PlayerMsg,
-    SavePlaylistMsg, XYWHMsg, YSMsg,
+    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg,
+    PlayerMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
@@ -123,9 +123,7 @@ impl Update<Msg> for Model {
                 }
                 None
             }
-            Msg::LayoutDataBase | Msg::LayoutTreeView | Msg::LayoutPodCast => {
-                self.update_layout(&msg)
-            }
+            Msg::Layout(msg) => self.update_layout(msg),
 
             Msg::SavePlaylist(msg) => self.update_save_playlist(msg),
 
@@ -424,9 +422,11 @@ impl Model {
 
         None
     }
-    fn update_layout(&mut self, msg: &Msg) -> Option<Msg> {
+
+    /// Switch the main view / layout
+    fn update_layout(&mut self, msg: MainLayoutMsg) -> Option<Msg> {
         match msg {
-            Msg::LayoutDataBase => {
+            MainLayoutMsg::DataBase => {
                 let mut need_to_set_focus = true;
                 if let Ok(Some(AttrValue::Flag(true))) =
                     self.app.query(&Id::DBListCriteria, Attribute::Focus)
@@ -456,9 +456,8 @@ impl Model {
 
                 self.layout = TermusicLayout::DataBase;
                 self.playlist_switch_layout();
-                None
             }
-            Msg::LayoutTreeView => {
+            MainLayoutMsg::TreeView => {
                 let mut need_to_set_focus = true;
                 if let Ok(Some(AttrValue::Flag(true))) =
                     self.app.query(&Id::Playlist, Attribute::Focus)
@@ -478,10 +477,8 @@ impl Model {
 
                 self.layout = TermusicLayout::TreeView;
                 self.playlist_switch_layout();
-                None
             }
-
-            Msg::LayoutPodCast => {
+            MainLayoutMsg::Podcast => {
                 let mut need_to_set_focus = true;
                 if let Ok(Some(AttrValue::Flag(true))) =
                     self.app.query(&Id::Podcast, Attribute::Focus)
@@ -513,10 +510,10 @@ impl Model {
                 self.layout = TermusicLayout::Podcast;
                 self.podcast_sync_feeds_and_episodes();
                 self.playlist_switch_layout();
-                None
             }
-            _ => None,
         }
+
+        None
     }
     fn update_database_list(&mut self, msg: &DBMsg) -> Option<Msg> {
         match msg {
@@ -918,12 +915,12 @@ impl Model {
                     if self.layout == TermusicLayout::Podcast {
                         return;
                     }
-                    self.update_layout(&Msg::LayoutPodCast);
+                    self.update_layout(MainLayoutMsg::Podcast);
                 }
                 MediaType::Music | MediaType::LiveRadio => match self.layout {
                     TermusicLayout::TreeView | TermusicLayout::DataBase => {}
                     TermusicLayout::Podcast => {
-                        self.update_layout(&Msg::LayoutTreeView);
+                        self.update_layout(MainLayoutMsg::TreeView);
                     }
                 },
             }

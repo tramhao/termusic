@@ -56,7 +56,7 @@ pub use progress::Progress;
 pub use tag_editor::*;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{PlayerMsg, SavePlaylistMsg};
+use termusiclib::types::{MainLayoutMsg, PlayerMsg, SavePlaylistMsg};
 
 use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg};
 use tui_realm_stdlib::Phantom;
@@ -132,15 +132,15 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_library.get() => {
-                Some(Msg::LayoutTreeView)
+                Some(Msg::Layout(MainLayoutMsg::TreeView))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_database.get() => {
-                Some(Msg::LayoutDataBase)
+                Some(Msg::Layout(MainLayoutMsg::DataBase))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_podcasts.get() => {
-                Some(Msg::LayoutPodCast)
+                Some(Msg::Layout(MainLayoutMsg::Podcast))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.toggle_prefetch.get() => {
