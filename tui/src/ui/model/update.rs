@@ -30,8 +30,8 @@ use std::time::Duration;
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::track::MediaType;
 use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, SavePlaylistMsg,
-    XYWHMsg, YSMsg,
+    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, PlayerMsg,
+    SavePlaylistMsg, XYWHMsg, YSMsg,
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
@@ -88,14 +88,7 @@ impl Update<Msg> for Model {
                 None
             }
 
-            Msg::PlayerTogglePause
-            | Msg::PlayerToggleGapless
-            | Msg::PlayerSpeedUp
-            | Msg::PlayerSpeedDown
-            | Msg::PlayerVolumeUp
-            | Msg::PlayerVolumeDown
-            | Msg::PlayerSeekForward
-            | Msg::PlayerSeekBackward => self.update_player(&msg),
+            Msg::Player(msg) => self.update_player(msg),
 
             Msg::HelpPopupShow => {
                 self.mount_help_popup();
@@ -381,12 +374,14 @@ impl Model {
         }
         None
     }
-    fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
+
+    /// Handle [`Player`] messages & events
+    fn update_player(&mut self, msg: PlayerMsg) -> Option<Msg> {
         match msg {
-            Msg::PlayerTogglePause => {
+            PlayerMsg::TogglePause => {
                 self.player_toggle_pause();
             }
-            Msg::PlayerSeekForward => {
+            PlayerMsg::SeekForward => {
                 if self.is_radio() {
                     self.show_message_timeout_label_help(
                         "seek is not available for live radio",
@@ -398,7 +393,7 @@ impl Model {
                 }
                 self.command(TuiCmd::SeekForward);
             }
-            Msg::PlayerSeekBackward => {
+            PlayerMsg::SeekBackward => {
                 if self.is_radio() {
                     self.show_message_timeout_label_help(
                         "seek is not available for live radio",
@@ -410,23 +405,23 @@ impl Model {
                 }
                 self.command(TuiCmd::SeekBackward);
             }
-            Msg::PlayerSpeedUp => {
+            PlayerMsg::SpeedUp => {
                 self.command(TuiCmd::SpeedUp);
             }
-            Msg::PlayerSpeedDown => {
+            PlayerMsg::SpeedDown => {
                 self.command(TuiCmd::SpeedDown);
             }
-            Msg::PlayerVolumeUp => {
+            PlayerMsg::VolumeUp => {
                 self.command(TuiCmd::VolumeUp);
             }
-            Msg::PlayerVolumeDown => {
+            PlayerMsg::VolumeDown => {
                 self.command(TuiCmd::VolumeDown);
             }
-            Msg::PlayerToggleGapless => {
+            PlayerMsg::ToggleGapless => {
                 self.command(TuiCmd::ToggleGapless);
             }
-            _ => {}
         }
+
         None
     }
     fn update_layout(&mut self, msg: &Msg) -> Option<Msg> {

@@ -27,14 +27,7 @@ pub enum Msg {
     LyricMessage(LyricMsg),
     LyricCycle,
     LyricAdjustDelay(i64),
-    PlayerToggleGapless,
-    PlayerTogglePause,
-    PlayerVolumeUp,
-    PlayerVolumeDown,
-    PlayerSpeedUp,
-    PlayerSpeedDown,
-    PlayerSeekForward,
-    PlayerSeekBackward,
+    Player(PlayerMsg),
     Playlist(PLMsg),
     Podcast(PCMsg),
     QuitPopupCloseCancel,
@@ -52,6 +45,19 @@ pub enum Msg {
     ///
     /// For example pushing ARROW DOWN to change the selection in a table.
     ForceRedraw,
+}
+
+/// Player relates messages
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerMsg {
+    ToggleGapless,
+    TogglePause,
+    VolumeUp,
+    VolumeDown,
+    SpeedUp,
+    SpeedDown,
+    SeekForward,
+    SeekBackward,
 }
 
 /// Save Playlist Popup related messages
