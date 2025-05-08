@@ -1,6 +1,6 @@
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::types::{Id, Msg};
+use termusiclib::types::{Id, Msg, SavePlaylistMsg};
 use tui_realm_stdlib::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
@@ -70,22 +70,24 @@ impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
                 self.perform(Cmd::Submit)
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::SavePlaylistPopupCloseCancel);
+                return Some(Msg::SavePlaylist(SavePlaylistMsg::PopupCloseCancel));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => match self.component.state() {
                 State::One(StateValue::String(input_string)) => {
-                    return Some(Msg::SavePlaylistPopupCloseOk(input_string))
+                    return Some(Msg::SavePlaylist(SavePlaylistMsg::PopupCloseOk(
+                        input_string,
+                    )))
                 }
                 _ => CmdResult::None,
             },
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                Some(Msg::SavePlaylistPopupUpdate(input_string))
-            }
+            CmdResult::Submit(State::One(StateValue::String(input_string))) => Some(
+                Msg::SavePlaylist(SavePlaylistMsg::PopupUpdate(input_string)),
+            ),
             CmdResult::None => None,
             _ => Some(Msg::ForceRedraw),
         }
@@ -120,8 +122,8 @@ impl Component<Msg, NoUserEvent> for SavePlaylistConfirmPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
-            Msg::SavePlaylistConfirmCloseOk(self.filename.clone()),
-            Msg::SavePlaylistConfirmCloseCancel,
+            Msg::SavePlaylist(SavePlaylistMsg::ConfirmCloseOk(self.filename.clone())),
+            Msg::SavePlaylist(SavePlaylistMsg::ConfirmCloseCancel),
         )
     }
 }

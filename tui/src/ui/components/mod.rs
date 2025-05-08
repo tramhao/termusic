@@ -56,6 +56,7 @@ pub use progress::Progress;
 pub use tag_editor::*;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::types::SavePlaylistMsg;
 
 use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg};
 use tui_realm_stdlib::Phantom;
@@ -161,7 +162,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.save_playlist.get() => {
-                Some(Msg::SavePlaylistPopupShow)
+                Some(Msg::SavePlaylist(SavePlaylistMsg::PopupShow))
             }
             Event::Keyboard(keyevent) if keyevent == keys.move_cover_art_keys.move_left.get() => {
                 Some(Msg::Xywh(XYWHMsg::MoveLeft))

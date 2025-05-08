@@ -40,12 +40,7 @@ pub enum Msg {
     QuitPopupCloseCancel,
     QuitPopupCloseOk,
     QuitPopupShow,
-    SavePlaylistPopupShow,
-    SavePlaylistPopupCloseCancel,
-    SavePlaylistPopupUpdate(String),
-    SavePlaylistPopupCloseOk(String),
-    SavePlaylistConfirmCloseCancel,
-    SavePlaylistConfirmCloseOk(String),
+    SavePlaylist(SavePlaylistMsg),
     TagEditor(TEMsg),
     UpdatePhoto,
     YoutubeSearch(YSMsg),
@@ -57,6 +52,17 @@ pub enum Msg {
     ///
     /// For example pushing ARROW DOWN to change the selection in a table.
     ForceRedraw,
+}
+
+/// Save Playlist Popup related messages
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SavePlaylistMsg {
+    PopupShow,
+    PopupCloseCancel,
+    PopupUpdate(String),
+    PopupCloseOk(String),
+    ConfirmCloseCancel,
+    ConfirmCloseOk(String),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

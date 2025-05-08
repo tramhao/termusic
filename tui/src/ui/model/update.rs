@@ -30,7 +30,8 @@ use std::time::Duration;
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::track::MediaType;
 use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
+    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, SavePlaylistMsg,
+    XYWHMsg, YSMsg,
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
@@ -133,40 +134,8 @@ impl Update<Msg> for Model {
                 self.update_layout(&msg)
             }
 
-            Msg::SavePlaylistPopupShow => {
-                if let Err(e) = self.mount_save_playlist() {
-                    self.mount_error_popup(e.context("mount save playlist"));
-                }
-                None
-            }
-            Msg::SavePlaylistPopupCloseCancel => {
-                self.umount_save_playlist();
-                None
-            }
-            Msg::SavePlaylistPopupCloseOk(filename) => {
-                self.umount_save_playlist();
-                if let Err(e) = self.playlist_save_m3u_before(&filename) {
-                    self.mount_error_popup(e.context("save m3u playlist before"));
-                }
-                None
-            }
-            Msg::SavePlaylistPopupUpdate(filename) => {
-                if let Err(e) = self.remount_save_playlist_label(&filename) {
-                    self.mount_error_popup(e.context("remount save playlist label"));
-                }
-                None
-            }
-            Msg::SavePlaylistConfirmCloseCancel => {
-                self.umount_save_playlist_confirm();
-                None
-            }
-            Msg::SavePlaylistConfirmCloseOk(filename) => {
-                if let Err(e) = self.playlist_save_m3u(Path::new(&filename)) {
-                    self.mount_error_popup(e.context("save m3u playlist"));
-                }
-                self.umount_save_playlist_confirm();
-                None
-            }
+            Msg::SavePlaylist(msg) => self.update_save_playlist(msg),
+
             Msg::Podcast(m) => self.update_podcast(m),
             Msg::LyricMessage(m) => self.update_lyric_textarea(m),
             Msg::Download(m) => self.update_download_msg(&m),
@@ -1038,6 +1007,42 @@ impl Model {
                 self.show_message_timeout_label_help(err_text, None, None, None);
             }
         }
+        None
+    }
+
+    /// Handle & update [`SavePlaylist`] related components.
+    fn update_save_playlist(&mut self, msg: SavePlaylistMsg) -> Option<Msg> {
+        match msg {
+            SavePlaylistMsg::PopupShow => {
+                if let Err(e) = self.mount_save_playlist() {
+                    self.mount_error_popup(e.context("mount save playlist"));
+                }
+            }
+            SavePlaylistMsg::PopupCloseCancel => {
+                self.umount_save_playlist();
+            }
+            SavePlaylistMsg::PopupCloseOk(filename) => {
+                self.umount_save_playlist();
+                if let Err(e) = self.playlist_save_m3u_before(&filename) {
+                    self.mount_error_popup(e.context("save m3u playlist before"));
+                }
+            }
+            SavePlaylistMsg::PopupUpdate(filename) => {
+                if let Err(e) = self.remount_save_playlist_label(&filename) {
+                    self.mount_error_popup(e.context("remount save playlist label"));
+                }
+            }
+            SavePlaylistMsg::ConfirmCloseCancel => {
+                self.umount_save_playlist_confirm();
+            }
+            SavePlaylistMsg::ConfirmCloseOk(filename) => {
+                if let Err(e) = self.playlist_save_m3u(Path::new(&filename)) {
+                    self.mount_error_popup(e.context("save m3u playlist"));
+                }
+                self.umount_save_playlist_confirm();
+            }
+        }
+
         None
     }
 }
