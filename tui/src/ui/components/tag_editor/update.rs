@@ -64,6 +64,8 @@ impl Model {
                 }
             }
             TEMsg::TEFocus(m) => self.update_tag_editor_focus(m),
+
+            TEMsg::TESearchLyricResult(m) => self.te_update_lyric_results(m),
         }
     }
 

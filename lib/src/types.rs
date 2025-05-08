@@ -522,6 +522,8 @@ pub enum TEMsg {
     TERename,
     TESearch,
     TESelectLyricOk(usize),
+
+    TESearchLyricResult(SongTagRecordingResult),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -726,7 +728,7 @@ pub enum IdKey {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SearchLyricState {
+pub enum SongTagRecordingResult {
     Finish(Vec<SongTag>),
 }
 

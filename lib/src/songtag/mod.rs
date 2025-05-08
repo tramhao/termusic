@@ -28,7 +28,7 @@ mod netease_v2;
 mod service;
 
 use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use crate::types::{DLMsg, Msg, SearchLyricState};
+use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
 use lofty::config::WriteOptions;
@@ -89,7 +89,7 @@ impl std::fmt::Display for ServiceProvider {
 }
 
 // Search function of 3 servers. Run in parallel to get results faster.
-pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
+pub async fn search(search_str: &str, tx_done: Sender<Msg>) {
     let mut results: Vec<SongTag> = Vec::new();
 
     let handle_netease = async {
@@ -125,7 +125,9 @@ pub async fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
         Err(err) => error!("Kogou Error: {err:#}"),
     }
 
-    tx_tageditor.send(SearchLyricState::Finish(results)).ok();
+    let _ = tx_done.send(Msg::TagEditor(TEMsg::TESearchLyricResult(
+        SongTagRecordingResult::Finish(results),
+    )));
 }
 
 impl SongTag {

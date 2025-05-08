@@ -26,7 +26,7 @@ use termusiclib::config::SharedTuiSettings;
  * SOFTWARE.
  */
 use termusiclib::songtag::{search, SongTag};
-use termusiclib::types::{Id, IdTagEditor, Msg, SearchLyricState, TEMsg, TFMsg};
+use termusiclib::types::{Id, IdTagEditor, Msg, SongTagRecordingResult, TEMsg, TFMsg};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -163,7 +163,15 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
 }
 
 impl Model {
-    pub fn te_add_songtag_options(&mut self, items: Vec<SongTag>) {
+    /// Apply the given items as the songtag results
+    pub fn te_set_songtag_lyric_options(&mut self, items: Vec<SongTag>) {
+        // dont do anything if not mounted
+        if !self
+            .app
+            .mounted(&Id::TagEditor(IdTagEditor::TableLyricOptions))
+        {
+            return;
+        }
         self.songtag_options = items;
         self.te_sync_songtag_options();
         assert!(self
@@ -172,6 +180,7 @@ impl Model {
             .is_ok());
     }
 
+    /// Build the Songtag Results table and assign it
     fn te_sync_songtag_options(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
@@ -253,7 +262,7 @@ impl Model {
         self.te_set_loading_results();
         self.download_tracker.increase_one(&search_str);
 
-        let songtag_tx = self.sender_songtag.clone();
+        let songtag_tx = self.tx_to_main.clone();
         let tracker_handle = self.download_tracker.clone();
 
         handle.spawn(async move {
@@ -262,14 +271,11 @@ impl Model {
         });
     }
 
-    pub fn te_update_lyric_options(&mut self) {
-        if self
-            .app
-            .mounted(&Id::TagEditor(IdTagEditor::TableLyricOptions))
-        {
-            if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
-                self.te_add_songtag_options(l);
-                self.redraw = true;
+    /// Handle [`SongTagRecordingResult`] events
+    pub fn te_update_lyric_results(&mut self, result: SongTagRecordingResult) {
+        match result {
+            SongTagRecordingResult::Finish(list) => {
+                self.te_set_songtag_lyric_options(list);
             }
         }
     }
