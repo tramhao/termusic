@@ -176,6 +176,7 @@ impl Model {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             path = get_parent_folder(Path::new(&node_id)).to_path_buf();
         }
+        let config_tui = self.config_tui.read();
         let args = vec![
             Arg::new("--extract-audio"),
             // Arg::new_with_arg("--audio-format", "vorbis"),
@@ -189,7 +190,10 @@ impl Model {
             Arg::new("--all-subs"),
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
+            Arg::new(&config_tui.settings.extra_ytdlp_args),
         ];
+
+        eprintln!("args is {args:?}");
 
         let ytd = YoutubeDL::new(&path, args, url)?;
         let tx = self.tx_to_main.clone();

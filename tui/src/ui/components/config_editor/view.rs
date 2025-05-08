@@ -1996,6 +1996,13 @@ impl Model {
                 }
             }
         }
+
+        if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))
+        {
+            config_tui.settings.extra_ytdlp_args = extra_ytdlp_args;
+        }
         Ok(())
     }
 
