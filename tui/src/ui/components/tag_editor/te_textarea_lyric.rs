@@ -22,9 +22,8 @@
  * SOFTWARE.
  */
 
-use crate::ui::{Msg, TEMsg, TFMsg};
-
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

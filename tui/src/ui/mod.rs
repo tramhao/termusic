@@ -42,7 +42,6 @@ use termusiclib::player::RunningStatus;
 use termusiclib::player::StreamUpdates;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
-pub use termusiclib::types::*;
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;

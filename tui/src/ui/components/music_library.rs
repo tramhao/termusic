@@ -1,5 +1,5 @@
+use crate::ui::model::Model;
 use crate::ui::tui_cmd::TuiCmd;
-use crate::ui::{LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
 use anyhow::{bail, Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename, DirEntry};
@@ -8,6 +8,7 @@ use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulte
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
+use termusiclib::types::{GSMsg, LIMsg, Msg, PLMsg, TEMsg, YSMsg};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -92,9 +93,7 @@ impl MusicLibrary {
         } else {
             (
                 CmdResult::None,
-                Some(Msg::Playlist(crate::ui::PLMsg::Add(
-                    current_node.to_string(),
-                ))),
+                Some(Msg::Playlist(PLMsg::Add(current_node.to_string()))),
             )
         }
     }
@@ -153,9 +152,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
-                    return Some(Msg::Playlist(crate::ui::PLMsg::Add(
-                        current_node.to_string(),
-                    )));
+                    return Some(Msg::Playlist(PLMsg::Add(current_node.to_string())));
                 }
                 CmdResult::None
             }
@@ -211,7 +208,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 return Some(Msg::Library(LIMsg::RemoveRoot))
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowLibrary))
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.youtube_search.get() => {

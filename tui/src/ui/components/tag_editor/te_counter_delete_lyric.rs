@@ -22,6 +22,7 @@ use termusiclib::config::SharedTuiSettings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -32,7 +33,8 @@ use tuirealm::{
     AttrValue, Attribute, Component, Event, Frame, MockComponent, Props, State, StateValue,
 };
 
-use crate::ui::{Model, Msg, TEMsg, TFMsg};
+use crate::ui::model::Model;
+
 /// ## Counter
 ///
 /// Counter which increments its value on Submit

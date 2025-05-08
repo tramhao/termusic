@@ -21,8 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{Msg, TEMsg, TFMsg};
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
