@@ -120,7 +120,7 @@ impl Update<Msg> for Model {
                 None
             }
             Msg::TagEditor(m) => {
-                self.update_tageditor(&m);
+                self.update_tageditor(m);
                 None
             }
             Msg::UpdatePhoto => {

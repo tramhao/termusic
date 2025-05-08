@@ -24,10 +24,10 @@
 use crate::ui::{Id, IdTagEditor, Model, TEMsg, TFMsg};
 
 impl Model {
-    pub fn update_tageditor(&mut self, msg: &TEMsg) {
+    pub fn update_tageditor(&mut self, msg: TEMsg) {
         match msg {
             TEMsg::TagEditorRun(node_id) => {
-                self.mount_tageditor(node_id);
+                self.mount_tageditor(&node_id);
             }
             TEMsg::TagEditorClose(_song) => {
                 if let Some(s) = self.tageditor_song.clone() {
@@ -41,7 +41,7 @@ impl Model {
             }
             TEMsg::TESelectLyricOk(index) => {
                 if let Some(mut song) = self.tageditor_song.clone() {
-                    song.set_lyric_selected_index(*index);
+                    song.set_lyric_selected_index(index);
                     self.init_by_song(song);
                 }
             }
@@ -49,12 +49,12 @@ impl Model {
                 self.te_songtag_search();
             }
             TEMsg::TEDownload(index) => {
-                if let Err(e) = self.te_songtag_download(*index) {
+                if let Err(e) = self.te_songtag_download(index) {
                     self.mount_error_popup(e.context("download by songtag"));
                 }
             }
             TEMsg::TEEmbed(index) => {
-                if let Err(e) = self.te_load_lyric_and_photo(*index) {
+                if let Err(e) = self.te_load_lyric_and_photo(index) {
                     self.mount_error_popup(e.context("log lyric and photo"));
                 }
             }
@@ -63,7 +63,7 @@ impl Model {
                     self.mount_error_popup(e.context("rename song by tag"));
                 }
             }
-            TEMsg::TEFocus(m) => self.update_tag_editor_focus(*m),
+            TEMsg::TEFocus(m) => self.update_tag_editor_focus(m),
         }
     }
 
