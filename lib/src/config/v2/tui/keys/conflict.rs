@@ -39,7 +39,7 @@ impl KeyPath {
     }
 }
 
-/// Error for when [`Key`] parsing fails
+/// Error for when [`KeyBinding`] has a conflict with another key
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 #[error("Key Conflict: '{key_path_first}' and '{key_path_second}', key: '{key}'")]
 pub struct KeyConflictError {

@@ -452,7 +452,7 @@ impl TryFrom<YAMLTheme> for ThemeColors {
 }
 
 impl ThemeColors {
-    /// Load a YAML Theme and then convert it to a [`Alacritty`] instance
+    /// Load a YAML Theme and then convert it to a [`ThemeColors`] instance
     pub fn from_yaml_file(path: &Path) -> anyhow::Result<Self> {
         let parsed: YAMLTheme = serde_yaml::from_reader(BufReader::new(File::open(path)?))?;
 
