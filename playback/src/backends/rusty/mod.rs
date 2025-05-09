@@ -113,17 +113,17 @@ impl RustyBackend {
         std::thread::Builder::new()
             .name("playback player loop".into())
             .spawn(move || {
-                tokio_handle.block_on(player_thread(
-                    total_duration_local,
-                    pcmd_tx_local,
-                    picmd_tx_local,
+                tokio_handle.block_on(player_thread(PlayerThreadArgs {
+                    total_duration: total_duration_local,
+                    pcmd_tx: pcmd_tx_local,
+                    picmd_tx: picmd_tx_local,
                     picmd_rx,
-                    media_title_local,
+                    media_title: media_title_local,
                     // radio_downloaded_local,
-                    position_local,
-                    volume_local,
-                    speed,
-                ));
+                    position: position_local,
+                    volume_inside: volume_local,
+                    speed_inside: speed,
+                }));
             })
             .expect("failed to spawn thread");
 
@@ -490,37 +490,42 @@ fn common_media_title_cb(media_title: Arc<Mutex<String>>) -> impl Fn(MediaTitleT
     }
 }
 
+#[derive(Debug)]
+struct PlayerThreadArgs {
+    total_duration: ArcTotalDuration,
+    /// Player commands that need to be processed outside of the backend
+    pcmd_tx: crate::PlayerCmdSender,
+    /// Internal Player commands that need to be processed by the player task
+    picmd_tx: Sender<PlayerInternalCmd>,
+    /// Reciever for the Internal Player Command
+    picmd_rx: Receiver<PlayerInternalCmd>,
+    media_title: Arc<Mutex<String>>,
+    // radio_downloaded: Arc<Mutex<u64>>,
+    position: Arc<Mutex<Duration>>,
+
+    volume_inside: Arc<AtomicU16>,
+    speed_inside: i32,
+}
+
 /// Player thread loop
 #[allow(
     clippy::cast_precision_loss,
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
-    clippy::needless_pass_by_value,
-    clippy::too_many_lines,
-    clippy::too_many_arguments
+    clippy::too_many_lines
 )]
-async fn player_thread(
-    total_duration: ArcTotalDuration,
-    pcmd_tx: crate::PlayerCmdSender,
-    picmd_tx: Sender<PlayerInternalCmd>,
-    picmd_rx: Receiver<PlayerInternalCmd>,
-    media_title: Arc<Mutex<String>>,
-    // radio_downloaded: Arc<Mutex<u64>>,
-    position: Arc<Mutex<Duration>>,
-    volume_inside: Arc<AtomicU16>,
-    mut speed_inside: i32,
-) {
+async fn player_thread(mut args: PlayerThreadArgs) {
     let mut is_radio = false;
 
     // option to store enqueued's duration
     // note that the current implementation is only meant to have 1 enqueued next after the current playing song
     let mut next_duration_opt = None;
     let (_stream, handle) = OutputStream::try_default().unwrap();
-    let sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
-    sink.set_speed(speed_inside as f32 / 10.0);
-    sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
+    let sink = Sink::try_new(&handle, args.picmd_tx.clone(), args.pcmd_tx.clone()).unwrap();
+    sink.set_speed(args.speed_inside as f32 / 10.0);
+    sink.set_volume(f32::from(args.volume_inside.load(Ordering::SeqCst)) / 100.0);
     loop {
-        let Ok(cmd) = picmd_rx.recv() else {
+        let Ok(cmd) = args.picmd_rx.recv() else {
             // only error can be a disconnect (no more senders)
             break;
         };
@@ -532,9 +537,9 @@ async fn player_thread(
                     gapless,
                     &sink,
                     &mut is_radio,
-                    &total_duration,
+                    &args.total_duration,
                     &mut next_duration_opt,
-                    &media_title,
+                    &args.media_title,
                     // &radio_downloaded,
                     false,
                     soundtouch,
@@ -553,9 +558,9 @@ async fn player_thread(
                     gapless,
                     &sink,
                     &mut is_radio,
-                    &total_duration,
+                    &args.total_duration,
                     &mut next_duration_opt,
-                    &media_title,
+                    &args.media_title,
                     // &radio_downloaded,
                     true,
                     soundtouch,
@@ -569,21 +574,21 @@ async fn player_thread(
                 sink.play();
             }
             PlayerInternalCmd::Speed(speed) => {
-                speed_inside = speed;
-                sink.set_speed(speed_inside as f32 / 10.0);
+                args.speed_inside = speed;
+                sink.set_speed(args.speed_inside as f32 / 10.0);
             }
             PlayerInternalCmd::Stop => {
                 sink.stop();
             }
             PlayerInternalCmd::Volume(volume) => {
                 sink.set_volume(f32::from(volume) / 100.0);
-                volume_inside.store(volume, Ordering::SeqCst);
+                args.volume_inside.store(volume, Ordering::SeqCst);
             }
             PlayerInternalCmd::Skip => {
                 // the sink can be empty, if for example nothing could be enqueued, so a "skip_one" would be a no-op and never send EOS, which is required to go to the next track
                 if sink.is_empty() {
-                    let _ = picmd_tx.send(PlayerInternalCmd::Eos);
-                    let _ = pcmd_tx.send(PlayerCmd::Eos);
+                    let _ = args.picmd_tx.send(PlayerInternalCmd::Eos);
+                    let _ = args.pcmd_tx.send(PlayerCmd::Eos);
                 } else {
                     sink.skip_one();
                 }
@@ -594,16 +599,16 @@ async fn player_thread(
             PlayerInternalCmd::Progress(new_position) => {
                 // let position = sink.elapsed().as_secs() as i64;
                 // error!("position in rusty backend is: {}", position);
-                *position.lock() = new_position;
+                *args.position.lock() = new_position;
 
                 // About to finish signal is a simulation of gstreamer, and used for gapless
                 if !is_radio {
-                    if let Some(d) = *total_duration.lock() {
+                    if let Some(d) = *args.total_duration.lock() {
                         let progress = new_position.as_secs_f64() / d.as_secs_f64();
                         if progress >= 0.5
                             && d.saturating_sub(new_position) < Duration::from_secs(2)
                         {
-                            if let Err(e) = pcmd_tx.send(PlayerCmd::AboutToFinish) {
+                            if let Err(e) = args.pcmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("command AboutToFinish sent failed: {e}");
                             }
                         }
@@ -624,7 +629,7 @@ async fn player_thread(
                 }
                 if offset.is_positive() {
                     let new_pos = sink.elapsed().as_secs() + offset as u64;
-                    if let Some(d) = *total_duration.lock() {
+                    if let Some(d) = *args.total_duration.lock() {
                         if new_pos < d.as_secs() - offset as u64 {
                             sink.seek(Duration::from_secs(new_pos));
                         }
@@ -639,7 +644,7 @@ async fn player_thread(
                 if paused {
                     std::thread::sleep(std::time::Duration::from_millis(50));
                     sink.pause();
-                    sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
+                    sink.set_volume(f32::from(args.volume_inside.load(Ordering::SeqCst)) / 100.0);
                 }
             }
 
@@ -647,7 +652,7 @@ async fn player_thread(
                 // replace the current total_duration with the next one
                 // this is only present when QueueNext was used; which is only used if gapless is enabled
                 if next_duration_opt.is_some() {
-                    *total_duration.lock() = next_duration_opt;
+                    *args.total_duration.lock() = next_duration_opt;
                 }
             }
         }
