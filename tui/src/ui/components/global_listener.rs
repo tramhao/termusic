@@ -261,11 +261,13 @@ impl Model {
         ]
     }
 
+    /// Generate the Clause for any popups to not be mounted.
     fn no_popup_mounted_clause() -> SubClause<Id> {
         let subclause1 = Self::no_popup_mounted_clause_1();
         let subclause2 = Self::no_popup_mounted_clause_2();
         SubClause::And(Box::new(subclause1), Box::new(subclause2))
     }
+
     fn no_popup_mounted_clause_2() -> SubClause<Id> {
         SubClause::Not(Box::new(SubClause::Or(
             Box::new(SubClause::IsMounted(Id::FeedDeleteConfirmRadioPopup)),
@@ -275,62 +277,69 @@ impl Model {
             )),
         )))
     }
+
     fn no_popup_mounted_clause_1() -> SubClause<Id> {
-        SubClause::Not(Box::new(SubClause::Or(
+        SubClause::Not(Box::new(Self::everywhere_popups(Box::new(
+            Self::delete_confirm_popups(Box::new(SubClause::Or(
+                Box::new(SubClause::IsMounted(Id::GeneralSearchInput)),
+                Box::new(SubClause::Or(
+                    Box::new(SubClause::IsMounted(Id::TagEditor(IdTagEditor::LabelHint))),
+                    Box::new(SubClause::Or(
+                        Box::new(SubClause::IsMounted(Id::ConfigEditor(
+                            IdConfigEditor::Footer,
+                        ))),
+                        Box::new(Self::youtube_search_popups(Box::new(SubClause::Or(
+                            Box::new(SubClause::IsMounted(Id::SavePlaylistPopup)),
+                            Box::new(SubClause::Or(
+                                Box::new(SubClause::IsMounted(Id::SavePlaylistConfirm)),
+                                Box::new(SubClause::IsMounted(Id::PodcastAddPopup)),
+                            )),
+                        )))),
+                    )),
+                )),
+            ))),
+        ))))
+    }
+
+    /// Youtube search popups, see [youtube search](super::popups::youtube_search)
+    #[inline]
+    fn youtube_search_popups(or: Box<SubClause<Id>>) -> SubClause<Id> {
+        SubClause::Or(
+            Box::new(SubClause::IsMounted(Id::YoutubeSearchInputPopup)),
+            Box::new(SubClause::Or(
+                Box::new(SubClause::IsMounted(Id::YoutubeSearchTablePopup)),
+                Box::new(SubClause::Or(
+                    Box::new(SubClause::IsMounted(Id::YoutubeSearchTablePopup)),
+                    or,
+                )),
+            )),
+        )
+    }
+
+    /// Delete confirmation popups, anything from the `deleteconfirm` module
+    #[inline]
+    fn delete_confirm_popups(or: Box<SubClause<Id>>) -> SubClause<Id> {
+        SubClause::Or(
+            Box::new(SubClause::IsMounted(Id::DeleteConfirmInputPopup)),
+            Box::new(SubClause::Or(
+                Box::new(SubClause::IsMounted(Id::DeleteConfirmRadioPopup)),
+                or,
+            )),
+        )
+    }
+
+    /// Popups that could happen everywhere
+    #[inline]
+    fn everywhere_popups(or: Box<SubClause<Id>>) -> SubClause<Id> {
+        SubClause::Or(
             Box::new(SubClause::IsMounted(Id::HelpPopup)),
             Box::new(SubClause::Or(
                 Box::new(SubClause::IsMounted(Id::ErrorPopup)),
                 Box::new(SubClause::Or(
                     Box::new(SubClause::IsMounted(Id::QuitPopup)),
-                    Box::new(SubClause::Or(
-                        Box::new(SubClause::IsMounted(Id::DeleteConfirmInputPopup)),
-                        Box::new(SubClause::Or(
-                            Box::new(SubClause::IsMounted(Id::DeleteConfirmRadioPopup)),
-                            Box::new(SubClause::Or(
-                                Box::new(SubClause::IsMounted(Id::GeneralSearchInput)),
-                                Box::new(SubClause::Or(
-                                    Box::new(SubClause::IsMounted(Id::TagEditor(
-                                        IdTagEditor::LabelHint,
-                                    ))),
-                                    Box::new(SubClause::Or(
-                                        Box::new(SubClause::IsMounted(Id::ConfigEditor(
-                                            IdConfigEditor::Footer,
-                                        ))),
-                                        Box::new(SubClause::Or(
-                                            Box::new(SubClause::IsMounted(
-                                                Id::YoutubeSearchInputPopup,
-                                            )),
-                                            Box::new(SubClause::Or(
-                                                Box::new(SubClause::IsMounted(
-                                                    Id::YoutubeSearchTablePopup,
-                                                )),
-                                                Box::new(SubClause::Or(
-                                                    Box::new(SubClause::IsMounted(
-                                                        Id::YoutubeSearchTablePopup,
-                                                    )),
-                                                    Box::new(SubClause::Or(
-                                                        Box::new(SubClause::IsMounted(
-                                                            Id::SavePlaylistPopup,
-                                                        )),
-                                                        Box::new(SubClause::Or(
-                                                            Box::new(SubClause::IsMounted(
-                                                                Id::SavePlaylistConfirm,
-                                                            )),
-                                                            Box::new(SubClause::IsMounted(
-                                                                Id::PodcastAddPopup,
-                                                            )),
-                                                        )),
-                                                    )),
-                                                )),
-                                            )),
-                                        )),
-                                    )),
-                                )),
-                            )),
-                        )),
-                    )),
+                    or,
                 )),
             )),
-        )))
+        )
     }
 }
