@@ -55,6 +55,7 @@ pub enum IdConfigEditor {
     CEThemeSelect,
     ConfigSavePopup,
     ExitConfirmation,
+    ExtraYtdlpArgs,
     Footer,
     Header,
     Key(IdKey),

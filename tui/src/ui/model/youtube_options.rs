@@ -1,11 +1,5 @@
 //! SPDX-License-Identifier: MIT
 
-use super::Model;
-use anyhow::{bail, Result};
-use id3::TagLike;
-use id3::Version::Id3v24;
-use regex::Regex;
-
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 use std::thread;
