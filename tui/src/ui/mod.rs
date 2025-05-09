@@ -181,8 +181,8 @@ impl UI {
                                 }
                             }
                         }
-                        None => parent_is_termusic  = false,
-                   };
+                        None => parent_is_termusic = false,
+                    }
                     if exe == "termusic" && !parent_is_termusic {
                         clients += 1;
                     }
