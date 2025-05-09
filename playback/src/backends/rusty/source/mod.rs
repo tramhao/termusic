@@ -1,5 +1,6 @@
 //! Custom rodio sources and extension trait
 
+pub use custom_speed::SpecificType;
 use rodio::{Sample, Source};
 
 #[cfg(feature = "rusty-soundtouch")]
@@ -19,12 +20,16 @@ where
     Self::Item: Sample,
 {
     /// A custom [`Source`] implementation to abstract away which speed module gets chosen.
-    fn custom_speed(self, initial_speed: f32) -> custom_speed::CustomSpeed<Self>
+    fn custom_speed(
+        self,
+        initial_speed: f32,
+        specific: SpecificType,
+    ) -> custom_speed::CustomSpeed<Self>
     where
         Self: Sized,
         Self: Source<Item = f32>,
     {
-        custom_speed::custom_speed(self, initial_speed)
+        custom_speed::custom_speed(self, initial_speed, specific)
     }
 }
 

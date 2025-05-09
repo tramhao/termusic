@@ -4,15 +4,39 @@ use rodio::Source;
 
 use super::SampleType;
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum SpecificType {
+    Rodio,
+    #[cfg(feature = "rusty-soundtouch")]
+    Soundtouch,
+}
+
+impl SpecificType {
+    /// Enable or disable soundtouch usage, has no effect if soundtouch has not been compiled-in
+    #[must_use]
+    #[allow(unused_variables)] // because of feature gates
+    pub fn soundtouch(value: bool) -> Self {
+        #[cfg(feature = "rusty-soundtouch")]
+        if value {
+            return Self::Soundtouch;
+        }
+
+        Self::Rodio
+    }
+}
+
 #[allow(clippy::needless_return)]
-pub fn custom_speed<I>(input: I, initial_speed: f32) -> CustomSpeed<I>
+pub fn custom_speed<I>(input: I, initial_speed: f32, specific: SpecificType) -> CustomSpeed<I>
 where
     I: Source<Item = SampleType>,
 {
-    #[cfg(not(feature = "rusty-soundtouch"))]
-    return CustomSpeed::Rodio(input.speed(initial_speed));
-    #[cfg(feature = "rusty-soundtouch")]
-    return CustomSpeed::SoundTouch(super::soundtouch::soundtouch(input, initial_speed));
+    match specific {
+        SpecificType::Rodio => CustomSpeed::Rodio(input.speed(initial_speed)),
+        #[cfg(feature = "rusty-soundtouch")]
+        SpecificType::Soundtouch => {
+            CustomSpeed::SoundTouch(super::soundtouch::soundtouch(input, initial_speed))
+        }
+    }
 }
 
 /// A custom [`Source`] implementation to abstract away which speed module gets chosen.

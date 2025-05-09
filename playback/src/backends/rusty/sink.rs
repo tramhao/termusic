@@ -9,9 +9,8 @@ use parking_lot::{Mutex, RwLock};
 use rodio::{queue, source::Done, Source};
 use rodio::{OutputStreamHandle, PlayError};
 
-use super::source::SampleType;
-#[allow(unused_imports)] // used for "rusty-soundtouch"
 use super::source::SourceExt as _;
+use super::source::{SampleType, SpecificType};
 use super::PlayerInternalCmd;
 use crate::PlayerCmd;
 
@@ -118,7 +117,7 @@ impl Sink {
         let progress_tx = self.picmd_tx.clone();
         let source = source
             .track_position()
-            .custom_speed(1.0)
+            .custom_speed(1.0, SpecificType::soundtouch(true))
             .amplify(1.0)
             .pausable(false)
             .skippable()
