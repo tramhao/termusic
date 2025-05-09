@@ -1,41 +1,23 @@
-/*!
- * MIT License
- *
- * termusic - Copyright (C) 2021 Larry Hao
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+//! SPDX-License-Identifier: MIT
 
-use crate::ui::tui_cmd::TuiCmd;
-use crate::ui::{model::TermusicLayout, Model};
-use anyhow::anyhow;
 use std::path::Path;
 use std::time::Duration;
+
+use anyhow::anyhow;
+use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::track::MediaType;
 use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
+    DBMsg, DLMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg,
+    SavePlaylistMsg, XYWHMsg, YSMsg,
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
 use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::Update;
+
+use crate::ui::tui_cmd::TuiCmd;
+use crate::ui::{model::TermusicLayout, Model};
 
 impl Update<Msg> for Model {
     #[allow(clippy::too_many_lines)]
@@ -87,14 +69,7 @@ impl Update<Msg> for Model {
                 None
             }
 
-            Msg::PlayerTogglePause
-            | Msg::PlayerToggleGapless
-            | Msg::PlayerSpeedUp
-            | Msg::PlayerSpeedDown
-            | Msg::PlayerVolumeUp
-            | Msg::PlayerVolumeDown
-            | Msg::PlayerSeekForward
-            | Msg::PlayerSeekBackward => self.update_player(&msg),
+            Msg::Player(msg) => self.update_player(msg),
 
             Msg::HelpPopupShow => {
                 self.mount_help_popup();
@@ -120,7 +95,7 @@ impl Update<Msg> for Model {
                 None
             }
             Msg::TagEditor(m) => {
-                self.update_tageditor(&m);
+                self.update_tageditor(m);
                 None
             }
             Msg::UpdatePhoto => {
@@ -129,44 +104,10 @@ impl Update<Msg> for Model {
                 }
                 None
             }
-            Msg::LayoutDataBase | Msg::LayoutTreeView | Msg::LayoutPodCast => {
-                self.update_layout(&msg)
-            }
+            Msg::Layout(msg) => self.update_layout(msg),
 
-            Msg::SavePlaylistPopupShow => {
-                if let Err(e) = self.mount_save_playlist() {
-                    self.mount_error_popup(e.context("mount save playlist"));
-                }
-                None
-            }
-            Msg::SavePlaylistPopupCloseCancel => {
-                self.umount_save_playlist();
-                None
-            }
-            Msg::SavePlaylistPopupCloseOk(filename) => {
-                self.umount_save_playlist();
-                if let Err(e) = self.playlist_save_m3u_before(&filename) {
-                    self.mount_error_popup(e.context("save m3u playlist before"));
-                }
-                None
-            }
-            Msg::SavePlaylistPopupUpdate(filename) => {
-                if let Err(e) = self.remount_save_playlist_label(&filename) {
-                    self.mount_error_popup(e.context("remount save playlist label"));
-                }
-                None
-            }
-            Msg::SavePlaylistConfirmCloseCancel => {
-                self.umount_save_playlist_confirm();
-                None
-            }
-            Msg::SavePlaylistConfirmCloseOk(filename) => {
-                if let Err(e) = self.playlist_save_m3u(Path::new(&filename)) {
-                    self.mount_error_popup(e.context("save m3u playlist"));
-                }
-                self.umount_save_playlist_confirm();
-                None
-            }
+            Msg::SavePlaylist(msg) => self.update_save_playlist(msg),
+
             Msg::Podcast(m) => self.update_podcast(m),
             Msg::LyricMessage(m) => self.update_lyric_textarea(m),
             Msg::Download(m) => self.update_download_msg(&m),
@@ -412,12 +353,14 @@ impl Model {
         }
         None
     }
-    fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
+
+    /// Handle [`Player`] messages & events
+    fn update_player(&mut self, msg: PlayerMsg) -> Option<Msg> {
         match msg {
-            Msg::PlayerTogglePause => {
+            PlayerMsg::TogglePause => {
                 self.player_toggle_pause();
             }
-            Msg::PlayerSeekForward => {
+            PlayerMsg::SeekForward => {
                 if self.is_radio() {
                     self.show_message_timeout_label_help(
                         "seek is not available for live radio",
@@ -429,7 +372,7 @@ impl Model {
                 }
                 self.command(TuiCmd::SeekForward);
             }
-            Msg::PlayerSeekBackward => {
+            PlayerMsg::SeekBackward => {
                 if self.is_radio() {
                     self.show_message_timeout_label_help(
                         "seek is not available for live radio",
@@ -441,28 +384,30 @@ impl Model {
                 }
                 self.command(TuiCmd::SeekBackward);
             }
-            Msg::PlayerSpeedUp => {
+            PlayerMsg::SpeedUp => {
                 self.command(TuiCmd::SpeedUp);
             }
-            Msg::PlayerSpeedDown => {
+            PlayerMsg::SpeedDown => {
                 self.command(TuiCmd::SpeedDown);
             }
-            Msg::PlayerVolumeUp => {
+            PlayerMsg::VolumeUp => {
                 self.command(TuiCmd::VolumeUp);
             }
-            Msg::PlayerVolumeDown => {
+            PlayerMsg::VolumeDown => {
                 self.command(TuiCmd::VolumeDown);
             }
-            Msg::PlayerToggleGapless => {
+            PlayerMsg::ToggleGapless => {
                 self.command(TuiCmd::ToggleGapless);
             }
-            _ => {}
         }
+
         None
     }
-    fn update_layout(&mut self, msg: &Msg) -> Option<Msg> {
+
+    /// Switch the main view / layout
+    fn update_layout(&mut self, msg: MainLayoutMsg) -> Option<Msg> {
         match msg {
-            Msg::LayoutDataBase => {
+            MainLayoutMsg::DataBase => {
                 let mut need_to_set_focus = true;
                 if let Ok(Some(AttrValue::Flag(true))) =
                     self.app.query(&Id::DBListCriteria, Attribute::Focus)
@@ -492,9 +437,8 @@ impl Model {
 
                 self.layout = TermusicLayout::DataBase;
                 self.playlist_switch_layout();
-                None
             }
-            Msg::LayoutTreeView => {
+            MainLayoutMsg::TreeView => {
                 let mut need_to_set_focus = true;
                 if let Ok(Some(AttrValue::Flag(true))) =
                     self.app.query(&Id::Playlist, Attribute::Focus)
@@ -514,10 +458,8 @@ impl Model {
 
                 self.layout = TermusicLayout::TreeView;
                 self.playlist_switch_layout();
-                None
             }
-
-            Msg::LayoutPodCast => {
+            MainLayoutMsg::Podcast => {
                 let mut need_to_set_focus = true;
                 if let Ok(Some(AttrValue::Flag(true))) =
                     self.app.query(&Id::Podcast, Attribute::Focus)
@@ -549,10 +491,10 @@ impl Model {
                 self.layout = TermusicLayout::Podcast;
                 self.podcast_sync_feeds_and_episodes();
                 self.playlist_switch_layout();
-                None
             }
-            _ => None,
         }
+
+        None
     }
     fn update_database_list(&mut self, msg: &DBMsg) -> Option<Msg> {
         match msg {
@@ -954,12 +896,12 @@ impl Model {
                     if self.layout == TermusicLayout::Podcast {
                         return;
                     }
-                    self.update_layout(&Msg::LayoutPodCast);
+                    self.update_layout(MainLayoutMsg::Podcast);
                 }
                 MediaType::Music | MediaType::LiveRadio => match self.layout {
                     TermusicLayout::TreeView | TermusicLayout::DataBase => {}
                     TermusicLayout::Podcast => {
-                        self.update_layout(&Msg::LayoutTreeView);
+                        self.update_layout(MainLayoutMsg::TreeView);
                     }
                 },
             }
@@ -1038,6 +980,42 @@ impl Model {
                 self.show_message_timeout_label_help(err_text, None, None, None);
             }
         }
+        None
+    }
+
+    /// Handle & update [`SavePlaylist`] related components.
+    fn update_save_playlist(&mut self, msg: SavePlaylistMsg) -> Option<Msg> {
+        match msg {
+            SavePlaylistMsg::PopupShow => {
+                if let Err(e) = self.mount_save_playlist() {
+                    self.mount_error_popup(e.context("mount save playlist"));
+                }
+            }
+            SavePlaylistMsg::PopupCloseCancel => {
+                self.umount_save_playlist();
+            }
+            SavePlaylistMsg::PopupCloseOk(filename) => {
+                self.umount_save_playlist();
+                if let Err(e) = self.playlist_save_m3u_before(&filename) {
+                    self.mount_error_popup(e.context("save m3u playlist before"));
+                }
+            }
+            SavePlaylistMsg::PopupUpdate(filename) => {
+                if let Err(e) = self.remount_save_playlist_label(&filename) {
+                    self.mount_error_popup(e.context("remount save playlist label"));
+                }
+            }
+            SavePlaylistMsg::ConfirmCloseCancel => {
+                self.umount_save_playlist_confirm();
+            }
+            SavePlaylistMsg::ConfirmCloseOk(filename) => {
+                if let Err(e) = self.playlist_save_m3u(Path::new(&filename)) {
+                    self.mount_error_popup(e.context("save m3u playlist"));
+                }
+                self.umount_save_playlist_confirm();
+            }
+        }
+
         None
     }
 }

@@ -1,5 +1,6 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::types::{Id, Msg};
+use termusiclib::ids::Id;
+use termusiclib::types::Msg;
 use tui_realm_stdlib::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},

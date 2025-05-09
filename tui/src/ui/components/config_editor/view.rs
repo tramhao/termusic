@@ -1,7 +1,16 @@
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
+use crate::ui::model::{ConfigEditorLayout, Model};
+use crate::ui::utils::draw_area_in_absolute;
+use crate::ui::Application;
+use anyhow::{bail, Result};
 use include_dir::DirEntry;
+use std::num::{NonZeroU32, NonZeroU8};
+use std::path::PathBuf;
 use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
+use termusiclib::config::v2::tui::Alignment as XywhAlign;
+use termusiclib::ids::{Id, IdConfigEditor, IdKey};
+use termusiclib::types::Msg;
 /**
  * MIT License
  *
@@ -27,14 +36,6 @@ use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, Remembe
  */
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use termusiclib::THEME_DIR;
-
-use crate::ui::model::{ConfigEditorLayout, Model};
-use crate::ui::utils::draw_area_in_absolute;
-use crate::ui::{Application, Id, IdConfigEditor, IdKey, Msg};
-use anyhow::{bail, Result};
-use std::num::{NonZeroU32, NonZeroU8};
-use std::path::PathBuf;
-use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Direction, Layout};

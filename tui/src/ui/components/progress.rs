@@ -1,8 +1,9 @@
 use crate::ui::Model;
 use std::time::Duration;
 use termusiclib::config::TuiOverlay;
+use termusiclib::ids::Id;
 use termusiclib::track::{MediaType, Track};
-use termusiclib::types::{Id, Msg};
+use termusiclib::types::Msg;
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, BorderType, Borders, PropPayload, PropValue};

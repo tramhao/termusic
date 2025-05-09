@@ -6,9 +6,10 @@ use sanitize_filename::{sanitize_with_options, Options};
 use serde_json::Value;
 use std::time::Duration;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::Id;
 use termusiclib::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
 use termusiclib::track::MediaType;
-use termusiclib::types::{Id, Msg, PCMsg};
+use termusiclib::types::{GSMsg, Msg, PCMsg};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -173,7 +174,7 @@ impl Component<Msg, NoUserEvent> for FeedsList {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowPodcast))
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowPodcast))
             }
             _ => CmdResult::None,
         };
@@ -341,7 +342,7 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 CmdResult::None
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowEpisode))
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowEpisode))
             }
             _ => CmdResult::None,
         };

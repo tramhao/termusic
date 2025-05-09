@@ -1,3 +1,21 @@
+//! SPDX-License-Identifier: MIT
+
+use std::path::Path;
+use std::time::{Duration, Instant};
+
+use anyhow::{bail, Result};
+use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
+use termusiclib::types::{DBMsg, Msg, PCMsg};
+use termusiclib::utils::get_parent_folder;
+use tui_realm_treeview::Tree;
+use tuirealm::event::NoUserEvent;
+use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
+use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
+use tuirealm::ratatui::widgets::Clear;
+use tuirealm::EventListenerCfg;
+use tuirealm::{Frame, State, StateValue};
+
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
@@ -8,42 +26,6 @@ use crate::ui::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute,
 };
 use crate::ui::Application;
-use anyhow::{bail, Result};
-use std::path::Path;
-use std::time::{Duration, Instant};
-use termusiclib::config::SharedTuiSettings;
-/**
- * MIT License
- *
- * termusic - Copyright (C) 2021 Larry Hao
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
-use termusiclib::utils::get_parent_folder;
-use tui_realm_treeview::Tree;
-use tuirealm::event::NoUserEvent;
-use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
-use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
-use tuirealm::ratatui::widgets::Clear;
-use tuirealm::EventListenerCfg;
-use tuirealm::{Frame, State, StateValue};
 
 impl Model {
     #[allow(clippy::too_many_lines)]

@@ -30,7 +30,8 @@ use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::theme::ThemeColors;
-use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
+use termusiclib::ids::{Id, IdConfigEditor, IdKey};
+use termusiclib::types::{ConfigEditorMsg, KFMsg, Msg};
 use termusiclib::utils::get_app_config_path;
 
 /// How many Themes there are without actual files and always exist

@@ -28,11 +28,11 @@ mod update;
 mod view;
 
 use crate::ui::model::{ConfigEditorLayout, Model};
-use crate::ui::{ConfigEditorMsg, Msg};
-use anyhow::Result;
 
+use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::types::{Id, IdConfigEditor};
+use termusiclib::ids::{Id, IdConfigEditor};
+use termusiclib::types::{ConfigEditorMsg, Msg};
 use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Style, TextSpan};
 use tuirealm::{event::NoUserEvent, Component, Event, MockComponent};

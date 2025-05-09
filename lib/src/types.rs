@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
+use crate::ids::{IdConfigEditor, IdKey};
 use crate::invidious::{Instance, YoutubeVideo};
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
@@ -20,32 +21,18 @@ pub enum Msg {
     GeneralSearch(GSMsg),
     HelpPopupShow,
     HelpPopupClose,
-    LayoutTreeView,
-    LayoutDataBase,
-    LayoutPodCast,
+    Layout(MainLayoutMsg),
     Library(LIMsg),
     LyricMessage(LyricMsg),
     LyricCycle,
     LyricAdjustDelay(i64),
-    PlayerToggleGapless,
-    PlayerTogglePause,
-    PlayerVolumeUp,
-    PlayerVolumeDown,
-    PlayerSpeedUp,
-    PlayerSpeedDown,
-    PlayerSeekForward,
-    PlayerSeekBackward,
+    Player(PlayerMsg),
     Playlist(PLMsg),
     Podcast(PCMsg),
     QuitPopupCloseCancel,
     QuitPopupCloseOk,
     QuitPopupShow,
-    SavePlaylistPopupShow,
-    SavePlaylistPopupCloseCancel,
-    SavePlaylistPopupUpdate(String),
-    SavePlaylistPopupCloseOk(String),
-    SavePlaylistConfirmCloseCancel,
-    SavePlaylistConfirmCloseOk(String),
+    SavePlaylist(SavePlaylistMsg),
     TagEditor(TEMsg),
     UpdatePhoto,
     YoutubeSearch(YSMsg),
@@ -57,6 +44,40 @@ pub enum Msg {
     ///
     /// For example pushing ARROW DOWN to change the selection in a table.
     ForceRedraw,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MainLayoutMsg {
+    /// Switch to the Music library view
+    TreeView,
+    /// Switch to the Database view
+    DataBase,
+    /// Switch to the Podcast view
+    Podcast,
+}
+
+/// Player relates messages
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerMsg {
+    ToggleGapless,
+    TogglePause,
+    VolumeUp,
+    VolumeDown,
+    SpeedUp,
+    SpeedDown,
+    SeekForward,
+    SeekBackward,
+}
+
+/// Save Playlist Popup related messages
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SavePlaylistMsg {
+    PopupShow,
+    PopupCloseCancel,
+    PopupUpdate(String),
+    PopupCloseOk(String),
+    ConfirmCloseCancel,
+    ConfirmCloseOk(String),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -516,7 +537,7 @@ pub enum YSMsg {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TEMsg {
     TagEditorRun(String),
-    TagEditorClose(Option<String>),
+    TagEditorClose,
     TECounterDeleteOk,
     TEDownload(usize),
     TEEmbed(usize),
@@ -524,6 +545,8 @@ pub enum TEMsg {
     TERename,
     TESearch,
     TESelectLyricOk(usize),
+
+    TESearchLyricResult(SongTagRecordingResult),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -546,188 +569,9 @@ pub enum TFMsg {
     TextareaLyricBlurUp,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
-pub enum Id {
-    ConfigEditor(IdConfigEditor),
-    DBListCriteria,
-    DBListSearchResult,
-    DBListSearchTracks,
-    DeleteConfirmRadioPopup,
-    DeleteConfirmInputPopup,
-    DownloadSpinner,
-    Episode,
-    ErrorPopup,
-    GeneralSearchInput,
-    GeneralSearchTable,
-    GlobalListener,
-    HelpPopup,
-    Label,
-    Library,
-    Lyric,
-    MessagePopup,
-    Playlist,
-    Podcast,
-    PodcastAddPopup,
-    PodcastSearchTablePopup,
-    FeedDeleteConfirmRadioPopup,
-    FeedDeleteConfirmInputPopup,
-    Progress,
-    QuitPopup,
-    SavePlaylistPopup,
-    SavePlaylistLabel,
-    SavePlaylistConfirm,
-    TagEditor(IdTagEditor),
-    YoutubeSearchInputPopup,
-    YoutubeSearchTablePopup,
-    DatabaseAddConfirmPopup,
-}
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
-pub enum IdTagEditor {
-    CounterDelete,
-    LabelHint,
-    InputArtist,
-    InputTitle,
-    InputAlbum,
-    InputGenre,
-    SelectLyric,
-    TableLyricOptions,
-    TextareaLyric,
-}
-
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
-pub enum IdConfigEditor {
-    AlbumPhotoAlign,
-    CEThemeSelect,
-    ConfigSavePopup,
-    ExitConfirmation,
-    ExtraYtdlpArgs,
-    Footer,
-    Header,
-    Key(IdKey),
-    KillDamon,
-
-    LibraryBackground,
-    LibraryBorder,
-    LibraryForeground,
-    LibraryHighlight,
-    LibraryHighlightSymbol,
-    LibraryLabel,
-
-    LyricBackground,
-    LyricBorder,
-    LyricForeground,
-    LyricLabel,
-
-    MusicDir,
-    PlayerPort,
-    PlayerUseDiscord,
-    PlayerUseMpris,
-
-    PlaylistBackground,
-    PlaylistBorder,
-    PlaylistDisplaySymbol,
-    PlaylistForeground,
-    PlaylistHighlight,
-    PlaylistHighlightSymbol,
-    PlaylistLabel,
-    PlaylistRandomAlbum,
-    PlaylistRandomTrack,
-
-    CurrentlyPlayingTrackSymbol,
-
-    PodcastDir,
-    PodcastMaxRetries,
-    PodcastSimulDownload,
-
-    ProgressBackground,
-    ProgressBorder,
-    ProgressForeground,
-    ProgressLabel,
-
-    SaveLastPosition,
-    SeekStep,
-
-    ImportantPopupLabel,
-    ImportantPopupBackground,
-    ImportantPopupBorder,
-    ImportantPopupForeground,
-
-    FallbackBackground,
-    FallbackBorder,
-    FallbackForeground,
-    FallbackHighlight,
-    FallbackLabel,
-}
-
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
-pub enum IdKey {
-    DatabaseAddAll,
-    DatabaseAddSelected,
-    GlobalConfig,
-    GlobalDown,
-    GlobalGotoBottom,
-    GlobalGotoTop,
-    GlobalHelp,
-    GlobalLayoutTreeview,
-    GlobalLayoutDatabase,
-    GlobalLeft,
-    GlobalLyricAdjustForward,
-    GlobalLyricAdjustBackward,
-    GlobalLyricCycle,
-    GlobalPlayerToggleGapless,
-    GlobalPlayerTogglePause,
-    GlobalPlayerNext,
-    GlobalPlayerPrevious,
-    GlobalPlayerSeekForward,
-    GlobalPlayerSeekBackward,
-    GlobalPlayerSpeedUp,
-    GlobalPlayerSpeedDown,
-    GlobalQuit,
-    GlobalRight,
-    GlobalUp,
-    GlobalVolumeDown,
-    GlobalVolumeUp,
-    GlobalSavePlaylist,
-    LibraryDelete,
-    LibraryLoadDir,
-    LibraryPaste,
-    LibrarySearch,
-    LibrarySearchYoutube,
-    LibraryTagEditor,
-    LibraryYank,
-    PlaylistDelete,
-    PlaylistDeleteAll,
-    PlaylistShuffle,
-    PlaylistModeCycle,
-    PlaylistPlaySelected,
-    PlaylistSearch,
-    PlaylistSwapDown,
-    PlaylistSwapUp,
-    PlaylistAddRandomAlbum,
-    PlaylistAddRandomTracks,
-    LibrarySwitchRoot,
-    LibraryAddRoot,
-    LibraryRemoveRoot,
-    GlobalLayoutPodcast,
-    GlobalXywhMoveLeft,
-    GlobalXywhMoveRight,
-    GlobalXywhMoveUp,
-    GlobalXywhMoveDown,
-    GlobalXywhZoomIn,
-    GlobalXywhZoomOut,
-    GlobalXywhHide,
-    PodcastMarkPlayed,
-    PodcastMarkAllPlayed,
-    PodcastEpDownload,
-    PodcastEpDeleteFile,
-    PodcastDeleteFeed,
-    PodcastDeleteAllFeeds,
-    PodcastSearchAddFeed,
-    PodcastRefreshFeed,
-    PodcastRefreshAllFeeds,
-}
-pub enum SearchLyricState {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SongTagRecordingResult {
     Finish(Vec<SongTag>),
 }
 

@@ -56,8 +56,12 @@ pub use progress::Progress;
 pub use tag_editor::*;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
+use termusiclib::types::{
+    ConfigEditorMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, SavePlaylistMsg, XYWHMsg,
+};
 
-use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg};
+use crate::ui::Model;
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
@@ -86,7 +90,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => Some(Msg::QuitPopupShow),
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => Some(Msg::QuitPopupShow),
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.toggle_pause.get() => {
-                Some(Msg::PlayerTogglePause)
+                Some(Msg::Player(PlayerMsg::TogglePause))
             }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.next_track.get() => {
                 Some(Msg::Playlist(PLMsg::NextSong))
@@ -95,35 +99,25 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 Some(Msg::Playlist(PLMsg::PrevSong))
             }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.volume_down.get() => {
-                Some(Msg::PlayerVolumeDown)
+                Some(Msg::Player(PlayerMsg::VolumeDown))
             }
-            // Event::Keyboard(keyevent)
-            //     if keyevent == keys.player_keys.volume_minus_2.get() =>
-            // {
-            //     Some(Msg::PlayerVolumeDown)
-            // }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.volume_up.get() => {
-                Some(Msg::PlayerVolumeUp)
+                Some(Msg::Player(PlayerMsg::VolumeUp))
             }
-            // Event::Keyboard(keyevent)
-            //     if keyevent == keys.player_keys.volume_plus_2.get() =>
-            // {
-            //     Some(Msg::PlayerVolumeUp)
-            // }
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.open_help.get() => {
                 Some(Msg::HelpPopupShow)
             }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.seek_forward.get() => {
-                Some(Msg::PlayerSeekForward)
+                Some(Msg::Player(PlayerMsg::SeekForward))
             }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.seek_backward.get() => {
-                Some(Msg::PlayerSeekBackward)
+                Some(Msg::Player(PlayerMsg::SeekBackward))
             }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.speed_up.get() => {
-                Some(Msg::PlayerSpeedUp)
+                Some(Msg::Player(PlayerMsg::SpeedUp))
             }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.speed_down.get() => {
-                Some(Msg::PlayerSpeedDown)
+                Some(Msg::Player(PlayerMsg::SpeedDown))
             }
 
             Event::Keyboard(keyevent)
@@ -141,19 +135,19 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_library.get() => {
-                Some(Msg::LayoutTreeView)
+                Some(Msg::Layout(MainLayoutMsg::TreeView))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_database.get() => {
-                Some(Msg::LayoutDataBase)
+                Some(Msg::Layout(MainLayoutMsg::DataBase))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_podcasts.get() => {
-                Some(Msg::LayoutPodCast)
+                Some(Msg::Layout(MainLayoutMsg::Podcast))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.toggle_prefetch.get() => {
-                Some(Msg::PlayerToggleGapless)
+                Some(Msg::Player(PlayerMsg::ToggleGapless))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.open_config.get() => {
@@ -161,7 +155,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.save_playlist.get() => {
-                Some(Msg::SavePlaylistPopupShow)
+                Some(Msg::SavePlaylist(SavePlaylistMsg::PopupShow))
             }
             Event::Keyboard(keyevent) if keyevent == keys.move_cover_art_keys.move_left.get() => {
                 Some(Msg::Xywh(XYWHMsg::MoveLeft))

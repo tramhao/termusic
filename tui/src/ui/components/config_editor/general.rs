@@ -22,13 +22,13 @@ use crate::ui::model::Model;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{ConfigEditorMsg, Msg};
 use crate::CombinedSettings;
 
 use anyhow::Result;
 use termusiclib::config::v2::tui::{keys::Keys, Alignment as XywhAlign};
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{Id, IdConfigEditor};
+use termusiclib::ids::{Id, IdConfigEditor};
+use termusiclib::types::{ConfigEditorMsg, Msg};
 use tui_realm_stdlib::{Input, Radio};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{

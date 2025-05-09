@@ -9,6 +9,7 @@ use anyhow::{anyhow, bail, Context};
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
+use termusiclib::ids::Id;
 use termusiclib::library_db::TrackDB;
 use termusiclib::library_db::{DataBase, SearchCriteria};
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
@@ -17,7 +18,7 @@ use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed};
 use termusiclib::songtag::SongTag;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::track::{MediaType, Track};
-use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
+use termusiclib::types::{Msg, YoutubeOptions};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;
@@ -279,8 +280,6 @@ pub struct Model {
 
     youtube_options: YoutubeOptions,
     pub songtag_options: Vec<SongTag>,
-    pub sender_songtag: Sender<SearchLyricState>,
-    pub receiver_songtag: Receiver<SearchLyricState>,
     pub download_tracker: DownloadTracker,
     /// Taskpool to limit number of active network requests
     ///
@@ -329,8 +328,6 @@ impl Model {
             &path,
             config_server.read().get_library_scan_depth(),
         ));
-
-        let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         let viuer_supported = if config_tui.read().cover_features_enabled() {
             get_viuer_support()
@@ -401,8 +398,6 @@ impl Model {
             #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
             ueberzug_instance,
             songtag_options: vec![],
-            sender_songtag: tx3,
-            receiver_songtag: rx3,
             viuer_supported,
             db,
             layout: TermusicLayout::TreeView,

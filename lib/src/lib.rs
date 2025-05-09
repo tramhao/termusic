@@ -7,6 +7,7 @@
 #![allow(clippy::missing_errors_doc)]
 
 pub mod config;
+pub mod ids;
 pub mod invidious;
 pub mod library_db;
 pub mod player;

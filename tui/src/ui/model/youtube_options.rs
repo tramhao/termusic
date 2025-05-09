@@ -1,45 +1,33 @@
-/**
- * MIT License
- *
- * termusic - Copyright (c) 2021 Larry Hao
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+//! SPDX-License-Identifier: MIT
+
 use super::Model;
 use anyhow::{bail, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
-use shell_words;
+
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 use std::thread;
 use std::time::Duration;
+
+use anyhow::{bail, Result};
+use id3::TagLike;
+use id3::Version::Id3v24;
+use regex::Regex;
+use shell_words;
+use termusiclib::ids::Id;
 use termusiclib::invidious::Instance;
 use termusiclib::track::Track;
-use termusiclib::types::{DLMsg, Id, Msg};
+use termusiclib::types::{DLMsg, Msg};
 use termusiclib::types::{YSMsg, YoutubeOptions};
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
 use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
+
+use super::Model;
 
 #[expect(dead_code)]
 static RE_FILENAME: LazyLock<Regex> =

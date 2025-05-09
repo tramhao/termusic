@@ -1,11 +1,12 @@
 use std::sync::LazyLock;
 
 use crate::ui::{model::TermusicLayout, Model};
+use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaType;
-use termusiclib::types::{Id, LyricMsg, Msg};
+use termusiclib::types::{LyricMsg, Msg};
 
 use anyhow::{anyhow, Result};
 use regex::Regex;
