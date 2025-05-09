@@ -340,21 +340,29 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
     id3_tag.write_to_path(file_fullname, Id3v24).ok();
 }
 
+#[derive(Debug, Clone, PartialEq)]
+enum ArgOrVal {
+    ArgumentWithVal(String),
+    Flag(String),
+    Argument(String),
+    Positional(String),
+}
+
 /// Parse the input shell-like string into a Vector of `argument` and `maybe argument value`.
-fn parse_args(input: &str) -> Result<Vec<(String, Option<String>)>, shell_words::ParseError> {
+fn parse_args(input: &str) -> Result<Vec<ArgOrVal>, shell_words::ParseError> {
     let result = shell_words::split(input)?
         .into_iter()
         .map(|token| {
             if token.starts_with("--") {
-                let parts: Vec<&str> = token.splitn(2, '=').collect();
-                (
-                    parts[0].to_string(),
-                    parts.get(1).map(std::string::ToString::to_string),
-                )
+                if token.contains('=') {
+                    ArgOrVal::ArgumentWithVal(token.to_string())
+                } else {
+                    ArgOrVal::Argument(token.to_string())
+                }
             } else if token.starts_with('-') {
-                (token.to_string(), None)
+                ArgOrVal::Flag(token.to_string())
             } else {
-                ("_positional".to_string(), Some(token.to_string()))
+                ArgOrVal::Positional(token.to_string())
             }
         })
         .collect();
@@ -362,18 +370,48 @@ fn parse_args(input: &str) -> Result<Vec<(String, Option<String>)>, shell_words:
 }
 
 /// Convert the `argument, maybe value` vector to [ytdrs Arguments](Arg).
-fn convert_to_args(extra_args: Vec<(String, Option<String>)>) -> Vec<Arg> {
+fn convert_to_args(extra_args: Vec<ArgOrVal>) -> Vec<Arg> {
     // This capacity *may* be a little inaccurate, but should broadly reflect what we need
     let mut extra_args_parsed = Vec::with_capacity(extra_args.len());
-    if !extra_args.is_empty() {
-        for (name, opt_arg) in extra_args {
-            let arg = match opt_arg {
-                Some(value) => Arg::new_with_arg(&name, &value),
-                None => Arg::new(&name),
-            };
-            extra_args_parsed.push(arg);
+
+    // store the last "maybe incomplete" argument here
+    // this has to be done because ytdrs `Arg` are non-modifiable after creation.
+    let mut last_arg: Option<String> = None;
+
+    for val in extra_args {
+        // push last arg to the array, before processing a new one
+        match &val {
+            ArgOrVal::ArgumentWithVal(_) | ArgOrVal::Argument(_) | ArgOrVal::Flag(_) => {
+                if let Some(v) = last_arg.take() {
+                    extra_args_parsed.push(Arg::new(&v));
+                }
+            }
+            ArgOrVal::Positional(_) => (),
+        }
+
+        match val {
+            ArgOrVal::ArgumentWithVal(v) | ArgOrVal::Flag(v) => {
+                extra_args_parsed.push(Arg::new(&v));
+            }
+            ArgOrVal::Argument(v) => {
+                last_arg = Some(v);
+            }
+            ArgOrVal::Positional(v) => {
+                let Some(last_arg) = last_arg.take() else {
+                    // in case there is a positional but no previous argument to combine with, skip the positional with a error
+                    // maybe we should error instead?
+                    error!("Positional without previous argument! {v:#?}");
+                    continue;
+                };
+                extra_args_parsed.push(Arg::new_with_arg(&last_arg, &v));
+            }
         }
     }
+
+    if let Some(remainder) = last_arg {
+        extra_args_parsed.push(Arg::new(&remainder));
+    }
+
     extra_args_parsed
 }
 
