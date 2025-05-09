@@ -862,7 +862,7 @@ impl Playlist {
     }
 
     /// Clear the current playlist.
-    /// This does not stop the playlist or clear [`current_track`].
+    /// This does not stop the playlist or clear [`current_track`](Self::current_track).
     pub fn clear(&mut self) {
         self.tracks.clear();
         self.played_index.clear();
@@ -1030,7 +1030,7 @@ impl Playlist {
         }
     }
 
-    /// Stop the current playlist by setting [`Status::Stopped`], preventing going to the next track
+    /// Stop the current playlist by setting [`RunningStatus::Stopped`], preventing going to the next track
     /// and finally, stop the currently playing track.
     pub fn stop(&mut self) {
         self.set_status(RunningStatus::Stopped);

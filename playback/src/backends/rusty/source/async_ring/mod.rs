@@ -31,7 +31,7 @@ pub type SeekData = (Duration, oneshot::Sender<usize>);
 /// The minimal size a decode-ringbuffer should have.
 ///
 /// Currently the size is based on 192kHz * 1 channel * 1 seconds, or 2 seconds of 48kHz stereo(2 channel) audio.
-const MIN_RING_SIZE: usize = 192_000 * MessageDataValue::MESSAGE_SIZE;
+pub const MIN_RING_SIZE: usize = 192_000 * MessageDataValue::MESSAGE_SIZE;
 
 /// A ringbuffer Producer meant for wrapping [`Source`] to make decode & playback async and keep the buffer filled without having audible gaps.
 ///
@@ -245,7 +245,7 @@ pub struct AsyncRingSource {
 }
 
 impl AsyncRingSource {
-    /// Create a new ringbuffer, with initial channel spec and at least [`MIN_SIZE`].
+    /// Create a new ringbuffer, with initial channel spec and at least [`MIN_RING_SIZE`].
     ///
     /// # Panics
     ///

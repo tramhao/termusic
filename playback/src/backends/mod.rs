@@ -15,12 +15,6 @@ pub enum BackendSelect {
     Mpv,
     #[cfg(feature = "gst")]
     GStreamer,
-    /// Create a new Backend with default backend ordering
-    ///
-    /// Order:
-    /// - [`GstreamerBackend`](gstreamer::GStreamerBackend) (feature `gst`)
-    /// - [`MpvBackend`](mpv::MpvBackend) (feature `mpv`)
-    /// - [`RustyBackend`](rusty::RustyBackend) (default)
     #[default]
     Rusty,
 }
