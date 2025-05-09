@@ -182,12 +182,12 @@ impl UI {
                 }
             }
             if clients <= 1 && target.is_some() {
-                #[cfg(not(target_os = "windows"))]
                 if let Some(s) = target {
+                    #[cfg(not(target_os = "windows"))]
                     s.kill_with(sysinfo::Signal::Term);
+                    #[cfg(target_os = "windows")]
+                    s.kill();
                 }
-                #[cfg(target_os = "windows")]
-                target.unwrap().kill();
             }
         }
 

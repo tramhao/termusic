@@ -194,7 +194,7 @@ impl Model {
         ];
         let extra_args = parse_args(&config_tui.settings.extra_ytdlp_args);
         let mut extra_args_parsed = parse_extra_args(extra_args);
-        if extra_args_parsed.len() > 0 {
+        if !extra_args_parsed.is_empty() {
             args.append(&mut extra_args_parsed);
         }
 
@@ -363,7 +363,10 @@ fn parse_args(input: &str) -> Result<Vec<(String, Option<String>)>, shell_words:
         .map(|token| {
             if token.starts_with("--") {
                 let parts: Vec<&str> = token.splitn(2, '=').collect();
-                (parts[0].to_string(), parts.get(1).map(|s| s.to_string()))
+                (
+                    parts[0].to_string(),
+                    parts.get(1).map(std::string::ToString::to_string),
+                )
             } else if token.starts_with('-') {
                 (token.to_string(), None)
             } else {
@@ -379,7 +382,7 @@ fn parse_extra_args(
 ) -> Vec<Arg> {
     let mut extra_args_parsed = vec![];
     if let Ok(extra_args_vec) = extra_args {
-        if extra_args_vec.len() > 0 {
+        if !extra_args_vec.is_empty() {
             for (name, opt_arg) in extra_args_vec {
                 let arg = match opt_arg {
                     Some(value) => Arg::new_with_arg(&name, &value),
