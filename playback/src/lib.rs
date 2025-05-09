@@ -295,10 +295,6 @@ impl GeneralPlayer {
                 drop(playlist);
                 self.current_track_updated = true;
                 info!("gapless next track played");
-                #[allow(irrefutable_let_patterns)]
-                if let Backend::Rusty(ref mut backend) = self.backend {
-                    backend.message_on_end();
-                }
                 self.add_and_play_mpris_discord();
                 return;
             }
@@ -312,10 +308,6 @@ impl GeneralPlayer {
 
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
-            #[allow(irrefutable_let_patterns)]
-            if let Backend::Rusty(ref mut backend) = self.backend {
-                backend.message_on_end();
-            }
 
             self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
                 current_track_index: u64::try_from(self.playlist.read().get_current_track_index())

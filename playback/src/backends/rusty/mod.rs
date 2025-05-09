@@ -49,7 +49,6 @@ pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
 #[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
-    MessageOnEnd,
     /// Enqueue a new track to be played, and skip to it
     /// (Track, gapless, soundtouch)
     Play(Box<Track>, bool, bool),
@@ -146,10 +145,6 @@ impl RustyBackend {
         if let Err(e) = self.command_tx.send(cmd.clone()) {
             error!("error in {cmd:?}: {e}");
         }
-    }
-
-    pub fn message_on_end(&self) {
-        self.command(PlayerInternalCmd::MessageOnEnd);
     }
 }
 
@@ -448,8 +443,6 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static>(
         soundtouch,
         |decoder, mut media_title_rx| {
             std::mem::swap(next_duration_opt, &mut decoder.total_duration());
-            // rely on EOS message to set next duration
-            sink.message_on_end();
 
             let handle = Handle::current();
 
@@ -477,8 +470,6 @@ fn append_to_sink_queue_no_duration(
     append_to_sink_inner(media_source, trace, sink, gapless, soundtouch, |_| {
         // remove potential old stale duration
         next_duration_opt.take();
-        // rely on EOS message to set next duration
-        sink.message_on_end();
     });
 }
 
@@ -617,9 +608,6 @@ async fn player_thread(mut args: PlayerThreadArgs) {
             }
             PlayerInternalCmd::SeekAbsolute(position) => {
                 sink.seek(position);
-            }
-            PlayerInternalCmd::MessageOnEnd => {
-                sink.message_on_end();
             }
 
             PlayerInternalCmd::SeekRelative(offset) => {

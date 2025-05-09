@@ -176,6 +176,7 @@ impl Sink {
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
         *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
+        self.message_on_end();
     }
 
     /// Gets the volume of the sound.
@@ -317,9 +318,9 @@ impl Sink {
         *self.controls.position.read()
     }
 
-    // Spawns a new thread to sleep until the sound ends, and then sends the SoundEnded
-    // message through the given Sender.
-    pub fn message_on_end(&self) {
+    // Spawns a new thread to sleep until the sound ends, and then sends the `Eos`
+    // message through the given Senders.
+    fn message_on_end(&self) {
         // TODO: we should not expose this function to be called outside of rusty-mod and always just have it active as we always need it
         // NOTE: (in addition to the todo), we always use "message_on_end" to rely on EOS, so it is basically always set, so it should not be necessary
         // to be set by commands every time, and worst, forget to call it or have race conditions that enqueue multiple things and wait on the wrong thing.
