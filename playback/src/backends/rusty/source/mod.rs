@@ -7,6 +7,7 @@ use rodio::{Sample, Source};
 pub mod soundtouch;
 
 pub mod async_ring;
+mod cb_done;
 mod custom_speed;
 
 /// Our sample type we choose to use across all places
@@ -30,6 +31,14 @@ where
         Self: Source<Item = f32>,
     {
         custom_speed::custom_speed(self, initial_speed, specific)
+    }
+
+    /// Run a function once at the end of a source.
+    fn cbdone<Fn: FnOnce()>(self, fun: Fn) -> cb_done::CbDone<Self, Fn>
+    where
+        Self: Sized,
+    {
+        cb_done::CbDone::new(self, fun)
     }
 }
 

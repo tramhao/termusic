@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use parking_lot::{Mutex, RwLock};
-use rodio::{queue, source::Done, Source};
+use rodio::{queue, Source};
 use rodio::{OutputStreamHandle, PlayError};
 
 use super::source::SourceExt as _;
@@ -174,9 +174,27 @@ impl Sink {
             });
 
         self.sound_count.fetch_add(1, Ordering::Relaxed);
-        let source = Done::new(source, self.sound_count.clone());
-        *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
-        self.message_on_end();
+
+        // the following allows us to avoid having to have a thread that waits for each sound to end to send a signal
+        // now with this, we can do much more stuff directly without having to have a extra thread for each sound.
+        let sound_count = self.sound_count.clone();
+        let pcmd_tx = self.pcmd_tx.clone();
+        let picmd_tx = self.picmd_tx.clone();
+        let source = source.cbdone(move || {
+            // the original function of `rodio::source::Done`, but we want to do more thant that
+            sound_count.fetch_sub(1, Ordering::Relaxed);
+
+            // using ".is_err()" here as the only error that can come from this channel is "Channel Closed"
+            if pcmd_tx.send(PlayerCmd::Eos).is_err() {
+                // not high priority, may log this on graceful exit because stop and player loop exit are not waiting on each-other
+                debug!("Player Channel is closed");
+            }
+            if picmd_tx.send(PlayerInternalCmd::Eos).is_err() {
+                error!("Player Internal Channel is closed");
+            }
+        });
+
+        self.queue_tx.append(source);
     }
 
     /// Gets the volume of the sound.
@@ -316,32 +334,6 @@ impl Sink {
     #[inline]
     pub fn elapsed(&self) -> Duration {
         *self.controls.position.read()
-    }
-
-    // Spawns a new thread to sleep until the sound ends, and then sends the `Eos`
-    // message through the given Senders.
-    fn message_on_end(&self) {
-        // TODO: we should not expose this function to be called outside of rusty-mod and always just have it active as we always need it
-        // NOTE: (in addition to the todo), we always use "message_on_end" to rely on EOS, so it is basically always set, so it should not be necessary
-        // to be set by commands every time, and worst, forget to call it or have race conditions that enqueue multiple things and wait on the wrong thing.
-        if let Some(sleep_until_end) = self.sleep_until_end.lock().take() {
-            let pcmd_tx = self.pcmd_tx.clone();
-            let picmd_tx = self.picmd_tx.clone();
-            std::thread::Builder::new()
-                .name("rusty message_on_end".into())
-                .spawn(move || {
-                    let _drop = sleep_until_end.recv();
-                    // using ".is_err()" here as the only error that can come from this channel is "Channel Closed"
-                    if pcmd_tx.send(PlayerCmd::Eos).is_err() {
-                        // not high priority, may log this on graceful exit because stop and player loop exit are not waiting on each-other
-                        debug!("Player Channel is closed");
-                    }
-                    if picmd_tx.send(PlayerInternalCmd::Eos).is_err() {
-                        error!("Player Internal Channel is closed");
-                    }
-                })
-                .expect("failed to spawn message_on_end thread");
-        }
     }
 }
 
