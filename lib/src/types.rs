@@ -29,8 +29,11 @@ pub enum Msg {
     Player(PlayerMsg),
     Playlist(PLMsg),
     Podcast(PCMsg),
+    /// Closes the Quit Popup, if it was shown without quitting.
     QuitPopupCloseCancel,
+    /// Always will directly quit.
     QuitPopupCloseOk,
+    /// Either shows the Quit Dialog if enabled, or if dialog is disabled, directly quits
     QuitPopupShow,
     SavePlaylist(SavePlaylistMsg),
     TagEditor(TEMsg),
