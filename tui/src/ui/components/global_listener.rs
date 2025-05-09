@@ -292,7 +292,10 @@ impl Model {
                             Box::new(SubClause::IsMounted(Id::SavePlaylistPopup)),
                             Box::new(SubClause::Or(
                                 Box::new(SubClause::IsMounted(Id::SavePlaylistConfirm)),
-                                Box::new(SubClause::IsMounted(Id::PodcastAddPopup)),
+                                Box::new(SubClause::Or(
+                                    Box::new(SubClause::IsMounted(Id::PodcastAddPopup)),
+                                    Box::new(SubClause::IsMounted(Id::DatabaseAddConfirmPopup)),
+                                )),
                             )),
                         )))),
                     )),
