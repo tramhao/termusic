@@ -16,6 +16,7 @@
 - Fix(tui): add CTRL+C handler for when TUI key-reading is not active yet or not active anymore.
 - Fix(tui): on track change, dont select "current track" playlist item if the old "current track" was not selected.
 - Fix(tui): re-select the (approximately) same playlist item after a shuffle.
+- Fix(tui): escape key will now no longer also act as a quit key.
 - Fix(server): with `rusty-soundtouch` on `rusty` backend, dont take initial samples until necessary.
 - Fix(server): on rusty backend, always decode and use `f32` samples. (instead of `i16`)
 - Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.

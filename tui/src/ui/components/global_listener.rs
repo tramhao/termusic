@@ -31,7 +31,8 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
         let keys = &self.config.read().settings.keys;
         match ev {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
-            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => Some(Msg::QuitPopupShow),
+            // "escape" should always just close the dialogs or similar, but should never quit so escape can be "spammed" to exit everything
+            // Event::Keyboard(keyevent) if keyevent == keys.escape.get() => Some(Msg::QuitPopupShow),
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => Some(Msg::QuitPopupShow),
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.toggle_pause.get() => {
                 Some(Msg::Player(PlayerMsg::TogglePause))
@@ -136,10 +137,10 @@ impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, NoUserEvent>> {
         vec![
-            Sub::new(
-                SubEventClause::Keyboard(keys.escape.get()),
-                Self::no_popup_mounted_clause(),
-            ),
+            // Sub::new(
+            //     SubEventClause::Keyboard(keys.escape.get()),
+            //     Self::no_popup_mounted_clause(),
+            // ),
             Sub::new(
                 SubEventClause::Keyboard(keys.quit.get()),
                 Self::no_popup_mounted_clause(),

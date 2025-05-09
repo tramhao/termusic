@@ -25,6 +25,7 @@
 mod config_editor;
 mod database;
 mod footer;
+mod global_listener;
 mod labels;
 mod lyric;
 mod music_library;
@@ -41,12 +42,12 @@ mod progress;
 /// Tag Editor Controls
 mod tag_editor;
 mod xywh;
-mod global_listener;
 
 // -- export
 pub use config_editor::*;
 pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
 pub use footer::Footer;
+pub use global_listener::GlobalListener;
 pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
@@ -55,4 +56,3 @@ pub use podcast::{EpisodeList, FeedsList};
 pub use popups::general_search::{GSInputPopup, GSTablePopup, Source};
 pub use progress::Progress;
 pub use tag_editor::*;
-pub use global_listener::GlobalListener;
