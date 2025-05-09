@@ -6,6 +6,7 @@
 - Change: change default transport protocol to be UDS on `unix` systems.
 - Change(tui): rename cli option `--disable-cover`  to `--hide-cover`.
 - Change(tui): dont depend on `termusicplayback` anymore.
+- Feat: allow setting the backend in the `server.toml` config.
 - Feat(tui): add new cli option `--disable-cover` which actually disables all cover probing and behaves as if no cover features are enabled.
 - Feat(tui): add native theme support. Useful for example for `pywal`.
 - Feat(tui): allow using "add single / add all" keys on Database `Result` view.

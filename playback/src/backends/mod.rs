@@ -1,4 +1,6 @@
-use termusiclib::config::ServerOverlay;
+use std::{error::Error, fmt::Display};
+
+use termusiclib::config::{v2::server::Backend as ConfigBackend, ServerOverlay};
 
 use crate::{PlayerCmdSender, PlayerTrait};
 
@@ -17,6 +19,44 @@ pub enum BackendSelect {
     GStreamer,
     #[default]
     Rusty,
+}
+
+/// Error for when [`ThemeColor`] parsing fails
+#[derive(Debug, Clone, PartialEq)]
+pub enum BackendSelectConvertError {
+    UnavailableBackend(String),
+}
+
+impl Display for BackendSelectConvertError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BackendSelectConvertError::UnavailableBackend(backend) => {
+                write!(f, "Backend {backend} is unavailable")
+            }
+        }
+    }
+}
+
+impl Error for BackendSelectConvertError {}
+
+impl TryFrom<ConfigBackend> for BackendSelect {
+    type Error = BackendSelectConvertError;
+
+    fn try_from(value: ConfigBackend) -> Result<Self, Self::Error> {
+        Ok(match value {
+            #[cfg(feature = "gst")]
+            ConfigBackend::Gstreamer => Self::GStreamer,
+            #[cfg(feature = "mpv")]
+            ConfigBackend::Mpv => Self::Mpv,
+            ConfigBackend::Rusty => Self::Rusty,
+            #[allow(unreachable_patterns)] // allow as a catch-all because of feature gates
+            _ => {
+                return Err(BackendSelectConvertError::UnavailableBackend(
+                    value.to_string(),
+                ))
+            }
+        })
+    }
 }
 
 /// Enum to choose backend at runtime

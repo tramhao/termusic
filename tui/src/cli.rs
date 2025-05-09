@@ -23,6 +23,7 @@
  */
 use clap::{builder::ArgPredicate, ArgAction, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
+use termusiclib::config::v2::server::Backend as ConfigBackend;
 
 #[derive(Parser, Debug)]
 // mostly read from `Cargo.toml`
@@ -46,39 +47,42 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
     pub max_depth: Option<u32>,
-    #[arg(short, long, default_value_t = Backend::Rusty, env = "TMS_BACKEND")]
-    pub backend: Backend,
+    /// Select the backend, default is `rusty`
+    #[arg(short, long, env = "TMS_BACKEND")]
+    pub backend: Option<Backend>,
     #[clap(flatten)]
     pub log_options: LogOptions,
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum, Default)]
+#[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Backend {
-    /// Create a new Backend with default backend ordering
-    ///
-    /// Order:
-    /// - [`Rusty`](Backend::Rusty) (feature `rusty`)
-    /// - [`GStreamer`](Backend::GStreamer) (feature `gst`)
-    /// - [`Mpv`](Backend::Mpv) (feature `mpv`)
-    /// - Compile Error
-    #[default]
     Rusty,
     Mpv,
     #[value(alias = "gst", name = "gstreamer")]
     GStreamer,
 }
 
+impl From<Backend> for ConfigBackend {
+    fn from(value: Backend) -> Self {
+        match value {
+            Backend::Rusty => Self::Rusty,
+            Backend::Mpv => Self::Mpv,
+            Backend::GStreamer => Self::Gstreamer,
+        }
+    }
+}
+
+impl Backend {
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        // reuse the config "as_str" impl
+        <Self as Into<ConfigBackend>>::into(self).as_str()
+    }
+}
+
 impl std::fmt::Display for Backend {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Backend::Mpv => "mpv",
-                Backend::Rusty => "rusty",
-                Backend::GStreamer => "gstreamer",
-            }
-        )
+        write!(f, "{}", self.as_str())
     }
 }
 
