@@ -8,7 +8,9 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::track::MediaType;
+use backends::BackendSettings;
 
+pub mod backends;
 /// Extra things necessary for a config file, like wrappers for versioning
 pub mod config_extra;
 
@@ -21,6 +23,8 @@ pub struct ServerSettings {
     pub com: ComSettings,
     pub player: PlayerSettings,
     pub podcast: PodcastSettings,
+    #[serde(skip)] // skip as long as there are no values
+    pub backends: BackendSettings,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -479,9 +483,9 @@ mod v1_interop {
     use std::num::TryFromIntError;
 
     use super::{
-        Backend, ComSettings, LoopMode, NonZeroU32, NonZeroU8, PlayerSettings, PodcastSettings,
-        PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
-        ServerSettings,
+        backends::BackendSettings, Backend, ComSettings, LoopMode, NonZeroU32, NonZeroU8,
+        PlayerSettings, PodcastSettings, PositionYesNo, PositionYesNoLower, RememberLastPosition,
+        ScanDepth, SeekStep, ServerSettings,
     };
     use crate::config::v1;
 
@@ -602,6 +606,7 @@ mod v1_interop {
                 com: com_settings,
                 player: player_settings,
                 podcast: podcast_settings,
+                backends: BackendSettings::default(),
             })
         }
     }
