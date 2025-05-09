@@ -156,7 +156,7 @@ mod v1_interop {
                 coverart: value.album_photo_xywh.into(),
                 theme,
                 keys: value.keys.into(),
-                extra_ytdlp_args: "".to_string(),
+                extra_ytdlp_args: String::new(),
             }
         }
     }
