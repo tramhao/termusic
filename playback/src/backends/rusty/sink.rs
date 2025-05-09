@@ -194,7 +194,7 @@ impl Sink {
             }
         });
 
-        self.queue_tx.append(source);
+        *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
     }
 
     /// Gets the volume of the sound.
