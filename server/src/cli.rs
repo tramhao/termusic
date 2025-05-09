@@ -44,8 +44,9 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
     pub max_depth: Option<u32>,
-    #[arg(short, long, default_value_t = Backend::Rusty, env = "TMS_BACKEND")]
-    pub backend: Backend,
+    /// Select the backend, default is `rusty`
+    #[arg(short, long, env = "TMS_BACKEND")]
+    pub backend: Option<Backend>,
     #[clap(flatten)]
     pub log_options: LogOptions,
 }
@@ -57,12 +58,6 @@ pub enum Backend {
     #[cfg(feature = "gst")]
     #[value(alias = "gst", name = "gstreamer")]
     GStreamer,
-    /// Create a new Backend with default backend ordering
-    ///
-    /// Order:
-    /// - [`Rusty`](Backend::Rusty) (default)
-    /// - [`GStreamer`](Backend::GStreamer) (feature `gst`)
-    /// - [`Mpv`](Backend::Mpv) (feature `mpv`)
     Rusty,
 }
 

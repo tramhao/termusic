@@ -105,6 +105,20 @@ async fn actual_main() -> Result<()> {
     }
 
     info!("Server starting...");
+
+    // do this before anything else so that we exit early on invalid/unavailable backends
+    let backend = {
+        let config_backend = config.settings.player.backend.try_into()?;
+
+        if let Some(backend) = args.backend {
+            trace!("Backend from CLI");
+            backend.into()
+        } else {
+            trace!("Backend from Config");
+            config_backend
+        }
+    };
+
     let config = new_shared_server_settings(config);
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
     let cmd_tx = PlayerCmdSender::new(cmd_tx);
@@ -144,7 +158,7 @@ async fn actual_main() -> Result<()> {
         .spawn(move || {
             let _guard = tokio_handle.enter();
             let res = player_loop(
-                args.backend.into(),
+                backend,
                 cmd_tx,
                 cmd_rx,
                 config,

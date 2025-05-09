@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     net::{IpAddr, SocketAddr},
     num::{NonZeroU32, NonZeroU8},
     path::PathBuf,
@@ -7,7 +8,9 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::track::MediaType;
+use backends::BackendSettings;
 
+pub mod backends;
 /// Extra things necessary for a config file, like wrappers for versioning
 pub mod config_extra;
 
@@ -20,6 +23,7 @@ pub struct ServerSettings {
     pub com: ComSettings,
     pub player: PlayerSettings,
     pub podcast: PodcastSettings,
+    pub backends: BackendSettings,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -268,6 +272,9 @@ pub struct PlayerSettings {
     pub random_track_quantity: NonZeroU32,
     /// Minimal amount of tracks a album needs to have before being chosen for "random album add"
     pub random_album_min_quantity: NonZeroU32,
+
+    /// The backend to use
+    pub backend: Backend,
 }
 
 /// Get the default Music dir, which uses OS-specific paths, or home/Music
@@ -296,7 +303,37 @@ impl Default for PlayerSettings {
 
             random_track_quantity: NonZeroU32::new(20).unwrap(),
             random_album_min_quantity: NonZeroU32::new(5).unwrap(),
+
+            backend: Backend::default(),
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Backend {
+    #[serde(rename = "gst")]
+    #[serde(alias = "gstreamer")]
+    Gstreamer,
+    Mpv,
+    #[default]
+    Rusty,
+}
+
+impl Backend {
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Backend::Gstreamer => "gst",
+            Backend::Mpv => "mpv",
+            Backend::Rusty => "rusty",
+        }
+    }
+}
+
+impl Display for Backend {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -445,9 +482,9 @@ mod v1_interop {
     use std::num::TryFromIntError;
 
     use super::{
-        ComSettings, LoopMode, NonZeroU32, NonZeroU8, PlayerSettings, PodcastSettings,
-        PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
-        ServerSettings,
+        backends::BackendSettings, Backend, ComSettings, LoopMode, NonZeroU32, NonZeroU8,
+        PlayerSettings, PodcastSettings, PositionYesNo, PositionYesNoLower, RememberLastPosition,
+        ScanDepth, SeekStep, ServerSettings,
     };
     use crate::config::v1;
 
@@ -560,12 +597,15 @@ mod v1_interop {
                     new_key: "player.random_album_min_quantity",
                     source: err,
                 })?,
+
+                backend: Backend::default(),
             };
 
             Ok(Self {
                 com: com_settings,
                 player: player_settings,
                 podcast: podcast_settings,
+                backends: BackendSettings::default(),
             })
         }
     }
@@ -639,6 +679,7 @@ mod v1_interop {
                     set_discord_status: true,
                     random_track_quantity: NonZeroU32::new(20).unwrap(),
                     random_album_min_quantity: NonZeroU32::new(5).unwrap(),
+                    backend: Backend::default(),
                 }
             );
         }

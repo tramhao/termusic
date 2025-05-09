@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use parking_lot::Mutex;
 use rodio::OutputStream;
 use rodio::Source;
-use sink::Sink;
+use sink::{Sink, SourceOptions};
 use source::async_ring::{AsyncRingSource, AsyncRingSourceProvider, SeekData};
 use std::num::{NonZeroU16, NonZeroUsize};
 use stream_download::http::{
@@ -28,7 +28,7 @@ use stream_download::{Settings as StreamSettings, StreamDownload};
 use symphonia::core::io::{
     MediaSource, MediaSourceStream, MediaSourceStreamOptions, ReadOnlySource,
 };
-use termusiclib::config::ServerOverlay;
+use termusiclib::config::SharedServerSettings;
 use termusiclib::track::{MediaType, Track};
 use tokio::runtime::Handle;
 use tokio::select;
@@ -49,14 +49,13 @@ pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
 #[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
-    MessageOnEnd,
     /// Enqueue a new track to be played, and skip to it
-    /// (Track, gapless)
-    Play(Box<Track>, bool),
+    /// (Track, gapless, soundtouch)
+    Play(Box<Track>, bool, bool),
     Progress(Duration),
     /// Enqueue a new track to be played, but do not skip current track
-    /// (Track, gapless)
-    QueueNext(Box<Track>, bool),
+    /// (Track, gapless, soundtouch)
+    QueueNext(Box<Track>, bool, bool),
     Resume,
     SeekAbsolute(Duration),
     SeekRelative(i64),
@@ -77,6 +76,7 @@ pub struct RustyBackend {
     media_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
     // cmd_tx_outside: crate::PlayerCmdSender,
+    config: SharedServerSettings,
 }
 
 #[allow(
@@ -87,14 +87,16 @@ pub struct RustyBackend {
 impl RustyBackend {
     #[allow(clippy::similar_names)]
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &ServerOverlay, cmd_tx: crate::PlayerCmdSender) -> Self {
+    pub fn new(config: SharedServerSettings, cmd_tx: crate::PlayerCmdSender) -> Self {
+        let config_read = config.read();
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let picmd_tx_local = picmd_tx.clone();
-        let volume = Arc::new(AtomicU16::from(config.settings.player.volume));
+        let volume = Arc::new(AtomicU16::from(config_read.settings.player.volume));
         let volume_local = volume.clone();
-        let speed = config.settings.player.speed;
-        let gapless = config.settings.player.gapless;
+        let speed = config_read.settings.player.speed;
+        let gapless = config_read.settings.player.gapless;
+        drop(config_read);
         let position = Arc::new(Mutex::new(Duration::default()));
         let total_duration = Arc::new(Mutex::new(None));
         let total_duration_local = total_duration.clone();
@@ -110,17 +112,17 @@ impl RustyBackend {
         std::thread::Builder::new()
             .name("playback player loop".into())
             .spawn(move || {
-                tokio_handle.block_on(player_thread(
-                    total_duration_local,
-                    pcmd_tx_local,
-                    picmd_tx_local,
+                tokio_handle.block_on(player_thread(PlayerThreadArgs {
+                    total_duration: total_duration_local,
+                    pcmd_tx: pcmd_tx_local,
+                    picmd_tx: picmd_tx_local,
                     picmd_rx,
-                    media_title_local,
+                    media_title: media_title_local,
                     // radio_downloaded_local,
-                    position_local,
-                    volume_local,
-                    speed,
-                ));
+                    position: position_local,
+                    volume_inside: volume_local,
+                    speed_inside: speed,
+                }));
             })
             .expect("failed to spawn thread");
 
@@ -134,6 +136,7 @@ impl RustyBackend {
             media_title,
             radio_downloaded,
             // cmd_tx_outside: cmd_tx,
+            config,
         }
     }
 
@@ -143,18 +146,22 @@ impl RustyBackend {
             error!("error in {cmd:?}: {e}");
         }
     }
-
-    pub fn message_on_end(&self) {
-        self.command(PlayerInternalCmd::MessageOnEnd);
-    }
 }
 
 #[async_trait]
 impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, track: &Track) {
+        let soundtouch = self
+            .config
+            .read_recursive()
+            .settings
+            .backends
+            .rusty
+            .soundtouch;
         self.command(PlayerInternalCmd::Play(
             Box::new(track.clone()),
             self.gapless,
+            soundtouch,
         ));
         self.resume();
     }
@@ -231,9 +238,17 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn enqueue_next(&mut self, track: &Track) {
+        let soundtouch = self
+            .config
+            .read_recursive()
+            .settings
+            .backends
+            .rusty
+            .soundtouch;
         self.command(PlayerInternalCmd::QueueNext(
             Box::new(track.clone()),
             self.gapless,
+            soundtouch,
         ));
     }
 
@@ -255,6 +270,7 @@ fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
     trace: &str,
     sink: &Sink,
     gapless: bool,
+    soundtouch: bool,
     func: F,
 ) {
     let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
@@ -272,8 +288,8 @@ fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
                 handle.block_on(decode_task(decoder, prod));
             });
 
-            sink.append(cons);
-            // sink.append(decoder);
+            sink.append(cons, &SourceOptions { soundtouch });
+            // sink.append(decoder, &SourceOptions { soundtouch });
         }
         Err(e) => error!("error decoding '{trace}' is: {e:?}"),
     }
@@ -341,13 +357,14 @@ fn append_to_sink_inner<F: FnOnce(&mut Symphonia)>(
     trace: &str,
     sink: &Sink,
     gapless: bool,
+    soundtouch: bool,
     func: F,
 ) {
     let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
     match Symphonia::new(mss, gapless) {
         Ok(mut decoder) => {
             func(&mut decoder);
-            sink.append(decoder);
+            sink.append(decoder, &SourceOptions { soundtouch });
         }
         Err(e) => error!("error decoding '{trace}' is: {e:?}"),
     }
@@ -362,6 +379,7 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static>(
     sink: &Sink,
     gapless: bool,
     total_duration_local: &ArcTotalDuration,
+    soundtouch: bool,
     media_title_fn: MT,
 ) {
     append_to_sink_inner_media_title(
@@ -369,6 +387,7 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static>(
         trace,
         sink,
         gapless,
+        soundtouch,
         |decoder, mut media_title_rx| {
             std::mem::swap(
                 &mut *total_duration_local.lock(),
@@ -393,8 +412,9 @@ fn append_to_sink_no_duration(
     sink: &Sink,
     gapless: bool,
     total_duration_local: &ArcTotalDuration,
+    soundtouch: bool,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |_| {
+    append_to_sink_inner(media_source, trace, sink, gapless, soundtouch, |_| {
         // remove old stale duration
         total_duration_local.lock().take();
     });
@@ -412,6 +432,7 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static>(
     gapless: bool,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
+    soundtouch: bool,
     media_title_fn: MT,
 ) {
     append_to_sink_inner_media_title(
@@ -419,10 +440,9 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static>(
         trace,
         sink,
         gapless,
+        soundtouch,
         |decoder, mut media_title_rx| {
             std::mem::swap(next_duration_opt, &mut decoder.total_duration());
-            // rely on EOS message to set next duration
-            sink.message_on_end();
 
             let handle = Handle::current();
 
@@ -445,12 +465,11 @@ fn append_to_sink_queue_no_duration(
     gapless: bool,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
+    soundtouch: bool,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |_| {
+    append_to_sink_inner(media_source, trace, sink, gapless, soundtouch, |_| {
         // remove potential old stale duration
         next_duration_opt.take();
-        // rely on EOS message to set next duration
-        sink.message_on_end();
     });
 }
 
@@ -462,53 +481,59 @@ fn common_media_title_cb(media_title: Arc<Mutex<String>>) -> impl Fn(MediaTitleT
     }
 }
 
+#[derive(Debug)]
+struct PlayerThreadArgs {
+    total_duration: ArcTotalDuration,
+    /// Player commands that need to be processed outside of the backend
+    pcmd_tx: crate::PlayerCmdSender,
+    /// Internal Player commands that need to be processed by the player task
+    picmd_tx: Sender<PlayerInternalCmd>,
+    /// Reciever for the Internal Player Command
+    picmd_rx: Receiver<PlayerInternalCmd>,
+    media_title: Arc<Mutex<String>>,
+    // radio_downloaded: Arc<Mutex<u64>>,
+    position: Arc<Mutex<Duration>>,
+
+    volume_inside: Arc<AtomicU16>,
+    speed_inside: i32,
+}
+
 /// Player thread loop
 #[allow(
     clippy::cast_precision_loss,
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
-    clippy::needless_pass_by_value,
-    clippy::too_many_lines,
-    clippy::too_many_arguments
+    clippy::too_many_lines
 )]
-async fn player_thread(
-    total_duration: ArcTotalDuration,
-    pcmd_tx: crate::PlayerCmdSender,
-    picmd_tx: Sender<PlayerInternalCmd>,
-    picmd_rx: Receiver<PlayerInternalCmd>,
-    media_title: Arc<Mutex<String>>,
-    // radio_downloaded: Arc<Mutex<u64>>,
-    position: Arc<Mutex<Duration>>,
-    volume_inside: Arc<AtomicU16>,
-    mut speed_inside: i32,
-) {
+async fn player_thread(mut args: PlayerThreadArgs) {
     let mut is_radio = false;
 
     // option to store enqueued's duration
     // note that the current implementation is only meant to have 1 enqueued next after the current playing song
     let mut next_duration_opt = None;
     let (_stream, handle) = OutputStream::try_default().unwrap();
-    let sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
-    sink.set_speed(speed_inside as f32 / 10.0);
-    sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
+    let sink = Sink::try_new(&handle, args.picmd_tx.clone(), args.pcmd_tx.clone()).unwrap();
+    sink.set_speed(args.speed_inside as f32 / 10.0);
+    sink.set_volume(f32::from(args.volume_inside.load(Ordering::SeqCst)) / 100.0);
     loop {
-        let Ok(cmd) = picmd_rx.recv() else {
+        let Ok(cmd) = args.picmd_rx.recv() else {
             // only error can be a disconnect (no more senders)
             break;
         };
 
         match cmd {
-            PlayerInternalCmd::Play(track, gapless) => {
+            PlayerInternalCmd::Play(track, gapless, soundtouch) => {
                 if let Err(err) = queue_next(
                     &track,
                     gapless,
                     &sink,
                     &mut is_radio,
-                    &total_duration,
+                    &args.total_duration,
                     &mut next_duration_opt,
-                    &media_title,
+                    &args.media_title,
                     // &radio_downloaded,
                     false,
+                    soundtouch,
                 )
                 .await
                 {
@@ -518,17 +543,18 @@ async fn player_thread(
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
             }
-            PlayerInternalCmd::QueueNext(track, gapless) => {
+            PlayerInternalCmd::QueueNext(track, gapless, soundtouch) => {
                 if let Err(err) = queue_next(
                     &track,
                     gapless,
                     &sink,
                     &mut is_radio,
-                    &total_duration,
+                    &args.total_duration,
                     &mut next_duration_opt,
-                    &media_title,
+                    &args.media_title,
                     // &radio_downloaded,
                     true,
+                    soundtouch,
                 )
                 .await
                 {
@@ -539,21 +565,21 @@ async fn player_thread(
                 sink.play();
             }
             PlayerInternalCmd::Speed(speed) => {
-                speed_inside = speed;
-                sink.set_speed(speed_inside as f32 / 10.0);
+                args.speed_inside = speed;
+                sink.set_speed(args.speed_inside as f32 / 10.0);
             }
             PlayerInternalCmd::Stop => {
                 sink.stop();
             }
             PlayerInternalCmd::Volume(volume) => {
                 sink.set_volume(f32::from(volume) / 100.0);
-                volume_inside.store(volume, Ordering::SeqCst);
+                args.volume_inside.store(volume, Ordering::SeqCst);
             }
             PlayerInternalCmd::Skip => {
                 // the sink can be empty, if for example nothing could be enqueued, so a "skip_one" would be a no-op and never send EOS, which is required to go to the next track
                 if sink.is_empty() {
-                    let _ = picmd_tx.send(PlayerInternalCmd::Eos);
-                    let _ = pcmd_tx.send(PlayerCmd::Eos);
+                    let _ = args.picmd_tx.send(PlayerInternalCmd::Eos);
+                    let _ = args.pcmd_tx.send(PlayerCmd::Eos);
                 } else {
                     sink.skip_one();
                 }
@@ -564,16 +590,16 @@ async fn player_thread(
             PlayerInternalCmd::Progress(new_position) => {
                 // let position = sink.elapsed().as_secs() as i64;
                 // error!("position in rusty backend is: {}", position);
-                *position.lock() = new_position;
+                *args.position.lock() = new_position;
 
                 // About to finish signal is a simulation of gstreamer, and used for gapless
                 if !is_radio {
-                    if let Some(d) = *total_duration.lock() {
+                    if let Some(d) = *args.total_duration.lock() {
                         let progress = new_position.as_secs_f64() / d.as_secs_f64();
                         if progress >= 0.5
                             && d.saturating_sub(new_position) < Duration::from_secs(2)
                         {
-                            if let Err(e) = pcmd_tx.send(PlayerCmd::AboutToFinish) {
+                            if let Err(e) = args.pcmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("command AboutToFinish sent failed: {e}");
                             }
                         }
@@ -583,9 +609,6 @@ async fn player_thread(
             PlayerInternalCmd::SeekAbsolute(position) => {
                 sink.seek(position);
             }
-            PlayerInternalCmd::MessageOnEnd => {
-                sink.message_on_end();
-            }
 
             PlayerInternalCmd::SeekRelative(offset) => {
                 let paused = sink.is_paused();
@@ -594,7 +617,7 @@ async fn player_thread(
                 }
                 if offset.is_positive() {
                     let new_pos = sink.elapsed().as_secs() + offset as u64;
-                    if let Some(d) = *total_duration.lock() {
+                    if let Some(d) = *args.total_duration.lock() {
                         if new_pos < d.as_secs() - offset as u64 {
                             sink.seek(Duration::from_secs(new_pos));
                         }
@@ -609,7 +632,7 @@ async fn player_thread(
                 if paused {
                     std::thread::sleep(std::time::Duration::from_millis(50));
                     sink.pause();
-                    sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
+                    sink.set_volume(f32::from(args.volume_inside.load(Ordering::SeqCst)) / 100.0);
                 }
             }
 
@@ -617,7 +640,7 @@ async fn player_thread(
                 // replace the current total_duration with the next one
                 // this is only present when QueueNext was used; which is only used if gapless is enabled
                 if next_duration_opt.is_some() {
-                    *total_duration.lock() = next_duration_opt;
+                    *args.total_duration.lock() = next_duration_opt;
                 }
             }
         }
@@ -636,6 +659,8 @@ async fn queue_next(
     next_duration_opt: &mut Option<Duration>,
     media_title: &Arc<Mutex<String>>,
     enqueue: bool,
+
+    soundtouch: bool,
 ) -> Result<()> {
     let media_type = &track.media_type;
     let file_path = track
@@ -654,6 +679,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             } else {
@@ -663,6 +689,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
+                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             }
@@ -682,6 +709,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         next_duration_opt,
+                        soundtouch,
                         common_media_title_cb(media_title.clone()),
                     );
                 } else {
@@ -691,6 +719,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         total_duration,
+                        soundtouch,
                         common_media_title_cb(media_title.clone()),
                     );
                 }
@@ -718,6 +747,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             } else {
@@ -727,6 +757,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
+                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             }
@@ -801,9 +832,17 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    soundtouch,
                 );
             } else {
-                append_to_sink_no_duration(media_source, &url, sink, gapless, total_duration);
+                append_to_sink_no_duration(
+                    media_source,
+                    &url,
+                    sink,
+                    gapless,
+                    total_duration,
+                    soundtouch,
+                );
             }
 
             Ok(())

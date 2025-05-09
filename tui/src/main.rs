@@ -130,9 +130,10 @@ async fn actual_main() -> Result<()> {
             server_args.push("--log-filecolor");
         }
 
-        let backend = args.backend.to_string();
-        server_args.push("--backend");
-        server_args.push(&backend);
+        if let Some(backend) = args.backend {
+            server_args.push("--backend");
+            server_args.push(backend.as_str());
+        }
 
         // server can stay around after client exits (if supported by the system)
         #[allow(clippy::zombie_processes)]
