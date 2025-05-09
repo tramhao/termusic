@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::Msg;
 use std::time::Instant;
 use termusiclib::config::TuiOverlay;
+use termusiclib::types::Msg;
 use tui_realm_stdlib::{Label, Span, Spinner};
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::NoUserEvent;

@@ -224,7 +224,7 @@ pub struct PlaylistRemoveTrackInfo {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlaylistLoopModeInfo {
-    /// The actual mode, mapped to [`LoopMode`](crate::config::v2::server::LoopMode)
+    /// The actual mode, mapped to [`LoopMode`]
     pub mode: u32,
 }
 

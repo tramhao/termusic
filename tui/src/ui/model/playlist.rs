@@ -208,8 +208,6 @@ impl TUIPlaylist {
     // TODO: move "save_m3u" to server-side
     /// Export the current playlist to a `.m3u` playlist file.
     ///
-    /// Might be confused with [save](Self::save).
-    ///
     /// # Errors
     ///
     /// Error could happen when writing file to local disk.

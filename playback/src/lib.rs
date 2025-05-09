@@ -192,7 +192,7 @@ impl GeneralPlayer {
         })
     }
 
-    /// Create a new [`GeneralPlayer`], with the [`BackendSelect::Default`] backend
+    /// Create a new [`GeneralPlayer`], with the default Backend ([`BackendSelect::Rusty`])
     ///
     /// # Errors
     ///
@@ -204,7 +204,13 @@ impl GeneralPlayer {
         stream_tx: StreamTX,
         playlist: SharedPlaylist,
     ) -> Result<Self> {
-        Self::new_backend(BackendSelect::Rusty, config, cmd_tx, stream_tx, playlist)
+        Self::new_backend(
+            BackendSelect::default(),
+            config,
+            cmd_tx,
+            stream_tx,
+            playlist,
+        )
     }
 
     /// Reload the config from file, on fail continue to use the old

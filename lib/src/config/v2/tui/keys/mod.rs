@@ -1234,7 +1234,7 @@ impl CheckConflict for KeysDatabase {
 }
 
 // TODO: upgrade errors with what config-key has errored
-/// Error for when [`Key`] parsing fails
+/// Error for when [`KeyBinding`] parsing fails
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum KeyParseError {
     /// Error when either the string is empty, or only has modifiers.
@@ -1509,9 +1509,9 @@ impl From<tuievents::KeyEvent> for KeyBinding {
     }
 }
 
-/// Error for when [`SupportedKeys`] parsing fails
+/// Error for when [`KeyWrap`] parsing fails
 #[derive(Debug, Clone, PartialEq)]
-pub enum KeyWrapParseError {
+enum KeyWrapParseError {
     Empty,
     UnknownKey(String),
 }
@@ -1521,7 +1521,7 @@ pub enum KeyWrapParseError {
 struct KeyWrap(tuievents::Key);
 
 /// Module for defining key string in one place, instead of multiple times in multiple places
-mod const_keys {
+pub mod const_keys {
     /// Macro to not repeat yourself writing `const IDENT: &str = CONTENT`
     ///
     /// Allows usage of calling one at a time:
@@ -1585,9 +1585,9 @@ mod const_keys {
         PAUSE "pause",
 
         // weird keys
-        /// https://en.wikipedia.org/wiki/Null_character
+        /// <https://en.wikipedia.org/wiki/Null_character>
         NULL "null",
-        /// https://en.wikipedia.org/wiki/Menu_key
+        /// <https://en.wikipedia.org/wiki/Menu_key>
         MENU "menu",
 
         // aliases
@@ -1740,7 +1740,7 @@ impl From<tuievents::Key> for KeyWrap {
 /// All Key-Modifiers we support
 ///
 /// It is defined here as we want a consistent config and be in control of it instead of some upstream package
-#[derive(Debug, Clone, Copy /* , EnumString, IntoStaticStr */)]
+#[derive(Debug, Clone, Copy)]
 enum SupportedModifiers {
     Control,
     Shift,

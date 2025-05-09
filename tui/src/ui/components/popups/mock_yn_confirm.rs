@@ -51,7 +51,7 @@ impl YNConfirm {
         Self { component, config }
     }
 
-    /// Basically [`Component::on`] but with custom extra parameters
+    /// Basically [`Component::on`](tuirealm::Component::on) but with custom extra parameters
     ///
     /// `on_y` corresponds to pressing `Yes` and `on_n` to pressing `No`
     #[allow(clippy::needless_pass_by_value)]
