@@ -26,6 +26,7 @@ use anyhow::{bail, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
+use shell_words;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 use std::thread;
@@ -177,7 +178,7 @@ impl Model {
             path = get_parent_folder(Path::new(&node_id)).to_path_buf();
         }
         let config_tui = self.config_tui.read();
-        let args = vec![
+        let mut args = vec![
             Arg::new("--extract-audio"),
             // Arg::new_with_arg("--audio-format", "vorbis"),
             Arg::new_with_arg("--audio-format", "mp3"),
@@ -190,10 +191,12 @@ impl Model {
             Arg::new("--all-subs"),
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
-            Arg::new(&config_tui.settings.extra_ytdlp_args),
         ];
-
-        eprintln!("args is {args:?}");
+        let extra_args = parse_args(&config_tui.settings.extra_ytdlp_args);
+        let mut extra_args_parsed = parse_extra_args(extra_args);
+        if extra_args_parsed.len() > 0 {
+            args.append(&mut extra_args_parsed);
+        }
 
         let ytd = YoutubeDL::new(&path, args, url)?;
         let tx = self.tx_to_main.clone();
@@ -352,6 +355,41 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
     }
 
     id3_tag.write_to_path(file_fullname, Id3v24).ok();
+}
+
+fn parse_args(input: &str) -> Result<Vec<(String, Option<String>)>, shell_words::ParseError> {
+    let result = shell_words::split(input)?
+        .into_iter()
+        .map(|token| {
+            if token.starts_with("--") {
+                let parts: Vec<&str> = token.splitn(2, '=').collect();
+                (parts[0].to_string(), parts.get(1).map(|s| s.to_string()))
+            } else if token.starts_with('-') {
+                (token.to_string(), None)
+            } else {
+                ("_positional".to_string(), Some(token.to_string()))
+            }
+        })
+        .collect();
+    Ok(result)
+}
+
+fn parse_extra_args(
+    extra_args: Result<Vec<(String, Option<String>)>, shell_words::ParseError>,
+) -> Vec<Arg> {
+    let mut extra_args_parsed = vec![];
+    if let Ok(extra_args_vec) = extra_args {
+        if extra_args_vec.len() > 0 {
+            for (name, opt_arg) in extra_args_vec {
+                let arg = match opt_arg {
+                    Some(value) => Arg::new_with_arg(&name, &value),
+                    None => Arg::new(&name),
+                };
+                extra_args_parsed.push(arg);
+            }
+        }
+    }
+    extra_args_parsed
 }
 
 #[cfg(test)]

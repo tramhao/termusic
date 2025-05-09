@@ -892,7 +892,7 @@ impl ExtraYtdlpArgs {
                 .input_type(InputType::Text)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
-                    "--cookies-from-browser brave+gnomekeyring",
+                    r#"--cookies-from-browser=brave+gnomekeyring or --cookies="d:\src\cookies.txt""#,
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Extra Args for yt-dlp: ", Alignment::Left)
