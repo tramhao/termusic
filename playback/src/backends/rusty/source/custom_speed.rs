@@ -34,6 +34,7 @@ where
         SpecificType::Rodio => CustomSpeed::Rodio(input.speed(initial_speed)),
         #[cfg(feature = "rusty-soundtouch")]
         SpecificType::Soundtouch => {
+            trace!("Using soundtouch");
             CustomSpeed::SoundTouch(super::soundtouch::soundtouch(input, initial_speed))
         }
     }

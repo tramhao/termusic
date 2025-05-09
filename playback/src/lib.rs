@@ -157,12 +157,12 @@ impl GeneralPlayer {
         stream_tx: StreamTX,
         playlist: SharedPlaylist,
     ) -> Result<Self> {
-        let config_read = config.read();
-        let backend = Backend::new_select(backend, &config_read, cmd_tx.clone());
+        let backend = Backend::new_select(backend, config.clone(), cmd_tx.clone());
 
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
         let db_podcast = DBPod::new(&db_path).with_context(|| "error connecting to podcast db.")?;
+        let config_read = config.read();
         let db = DataBase::new(&config_read)?;
 
         let mpris = if config.read().settings.player.use_mediacontrols {

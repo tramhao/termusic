@@ -55,6 +55,18 @@ struct Controls {
     position: RwLock<Duration>,
 }
 
+/// Options to apply to a specific source
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceOptions {
+    pub soundtouch: bool,
+}
+
+impl Default for SourceOptions {
+    fn default() -> Self {
+        Self { soundtouch: true }
+    }
+}
+
 #[allow(dead_code)]
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
@@ -100,7 +112,7 @@ impl Sink {
     /// Appends a sound to the queue of sounds to play.
     #[inline]
     #[allow(clippy::cast_possible_wrap)]
-    pub fn append<S>(&self, source: S)
+    pub fn append<S>(&self, source: S, options: &SourceOptions)
     where
         S: Source<Item = SampleType> + Send + 'static,
     {
@@ -117,7 +129,7 @@ impl Sink {
         let progress_tx = self.picmd_tx.clone();
         let source = source
             .track_position()
-            .custom_speed(1.0, SpecificType::soundtouch(true))
+            .custom_speed(1.0, SpecificType::soundtouch(options.soundtouch))
             .amplify(1.0)
             .pausable(false)
             .skippable()

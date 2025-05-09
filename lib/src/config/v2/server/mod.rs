@@ -23,7 +23,6 @@ pub struct ServerSettings {
     pub com: ComSettings,
     pub player: PlayerSettings,
     pub podcast: PodcastSettings,
-    #[serde(skip)] // skip as long as there are no values
     pub backends: BackendSettings,
 }
 

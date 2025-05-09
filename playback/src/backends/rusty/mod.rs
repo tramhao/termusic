@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use parking_lot::Mutex;
 use rodio::OutputStream;
 use rodio::Source;
-use sink::Sink;
+use sink::{Sink, SourceOptions};
 use source::async_ring::{AsyncRingSource, AsyncRingSourceProvider, SeekData};
 use std::num::{NonZeroU16, NonZeroUsize};
 use stream_download::http::{
@@ -28,7 +28,7 @@ use stream_download::{Settings as StreamSettings, StreamDownload};
 use symphonia::core::io::{
     MediaSource, MediaSourceStream, MediaSourceStreamOptions, ReadOnlySource,
 };
-use termusiclib::config::ServerOverlay;
+use termusiclib::config::SharedServerSettings;
 use termusiclib::track::{MediaType, Track};
 use tokio::runtime::Handle;
 use tokio::select;
@@ -51,12 +51,12 @@ pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 pub enum PlayerInternalCmd {
     MessageOnEnd,
     /// Enqueue a new track to be played, and skip to it
-    /// (Track, gapless)
-    Play(Box<Track>, bool),
+    /// (Track, gapless, soundtouch)
+    Play(Box<Track>, bool, bool),
     Progress(Duration),
     /// Enqueue a new track to be played, but do not skip current track
-    /// (Track, gapless)
-    QueueNext(Box<Track>, bool),
+    /// (Track, gapless, soundtouch)
+    QueueNext(Box<Track>, bool, bool),
     Resume,
     SeekAbsolute(Duration),
     SeekRelative(i64),
@@ -77,6 +77,7 @@ pub struct RustyBackend {
     media_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
     // cmd_tx_outside: crate::PlayerCmdSender,
+    config: SharedServerSettings,
 }
 
 #[allow(
@@ -87,14 +88,16 @@ pub struct RustyBackend {
 impl RustyBackend {
     #[allow(clippy::similar_names)]
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &ServerOverlay, cmd_tx: crate::PlayerCmdSender) -> Self {
+    pub fn new(config: SharedServerSettings, cmd_tx: crate::PlayerCmdSender) -> Self {
+        let config_read = config.read();
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let picmd_tx_local = picmd_tx.clone();
-        let volume = Arc::new(AtomicU16::from(config.settings.player.volume));
+        let volume = Arc::new(AtomicU16::from(config_read.settings.player.volume));
         let volume_local = volume.clone();
-        let speed = config.settings.player.speed;
-        let gapless = config.settings.player.gapless;
+        let speed = config_read.settings.player.speed;
+        let gapless = config_read.settings.player.gapless;
+        drop(config_read);
         let position = Arc::new(Mutex::new(Duration::default()));
         let total_duration = Arc::new(Mutex::new(None));
         let total_duration_local = total_duration.clone();
@@ -134,6 +137,7 @@ impl RustyBackend {
             media_title,
             radio_downloaded,
             // cmd_tx_outside: cmd_tx,
+            config,
         }
     }
 
@@ -152,9 +156,17 @@ impl RustyBackend {
 #[async_trait]
 impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, track: &Track) {
+        let soundtouch = self
+            .config
+            .read_recursive()
+            .settings
+            .backends
+            .rusty
+            .soundtouch;
         self.command(PlayerInternalCmd::Play(
             Box::new(track.clone()),
             self.gapless,
+            soundtouch,
         ));
         self.resume();
     }
@@ -231,9 +243,17 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn enqueue_next(&mut self, track: &Track) {
+        let soundtouch = self
+            .config
+            .read_recursive()
+            .settings
+            .backends
+            .rusty
+            .soundtouch;
         self.command(PlayerInternalCmd::QueueNext(
             Box::new(track.clone()),
             self.gapless,
+            soundtouch,
         ));
     }
 
@@ -255,6 +275,7 @@ fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
     trace: &str,
     sink: &Sink,
     gapless: bool,
+    soundtouch: bool,
     func: F,
 ) {
     let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
@@ -272,8 +293,8 @@ fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
                 handle.block_on(decode_task(decoder, prod));
             });
 
-            sink.append(cons);
-            // sink.append(decoder);
+            sink.append(cons, &SourceOptions { soundtouch });
+            // sink.append(decoder, &SourceOptions { soundtouch });
         }
         Err(e) => error!("error decoding '{trace}' is: {e:?}"),
     }
@@ -341,13 +362,14 @@ fn append_to_sink_inner<F: FnOnce(&mut Symphonia)>(
     trace: &str,
     sink: &Sink,
     gapless: bool,
+    soundtouch: bool,
     func: F,
 ) {
     let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
     match Symphonia::new(mss, gapless) {
         Ok(mut decoder) => {
             func(&mut decoder);
-            sink.append(decoder);
+            sink.append(decoder, &SourceOptions { soundtouch });
         }
         Err(e) => error!("error decoding '{trace}' is: {e:?}"),
     }
@@ -362,6 +384,7 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static>(
     sink: &Sink,
     gapless: bool,
     total_duration_local: &ArcTotalDuration,
+    soundtouch: bool,
     media_title_fn: MT,
 ) {
     append_to_sink_inner_media_title(
@@ -369,6 +392,7 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static>(
         trace,
         sink,
         gapless,
+        soundtouch,
         |decoder, mut media_title_rx| {
             std::mem::swap(
                 &mut *total_duration_local.lock(),
@@ -393,8 +417,9 @@ fn append_to_sink_no_duration(
     sink: &Sink,
     gapless: bool,
     total_duration_local: &ArcTotalDuration,
+    soundtouch: bool,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |_| {
+    append_to_sink_inner(media_source, trace, sink, gapless, soundtouch, |_| {
         // remove old stale duration
         total_duration_local.lock().take();
     });
@@ -412,6 +437,7 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static>(
     gapless: bool,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
+    soundtouch: bool,
     media_title_fn: MT,
 ) {
     append_to_sink_inner_media_title(
@@ -419,6 +445,7 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static>(
         trace,
         sink,
         gapless,
+        soundtouch,
         |decoder, mut media_title_rx| {
             std::mem::swap(next_duration_opt, &mut decoder.total_duration());
             // rely on EOS message to set next duration
@@ -445,8 +472,9 @@ fn append_to_sink_queue_no_duration(
     gapless: bool,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
+    soundtouch: bool,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |_| {
+    append_to_sink_inner(media_source, trace, sink, gapless, soundtouch, |_| {
         // remove potential old stale duration
         next_duration_opt.take();
         // rely on EOS message to set next duration
@@ -498,7 +526,7 @@ async fn player_thread(
         };
 
         match cmd {
-            PlayerInternalCmd::Play(track, gapless) => {
+            PlayerInternalCmd::Play(track, gapless, soundtouch) => {
                 if let Err(err) = queue_next(
                     &track,
                     gapless,
@@ -509,6 +537,7 @@ async fn player_thread(
                     &media_title,
                     // &radio_downloaded,
                     false,
+                    soundtouch,
                 )
                 .await
                 {
@@ -518,7 +547,7 @@ async fn player_thread(
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
             }
-            PlayerInternalCmd::QueueNext(track, gapless) => {
+            PlayerInternalCmd::QueueNext(track, gapless, soundtouch) => {
                 if let Err(err) = queue_next(
                     &track,
                     gapless,
@@ -529,6 +558,7 @@ async fn player_thread(
                     &media_title,
                     // &radio_downloaded,
                     true,
+                    soundtouch,
                 )
                 .await
                 {
@@ -636,6 +666,8 @@ async fn queue_next(
     next_duration_opt: &mut Option<Duration>,
     media_title: &Arc<Mutex<String>>,
     enqueue: bool,
+
+    soundtouch: bool,
 ) -> Result<()> {
     let media_type = &track.media_type;
     let file_path = track
@@ -654,6 +686,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             } else {
@@ -663,6 +696,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
+                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             }
@@ -682,6 +716,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         next_duration_opt,
+                        soundtouch,
                         common_media_title_cb(media_title.clone()),
                     );
                 } else {
@@ -691,6 +726,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         total_duration,
+                        soundtouch,
                         common_media_title_cb(media_title.clone()),
                     );
                 }
@@ -718,6 +754,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             } else {
@@ -727,6 +764,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
+                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             }
@@ -801,9 +839,17 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    soundtouch,
                 );
             } else {
-                append_to_sink_no_duration(media_source, &url, sink, gapless, total_duration);
+                append_to_sink_no_duration(
+                    media_source,
+                    &url,
+                    sink,
+                    gapless,
+                    total_duration,
+                    soundtouch,
+                );
             }
 
             Ok(())
