@@ -119,7 +119,7 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
-    /// Ensure the [`QuitPopup`](crate::ui::components::QuitPopup) always has the focus (top-most)
+    /// Ensure the `QuitPopup` always has the focus (top-most)
     pub fn ensure_quit_popup_top_most_focus(&mut self) {
         if self.app.mounted(&Id::QuitPopup)
             && !self.app.focus().is_some_and(|v| *v == Id::QuitPopup)
@@ -354,7 +354,7 @@ impl Model {
         None
     }
 
-    /// Handle [`Player`] messages & events
+    /// Handle Player related messages & events
     fn update_player(&mut self, msg: PlayerMsg) -> Option<Msg> {
         match msg {
             PlayerMsg::TogglePause => {
@@ -983,7 +983,7 @@ impl Model {
         None
     }
 
-    /// Handle & update [`SavePlaylist`] related components.
+    /// Handle & update [`SavePlaylistMsg`] related components.
     fn update_save_playlist(&mut self, msg: SavePlaylistMsg) -> Option<Msg> {
         match msg {
             SavePlaylistMsg::PopupShow => {

@@ -199,7 +199,7 @@ impl UI {
         Ok(())
     }
 
-    /// Handle running [`Status`] having possibly changed.
+    /// Handle running [`RunningStatus`] having possibly changed.
     fn handle_status(&mut self, new_status: RunningStatus) {
         let old_status = self.model.playback.status();
         // nothing needs to be done as the status is the same
@@ -354,7 +354,7 @@ impl UI {
 
     /// Handle Stream updates from the provided stream.
     ///
-    /// In case of lag, sends a [`PlayerCmd::GetProgress`] to `self.model`.
+    /// In case of lag, sends a [`TuiCmd::GetProgress`] to `self.model`.
     ///
     /// - Does not wait until the next event (non-blocking).
     /// - Processess *all* available events.
