@@ -5,7 +5,7 @@ use std::sync::{Arc, LazyLock};
 use std::thread;
 use std::time::Duration;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
@@ -174,8 +174,9 @@ impl Model {
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
-        let extra_args = parse_args(&config_tui.settings.extra_ytdlp_args);
-        let mut extra_args_parsed = parse_extra_args(extra_args);
+        let extra_args = parse_args(&config_tui.settings.extra_ytdlp_args)
+            .context("Parsing config `extra_ytdlp_args`")?;
+        let mut extra_args_parsed = convert_to_args(extra_args);
         if !extra_args_parsed.is_empty() {
             args.append(&mut extra_args_parsed);
         }
@@ -339,6 +340,7 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
     id3_tag.write_to_path(file_fullname, Id3v24).ok();
 }
 
+/// Parse the input shell-like string into a Vector of `argument` and `maybe argument value`.
 fn parse_args(input: &str) -> Result<Vec<(String, Option<String>)>, shell_words::ParseError> {
     let result = shell_words::split(input)?
         .into_iter()
@@ -359,19 +361,17 @@ fn parse_args(input: &str) -> Result<Vec<(String, Option<String>)>, shell_words:
     Ok(result)
 }
 
-fn parse_extra_args(
-    extra_args: Result<Vec<(String, Option<String>)>, shell_words::ParseError>,
-) -> Vec<Arg> {
-    let mut extra_args_parsed = vec![];
-    if let Ok(extra_args_vec) = extra_args {
-        if !extra_args_vec.is_empty() {
-            for (name, opt_arg) in extra_args_vec {
-                let arg = match opt_arg {
-                    Some(value) => Arg::new_with_arg(&name, &value),
-                    None => Arg::new(&name),
-                };
-                extra_args_parsed.push(arg);
-            }
+/// Convert the `argument, maybe value` vector to [ytdrs Arguments](Arg).
+fn convert_to_args(extra_args: Vec<(String, Option<String>)>) -> Vec<Arg> {
+    // This capacity *may* be a little inaccurate, but should broadly reflect what we need
+    let mut extra_args_parsed = Vec::with_capacity(extra_args.len());
+    if !extra_args.is_empty() {
+        for (name, opt_arg) in extra_args {
+            let arg = match opt_arg {
+                Some(value) => Arg::new_with_arg(&name, &value),
+                None => Arg::new(&name),
+            };
+            extra_args_parsed.push(arg);
         }
     }
     extra_args_parsed
