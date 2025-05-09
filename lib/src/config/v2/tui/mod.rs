@@ -22,6 +22,7 @@ pub struct TuiSettings {
     #[serde(flatten)]
     pub theme: theme::ThemeWrap,
     pub keys: keys::Keys,
+    pub extra_ytdlp_args: String,
 }
 
 impl TuiSettings {
@@ -155,6 +156,7 @@ mod v1_interop {
                 coverart: value.album_photo_xywh.into(),
                 theme,
                 keys: value.keys.into(),
+                extra_ytdlp_args: String::new(),
             }
         }
     }

@@ -163,6 +163,8 @@ pub enum ConfigEditorMsg {
     ConfigSaveCancel,
     ExitConfirmationBlurDown,
     ExitConfirmationBlurUp,
+    ExtraYtdlpArgsBlurDown,
+    ExtraYtdlpArgsBlurUp,
     Open,
     KeyFocus(KFMsg),
     MusicDirBlurDown,
@@ -566,6 +568,7 @@ pub enum TFMsg {
     TextareaLyricBlurDown,
     TextareaLyricBlurUp,
 }
+
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SongTagRecordingResult {

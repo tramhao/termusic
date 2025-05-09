@@ -191,6 +191,12 @@ impl Model {
                     chunks_middle_right[6],
                 );
 
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs),
+                    f,
+                    chunks_middle_right[7],
+                );
+
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
@@ -1990,6 +1996,13 @@ impl Model {
                     bail!(" It's not recommended to use ports below 1024 for the player. ");
                 }
             }
+        }
+
+        if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))
+        {
+            config_tui.settings.extra_ytdlp_args = extra_ytdlp_args;
         }
         Ok(())
     }

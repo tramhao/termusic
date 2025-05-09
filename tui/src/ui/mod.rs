@@ -170,22 +170,29 @@ impl UI {
                         }
                         continue;
                     }
-                    let parent_is_termusic = match proc.parent() {
-                        Some(s) => system.processes().get(&s).unwrap().name() == "termusic",
-                        None => false,
-                    };
+                    let mut parent_is_termusic = false;
+                    match proc.parent() {
+                        Some(s) => {
+                            if let Some(parent) = system.processes().get(&s) {
+                                if parent.name() == "termusic" {
+                                    parent_is_termusic = true;
+                                }
+                            }
+                        }
+                        None => parent_is_termusic = false,
+                    }
                     if exe == "termusic" && !parent_is_termusic {
                         clients += 1;
                     }
                 }
             }
             if clients <= 1 && target.is_some() {
-                #[cfg(not(target_os = "windows"))]
                 if let Some(s) = target {
+                    #[cfg(not(target_os = "windows"))]
                     s.kill_with(sysinfo::Signal::Term);
+                    #[cfg(target_os = "windows")]
+                    s.kill();
                 }
-                #[cfg(target_os = "windows")]
-                target.unwrap().kill();
             }
         }
 
