@@ -569,7 +569,6 @@ pub enum TFMsg {
     TextareaLyricBlurUp,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SongTagRecordingResult {
     Finish(Vec<SongTag>),
