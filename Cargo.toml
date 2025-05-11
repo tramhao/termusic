@@ -24,16 +24,16 @@ rust-version = "1.82"
 termusic-lib = { path = "lib/", version = "0.10.0" }
 # need to disable "default-features" here for "termusic-server", otherwise the "default-features" in "termusic-server" have no effect
 termusic-playback = { path = "playback/", version = "0.10.0", default-features = false }
-ahash = "^0.8"
-anyhow = { version = "1.0.97", features = ["backtrace"] }
+ahash = "^0.8.12"
+anyhow = { version = "1.0.98", features = ["backtrace"] }
 async-ringbuf = "0.3"
 thiserror = "2.0.12"
 async-trait = "0.1.88"
 base64 = "0.22"
 bytes = "1.10"
-chrono = "0.4.40"
-clap = { version = "4.5.34", features = ["derive", "env"] }
-ctrlc = { version = "3.4", features = ["termination"] }
+chrono = "0.4.41"
+clap = { version = "4.5.38", features = ["derive", "env"] }
+ctrlc = { version = "3.4.6", features = ["termination"] }
 criterion = "0.5"
 dirs = "6.0"
 discord-rich-presence = "0.2.5"
@@ -49,9 +49,10 @@ viuer = "0.9"
 include_dir = "0.7"
 libaes = "0.7"
 libmpv-sirno = "2.0.2-fork.1"
+# lofty 0.22.3 updates to MSRV 1.85
 lofty = "0.22.2"
 log = "0.4.27"
-flexi_logger = "0.29.8"
+flexi_logger = "0.30.1"
 colored = "3.0"
 md5 = "0.7"
 num-bigint = "0.4"
@@ -61,8 +62,8 @@ pathdiff = { version = "0.2.3", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
 pretty_assertions = "1.4.1"
-quick-xml = "0.37.3"
-rand = "0.9"
+quick-xml = "0.37.5"
+rand = "0.9.1"
 regex = "^1.11.1"
 reqwest = { version = "0.12.15", features = [
     "cookies",
@@ -72,17 +73,17 @@ reqwest = { version = "0.12.15", features = [
 ] }
 rfc822_sanitizer = "0.3"
 rss = { version = "2.0.12", default-features = false }
-rusqlite = { version = "0.34", features = ["bundled"] }
+rusqlite = { version = "0.35", features = ["bundled"] }
 sanitize-filename = "0.6"
 semver = "1.0.26"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 serde_yaml = "0.9"
-shellexpand = { version = "3.1", features = ["path"] }
+shellexpand = { version = "3.1.1", features = ["path"] }
 shell-words = "1.1.0"
-soundtouch = "0.4.2"
+soundtouch = "0.4.3"
 souvlaki = { version = "0.8.2", default-features=false, features = ["use_zbus"] }
-stream-download = { version = "0.18.0", features = ["reqwest-rustls"] }
+stream-download = { version = "0.19.0", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
     "aac",
     "mp3",
@@ -94,16 +95,16 @@ symphonia = { version = "0.5.1", features = [
     "aiff"
 ] }
 rodio = { version = "0.20", default-features = false }
-sysinfo = { version = "^0.33", default-features = false, features = ["system"] }
+sysinfo = { version = "^0.35", default-features = false, features = ["system"] }
 textwrap = "0.16.2"
-tokio = { version = "1.44", features = ["sync", "macros", "rt","rt-multi-thread"] }
-tokio-util = "0.7.14"
+tokio = { version = "1.45", features = ["sync", "macros", "rt","rt-multi-thread"] }
+tokio-util = "0.7.15"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
-toml = "0.8.20"
+toml = "0.8.22"
 # only update prost and tonic major versions together
 prost = "0.13.5"
-tonic = "0.13.0"
-tonic-build = "0.13.0"
+tonic = "0.13.1"
+tonic-build = "0.13.1"
 tuirealm = "~2.1.0"
 tui-realm-stdlib = "~2.0"
 tui-realm-treeview = "~2.0"
