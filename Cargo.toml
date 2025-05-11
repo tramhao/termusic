@@ -102,8 +102,8 @@ tokio-stream = { version = "0.1.17", features = ["sync"] }
 toml = "0.8.22"
 # only update prost and tonic major versions together
 prost = "0.13.5"
-tonic = "0.13.0"
-tonic-build = "0.13.0"
+tonic = "0.13.1"
+tonic-build = "0.13.1"
 tuirealm = "~2.1.0"
 tui-realm-stdlib = "~2.0"
 tui-realm-treeview = "~2.0"
