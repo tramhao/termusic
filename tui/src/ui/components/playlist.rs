@@ -573,8 +573,7 @@ impl Model {
                 table.add_row();
             }
 
-            let duration = record.duration_formatted().to_string();
-            let duration_string = format!("[{duration:^7.7}]");
+            let duration_string = format!("[{:^7.7}]", record.duration_formatted());
 
             let mut title = record.title().unwrap_or("Unknown Title").to_string();
             if record.podcast_localfile.is_some() {
@@ -626,8 +625,7 @@ impl Model {
                 table.add_row();
             }
 
-            let duration = record.duration_formatted().to_string();
-            let duration_string = format!("[{duration:^7.7}]");
+            let duration_string = format!("[{:^7.7}]", record.duration_formatted());
 
             let noname_string = "No Name".to_string();
             let name = record.name().unwrap_or(&noname_string);

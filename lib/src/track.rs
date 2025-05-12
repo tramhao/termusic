@@ -443,8 +443,8 @@ impl Track {
     }
 
     #[must_use]
-    pub fn duration_formatted(&self) -> String {
-        DurationFmtShort(self.duration).to_string()
+    pub fn duration_formatted(&self) -> DurationFmtShort {
+        DurationFmtShort(self.duration)
     }
 
     /// Get the `file_name` or the full URI of the current Track
