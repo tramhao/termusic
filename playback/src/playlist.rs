@@ -164,7 +164,7 @@ impl Playlist {
                 }
                 continue;
             }
-            if let Ok(track) = Track::read_from_path(&line, false) {
+            if let Ok(track) = Track::read_from_path(&line, true) {
                 playlist_items.push(track);
             }
         }
@@ -213,7 +213,7 @@ impl Playlist {
             };
 
             let track = match PlaylistTrackSource::try_from(id)? {
-                PlaylistTrackSource::Path(v) => Track::read_from_path(v, false)?,
+                PlaylistTrackSource::Path(v) => Track::read_from_path(v, true)?,
                 PlaylistTrackSource::Url(v) => Track::new_radio(&v),
                 PlaylistTrackSource::PodcastUrl(v) => {
                     let episode = podcast_db.get_episode_by_url(&v)?;
