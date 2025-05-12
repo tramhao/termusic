@@ -12,7 +12,7 @@ use regex::Regex;
 use shell_words;
 use termusiclib::ids::Id;
 use termusiclib::invidious::Instance;
-use termusiclib::track::Track;
+use termusiclib::new_track::DurationFmtShort;
 use termusiclib::types::{DLMsg, Msg};
 use termusiclib::types::{YSMsg, YoutubeOptions};
 use termusiclib::utils::get_parent_folder;
@@ -117,8 +117,7 @@ impl Model {
             if idx > 0 {
                 table.add_row();
             }
-            let duration =
-                Track::duration_formatted_short(&Duration::from_secs(record.length_seconds));
+            let duration = DurationFmtShort(Duration::from_secs(record.length_seconds));
             let duration_string = format!("[{duration:^10.10}]");
 
             let title = record.title.as_str();

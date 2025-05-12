@@ -1,4 +1,5 @@
 use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use crate::new_track::DurationFmtShort;
 use crate::podcast::episode::Episode;
 /**
  * MIT License
@@ -443,20 +444,7 @@ impl Track {
 
     #[must_use]
     pub fn duration_formatted(&self) -> String {
-        Self::duration_formatted_short(&self.duration)
-    }
-
-    #[must_use]
-    pub fn duration_formatted_short(d: &Duration) -> String {
-        let duration_hour = d.as_secs() / 3600;
-        let duration_min = (d.as_secs() % 3600) / 60;
-        let duration_secs = d.as_secs() % 60;
-
-        if duration_hour == 0 {
-            format!("{duration_min:0>2}:{duration_secs:0>2}")
-        } else {
-            format!("{duration_hour}:{duration_min:0>2}:{duration_secs:0>2}")
-        }
+        DurationFmtShort(self.duration).to_string()
     }
 
     /// Get the `file_name` or the full URI of the current Track

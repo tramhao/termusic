@@ -12,6 +12,7 @@ use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
+use termusiclib::new_track::DurationFmtShort;
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
     PlaylistTrackSource,
@@ -781,7 +782,7 @@ impl Model {
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} \u{251c}\u{2500}",
             self.playback.playlist.len(),
-            Track::duration_formatted_short(&duration),
+            DurationFmtShort(duration),
             loop_mode.display(display_symbol),
         );
         self.app

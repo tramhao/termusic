@@ -2,7 +2,8 @@ use crate::ui::Model;
 use std::time::Duration;
 use termusiclib::config::TuiOverlay;
 use termusiclib::ids::Id;
-use termusiclib::track::{MediaType, Track};
+use termusiclib::new_track::DurationFmtShort;
+use termusiclib::track::MediaType;
 use termusiclib::types::Msg;
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::event::NoUserEvent;
@@ -143,8 +144,8 @@ impl Model {
                 Attribute::Text,
                 AttrValue::String(format!(
                     "{}    -    {}",
-                    Track::duration_formatted_short(&self.playback.current_track_pos()),
-                    Track::duration_formatted_short(&total_duration)
+                    DurationFmtShort(self.playback.current_track_pos()),
+                    DurationFmtShort(total_duration),
                 )),
             )
             .ok();
