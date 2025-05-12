@@ -1,0 +1,455 @@
+use std::{
+    borrow::Cow,
+    fmt::Display,
+    path::{Path, PathBuf},
+    time::Duration,
+};
+
+use anyhow::Result;
+use id3::frame::Lyrics as Id3Lyrics;
+use lofty::{
+    config::ParseOptions,
+    file::{AudioFile, TaggedFileExt},
+    picture::{Picture, PictureType},
+    probe::Probe,
+    tag::{Accessor, ItemKey, ItemValue, Tag as LoftyTag},
+};
+
+use crate::podcast::episode::Episode;
+
+#[derive(Debug, Clone)]
+pub struct PodcastTrackData {
+    /// The Podcast url, used as the sole identifier for equality
+    url: String,
+
+    localfile: Option<PathBuf>,
+    image_url: Option<String>,
+}
+
+impl PartialEq for PodcastTrackData {
+    fn eq(&self, other: &Self) -> bool {
+        self.url == other.url
+    }
+}
+
+impl PodcastTrackData {
+    /// Get the Podcast URL identifier
+    #[must_use]
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
+    /// Get the local file path for the downloaded podcast
+    #[must_use]
+    pub fn localfile(&self) -> Option<&Path> {
+        self.localfile.as_deref()
+    }
+
+    /// Check if this track has a localfile attached
+    #[must_use]
+    pub fn has_localfile(&self) -> bool {
+        self.localfile.is_some()
+    }
+
+    #[must_use]
+    pub fn image_url(&self) -> Option<&str> {
+        self.image_url.as_deref()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct RadioTrackData {
+    /// The Radio url, used as the sole identifier for equality
+    url: String,
+}
+
+impl RadioTrackData {
+    /// Get the url for for the radio
+    #[must_use]
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TrackData {
+    /// The Track file path, used as the sole identifier for equality
+    path: PathBuf,
+
+    album: Option<String>,
+}
+
+impl PartialEq for TrackData {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+    }
+}
+
+impl TrackData {
+    /// Get the path the track is stored at
+    #[must_use]
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    #[must_use]
+    pub fn album(&self) -> Option<&str> {
+        self.album.as_deref()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MediaTypes {
+    Track(TrackData),
+    Radio(RadioTrackData),
+    Podcast(PodcastTrackData),
+}
+
+#[derive(Debug, Clone)]
+pub struct Track {
+    inner: MediaTypes,
+
+    duration: Option<Duration>,
+    title: Option<String>,
+    artist: Option<String>,
+}
+
+impl PartialEq for Track {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
+}
+
+impl Track {
+    /// Create a new Track instance from a Podcast Episode from the database
+    #[must_use]
+    pub fn from_podcast_episode(ep: &Episode) -> Self {
+        let localfile = ep.path.as_ref().take_if(|v| v.exists()).cloned();
+
+        let podcast_data = PodcastTrackData {
+            url: ep.url.clone(),
+            localfile,
+            image_url: ep.image_url.clone(),
+        };
+
+        let duration = ep
+            .duration
+            .map(u64::try_from)
+            .transpose()
+            .ok()
+            .flatten()
+            .map(Duration::from_secs);
+
+        Self {
+            inner: MediaTypes::Podcast(podcast_data),
+            duration,
+            title: Some(ep.title.clone()),
+            artist: None,
+        }
+    }
+
+    /// Create a new Track from a radio url
+    #[must_use]
+    pub fn new_radio<U: Into<String>>(url: U) -> Self {
+        let radio_data = RadioTrackData { url: url.into() };
+
+        Self {
+            inner: MediaTypes::Radio(radio_data),
+            duration: None,
+            // will be fetched later, maybe consider storing a cache in the database?
+            title: None,
+            artist: None,
+        }
+    }
+
+    /// Create a new Track from a local file, populated with the most important tags
+    pub fn read_track_from_path<P: Into<PathBuf>>(path: P) -> Result<Self> {
+        let path = path.into();
+
+        let metadata = match parse_metadata_from_file(
+            &path,
+            MetadataOptions {
+                album: true,
+                artist: true,
+                title: true,
+                duration: true,
+                ..Default::default()
+            },
+        ) {
+            Ok(v) => v,
+            Err(err) => {
+                // not being able to read metadata is not fatal, we will just have less information about it
+                warn!(
+                    "Failed to read metadata from \"{}\": {}",
+                    path.display(),
+                    err
+                );
+                TrackMetadata::default()
+            }
+        };
+
+        let track_data = TrackData {
+            path,
+            album: metadata.album,
+        };
+
+        Ok(Self {
+            inner: MediaTypes::Track(track_data),
+            duration: metadata.duration,
+            title: metadata.title,
+            artist: metadata.artist,
+        })
+    }
+
+    #[must_use]
+    pub fn artist(&self) -> Option<&str> {
+        self.artist.as_deref()
+    }
+
+    #[must_use]
+    pub fn title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+
+    #[must_use]
+    pub fn duration(&self) -> Option<Duration> {
+        self.duration
+    }
+
+    /// Format the Track's duration to a short-form.
+    ///
+    /// see [`DurationFmtShort`] for formatting.
+    #[must_use]
+    pub fn duration_str_short(&self) -> Option<DurationFmtShort> {
+        let dur = self.duration?;
+
+        Some(DurationFmtShort(dur))
+    }
+
+    /// Get the main URL-identifier of the current track, if it is a type that has one.
+    ///
+    /// Only [`MediaTypes::Track`] does not have a URL at the moment.
+    #[must_use]
+    pub fn url(&self) -> Option<&str> {
+        match &self.inner {
+            MediaTypes::Track(_track_data) => None,
+            MediaTypes::Radio(radio_track_data) => Some(radio_track_data.url()),
+            MediaTypes::Podcast(podcast_track_data) => Some(podcast_track_data.url()),
+        }
+    }
+
+    /// Get the main Path-identifier of the current track, if it is a type that has one.
+    ///
+    /// Only [`MediaTypes::Track`] currently has a main Path-identifier.
+    #[must_use]
+    pub fn path(&self) -> Option<&Path> {
+        if let MediaTypes::Track(track_data) = &self.inner {
+            Some(track_data.path())
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    pub fn as_track(&self) -> Option<&TrackData> {
+        if let MediaTypes::Track(track_data) = &self.inner {
+            Some(track_data)
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    pub fn as_radio(&self) -> Option<&RadioTrackData> {
+        if let MediaTypes::Radio(radio_data) = &self.inner {
+            Some(radio_data)
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    pub fn as_podcast(&self) -> Option<&PodcastTrackData> {
+        if let MediaTypes::Podcast(podcast_data) = &self.inner {
+            Some(podcast_data)
+        } else {
+            None
+        }
+    }
+}
+
+/// Format the given Duration in the following way via a `Display` impl:
+///
+/// ```txt
+/// # if Hours > 0
+/// 10:01:01
+/// # if Hour == 0
+/// 01:01
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DurationFmtShort(pub Duration);
+
+impl Display for DurationFmtShort {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let d = self.0;
+        let duration_hour = d.as_secs() / 3600;
+        let duration_min = (d.as_secs() % 3600) / 60;
+        let duration_secs = d.as_secs() % 60;
+
+        if duration_hour == 0 {
+            write!(f, "{duration_min:0>2}:{duration_secs:0>2}")
+        } else {
+            write!(f, "{duration_hour}:{duration_min:0>2}:{duration_secs:0>2}")
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[allow(clippy::struct_excessive_bools)] // options, not a state machine
+pub struct MetadataOptions {
+    pub album: bool,
+    pub artist: bool,
+    pub title: bool,
+    pub duration: bool,
+    pub genre: bool,
+    pub cover: bool,
+    pub lyrics: bool,
+}
+
+impl MetadataOptions {
+    /// Enable all options
+    #[must_use]
+    pub fn all() -> Self {
+        Self {
+            album: true,
+            artist: true,
+            title: true,
+            duration: true,
+            genre: true,
+            cover: true,
+            lyrics: true,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TrackMetadata {
+    pub album: Option<String>,
+    pub artist: Option<String>,
+    pub title: Option<String>,
+    pub duration: Option<Duration>,
+    pub genre: Option<String>,
+    pub cover: Option<Picture>,
+    pub lyric_frames: Option<Vec<Id3Lyrics>>,
+}
+
+/// Try to parse all specified metadata in the given `options`.
+pub fn parse_metadata_from_file(path: &Path, options: MetadataOptions) -> Result<TrackMetadata> {
+    let mut parse_options = ParseOptions::new();
+
+    parse_options = parse_options.read_cover_art(options.cover);
+
+    let probe = Probe::open(path)?.options(parse_options);
+
+    let tagged_file = probe.read()?;
+
+    let mut res = TrackMetadata::default();
+
+    if options.duration {
+        let properties = tagged_file.properties();
+        res.duration = Some(properties.duration());
+    }
+
+    if let Some(tag) = tagged_file.primary_tag() {
+        handle_tag(tag, options, &mut res);
+    } else if let Some(tag) = tagged_file.first_tag() {
+        handle_tag(tag, options, &mut res);
+    }
+
+    Ok(res)
+}
+
+/// The inner working to actually copy data from the given [`LoftyTag`] into the `res`ult
+fn handle_tag(tag: &LoftyTag, options: MetadataOptions, res: &mut TrackMetadata) {
+    if let Some(len_tag) = tag.get_string(&ItemKey::Length) {
+        match len_tag.parse::<u64>() {
+            Ok(v) => res.duration = Some(Duration::from_millis(v)),
+            Err(_) => warn!(
+                "Failed reading precise \"Length\", expected u64 parseable, got \"{len_tag:#?}\"",
+            ),
+        }
+    }
+
+    if options.artist {
+        res.artist = tag.artist().map(Cow::into_owned);
+    }
+    if options.album {
+        res.album = tag.album().map(Cow::into_owned);
+    }
+    if options.title {
+        res.title = tag.title().map(Cow::into_owned);
+    }
+    if options.genre {
+        res.genre = tag.genre().map(Cow::into_owned);
+    }
+
+    if options.cover {
+        res.cover = tag
+            .pictures()
+            .iter()
+            .find(|pic| pic.pic_type() == PictureType::CoverFront)
+            .or_else(|| tag.pictures().first())
+            .cloned();
+    }
+
+    if options.lyrics {
+        let mut lyric_frames: Vec<Id3Lyrics> = Vec::new();
+        get_lyrics_from_tags(tag, &mut lyric_frames);
+        res.lyric_frames = Some(lyric_frames);
+    }
+}
+
+/// Fetch all lyrics from the given Lofty tag into the given array.
+fn get_lyrics_from_tags(tag: &LoftyTag, lyric_frames: &mut Vec<Id3Lyrics>) {
+    let lyrics = tag.get_items(&ItemKey::Lyrics);
+    for lyric in lyrics {
+        if let ItemValue::Text(lyrics_text) = lyric.value() {
+            lyric_frames.push(Id3Lyrics {
+                lang: lyric.lang().escape_ascii().to_string(),
+                description: lyric.description().to_string(),
+                text: lyrics_text.to_string(),
+            });
+        }
+    }
+
+    lyric_frames.sort_by(|a, b| {
+        a.description
+            .to_lowercase()
+            .cmp(&b.description.to_lowercase())
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    mod durationfmt {
+        use std::time::Duration;
+
+        use crate::new_track::DurationFmtShort;
+
+        #[test]
+        fn should_format_without_hours() {
+            assert_eq!(
+                DurationFmtShort(Duration::from_secs(61)).to_string(),
+                "01:01"
+            );
+        }
+
+        #[test]
+        fn should_format_with_hours() {
+            assert_eq!(
+                DurationFmtShort(Duration::from_secs(60 * 61 + 1)).to_string(),
+                "1:01:01"
+            );
+        }
+    }
+}
