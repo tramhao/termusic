@@ -1,11 +1,13 @@
 use std::{
     borrow::Cow,
     fmt::Display,
+    fs::File,
+    io::BufReader,
     path::{Path, PathBuf},
     time::{Duration, SystemTime},
 };
 
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use id3::frame::Lyrics as Id3Lyrics;
 use lofty::{
     config::ParseOptions,
@@ -339,6 +341,84 @@ impl Track {
             }
         }
     }
+
+    /// Get a cover / picture for the current track.
+    ///
+    /// This is currently **only** implemented for Music Tracks.
+    pub fn get_picture(&self) -> Result<Option<Picture>> {
+        match &self.inner {
+            MediaTypes::Track(track_data) => {
+                let result = parse_metadata_from_file(
+                    &track_data.path,
+                    MetadataOptions {
+                        cover: true,
+                        ..Default::default()
+                    },
+                )?;
+
+                // TODO: cache the picture?
+                let Some(picture) = result.cover else {
+                    let maybe_dir_pic = find_folder_picture(track_data.path())?;
+                    return Ok(maybe_dir_pic);
+                };
+
+                return Ok(Some(picture));
+            }
+            MediaTypes::Radio(_radio_track_data) => trace!("Unimplemented: radio picture"),
+            MediaTypes::Podcast(_podcast_track_data) => trace!("Unimplemented: podcast picture"),
+        }
+
+        Ok(None)
+    }
+}
+
+/// Find a picture file and parse it in the parent directory of the given path.
+///
+/// # Errors
+///
+/// - if there is no parent in the given path
+/// - reading the directory fails
+/// - reading the file fails
+/// - parsing the file as a picture fails
+fn find_folder_picture(track_path: &Path) -> Result<Option<Picture>> {
+    let Some(parent_folder) = track_path.parent() else {
+        return Err(anyhow!("Track does not have a parent directory")
+            .context(track_path.display().to_string()));
+    };
+
+    let files = std::fs::read_dir(parent_folder).context(parent_folder.display().to_string())?;
+
+    for entry in files.flatten() {
+        let path = entry.path();
+
+        let Some(ext) = path.extension() else {
+            continue;
+        };
+
+        let Some(name) = path.file_stem() else {
+            continue;
+        };
+
+        // only take some picture files we can handle and are common
+        if ext != "jpg" || ext != "png" {
+            continue;
+        }
+
+        // skip "artist.EXT" files; those may exist for standalone tracks which are in the same directory as the artist info
+        // for example this might exist when using jellyfin
+        // and the artist cover is unlikely we want as a track picture
+        if name.eq_ignore_ascii_case("artist") {
+            continue;
+        }
+
+        let mut reader = BufReader::new(File::open(path)?);
+
+        let picture = Picture::from_reader(&mut reader)?;
+
+        return Ok(Some(picture));
+    }
+
+    Ok(None)
 }
 
 /// Format the given Duration in the following way via a `Display` impl:
