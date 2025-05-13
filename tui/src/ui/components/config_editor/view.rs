@@ -2002,7 +2002,7 @@ impl Model {
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))
         {
-            config_tui.settings.extra_ytdlp_args = extra_ytdlp_args;
+            config_tui.settings.ytdlp.extra_ytdlp_args = extra_ytdlp_args;
         }
         Ok(())
     }

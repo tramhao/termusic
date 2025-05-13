@@ -174,7 +174,7 @@ impl Model {
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
-        let extra_args = parse_args(&config_tui.settings.extra_ytdlp_args)
+        let extra_args = parse_args(&config_tui.settings.ytdlp.extra_ytdlp_args)
             .context("Parsing config `extra_ytdlp_args`")?;
         let mut extra_args_parsed = convert_to_args(extra_args);
         if !extra_args_parsed.is_empty() {
