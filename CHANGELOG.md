@@ -10,6 +10,7 @@
 - Feat(tui): add new cli option `--disable-cover` which actually disables all cover probing and behaves as if no cover features are enabled.
 - Feat(tui): add native theme support. Useful for example for `pywal`.
 - Feat(tui): allow using "add single / add all" keys on Database `Result` view.
+- Feat(tui): add option to add extra arguments to the yt-dl command.
 - Feat(server): for rusty backend, add feature `rusty-simd` to enable SIMD instructions for decoding.
 - Feat(server): on rusty backend, do async decoding instead of JIT decoding for music and podcast files. (fixes #191)
 - Feat(server): on rusty backend, allow choosing which speed modifier to use in the config.

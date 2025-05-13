@@ -896,7 +896,7 @@ impl ExtraYtdlpArgs {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Extra Args for yt-dlp: ", Alignment::Left)
-                .value(&config_tui.settings.ytdlp.extra_ytdlp_args)
+                .value(&config_tui.settings.ytdlp.extra_args)
         };
 
         Self {
