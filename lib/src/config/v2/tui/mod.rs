@@ -115,18 +115,10 @@ pub enum Alignment {
     BottomLeft,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Ytdlp {
     /// Extra args for yt-dlp
     pub extra_ytdlp_args: String,
-}
-
-impl Default for Ytdlp {
-    fn default() -> Self {
-        Self {
-            extra_ytdlp_args: String::new(),
-        }
-    }
 }
 
 mod v1_interop {
