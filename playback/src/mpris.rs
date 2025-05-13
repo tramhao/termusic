@@ -70,24 +70,26 @@ impl Mpris {
             .set_playback(MediaPlayback::Playing { progress: None })
             .ok();
 
-        // TODO: implement a way to get pictures for a track
-        // let cover_art = track.picture().map(|picture| {
-        //     format!(
-        //         "data:{};base64,{}",
-        //         picture.mime_type().map_or_else(
-        //             || {
-        //                 error!(
-        //                     "Unknown mimetype for picture of track {}",
-        //                     track.file().unwrap_or("<unknown file>")
-        //                 );
-        //                 "application/octet-stream"
-        //             },
-        //             |v| v.as_str()
-        //         ),
-        //         base64::engine::general_purpose::STANDARD_NO_PAD.encode(picture.data())
-        //     )
-        // });
-        let cover_art: Option<String> = None;
+        let cover_art = match track.get_picture() {
+            Ok(v) => v.map(|v| {
+                format!(
+                    "data:{};base64,{}",
+                    v.mime_type().map_or_else(
+                        || {
+                            error!("Unknown mimetype for picture of track {track:#?}");
+                            "application/octet-stream"
+                        },
+                        |v| v.as_str()
+                    ),
+                    base64::engine::general_purpose::STANDARD_NO_PAD.encode(v.data())
+                )
+            }),
+            Err(err) => {
+                error!("Fetching the cover failed: {err:#?}");
+                None
+            }
+        };
+
         let album = track.as_track().and_then(|v| v.album());
 
         self.controls
