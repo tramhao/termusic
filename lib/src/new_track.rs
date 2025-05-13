@@ -2,7 +2,7 @@ use std::{
     borrow::Cow,
     fmt::Display,
     path::{Path, PathBuf},
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use anyhow::Result;
@@ -314,6 +314,7 @@ pub struct MetadataOptions {
     pub genre: bool,
     pub cover: bool,
     pub lyrics: bool,
+    pub file_times: bool,
 }
 
 impl MetadataOptions {
@@ -328,6 +329,7 @@ impl MetadataOptions {
             genre: true,
             cover: true,
             lyrics: true,
+            file_times: true,
         }
     }
 }
@@ -341,6 +343,13 @@ pub struct TrackMetadata {
     pub genre: Option<String>,
     pub cover: Option<Picture>,
     pub lyric_frames: Option<Vec<Id3Lyrics>>,
+    pub file_times: Option<FileTimes>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct FileTimes {
+    pub modified: Option<SystemTime>,
+    pub created: Option<SystemTime>,
 }
 
 /// Try to parse all specified metadata in the given `options`.
@@ -364,6 +373,17 @@ pub fn parse_metadata_from_file(path: &Path, options: MetadataOptions) -> Result
         handle_tag(tag, options, &mut res);
     } else if let Some(tag) = tagged_file.first_tag() {
         handle_tag(tag, options, &mut res);
+    }
+
+    if options.file_times {
+        if let Ok(metadata) = std::fs::metadata(path) {
+            let filetimes = FileTimes {
+                modified: metadata.modified().ok(),
+                created: metadata.created().ok(),
+            };
+
+            res.file_times = Some(filetimes);
+        }
     }
 
     Ok(res)
