@@ -15,7 +15,8 @@ use lofty::{
     tag::{Accessor, ItemKey, ItemValue, Tag as LoftyTag},
 };
 
-use crate::podcast::episode::Episode;
+pub use crate::track::MediaType as MediaTypesSimple;
+use crate::{player::playlist_helpers::PlaylistTrackSource, podcast::episode::Episode};
 
 #[derive(Debug, Clone)]
 pub struct PodcastTrackData {
@@ -55,6 +56,19 @@ impl PodcastTrackData {
     pub fn image_url(&self) -> Option<&str> {
         self.image_url.as_deref()
     }
+
+    /// Create new [`PodcastTrackData`] with only the url.
+    ///
+    /// This should mainly be used for tests only.
+    #[must_use]
+    pub fn new(url: String) -> Self {
+        Self {
+            url,
+
+            localfile: None,
+            image_url: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -68,6 +82,14 @@ impl RadioTrackData {
     #[must_use]
     pub fn url(&self) -> &str {
         &self.url
+    }
+
+    /// Create new [`RadioTrackData`] with only the url.
+    ///
+    /// This should mainly be used for tests only.
+    #[must_use]
+    pub fn new(url: String) -> Self {
+        Self { url }
     }
 }
 
@@ -95,6 +117,14 @@ impl TrackData {
     #[must_use]
     pub fn album(&self) -> Option<&str> {
         self.album.as_deref()
+    }
+
+    /// Create new [`TrackData`] with only the path.
+    ///
+    /// This should mainly be used for tests only.
+    #[must_use]
+    pub fn new(path: PathBuf) -> Self {
+        Self { path, album: None }
     }
 }
 
@@ -274,6 +304,39 @@ impl Track {
             Some(podcast_data)
         } else {
             None
+        }
+    }
+
+    #[must_use]
+    pub fn inner(&self) -> &MediaTypes {
+        &self.inner
+    }
+
+    /// Get a Enum without values to check against types.
+    ///
+    /// Mainly for not having to change too many functions yet.
+    #[must_use]
+    pub fn media_type(&self) -> MediaTypesSimple {
+        match &self.inner {
+            MediaTypes::Track(_) => MediaTypesSimple::Music,
+            MediaTypes::Radio(_) => MediaTypesSimple::LiveRadio,
+            MediaTypes::Podcast(_) => MediaTypesSimple::Podcast,
+        }
+    }
+
+    /// Create a [`PlaylistTrackSource`] from the current track identifier for GRPC.
+    #[must_use]
+    pub fn as_track_source(&self) -> PlaylistTrackSource {
+        match &self.inner {
+            MediaTypes::Track(track_data) => {
+                PlaylistTrackSource::Path(track_data.path.to_string_lossy().to_string())
+            }
+            MediaTypes::Radio(radio_track_data) => {
+                PlaylistTrackSource::Url(radio_track_data.url.to_string())
+            }
+            MediaTypes::Podcast(podcast_track_data) => {
+                PlaylistTrackSource::PodcastUrl(podcast_track_data.url.to_string())
+            }
         }
     }
 }
