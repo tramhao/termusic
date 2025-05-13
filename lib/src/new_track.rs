@@ -1,9 +1,12 @@
 use std::{
     borrow::Cow,
+    cell::RefCell,
     fmt::Display,
     fs::File,
     io::BufReader,
+    num::NonZeroUsize,
     path::{Path, PathBuf},
+    sync::Arc,
     time::{Duration, SystemTime},
 };
 
@@ -16,6 +19,7 @@ use lofty::{
     probe::Probe,
     tag::{Accessor, ItemKey, ItemValue, Tag as LoftyTag},
 };
+use lru::LruCache;
 
 pub use crate::track::MediaType as MediaTypesSimple;
 use crate::{player::playlist_helpers::PlaylistTrackSource, podcast::episode::Episode};
@@ -135,6 +139,12 @@ pub enum MediaTypes {
     Track(TrackData),
     Radio(RadioTrackData),
     Podcast(PodcastTrackData),
+}
+
+type PictureCache = LruCache<PathBuf, Arc<Picture>>;
+
+std::thread_local! {
+    static PICTURE_CACHE: RefCell<PictureCache> = RefCell::new(PictureCache::new(NonZeroUsize::new(5).unwrap()));
 }
 
 #[derive(Debug, Clone)]
@@ -344,25 +354,44 @@ impl Track {
 
     /// Get a cover / picture for the current track.
     ///
+    /// Returns `Ok(None)` if there was no error, but also no picture could be found.
+    ///
     /// This is currently **only** implemented for Music Tracks.
-    pub fn get_picture(&self) -> Result<Option<Picture>> {
+    ///
+    /// # Errors
+    ///
+    /// /// - if reading the file fails
+    /// - if parsing the file fails
+    /// - if there is no parent in the given path
+    /// - reading the directory fails
+    /// - reading the file fails
+    /// - parsing the file as a picture fails
+    pub fn get_picture(&self) -> Result<Option<Arc<Picture>>> {
         match &self.inner {
             MediaTypes::Track(track_data) => {
-                let result = parse_metadata_from_file(
-                    &track_data.path,
-                    MetadataOptions {
-                        cover: true,
-                        ..Default::default()
-                    },
-                )?;
+                let path_key = track_data.path().to_owned();
 
-                // TODO: cache the picture?
-                let Some(picture) = result.cover else {
-                    let maybe_dir_pic = find_folder_picture(track_data.path())?;
-                    return Ok(maybe_dir_pic);
-                };
+                let res = PICTURE_CACHE.with_borrow_mut(|cache| {
+                    cache
+                        .try_get_or_insert(path_key, || {
+                            let picture =
+                                get_picture_for_music_track(track_data.path()).map_err(Some)?;
 
-                return Ok(Some(picture));
+                            let Some(picture) = picture else {
+                                return Err(None);
+                            };
+
+                            Ok(Arc::new(picture))
+                        })
+                        .cloned()
+                });
+
+                // this has to be done as LruCache::try_get_or_insert enforces that the Ok result is the value itself, no mapping can be done.
+                match res {
+                    Ok(v) => return Ok(Some(v)),
+                    Err(None) => return Ok(None),
+                    Err(Some(err)) => return Err(err),
+                }
             }
             MediaTypes::Radio(_radio_track_data) => trace!("Unimplemented: radio picture"),
             MediaTypes::Podcast(_podcast_track_data) => trace!("Unimplemented: podcast picture"),
@@ -370,6 +399,30 @@ impl Track {
 
         Ok(None)
     }
+}
+
+/// Try to get a [`Picture`] for a given music track.
+///
+/// # Errors
+///
+/// - if reading the file fails
+/// - if parsing the file fails
+/// - also see [`find_folder_picture`]
+fn get_picture_for_music_track(track_path: &Path) -> Result<Option<Picture>> {
+    let result = parse_metadata_from_file(
+        track_path,
+        MetadataOptions {
+            cover: true,
+            ..Default::default()
+        },
+    )?;
+
+    let Some(picture) = result.cover else {
+        let maybe_dir_pic = find_folder_picture(track_path)?;
+        return Ok(maybe_dir_pic);
+    };
+
+    Ok(Some(picture))
 }
 
 /// Find a picture file and parse it in the parent directory of the given path.

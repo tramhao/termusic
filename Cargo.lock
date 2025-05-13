@@ -4790,6 +4790,7 @@ dependencies = [
  "libaes",
  "lofty",
  "log",
+ "lru",
  "md5",
  "num-bigint",
  "opml",
