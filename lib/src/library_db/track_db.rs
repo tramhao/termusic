@@ -1,8 +1,12 @@
-use std::time::{Duration, UNIX_EPOCH};
+use std::{
+    ffi::OsStr,
+    path::Path,
+    time::{Duration, UNIX_EPOCH},
+};
 
 use rusqlite::{named_params, Connection, Row};
 
-use crate::track::Track;
+use crate::{new_track::TrackMetadata, track::Track};
 
 /// A struct representing a [`Track`](Track) in the database
 #[derive(Clone, Debug, PartialEq)]
@@ -109,6 +113,35 @@ pub mod const_unknown {
     // even after, it is likely the `UNKNOWN_` values will continue to exist for display purposes
 }
 use const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_GENRE, UNKNOWN_TITLE};
+
+impl<'a> TrackDBInsertable<'a> {
+    pub fn from_track_metadata(value: &'a TrackMetadata, path: &'a Path) -> Self {
+        let name = path.file_stem().and_then(OsStr::to_str).unwrap_or_default();
+        let ext = path.extension().and_then(OsStr::to_str).unwrap_or_default();
+        let directory = path.parent().and_then(Path::to_str).unwrap_or_default();
+
+        Self {
+            artist: value.artist.as_deref().unwrap_or(UNKNOWN_ARTIST),
+            title: value.title.as_deref().unwrap_or(UNKNOWN_TITLE),
+            album: value.album.as_deref().unwrap_or(UNKNOWN_ALBUM),
+            genre: value.genre.as_deref().unwrap_or(UNKNOWN_GENRE),
+            file: path.to_str().unwrap_or(UNKNOWN_FILE),
+            duration: value.duration.unwrap_or_default(),
+            name,
+            ext,
+            directory,
+            last_modified: value
+                .file_times
+                .as_ref()
+                .and_then(|v| v.modified)
+                .and_then(|v| v.duration_since(UNIX_EPOCH).ok())
+                .unwrap_or_default()
+                .as_secs()
+                .to_string(),
+            last_position: Duration::default(),
+        }
+    }
+}
 
 impl<'a> From<&'a Track> for TrackDBInsertable<'a> {
     fn from(value: &'a Track) -> Self {

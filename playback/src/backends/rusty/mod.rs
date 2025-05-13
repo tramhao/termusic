@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::fs::File;
 use std::path::Path;
 use std::sync::atomic::{AtomicU16, Ordering};
@@ -5,7 +6,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use parking_lot::Mutex;
 use rodio::OutputStream;
@@ -29,7 +30,7 @@ use symphonia::core::io::{
     MediaSource, MediaSourceStream, MediaSourceStreamOptions, ReadOnlySource,
 };
 use termusiclib::config::SharedServerSettings;
-use termusiclib::track::{MediaType, Track};
+use termusiclib::new_track::{MediaTypes, Track};
 use tokio::runtime::Handle;
 use tokio::select;
 
@@ -265,9 +266,9 @@ impl PlayerTrait for RustyBackend {
 }
 
 /// Append the `media_source` to the `sink`, while allowing different functions to run with `func` with a [`MediaTitleRx`]
-fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
+fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx), TD: Display>(
     media_source: Box<dyn MediaSource>,
-    trace: &str,
+    trace: TD,
     sink: &Sink,
     gapless: bool,
     soundtouch: bool,
@@ -373,9 +374,9 @@ fn append_to_sink_inner<F: FnOnce(&mut Symphonia)>(
 /// Append the `media_source` to the `sink`, while also setting `total_duration*`
 ///
 /// Expects current thread to have a tokio handle
-fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static>(
+fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
     media_source: Box<dyn MediaSource>,
-    trace: &str,
+    trace: TD,
     sink: &Sink,
     gapless: bool,
     total_duration_local: &ArcTotalDuration,
@@ -425,9 +426,9 @@ fn append_to_sink_no_duration(
 /// This is used for enqueued entries which do not start immediately
 ///
 /// Expects current thread to have a tokio handle
-fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static>(
+fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
     media_source: Box<dyn MediaSource>,
-    trace: &str,
+    trace: TD,
     sink: &Sink,
     gapless: bool,
     // total_duration_local: &ArcTotalDuration,
@@ -662,20 +663,16 @@ async fn queue_next(
 
     soundtouch: bool,
 ) -> Result<()> {
-    let media_type = &track.media_type;
-    let file_path = track
-        .file()
-        .ok_or_else(|| anyhow!("No file path found"))?
-        .to_owned();
-    match media_type {
-        MediaType::Music => {
+    match track.inner() {
+        MediaTypes::Track(track_data) => {
             *is_radio = false;
-            let file = File::open(Path::new(&file_path)).context("Failed to open music file")?;
+            let file_path = track_data.path();
+            let file = File::open(file_path).context("Failed to open music file")?;
 
             if enqueue {
                 append_to_sink_queue(
                     Box::new(BufferedSource::new_default_size(file)),
-                    &file_path,
+                    file_path.display(),
                     sink,
                     gapless,
                     next_duration_opt,
@@ -685,7 +682,7 @@ async fn queue_next(
             } else {
                 append_to_sink(
                     Box::new(BufferedSource::new_default_size(file)),
-                    &file_path,
+                    file_path.display(),
                     sink,
                     gapless,
                     total_duration,
@@ -696,77 +693,9 @@ async fn queue_next(
 
             Ok(())
         }
-
-        MediaType::Podcast => {
-            *is_radio = false;
-            if let Some(file_path) = track.podcast_localfile.clone() {
-                let file = File::open(Path::new(&file_path))
-                    .context("Failed to open local podcast file")?;
-                if enqueue {
-                    append_to_sink_queue(
-                        Box::new(BufferedSource::new_default_size(file)),
-                        &file_path,
-                        sink,
-                        gapless,
-                        next_duration_opt,
-                        soundtouch,
-                        common_media_title_cb(media_title.clone()),
-                    );
-                } else {
-                    append_to_sink(
-                        Box::new(BufferedSource::new_default_size(file)),
-                        &file_path,
-                        sink,
-                        gapless,
-                        total_duration,
-                        soundtouch,
-                        common_media_title_cb(media_title.clone()),
-                    );
-                }
-                return Ok(());
-            }
-
-            let url = file_path;
-            let settings = StreamSettings::default();
-
-            let stream = HttpStream::<Client>::create(url.parse()?).await?;
-
-            let file_len = stream.content_length();
-
-            let reader = StreamDownload::from_stream(
-                stream,
-                TempStorageProvider::with_prefix(".termusic-stream-cache-"),
-                settings,
-            )
-            .await?;
-
-            if enqueue {
-                append_to_sink_queue(
-                    Box::new(ReadSeekSource::new(reader, file_len)),
-                    &url,
-                    sink,
-                    gapless,
-                    next_duration_opt,
-                    soundtouch,
-                    common_media_title_cb(media_title.clone()),
-                );
-            } else {
-                append_to_sink(
-                    Box::new(ReadSeekSource::new(reader, file_len)),
-                    &url,
-                    sink,
-                    gapless,
-                    total_duration,
-                    soundtouch,
-                    common_media_title_cb(media_title.clone()),
-                );
-            }
-            Ok(())
-        }
-
-        MediaType::LiveRadio => {
+        MediaTypes::Radio(radio_track_data) => {
             *is_radio = true;
-            let url = file_path;
+            let url = radio_track_data.url();
             let settings = StreamSettings::default();
 
             let mut headers = HeaderMap::new();
@@ -828,7 +757,7 @@ async fn queue_next(
             if enqueue {
                 append_to_sink_queue_no_duration(
                     media_source,
-                    &url,
+                    url,
                     sink,
                     gapless,
                     next_duration_opt,
@@ -837,7 +766,7 @@ async fn queue_next(
             } else {
                 append_to_sink_no_duration(
                     media_source,
-                    &url,
+                    url,
                     sink,
                     gapless,
                     total_duration,
@@ -845,6 +774,72 @@ async fn queue_next(
                 );
             }
 
+            Ok(())
+        }
+        MediaTypes::Podcast(podcast_track_data) => {
+            *is_radio = false;
+            if let Some(file_path) = podcast_track_data.localfile() {
+                let file = File::open(Path::new(&file_path))
+                    .context("Failed to open local podcast file")?;
+                if enqueue {
+                    append_to_sink_queue(
+                        Box::new(BufferedSource::new_default_size(file)),
+                        file_path.display(),
+                        sink,
+                        gapless,
+                        next_duration_opt,
+                        soundtouch,
+                        common_media_title_cb(media_title.clone()),
+                    );
+                } else {
+                    append_to_sink(
+                        Box::new(BufferedSource::new_default_size(file)),
+                        file_path.display(),
+                        sink,
+                        gapless,
+                        total_duration,
+                        soundtouch,
+                        common_media_title_cb(media_title.clone()),
+                    );
+                }
+                return Ok(());
+            }
+
+            let url = podcast_track_data.url();
+            let settings = StreamSettings::default();
+
+            let stream = HttpStream::<Client>::create(url.parse()?).await?;
+
+            let file_len = stream.content_length();
+
+            let reader = StreamDownload::from_stream(
+                stream,
+                TempStorageProvider::with_prefix(".termusic-stream-cache-"),
+                settings,
+            )
+            .await?;
+
+            if enqueue {
+                append_to_sink_queue(
+                    Box::new(ReadSeekSource::new(reader, file_len)),
+                    url,
+                    sink,
+                    gapless,
+                    next_duration_opt,
+                    soundtouch,
+                    common_media_title_cb(media_title.clone()),
+                );
+            } else {
+                append_to_sink(
+                    Box::new(ReadSeekSource::new(reader, file_len)),
+                    url,
+                    sink,
+                    gapless,
+                    total_duration,
+                    soundtouch,
+                    common_media_title_cb(media_title.clone()),
+                );
+            }
             Ok(())
         }
     }

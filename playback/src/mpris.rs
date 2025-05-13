@@ -4,7 +4,7 @@ use base64::Engine;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use termusiclib::{
     library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE},
-    track::Track,
+    new_track::Track,
 };
 
 use crate::{
@@ -70,30 +70,33 @@ impl Mpris {
             .set_playback(MediaPlayback::Playing { progress: None })
             .ok();
 
-        let cover_art = track.picture().map(|picture| {
-            format!(
-                "data:{};base64,{}",
-                picture.mime_type().map_or_else(
-                    || {
-                        error!(
-                            "Unknown mimetype for picture of track {}",
-                            track.file().unwrap_or("<unknown file>")
-                        );
-                        "application/octet-stream"
-                    },
-                    |v| v.as_str()
-                ),
-                base64::engine::general_purpose::STANDARD_NO_PAD.encode(picture.data())
-            )
-        });
+        // TODO: implement a way to get pictures for a track
+        // let cover_art = track.picture().map(|picture| {
+        //     format!(
+        //         "data:{};base64,{}",
+        //         picture.mime_type().map_or_else(
+        //             || {
+        //                 error!(
+        //                     "Unknown mimetype for picture of track {}",
+        //                     track.file().unwrap_or("<unknown file>")
+        //                 );
+        //                 "application/octet-stream"
+        //             },
+        //             |v| v.as_str()
+        //         ),
+        //         base64::engine::general_purpose::STANDARD_NO_PAD.encode(picture.data())
+        //     )
+        // });
+        let cover_art: Option<String> = None;
+        let album = track.as_track().and_then(|v| v.album());
 
         self.controls
             .set_metadata(MediaMetadata {
                 title: Some(track.title().unwrap_or(UNKNOWN_TITLE)),
                 artist: Some(track.artist().unwrap_or(UNKNOWN_ARTIST)),
-                album: Some(track.album().unwrap_or("")),
+                album: Some(album.unwrap_or("")),
                 cover_url: cover_art.as_deref(),
-                duration: Some(track.duration()),
+                duration: track.duration(),
             })
             .ok();
     }

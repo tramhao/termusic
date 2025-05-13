@@ -10,6 +10,7 @@ pub use playlist::Playlist;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::library_db::DataBase;
+use termusiclib::new_track::{MediaTypesSimple, Track};
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
@@ -17,7 +18,6 @@ use termusiclib::player::{
     PlayerProgress, PlayerTimeUnit, RunningStatus, TrackChangedInfo, UpdateEvents,
 };
 use termusiclib::podcast::db::Database as DBPod;
-use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::error::SendError;
@@ -412,12 +412,14 @@ impl GeneralPlayer {
     ///
     /// if the underlying "seek" returns a error (which current never happens)
     pub fn seek_relative(&mut self, forward: bool) {
-        let track_len = if let Some(track) = self.playlist.read().current_track() {
-            track.duration().as_secs()
-        } else {
-            // fallback to 5 instead of not seeking at all
-            5
-        };
+        // fallback to 5 instead of not seeking at all
+        let track_len = self
+            .playlist
+            .read()
+            .current_track()
+            .and_then(Track::duration)
+            .unwrap_or(Duration::from_secs(5))
+            .as_secs();
 
         let mut offset = self
             .config
@@ -451,28 +453,28 @@ impl GeneralPlayer {
             .settings
             .player
             .remember_position
-            .get_time(track.media_type)
+            .get_time(track.media_type())
         else {
             info!(
                 "Not saving Last position as \"Remember last position\" is not enabled for {:#?}",
-                track.media_type
+                track.media_type()
             );
             return;
         };
 
         if time_before_save < position.as_secs() {
-            match track.media_type {
-                MediaType::Music => {
+            match track.media_type() {
+                MediaTypesSimple::Music => {
                     if let Err(err) = self.db.set_last_position(track, position) {
                         error!("Saving last_position for music failed, Error: {err:#?}");
                     }
                 }
-                MediaType::Podcast => {
+                MediaTypesSimple::LiveRadio => (),
+                MediaTypesSimple::Podcast => {
                     if let Err(err) = self.db_podcast.set_last_position(track, position) {
                         error!("Saving last_position for podcast failed, Error: {err:#?}");
                     }
                 }
-                MediaType::LiveRadio => (),
             }
         } else {
             info!("Not saving Last position as the position is lower than time_before_save");
@@ -495,31 +497,32 @@ impl GeneralPlayer {
             .settings
             .player
             .remember_position
-            .is_enabled_for(track.media_type)
+            .is_enabled_for(track.media_type())
         {
-            match track.media_type {
-                MediaType::Music => {
+            match track.media_type() {
+                MediaTypesSimple::Music => {
                     if let Ok(last_pos) = self.db.get_last_position(&track) {
                         self.seek_to(last_pos);
                         restored = true;
                     }
                 }
-                MediaType::Podcast => {
+                MediaTypesSimple::LiveRadio => (),
+                MediaTypesSimple::Podcast => {
                     if let Ok(last_pos) = self.db_podcast.get_last_position(&track) {
                         self.seek_to(last_pos);
                         restored = true;
                     }
                 }
-                MediaType::LiveRadio => (),
             }
         } else {
             info!(
                 "Not restoring Last position as it is not enabled for {:#?}",
-                track.media_type
+                track.media_type()
             );
         }
 
         if restored {
+            // TODO: dosnt this apply podcast titles into the tracks database?
             if let Err(err) = self.db.set_last_position(&track, Duration::from_secs(0)) {
                 error!("Resetting last_position failed, Error: {err:#?}");
             }

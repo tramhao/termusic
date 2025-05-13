@@ -492,7 +492,7 @@ fn player_loop(
                 if let Some(track) = playlist.current_track() {
                     // if only one backend is enabled, rust will complain that it is the only thing that happens
                     #[allow(irrefutable_let_patterns)]
-                    if MediaType::LiveRadio == track.media_type {
+                    if MediaType::LiveRadio == track.media_type() {
                         // TODO: consider changing "radio_title" and "media_title" to be consistent
                         p_tick.radio_title = player.media_info().media_title.unwrap_or_default();
 

@@ -23,13 +23,13 @@ use crate::config::v2::server::ScanDepth;
  * SOFTWARE.
  */
 use crate::config::ServerOverlay;
-use crate::track::Track;
+use crate::new_track::{parse_metadata_from_file, MetadataOptions, Track, TrackMetadata};
 use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
 use anyhow::Context;
 use parking_lot::Mutex;
 use rusqlite::{params, Connection, Error, Result};
 use std::fmt::Debug;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
 use track_db::TrackDBInsertable;
@@ -119,12 +119,15 @@ impl DataBase {
     }
 
     /// Insert multiple tracks into the database
-    fn add_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<Track>) -> Result<()> {
+    fn add_records(
+        conn: &Arc<Mutex<Connection>>,
+        tracks: Vec<(TrackMetadata, PathBuf)>,
+    ) -> Result<()> {
         let mut conn = conn.lock();
         let tx = conn.transaction()?;
 
-        for track in tracks {
-            TrackDBInsertable::from(&track).insert_track(&tx)?;
+        for (metadata, path) in tracks {
+            TrackDBInsertable::from_track_metadata(&metadata, &path).insert_track(&tx)?;
         }
 
         tx.commit()?;
@@ -206,7 +209,7 @@ impl DataBase {
         };
 
         std::thread::spawn(move || -> Result<()> {
-            let mut need_updates: Vec<Track> = vec![];
+            let mut need_updates = Vec::new();
 
             for record in all_items
                 .into_iter()
@@ -216,8 +219,18 @@ impl DataBase {
             {
                 match Self::need_update(&conn, record.path()) {
                     Ok(true) => {
-                        if let Ok(track) = Track::read_from_path(record.path(), true) {
-                            need_updates.push(track);
+                        if let Ok(track) = parse_metadata_from_file(
+                            record.path(),
+                            MetadataOptions {
+                                album: true,
+                                artist: true,
+                                title: true,
+                                duration: true,
+                                genre: true,
+                                ..Default::default()
+                            },
+                        ) {
+                            need_updates.push((track, record.into_path()));
                         }
                     }
                     Ok(false) => {}
@@ -312,9 +325,10 @@ impl DataBase {
 
     /// Get the stored `last_position` of a given track
     pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
-        let filename = track
-            .name()
-            .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?;
+        let filename = track.as_track().ok_or_else(|| {
+            Error::InvalidParameterName("Track is not a Music track!".to_string())
+        })?;
+        let filename = filename.path().to_string_lossy();
         let query = "SELECT last_position FROM tracks WHERE name = ?1";
 
         let mut last_position: Duration = Duration::from_secs(0);
@@ -331,9 +345,10 @@ impl DataBase {
 
     /// Set the stored `last_position` of a given track
     pub fn set_last_position(&mut self, track: &Track, last_position: Duration) -> Result<()> {
-        let filename = track
-            .name()
-            .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?;
+        let filename = track.as_track().ok_or_else(|| {
+            Error::InvalidParameterName("Track is not a Music track!".to_string())
+        })?;
+        let filename = filename.path().to_string_lossy();
         let query = "UPDATE tracks SET last_position = ?1 WHERE name = ?2";
         let conn = self.conn.lock();
         conn.execute(query, params![last_position.as_secs(), filename,])?;
