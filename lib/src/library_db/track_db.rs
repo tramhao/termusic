@@ -176,7 +176,6 @@ pub trait Indexable {
     fn meta_title(&self) -> Option<&str>;
     fn meta_album(&self) -> Option<&str>;
     fn meta_artist(&self) -> Option<&str>;
-    fn meta_genre(&self) -> Option<&str>;
     fn meta_duration(&self) -> Duration;
 }
 
@@ -205,12 +204,6 @@ impl Indexable for TrackDB {
         }
         Some(&self.artist)
     }
-    fn meta_genre(&self) -> Option<&str> {
-        if self.genre == UNKNOWN_GENRE {
-            return None;
-        }
-        Some(&self.genre)
-    }
 
     fn meta_duration(&self) -> Duration {
         self.duration
@@ -224,29 +217,26 @@ impl Indexable for &TrackDB {
         }
         Some(&self.file)
     }
+
     fn meta_title(&self) -> Option<&str> {
         if self.title == UNKNOWN_TITLE {
             return None;
         }
         Some(&self.title)
     }
+
     fn meta_album(&self) -> Option<&str> {
         if self.album == UNKNOWN_ALBUM {
             return None;
         }
         Some(&self.album)
     }
+
     fn meta_artist(&self) -> Option<&str> {
         if self.artist == UNKNOWN_ARTIST {
             return None;
         }
         Some(&self.artist)
-    }
-    fn meta_genre(&self) -> Option<&str> {
-        if self.genre == UNKNOWN_GENRE {
-            return None;
-        }
-        Some(&self.genre)
     }
 
     fn meta_duration(&self) -> Duration {
@@ -271,10 +261,6 @@ impl Indexable for Track {
         self.artist()
     }
 
-    fn meta_genre(&self) -> Option<&str> {
-        todo!()
-    }
-
     fn meta_duration(&self) -> Duration {
         self.duration().unwrap_or_default()
     }
@@ -295,10 +281,6 @@ impl Indexable for &Track {
 
     fn meta_artist(&self) -> Option<&str> {
         self.artist()
-    }
-
-    fn meta_genre(&self) -> Option<&str> {
-        todo!()
     }
 
     fn meta_duration(&self) -> Duration {
