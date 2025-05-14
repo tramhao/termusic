@@ -6,7 +6,10 @@ use std::{
 
 use rusqlite::{named_params, Connection, Row};
 
-use crate::{new_track::TrackMetadata, track::Track};
+use crate::{
+    new_track::{Track as NewTrack, TrackMetadata},
+    track::Track,
+};
 
 /// A struct representing a [`Track`](Track) in the database
 #[derive(Clone, Debug, PartialEq)]
@@ -316,5 +319,57 @@ impl Indexable for &TrackDB {
 
     fn meta_duration(&self) -> Duration {
         self.duration
+    }
+}
+
+impl Indexable for NewTrack {
+    fn meta_file(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.path().to_str())
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.album())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+
+    fn meta_genre(&self) -> Option<&str> {
+        todo!()
+    }
+
+    fn meta_duration(&self) -> Duration {
+        self.duration().unwrap_or_default()
+    }
+}
+
+impl Indexable for &NewTrack {
+    fn meta_file(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.path().to_str())
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.album())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+
+    fn meta_genre(&self) -> Option<&str> {
+        todo!()
+    }
+
+    fn meta_duration(&self) -> Duration {
+        self.duration().unwrap_or_default()
     }
 }

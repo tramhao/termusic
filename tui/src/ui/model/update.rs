@@ -856,8 +856,8 @@ impl Model {
                 self.update_show_message_timeout("Currently Playing", title, None);
                 return;
             }
-            let name = track.name().unwrap_or("Unknown Song");
-            self.update_show_message_timeout("Currently Playing", name, None);
+            let name = track.title().map_or_else(|| track.id_str(), Into::into);
+            self.update_show_message_timeout("Currently Playing", &name, None);
 
             // TODO: is there a better way to update only a single / 2 columns (prev/next) instead of re-doing the whole playist; OR a way to decide at draw-time?
             // sync playlist to update any dynamic parts added to the columns (like current playing symbol)
@@ -891,7 +891,7 @@ impl Model {
 
     pub fn update_layout_for_current_track(&mut self) {
         if let Some(track) = self.playback.current_track() {
-            match track.media_type {
+            match track.media_type() {
                 MediaType::Podcast => {
                     if self.layout == TermusicLayout::Podcast {
                         return;

@@ -31,7 +31,6 @@ use anyhow::Context;
 use anyhow::Result;
 use bytes::Buf;
 use image::DynamicImage;
-use image::ImageReader;
 use lofty::picture::Picture;
 #[cfg(any(
     feature = "cover-viuer-iterm",
@@ -39,8 +38,9 @@ use lofty::picture::Picture;
     feature = "cover-viuer-sixel"
 ))]
 use std::io::Write;
+use std::sync::mpsc::Sender;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
-use termusiclib::track::MediaType;
+use termusiclib::new_track::MediaTypes;
 use termusiclib::types::{DLMsg, ImageWrapper, Msg};
 use tokio::runtime::Handle;
 
@@ -135,28 +135,33 @@ impl Model {
             return Ok(());
         };
 
-        match track.media_type {
-            MediaType::Music => {
-                // just show the first photo
-                if let Some(picture) = track.picture() {
+        match track.inner() {
+            MediaTypes::Track(track_data) => {
+                let res = match track.get_picture() {
+                    Ok(v) => v,
+                    Err(err) => {
+                        error!(
+                            "Getting the track for \"{}\" failed! Error: {}",
+                            track_data.path().display(),
+                            err
+                        );
+                        return Ok(());
+                    }
+                };
+                if let Some(picture) = res {
                     if let Ok(image) = image::load_from_memory(picture.data()) {
                         self.show_image(&image)?;
                         return Ok(());
                     }
                 }
-
-                if let Some(album_photo) = track.album_photo() {
-                    let img = ImageReader::open(album_photo)?.decode()?;
-                    self.show_image(&img)?;
-                }
             }
-            MediaType::Podcast => {
+            MediaTypes::Radio(_radio_track_data) => (),
+            MediaTypes::Podcast(podcast_track_data) => {
                 let url = {
-                    if let Some(episode_photo_url) = track.album_photo() {
+                    if let Some(episode_photo_url) = podcast_track_data.image_url() {
                         episode_photo_url.to_string()
-                    } else if let Some(pod_photo_url) = track
-                        .file()
-                        .and_then(|file| self.podcast_get_album_photo_by_url(file))
+                    } else if let Some(pod_photo_url) =
+                        self.podcast_get_album_photo_by_url(podcast_track_data.url())
                     {
                         pod_photo_url
                     } else {
@@ -169,69 +174,71 @@ impl Model {
                 }
                 let tx = self.tx_to_main.clone();
 
-                Handle::current().spawn(async move {
-                    match reqwest::get(&url).await {
-                        Ok(result) => {
-                            if result.status() != reqwest::StatusCode::OK {
-                                tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                    "Error non-OK Status code: {}",
-                                    result.status()
-                                ))))
-                                .ok();
-                                return;
-                            }
-
-                            let mut reader = {
-                                let bytes = match result.bytes().await {
-                                    Ok(v) => v,
-                                    Err(err) => {
-                                        tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                            "Error in reqest::Response::bytes: {err}"
-                                        ))))
-                                        .ok();
-                                        return;
-                                    }
-                                };
-
-                                bytes.reader()
-                            };
-
-                            let picture = match Picture::from_reader(&mut reader) {
-                                Ok(v) => v,
-                                Err(e) => {
-                                    tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                        "Error in picture from_reader: {e}"
-                                    ))))
-                                    .ok();
-                                    return;
-                                }
-                            };
-
-                            match image::load_from_memory(picture.data()) {
-                                Ok(image) => {
-                                    let image_wrapper = ImageWrapper { data: image };
-                                    tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(image_wrapper)))
-                                        .ok()
-                                }
-                                Err(e) => tx
-                                    .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                        "Error in load_from_memory: {e}"
-                                    ))))
-                                    .ok(),
-                            }
-                        }
-                        Err(e) => tx
-                            .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                "Error in ureq get: {e}"
-                            ))))
-                            .ok(),
-                    };
-                });
+                Handle::current().spawn(Self::fetch_podcast_image(tx, url));
             }
-            MediaType::LiveRadio => {}
         }
 
         Ok(())
+    }
+
+    /// Fetch the given url as a image and send events when done or error.
+    async fn fetch_podcast_image(tx: Sender<Msg>, url: String) {
+        match reqwest::get(&url).await {
+            Ok(result) => {
+                if result.status() != reqwest::StatusCode::OK {
+                    tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                        "Error non-OK Status code: {}",
+                        result.status()
+                    ))))
+                    .ok();
+                    return;
+                }
+
+                let mut reader = {
+                    let bytes = match result.bytes().await {
+                        Ok(v) => v,
+                        Err(err) => {
+                            tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                "Error in reqest::Response::bytes: {err}"
+                            ))))
+                            .ok();
+                            return;
+                        }
+                    };
+
+                    bytes.reader()
+                };
+
+                let picture = match Picture::from_reader(&mut reader) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                            "Error in picture from_reader: {e}"
+                        ))))
+                        .ok();
+                        return;
+                    }
+                };
+
+                match image::load_from_memory(picture.data()) {
+                    Ok(image) => {
+                        let image_wrapper = ImageWrapper { data: image };
+                        tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(image_wrapper)))
+                            .ok()
+                    }
+                    Err(e) => tx
+                        .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                            "Error in load_from_memory: {e}"
+                        ))))
+                        .ok(),
+                }
+            }
+            Err(e) => tx
+                .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                    "Error in ureq get: {e}"
+                ))))
+                .ok(),
+        };
     }
 
     #[allow(clippy::cast_possible_truncation, clippy::unnecessary_wraps)]

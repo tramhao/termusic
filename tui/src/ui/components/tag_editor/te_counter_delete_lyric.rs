@@ -286,19 +286,24 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
 }
 impl Model {
     pub fn te_delete_lyric(&mut self) {
-        if let Some(mut song) = self.tageditor_song.clone() {
-            if song.lyric_frames_is_empty() {
-                song.set_parsed_lyric(None);
+        if let Some(song) = self.tageditor_song.as_mut() {
+            if song.lyric_frames().is_empty() {
+                song.set_parsed_lyrics(None);
                 return;
             }
             song.lyric_frames_remove_selected();
-            if (song.lyric_selected_index() >= song.lyric_frames_len())
+            if (song.lyric_selected_index() >= song.lyric_frames().len())
                 && (song.lyric_selected_index() > 0)
             {
                 song.set_lyric_selected_index(song.lyric_selected_index() - 1);
             }
             match song.save_tag() {
-                Ok(()) => self.init_by_song(song),
+                Ok(()) => {
+                    // the unwrap should never happen as we are in a branch where we had a reference to it
+                    let song = self.tageditor_song.take().unwrap();
+                    // the unwrap should also never happen as all components should be properly mounted
+                    self.init_by_song(song).unwrap();
+                }
                 Err(e) => {
                     self.mount_error_popup(e);
                 }

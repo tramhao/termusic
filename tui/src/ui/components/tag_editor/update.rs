@@ -33,7 +33,7 @@ impl Model {
             }
             TEMsg::TagEditorClose => {
                 if let Some(s) = self.tageditor_song.clone() {
-                    self.library_reload_with_node_focus(s.file());
+                    self.library_reload_with_node_focus(Some(&s.path_as_id_str()));
                 }
                 self.umount_tageditor();
             }
@@ -42,9 +42,10 @@ impl Model {
                 self.te_delete_lyric();
             }
             TEMsg::TESelectLyricOk(index) => {
-                if let Some(mut song) = self.tageditor_song.clone() {
+                if let Some(mut song) = self.tageditor_song.take() {
                     song.set_lyric_selected_index(index);
-                    self.init_by_song(song);
+                    // the unwrap should also never happen as all components should be properly mounted
+                    self.init_by_song(song).unwrap();
                 }
             }
             TEMsg::TESearch => {

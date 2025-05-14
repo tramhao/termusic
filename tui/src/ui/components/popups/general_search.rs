@@ -25,6 +25,7 @@ use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
+use termusiclib::new_track::MediaTypes;
 use termusiclib::types::{GSMsg, Msg};
 use tui_realm_stdlib::{Input, Table};
 use tui_realm_treeview::TREE_INITIAL_NODE;
@@ -459,7 +460,19 @@ impl Model {
                     if let Some(file_name_text_span) = line.get(3) {
                         let file_name = &file_name_text_span.content;
                         for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
-                            if item.file() == Some(file_name) {
+                            // NOTE: i dont know if this should apply to anything other than "track_data"
+                            let lower_matched = match item.inner() {
+                                MediaTypes::Track(track_data) => {
+                                    track_data.path().to_string_lossy() == file_name.as_str()
+                                }
+                                MediaTypes::Radio(radio_track_data) => {
+                                    radio_track_data.url() == file_name
+                                }
+                                MediaTypes::Podcast(podcast_track_data) => {
+                                    podcast_track_data.url() == file_name
+                                }
+                            };
+                            if lower_matched {
                                 index = idx;
                                 matched = true;
                             }
@@ -487,7 +500,19 @@ impl Model {
                     if let Some(file_name_text_span) = line.get(3) {
                         let file_name = &file_name_text_span.content;
                         for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
-                            if item.file() == Some(file_name) {
+                            // NOTE: i dont know if this should apply to anything other than "track_data"
+                            let lower_matched = match item.inner() {
+                                MediaTypes::Track(track_data) => {
+                                    track_data.path().to_string_lossy() == file_name.as_str()
+                                }
+                                MediaTypes::Radio(radio_track_data) => {
+                                    radio_track_data.url() == file_name
+                                }
+                                MediaTypes::Podcast(podcast_track_data) => {
+                                    podcast_track_data.url() == file_name
+                                }
+                            };
+                            if lower_matched {
                                 index = idx;
                                 matched = true;
                             }

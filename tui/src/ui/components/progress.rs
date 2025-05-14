@@ -66,7 +66,7 @@ impl Model {
         };
         let mut progress_title = String::new();
         if let Some(track) = self.playback.current_track() {
-            match track.media_type {
+            match track.media_type() {
                 MediaType::Music | MediaType::LiveRadio => {
                     progress_title = format!(
                         " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
