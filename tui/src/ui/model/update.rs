@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::library_db::SearchCriteria;
-use termusiclib::new_track::MediaTypesSimple;
+use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg,
     SavePlaylistMsg, XYWHMsg, YSMsg,

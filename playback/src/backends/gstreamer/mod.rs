@@ -15,7 +15,7 @@ use gstreamer::{event::Seek, Element, SeekFlags, SeekType};
 use gstreamer::{ClockTime, StateChangeError, StateChangeSuccess};
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
-use termusiclib::new_track::{MediaTypes, Track};
+use termusiclib::track::{MediaTypes, Track};
 use tokio::sync::mpsc;
 
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};

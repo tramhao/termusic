@@ -14,7 +14,7 @@ use libmpv::{
 };
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
-use termusiclib::new_track::{MediaTypes, Track};
+use termusiclib::track::{MediaTypes, Track};
 
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 

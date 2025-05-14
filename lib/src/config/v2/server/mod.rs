@@ -7,7 +7,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::new_track::MediaTypesSimple;
+use crate::track::MediaTypesSimple;
 use backends::BackendSettings;
 
 pub mod backends;

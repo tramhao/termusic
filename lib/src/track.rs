@@ -764,7 +764,7 @@ mod tests {
     mod durationfmt {
         use std::time::Duration;
 
-        use crate::new_track::DurationFmtShort;
+        use crate::track::DurationFmtShort;
 
         #[test]
         fn should_format_without_hours() {

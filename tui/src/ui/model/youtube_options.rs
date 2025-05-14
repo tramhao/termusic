@@ -12,7 +12,7 @@ use regex::Regex;
 use shell_words;
 use termusiclib::ids::Id;
 use termusiclib::invidious::Instance;
-use termusiclib::new_track::DurationFmtShort;
+use termusiclib::track::DurationFmtShort;
 use termusiclib::types::{DLMsg, Msg};
 use termusiclib::types::{YSMsg, YoutubeOptions};
 use termusiclib::utils::get_parent_folder;

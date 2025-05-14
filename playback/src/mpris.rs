@@ -4,7 +4,7 @@ use base64::Engine;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use termusiclib::{
     library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE},
-    new_track::Track,
+    track::Track,
 };
 
 use crate::{

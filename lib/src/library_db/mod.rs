@@ -23,7 +23,7 @@ use crate::config::v2::server::ScanDepth;
  * SOFTWARE.
  */
 use crate::config::ServerOverlay;
-use crate::new_track::{parse_metadata_from_file, MetadataOptions, Track, TrackMetadata};
+use crate::track::{parse_metadata_from_file, MetadataOptions, Track, TrackMetadata};
 use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
 use anyhow::Context;
 use parking_lot::Mutex;

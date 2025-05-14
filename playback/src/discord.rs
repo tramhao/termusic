@@ -4,7 +4,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use termusiclib::new_track::Track;
+use termusiclib::track::Track;
 
 use crate::PlayerTimeUnit;
 

@@ -40,7 +40,7 @@ use lofty::picture::Picture;
 use std::io::Write;
 use std::sync::mpsc::Sender;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
-use termusiclib::new_track::MediaTypes;
+use termusiclib::track::MediaTypes;
 use termusiclib::types::{DLMsg, ImageWrapper, Msg};
 use tokio::runtime::Handle;
 

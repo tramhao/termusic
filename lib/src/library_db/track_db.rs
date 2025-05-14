@@ -6,7 +6,7 @@ use std::{
 
 use rusqlite::{named_params, Connection, Row};
 
-use crate::new_track::{Track, TrackMetadata};
+use crate::track::{Track, TrackMetadata};
 
 /// A struct representing a [`Track`](Track) in the database
 #[derive(Clone, Debug, PartialEq)]

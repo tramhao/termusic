@@ -10,7 +10,6 @@ pub use playlist::Playlist;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::library_db::DataBase;
-use termusiclib::new_track::{MediaTypesSimple, Track};
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
@@ -18,6 +17,7 @@ use termusiclib::player::{
     PlayerProgress, PlayerTimeUnit, RunningStatus, TrackChangedInfo, UpdateEvents,
 };
 use termusiclib::podcast::db::Database as DBPod;
+use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::utils::get_app_config_path;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::error::SendError;

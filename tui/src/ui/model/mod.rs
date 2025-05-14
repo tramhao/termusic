@@ -14,13 +14,13 @@ use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings
 use termusiclib::ids::Id;
 use termusiclib::library_db::TrackDB;
 use termusiclib::library_db::{DataBase, SearchCriteria};
-use termusiclib::new_track::{LyricData, MediaTypesSimple, Track};
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::{PlaylistTracks, RunningStatus};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed};
 use termusiclib::songtag::lrc::Lyric;
 use termusiclib::songtag::SongTag;
 use termusiclib::taskpool::TaskPool;
+use termusiclib::track::{LyricData, MediaTypesSimple, Track};
 use termusiclib::types::{Msg, YoutubeOptions};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;

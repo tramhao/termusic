@@ -14,9 +14,9 @@ use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
 use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
-use termusiclib::new_track::MediaTypesSimple;
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
+use termusiclib::track::MediaTypesSimple;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,

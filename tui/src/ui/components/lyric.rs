@@ -4,10 +4,10 @@ use crate::ui::model::ExtraLyricData;
 use crate::ui::{model::TermusicLayout, Model};
 use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use termusiclib::new_track::MediaTypes;
-use termusiclib::new_track::MediaTypesSimple;
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
+use termusiclib::track::MediaTypes;
+use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{LyricMsg, Msg};
 
 use anyhow::{anyhow, Result};

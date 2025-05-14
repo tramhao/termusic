@@ -15,8 +15,8 @@ use lofty::{
     tag::{Accessor, ItemKey, ItemValue, Tag, TagExt, TagItem},
 };
 use termusiclib::{
-    new_track::{parse_metadata_from_file, LyricData, MetadataOptions, Track},
     songtag::lrc::Lyric,
+    track::{parse_metadata_from_file, LyricData, MetadataOptions, Track},
 };
 
 use crate::ui::model::ExtraLyricData;

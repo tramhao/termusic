@@ -9,7 +9,7 @@ use file_db::{FileDB, FileDBInsertable};
 use rusqlite::{params, Connection};
 
 use super::{Episode, EpisodeNoId, Podcast, PodcastNoId, RE_ARTICLES};
-use crate::new_track::Track;
+use crate::track::Track;
 use podcast_db::{PodcastDB, PodcastDBInsertable};
 
 mod episode_db;

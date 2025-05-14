@@ -30,7 +30,7 @@ use symphonia::core::io::{
     MediaSource, MediaSourceStream, MediaSourceStreamOptions, ReadOnlySource,
 };
 use termusiclib::config::SharedServerSettings;
-use termusiclib::new_track::{MediaTypes, Track};
+use termusiclib::track::{MediaTypes, Track};
 use tokio::runtime::Handle;
 use tokio::select;
 

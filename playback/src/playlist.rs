@@ -12,7 +12,6 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedServerSettings;
-use termusiclib::new_track::{MediaTypes, Track, TrackData};
 use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
@@ -26,6 +25,7 @@ use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::{self, RunningStatus};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
+use termusiclib::track::{MediaTypes, Track, TrackData};
 use termusiclib::utils::{filetype_supported, get_app_config_path, get_parent_folder};
 
 use crate::SharedPlaylist;
@@ -1155,8 +1155,8 @@ mod tests {
     use std::path::PathBuf;
 
     use termusiclib::{
-        new_track::{MediaTypes, PodcastTrackData, RadioTrackData, TrackData},
         player::playlist_helpers::PlaylistTrackSource,
+        track::{MediaTypes, PodcastTrackData, RadioTrackData, TrackData},
     };
 
     use super::Playlist;

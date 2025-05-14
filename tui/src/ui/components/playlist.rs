@@ -12,8 +12,6 @@ use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
-use termusiclib::new_track::Track;
-use termusiclib::new_track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
     PlaylistTrackSource,
@@ -22,6 +20,8 @@ use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
     PlaylistSwapInfo,
 };
+use termusiclib::track::Track;
+use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::types::{GSMsg, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 

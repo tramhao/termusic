@@ -25,7 +25,7 @@ use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
-use termusiclib::new_track::MediaTypes;
+use termusiclib::track::MediaTypes;
 use termusiclib::types::{GSMsg, Msg};
 use tui_realm_stdlib::{Input, Table};
 use tui_realm_treeview::TREE_INITIAL_NODE;

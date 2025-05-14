@@ -3,12 +3,12 @@ use std::path::Path;
 
 use anyhow::{bail, Context, Result};
 use pathdiff::diff_paths;
-use termusiclib::new_track::MediaTypes;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistTrackSource};
 use termusiclib::player::PlaylistRemoveTrackInfo;
 use termusiclib::podcast::db::Database as DBPod;
+use termusiclib::track::MediaTypes;
 use termusiclib::utils::get_parent_folder;
-use termusiclib::{config::v2::server::LoopMode, new_track::Track};
+use termusiclib::{config::v2::server::LoopMode, track::Track};
 
 /// A Playlist with all the tracks and options
 #[derive(Debug, Clone, PartialEq, Default)]
