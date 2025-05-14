@@ -29,6 +29,7 @@ use crate::ui::components::{
 use crate::ui::model::Model;
 use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 use anyhow::Result;
+use std::borrow::Cow;
 use std::path::Path;
 use termusiclib::ids::{Id, IdTagEditor};
 use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
@@ -358,10 +359,9 @@ impl Model {
             self.init_by_song_no_lyric();
             return Ok(());
         };
-        // TODO: replace with tui-realm "as_str" once available
-        let PropValue::Str(selected_desc) = selected_desc else {
-            unreachable!()
-        };
+        let selected_desc = selected_desc
+            .as_str()
+            .map_or_else(|| "No Description".into(), Cow::from);
         let selected_description = format!("Lyrics for {selected_desc}");
         let selected_index_display = selected_index + 1;
 
