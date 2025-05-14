@@ -428,6 +428,25 @@ impl Track {
         Ok(None)
     }
 
+    /// Get a display-able identifier
+    ///
+    /// # Panics
+    ///
+    /// If somehow a [`MediaTypes::Track`] does not have a `file_name`.
+    #[must_use]
+    pub fn id_str(&self) -> Cow<'_, str> {
+        match &self.inner {
+            // A music track will always have a file_name (and not terminate in "..")
+            MediaTypes::Track(track_data) => track_data
+                .path()
+                .file_name()
+                .map(|v| v.to_string_lossy())
+                .unwrap(),
+            MediaTypes::Radio(radio_track_data) => radio_track_data.url().into(),
+            MediaTypes::Podcast(podcast_track_data) => podcast_track_data.url().into(),
+        }
+    }
+
     /// Get the lyrics data for the current Track.
     ///
     /// Only works for Music Tracks.
@@ -467,6 +486,20 @@ impl Track {
             Ok(v) => Ok(Some(v)),
             Err(None) => Ok(None),
             Err(Some(err)) => Err(err),
+        }
+    }
+}
+
+impl PartialEq<PlaylistTrackSource> for &Track {
+    fn eq(&self, other: &PlaylistTrackSource) -> bool {
+        match other {
+            PlaylistTrackSource::Path(path) => self
+                .as_track()
+                .is_some_and(|v| v.path().to_string_lossy() == path.as_str()),
+            PlaylistTrackSource::Url(url) => self.as_radio().is_some_and(|v| v.url() == url),
+            PlaylistTrackSource::PodcastUrl(url) => {
+                self.as_podcast().is_some_and(|v| v.url() == url)
+            }
         }
     }
 }
