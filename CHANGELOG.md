@@ -4,6 +4,7 @@
 - Change: updated MSRV to 1.82.
 - Change: support Unix Domain Sockets in addition to HTTP transport. (Note that UDS is only available for `unix` targets)
 - Change: change default transport protocol to be UDS on `unix` systems.
+- Change: the internal `Track` structure has been rewritten, reducing RAM usage when having many tracks in the playlist. (by not having all pictures in the playlist loaded all the time)
 - Change(tui): rename cli option `--disable-cover`  to `--hide-cover`.
 - Change(tui): dont depend on `termusicplayback` anymore.
 - Feat: allow setting the backend in the `server.toml` config.
