@@ -14,7 +14,7 @@ use anyhow::{anyhow, Context, Result};
 use id3::frame::Lyrics as Id3Lyrics;
 use lofty::{
     config::ParseOptions,
-    file::{AudioFile, TaggedFileExt},
+    file::{AudioFile, FileType, TaggedFileExt},
     picture::{Picture, PictureType},
     probe::Probe,
     tag::{Accessor, ItemKey, ItemValue, Tag as LoftyTag},
@@ -105,6 +105,8 @@ pub struct TrackData {
     path: PathBuf,
 
     album: Option<String>,
+
+    file_type: Option<FileType>,
 }
 
 impl PartialEq for TrackData {
@@ -125,12 +127,24 @@ impl TrackData {
         self.album.as_deref()
     }
 
+    /// The lofty File-Type; may not exist if lofty could not parse the file.
+    ///
+    /// Note that if lofty cannot parse the file, that **does not** mean that symphonia cannot play it.
+    #[must_use]
+    pub fn file_type(&self) -> Option<FileType> {
+        self.file_type
+    }
+
     /// Create new [`TrackData`] with only the path.
     ///
     /// This should mainly be used for tests only.
     #[must_use]
     pub fn new(path: PathBuf) -> Self {
-        Self { path, album: None }
+        Self {
+            path,
+            album: None,
+            file_type: None,
+        }
     }
 }
 
@@ -233,6 +247,7 @@ impl Track {
         let track_data = TrackData {
             path,
             album: metadata.album,
+            file_type: metadata.file_type,
         };
 
         Ok(Self {
@@ -360,7 +375,7 @@ impl Track {
     ///
     /// # Errors
     ///
-    /// /// - if reading the file fails
+    /// - if reading the file fails
     /// - if parsing the file fails
     /// - if there is no parent in the given path
     /// - reading the directory fails
@@ -371,6 +386,7 @@ impl Track {
             MediaTypes::Track(track_data) => {
                 let path_key = track_data.path().to_owned();
 
+                // TODO: option to disable getting with folder cover for tag editor?
                 let res = PICTURE_CACHE.with_borrow_mut(|cache| {
                     cache
                         .try_get_or_insert(path_key, || {
@@ -540,6 +556,8 @@ pub struct TrackMetadata {
     pub cover: Option<Picture>,
     pub lyric_frames: Option<Vec<Id3Lyrics>>,
     pub file_times: Option<FileTimes>,
+
+    pub file_type: Option<FileType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -564,6 +582,8 @@ pub fn parse_metadata_from_file(path: &Path, options: MetadataOptions) -> Result
         let properties = tagged_file.properties();
         res.duration = Some(properties.duration());
     }
+
+    res.file_type = Some(tagged_file.file_type());
 
     if let Some(tag) = tagged_file.primary_tag() {
         handle_tag(tag, options, &mut res);
