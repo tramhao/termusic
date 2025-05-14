@@ -22,10 +22,17 @@ use lofty::{
 };
 use lru::LruCache;
 
-pub use crate::track::MediaType as MediaTypesSimple;
 use crate::{
     player::playlist_helpers::PlaylistTrackSource, podcast::episode::Episode, songtag::lrc::Lyric,
 };
+
+/// A simple no-value representation of [`MediaTypes`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MediaTypesSimple {
+    Music,
+    Podcast,
+    LiveRadio,
+}
 
 #[derive(Debug, Clone)]
 pub struct PodcastTrackData {
