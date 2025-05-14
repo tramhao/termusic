@@ -1,6 +1,7 @@
 use std::{
     borrow::Cow,
     path::{Path, PathBuf},
+    str::FromStr,
     time::Duration,
 };
 
@@ -14,7 +15,7 @@ use lofty::{
     tag::{Accessor, ItemKey, ItemValue, Tag, TagExt, TagItem},
 };
 use termusiclib::{
-    new_track::{LyricData, Track},
+    new_track::{parse_metadata_from_file, LyricData, MetadataOptions, Track},
     songtag::lrc::Lyric,
 };
 
@@ -292,6 +293,7 @@ impl TETrack {
         Ok(())
     }
 
+    /// Helper function to set common tags from `Self` to `T`
     fn set_data_on_tag<T: Accessor>(&self, tag: &mut T) {
         if let Some(artist) = self.artist.clone() {
             tag.set_artist(artist);
@@ -307,7 +309,52 @@ impl TETrack {
         }
     }
 
+    /// Get the path id as a string
     pub fn path_as_id_str(&self) -> Cow<'_, str> {
         self.path.to_string_lossy()
+    }
+
+    /// Read metadata from a file with all the metadata that can be handled.
+    ///
+    /// Note that this completely bypasses any [`Track`] functions and caching (both in getting and in setting).
+    pub fn read_metadata_from_file<P: Into<PathBuf>>(path: P) -> Result<Self> {
+        let path = path.into();
+        let metadata = parse_metadata_from_file(
+            &path,
+            MetadataOptions {
+                album: true,
+                artist: true,
+                title: true,
+                genre: true,
+                cover: true,
+                lyrics: true,
+                ..Default::default()
+            },
+        )?;
+
+        let Some(file_type) = metadata.file_type else {
+            bail!("Unable to create TETrack due to missing file_type");
+        };
+
+        let lyric_frames = metadata.lyric_frames.unwrap_or_default();
+
+        let lyric_parsed = lyric_frames
+            .first()
+            .and_then(|v| Lyric::from_str(&v.text).ok());
+
+        let res = Self {
+            path,
+            artist: metadata.artist,
+            title: metadata.title,
+            album: metadata.album,
+            genre: metadata.genre,
+            picture: metadata.cover,
+            lyric_selected_idx: 0,
+            lyric_frames,
+            lyric_parsed,
+            file_type,
+        };
+
+        Ok(res)
     }
 }

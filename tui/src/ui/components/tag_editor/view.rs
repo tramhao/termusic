@@ -26,12 +26,11 @@ use crate::ui::components::{
     LabelGeneric, TECounterDelete, TEInputAlbum, TEInputArtist, TEInputGenre, TEInputTitle,
     TESelectLyric, TETableLyricOptions, TETextareaLyric,
 };
-use crate::ui::model::{ExtraLyricData, Model};
+use crate::ui::model::Model;
 use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 use anyhow::Result;
 use std::path::Path;
 use termusiclib::ids::{Id, IdTagEditor};
-use termusiclib::new_track::Track;
 use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
 use tuirealm::ratatui::widgets::Clear;
@@ -241,15 +240,10 @@ impl Model {
             return;
         }
 
-        // the following possibly opens and reads the metadata 3 times:
-        // - once for "read_track_from_path"
-        // - once for "get_lyrics"
-        // - and once for "get_picture"
-        // this could likely be optimized to one metadata call
-        let track = match Track::read_track_from_path(node_path) {
+        let te_track = match TETrack::read_metadata_from_file(node_path) {
             Ok(v) => v,
             Err(err) => {
-                self.mount_error_popup(err.context("track parse"));
+                self.mount_error_popup(err.context(node_path.display().to_string()));
                 return;
             }
         };
@@ -260,19 +254,6 @@ impl Model {
             .active(&Id::TagEditor(IdTagEditor::InputArtist))
             .ok();
 
-        // the unwrap should never happen as "Track::read_track_from_path" always is a music track
-        let mut te_track: TETrack = (&track).try_into().unwrap();
-
-        if let Ok(Some(data)) = track.get_lyrics() {
-            te_track.lyric_set_with_extra(Some(&ExtraLyricData {
-                for_track: node_path.to_owned(),
-                data: (*data).clone(),
-                selected_idx: 0,
-            }));
-        }
-        if let Ok(Some(picture)) = track.get_picture() {
-            te_track.set_picture((*picture).clone());
-        }
         // the unwrap should also never happen as all components should be properly mounted
         self.init_by_song(te_track).unwrap();
 

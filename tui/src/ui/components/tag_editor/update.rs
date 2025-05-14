@@ -33,6 +33,7 @@ impl Model {
             }
             TEMsg::TagEditorClose => {
                 if let Some(s) = self.tageditor_song.clone() {
+                    // TODO: this should be re-done and take actual track ids themself, or at least verified to use the same functions to result in the same id
                     self.library_reload_with_node_focus(Some(&s.path_as_id_str()));
                 }
                 self.umount_tageditor();
