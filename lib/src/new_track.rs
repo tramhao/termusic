@@ -6,11 +6,12 @@ use std::{
     io::BufReader,
     num::NonZeroUsize,
     path::{Path, PathBuf},
+    str::FromStr,
     sync::Arc,
     time::{Duration, SystemTime},
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use id3::frame::Lyrics as Id3Lyrics;
 use lofty::{
     config::ParseOptions,
@@ -22,7 +23,9 @@ use lofty::{
 use lru::LruCache;
 
 pub use crate::track::MediaType as MediaTypesSimple;
-use crate::{player::playlist_helpers::PlaylistTrackSource, podcast::episode::Episode};
+use crate::{
+    player::playlist_helpers::PlaylistTrackSource, podcast::episode::Episode, songtag::lrc::Lyric,
+};
 
 #[derive(Debug, Clone)]
 pub struct PodcastTrackData {
@@ -155,10 +158,19 @@ pub enum MediaTypes {
     Podcast(PodcastTrackData),
 }
 
-type PictureCache = LruCache<PathBuf, Arc<Picture>>;
+#[derive(Debug, Clone, PartialEq)]
+pub struct LyricData {
+    pub raw_lyrics: Vec<Id3Lyrics>,
+    pub parsed_lyrics: Option<Lyric>,
+}
 
+type PictureCache = LruCache<PathBuf, Arc<Picture>>;
+type LyricCache = LruCache<PathBuf, Arc<LyricData>>;
+
+// NOTE: thread_locals are like "LazyLock"s, they only get initialized on first access.
 std::thread_local! {
     static PICTURE_CACHE: RefCell<PictureCache> = RefCell::new(PictureCache::new(NonZeroUsize::new(5).unwrap()));
+    static LYRIC_CACHE: RefCell<LyricCache> = RefCell::new(LyricCache::new(NonZeroUsize::new(5).unwrap()));
 }
 
 #[derive(Debug, Clone)]
@@ -414,6 +426,48 @@ impl Track {
         }
 
         Ok(None)
+    }
+
+    /// Get the lyrics data for the current Track.
+    ///
+    /// Only works for Music Tracks.
+    pub fn get_lyrics(&self) -> Result<Option<Arc<LyricData>>> {
+        let Some(track_data) = self.as_track() else {
+            bail!("Track is not a Music Track!");
+        };
+
+        let path_key = track_data.path().to_owned();
+
+        let res = LYRIC_CACHE.with_borrow_mut(|cache| {
+            cache
+                .try_get_or_insert(path_key, || {
+                    let result = parse_metadata_from_file(
+                        track_data.path(),
+                        MetadataOptions {
+                            lyrics: true,
+                            ..Default::default()
+                        },
+                    )?;
+                    let lyric_frames = result.lyric_frames.unwrap_or_default();
+
+                    let parsed_lyric = lyric_frames
+                        .first()
+                        .and_then(|frame| Lyric::from_str(&frame.text).ok());
+
+                    Ok(Arc::new(LyricData {
+                        raw_lyrics: lyric_frames,
+                        parsed_lyrics: parsed_lyric,
+                    }))
+                })
+                .cloned()
+        });
+
+        // this has to be done as LruCache::try_get_or_insert enforces that the Ok result is the value itself, no mapping can be done.
+        match res {
+            Ok(v) => Ok(Some(v)),
+            Err(None) => Ok(None),
+            Err(Some(err)) => Err(err),
+        }
     }
 }
 
