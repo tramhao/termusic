@@ -1,20 +1,24 @@
 //! SPDX-License-Identifier: MIT
 
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, bail, Context, Result};
+use id3::frame::Lyrics as Id3Lyrics;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
 use termusiclib::ids::Id;
 use termusiclib::library_db::TrackDB;
 use termusiclib::library_db::{DataBase, SearchCriteria};
+use termusiclib::new_track::LyricData;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::{PlaylistTracks, RunningStatus};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed};
+use termusiclib::songtag::lrc::Lyric;
 use termusiclib::songtag::SongTag;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::track::{MediaType, Track};
@@ -242,6 +246,38 @@ impl Playback {
         self.set_current_track_from_playlist();
 
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExtraLyricData {
+    pub for_track: PathBuf,
+    pub data: LyricData,
+    pub selected_idx: usize,
+}
+
+impl ExtraLyricData {
+    /// Cycle to the next lyric frame and parse it.
+    ///
+    /// Returns `Some(RawLyric)` if found.
+    ///
+    /// # Errors
+    ///
+    /// If there are no frames
+    pub fn cycle_lyric(&mut self) -> Result<Option<&Id3Lyrics>> {
+        if self.data.raw_lyrics.is_empty() {
+            bail!("No lyric frames");
+        }
+
+        self.selected_idx += 1;
+        if self.selected_idx >= self.data.raw_lyrics.len() {
+            self.selected_idx = 0;
+        }
+
+        let raw_lyric = self.data.raw_lyrics.get(self.selected_idx);
+        self.data.parsed_lyrics = raw_lyric.and_then(|v| Lyric::from_str(&v.text).ok());
+
+        Ok(raw_lyric)
     }
 }
 
