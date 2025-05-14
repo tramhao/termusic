@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::library_db::SearchCriteria;
-use termusiclib::track::MediaType;
+use termusiclib::new_track::MediaTypesSimple;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg,
     SavePlaylistMsg, XYWHMsg, YSMsg,
@@ -892,13 +892,13 @@ impl Model {
     pub fn update_layout_for_current_track(&mut self) {
         if let Some(track) = self.playback.current_track() {
             match track.media_type() {
-                MediaType::Podcast => {
+                MediaTypesSimple::Podcast => {
                     if self.layout == TermusicLayout::Podcast {
                         return;
                     }
                     self.update_layout(MainLayoutMsg::Podcast);
                 }
-                MediaType::Music | MediaType::LiveRadio => match self.layout {
+                MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => match self.layout {
                     TermusicLayout::TreeView | TermusicLayout::DataBase => {}
                     TermusicLayout::Podcast => {
                         self.update_layout(MainLayoutMsg::TreeView);

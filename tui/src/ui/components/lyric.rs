@@ -5,9 +5,9 @@ use crate::ui::{model::TermusicLayout, Model};
 use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::new_track::MediaTypes;
+use termusiclib::new_track::MediaTypesSimple;
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
-use termusiclib::track::MediaType;
 use termusiclib::types::{LyricMsg, Msg};
 
 use anyhow::{anyhow, Result};
@@ -265,7 +265,7 @@ impl Model {
             return;
         }
         if let Some(track) = self.playback.current_track() {
-            if MediaType::LiveRadio == track.media_type() {
+            if MediaTypesSimple::LiveRadio == track.media_type() {
                 return;
             }
 
@@ -316,7 +316,7 @@ impl Model {
 
     pub fn lyric_update_for_radio<T: AsRef<str>>(&mut self, radio_title: T) {
         if let Some(song) = self.playback.current_track() {
-            if MediaType::LiveRadio == song.media_type() {
+            if MediaTypesSimple::LiveRadio == song.media_type() {
                 let radio_title = radio_title.as_ref();
                 if radio_title.is_empty() {
                     return;

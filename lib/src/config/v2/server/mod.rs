@@ -7,7 +7,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::track::MediaType;
+use crate::new_track::MediaTypesSimple;
 use backends::BackendSettings;
 
 pub mod backends;
@@ -160,13 +160,13 @@ pub enum PositionYesNo {
 impl PositionYesNo {
     /// Get the time before saving the track position, if enabled
     #[must_use]
-    pub fn get_time(&self, media_type: MediaType) -> Option<u64> {
+    pub fn get_time(&self, media_type: MediaTypesSimple) -> Option<u64> {
         match self {
             PositionYesNo::Simple(v) => match v {
                 PositionYesNoLower::Yes => match media_type {
-                    MediaType::Music => Some(DEFAULT_YES_TIME_BEFORE_SAVE_MUSIC),
-                    MediaType::Podcast => Some(DEFAULT_YES_TIME_BEFORE_SAVE_PODCAST),
-                    MediaType::LiveRadio => None,
+                    MediaTypesSimple::Music => Some(DEFAULT_YES_TIME_BEFORE_SAVE_MUSIC),
+                    MediaTypesSimple::Podcast => Some(DEFAULT_YES_TIME_BEFORE_SAVE_PODCAST),
+                    MediaTypesSimple::LiveRadio => None,
                 },
                 PositionYesNoLower::No => None,
             },
@@ -199,30 +199,30 @@ pub enum RememberLastPosition {
 impl RememberLastPosition {
     /// Get the time before saving the track position, if enabled
     #[must_use]
-    pub fn get_time(&self, media_type: MediaType) -> Option<u64> {
+    pub fn get_time(&self, media_type: MediaTypesSimple) -> Option<u64> {
         match self {
             RememberLastPosition::All(v) => v.get_time(media_type),
             RememberLastPosition::Depends { music, podcast } => match media_type {
-                MediaType::Music => music.get_time(media_type),
-                MediaType::Podcast => podcast.get_time(media_type),
-                MediaType::LiveRadio => None,
+                MediaTypesSimple::Music => music.get_time(media_type),
+                MediaTypesSimple::Podcast => podcast.get_time(media_type),
+                MediaTypesSimple::LiveRadio => None,
             },
         }
     }
 
-    /// Get if remembering for the given [`MediaType`] is enabled or not
+    /// Get if remembering for the given [`MediaTypesSimple`] is enabled or not
     ///
     /// use case is in the restore of the last position
-    #[allow(clippy::needless_pass_by_value)] // "MediaType" is a 1-byte copy
+    #[allow(clippy::needless_pass_by_value)] // "MediaTypesSimple" is a 1-byte copy
     #[must_use]
-    pub fn is_enabled_for(&self, media_type: MediaType) -> bool {
+    pub fn is_enabled_for(&self, media_type: MediaTypesSimple) -> bool {
         match self {
             RememberLastPosition::All(v) => v.is_enabled(),
             RememberLastPosition::Depends { music, podcast } => match media_type {
-                MediaType::Music => music.is_enabled(),
-                MediaType::Podcast => podcast.is_enabled(),
+                MediaTypesSimple::Music => music.is_enabled(),
+                MediaTypesSimple::Podcast => podcast.is_enabled(),
                 // liveradio cannot store a position
-                MediaType::LiveRadio => false,
+                MediaTypesSimple::LiveRadio => false,
             },
         }
     }

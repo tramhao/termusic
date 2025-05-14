@@ -14,9 +14,9 @@ use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
 use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
+use termusiclib::new_track::MediaTypesSimple;
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
-use termusiclib::track::MediaType;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
@@ -492,7 +492,7 @@ fn player_loop(
                 if let Some(track) = playlist.current_track() {
                     // if only one backend is enabled, rust will complain that it is the only thing that happens
                     #[allow(irrefutable_let_patterns)]
-                    if MediaType::LiveRadio == track.media_type() {
+                    if MediaTypesSimple::LiveRadio == track.media_type() {
                         // TODO: consider changing "radio_title" and "media_title" to be consistent
                         p_tick.radio_title = player.media_info().media_title.unwrap_or_default();
 

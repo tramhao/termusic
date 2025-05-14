@@ -6,10 +6,7 @@ use std::{
 
 use rusqlite::{named_params, Connection, Row};
 
-use crate::{
-    new_track::{Track as NewTrack, TrackMetadata},
-    track::Track,
-};
+use crate::new_track::{Track, TrackMetadata};
 
 /// A struct representing a [`Track`](Track) in the database
 #[derive(Clone, Debug, PartialEq)]
@@ -146,29 +143,6 @@ impl<'a> TrackDBInsertable<'a> {
     }
 }
 
-impl<'a> From<&'a Track> for TrackDBInsertable<'a> {
-    fn from(value: &'a Track) -> Self {
-        Self {
-            artist: value.artist().unwrap_or(UNKNOWN_ARTIST),
-            title: value.title().unwrap_or(UNKNOWN_TITLE),
-            album: value.album().unwrap_or(UNKNOWN_ALBUM),
-            genre: value.genre().unwrap_or(UNKNOWN_GENRE),
-            file: value.file().unwrap_or(UNKNOWN_FILE),
-            duration: value.duration(),
-            name: value.name().unwrap_or_default(),
-            ext: value.ext().unwrap_or_default(),
-            directory: value.directory().unwrap_or_default(),
-            last_modified: value
-                .last_modified
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs()
-                .to_string(),
-            last_position: Duration::default(),
-        }
-    }
-}
-
 impl TrackDBInsertable<'_> {
     /// Insert the current [`TrackDBInsertable`] into the `tracks` table
     #[inline]
@@ -206,27 +180,6 @@ pub trait Indexable {
     fn meta_duration(&self) -> Duration;
 }
 
-impl Indexable for Track {
-    fn meta_file(&self) -> Option<&str> {
-        self.file()
-    }
-    fn meta_title(&self) -> Option<&str> {
-        self.title()
-    }
-    fn meta_album(&self) -> Option<&str> {
-        self.album()
-    }
-    fn meta_artist(&self) -> Option<&str> {
-        self.artist()
-    }
-    fn meta_genre(&self) -> Option<&str> {
-        self.genre()
-    }
-    fn meta_duration(&self) -> Duration {
-        self.duration()
-    }
-}
-
 impl Indexable for TrackDB {
     fn meta_file(&self) -> Option<&str> {
         if self.file == UNKNOWN_FILE {
@@ -261,27 +214,6 @@ impl Indexable for TrackDB {
 
     fn meta_duration(&self) -> Duration {
         self.duration
-    }
-}
-
-impl Indexable for &Track {
-    fn meta_file(&self) -> Option<&str> {
-        self.file()
-    }
-    fn meta_title(&self) -> Option<&str> {
-        self.title()
-    }
-    fn meta_album(&self) -> Option<&str> {
-        self.album()
-    }
-    fn meta_artist(&self) -> Option<&str> {
-        self.artist()
-    }
-    fn meta_genre(&self) -> Option<&str> {
-        self.genre()
-    }
-    fn meta_duration(&self) -> Duration {
-        self.duration()
     }
 }
 
@@ -322,7 +254,7 @@ impl Indexable for &TrackDB {
     }
 }
 
-impl Indexable for NewTrack {
+impl Indexable for Track {
     fn meta_file(&self) -> Option<&str> {
         self.as_track().and_then(|v| v.path().to_str())
     }
@@ -348,7 +280,7 @@ impl Indexable for NewTrack {
     }
 }
 
-impl Indexable for &NewTrack {
+impl Indexable for &Track {
     fn meta_file(&self) -> Option<&str> {
         self.as_track().and_then(|v| v.path().to_str())
     }
