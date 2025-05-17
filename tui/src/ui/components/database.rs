@@ -4,6 +4,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
 use termusiclib::library_db::{Indexable, SearchCriteria, TrackDB};
+use termusiclib::track::DurationFmtShort;
 use termusiclib::types::{DBMsg, GSMsg, Msg};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
@@ -756,8 +757,7 @@ impl Model {
                 table.add_row();
             }
 
-            let duration =
-                termusiclib::track::Track::duration_formatted_short(&record.meta_duration());
+            let duration = DurationFmtShort(record.meta_duration());
             let duration_string = format!("[{duration:^6.6}]");
 
             table

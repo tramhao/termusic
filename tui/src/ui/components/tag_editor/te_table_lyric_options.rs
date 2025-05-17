@@ -1,6 +1,5 @@
 use crate::ui::Model;
 use anyhow::{anyhow, Context, Result};
-use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::{Id, IdTagEditor};
 /**
@@ -249,11 +248,8 @@ impl Model {
 
         if search_str.len() < 4 {
             if let Some(song) = &self.tageditor_song {
-                if let Some(file) = song.file() {
-                    let p: &Path = Path::new(file);
-                    if let Some(stem) = p.file_stem() {
-                        search_str = stem.to_string_lossy().to_string();
-                    }
+                if let Some(stem) = song.path().file_stem() {
+                    search_str = stem.to_string_lossy().to_string();
                 }
             }
         }
@@ -287,7 +283,7 @@ impl Model {
             .get(index)
             .with_context(|| format!("no song_tag with index {index} found"))?;
         if let Some(song) = &self.tageditor_song {
-            let file = song.file().context("no file path found")?;
+            let file = song.path();
             // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
             // though i am not fully sure if that is 100% the case, this avoid the panic though
             let tx_to_main = &self.tx_to_main;
@@ -321,7 +317,8 @@ impl Model {
                 song.set_genre(&genre);
             }
             song.save_tag()?;
-            self.init_by_song(song);
+            // the unwrap should also never happen as all components should be properly mounted
+            self.init_by_song(song).unwrap();
             self.playlist_update_library_delete();
         }
         Ok(())
@@ -362,14 +359,15 @@ impl Model {
             self.download_tracker.decrease_one(tracker_id);
 
             if let Ok(Some(lyric_string)) = lyric_string {
-                song.set_lyric(&lyric_string, lang_ext);
+                song.set_lyric(&lyric_string, lang_ext, None::<String>);
             }
             if let Ok(artwork) = artwork {
-                song.set_photo(artwork);
+                song.set_picture(artwork);
             }
 
             song.save_tag()?;
-            self.init_by_song(song);
+            // the unwrap should also never happen as all components should be properly mounted
+            self.init_by_song(song).unwrap();
             self.playlist_update_library_delete();
             // self.library_sync(song.file());
         }

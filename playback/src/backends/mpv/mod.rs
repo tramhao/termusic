@@ -14,7 +14,7 @@ use libmpv::{
 };
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
-use termusiclib::track::Track;
+use termusiclib::track::{MediaTypes, Track};
 
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 
@@ -297,14 +297,22 @@ fn format_duration(dur: Duration) -> String {
     format!("{secs}.{milli}")
 }
 
+fn track_to_string(track: &Track) -> String {
+    match track.inner() {
+        MediaTypes::Track(track_data) => track_data.path().to_string_lossy().to_string(),
+        MediaTypes::Radio(radio_track_data) => radio_track_data.url().to_string(),
+        MediaTypes::Podcast(podcast_track_data) => podcast_track_data.url().to_string(),
+    }
+}
+
 #[async_trait]
 impl PlayerTrait for MpvBackend {
     async fn add_and_play(&mut self, track: &Track) {
-        if let Some(file) = track.file() {
-            self.command_tx
-                .send(PlayerInternalCmd::Play(file.to_string()))
-                .expect("failed to queue and play");
-        }
+        let file = track_to_string(track);
+
+        self.command_tx
+            .send(PlayerInternalCmd::Play(file))
+            .expect("failed to queue and play");
     }
 
     fn volume(&self) -> Volume {
@@ -376,13 +384,10 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn enqueue_next(&mut self, track: &Track) {
-        let Some(file) = track.file() else {
-            error!("Got track, but cant handle it without a file!");
-            return;
-        };
+        let file = track_to_string(track);
 
         self.command_tx
-            .send(PlayerInternalCmd::QueueNext(file.to_string()))
+            .send(PlayerInternalCmd::QueueNext(file))
             .expect("failed to queue next");
     }
 

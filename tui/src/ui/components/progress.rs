@@ -2,7 +2,8 @@ use crate::ui::Model;
 use std::time::Duration;
 use termusiclib::config::TuiOverlay;
 use termusiclib::ids::Id;
-use termusiclib::track::{MediaType, Track};
+use termusiclib::track::DurationFmtShort;
+use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::Msg;
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::event::NoUserEvent;
@@ -65,8 +66,8 @@ impl Model {
         };
         let mut progress_title = String::new();
         if let Some(track) = self.playback.current_track() {
-            match track.media_type {
-                MediaType::Music | MediaType::LiveRadio => {
+            match track.media_type() {
+                MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => {
                     progress_title = format!(
                         " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playback.status(),
@@ -75,7 +76,7 @@ impl Model {
                         gapless,
                     );
                 }
-                MediaType::Podcast => {
+                MediaTypesSimple::Podcast => {
                     progress_title = format!(
                         " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playback.status(),
@@ -143,8 +144,8 @@ impl Model {
                 Attribute::Text,
                 AttrValue::String(format!(
                     "{}    -    {}",
-                    Track::duration_formatted_short(&self.playback.current_track_pos()),
-                    Track::duration_formatted_short(&total_duration)
+                    DurationFmtShort(self.playback.current_track_pos()),
+                    DurationFmtShort(total_duration),
                 )),
             )
             .ok();

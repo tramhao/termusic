@@ -399,19 +399,19 @@ impl Database {
     }
 
     pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
+        let podcast_data = track
+            .as_podcast()
+            .ok_or(anyhow!("Track is not a Podcast track!"))?;
         let query = "SELECT last_position FROM episodes WHERE url = ?1";
 
         let mut last_position: Duration = Duration::from_secs(0);
-        self.conn.query_row(
-            query,
-            params![track.file().unwrap_or("Unknown File").to_string(),],
-            |row| {
+        self.conn
+            .query_row(query, params![podcast_data.url()], |row| {
                 let last_position_u64: u64 = row.get(0)?;
                 // error!("last_position_u64 is {last_position_u64}");
                 last_position = Duration::from_secs(last_position_u64);
                 Ok(last_position)
-            },
-        )?;
+            })?;
         // error!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
@@ -421,15 +421,12 @@ impl Database {
     /// - if the connection is unavailable
     /// - if the query fails
     pub fn set_last_position(&self, track: &Track, last_position: Duration) -> Result<()> {
+        let podcast_data = track
+            .as_podcast()
+            .ok_or(anyhow!("Track is not a Podcast track!"))?;
         let query = "UPDATE episodes SET last_position = ?1 WHERE url = ?2";
         self.conn
-            .execute(
-                query,
-                params![
-                    last_position.as_secs(),
-                    track.file().unwrap_or("Unknown File Name").to_string(),
-                ],
-            )
+            .execute(query, params![last_position.as_secs(), podcast_data.url(),])
             .context("update last position failed.")?;
         // error!("set last position as {}", last_position.as_secs());
 

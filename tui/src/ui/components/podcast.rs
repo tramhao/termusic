@@ -8,7 +8,6 @@ use std::time::Duration;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 use termusiclib::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
-use termusiclib::track::MediaType;
 use termusiclib::types::{GSMsg, Msg, PCMsg};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::List;
@@ -922,19 +921,18 @@ impl Model {
             return Ok(());
         }
         if let Some(track) = self.playback.current_track() {
-            if MediaType::Podcast == track.media_type {
-                if let Some(url) = track.file() {
-                    'outer: for pod in &mut self.podcast.podcasts {
-                        for ep in &mut pod.episodes {
-                            if ep.url == url {
-                                if !ep.played {
-                                    ep.played = true;
-                                    self.podcast
-                                        .db_podcast
-                                        .set_played_status(ep.id, ep.played)?;
-                                }
-                                break 'outer;
+            if let Some(podcast_data) = track.as_podcast() {
+                let url = podcast_data.url();
+                'outer: for pod in &mut self.podcast.podcasts {
+                    for ep in &mut pod.episodes {
+                        if ep.url == url {
+                            if !ep.played {
+                                ep.played = true;
+                                self.podcast
+                                    .db_podcast
+                                    .set_played_status(ep.id, ep.played)?;
                             }
+                            break 'outer;
                         }
                     }
                 }
