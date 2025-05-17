@@ -754,6 +754,7 @@ impl Playlist {
     }
 
     /// Create a Track from a given Path
+    #[allow(clippy::unnecessary_debug_formatting)] // we want debug information about a path (especially have it escaped)
     fn track_from_path(path_str: &str) -> Result<Track, PlaylistAddError> {
         let path = Path::new(path_str);
 
