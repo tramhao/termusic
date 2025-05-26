@@ -29,6 +29,7 @@ mod te_input;
 mod te_select_lyric;
 mod te_table_lyric_options;
 mod te_textarea_lyric;
+mod te_track;
 mod update;
 mod view;
 
@@ -38,3 +39,4 @@ pub use te_input::*;
 pub use te_select_lyric::TESelectLyric;
 pub use te_table_lyric_options::TETableLyricOptions;
 pub use te_textarea_lyric::TETextareaLyric;
+pub use te_track::TETrack;

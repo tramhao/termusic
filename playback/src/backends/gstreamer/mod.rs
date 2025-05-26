@@ -15,7 +15,7 @@ use gstreamer::{event::Seek, Element, SeekFlags, SeekType};
 use gstreamer::{ClockTime, StateChangeError, StateChangeSuccess};
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
-use termusiclib::track::{MediaType, Track};
+use termusiclib::track::{MediaTypes, Track};
 use tokio::sync::mpsc;
 
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
@@ -568,17 +568,9 @@ impl Drop for GStreamerBackend {
 
 /// Helper function to consistently set the `uri` on `playbin` from a [`Track`]
 fn set_uri_from_track(playbin: &PlaybinWrap, track: &Track) {
-    match track.media_type {
-        MediaType::Music => {
-            if let Some(file) = track.file() {
-                let path = Path::new(file);
-                playbin.set_uri(path.to_uri());
-            }
-        }
-        MediaType::Podcast | MediaType::LiveRadio => {
-            if let Some(url) = track.file() {
-                playbin.set_uri(url);
-            }
-        }
+    match track.inner() {
+        MediaTypes::Track(track_data) => playbin.set_uri(track_data.path().to_uri()),
+        MediaTypes::Radio(radio_track_data) => playbin.set_uri(radio_track_data.url()),
+        MediaTypes::Podcast(podcast_track_data) => playbin.set_uri(podcast_track_data.url()),
     }
 }

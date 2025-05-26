@@ -1,11 +1,13 @@
 use std::sync::LazyLock;
 
+use crate::ui::model::ExtraLyricData;
 use crate::ui::{model::TermusicLayout, Model};
 use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
-use termusiclib::track::MediaType;
+use termusiclib::track::MediaTypes;
+use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{LyricMsg, Msg};
 
 use anyhow::{anyhow, Result};
@@ -18,6 +20,8 @@ use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderType, Borders, PropPayload, PropValue, TextSpan,
 };
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
+
+use super::TETrack;
 
 /// Regex for finding <br/> tags -- also captures any surrounding
 /// line breaks
@@ -138,16 +142,15 @@ impl Model {
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
         if let Some(track) = self.playback.current_track() {
-            if MediaType::Podcast == track.media_type {
-                if let Some(file) = track.file() {
-                    'outer: for pod in &self.podcast.podcasts {
-                        for ep in &pod.episodes {
-                            if ep.url == file {
-                                pod_title.clone_from(&pod.title);
-                                ep_for_lyric = ep.clone();
-                                need_update = true;
-                                break 'outer;
-                            }
+            if let Some(podcast_data) = track.as_podcast() {
+                let url = podcast_data.url();
+                'outer: for pod in &self.podcast.podcasts {
+                    for ep in &pod.episodes {
+                        if ep.url == url {
+                            pod_title.clone_from(&pod.title);
+                            ep_for_lyric = ep.clone();
+                            need_update = true;
+                            break 'outer;
                         }
                     }
                 }
@@ -249,6 +252,8 @@ impl Model {
     }
 
     pub fn lyric_update(&mut self) {
+        const NO_LYRICS: &str = "No lyrics available.";
+
         if self.layout == TermusicLayout::Podcast {
             if let Err(e) = self.lyric_update_for_podcast() {
                 self.mount_error_popup(e.context("lyric update for podcast"));
@@ -260,23 +265,50 @@ impl Model {
             return;
         }
         if let Some(track) = self.playback.current_track() {
-            if MediaType::LiveRadio == track.media_type {
+            if MediaTypesSimple::LiveRadio == track.media_type() {
                 return;
             }
 
             let mut line = String::new();
 
-            if let Some(l) = track.parsed_lyric() {
-                if l.captions.is_empty() {
-                    self.lyric_set_lyric("No lyrics available.");
+            if self
+                .current_track_lyric
+                .as_ref()
+                .is_none_or(|extra| track.as_track().is_none_or(|v| extra.for_track != v.path()))
+            {
+                self.current_track_lyric.take();
+                if track.as_track().is_none() {
+                    self.lyric_set_lyric(NO_LYRICS);
                     return;
                 }
-                if let Some(l) = l.get_text(self.playback.current_track_pos()) {
-                    line = l.to_string();
+
+                if let Ok(Some(data)) = track.get_lyrics() {
+                    self.current_track_lyric = Some(ExtraLyricData {
+                        for_track: track.as_track().unwrap().path().to_owned(),
+                        data: (*data).clone(),
+                        selected_idx: 0,
+                    });
+                } else {
+                    self.lyric_set_lyric(NO_LYRICS);
+                    return;
                 }
-            } else {
-                self.lyric_set_lyric("No lyrics available.");
+            }
+
+            // by this point "current_track_lyric" is definitely "Some()"
+
+            let extra = self.current_track_lyric.as_ref().unwrap();
+
+            let Some(parsed_lyrics) = &extra.data.parsed_lyrics else {
+                self.lyric_set_lyric(NO_LYRICS);
                 return;
+            };
+
+            if parsed_lyrics.captions.is_empty() {
+                self.lyric_set_lyric(NO_LYRICS);
+                return;
+            }
+            if let Some(l) = parsed_lyrics.get_text(self.playback.current_track_pos()) {
+                line = l.to_string();
             }
             self.lyric_set_lyric(line);
         }
@@ -284,7 +316,7 @@ impl Model {
 
     pub fn lyric_update_for_radio<T: AsRef<str>>(&mut self, radio_title: T) {
         if let Some(song) = self.playback.current_track() {
-            if MediaType::LiveRadio == song.media_type {
+            if MediaTypesSimple::LiveRadio == song.media_type() {
                 let radio_title = radio_title.as_ref();
                 if radio_title.is_empty() {
                     return;
@@ -312,8 +344,8 @@ impl Model {
     }
 
     pub fn lyric_cycle(&mut self) {
-        if let Some(track) = self.playback.current_track_mut() {
-            if let Ok(f) = track.cycle_lyrics() {
+        if let Some(extra) = self.current_track_lyric.as_mut() {
+            if let Some(f) = extra.cycle_lyric().ok().flatten() {
                 let lang_ext = f.description.clone();
                 self.update_show_message_timeout(
                     "Lyric switch successful",
@@ -325,10 +357,25 @@ impl Model {
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
         let time_pos = self.playback.current_track_pos();
-        if let Some(track) = self.playback.current_track_mut() {
-            if let Err(e) = track.adjust_lyric_delay(time_pos, offset) {
+        if let Some(track) = self.playback.current_track() {
+            let Ok(mut te_track) = TETrack::try_from(track) else {
+                debug!("Could not adjust delay because it is not a music track!");
+                return;
+            };
+            if te_track
+                .lyric_set_with_extra(self.current_track_lyric.as_ref())
+                .is_none()
+            {
+                debug!(
+                    "Could not adjust delay because of mismatching extra data and current track!"
+                );
+                return;
+            }
+            te_track.lyric_adjust_delay(time_pos, offset);
+            if let Err(e) = te_track.save_tag() {
                 self.mount_error_popup(e.context("adjust lyric delay"));
             }
+            self.current_track_lyric = Some(te_track.into_extra_lyric_data());
         }
     }
 
@@ -343,14 +390,14 @@ impl Model {
 
         let track = track.unwrap();
 
-        let lyric_title = match track.media_type {
-            MediaType::Music => {
+        let lyric_title = match track.inner() {
+            MediaTypes::Track(_track_data) => {
                 let artist = track.artist().unwrap_or(UNKNOWN_ARTIST);
                 let title = track.title().unwrap_or(UNKNOWN_TITLE);
                 format!(" Lyrics of {artist:^.20} - {title:^.20} ")
             }
-            MediaType::Podcast => " Details: ".to_string(),
-            MediaType::LiveRadio => " Live Radio ".to_string(),
+            MediaTypes::Radio(_radio_track_data) => " Live Radio ".to_string(),
+            MediaTypes::Podcast(_podcast_track_data) => " Details: ".to_string(),
         };
         self.lyric_title_set(lyric_title);
     }

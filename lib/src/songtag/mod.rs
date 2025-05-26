@@ -214,8 +214,8 @@ impl SongTag {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub async fn download(&self, file: &str, tx_tageditor: &Sender<Msg>) -> Result<()> {
-        let p_parent = get_parent_folder(Path::new(file));
+    pub async fn download(&self, file: &Path, tx_tageditor: &Sender<Msg>) -> Result<()> {
+        let p_parent = get_parent_folder(file);
         let artist = self
             .artist
             .clone()

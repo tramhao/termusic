@@ -2,8 +2,11 @@ use std::fmt::Write as _;
 use std::path::Path;
 
 use anyhow::{bail, Context, Result};
+use pathdiff::diff_paths;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistTrackSource};
+use termusiclib::player::PlaylistRemoveTrackInfo;
 use termusiclib::podcast::db::Database as DBPod;
+use termusiclib::track::MediaTypes;
 use termusiclib::utils::get_parent_folder;
 use termusiclib::{config::v2::server::LoopMode, track::Track};
 
@@ -93,6 +96,25 @@ impl TUIPlaylist {
         Ok(())
     }
 
+    /// Handle a `PlaylistRemove` message from the grpc interface
+    ///
+    /// # Errors
+    ///
+    /// - if the inde is out-of-bound
+    /// - if same track checks fail (desync)
+    pub fn handle_grpc_remove(&mut self, items: &PlaylistRemoveTrackInfo) -> Result<()> {
+        let at_index = usize::try_from(items.at_index).unwrap();
+        // verify that it is the track to be removed via id matching
+        let Some(track_at_idx) = self.tracks().get(at_index) else {
+            // this should not happen as it is verified before the loop, but just in case
+            bail!("Failed to get track at index \"{at_index}\"");
+        };
+
+        Self::check_same_source(&items.trackid, track_at_idx.inner(), at_index)?;
+
+        self.remove_simple(at_index)
+    }
+
     /// Add Paths / Urls from the music service
     ///
     /// # Errors
@@ -152,7 +174,7 @@ impl TUIPlaylist {
 
         // TODO: refactor to have everything necessary send over grpc instead of having the TUI reading too
         let track =
-            Track::read_from_path(path, false).with_context(|| path.display().to_string())?;
+            Track::read_track_from_path(path).with_context(|| path.display().to_string())?;
 
         Ok(track)
     }
@@ -166,7 +188,7 @@ impl TUIPlaylist {
     fn track_from_podcasturi(uri: &str, db_pod: &DBPod) -> Result<Track> {
         // TODO: refactor to have everything necessary send over grpc instead of having the TUI access to the database
         let ep = db_pod.get_episode_by_url(uri)?;
-        let track = Track::from_episode(&ep);
+        let track = Track::from_podcast_episode(&ep);
 
         Ok(track)
     }
@@ -230,14 +252,67 @@ impl TUIPlaylist {
     fn get_m3u_file(&self, parent_folder: &Path) -> String {
         let mut m3u = String::from("#EXTM3U\n");
         for track in &self.tracks {
-            if let Some(file) = track.file() {
-                let path_relative = pathdiff::diff_paths(file, parent_folder);
+            let file = match track.inner() {
+                MediaTypes::Track(track_data) => {
+                    let path_relative = diff_paths(track_data.path(), parent_folder);
 
-                if let Some(path_relative) = path_relative {
-                    let _ = writeln!(m3u, "{}", path_relative.display());
+                    path_relative.map_or_else(
+                        || track_data.path().to_string_lossy(),
+                        |v| v.to_string_lossy().to_string().into(),
+                    )
                 }
-            }
+                MediaTypes::Radio(radio_track_data) => radio_track_data.url().into(),
+                MediaTypes::Podcast(podcast_track_data) => podcast_track_data.url().into(),
+            };
+
+            let _ = writeln!(m3u, "{file}");
         }
         m3u
+    }
+
+    /// Check that the given `info` track source matches the given `track_inner` types.
+    ///
+    /// # Errors
+    ///
+    /// if they dont match
+    pub fn check_same_source(
+        info: &PlaylistTrackSource,
+        track_inner: &MediaTypes,
+        at_index: usize,
+    ) -> Result<()> {
+        // Error style: "Error; expected INFO_TYPE; found PLAYLIST_TYPE"
+        match (info, track_inner) {
+            (PlaylistTrackSource::Path(file_url), MediaTypes::Track(id)) => {
+                if Path::new(&file_url) != id.path() {
+                    bail!(
+                        "Path mismatch, expected \"{file_url}\" at \"{at_index}\", found \"{}\"",
+                        id.path().display()
+                    );
+                }
+            }
+            (PlaylistTrackSource::Url(file_url), MediaTypes::Radio(id)) => {
+                if file_url != id.url() {
+                    bail!(
+                        "URI mismatch, expected \"{file_url}\" at \"{at_index}\", found \"{}\"",
+                        id.url()
+                    );
+                }
+            }
+            (PlaylistTrackSource::PodcastUrl(file_url), MediaTypes::Podcast(id)) => {
+                if file_url != id.url() {
+                    bail!(
+                        "URI mismatch, expected \"{file_url}\" at \"{at_index}\", found \"{}\"",
+                        id.url()
+                    );
+                }
+            }
+            (expected, got) => {
+                bail!(
+                    "Type mismatch, expected \"{expected:#?}\" at \"{at_index}\" found \"{got:#?}\""
+                );
+            }
+        }
+
+        Ok(())
     }
 }

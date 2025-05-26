@@ -1,11 +1,13 @@
 //! SPDX-License-Identifier: MIT
 
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, bail, Context, Result};
+use id3::frame::Lyrics as Id3Lyrics;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
@@ -15,9 +17,10 @@ use termusiclib::library_db::{DataBase, SearchCriteria};
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::{PlaylistTracks, RunningStatus};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed};
+use termusiclib::songtag::lrc::Lyric;
 use termusiclib::songtag::SongTag;
 use termusiclib::taskpool::TaskPool;
-use termusiclib::track::{MediaType, Track};
+use termusiclib::track::{LyricData, MediaTypesSimple, Track};
 use termusiclib::types::{Msg, YoutubeOptions};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
@@ -28,6 +31,7 @@ use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 
+use super::components::TETrack;
 use super::tui_cmd::TuiCmd;
 use crate::ui::Application;
 use crate::CombinedSettings;
@@ -163,6 +167,7 @@ impl Playback {
     }
 
     #[must_use]
+    #[expect(dead_code)]
     pub fn current_track_mut(&mut self) -> Option<&mut Track> {
         self.current_track.as_mut()
     }
@@ -220,11 +225,11 @@ impl Playback {
             };
 
             let track = match PlaylistTrackSource::try_from(id)? {
-                PlaylistTrackSource::Path(v) => Track::read_from_path(v, false)?,
+                PlaylistTrackSource::Path(v) => Track::read_track_from_path(v)?,
                 PlaylistTrackSource::Url(v) => Track::new_radio(&v),
                 PlaylistTrackSource::PodcastUrl(v) => {
                     let episode = podcast_db.get_episode_by_url(&v)?;
-                    Track::from_episode(&episode)
+                    Track::from_podcast_episode(&episode)
                 }
             };
 
@@ -242,6 +247,38 @@ impl Playback {
         self.set_current_track_from_playlist();
 
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExtraLyricData {
+    pub for_track: PathBuf,
+    pub data: LyricData,
+    pub selected_idx: usize,
+}
+
+impl ExtraLyricData {
+    /// Cycle to the next lyric frame and parse it.
+    ///
+    /// Returns `Some(RawLyric)` if found.
+    ///
+    /// # Errors
+    ///
+    /// If there are no frames
+    pub fn cycle_lyric(&mut self) -> Result<Option<&Id3Lyrics>> {
+        if self.data.raw_lyrics.is_empty() {
+            bail!("No lyric frames");
+        }
+
+        self.selected_idx += 1;
+        if self.selected_idx >= self.data.raw_lyrics.len() {
+            self.selected_idx = 0;
+        }
+
+        let raw_lyric = self.data.raw_lyrics.get(self.selected_idx);
+        self.data.parsed_lyrics = raw_lyric.and_then(|v| Lyric::from_str(&v.text).ok());
+
+        Ok(raw_lyric)
     }
 }
 
@@ -269,8 +306,9 @@ pub struct Model {
     pub podcast: PodcastWidgetData,
     pub config_editor: ConfigEditorData,
 
-    pub tageditor_song: Option<Track>,
+    pub tageditor_song: Option<TETrack>,
     pub lyric_line: String,
+    pub current_track_lyric: Option<ExtraLyricData>,
     pub playback: Playback,
 
     #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
@@ -423,6 +461,7 @@ impl Model {
             tx_to_main,
             rx_to_main,
             download_tracker: DownloadTracker::default(),
+            current_track_lyric: None,
             playback: Playback::new(),
             cmd_to_server_tx,
             xywh,
@@ -540,7 +579,7 @@ impl Model {
 
     pub fn is_radio(&self) -> bool {
         if let Some(track) = self.playback.current_track() {
-            if track.media_type == MediaType::LiveRadio {
+            if track.media_type() == MediaTypesSimple::LiveRadio {
                 return true;
             }
         }

@@ -20,7 +20,8 @@ use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
     PlaylistSwapInfo,
 };
-use termusiclib::track::{MediaType, Track};
+use termusiclib::track::Track;
+use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::types::{GSMsg, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 
@@ -431,35 +432,7 @@ impl Model {
 
     /// Handle when a playlist has removed a track
     pub fn handle_playlist_remove(&mut self, items: &PlaylistRemoveTrackInfo) -> Result<()> {
-        let at_index = usize::try_from(items.at_index).unwrap();
-        // verify that it is the track to be removed via id matching
-        let Some(track_at_idx) = self.playback.playlist.tracks().get(at_index) else {
-            // this should not happen as it is verified before the loop, but just in case
-            bail!("Failed to get track at index \"{at_index}\"");
-        };
-        // this unwrap could be handled better, but this should never actually happen
-        let id = track_at_idx.file().unwrap();
-
-        let input_track = &items.trackid;
-
-        // Note: clippy suggested this instead of a match block
-        let ((PlaylistTrackSource::Path(file_url), MediaType::Music)
-        | (PlaylistTrackSource::PodcastUrl(file_url), MediaType::Podcast)
-        | (PlaylistTrackSource::Url(file_url), MediaType::LiveRadio)) =
-            (&input_track, track_at_idx.media_type)
-        else {
-            bail!(
-                "Type mismatch, expected \"{:#?}\" at \"{at_index}\" found \"{:#?}\"",
-                input_track,
-                track_at_idx
-            );
-        };
-
-        if file_url != id {
-            bail!("URI mismatch, expected \"{file_url}\" at \"{at_index}\" in request, found \"{id}\" in playlist");
-        }
-
-        self.playback.playlist.remove_simple(at_index)?;
+        self.playback.playlist.handle_grpc_remove(items)?;
 
         self.playlist_sync();
 
@@ -508,22 +481,23 @@ impl Model {
         // this might be fragile if there are multiple of the same track in the playlist as there is no unique identifier currently
         let playlist_track_at_old_file = playlist_comp_selected_index
             .and_then(|idx| self.playback.playlist.tracks().get(idx))
-            .and_then(|track| track.file())
-            .map(ToOwned::to_owned);
+            .map(Track::as_track_source);
 
         self.playback
             .load_from_grpc(shuffled.tracks, &self.podcast.db_podcast)?;
         self.playlist_sync();
 
-        let found_new_index = self
-            .playback
-            .playlist
-            .tracks()
-            .iter()
-            .enumerate()
-            .find(|(_, track)| track.file() == playlist_track_at_old_file.as_deref());
-        if let Some((new_index, _)) = found_new_index {
-            self.playlist_locate(new_index);
+        if let Some(old_id) = playlist_track_at_old_file {
+            let found_new_index = self
+                .playback
+                .playlist
+                .tracks()
+                .iter()
+                .enumerate()
+                .find(|(_, track)| *track == old_id);
+            if let Some((new_index, _)) = found_new_index {
+                self.playlist_locate(new_index);
+            }
         }
 
         Ok(())
@@ -567,16 +541,22 @@ impl Model {
     fn playlist_sync_podcasts(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.playback.playlist.tracks().iter().enumerate() {
+        for (idx, track) in self.playback.playlist.tracks().iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
 
-            let duration = record.duration_formatted().to_string();
-            let duration_string = format!("[{duration:^7.7}]");
+            let duration_str = if let Some(dur) = track.duration_str_short() {
+                format!("[{dur:^7.7}]")
+            } else {
+                "[--:--]".to_string()
+            };
 
-            let mut title = record.title().unwrap_or("Unknown Title").to_string();
-            if record.podcast_localfile.is_some() {
+            let mut title = track.title().unwrap_or("Unknown Title").to_string();
+            if track
+                .as_podcast()
+                .is_some_and(PodcastTrackData::has_localfile)
+            {
                 title = format!("[D] {title}");
             }
             if Some(idx) == self.playback.playlist.current_track_index() {
@@ -592,7 +572,7 @@ impl Model {
                 );
             }
             table
-                .add_col(TextSpan::new(duration_string.as_str()))
+                .add_col(TextSpan::new(duration_str.as_str()))
                 .add_col(TextSpan::new(title).bold());
         }
         if self.playback.playlist.is_empty() {
@@ -620,19 +600,24 @@ impl Model {
 
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.playback.playlist.tracks().iter().enumerate() {
+        for (idx, track) in self.playback.playlist.tracks().iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
 
-            let duration = record.duration_formatted().to_string();
-            let duration_string = format!("[{duration:^7.7}]");
+            let duration_str = if let Some(dur) = track.duration_str_short() {
+                format!("[{dur:^7.7}]")
+            } else {
+                "[--:--]".to_string()
+            };
 
-            let noname_string = "No Name".to_string();
-            let name = record.name().unwrap_or(&noname_string);
-            let artist = record.artist().unwrap_or(UNKNOWN_ARTIST);
-            let mut title: Cow<'_, str> = record.title().unwrap_or(name).into();
-            let album = record.album().unwrap_or(UNKNOWN_ALBUM);
+            let mut title: Cow<'_, str> = track.title().map_or_else(|| track.id_str(), Into::into);
+
+            let artist = track.artist().unwrap_or(UNKNOWN_ARTIST);
+            let album = track
+                .as_track()
+                .and_then(|v| v.album())
+                .unwrap_or(UNKNOWN_ALBUM);
 
             // TODO: is there maybe a better option to do this on-demand instead of the whole playlist; like on draw-time?
             if Some(idx) == self.playback.playlist.current_track_index() {
@@ -650,7 +635,7 @@ impl Model {
             }
 
             table
-                .add_col(TextSpan::new(duration_string.as_str()))
+                .add_col(TextSpan::new(duration_str.as_str()))
                 .add_col(TextSpan::new(artist).fg(tuirealm::ratatui::style::Color::LightYellow))
                 .add_col(TextSpan::new(title).bold())
                 .add_col(TextSpan::new(album));
@@ -680,24 +665,14 @@ impl Model {
             return;
         }
 
-        let Some(item) = self.playback.playlist.tracks().get(index) else {
+        let Some(track) = self.playback.playlist.tracks().get(index) else {
             return;
         };
 
-        let Some(file) = item.file() else {
-            return;
-        };
-
-        let id = match item.media_type {
-            termusiclib::track::MediaType::Music => PlaylistTrackSource::Path(file.to_string()),
-            termusiclib::track::MediaType::Podcast => {
-                PlaylistTrackSource::PodcastUrl(file.to_string())
-            }
-            termusiclib::track::MediaType::LiveRadio => PlaylistTrackSource::Url(file.to_string()),
-        };
+        let track_source = track.as_track_source();
 
         self.command(TuiCmd::Playlist(PlaylistCmd::RemoveTrack(
-            PlaylistRemoveTrackIndexed::new_single(u64::try_from(index).unwrap(), id),
+            PlaylistRemoveTrackIndexed::new_single(u64::try_from(index).unwrap(), track_source),
         )));
     }
 
@@ -767,7 +742,7 @@ impl Model {
             .playlist
             .tracks()
             .iter()
-            .map(Track::duration)
+            .filter_map(Track::duration)
             .sum();
         let display_symbol = self
             .config_tui
@@ -781,7 +756,7 @@ impl Model {
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} \u{251c}\u{2500}",
             self.playback.playlist.len(),
-            Track::duration_formatted_short(&duration),
+            DurationFmtShort(duration),
             loop_mode.display(display_symbol),
         );
         self.app
@@ -800,24 +775,12 @@ impl Model {
             return;
         };
 
-        // TODO: refactor Track::file to be always existing
-        let Some(file) = track.file() else {
-            error!("Track {index} did not have a file(id), skipping!");
-            return;
-        };
-        // TODO: this should likely be a function on "Track"
-        let id = match track.media_type {
-            termusiclib::track::MediaType::Music => PlaylistTrackSource::Path(file.to_string()),
-            termusiclib::track::MediaType::Podcast => {
-                PlaylistTrackSource::PodcastUrl(file.to_string())
-            }
-            termusiclib::track::MediaType::LiveRadio => PlaylistTrackSource::Url(file.to_string()),
-        };
+        let track_source = track.as_track_source();
 
         self.command(TuiCmd::Playlist(PlaylistCmd::PlaySpecific(
             PlaylistPlaySpecific {
                 track_index: u64::try_from(index).unwrap(),
-                id,
+                id: track_source,
             },
         )));
     }

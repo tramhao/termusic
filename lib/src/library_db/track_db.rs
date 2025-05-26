@@ -1,8 +1,12 @@
-use std::time::{Duration, UNIX_EPOCH};
+use std::{
+    ffi::OsStr,
+    path::Path,
+    time::{Duration, UNIX_EPOCH},
+};
 
 use rusqlite::{named_params, Connection, Row};
 
-use crate::track::Track;
+use crate::track::{Track, TrackMetadata};
 
 /// A struct representing a [`Track`](Track) in the database
 #[derive(Clone, Debug, PartialEq)]
@@ -110,21 +114,27 @@ pub mod const_unknown {
 }
 use const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_GENRE, UNKNOWN_TITLE};
 
-impl<'a> From<&'a Track> for TrackDBInsertable<'a> {
-    fn from(value: &'a Track) -> Self {
+impl<'a> TrackDBInsertable<'a> {
+    pub fn from_track_metadata(value: &'a TrackMetadata, path: &'a Path) -> Self {
+        let name = path.file_stem().and_then(OsStr::to_str).unwrap_or_default();
+        let ext = path.extension().and_then(OsStr::to_str).unwrap_or_default();
+        let directory = path.parent().and_then(Path::to_str).unwrap_or_default();
+
         Self {
-            artist: value.artist().unwrap_or(UNKNOWN_ARTIST),
-            title: value.title().unwrap_or(UNKNOWN_TITLE),
-            album: value.album().unwrap_or(UNKNOWN_ALBUM),
-            genre: value.genre().unwrap_or(UNKNOWN_GENRE),
-            file: value.file().unwrap_or(UNKNOWN_FILE),
-            duration: value.duration(),
-            name: value.name().unwrap_or_default(),
-            ext: value.ext().unwrap_or_default(),
-            directory: value.directory().unwrap_or_default(),
+            artist: value.artist.as_deref().unwrap_or(UNKNOWN_ARTIST),
+            title: value.title.as_deref().unwrap_or(UNKNOWN_TITLE),
+            album: value.album.as_deref().unwrap_or(UNKNOWN_ALBUM),
+            genre: value.genre.as_deref().unwrap_or(UNKNOWN_GENRE),
+            file: path.to_str().unwrap_or(UNKNOWN_FILE),
+            duration: value.duration.unwrap_or_default(),
+            name,
+            ext,
+            directory,
             last_modified: value
-                .last_modified
-                .duration_since(UNIX_EPOCH)
+                .file_times
+                .as_ref()
+                .and_then(|v| v.modified)
+                .and_then(|v| v.duration_since(UNIX_EPOCH).ok())
                 .unwrap_or_default()
                 .as_secs()
                 .to_string(),
@@ -166,29 +176,7 @@ pub trait Indexable {
     fn meta_title(&self) -> Option<&str>;
     fn meta_album(&self) -> Option<&str>;
     fn meta_artist(&self) -> Option<&str>;
-    fn meta_genre(&self) -> Option<&str>;
     fn meta_duration(&self) -> Duration;
-}
-
-impl Indexable for Track {
-    fn meta_file(&self) -> Option<&str> {
-        self.file()
-    }
-    fn meta_title(&self) -> Option<&str> {
-        self.title()
-    }
-    fn meta_album(&self) -> Option<&str> {
-        self.album()
-    }
-    fn meta_artist(&self) -> Option<&str> {
-        self.artist()
-    }
-    fn meta_genre(&self) -> Option<&str> {
-        self.genre()
-    }
-    fn meta_duration(&self) -> Duration {
-        self.duration()
-    }
 }
 
 impl Indexable for TrackDB {
@@ -216,36 +204,9 @@ impl Indexable for TrackDB {
         }
         Some(&self.artist)
     }
-    fn meta_genre(&self) -> Option<&str> {
-        if self.genre == UNKNOWN_GENRE {
-            return None;
-        }
-        Some(&self.genre)
-    }
 
     fn meta_duration(&self) -> Duration {
         self.duration
-    }
-}
-
-impl Indexable for &Track {
-    fn meta_file(&self) -> Option<&str> {
-        self.file()
-    }
-    fn meta_title(&self) -> Option<&str> {
-        self.title()
-    }
-    fn meta_album(&self) -> Option<&str> {
-        self.album()
-    }
-    fn meta_artist(&self) -> Option<&str> {
-        self.artist()
-    }
-    fn meta_genre(&self) -> Option<&str> {
-        self.genre()
-    }
-    fn meta_duration(&self) -> Duration {
-        self.duration()
     }
 }
 
@@ -256,32 +217,73 @@ impl Indexable for &TrackDB {
         }
         Some(&self.file)
     }
+
     fn meta_title(&self) -> Option<&str> {
         if self.title == UNKNOWN_TITLE {
             return None;
         }
         Some(&self.title)
     }
+
     fn meta_album(&self) -> Option<&str> {
         if self.album == UNKNOWN_ALBUM {
             return None;
         }
         Some(&self.album)
     }
+
     fn meta_artist(&self) -> Option<&str> {
         if self.artist == UNKNOWN_ARTIST {
             return None;
         }
         Some(&self.artist)
     }
-    fn meta_genre(&self) -> Option<&str> {
-        if self.genre == UNKNOWN_GENRE {
-            return None;
-        }
-        Some(&self.genre)
-    }
 
     fn meta_duration(&self) -> Duration {
         self.duration
+    }
+}
+
+impl Indexable for Track {
+    fn meta_file(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.path().to_str())
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.album())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+
+    fn meta_duration(&self) -> Duration {
+        self.duration().unwrap_or_default()
+    }
+}
+
+impl Indexable for &Track {
+    fn meta_file(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.path().to_str())
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.album())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+
+    fn meta_duration(&self) -> Duration {
+        self.duration().unwrap_or_default()
     }
 }
