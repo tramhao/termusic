@@ -153,6 +153,15 @@ impl PlayerTrait for RustyBackend {
                 .as_u64(),
         )
         .unwrap_or(usize::MAX);
+        let ringbuf_size = usize::try_from(
+            config_read
+                .settings
+                .backends
+                .rusty
+                .decoded_buffer_size
+                .as_u64(),
+        )
+        .unwrap_or(usize::MAX);
 
         drop(config_read);
 
@@ -162,6 +171,7 @@ impl PlayerTrait for RustyBackend {
                 gapless_decode: self.gapless,
                 soundtouch,
                 file_buf_size,
+                ringbuf_size,
                 enqueue: false,
             },
         ));
@@ -249,6 +259,15 @@ impl PlayerTrait for RustyBackend {
                 .as_u64(),
         )
         .unwrap_or(usize::MAX);
+        let ringbuf_size = usize::try_from(
+            config_read
+                .settings
+                .backends
+                .rusty
+                .decoded_buffer_size
+                .as_u64(),
+        )
+        .unwrap_or(usize::MAX);
 
         drop(config_read);
 
@@ -258,6 +277,7 @@ impl PlayerTrait for RustyBackend {
                 gapless_decode: self.gapless,
                 soundtouch,
                 file_buf_size,
+                ringbuf_size,
                 enqueue: true,
             },
         ));
@@ -284,6 +304,8 @@ struct CommonAppendOptions {
     soundtouch: bool,
     /// Enable or disable async decoding (decode to happen on a different thread than the playback)
     async_decode: bool,
+    /// The size for the ring buffer.
+    ringbuf_size: usize,
 }
 
 /// Extra options specific to [`append_to_sink_test`]
@@ -321,8 +343,13 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
         let handle = tokio::runtime::Handle::current();
         let (spec, current_frame_len) = decoder.get_spec();
         let total_duration = decoder.total_duration();
-        let (prod, cons) =
-            AsyncRingSource::new(spec, total_duration, current_frame_len, 0, handle.clone());
+        let (prod, cons) = AsyncRingSource::new(
+            spec,
+            total_duration,
+            current_frame_len,
+            common_options.ringbuf_size,
+            handle.clone(),
+        );
 
         tokio::task::spawn_blocking(move || {
             handle.block_on(decode_task(decoder, prod));
@@ -684,6 +711,8 @@ struct QueueNextOptions {
     enqueue: bool,
     /// Determines the size of the [`BufferedSource`].
     file_buf_size: usize,
+    /// Determines the size of the [`AsyncRingSource`].
+    ringbuf_size: usize,
 }
 
 /// Queue the given track into the [`Sink`], while also setting all of the other variables
@@ -712,6 +741,7 @@ async fn queue_next(
                     &CommonAppendOptions {
                         gapless_decode: options.gapless_decode,
                         soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
                         async_decode: true,
                     },
                     next_duration_opt,
@@ -725,6 +755,7 @@ async fn queue_next(
                     &CommonAppendOptions {
                         gapless_decode: options.gapless_decode,
                         soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
                         async_decode: true,
                     },
                     total_duration,
@@ -803,6 +834,7 @@ async fn queue_next(
                     &CommonAppendOptions {
                         gapless_decode: options.gapless_decode,
                         soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
                         async_decode: false,
                     },
                     next_duration_opt,
@@ -815,6 +847,7 @@ async fn queue_next(
                     &CommonAppendOptions {
                         gapless_decode: options.gapless_decode,
                         soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
                         async_decode: false,
                     },
                     total_duration,
@@ -836,6 +869,7 @@ async fn queue_next(
                         &CommonAppendOptions {
                             gapless_decode: options.gapless_decode,
                             soundtouch: options.soundtouch,
+                            ringbuf_size: options.ringbuf_size,
                             async_decode: true,
                         },
                         next_duration_opt,
@@ -849,6 +883,7 @@ async fn queue_next(
                         &CommonAppendOptions {
                             gapless_decode: options.gapless_decode,
                             soundtouch: options.soundtouch,
+                            ringbuf_size: options.ringbuf_size,
                             async_decode: true,
                         },
                         total_duration,
@@ -880,6 +915,7 @@ async fn queue_next(
                     &CommonAppendOptions {
                         gapless_decode: options.gapless_decode,
                         soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
                         async_decode: false,
                     },
                     next_duration_opt,
@@ -893,6 +929,7 @@ async fn queue_next(
                     &CommonAppendOptions {
                         gapless_decode: options.gapless_decode,
                         soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
                         async_decode: false,
                     },
                     total_duration,
