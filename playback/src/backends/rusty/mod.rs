@@ -80,14 +80,8 @@ pub struct RustyBackend {
     config: SharedServerSettings,
 }
 
-#[allow(
-    clippy::cast_precision_loss,
-    clippy::cast_possible_truncation,
-    clippy::cast_sign_loss
-)]
 impl RustyBackend {
     #[allow(clippy::similar_names)]
-    #[allow(clippy::too_many_lines)]
     pub fn new(config: SharedServerSettings, cmd_tx: crate::PlayerCmdSender) -> Self {
         let config_read = config.read();
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
@@ -217,8 +211,6 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::Stop);
     }
 
-    #[allow(clippy::cast_precision_loss)]
-    #[allow(clippy::cast_possible_wrap)]
     fn get_progress(&self) -> Option<PlayerProgress> {
         Some(PlayerProgress {
             position: Some(*self.position.lock()),
