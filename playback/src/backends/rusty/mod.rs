@@ -49,14 +49,10 @@ pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
 #[derive(Clone, Debug)]
-pub enum PlayerInternalCmd {
-    /// Enqueue a new track to be played, and skip to it
-    /// (Track, gapless, soundtouch)
-    Play(Box<Track>, bool, bool),
+enum PlayerInternalCmd {
+    /// Enqueue a new track to be played, and if `enqueue: false` directly skip to it.
+    Play(Box<Track>, QueueNextOptions),
     Progress(Duration),
-    /// Enqueue a new track to be played, but do not skip current track
-    /// (Track, gapless, soundtouch)
-    QueueNext(Box<Track>, bool, bool),
     Resume,
     SeekAbsolute(Duration),
     SeekRelative(i64),
@@ -146,17 +142,18 @@ impl RustyBackend {
 #[async_trait]
 impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, track: &Track) {
-        let soundtouch = self
-            .config
-            .read_recursive()
-            .settings
-            .backends
-            .rusty
-            .soundtouch;
+        let config_read = self.config.read_recursive();
+        let soundtouch = config_read.settings.backends.rusty.soundtouch;
+
+        drop(config_read);
+
         self.command(PlayerInternalCmd::Play(
             Box::new(track.clone()),
-            self.gapless,
-            soundtouch,
+            QueueNextOptions {
+                gapless_decode: self.gapless,
+                soundtouch,
+                enqueue: false,
+            },
         ));
         self.resume();
     }
@@ -231,17 +228,18 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn enqueue_next(&mut self, track: &Track) {
-        let soundtouch = self
-            .config
-            .read_recursive()
-            .settings
-            .backends
-            .rusty
-            .soundtouch;
-        self.command(PlayerInternalCmd::QueueNext(
+        let config_read = self.config.read_recursive();
+        let soundtouch = config_read.settings.backends.rusty.soundtouch;
+
+        drop(config_read);
+
+        self.command(PlayerInternalCmd::Play(
             Box::new(track.clone()),
-            self.gapless,
-            soundtouch,
+            QueueNextOptions {
+                gapless_decode: self.gapless,
+                soundtouch,
+                enqueue: true,
+            },
         ));
     }
 
@@ -551,15 +549,11 @@ async fn player_thread(mut args: PlayerThreadArgs) {
         };
 
         match cmd {
-            PlayerInternalCmd::Play(track, gapless, soundtouch) => {
+            PlayerInternalCmd::Play(track, options) => {
                 if let Err(err) = queue_next(
                     &track,
                     &sink,
-                    QueueNextOptions {
-                        gapless_decode: gapless,
-                        soundtouch,
-                        enqueue: false,
-                    },
+                    options,
                     &mut is_radio,
                     &args.total_duration,
                     &mut next_duration_opt,
@@ -568,31 +562,11 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                 )
                 .await
                 {
-                    error!("Failed to play track: {err:#?}");
+                    error!("Failed to enqueue track: {err:#?}");
                 }
             }
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
-            }
-            PlayerInternalCmd::QueueNext(track, gapless, soundtouch) => {
-                if let Err(err) = queue_next(
-                    &track,
-                    &sink,
-                    QueueNextOptions {
-                        gapless_decode: gapless,
-                        soundtouch,
-                        enqueue: true,
-                    },
-                    &mut is_radio,
-                    &args.total_duration,
-                    &mut next_duration_opt,
-                    &args.media_title,
-                    // &radio_downloaded,
-                )
-                .await
-                {
-                    error!("Failed to queue next track: {err:#?}");
-                }
             }
             PlayerInternalCmd::Resume => {
                 sink.play();
@@ -680,7 +654,7 @@ async fn player_thread(mut args: PlayerThreadArgs) {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct QueueNextOptions {
     /// Enable or disable gapless decoding
     gapless_decode: bool,
