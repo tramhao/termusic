@@ -90,6 +90,7 @@ impl MusicLibrary {
         let current_node = self.component.tree_state().selected().unwrap();
         let p: &Path = Path::new(current_node);
         if p.is_dir() {
+            // TODO: try to load the directory if it is not loaded yet.
             (self.perform(Cmd::Custom(TREE_CMD_OPEN)), None)
         } else {
             (
