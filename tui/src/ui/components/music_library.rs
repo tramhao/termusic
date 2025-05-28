@@ -397,13 +397,16 @@ impl Model {
         }
     }
 
+    /// Handle stepping into a node on the tree
     pub fn library_stepinto(&mut self, node_id: &str) {
         self.library_scan_dir(PathBuf::from(node_id), None);
     }
 
+    /// Handle stepping out of the current root node on the tree
     pub fn library_stepout(&mut self) {
         if let Some(p) = self.library_upper_dir() {
-            self.library_scan_dir(p, None);
+            let focus_node = Some(self.library.tree_path.to_string_lossy().to_string());
+            self.library_scan_dir(p, focus_node);
         }
     }
 
