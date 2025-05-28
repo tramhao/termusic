@@ -2,13 +2,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Result, Seek, SeekFrom};
 
 use symphonia::core::io::MediaSource;
-
-/// Default Buffer capacity in bytes
-///
-/// 1024 * 1024 * 4 = 4 MiB
-///
-/// [`BufReader`]'s default size is 8 Kib
-const BUF_SIZE_DEFAULT: usize = 1024 * 1024 * 4;
+use termusiclib::config::v2::server::backends::FILEBUF_SIZE_DEFAULT;
 
 /// A [`MediaSource`] for [`File`] but using a [`BufReader`] (Buffered file source)
 ///
@@ -23,12 +17,13 @@ pub struct BufferedSource {
 }
 
 impl BufferedSource {
-    /// Create a new Buffered-Source with a given custom size
+    /// Create a new Buffered-Source with a given custom size, with the minimal size being [`FILEBUF_SIZE_DEFAULT`].
     pub fn new(file: File, size: usize) -> Self {
         let mut is_seekable = false;
         let mut byte_len = None;
 
-        let mut buf_size = size;
+        // ensure size is at least the default size
+        let mut buf_size = size.max(usize::try_from(FILEBUF_SIZE_DEFAULT).unwrap_or(usize::MAX));
 
         if let Ok(metadata) = file.metadata() {
             // If the file's metadata is available, and the file is a regular file (i.e., not a FIFO,
@@ -57,9 +52,13 @@ impl BufferedSource {
         }
     }
 
-    /// Create a new Buffered-Source with [`BUF_SIZE_DEFAULT`]
+    /// Create a new Buffered-Source with [`FILEBUF_SIZE_DEFAULT`]
+    #[expect(unused)]
     pub fn new_default_size(file: File) -> Self {
-        Self::new(file, BUF_SIZE_DEFAULT)
+        Self::new(
+            file,
+            usize::try_from(FILEBUF_SIZE_DEFAULT).unwrap_or(usize::MAX),
+        )
     }
 }
 

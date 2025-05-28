@@ -144,6 +144,15 @@ impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, track: &Track) {
         let config_read = self.config.read_recursive();
         let soundtouch = config_read.settings.backends.rusty.soundtouch;
+        let file_buf_size = usize::try_from(
+            config_read
+                .settings
+                .backends
+                .rusty
+                .file_buffer_size
+                .as_u64(),
+        )
+        .unwrap_or(usize::MAX);
 
         drop(config_read);
 
@@ -152,6 +161,7 @@ impl PlayerTrait for RustyBackend {
             QueueNextOptions {
                 gapless_decode: self.gapless,
                 soundtouch,
+                file_buf_size,
                 enqueue: false,
             },
         ));
@@ -230,6 +240,15 @@ impl PlayerTrait for RustyBackend {
     fn enqueue_next(&mut self, track: &Track) {
         let config_read = self.config.read_recursive();
         let soundtouch = config_read.settings.backends.rusty.soundtouch;
+        let file_buf_size = usize::try_from(
+            config_read
+                .settings
+                .backends
+                .rusty
+                .file_buffer_size
+                .as_u64(),
+        )
+        .unwrap_or(usize::MAX);
 
         drop(config_read);
 
@@ -238,6 +257,7 @@ impl PlayerTrait for RustyBackend {
             QueueNextOptions {
                 gapless_decode: self.gapless,
                 soundtouch,
+                file_buf_size,
                 enqueue: true,
             },
         ));
@@ -662,6 +682,8 @@ struct QueueNextOptions {
     soundtouch: bool,
     /// Determines which append function and which duration type to use.
     enqueue: bool,
+    /// Determines the size of the [`BufferedSource`].
+    file_buf_size: usize,
 }
 
 /// Queue the given track into the [`Sink`], while also setting all of the other variables
@@ -684,7 +706,7 @@ async fn queue_next(
 
             if options.enqueue {
                 append_to_sink_queue(
-                    Box::new(BufferedSource::new_default_size(file)),
+                    Box::new(BufferedSource::new(file, options.file_buf_size)),
                     file_path.display(),
                     sink,
                     &CommonAppendOptions {
@@ -697,7 +719,7 @@ async fn queue_next(
                 );
             } else {
                 append_to_sink(
-                    Box::new(BufferedSource::new_default_size(file)),
+                    Box::new(BufferedSource::new(file, options.file_buf_size)),
                     file_path.display(),
                     sink,
                     &CommonAppendOptions {
@@ -808,7 +830,7 @@ async fn queue_next(
                     .context("Failed to open local podcast file")?;
                 if options.enqueue {
                     append_to_sink_queue(
-                        Box::new(BufferedSource::new_default_size(file)),
+                        Box::new(BufferedSource::new(file, options.file_buf_size)),
                         file_path.display(),
                         sink,
                         &CommonAppendOptions {
@@ -821,7 +843,7 @@ async fn queue_next(
                     );
                 } else {
                     append_to_sink(
-                        Box::new(BufferedSource::new_default_size(file)),
+                        Box::new(BufferedSource::new(file, options.file_buf_size)),
                         file_path.display(),
                         sink,
                         &CommonAppendOptions {
