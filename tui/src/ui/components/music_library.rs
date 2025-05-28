@@ -1,14 +1,15 @@
-use crate::ui::model::Model;
+use crate::ui::model::{DownloadTracker, Model};
 use crate::ui::tui_cmd::TuiCmd;
 use crate::utils::get_pin_yin;
 use anyhow::{bail, Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename, DirEntry};
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::Sender;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
-use termusiclib::types::{GSMsg, LIMsg, Msg, PLMsg, TEMsg, YSMsg};
+use termusiclib::types::{GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -234,14 +235,6 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 }
 
 impl Model {
-    pub fn library_scan_dir<P: Into<PathBuf>>(&mut self, p: P) {
-        self.library.tree_path = p.into();
-        self.library.tree = Tree::new(Self::library_dir_tree(
-            &self.library.tree_path,
-            self.config_server.read().get_library_scan_depth(),
-        ));
-    }
-
     pub fn library_upper_dir(&self) -> Option<PathBuf> {
         self.library
             .tree_path
@@ -249,12 +242,58 @@ impl Model {
             .map(std::path::Path::to_path_buf)
     }
 
-    pub fn library_dir_tree(p: &Path, depth: ScanDepth) -> Node<String> {
-        let name: String = match p.file_name() {
+    /// Execute [`Self::library_scan`] from a `&self` instance.
+    #[inline]
+    pub fn library_scan_dir<P: Into<PathBuf>>(&self, path: P, focus_node: Option<String>) {
+        Self::library_scan(
+            self.tx_to_main.clone(),
+            self.download_tracker.clone(),
+            path,
+            self.config_server.read().get_library_scan_depth(),
+            focus_node,
+        );
+    }
+
+    pub fn loading_tree() -> Tree<String> {
+        Tree::new(Node::new("/dev/null".to_string(), "Loading...".to_string()))
+    }
+
+    /// Execute a library scan on a different thread.
+    ///
+    /// Executes [`Self::library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
+    pub fn library_scan<P: Into<PathBuf>>(
+        tx: Sender<Msg>,
+        download_tracker: DownloadTracker,
+        path: P,
+        depth: ScanDepth,
+        focus_node: Option<String>,
+    ) {
+        let path = path.into();
+        std::thread::Builder::new()
+            .name("library tree scan".to_string())
+            .spawn(move || {
+                download_tracker.increase_one(path.to_string_lossy());
+                let root_node = Self::library_dir_tree(&path, depth);
+
+                let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
+                download_tracker.decrease_one(&path.to_string_lossy());
+            })
+            .expect("Failed to spawn thread");
+    }
+
+    /// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
+    ///
+    /// Note: consider using [`Self::library_scan`] instead of this directly.
+    fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
+        let name: String = match path.file_name() {
             None => "/".to_string(),
             Some(n) => n.to_string_lossy().into_owned(),
         };
-        let mut node: Node<String> = Node::new(p.to_string_lossy().into_owned(), name);
+        let mut node = RecVec {
+            id: path.to_path_buf(),
+            value: name,
+            children: Vec::new(),
+        };
 
         let depth = match depth {
             ScanDepth::Limited(v) => v,
@@ -262,8 +301,8 @@ impl Model {
             ScanDepth::Unlimited => u32::MAX,
         };
 
-        if depth > 0 && p.is_dir() {
-            if let Ok(paths) = std::fs::read_dir(p) {
+        if depth > 0 && path.is_dir() {
+            if let Ok(paths) = std::fs::read_dir(path) {
                 let mut paths: Vec<(String, PathBuf)> = paths
                     .filter_map(std::result::Result::ok)
                     .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
@@ -273,12 +312,14 @@ impl Model {
                 paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
 
                 for p in paths {
-                    node.add_child(Self::library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
+                    node.children
+                        .push(Self::library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
                 }
             }
         }
         node
     }
+
     pub fn library_dir_children(p: &Path) -> Vec<String> {
         let mut children: Vec<String> = vec![];
         if p.is_dir() {
@@ -300,88 +341,69 @@ impl Model {
         children
     }
 
-    pub fn library_reload_with_node_focus(&mut self, node: Option<&str>) {
+    /// Reload the library with the given `node` as a focus, also starts a new database sync worker for the current path.
+    pub fn library_reload_with_node_focus(&mut self, node: Option<String>) {
         self.db.sync_database(self.library.tree_path.as_path());
         self.database_reload();
-        self.library_reload_tree();
-        if let Some(n) = node {
-            assert!(self
-                .app
-                .attr(
-                    &Id::Library,
-                    Attribute::Custom(TREE_INITIAL_NODE),
-                    AttrValue::String(n.to_string()),
-                )
-                .is_ok());
-        }
+        self.library_scan_dir(&self.library.tree_path, node);
     }
 
-    pub fn library_reload_tree(&mut self) {
-        self.library.tree = Tree::new(Self::library_dir_tree(
-            self.library.tree_path.as_ref(),
-            self.config_server.read().get_library_scan_depth(),
-        ));
-        let current_node = match self.app.state(&Id::Library).ok().unwrap() {
+    /// Convert a [`RecVec`] to a [`Node`].
+    fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
+        let mut node = Node::new(vec.id.to_string_lossy().to_string(), vec.value);
+
+        for val in vec.children {
+            node.add_child(Self::recvec_to_node(val));
+        }
+
+        node
+    }
+
+    /// Apply the given [`RecVec`] as a tree
+    pub fn library_apply_as_tree(
+        &mut self,
+        msg: RecVec<PathBuf, String>,
+        focus_node: Option<String>,
+    ) {
+        let root_path = msg.id.clone();
+        let root_node = Self::recvec_to_node(msg);
+
+        let old_current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
         };
-        let mut focus = false;
 
-        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
+        self.library.tree_path = root_path;
+        self.library.tree = Tree::new(root_node);
+
+        // remount preserves focus
+        let _ = self.app.remount(
+            Id::Library,
+            Box::new(MusicLibrary::new(
+                &self.library.tree,
+                old_current_node,
+                self.config_tui.clone(),
+            )),
+            Vec::new(),
+        );
+
+        // focus the specified node
+        if let Some(id) = focus_node {
+            let _ = self.app.attr(
+                &Id::Library,
+                Attribute::Custom(TREE_INITIAL_NODE),
+                AttrValue::String(id),
+            );
         }
-
-        if focus {
-            self.app.umount(&Id::Library).ok();
-            assert!(self
-                .app
-                .mount(
-                    Id::Library,
-                    Box::new(MusicLibrary::new(
-                        &self.library.tree,
-                        current_node,
-                        self.config_tui.clone(),
-                    ),),
-                    Vec::new()
-                )
-                .is_ok());
-            self.app.active(&Id::Library).ok();
-            return;
-        }
-
-        assert!(self
-            .app
-            .remount(
-                Id::Library,
-                Box::new(MusicLibrary::new(
-                    &self.library.tree,
-                    current_node,
-                    self.config_tui.clone(),
-                ),),
-                Vec::new()
-            )
-            .is_ok());
     }
 
-    // Kept for debugging focus issue
-    // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-    //     if Some(AttrValue::Flag(true)) == f {
-    //         error!("focus after remount: true");
-    //     } else {
-    //         error!("focus after remount: false");
-    //     }
-    // }
     pub fn library_stepinto(&mut self, node_id: &str) {
-        self.library_scan_dir(PathBuf::from(node_id));
-        self.library_reload_tree();
+        self.library_scan_dir(PathBuf::from(node_id), None);
     }
 
     pub fn library_stepout(&mut self) {
         if let Some(p) = self.library_upper_dir() {
-            self.library_scan_dir(p);
-            self.library_reload_tree();
+            self.library_scan_dir(p, None);
         }
     }
 
@@ -396,6 +418,7 @@ impl Model {
         }
     }
 
+    /// Delete the currently selected node from the filesystem and reload the tree and remove the deleted paths from the playlist.
     pub fn library_delete_node(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
@@ -407,28 +430,27 @@ impl Model {
                     remove_dir_all(p)?;
                 }
 
-                // this is to keep the state of playlist
-                self.library_reload_tree();
-                let tree = self.library.tree.clone();
-                if let Some(new_node) = tree.root().node_by_route(&route) {
-                    self.library_reload_with_node_focus(Some(new_node.id()));
-                } else {
-                    //special case 1: old route not available but have siblings
-                    if let Some(last) = route.last_mut() {
-                        if last > &mut 0 {
-                            *last -= 1;
-                        }
-                    }
-                    if let Some(new_node) = tree.root().node_by_route(&route) {
-                        self.library_reload_with_node_focus(Some(new_node.id()));
-                    } else {
-                        //special case 2: old route not available and no siblings
-                        route.truncate(route.len() - 1);
-                        if let Some(new_node) = tree.root().node_by_route(&route) {
-                            self.library_reload_with_node_focus(Some(new_node.id()));
+                let mut tree = self.library.tree.clone();
+                tree.root_mut().remove_child(&node_id);
+                let mut focus_node: Option<String> = None;
+                // case 1: the route still exists due to having a sibling beyond the index which now takes the same index
+                if let Some(node) = tree.root().node_by_route(&route) {
+                    focus_node = Some(node.id().to_string());
+                } else if !route.is_empty() {
+                    let _ = route.pop();
+                    // case 2: the route does not exist anymore, but there is a parent in the route
+                    if let Some(parent) = tree.root().node_by_route(&route) {
+                        // case 2.1: the parent has children, select the last of them
+                        if let Some(last_child) = parent.children().last() {
+                            focus_node = Some(last_child.id().to_string());
+                        } else {
+                            // case 2.2: the parent exists, but has no children
+                            focus_node = Some(parent.id().to_string());
                         }
                     }
                 }
+
+                self.library_scan_dir(&self.library.tree_path, focus_node);
             }
             // this line remove the deleted songs from playlist
             self.playlist_update_library_delete();
@@ -459,7 +481,7 @@ impl Model {
                 p_parent.join(pold_filename)
             };
             rename(pold, new_node_id.as_path())?;
-            self.library_reload_with_node_focus(new_node_id.to_str());
+            self.library_reload_with_node_focus(Some(new_node_id.to_string_lossy().to_string()));
         }
         self.library.yanked_node_id = None;
         self.playlist_update_library_delete();
@@ -520,7 +542,7 @@ impl Model {
         }
         if let Some(dir) = vec.get(index) {
             let pathbuf = PathBuf::from(dir);
-            self.library_scan_dir(pathbuf);
+            self.library_scan_dir(pathbuf, None);
             self.library_reload_with_node_focus(None);
         }
     }

@@ -35,7 +35,7 @@ use super::components::TETrack;
 use super::tui_cmd::TuiCmd;
 use crate::ui::Application;
 use crate::CombinedSettings;
-use download_tracker::DownloadTracker;
+pub use download_tracker::DownloadTracker;
 
 mod download_tracker;
 mod playlist;
@@ -362,10 +362,7 @@ impl Model {
         } = config;
         let path = Self::get_full_path_from_config(&config_server.read());
         // TODO: refactor music library tree to be Paths instead?
-        let tree = Tree::new(Self::library_dir_tree(
-            &path,
-            config_server.read().get_library_scan_depth(),
-        ));
+        let tree = Self::loading_tree();
 
         let viuer_supported = if config_tui.read().cover_features_enabled() {
             get_viuer_support()
@@ -411,6 +408,16 @@ impl Model {
 
         let ce_theme = config_tui.read().settings.theme.clone();
         let xywh = xywh::Xywh::from(&config_tui.read().settings.coverart);
+
+        let download_tracker = DownloadTracker::default();
+
+        Self::library_scan(
+            tx_to_main.clone(),
+            download_tracker.clone(),
+            &path,
+            config_server.read().get_library_scan_depth(),
+            None,
+        );
 
         Self {
             app,
@@ -460,7 +467,7 @@ impl Model {
             taskpool,
             tx_to_main,
             rx_to_main,
-            download_tracker: DownloadTracker::default(),
+            download_tracker,
             current_track_lyric: None,
             playback: Playback::new(),
             cmd_to_server_tx,
