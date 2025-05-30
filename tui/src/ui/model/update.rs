@@ -57,7 +57,7 @@ impl Update<Msg> for Model {
                 None
             }
             Msg::Library(m) => {
-                self.update_library(&m);
+                self.update_library(m);
                 None
             }
             Msg::GeneralSearch(m) => {
@@ -110,7 +110,7 @@ impl Update<Msg> for Model {
 
             Msg::Podcast(m) => self.update_podcast(m),
             Msg::LyricMessage(m) => self.update_lyric_textarea(m),
-            Msg::Download(m) => self.update_download_msg(&m),
+            Msg::Download(m) => self.update_download_msg(m),
             Msg::Xywh(m) => self.update_xywh_msg(m),
 
             Msg::ForceRedraw => None,
@@ -558,13 +558,13 @@ impl Model {
         None
     }
 
-    fn update_library(&mut self, msg: &LIMsg) {
+    fn update_library(&mut self, msg: LIMsg) {
         match msg {
             LIMsg::TreeBlur => {
                 assert!(self.app.active(&Id::Playlist).is_ok());
             }
             LIMsg::TreeStepInto(path) => {
-                self.library_stepinto(path);
+                self.library_stepinto(&path);
             }
             LIMsg::TreeStepOut => {
                 self.library_stepout();
@@ -587,6 +587,9 @@ impl Model {
                 if let Err(e) = self.library_remove_root() {
                     self.mount_error_popup(e.context("library remove root"));
                 }
+            }
+            LIMsg::TreeNodeReady(vec, focus_node) => {
+                self.library_apply_as_tree(vec, focus_node);
             }
         }
     }
@@ -916,20 +919,20 @@ impl Model {
     }
 
     // change status bar text to indicate the downloading state
-    fn update_download_msg(&mut self, msg: &DLMsg) -> Option<Msg> {
+    fn update_download_msg(&mut self, msg: DLMsg) -> Option<Msg> {
         self.redraw = true;
         match msg {
             DLMsg::DownloadRunning(url, title) => {
-                self.download_tracker.increase_one(&**url);
+                self.download_tracker.increase_one(&*url);
                 self.show_message_timeout_label_help(
-                    self.download_tracker.message_download_start(title),
+                    self.download_tracker.message_download_start(&title),
                     None,
                     None,
                     None,
                 );
             }
             DLMsg::DownloadSuccess(url) => {
-                self.download_tracker.decrease_one(url);
+                self.download_tracker.decrease_one(&url);
                 self.show_message_timeout_label_help(
                     self.download_tracker.message_download_complete(),
                     None,
@@ -945,13 +948,14 @@ impl Model {
                 if self.download_tracker.visible() {
                     return None;
                 }
-                self.library_reload_with_node_focus(file.as_deref());
+                self.library_reload_with_node_focus(file);
             }
             DLMsg::DownloadErrDownload(url, title, error_message) => {
-                self.download_tracker.decrease_one(url);
+                self.download_tracker.decrease_one(&url);
                 self.mount_error_popup(anyhow!("download failed: {error_message}"));
                 self.show_message_timeout_label_help(
-                    self.download_tracker.message_download_error_response(title),
+                    self.download_tracker
+                        .message_download_error_response(&title),
                     None,
                     None,
                     None,
@@ -961,17 +965,17 @@ impl Model {
                 self.mount_error_popup(anyhow!("download ok but tag info is not complete."));
                 self.show_message_timeout_label_help(
                     self.download_tracker
-                        .message_download_error_embed_data(title),
+                        .message_download_error_embed_data(&title),
                     None,
                     None,
                     None,
                 );
             }
             DLMsg::MessageShow((title, text)) => {
-                self.mount_message(title, text);
+                self.mount_message(&title, &text);
             }
             DLMsg::MessageHide((title, text)) => {
-                self.umount_message(title, text);
+                self.umount_message(&title, &text);
             }
             DLMsg::FetchPhotoSuccess(image_wrapper) => {
                 self.show_image(&image_wrapper.data).ok();

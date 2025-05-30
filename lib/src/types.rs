@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
@@ -387,6 +388,14 @@ pub enum KFMsg {
     PodcastRefreshAllFeedsBlurUp,
 }
 
+/// Basically a Tree Node, but without having to include `tui-realm-treeview` as another dependency for lib
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecVec<T, V> {
+    pub id: T,
+    pub value: V,
+    pub children: Vec<RecVec<T, V>>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
     TreeStepInto(String),
@@ -397,6 +406,10 @@ pub enum LIMsg {
     SwitchRoot,
     AddRoot,
     RemoveRoot,
+
+    /// A requested node is ready from loading.
+    /// `(Tree, FocusNode)`
+    TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -888,7 +888,7 @@ impl Model {
         // TODO: move this to server?
         self.playback.playlist.save_m3u(filename)?;
 
-        self.library_reload_with_node_focus(Some(&filename.to_string_lossy()));
+        self.library_reload_with_node_focus(Some(filename.to_string_lossy().to_string()));
 
         Ok(())
     }
