@@ -25,6 +25,7 @@ anyhow.workspace = true
 thiserror.workspace = true
 base64.workspace = true
 bytes.workspace = true #   = "1"
+bytesize.workspace = true
 chrono.workspace = true #   = "^0.4.23"
 dirs.workspace = true
 escaper.workspace = true #   = "0.1.1"

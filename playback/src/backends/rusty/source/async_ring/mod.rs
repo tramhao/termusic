@@ -31,6 +31,7 @@ pub type SeekData = (Duration, oneshot::Sender<usize>);
 /// The minimal size a decode-ringbuffer should have.
 ///
 /// Currently the size is based on 192kHz * 1 channel * 1 seconds, or 2 seconds of 48kHz stereo(2 channel) audio.
+// NOTE: try to keep this in-sync with the config's `RINGBUF_SIZE_DEFAULT`
 pub const MIN_RING_SIZE: usize = 192_000 * MessageDataValue::MESSAGE_SIZE;
 
 /// A ringbuffer Producer meant for wrapping [`Source`] to make decode & playback async and keep the buffer filled without having audible gaps.

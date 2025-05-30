@@ -15,6 +15,8 @@
 - Feat(server): for rusty backend, add feature `rusty-simd` to enable SIMD instructions for decoding.
 - Feat(server): on rusty backend, do async decoding instead of JIT decoding for music and podcast files. (fixes #191)
 - Feat(server): on rusty backend, allow choosing which speed modifier to use in the config.
+- Feat(server): on rusty backend, allow configuring file buffer size.
+- Feat(server): on rusty backend, allow configuring decoded(ring) buffer size.
 - Fix(tui): set `ueberzug` command to `--silent`.
 - Fix(tui): force viuer to use the terminal image protocol that was probed at the beginning.
 - Fix(tui): add CTRL+C handler for when TUI key-reading is not active yet or not active anymore.

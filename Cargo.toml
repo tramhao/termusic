@@ -31,6 +31,7 @@ thiserror = "2.0.12"
 async-trait = "0.1.88"
 base64 = "0.22"
 bytes = "1.10"
+bytesize = { version = "2.0", features = ["serde"] }
 chrono = "0.4.41"
 clap = { version = "4.5.38", features = ["derive", "env"] }
 ctrlc = { version = "3.4.6", features = ["termination"] }

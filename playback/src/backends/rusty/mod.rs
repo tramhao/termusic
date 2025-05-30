@@ -49,14 +49,10 @@ pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
 #[derive(Clone, Debug)]
-pub enum PlayerInternalCmd {
-    /// Enqueue a new track to be played, and skip to it
-    /// (Track, gapless, soundtouch)
-    Play(Box<Track>, bool, bool),
+enum PlayerInternalCmd {
+    /// Enqueue a new track to be played, and if `enqueue: false` directly skip to it.
+    Play(Box<Track>, QueueNextOptions),
     Progress(Duration),
-    /// Enqueue a new track to be played, but do not skip current track
-    /// (Track, gapless, soundtouch)
-    QueueNext(Box<Track>, bool, bool),
     Resume,
     SeekAbsolute(Duration),
     SeekRelative(i64),
@@ -80,14 +76,8 @@ pub struct RustyBackend {
     config: SharedServerSettings,
 }
 
-#[allow(
-    clippy::cast_precision_loss,
-    clippy::cast_possible_truncation,
-    clippy::cast_sign_loss
-)]
 impl RustyBackend {
     #[allow(clippy::similar_names)]
-    #[allow(clippy::too_many_lines)]
     pub fn new(config: SharedServerSettings, cmd_tx: crate::PlayerCmdSender) -> Self {
         let config_read = config.read();
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
@@ -152,17 +142,38 @@ impl RustyBackend {
 #[async_trait]
 impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, track: &Track) {
-        let soundtouch = self
-            .config
-            .read_recursive()
-            .settings
-            .backends
-            .rusty
-            .soundtouch;
+        let config_read = self.config.read_recursive();
+        let soundtouch = config_read.settings.backends.rusty.soundtouch;
+        let file_buf_size = usize::try_from(
+            config_read
+                .settings
+                .backends
+                .rusty
+                .file_buffer_size
+                .as_u64(),
+        )
+        .unwrap_or(usize::MAX);
+        let ringbuf_size = usize::try_from(
+            config_read
+                .settings
+                .backends
+                .rusty
+                .decoded_buffer_size
+                .as_u64(),
+        )
+        .unwrap_or(usize::MAX);
+
+        drop(config_read);
+
         self.command(PlayerInternalCmd::Play(
             Box::new(track.clone()),
-            self.gapless,
-            soundtouch,
+            QueueNextOptions {
+                gapless_decode: self.gapless,
+                soundtouch,
+                file_buf_size,
+                ringbuf_size,
+                enqueue: false,
+            },
         ));
         self.resume();
     }
@@ -217,8 +228,6 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::Stop);
     }
 
-    #[allow(clippy::cast_precision_loss)]
-    #[allow(clippy::cast_possible_wrap)]
     fn get_progress(&self) -> Option<PlayerProgress> {
         Some(PlayerProgress {
             position: Some(*self.position.lock()),
@@ -239,17 +248,38 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn enqueue_next(&mut self, track: &Track) {
-        let soundtouch = self
-            .config
-            .read_recursive()
-            .settings
-            .backends
-            .rusty
-            .soundtouch;
-        self.command(PlayerInternalCmd::QueueNext(
+        let config_read = self.config.read_recursive();
+        let soundtouch = config_read.settings.backends.rusty.soundtouch;
+        let file_buf_size = usize::try_from(
+            config_read
+                .settings
+                .backends
+                .rusty
+                .file_buffer_size
+                .as_u64(),
+        )
+        .unwrap_or(usize::MAX);
+        let ringbuf_size = usize::try_from(
+            config_read
+                .settings
+                .backends
+                .rusty
+                .decoded_buffer_size
+                .as_u64(),
+        )
+        .unwrap_or(usize::MAX);
+
+        drop(config_read);
+
+        self.command(PlayerInternalCmd::Play(
             Box::new(track.clone()),
-            self.gapless,
-            soundtouch,
+            QueueNextOptions {
+                gapless_decode: self.gapless,
+                soundtouch,
+                file_buf_size,
+                ringbuf_size,
+                enqueue: true,
+            },
         ));
     }
 
@@ -265,34 +295,79 @@ impl PlayerTrait for RustyBackend {
     }
 }
 
-/// Append the `media_source` to the `sink`, while allowing different functions to run with `func` with a [`MediaTitleRx`]
-fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx), TD: Display>(
+/// Common options across the `append_to_sink*` functions
+#[derive(Debug, Default)]
+struct CommonAppendOptions {
+    /// Enable or disable gapless decoding
+    gapless_decode: bool,
+    /// Enable or disable soundtouch speed modifier or with `false` use rodio's speed modifier
+    soundtouch: bool,
+    /// Enable or disable async decoding (decode to happen on a different thread than the playback)
+    async_decode: bool,
+    /// The size for the ring buffer.
+    ringbuf_size: usize,
+}
+
+/// Extra options specific to [`append_to_sink_test`]
+#[derive(Debug)]
+struct SpecificAppendOptions {
+    /// Enable or disable creation of the media-title update channel.
+    media_title: bool,
+}
+
+/// The function to actually create the decoder and append it to the sink.
+fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitleRx>)>(
     media_source: Box<dyn MediaSource>,
     trace: TD,
     sink: &Sink,
-    gapless: bool,
-    soundtouch: bool,
+    common_options: &CommonAppendOptions,
+    specific_options: &SpecificAppendOptions,
     func: F,
 ) {
     let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
-    match Symphonia::new_with_media_title(mss, gapless) {
-        Ok((mut decoder, rx)) => {
-            func(&mut decoder, rx);
-
-            let handle = tokio::runtime::Handle::current();
-            let (spec, current_frame_len) = decoder.get_spec();
-            let total_duration = decoder.total_duration();
-            let (prod, cons) =
-                AsyncRingSource::new(spec, total_duration, current_frame_len, 0, handle.clone());
-
-            tokio::task::spawn_blocking(move || {
-                handle.block_on(decode_task(decoder, prod));
-            });
-
-            sink.append(cons, &SourceOptions { soundtouch });
-            // sink.append(decoder, &SourceOptions { soundtouch });
+    let (mut decoder, rx) = match Symphonia::new(
+        mss,
+        common_options.gapless_decode,
+        specific_options.media_title,
+    ) {
+        Err(err) => {
+            error!("Error decoding '{trace}': {err:?}");
+            return;
         }
-        Err(e) => error!("error decoding '{trace}' is: {e:?}"),
+        Ok(v) => v,
+    };
+
+    (func)(&mut decoder, rx);
+
+    if common_options.async_decode {
+        let handle = tokio::runtime::Handle::current();
+        let (spec, current_frame_len) = decoder.get_spec();
+        let total_duration = decoder.total_duration();
+        let (prod, cons) = AsyncRingSource::new(
+            spec,
+            total_duration,
+            current_frame_len,
+            common_options.ringbuf_size,
+            handle.clone(),
+        );
+
+        tokio::task::spawn_blocking(move || {
+            handle.block_on(decode_task(decoder, prod));
+        });
+
+        sink.append(
+            cons,
+            &SourceOptions {
+                soundtouch: common_options.soundtouch,
+            },
+        );
+    } else {
+        sink.append(
+            decoder,
+            &SourceOptions {
+                soundtouch: common_options.soundtouch,
+            },
+        );
     }
 }
 
@@ -352,25 +427,6 @@ async fn decode_task_seek_fut(
     Some(())
 }
 
-/// Append the `media_source` to the `sink`, while allowing different functions to run with `func`
-fn append_to_sink_inner<F: FnOnce(&mut Symphonia)>(
-    media_source: Box<dyn MediaSource>,
-    trace: &str,
-    sink: &Sink,
-    gapless: bool,
-    soundtouch: bool,
-    func: F,
-) {
-    let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
-    match Symphonia::new(mss, gapless) {
-        Ok(mut decoder) => {
-            func(&mut decoder);
-            sink.append(decoder, &SourceOptions { soundtouch });
-        }
-        Err(e) => error!("error decoding '{trace}' is: {e:?}"),
-    }
-}
-
 /// Append the `media_source` to the `sink`, while also setting `total_duration*`
 ///
 /// Expects current thread to have a tokio handle
@@ -378,18 +434,19 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
     media_source: Box<dyn MediaSource>,
     trace: TD,
     sink: &Sink,
-    gapless: bool,
+    options: &CommonAppendOptions,
     total_duration_local: &ArcTotalDuration,
-    soundtouch: bool,
     media_title_fn: MT,
 ) {
-    append_to_sink_inner_media_title(
+    append_to_sink_inner(
         media_source,
         trace,
         sink,
-        gapless,
-        soundtouch,
-        |decoder, mut media_title_rx| {
+        options,
+        &SpecificAppendOptions { media_title: true },
+        |decoder, media_title_rx| {
+            // ensured to always exist if `specific_options.media_title = true`
+            let mut media_title_rx = media_title_rx.unwrap();
             std::mem::swap(
                 &mut *total_duration_local.lock(),
                 &mut decoder.total_duration(),
@@ -407,18 +464,25 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
 }
 
 /// Append the `media_source` to the `sink`, while setting duration to be unknown (to [`None`])
+#[inline]
 fn append_to_sink_no_duration(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
-    gapless: bool,
+    options: &CommonAppendOptions,
     total_duration_local: &ArcTotalDuration,
-    soundtouch: bool,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, soundtouch, |_| {
-        // remove old stale duration
-        total_duration_local.lock().take();
-    });
+    append_to_sink_inner(
+        media_source,
+        trace,
+        sink,
+        options,
+        &SpecificAppendOptions { media_title: false },
+        |_, _| {
+            // remove old stale duration
+            total_duration_local.lock().take();
+        },
+    );
 }
 
 /// Append the `media_source` to the `sink`, while also setting `next_duration_opt`
@@ -430,19 +494,21 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
     media_source: Box<dyn MediaSource>,
     trace: TD,
     sink: &Sink,
-    gapless: bool,
+    options: &CommonAppendOptions,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
-    soundtouch: bool,
     media_title_fn: MT,
 ) {
-    append_to_sink_inner_media_title(
+    append_to_sink_inner(
         media_source,
         trace,
         sink,
-        gapless,
-        soundtouch,
-        |decoder, mut media_title_rx| {
+        options,
+        &SpecificAppendOptions { media_title: true },
+        |decoder, media_title_rx| {
+            // ensured to always exist if `specific_options.media_title = true`
+            let mut media_title_rx = media_title_rx.unwrap();
+
             std::mem::swap(next_duration_opt, &mut decoder.total_duration());
 
             let handle = Handle::current();
@@ -459,19 +525,26 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
 /// Append the `media_source` to the `sink`, while also setting `next_duration_opt` to be unknown (to [`None`])
 ///
 /// This is used for enqueued entries which do not start immediately
+#[inline]
 fn append_to_sink_queue_no_duration(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
-    gapless: bool,
+    options: &CommonAppendOptions,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
-    soundtouch: bool,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, soundtouch, |_| {
-        // remove potential old stale duration
-        next_duration_opt.take();
-    });
+    append_to_sink_inner(
+        media_source,
+        trace,
+        sink,
+        options,
+        &SpecificAppendOptions { media_title: false },
+        |_, _| {
+            // remove potential old stale duration
+            next_duration_opt.take();
+        },
+    );
 }
 
 /// Common handling of a `media_title` for a [`append_to_sink`] function
@@ -523,44 +596,24 @@ async fn player_thread(mut args: PlayerThreadArgs) {
         };
 
         match cmd {
-            PlayerInternalCmd::Play(track, gapless, soundtouch) => {
+            PlayerInternalCmd::Play(track, options) => {
                 if let Err(err) = queue_next(
                     &track,
-                    gapless,
                     &sink,
+                    options,
                     &mut is_radio,
                     &args.total_duration,
                     &mut next_duration_opt,
                     &args.media_title,
                     // &radio_downloaded,
-                    false,
-                    soundtouch,
                 )
                 .await
                 {
-                    error!("Failed to play track: {err:#?}");
+                    error!("Failed to enqueue track: {err:#?}");
                 }
             }
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
-            }
-            PlayerInternalCmd::QueueNext(track, gapless, soundtouch) => {
-                if let Err(err) = queue_next(
-                    &track,
-                    gapless,
-                    &sink,
-                    &mut is_radio,
-                    &args.total_duration,
-                    &mut next_duration_opt,
-                    &args.media_title,
-                    // &radio_downloaded,
-                    true,
-                    soundtouch,
-                )
-                .await
-                {
-                    error!("Failed to queue next track: {err:#?}");
-                }
             }
             PlayerInternalCmd::Resume => {
                 sink.play();
@@ -648,20 +701,31 @@ async fn player_thread(mut args: PlayerThreadArgs) {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct QueueNextOptions {
+    /// Enable or disable gapless decoding
+    gapless_decode: bool,
+    /// Enable or disable soundtouch speed modifier or with `false` use rodio's speed modifier
+    soundtouch: bool,
+    /// Determines which append function and which duration type to use.
+    enqueue: bool,
+    /// Determines the size of the [`BufferedSource`].
+    file_buf_size: usize,
+    /// Determines the size of the [`AsyncRingSource`].
+    ringbuf_size: usize,
+}
+
 /// Queue the given track into the [`Sink`], while also setting all of the other variables
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 async fn queue_next(
     track: &Track,
-    gapless: bool,
     sink: &Sink,
+    options: QueueNextOptions,
 
     is_radio: &mut bool,
     total_duration: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
     media_title: &Arc<Mutex<String>>,
-    enqueue: bool,
-
-    soundtouch: bool,
 ) -> Result<()> {
     match track.inner() {
         MediaTypes::Track(track_data) => {
@@ -669,24 +733,32 @@ async fn queue_next(
             let file_path = track_data.path();
             let file = File::open(file_path).context("Failed to open music file")?;
 
-            if enqueue {
+            if options.enqueue {
                 append_to_sink_queue(
-                    Box::new(BufferedSource::new_default_size(file)),
+                    Box::new(BufferedSource::new(file, options.file_buf_size)),
                     file_path.display(),
                     sink,
-                    gapless,
+                    &CommonAppendOptions {
+                        gapless_decode: options.gapless_decode,
+                        soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
+                        async_decode: true,
+                    },
                     next_duration_opt,
-                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             } else {
                 append_to_sink(
-                    Box::new(BufferedSource::new_default_size(file)),
+                    Box::new(BufferedSource::new(file, options.file_buf_size)),
                     file_path.display(),
                     sink,
-                    gapless,
+                    &CommonAppendOptions {
+                        gapless_decode: options.gapless_decode,
+                        soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
+                        async_decode: true,
+                    },
                     total_duration,
-                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             }
@@ -754,23 +826,31 @@ async fn queue_next(
                 Box::new(ReadOnlySource::new(reader))
             };
 
-            if enqueue {
+            if options.enqueue {
                 append_to_sink_queue_no_duration(
                     media_source,
                     url,
                     sink,
-                    gapless,
+                    &CommonAppendOptions {
+                        gapless_decode: options.gapless_decode,
+                        soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
+                        async_decode: false,
+                    },
                     next_duration_opt,
-                    soundtouch,
                 );
             } else {
                 append_to_sink_no_duration(
                     media_source,
                     url,
                     sink,
-                    gapless,
+                    &CommonAppendOptions {
+                        gapless_decode: options.gapless_decode,
+                        soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
+                        async_decode: false,
+                    },
                     total_duration,
-                    soundtouch,
                 );
             }
 
@@ -781,24 +861,32 @@ async fn queue_next(
             if let Some(file_path) = podcast_track_data.localfile() {
                 let file = File::open(Path::new(&file_path))
                     .context("Failed to open local podcast file")?;
-                if enqueue {
+                if options.enqueue {
                     append_to_sink_queue(
-                        Box::new(BufferedSource::new_default_size(file)),
+                        Box::new(BufferedSource::new(file, options.file_buf_size)),
                         file_path.display(),
                         sink,
-                        gapless,
+                        &CommonAppendOptions {
+                            gapless_decode: options.gapless_decode,
+                            soundtouch: options.soundtouch,
+                            ringbuf_size: options.ringbuf_size,
+                            async_decode: true,
+                        },
                         next_duration_opt,
-                        soundtouch,
                         common_media_title_cb(media_title.clone()),
                     );
                 } else {
                     append_to_sink(
-                        Box::new(BufferedSource::new_default_size(file)),
+                        Box::new(BufferedSource::new(file, options.file_buf_size)),
                         file_path.display(),
                         sink,
-                        gapless,
+                        &CommonAppendOptions {
+                            gapless_decode: options.gapless_decode,
+                            soundtouch: options.soundtouch,
+                            ringbuf_size: options.ringbuf_size,
+                            async_decode: true,
+                        },
                         total_duration,
-                        soundtouch,
                         common_media_title_cb(media_title.clone()),
                     );
                 }
@@ -819,14 +907,18 @@ async fn queue_next(
             )
             .await?;
 
-            if enqueue {
+            if options.enqueue {
                 append_to_sink_queue(
                     Box::new(ReadSeekSource::new(reader, file_len)),
                     url,
                     sink,
-                    gapless,
+                    &CommonAppendOptions {
+                        gapless_decode: options.gapless_decode,
+                        soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
+                        async_decode: false,
+                    },
                     next_duration_opt,
-                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             } else {
@@ -834,9 +926,13 @@ async fn queue_next(
                     Box::new(ReadSeekSource::new(reader, file_len)),
                     url,
                     sink,
-                    gapless,
+                    &CommonAppendOptions {
+                        gapless_decode: options.gapless_decode,
+                        soundtouch: options.soundtouch,
+                        ringbuf_size: options.ringbuf_size,
+                        async_decode: false,
+                    },
                     total_duration,
-                    soundtouch,
                     common_media_title_cb(media_title.clone()),
                 );
             }
