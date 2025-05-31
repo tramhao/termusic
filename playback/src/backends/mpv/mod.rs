@@ -146,7 +146,7 @@ impl MpvBackend {
             }
 
             if let Ok(cmd) = icmd_rx.try_recv() {
-                Self::handle_internal_cmd(cmd, mpv, total_duration, cmd_tx);
+                Self::handle_internal_cmd(cmd, mpv, cmd_tx);
             }
 
             // This is important to keep the mpv running, otherwise it cannot play.
@@ -164,6 +164,11 @@ impl MpvBackend {
         total_duration: &ArcTotalDuration,
     ) {
         match ev {
+            Event::StartFile => {
+                // Reset times on the start of a file / stream
+                total_duration.lock().take();
+                *position.lock() = Duration::ZERO;
+            }
             Event::EndFile(e) => {
                 // error!("event end file {:?} received", e);
                 if e == 0 {
@@ -227,16 +232,9 @@ impl MpvBackend {
     }
 
     /// Handle a given [`PlayerInternalCmd`].
-    fn handle_internal_cmd(
-        cmd: PlayerInternalCmd,
-        mpv: &Mpv,
-        total_duration: &ArcTotalDuration,
-        cmd_tx: &crate::PlayerCmdSender,
-    ) {
+    fn handle_internal_cmd(cmd: PlayerInternalCmd, mpv: &Mpv, cmd_tx: &crate::PlayerCmdSender) {
         match cmd {
             PlayerInternalCmd::Play(new) => {
-                // reset total duration for new track
-                let _ = total_duration.lock().take();
                 let _ = mpv.command("loadfile", &[&format!("\"{new}\""), "replace"]);
             }
             PlayerInternalCmd::QueueNext(next) => {
