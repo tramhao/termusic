@@ -134,6 +134,3 @@ CREATE TABLE IF NOT EXISTS podcast_episodes(
     -- optional description of the episode
     description TEXT
 );
-
--- Open questions:
--- 4: should we do some kind of design where there is one single "last_position" table for both music and podcasts?
