@@ -166,6 +166,10 @@ impl Playlist {
             }
         }
 
+        // protect against the listed index in the playlist file not matching the elements in the playlist
+        // for example lets say it has "100", but there are only 2 elements in the playlist
+        let current_track_index = current_track_index.min(playlist_items.len().saturating_sub(1));
+
         Ok((current_track_index, playlist_items))
     }
 
