@@ -18,6 +18,8 @@ use termusiclib::track::{MediaTypes, Track};
 
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 
+pub type ArcTotalDuration = Arc<Mutex<Option<Duration>>>;
+
 pub struct MpvBackend {
     // player: Mpv,
     volume: u16,
@@ -25,8 +27,7 @@ pub struct MpvBackend {
     gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
     position: Arc<Mutex<Duration>>,
-    // TODO: this should likely be a Option
-    duration: Arc<Mutex<Duration>>,
+    total_duration: ArcTotalDuration,
     media_title: Arc<Mutex<String>>,
     // cmd_tx: crate::PlayerCmdSender,
 }
@@ -53,10 +54,10 @@ impl MpvBackend {
         let speed = config.settings.player.speed;
         let gapless = config.settings.player.gapless;
         let position = Arc::new(Mutex::new(Duration::default()));
-        let duration = Arc::new(Mutex::new(Duration::default()));
+        let total_duration = Arc::new(Mutex::new(None));
         let media_title = Arc::new(Mutex::new(String::new()));
         let position_inside = position.clone();
-        let duration_inside = duration.clone();
+        let total_duration_inside = total_duration.clone();
         let media_title_inside = media_title.clone();
 
         let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
@@ -85,7 +86,7 @@ impl MpvBackend {
                     &cmd_tx,
                     &media_title_inside,
                     &position_inside,
-                    &duration_inside,
+                    &total_duration_inside,
                 );
             })
             .expect("failed to start mpv event loop thread");
@@ -96,7 +97,7 @@ impl MpvBackend {
             gapless,
             command_tx,
             position,
-            duration,
+            total_duration,
             media_title,
         }
     }
@@ -109,7 +110,7 @@ impl MpvBackend {
         cmd_tx: &crate::PlayerCmdSender,
         media_title: &Arc<Mutex<String>>,
         position: &Arc<Mutex<Duration>>,
-        duration: &Arc<Mutex<Duration>>,
+        total_duration: &ArcTotalDuration,
     ) {
         let mut ev_ctx = mpv.create_event_context();
         ev_ctx
@@ -134,7 +135,7 @@ impl MpvBackend {
                             cmd_tx,
                             media_title,
                             position,
-                            duration,
+                            total_duration,
                         );
                     }
                     Err(err) => {
@@ -145,7 +146,7 @@ impl MpvBackend {
             }
 
             if let Ok(cmd) = icmd_rx.try_recv() {
-                Self::handle_internal_cmd(cmd, mpv, duration, cmd_tx);
+                Self::handle_internal_cmd(cmd, mpv, total_duration, cmd_tx);
             }
 
             // This is important to keep the mpv running, otherwise it cannot play.
@@ -160,7 +161,7 @@ impl MpvBackend {
         cmd_tx: &crate::PlayerCmdSender,
         media_title: &Arc<Mutex<String>>,
         position: &Arc<Mutex<Duration>>,
-        duration: &Arc<Mutex<Duration>>,
+        total_duration: &ArcTotalDuration,
     ) {
         match ev {
             Event::EndFile(e) => {
@@ -180,7 +181,7 @@ impl MpvBackend {
                 "duration" => {
                     if let PropertyData::Double(dur) = change {
                         // using "dur.max" because mpv *may* return a negative number
-                        *duration.lock() = Duration::from_secs_f64(dur.max(0.0));
+                        *total_duration.lock() = Some(Duration::from_secs_f64(dur.max(0.0)));
                     }
                 }
                 "time-pos" => {
@@ -190,11 +191,14 @@ impl MpvBackend {
                         *position.lock() = time_pos;
 
                         // About to finish signal is a simulation of gstreamer, and used for gapless
-                        let dur = duration.lock();
-                        let progress = time_pos.as_secs_f64() / dur.as_secs_f64();
-                        if progress >= 0.5 && (*dur - time_pos) < Duration::from_secs(2) {
-                            if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
-                                error!("command AboutToFinish sent failed: {e}");
+                        if let Some(total_duration) = *total_duration.lock() {
+                            let progress = time_pos.as_secs_f64() / total_duration.as_secs_f64();
+                            if progress >= 0.5
+                                && total_duration.saturating_sub(time_pos) < Duration::from_secs(2)
+                            {
+                                if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
+                                    error!("command AboutToFinish sent failed: {e}");
+                                }
                             }
                         }
                     }
@@ -226,15 +230,14 @@ impl MpvBackend {
     fn handle_internal_cmd(
         cmd: PlayerInternalCmd,
         mpv: &Mpv,
-        duration: &Arc<Mutex<Duration>>,
+        total_duration: &ArcTotalDuration,
         cmd_tx: &crate::PlayerCmdSender,
     ) {
         match cmd {
-            // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
             PlayerInternalCmd::Play(new) => {
-                *duration.lock() = Duration::default();
+                // reset total duration for new track
+                let _ = total_duration.lock().take();
                 let _ = mpv.command("loadfile", &[&format!("\"{new}\""), "replace"]);
-                // error!("add and play {} ok", new);
             }
             PlayerInternalCmd::QueueNext(next) => {
                 let _ = mpv.command("loadfile", &[&format!("\"{next}\""), "append"]);
@@ -367,7 +370,7 @@ impl PlayerTrait for MpvBackend {
     fn get_progress(&self) -> Option<PlayerProgress> {
         Some(PlayerProgress {
             position: Some(*self.position.lock()),
-            total_duration: Some(*self.duration.lock()),
+            total_duration: *self.total_duration.lock(),
         })
     }
 
