@@ -239,7 +239,12 @@ impl Track {
 
     /// Create a new Track from a local file, populated with the most important tags
     pub fn read_track_from_path<P: Into<PathBuf>>(path: P) -> Result<Self> {
-        let path = path.into();
+        let path: PathBuf = path.into();
+
+        // for the case that we somehow get a path that is just ""(empty)
+        if path.as_os_str().is_empty() {
+            bail!("Given path is empty!");
+        }
 
         let metadata = match parse_metadata_from_file(
             &path,

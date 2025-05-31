@@ -518,8 +518,6 @@ impl PlayerTrait for GStreamerBackend {
         let _ = self.playbin.set_state(gst::State::Null);
     }
 
-    #[allow(clippy::cast_precision_loss)]
-    #[allow(clippy::cast_possible_wrap)]
     fn get_progress(&self) -> Option<PlayerProgress> {
         let position = Some(self.playbin.get_position()?.into());
         let total_duration = Some(self.playbin.get_duration()?.into());

@@ -28,6 +28,7 @@
 - Fix(server): with `rusty-soundtouch` on `rusty` backend, dont take initial samples until necessary.
 - Fix(server): on rusty backend, always decode and use `f32` samples. (instead of `i16`)
 - Fix(server): on rusty backend, update `soundtouch` version to fix build issues on latest arch & gcc 15.
+- Fix(server): on mpv backend, fix possible race condition that could cause a panic by having `time-pos` event before `duration` event.
 - Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
 
 ### [V0.10.0]
