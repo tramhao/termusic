@@ -12,8 +12,12 @@ CREATE TABLE IF NOT EXISTS config(
 -- the table for all local music files to use as reference
 CREATE TABLE IF NOT EXISTS tracks(
     id INTEGER PRIMARY KEY,
-    -- file cannot be null, as it is used as a identifier
-    file TEXT NOT NULL UNIQUE,
+    -- the file's directory
+    file_dir TEXT NOT NULL,
+    -- the file's name
+    file_stem TEXT NOT NULL,
+    -- the file's extension
+    file_ext TEXT NOT NULL,
     -- duration parsing may fail or somehow not be available
     duration INTEGER,
     -- last known played position, if NULL should assume 0
@@ -24,6 +28,9 @@ CREATE TABLE IF NOT EXISTS tracks(
     -- set "NULL" on delete as deleting a album does not inheritly mean the file is deleted
     album INTEGER REFERENCES albums(id) ON DELETE SET NULL
 );
+
+-- unique index on the tracks.file_* columns as those combine to be one path
+CREATE UNIQUE INDEX IF NOT EXISTS tracks_files ON tracks(file_dir, file_stem, file_ext);
 
 -- single metadata for a file
 CREATE TABLE IF NOT EXISTS tracks_metadata(
@@ -129,5 +136,4 @@ CREATE TABLE IF NOT EXISTS podcast_episodes(
 );
 
 -- Open questions:
--- 3: should "files.file" be split to "directory, file_stem, ext" instead of just the full path?
 -- 4: should we do some kind of design where there is one single "last_position" table for both music and podcasts?
