@@ -67,8 +67,8 @@ CREATE TABLE IF NOT EXISTS tracks_artists(
 -- Note: not unique, there *could* be ones with the same name
 CREATE TABLE IF NOT EXISTS albums(
     id INTEGER PRIMARY KEY,
-    -- can be null if failed to parse, or is in a album but does not have a name for whatever reason
-    title TEXT,
+    -- the title of the album, if it failed to parse, no album should be added
+    title TEXT NOT NULL,
     -- what will be shown for the author field, example "AuthorA feat. AuthorB" (but for linking use the artists / albums_artist tables)
     author_display TEXT
 );
