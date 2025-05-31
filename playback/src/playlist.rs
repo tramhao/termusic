@@ -143,6 +143,15 @@ impl Playlist {
             .with_context(|| "failed to get podcasts from db.")?;
         for line in lines {
             let line = line?;
+
+            let trimmed_line = line.trim();
+
+            // skip empty lines without trying to process them
+            // skip lines that are comments (m3u-like)
+            if trimmed_line.is_empty() || trimmed_line.starts_with('#') {
+                continue;
+            }
+
             if line.starts_with("http") {
                 let mut is_podcast = false;
                 'outer: for pod in &podcasts {
