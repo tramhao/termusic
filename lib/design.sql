@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS config(
 --- SECTION: local music files
 
 -- the table for all local music files to use as reference
-CREATE TABLE IF NOT EXISTS files(
+CREATE TABLE IF NOT EXISTS tracks(
     id INTEGER PRIMARY KEY,
     -- file cannot be null, as it is used as a identifier
     file TEXT NOT NULL UNIQUE,
@@ -26,15 +26,15 @@ CREATE TABLE IF NOT EXISTS files(
 );
 
 -- single metadata for a file
-CREATE TABLE IF NOT EXISTS files_metadata(
+CREATE TABLE IF NOT EXISTS tracks_metadata(
     id INTEGER PRIMARY KEY,
     -- the file this metadata is for; if the related file is dropped, drop this too
-    file INTEGER NOT NULL UNIQUE REFERENCES files(id) ON DELETE CASCADE,
+    file INTEGER NOT NULL UNIQUE REFERENCES tracks(id) ON DELETE CASCADE,
     -- can be null if not present or cannot be parsed
     title TEXT,
     -- can be null if not present or cannot be parsed
     genre TEXT,
-    -- what will be shown for the author field, example "AuthorA feat. AuthorB" (but for linking use the artists / files_artists tables)
+    -- what will be shown for the author field, example "AuthorA feat. AuthorB" (but for linking use the artists / tracks_artists tables)
     author_display TEXT
 );
 
@@ -50,9 +50,9 @@ CREATE TABLE IF NOT EXISTS artists(
 
 -- relation table for a file's artist
 -- entry will get deleted if the artist is dropped or the file is dropped
-CREATE TABLE IF NOT EXISTS files_artists(
+CREATE TABLE IF NOT EXISTS tracks_artists(
     id INTEGER PRIMARY KEY,
-    file INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+    file INTEGER NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
     artist INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE
 );
 
