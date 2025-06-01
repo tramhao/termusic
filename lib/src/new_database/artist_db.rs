@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use rusqlite::{Connection, named_params};
 
 use super::Integer;
@@ -16,7 +16,7 @@ impl ArtistInsertable<'_> {
             artist: self.artist,
         };
 
-        let id = insert_artist.upsert(conn)?;
+        let id = insert_artist.upsert(conn).context("artists")?;
 
         Ok(id)
     }
@@ -59,7 +59,7 @@ impl InsertArtist<'_> {
 
     // TODO: the following functions should be on a different struct
 
-    /// Count all rows currently in the `tracks` database
+    /// Count all rows currently in the `artists` database
     fn count_all(conn: &Connection) -> Result<Integer> {
         let count = conn.query_row("SELECT COUNT(id) FROM artists;", [], |v| v.get(0))?;
 
