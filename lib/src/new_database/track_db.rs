@@ -134,7 +134,6 @@ impl<'a> TrackInsertable<'a> {
     /// This will also insert all metadata, album and artists.
     pub fn try_insert_or_update(&self, conn: &Connection) -> Result<Integer> {
         // TODO: insert album
-        // TODO: insert artists
 
         let insert_track = InsertTrack {
             file_dir: &self.file_dir.to_string_lossy(),
@@ -155,6 +154,17 @@ impl<'a> TrackInsertable<'a> {
             artist_display: self.artist_display,
         };
 
+        for artist in &self.artists {
+            let artist = match artist {
+                Either::Left(insertable) => insertable.try_insert_or_update(conn)?,
+                Either::Right(v) => *v,
+            };
+
+            let insert_mapping = InsertTrackArtistMapping { file: id, artist };
+
+            insert_mapping.upsert(conn)?;
+        }
+
         let _ = insert_metadata.upsert(conn)?;
 
         Ok(id)
@@ -162,6 +172,7 @@ impl<'a> TrackInsertable<'a> {
 }
 
 /// Stores references for insertion into `tracks` directly
+#[derive(Debug, PartialEq)]
 struct InsertTrack<'a> {
     // Track identifier
     file_dir: &'a str,
@@ -217,8 +228,9 @@ impl InsertTrack<'_> {
 }
 
 /// Stores references for insertion into `tracks_metadata` directly
+#[derive(Debug, PartialEq)]
 struct InsertTrackMetadata<'a> {
-    // Track identifier
+    /// Track identifier
     file: Integer,
 
     // Direct data on `tracks_metadata`
@@ -263,11 +275,51 @@ impl InsertTrackMetadata<'_> {
     }
 }
 
+/// Stores references for insertion into `tracks_artists` directly
+#[derive(Debug, PartialEq)]
+struct InsertTrackArtistMapping {
+    file: Integer,
+    artist: Integer,
+}
+
+impl InsertTrackArtistMapping {
+    /// Insert the current data, not caring about the id that was inserted
+    fn upsert(&self, conn: &Connection) -> Result<()> {
+        let mut stmt = conn.prepare_cached(
+            "
+            INSERT INTO tracks_artists (file, artist)
+            VALUES (:file, :artist)
+            ON CONFLICT(file, artist) DO NOTHING;
+        ",
+        )?;
+
+        stmt.execute(named_params! {
+            ":file": self.file,
+            ":artist": self.artist,
+        })?;
+
+        Ok(())
+    }
+
+    // TODO: the following functions should be on a different struct
+
+    /// Count all rows currently in the `tracks` database
+    fn count_all(conn: &Connection) -> Result<Integer> {
+        let count = conn.query_row("SELECT COUNT(file) FROM tracks_artists;", [], |v| v.get(0))?;
+
+        Ok(count)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
 
-    use crate::new_database::{test_utils::gen_database, track_db::InsertTrackMetadata};
+    use crate::new_database::{
+        artist_db::ArtistInsertable,
+        test_utils::gen_database,
+        track_db::{InsertTrackArtistMapping, InsertTrackMetadata},
+    };
 
     use super::InsertTrack;
 
@@ -337,6 +389,44 @@ mod tests {
         assert_eq!(new_id, id);
 
         let count = InsertTrackMetadata::count_all(&db).unwrap();
+
+        assert_eq!(count, 1);
+    }
+
+    /// Simple test that [`InsertTrackArtistMapping::upsert`] works correctly
+    /// both with insertion and updating.
+    #[test]
+    fn should_insert_artist_mapping_simple() {
+        let db = gen_database();
+
+        let data = InsertTrack {
+            file_dir: "/somewhere",
+            file_stem: "some file",
+            file_ext: "mp3",
+            duration: Some(Duration::from_secs(10)),
+            last_position: None,
+            album: None,
+        };
+
+        let db = db.conn.lock();
+        let track_id = data.upsert(&db).unwrap();
+        assert_eq!(track_id, 1);
+
+        let artist = ArtistInsertable { artist: "ArtistA" };
+
+        let artist_id = artist.try_insert_or_update(&db).unwrap();
+        assert_eq!(artist_id, 1);
+
+        let mapping = InsertTrackArtistMapping {
+            file: track_id,
+            artist: artist_id,
+        };
+
+        mapping.upsert(&db).unwrap();
+
+        mapping.upsert(&db).unwrap();
+
+        let count = InsertTrackArtistMapping::count_all(&db).unwrap();
 
         assert_eq!(count, 1);
     }
