@@ -738,6 +738,7 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions, res: &mut TrackMetadata)
         res.artist = tag.artist().map(Cow::into_owned);
     }
     if options.artists {
+        // TODO: manually split if convenient tag is not available
         res.artists = Some(
             tag.get_strings(&ItemKey::TrackArtists)
                 .map(ToString::to_string)
@@ -754,6 +755,8 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions, res: &mut TrackMetadata)
             .map(ToString::to_string);
     }
     if options.album_artists {
+        // TODO: manually split if convenient tag is not available
+
         // manual implementation as it currently does not exist upstream
         // see https://github.com/Serial-ATA/lofty-rs/issues/522
         // res.album_artists = Some(tag.get_strings(&ItemKey::AlbumArtists).map(ToString::to_string).collect());
