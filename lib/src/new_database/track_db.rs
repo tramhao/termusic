@@ -1,6 +1,6 @@
 use std::{borrow::Cow, ffi::OsStr, path::Path, time::Duration};
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use either::Either;
 use rusqlite::{Connection, named_params};
 
@@ -83,7 +83,9 @@ impl<'a> TrackInsertable<'a> {
             .map(String::as_str);
         let album_artists = metadata.album_artists.as_ref();
 
-        let album = if let Some(album_title) = album_title {
+        let album = if let (Some(album_title), Some(album_artist_display)) =
+            (album_title, album_artist_display)
+        {
             let album_artists = album_artists
                 .map(|v| {
                     v.iter()
@@ -133,7 +135,18 @@ impl<'a> TrackInsertable<'a> {
     ///
     /// This will also insert all metadata, album and artists.
     pub fn try_insert_or_update(&self, conn: &Connection) -> Result<Integer> {
-        // TODO: insert album
+        let album = if let Some(album) = &self.album {
+            let ret = match album {
+                Either::Left(insertable) => {
+                    insertable.try_insert_or_update(conn).context("album")?
+                }
+                Either::Right(v) => *v,
+            };
+
+            Some(ret)
+        } else {
+            None
+        };
 
         let insert_track = InsertTrack {
             file_dir: &self.file_dir.to_string_lossy(),
@@ -141,11 +154,10 @@ impl<'a> TrackInsertable<'a> {
             file_ext: &self.file_ext.to_string_lossy(),
             duration: self.duration,
             last_position: self.last_position,
-            // TODO: do the album first, then add this
-            album: None,
+            album,
         };
 
-        let id = insert_track.upsert(conn)?;
+        let id = insert_track.upsert(conn).context("tracks")?;
 
         let insert_metadata = InsertTrackMetadata {
             track: id,
@@ -154,18 +166,20 @@ impl<'a> TrackInsertable<'a> {
             artist_display: self.artist_display,
         };
 
+        let _ = insert_metadata.upsert(conn).context("tracks_metadata")?;
+
         for artist in &self.artists {
             let artist = match artist {
-                Either::Left(insertable) => insertable.try_insert_or_update(conn)?,
+                Either::Left(insertable) => {
+                    insertable.try_insert_or_update(conn).context("artists")?
+                }
                 Either::Right(v) => *v,
             };
 
             let insert_mapping = InsertTrackArtistMapping { track: id, artist };
 
-            insert_mapping.upsert(conn)?;
+            insert_mapping.upsert(conn).context("tracks_artist")?;
         }
-
-        let _ = insert_metadata.upsert(conn)?;
 
         Ok(id)
     }
@@ -267,7 +281,7 @@ impl InsertTrackMetadata<'_> {
 
     // TODO: the following functions should be on a different struct
 
-    /// Count all rows currently in the `tracks` database
+    /// Count all rows currently in the `tracks_metadata` database
     fn count_all(conn: &Connection) -> Result<Integer> {
         let count = conn.query_row("SELECT COUNT(track) FROM tracks_metadata;", [], |v| {
             v.get(0)
@@ -305,7 +319,7 @@ impl InsertTrackArtistMapping {
 
     // TODO: the following functions should be on a different struct
 
-    /// Count all rows currently in the `tracks` database
+    /// Count all rows currently in the `tracks_artists` database
     fn count_all(conn: &Connection) -> Result<Integer> {
         let count = conn.query_row("SELECT COUNT(track) FROM tracks_artists;", [], |v| v.get(0))?;
 
