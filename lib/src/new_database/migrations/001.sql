@@ -64,15 +64,17 @@ CREATE TABLE IF NOT EXISTS tracks_artists(
 );
 
 -- the table for all albums
--- Note: not unique, there *could* be ones with the same name
--- Note: "artist_display" or "albums_artists" should be used to match exact album
 CREATE TABLE IF NOT EXISTS albums(
     id INTEGER PRIMARY KEY,
     -- the title of the album, if it failed to parse, no album should be added
     title TEXT NOT NULL,
     -- what will be shown for the artist field, example "ArtistA feat. ArtistB" (but for linking use the artists / tracks_artists tables)
-    artist_display TEXT
+    artist_display TEXT NOT NULL
 );
+
+-- unique index on the albums so that upsert works; there should only be one album from the same artist(s) and name
+-- in the future maybe consider restricting this with additional id's like musicbrainz
+CREATE UNIQUE INDEX IF NOT EXISTS albums_id ON albums(title, artist_display);
 
 -- relation table for a album's artist
 -- this is so that albums with "ArtistA feat. ArtistB" can be searched for either
