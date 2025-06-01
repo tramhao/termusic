@@ -135,7 +135,6 @@ impl<'a> TrackInsertable<'a> {
     pub fn try_insert_or_update(&self, conn: &Connection) -> Result<Integer> {
         // TODO: insert album
         // TODO: insert artists
-        // TODO: insert extra metadata
 
         let insert_track = InsertTrack {
             file_dir: &self.file_dir.to_string_lossy(),
@@ -148,6 +147,15 @@ impl<'a> TrackInsertable<'a> {
         };
 
         let id = insert_track.upsert(conn)?;
+
+        let insert_metadata = InsertTrackMetadata {
+            track: id,
+            title: self.title,
+            genre: self.genre,
+            artist_display: self.artist_display,
+        };
+
+        let _ = insert_metadata.upsert(conn)?;
 
         Ok(id)
     }
@@ -208,11 +216,60 @@ impl InsertTrack<'_> {
     }
 }
 
+/// Stores references for insertion into `tracks_metadata` directly
+struct InsertTrackMetadata<'a> {
+    // Track identifier
+    track: Integer,
+
+    // Direct data on `tracks_metadata`
+    title: Option<&'a str>,
+    genre: Option<&'a str>,
+    artist_display: Option<&'a str>,
+}
+
+impl InsertTrackMetadata<'_> {
+    /// Insert or update the current data with the file as identifier.
+    fn upsert(&self, conn: &Connection) -> Result<Integer> {
+        let mut stmt = conn.prepare_cached(
+            "
+            INSERT INTO tracks_metadata (track, title, genre, artist_display)
+            VALUES (:track, :title, :genre, :artist_display)
+            ON CONFLICT(track) DO UPDATE SET 
+                title=excluded.title, genre=excluded.genre, artist_display=excluded.artist_display
+            RETURNING track;
+        ",
+        )?;
+
+        let id = stmt.query_row(
+            named_params! {
+                ":track": self.track,
+                ":title": self.title,
+                ":genre": self.genre,
+                ":artist_display": self.artist_display,
+            },
+            |row| row.get(0),
+        )?;
+
+        Ok(id)
+    }
+
+    // TODO: the following functions should be on a different struct
+
+    /// Count all rows currently in the `tracks` database
+    fn count_all(conn: &Connection) -> Result<Integer> {
+        let count = conn.query_row("SELECT COUNT(track) FROM tracks_metadata;", [], |v| {
+            v.get(0)
+        })?;
+
+        Ok(count)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
 
-    use crate::new_database::test_utils::gen_database;
+    use crate::new_database::{test_utils::gen_database, track_db::InsertTrackMetadata};
 
     use super::InsertTrack;
 
@@ -243,6 +300,45 @@ mod tests {
         assert_eq!(new_id, id);
 
         let count = InsertTrack::count_all(&db).unwrap();
+
+        assert_eq!(count, 1);
+    }
+
+    /// Simple test that [`InsertTrackMetadata::upsert`] works correctly
+    /// both with insertion and updating.
+    #[test]
+    fn should_insert_metadata_simple() {
+        let db = gen_database();
+
+        let data = InsertTrack {
+            file_dir: "/somewhere",
+            file_stem: "some file",
+            file_ext: "mp3",
+            duration: Some(Duration::from_secs(10)),
+            last_position: None,
+            album: None,
+        };
+
+        let db = db.conn.lock();
+        let id = data.upsert(&db).unwrap();
+        assert_eq!(id, 1);
+
+        let metadata = InsertTrackMetadata {
+            track: id,
+            title: Some("test"),
+            genre: Some("rock"),
+            artist_display: Some("ArtistA"),
+        };
+
+        let id = metadata.upsert(&db).unwrap();
+
+        assert_eq!(id, 1);
+
+        let new_id = metadata.upsert(&db).unwrap();
+
+        assert_eq!(new_id, id);
+
+        let count = InsertTrackMetadata::count_all(&db).unwrap();
 
         assert_eq!(count, 1);
     }
