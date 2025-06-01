@@ -615,11 +615,15 @@ impl Display for DurationFmtShort {
     }
 }
 
+/// See [`TrackMetadata`] for explanation of values.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
-#[allow(clippy::struct_excessive_bools)] // options, not a state machine
+#[allow(clippy::struct_excessive_bools)] // configuration, this is not a state machine
 pub struct MetadataOptions {
     pub album: bool,
+    pub album_artist: bool,
+    pub album_artists: bool,
     pub artist: bool,
+    pub artists: bool,
     pub title: bool,
     pub duration: bool,
     pub genre: bool,
@@ -634,7 +638,10 @@ impl MetadataOptions {
     pub fn all() -> Self {
         Self {
             album: true,
+            album_artist: true,
+            album_artists: true,
             artist: true,
+            artists: true,
             title: true,
             duration: true,
             genre: true,
@@ -645,14 +652,31 @@ impl MetadataOptions {
     }
 }
 
+/// For ID3v2 tags consult <https://exiftool.org/TagNames/ID3.html#v2_4>.
+///
+/// For common-usage consult <https://kodi.wiki/view/Music_tagging#Tags_Kodi_reads>.
+/// For common `TXX` tags consult <https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#artists>.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TrackMetadata {
+    /// ID3v2 tag `TALB` or equivalent
     pub album: Option<String>,
+    /// ID3v2 tag `TPE2` or equivalent
+    pub album_artist: Option<String>,
+    /// ID3v2 tag `TXX:ALBUMARTISTS` <https://kodi.wiki/view/Music_tagging#Tags_Kodi_reads>
+    pub album_artists: Option<Vec<String>>,
+    /// ID3v2 tag `TPE1` or equivalent
     pub artist: Option<String>,
+    /// ID3v2 tag `TXX:ARTISTS` <https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html>
+    pub artists: Option<Vec<String>>,
+    /// ID3v2 tag `TIT2` or equivalent
     pub title: Option<String>,
+    /// Total duration, this may or may not come from a tag
     pub duration: Option<Duration>,
+    /// ID3v2 tag `TCON` or equivalent
     pub genre: Option<String>,
+    /// ID3v2 tag `APIC` or equivalent
     pub cover: Option<Picture>,
+    /// ID3v2 tags `USLT` or equivalent
     pub lyric_frames: Option<Vec<Id3Lyrics>>,
     pub file_times: Option<FileTimes>,
 
@@ -718,8 +742,32 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions, res: &mut TrackMetadata)
     if options.artist {
         res.artist = tag.artist().map(Cow::into_owned);
     }
+    if options.artists {
+        res.artists = Some(
+            tag.get_strings(&ItemKey::TrackArtists)
+                .map(ToString::to_string)
+                .collect(),
+        );
+    }
     if options.album {
         res.album = tag.album().map(Cow::into_owned);
+    }
+    if options.album_artist {
+        res.album_artist = tag
+            .get(&ItemKey::AlbumArtist)
+            .and_then(|v| v.value().text())
+            .map(ToString::to_string);
+    }
+    if options.album_artists {
+        // manual implementation as it currently does not exist upstream
+        // see https://github.com/Serial-ATA/lofty-rs/issues/522
+        // res.album_artists = Some(tag.get_strings(&ItemKey::AlbumArtists).map(ToString::to_string).collect());
+        // lofty already separates them from a "; "
+        res.album_artists = Some(
+            tag.get_strings(&ItemKey::Unknown("ALBUMARTISTS".to_string()))
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+        );
     }
     if options.title {
         res.title = tag.title().map(Cow::into_owned);
