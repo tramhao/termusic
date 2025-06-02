@@ -10,23 +10,23 @@ use crate::track::TrackMetadata;
 #[derive(Debug, Clone)]
 pub struct TrackInsertable<'a> {
     // Track identifier
-    file_dir: &'a Path,
-    file_stem: &'a OsStr,
-    file_ext: &'a OsStr,
+    pub(super) file_dir: &'a Path,
+    pub(super) file_stem: &'a OsStr,
+    pub(super) file_ext: &'a OsStr,
 
     // Direct data on `tracks`
-    duration: Option<Duration>,
-    last_position: Option<Duration>,
+    pub(super) duration: Option<Duration>,
+    pub(super) last_position: Option<Duration>,
     /// Either a reference to a insertable to look-up or a direct integer to use as reference into `albums`.
-    album: Option<Either<Cow<'a, AlbumInsertable<'a>>, Integer>>,
+    pub(super) album: Option<Either<Cow<'a, AlbumInsertable<'a>>, Integer>>,
 
     // Data on `tracks_metadata`
-    title: Option<&'a str>,
-    genre: Option<&'a str>,
-    artist_display: Option<&'a str>,
+    pub(super) title: Option<&'a str>,
+    pub(super) genre: Option<&'a str>,
+    pub(super) artist_display: Option<&'a str>,
 
     // mapped metadata
-    artists: Vec<Either<Cow<'a, ArtistInsertable<'a>>, Integer>>,
+    pub(super) artists: Vec<Either<Cow<'a, ArtistInsertable<'a>>, Integer>>,
 }
 
 // TODO: proper errors?
@@ -230,15 +230,6 @@ impl InsertTrack<'_> {
 
         Ok(id)
     }
-
-    // TODO: the following functions should be on a different struct
-
-    /// Count all rows currently in the `tracks` database
-    fn count_all(conn: &Connection) -> Result<Integer> {
-        let count = conn.query_row("SELECT COUNT(id) FROM tracks;", [], |v| v.get(0))?;
-
-        Ok(count)
-    }
 }
 
 /// Stores references for insertion into `tracks_metadata` directly
@@ -277,17 +268,6 @@ impl InsertTrackMetadata<'_> {
         )?;
 
         Ok(id)
-    }
-
-    // TODO: the following functions should be on a different struct
-
-    /// Count all rows currently in the `tracks_metadata` database
-    fn count_all(conn: &Connection) -> Result<Integer> {
-        let count = conn.query_row("SELECT COUNT(track) FROM tracks_metadata;", [], |v| {
-            v.get(0)
-        })?;
-
-        Ok(count)
     }
 }
 
@@ -335,6 +315,7 @@ mod tests {
         artist_insert::ArtistInsertable,
         test_utils::gen_database,
         track_insert::{InsertTrackArtistMapping, InsertTrackMetadata},
+        track_ops::{count_all_track_metadata, count_all_tracks},
     };
 
     use super::InsertTrack;
@@ -365,7 +346,7 @@ mod tests {
         // check that insertion and upsertion(update) return the same id
         assert_eq!(new_id, id);
 
-        let count = InsertTrack::count_all(&db).unwrap();
+        let count = count_all_tracks(&db).unwrap();
 
         assert_eq!(count, 1);
     }
@@ -404,7 +385,7 @@ mod tests {
 
         assert_eq!(new_id, id);
 
-        let count = InsertTrackMetadata::count_all(&db).unwrap();
+        let count = count_all_track_metadata(&db).unwrap();
 
         assert_eq!(count, 1);
     }

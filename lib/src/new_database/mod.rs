@@ -1,7 +1,7 @@
 use std::{fmt::Debug, path::Path, sync::Arc};
 
 use anyhow::{Context, Result};
-use parking_lot::Mutex;
+use parking_lot::{Mutex, MutexGuard};
 use rusqlite::Connection;
 use tokio::{
     runtime::Handle,
@@ -25,6 +25,7 @@ mod album_insert;
 mod artist_insert;
 mod migrate;
 mod track_insert;
+pub mod track_ops;
 
 #[allow(clippy::doc_markdown)]
 /// The SQLite Database interface.
@@ -56,6 +57,11 @@ impl Database {
         let conn = Connection::open(path).context("open/create database")?;
 
         Self::new_from_connection(conn)
+    }
+
+    /// Get a lock to the underlying connection to start operations.
+    pub fn get_connection(&self) -> MutexGuard<'_, Connection> {
+        self.conn.lock()
     }
 
     /// Prepare the given Connection for usage.
