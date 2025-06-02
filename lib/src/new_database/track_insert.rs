@@ -4,7 +4,7 @@ use anyhow::{Context, Result, bail};
 use either::Either;
 use rusqlite::{Connection, named_params};
 
-use super::{Integer, album_db::AlbumInsertable, artist_db::ArtistInsertable};
+use super::{Integer, album_insert::AlbumInsertable, artist_insert::ArtistInsertable};
 use crate::track::TrackMetadata;
 
 #[derive(Debug, Clone)]
@@ -332,9 +332,9 @@ mod tests {
     use std::time::Duration;
 
     use crate::new_database::{
-        artist_db::ArtistInsertable,
+        artist_insert::ArtistInsertable,
         test_utils::gen_database,
-        track_db::{InsertTrackArtistMapping, InsertTrackMetadata},
+        track_insert::{InsertTrackArtistMapping, InsertTrackMetadata},
     };
 
     use super::InsertTrack;

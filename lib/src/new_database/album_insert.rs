@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use either::Either;
 use rusqlite::{Connection, named_params};
 
-use super::{Integer, artist_db::ArtistInsertable};
+use super::{Integer, artist_insert::ArtistInsertable};
 
 #[derive(Debug, Clone)]
 pub struct AlbumInsertable<'a> {
@@ -126,8 +126,8 @@ impl InsertAlbumArtistMapping {
 #[cfg(test)]
 mod tests {
     use crate::new_database::{
-        album_db::{InsertAlbum, InsertAlbumArtistMapping},
-        artist_db::ArtistInsertable,
+        album_insert::{InsertAlbum, InsertAlbumArtistMapping},
+        artist_insert::ArtistInsertable,
         test_utils::gen_database,
     };
 
