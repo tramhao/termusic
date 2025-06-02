@@ -69,7 +69,7 @@ impl InsertArtist<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::new_database::{artist_db::InsertArtist, test_utils::gen_database};
+    use crate::new_database::{artist_insert::InsertArtist, test_utils::gen_database};
 
     /// Simple test that [`InsertArtist::upsert`] works correctly
     /// both with insertion and updating.

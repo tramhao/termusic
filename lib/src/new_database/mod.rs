@@ -7,7 +7,7 @@ use tokio::{
     runtime::Handle,
     sync::{OwnedSemaphorePermit, Semaphore},
 };
-use track_db::TrackInsertable;
+use track_insert::TrackInsertable;
 use walkdir::DirEntry;
 
 use crate::{
@@ -21,10 +21,10 @@ use crate::{
 /// This alias exists to keep it in one place and because rusqlite does not export such a type.
 pub type Integer = i64;
 
-mod album_db;
-mod artist_db;
+mod album_insert;
+mod artist_insert;
 mod migrate;
-mod track_db;
+mod track_insert;
 
 #[allow(clippy::doc_markdown)]
 /// The SQLite Database interface.
