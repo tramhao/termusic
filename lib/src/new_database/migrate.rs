@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, bail};
-use rusqlite::Connection;
+use rusqlite::{Connection, named_params};
 
 /// The Current Database schema version this application is meant to run against
 pub(super) const DB_VERSION: u32 = 1;
@@ -50,7 +50,54 @@ fn apply_migrations(conn: &Connection, mut user_version: u32) -> Result<()> {
         conn.execute_batch(include_str!("./migrations/001.sql"))
             .context("Database version 1 could not be created")?;
         user_version = set_user_version(conn, 1)?;
+
+        set_db_created_at(conn)?;
+        set_db_created_with(conn)?;
     }
+
+    set_last_updated_at(conn)?;
+
+    Ok(())
+}
+
+// the following are to set some values in table "config", values which could help debugging database issues.
+
+/// Set database config value `last_migrated_at` to the current time.
+#[inline]
+fn set_last_updated_at(conn: &Connection) -> Result<()> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    conn.execute(
+        "INSERT INTO config(key, value) VALUES (\"last_migrated_at\", :value)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value;",
+        named_params! {":value": now},
+    )?;
+
+    Ok(())
+}
+
+/// Set database config value `db_created_at` to the current time.
+#[inline]
+fn set_db_created_at(conn: &Connection) -> Result<()> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    conn.execute(
+        "INSERT INTO config(key, value) VALUES (\"db_created_at\", :value) ON CONFLICT(key) DO NOTHING;",
+        named_params! {":value": now},
+    )?;
+
+    Ok(())
+}
+
+/// Set database config value `db_created_with` to the current time.
+#[inline]
+fn set_db_created_with(conn: &Connection) -> Result<()> {
+    let version = crate::VERSION;
+
+    conn.execute(
+        "INSERT INTO config(key, value) VALUES (\"db_created_with\", :value) ON CONFLICT(key) DO NOTHING;",
+        named_params! {":value": version},
+    )?;
 
     Ok(())
 }
