@@ -5,7 +5,9 @@ use rusqlite::{named_params, Connection};
 
 use crate::track::TrackMetadata;
 
-use super::{album_db::AlbumInsertable, artist_db::ArtistInsertable, either::Either, Integer};
+use super::{
+    album_insert::AlbumInsertable, artist_insert::ArtistInsertable, either::Either, Integer,
+};
 
 #[derive(Debug, Clone)]
 pub struct TrackInsertable<'a> {
@@ -330,9 +332,9 @@ mod tests {
     use std::time::Duration;
 
     use crate::new_database::{
-        artist_db::ArtistInsertable,
+        artist_insert::ArtistInsertable,
         test_utils::gen_database,
-        track_db::{InsertTrackArtistMapping, InsertTrackMetadata},
+        track_insert::{InsertTrackArtistMapping, InsertTrackMetadata},
     };
 
     use super::InsertTrack;
