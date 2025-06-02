@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use anyhow::{Context, Result};
 use rusqlite::{Connection, named_params};
 
@@ -19,6 +21,18 @@ impl ArtistInsertable<'_> {
         let id = insert_artist.upsert(conn).context("artists")?;
 
         Ok(id)
+    }
+}
+
+impl<'a> From<ArtistInsertable<'a>> for Cow<'a, ArtistInsertable<'a>> {
+    fn from(value: ArtistInsertable<'a>) -> Self {
+        Cow::Owned(value)
+    }
+}
+
+impl<'a> From<&'a ArtistInsertable<'a>> for Cow<'a, ArtistInsertable<'a>> {
+    fn from(value: &'a ArtistInsertable<'a>) -> Self {
+        Cow::Borrowed(value)
     }
 }
 

@@ -43,6 +43,18 @@ impl AlbumInsertable<'_> {
     }
 }
 
+impl<'a> From<AlbumInsertable<'a>> for Cow<'a, AlbumInsertable<'a>> {
+    fn from(value: AlbumInsertable<'a>) -> Self {
+        Cow::Owned(value)
+    }
+}
+
+impl<'a> From<&'a AlbumInsertable<'a>> for Cow<'a, AlbumInsertable<'a>> {
+    fn from(value: &'a AlbumInsertable<'a>) -> Self {
+        Cow::Borrowed(value)
+    }
+}
+
 /// Stores references for insertion into `albums` directly
 #[derive(Debug, PartialEq)]
 struct InsertAlbum<'a> {
