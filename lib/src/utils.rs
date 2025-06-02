@@ -1,13 +1,15 @@
-use anyhow::{anyhow, Context, Result};
-use pinyin::ToPinyin;
-use rand::Rng;
 use std::borrow::Cow;
+use std::iter::FusedIterator;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::{
     ffi::OsStr,
     process::{Child, Command},
 };
+
+use anyhow::{anyhow, Context, Result};
+use pinyin::ToPinyin;
+use rand::Rng;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::config::ServerOverlay;
@@ -292,6 +294,65 @@ pub fn display_with(
     DisplayWith(f)
 }
 
+/// A extra [`str::split`] iterator that splits at any of the given `array`.
+///
+/// This is currently not possible with std rust as [`str::split`] accepts a Pattern, but no pattern is implemented for `&[&str]`
+/// and custom Patterns can currently not be implemented without nightly.
+///
+/// Note that this iterator does nothing if the value is empty.
+/// If the pattern is empty, behaves as if no pattern was found and yields the entire value once.
+#[derive(Debug, Clone)]
+pub struct SplitArrayIter<'a> {
+    val: &'a str,
+    array: &'a [&'a str],
+}
+
+impl<'a> SplitArrayIter<'a> {
+    #[must_use]
+    pub fn new(val: &'a str, array: &'a [&'a str]) -> Self {
+        Self { val, array }
+    }
+}
+
+impl<'a> Iterator for SplitArrayIter<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.val.is_empty() {
+            return None;
+        }
+
+        let mut found: Option<(&str, &str)> = None;
+
+        // Find the first pattern that occurs, resetting the values if there is pattern before it.
+        // It is using a "found" option because lets say input value is "a+b-c+t", and the pattern is "-" and "+" (in that order),
+        // we would want to split it to "a", "b", "c" and "t", not "a+b", "c" and "t".
+        //
+        // Or said differently, if we have "ArtistA, ArtistB feat. ArtistC" and pattern ["feat.", ","] (in that order),
+        // then we would want to split it into "ArtistA", "ArtistB" and "ArtistC", not "ArtistA, ArtistB" and "ArtistC".
+        for pat in self.array {
+            // "split_once" only returns "Some" if pattern is found
+            // the returned values do not include the pattern
+            if let Some((val, remainder)) = self.val.split_once(pat) {
+                // only assign a new "found" if there is none or if the current pattern's value is shorter
+                // meaning it is found before any other, as explained above
+                if found.is_none_or(|v| v.0.len() > val.len()) {
+                    found = Some((val, remainder));
+                }
+            }
+            // try the next pattern
+        }
+
+        let (found, remainder) = found.unwrap_or((self.val, ""));
+
+        self.val = remainder;
+
+        Some(found)
+    }
+}
+
+impl FusedIterator for SplitArrayIter<'_> {}
+
 #[cfg(test)]
 mod tests {
     use std::fmt::{Display, Write};
@@ -337,5 +398,83 @@ mod tests {
         let _ = write!(&mut str, "Formatted! {}", nested());
 
         assert_eq!(str, "Formatted! Nested! Owned");
+    }
+
+    #[test]
+    fn split_array_single_pattern() {
+        let value = "something++another++test";
+        let pattern = &["++"];
+        let mut iter = SplitArrayIter::new(value, pattern);
+
+        assert_eq!(iter.next(), Some("something"));
+        assert_eq!(iter.next(), Some("another"));
+        assert_eq!(iter.next(), Some("test"));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn split_array_multi_pattern() {
+        let value = "something++another--test";
+        let pattern = &["++", "--"];
+        let mut iter = SplitArrayIter::new(value, pattern);
+
+        assert_eq!(iter.next(), Some("something"));
+        assert_eq!(iter.next(), Some("another"));
+        assert_eq!(iter.next(), Some("test"));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn split_array_multi_pattern_interspersed() {
+        let value = "something--test++another--test";
+        let pattern = &["++", "--"];
+        let mut iter = SplitArrayIter::new(value, pattern);
+
+        assert_eq!(iter.next(), Some("something"));
+        assert_eq!(iter.next(), Some("test"));
+        assert_eq!(iter.next(), Some("another"));
+        assert_eq!(iter.next(), Some("test"));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn split_array_multi_pattern_interspersed2() {
+        let value = "ArtistA, ArtistB feat. ArtistC";
+        // the pattern has a specific order
+        let pattern = &["feat.", ","];
+        let mut iter = SplitArrayIter::new(value, pattern).map(str::trim);
+
+        assert_eq!(iter.next(), Some("ArtistA"));
+        assert_eq!(iter.next(), Some("ArtistB"));
+        assert_eq!(iter.next(), Some("ArtistC"));
+        assert_eq!(iter.next(), None);
+
+        let value = "ArtistA, ArtistB feat. ArtistC";
+        // the pattern has a specific order
+        let pattern = &[",", "feat."];
+        let mut iter = SplitArrayIter::new(value, pattern).map(str::trim);
+
+        assert_eq!(iter.next(), Some("ArtistA"));
+        assert_eq!(iter.next(), Some("ArtistB"));
+        assert_eq!(iter.next(), Some("ArtistC"));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn split_array_empty_val() {
+        let mut iter = SplitArrayIter::new("", &["test"]);
+
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn split_array_empty_pat() {
+        let mut iter = SplitArrayIter::new("hello there", &[]);
+
+        assert_eq!(iter.next(), Some("hello there"));
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 }
