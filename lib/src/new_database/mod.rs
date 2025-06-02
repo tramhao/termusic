@@ -12,7 +12,7 @@ use walkdir::DirEntry;
 
 use crate::{
     config::{ServerOverlay, v2::server::ScanDepth},
-    track::{MetadataOptions, parse_metadata_from_file},
+    track::{DEFAULT_ARTIST_SEPARATORS, MetadataOptions, parse_metadata_from_file},
     utils::filetype_supported,
 };
 
@@ -138,6 +138,8 @@ impl Database {
                     album_artists: true,
                     artist: true,
                     artists: true,
+                    // TODO: allow this to be configurable
+                    artist_separators: DEFAULT_ARTIST_SEPARATORS,
                     title: true,
                     duration: true,
                     genre: true,
