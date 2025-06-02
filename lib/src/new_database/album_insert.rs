@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use anyhow::{Context, Result};
 use rusqlite::{named_params, Connection};
 
-use super::{artist_db::ArtistInsertable, either::Either, Integer};
+use super::{artist_insert::ArtistInsertable, either::Either, Integer};
 
 #[derive(Debug, Clone)]
 pub struct AlbumInsertable<'a> {
@@ -125,8 +125,8 @@ impl InsertAlbumArtistMapping {
 #[cfg(test)]
 mod tests {
     use crate::new_database::{
-        album_db::{InsertAlbum, InsertAlbumArtistMapping},
-        artist_db::ArtistInsertable,
+        album_insert::{InsertAlbum, InsertAlbumArtistMapping},
+        artist_insert::ArtistInsertable,
         test_utils::gen_database,
     };
 
