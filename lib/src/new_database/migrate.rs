@@ -142,6 +142,7 @@ mod tests {
                 "albums_artist",
             ];
 
+            #[allow(clippy::stable_sort_primitive)]
             orig.sort();
             orig
         };

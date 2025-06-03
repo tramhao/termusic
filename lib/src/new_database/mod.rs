@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_debug_formatting)] // for logging we want all paths's characters to be escaped
+
 use std::{fmt::Debug, path::Path, sync::Arc};
 
 use anyhow::{Context, Result};
@@ -110,9 +112,7 @@ impl Database {
             };
 
             handle_1.spawn_blocking(move || {
-                if let Err(err) = Self::process_iter(walker, permit, db, &path) {
-                    error!("Error while scanning {path:#?}: {err:#?}");
-                }
+                Self::process_iter(walker, permit, &db, &path);
             });
         });
 
@@ -125,12 +125,13 @@ impl Database {
     fn process_iter(
         walker: impl Iterator<Item = DirEntry>,
         permit: OwnedSemaphorePermit,
-        db: Self,
+        db: &Self,
         path: &Path,
-    ) -> Result<()> {
+    ) {
         // keep the permit for the entirety of this function
         let _permit = permit;
         info!("Scanning {path:#?}");
+
         // assumptions in this function:
         // - "walker" iterator is already filtered to only contain files
         // - "walker" iterator is already filtered to only our supported file types
@@ -168,8 +169,6 @@ impl Database {
                 }
             };
 
-            debug!("db_track: {:#?}", db_track);
-
             let _id = match db_track.try_insert_or_update(&db.conn.lock()) {
                 Ok(v) => v,
                 Err(err) => {
@@ -177,13 +176,9 @@ impl Database {
                     continue;
                 }
             };
-
-            debug!("new id: {}", _id);
         }
 
         info!("Finished Scanning {path:#?}");
-
-        Ok(())
     }
 }
 
