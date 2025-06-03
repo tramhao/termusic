@@ -254,6 +254,35 @@ pub fn get_tracks_from_artist(
     Ok(result)
 }
 
+/// Get all tracks associated with a genre.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn get_tracks_from_genre(
+    conn: &Connection,
+    genre: &str,
+    order: RowOrdering,
+) -> Result<Vec<TrackRead>> {
+    let stmt = format!("SELECT tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position, tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre, albums.id AS album_id, albums.title AS album_title
+    FROM tracks
+    INNER JOIN tracks_metadata ON tracks.id = tracks_metadata.track
+    LEFT JOIN albums ON tracks.album = albums.id
+    WHERE tracks_metadata.genre=:genre
+    ORDER BY {};", order.as_sql());
+    let mut stmt = conn.prepare(&stmt)?;
+
+    let result: Vec<TrackRead> = stmt
+        .query_map(named_params! {":genre": genre}, |row| {
+            let trackread = common_row_to_trackread(conn, row);
+
+            Ok(trackread)
+        })?
+        .collect::<Result<Vec<_>, rusqlite::Error>>()?;
+
+    Ok(result)
+}
+
 /// Common function that converts a well-known named row to a [`TrackRead`].
 ///
 /// For row names look at [`get_all_tracks`].
@@ -338,7 +367,8 @@ mod tests {
             track_insert::TrackInsertable,
             track_ops::{
                 AlbumRead, ArtistRead, RowOrdering, TrackRead, get_all_tracks, get_last_position,
-                get_tracks_from_album, get_tracks_from_artist, set_last_position,
+                get_tracks_from_album, get_tracks_from_artist, get_tracks_from_genre,
+                set_last_position,
             },
         },
         track::TrackMetadata,
@@ -650,5 +680,57 @@ mod tests {
         let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
 
         assert_eq!(&res, &["FileA2", "FileB1"]);
+    }
+
+    #[test]
+    fn tracks_by_genre() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Rock".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA2".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Pop".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: None,
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let res = get_tracks_from_genre(&db.get_connection(), "Rock", RowOrdering::IdAsc).unwrap();
+        let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
+
+        assert_eq!(&res, &["FileA1"]);
     }
 }
