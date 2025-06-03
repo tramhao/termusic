@@ -41,27 +41,7 @@ impl<'a> TrackInsertable<'a> {
     ///
     /// Any other potential errors (like empty artist string) will be silently ignored.
     pub fn try_from_track(path: &'a Path, metadata: &'a TrackMetadata) -> Result<Self> {
-        // we could use "to_str_lossy", but then reconstructing (and probing) the path would not result in the same one
-        // we could also store the path components as binary, but realistically, all paths are UTF-8 compatible nowadays
-        if path.to_str().is_none() {
-            bail!("Giben path is not UTF-8 compatible!");
-        }
-
-        if !path.is_absolute() {
-            bail!("Given path is not absolute!");
-        }
-
-        let Some(file_dir) = path.parent() else {
-            bail!("Given path does not have a parent!");
-        };
-
-        let Some(file_stem) = path.file_stem() else {
-            bail!("Given path does not have a stem!");
-        };
-
-        let Some(file_ext) = path.extension() else {
-            bail!("Given path does not have a extension!");
-        };
+        let (file_dir, file_stem, file_ext) = path_to_db_comp(path)?;
 
         let title = metadata
             .title
@@ -190,6 +170,39 @@ impl<'a> TrackInsertable<'a> {
 
         Ok(id)
     }
+}
+
+/// Convert a given `path` to the `(dir, stem, ext)` components.
+///
+/// # Errors
+///
+/// - if the given `path` is not UTF-8 compatible
+/// - if the given `path` is not absolute
+/// - if the given `path` does not have components: parent, stem, ext
+pub(super) fn path_to_db_comp(path: &Path) -> Result<(&Path, &OsStr, &OsStr)> {
+    // we could use "to_str_lossy", but then reconstructing (and probing) the path would not result in the same one
+    // we could also store the path components as binary, but realistically, all paths are UTF-8 compatible nowadays
+    if path.to_str().is_none() {
+        bail!("Giben path is not UTF-8 compatible!");
+    }
+
+    if !path.is_absolute() {
+        bail!("Given path is not absolute!");
+    }
+
+    let Some(file_dir) = path.parent() else {
+        bail!("Given path does not have a parent!");
+    };
+
+    let Some(file_stem) = path.file_stem() else {
+        bail!("Given path does not have a stem!");
+    };
+
+    let Some(file_ext) = path.extension() else {
+        bail!("Given path does not have a extension!");
+    };
+
+    Ok((file_dir, file_stem, file_ext))
 }
 
 /// Stores references for insertion into `tracks` directly
