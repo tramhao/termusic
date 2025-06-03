@@ -1,7 +1,13 @@
-use std::{ffi::OsString, path::PathBuf, time::Duration};
+use std::{
+    ffi::OsString,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use rusqlite::{Connection, named_params};
+
+use crate::new_database::track_insert::path_to_db_comp;
 
 use super::Integer;
 
@@ -187,6 +193,59 @@ pub fn get_all_artists_for_track(conn: &Connection, track_id: Integer) -> Result
     Ok(result)
 }
 
+/// Get the `last_position` for the given `track`.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn get_last_position(conn: &Connection, track: &Path) -> Result<Option<Duration>> {
+    let (file_dir, file_stem, file_ext) = path_to_db_comp(track)?;
+    let file_dir = file_dir.to_string_lossy();
+    let file_stem = file_stem.to_string_lossy();
+    let file_ext = file_ext.to_string_lossy();
+
+    let mut stmt = conn.prepare_cached(
+        "SELECT last_position FROM tracks
+WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;",
+    )?;
+
+    let result: Option<Integer> = stmt.query_row(
+        named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext},
+        |row| row.get(0),
+    )?;
+
+    let last_position = result.map(|v: Integer| {
+        let int = u64::try_from(v.max(0)).unwrap();
+        Duration::from_secs(int)
+    });
+
+    Ok(last_position)
+}
+
+/// Set the `last_positon` for the given `track`.
+pub fn set_last_position(conn: &Connection, track: &Path, to: Option<Duration>) -> Result<()> {
+    let (file_dir, file_stem, file_ext) = path_to_db_comp(track)?;
+    let file_dir = file_dir.to_string_lossy();
+    let file_stem = file_stem.to_string_lossy();
+    let file_ext = file_ext.to_string_lossy();
+
+    let last_position = to.map(|v| v.as_secs());
+
+    let mut stmt = conn.prepare_cached(
+        "UPDATE tracks SET last_position=:last_position
+            WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;",
+    )?;
+
+    let affected = stmt.execute(named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext, ":last_position": last_position})?;
+
+    // update would otherwise fail silently
+    if affected == 0 {
+        bail!("Track not found");
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -203,7 +262,10 @@ mod tests {
         artist_insert::ArtistInsertable,
         test_utils::gen_database,
         track_insert::TrackInsertable,
-        track_ops::{AlbumRead, ArtistRead, RowOrdering, TrackRead, get_all_tracks},
+        track_ops::{
+            AlbumRead, ArtistRead, RowOrdering, TrackRead, get_all_tracks, get_last_position,
+            set_last_position,
+        },
     };
 
     use super::get_all_artists_for_track;
@@ -297,5 +359,97 @@ mod tests {
                 }]
             }]
         );
+    }
+
+    #[test]
+    fn last_position_some() {
+        let db = gen_database();
+
+        let track = TrackInsertable {
+            file_dir: Path::new("/somewhere"),
+            file_stem: OsStr::new("file"),
+            file_ext: OsStr::new("ext"),
+            duration: Some(Duration::from_secs(10)),
+            last_position: Some(Duration::from_secs(5)),
+            album: Some(Either::Left(
+                AlbumInsertable {
+                    title: "AlbumA",
+                    artist_display: "ArtistA",
+                    artists: vec![Either::Left(ArtistInsertable { artist: "ArtistA" }.into())],
+                }
+                .into(),
+            )),
+            title: Some("file test"),
+            genre: None,
+            artist_display: Some("ArtistA"),
+            artists: vec![Either::Left(ArtistInsertable { artist: "ArtistA" }.into())],
+        };
+        let path = Path::new("/somewhere/file.ext");
+        let _track_id = track.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let last_position = get_last_position(&db.get_connection(), path).unwrap();
+
+        assert_eq!(last_position, Some(Duration::from_secs(5)));
+
+        set_last_position(&db.get_connection(), path, None).unwrap();
+
+        let last_position = get_last_position(&db.get_connection(), path).unwrap();
+
+        assert_eq!(last_position, None);
+    }
+
+    #[test]
+    fn last_position_none() {
+        let db = gen_database();
+
+        let track = TrackInsertable {
+            file_dir: Path::new("/somewhere"),
+            file_stem: OsStr::new("file"),
+            file_ext: OsStr::new("ext"),
+            duration: Some(Duration::from_secs(10)),
+            last_position: None,
+            album: Some(Either::Left(
+                AlbumInsertable {
+                    title: "AlbumA",
+                    artist_display: "ArtistA",
+                    artists: vec![Either::Left(ArtistInsertable { artist: "ArtistA" }.into())],
+                }
+                .into(),
+            )),
+            title: Some("file test"),
+            genre: None,
+            artist_display: Some("ArtistA"),
+            artists: vec![Either::Left(ArtistInsertable { artist: "ArtistA" }.into())],
+        };
+        let path = Path::new("/somewhere/file.ext");
+        let _track_id = track.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let last_position = get_last_position(&db.get_connection(), path).unwrap();
+
+        assert_eq!(last_position, None);
+
+        set_last_position(&db.get_connection(), path, Some(Duration::from_secs(5))).unwrap();
+
+        let last_position = get_last_position(&db.get_connection(), path).unwrap();
+
+        assert_eq!(last_position, Some(Duration::from_secs(5)));
+    }
+
+    #[test]
+    fn last_position_not_found() {
+        let db = gen_database();
+
+        let path = Path::new("/somewhere/file.ext");
+
+        // get
+        let err = get_last_position(&db.get_connection(), path).unwrap_err();
+        let err = err.downcast::<rusqlite::Error>().unwrap();
+
+        assert_eq!(err, rusqlite::Error::QueryReturnedNoRows);
+
+        // set
+        let err = set_last_position(&db.get_connection(), path, None).unwrap_err();
+
+        assert!(err.to_string().contains("Track not found"));
     }
 }
