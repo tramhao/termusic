@@ -78,8 +78,15 @@ impl Database {
 
     /// Scan the given path recursively, limited to [`ServerOverlay::get_library_scan_depth`].
     ///
+    /// If `replace_metadata` is `false` then paths that already exist in the database will not be updated.
+    ///
     /// Waits for a permit before starting another worker.
-    pub fn scan_path(&self, path: &Path, config: &ServerOverlay) -> Result<()> {
+    pub fn scan_path(
+        &self,
+        path: &Path,
+        config: &ServerOverlay,
+        replace_metadata: bool,
+    ) -> Result<()> {
         let path = path
             .canonicalize()
             .with_context(|| path.display().to_string())?;
@@ -111,7 +118,7 @@ impl Database {
             };
 
             handle_1.spawn_blocking(move || {
-                Self::process_iter(walker, permit, &db, &path);
+                Self::process_iter(walker, permit, &db, &path, replace_metadata);
             });
         });
 
@@ -126,16 +133,31 @@ impl Database {
         permit: OwnedSemaphorePermit,
         db: &Self,
         path: &Path,
+        replace_metadata: bool,
     ) {
         // keep the permit for the entirety of this function
         let _permit = permit;
         info!("Scanning {path:#?}");
+
+        let mut created_updated: usize = 0;
 
         // assumptions in this function:
         // - "walker" iterator is already filtered to only contain files
         // - "walker" iterator is already filtered to only our supported file types
         for record in walker {
             let path = record.path();
+
+            // skip existing paths, if no full scan is requested
+            if !replace_metadata {
+                match track_ops::track_exists(&db.conn.lock(), path) {
+                    Ok(true) => continue,
+                    Err(err) => {
+                        error!("Error checking if {path:#?} exists: {err:#?}");
+                        continue;
+                    }
+                    Ok(false) => (),
+                }
+            }
 
             let track_metadata = match parse_metadata_from_file(
                 path,
@@ -175,9 +197,11 @@ impl Database {
                     continue;
                 }
             };
+
+            created_updated += 1;
         }
 
-        info!("Finished Scanning {path:#?}");
+        info!("Finished Scanning {path:#?} with {created_updated} created or updated");
     }
 }
 
