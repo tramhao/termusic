@@ -348,6 +348,43 @@ fn common_row_to_trackread(conn: &Connection, row: &Row<'_>) -> TrackRead {
     }
 }
 
+/// Check if a entry for the given `track` exists.
+///
+/// # Panics
+///
+/// If sqlite somehow does not return what is expected.
+pub fn track_exists(conn: &Connection, track: &Path) -> Result<bool> {
+    let (file_dir, file_stem, file_ext) = path_to_db_comp(track)?;
+    let file_dir = file_dir.to_string_lossy();
+    let file_stem = file_stem.to_string_lossy();
+    let file_ext = file_ext.to_string_lossy();
+
+    let mut stmt = conn.prepare(
+        "SELECT COUNT(tracks.id)
+            FROM tracks
+            WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;",
+    )?;
+
+    let count = stmt
+        .query_row(
+            named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext},
+            |row| {
+                let count: Integer = row.get(0).unwrap();
+
+                Ok(count.max(0))
+            },
+        )
+        .or_else(|v| {
+            if v == rusqlite::Error::QueryReturnedNoRows {
+                Ok(0)
+            } else {
+                Err(v)
+            }
+        })?;
+
+    Ok(count != 0)
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -368,7 +405,7 @@ mod tests {
             track_ops::{
                 AlbumRead, ArtistRead, RowOrdering, TrackRead, get_all_tracks, get_last_position,
                 get_tracks_from_album, get_tracks_from_artist, get_tracks_from_genre,
-                set_last_position,
+                set_last_position, track_exists,
             },
         },
         track::TrackMetadata,
@@ -732,5 +769,29 @@ mod tests {
         let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
 
         assert_eq!(&res, &["FileA1"]);
+    }
+
+    #[test]
+    fn exists() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let path = Path::new("/somewhere/fileA1.ext");
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let res = track_exists(&db.get_connection(), path).unwrap();
+
+        assert!(res);
+
+        let res = track_exists(&db.get_connection(), Path::new("/somewhere/else.ext")).unwrap();
+
+        assert!(!res);
     }
 }
