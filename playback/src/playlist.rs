@@ -143,6 +143,15 @@ impl Playlist {
             .with_context(|| "failed to get podcasts from db.")?;
         for line in lines {
             let line = line?;
+
+            let trimmed_line = line.trim();
+
+            // skip empty lines without trying to process them
+            // skip lines that are comments (m3u-like)
+            if trimmed_line.is_empty() || trimmed_line.starts_with('#') {
+                continue;
+            }
+
             if line.starts_with("http") {
                 let mut is_podcast = false;
                 'outer: for pod in &podcasts {
@@ -165,6 +174,10 @@ impl Playlist {
                 playlist_items.push(track);
             }
         }
+
+        // protect against the listed index in the playlist file not matching the elements in the playlist
+        // for example lets say it has "100", but there are only 2 elements in the playlist
+        let current_track_index = current_track_index.min(playlist_items.len().saturating_sub(1));
 
         Ok((current_track_index, playlist_items))
     }
