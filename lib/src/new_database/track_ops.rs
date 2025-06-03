@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::{Result, bail};
-use rusqlite::{Connection, named_params};
+use rusqlite::{Connection, Row, named_params};
 
 use crate::new_database::track_insert::path_to_db_comp;
 
@@ -102,65 +102,9 @@ pub fn get_all_tracks(conn: &Connection, order: RowOrdering) -> Result<Vec<Track
 
     let result: Vec<TrackRead> = stmt
         .query_map(named_params! {}, |row| {
-            let file_dir = row
-                .get("file_dir")
-                .map(|v: String| PathBuf::from(v))
-                .unwrap();
-            let file_stem = row
-                .get("file_stem")
-                .map(|v: String| OsString::from(v))
-                .unwrap();
-            let file_ext = row
-                .get("file_ext")
-                .map(|v: String| OsString::from(v))
-                .unwrap();
-            let id = row.get("track_id").unwrap();
+            let trackread = common_row_to_trackread(conn, row);
 
-            let duration = row.get("duration").ok().map(|v: Integer| {
-                let int = u64::try_from(v.max(0)).unwrap();
-                Duration::from_secs(int)
-            });
-            let last_position = row.get("last_position").ok().map(|v: Integer| {
-                let int = u64::try_from(v.max(0)).unwrap();
-                Duration::from_secs(int)
-            });
-            let title = row.get("track_title").unwrap_or_default();
-            let genre = row.get("genre").unwrap_or_default();
-            let artist_display = row.get("artist_display").unwrap_or_default();
-
-            let album_id = row.get("album_id").ok();
-            let album_title = row.get("album_title").ok();
-
-            let album = if let (Some(album_id), Some(album_title)) = (album_id, album_title) {
-                Some(AlbumRead {
-                    id: album_id,
-                    title: album_title,
-                })
-            } else {
-                None
-            };
-
-            let artists = match get_all_artists_for_track(conn, id) {
-                Ok(v) => v,
-                Err(err) => {
-                    warn!("Error resolving artists for a track: {err:#?}");
-                    Vec::new()
-                }
-            };
-
-            Ok(TrackRead {
-                id,
-                file_dir,
-                file_stem,
-                file_ext,
-                duration,
-                last_position,
-                album,
-                title,
-                genre,
-                artist_display,
-                artists,
-            })
+            Ok(trackread)
         })?
         .collect::<Result<Vec<_>, rusqlite::Error>>()?;
 
@@ -246,6 +190,135 @@ pub fn set_last_position(conn: &Connection, track: &Path, to: Option<Duration>) 
     Ok(())
 }
 
+/// Get all tracks associated with the given album.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn get_tracks_from_album(
+    conn: &Connection,
+    album_title: &str,
+    album_artist: &str,
+    order: RowOrdering,
+) -> Result<Vec<TrackRead>> {
+    let stmt = format!("SELECT tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position, tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre, albums.id AS album_id, albums.title AS album_title
+    FROM tracks
+    LEFT JOIN tracks_metadata ON tracks.id = tracks_metadata.track
+    LEFT JOIN albums ON tracks.album = albums.id
+    WHERE albums.title=:album_title AND albums.artist_display=:album_artist
+    ORDER BY {};", order.as_sql());
+    let mut stmt = conn.prepare(&stmt)?;
+
+    let result: Vec<TrackRead> = stmt
+        .query_map(
+            named_params! {":album_title": album_title, ":album_artist": album_artist},
+            |row| {
+                let trackread = common_row_to_trackread(conn, row);
+
+                Ok(trackread)
+            },
+        )?
+        .collect::<Result<Vec<_>, rusqlite::Error>>()?;
+
+    Ok(result)
+}
+
+/// Get all tracks associated with the given artist.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn get_tracks_from_artist(
+    conn: &Connection,
+    artist: &str,
+    order: RowOrdering,
+) -> Result<Vec<TrackRead>> {
+    let stmt = format!("SELECT tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position, tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre, albums.id AS album_id, albums.title AS album_title
+    FROM tracks
+    LEFT JOIN tracks_metadata ON tracks.id = tracks_metadata.track
+    LEFT JOIN albums ON tracks.album = albums.id
+    INNER JOIN tracks_artists ON tracks.id = tracks_artists.track
+    INNER JOIN artists ON artists.id=tracks_artists.artist
+    WHERE artists.artist=:artist
+    ORDER BY {};", order.as_sql());
+    let mut stmt = conn.prepare(&stmt)?;
+
+    let result: Vec<TrackRead> = stmt
+        .query_map(named_params! {":artist": artist}, |row| {
+            let trackread = common_row_to_trackread(conn, row);
+
+            Ok(trackread)
+        })?
+        .collect::<Result<Vec<_>, rusqlite::Error>>()?;
+
+    Ok(result)
+}
+
+/// Common function that converts a well-known named row to a [`TrackRead`].
+///
+/// For row names look at [`get_all_tracks`].
+fn common_row_to_trackread(conn: &Connection, row: &Row<'_>) -> TrackRead {
+    let file_dir = row
+        .get("file_dir")
+        .map(|v: String| PathBuf::from(v))
+        .unwrap();
+    let file_stem = row
+        .get("file_stem")
+        .map(|v: String| OsString::from(v))
+        .unwrap();
+    let file_ext = row
+        .get("file_ext")
+        .map(|v: String| OsString::from(v))
+        .unwrap();
+    let id = row.get("track_id").unwrap();
+
+    let duration = row.get("duration").ok().map(|v: Integer| {
+        let int = u64::try_from(v.max(0)).unwrap();
+        Duration::from_secs(int)
+    });
+    let last_position = row.get("last_position").ok().map(|v: Integer| {
+        let int = u64::try_from(v.max(0)).unwrap();
+        Duration::from_secs(int)
+    });
+    let title = row.get("track_title").unwrap_or_default();
+    let genre = row.get("genre").unwrap_or_default();
+    let artist_display = row.get("artist_display").unwrap_or_default();
+
+    let album_id = row.get("album_id").ok();
+    let album_title = row.get("album_title").ok();
+
+    let album = if let (Some(album_id), Some(album_title)) = (album_id, album_title) {
+        Some(AlbumRead {
+            id: album_id,
+            title: album_title,
+        })
+    } else {
+        None
+    };
+
+    let artists = match get_all_artists_for_track(conn, id) {
+        Ok(v) => v,
+        Err(err) => {
+            warn!("Error resolving artists for a track: {err:#?}");
+            Vec::new()
+        }
+    };
+
+    TrackRead {
+        id,
+        file_dir,
+        file_stem,
+        file_ext,
+        duration,
+        last_position,
+        album,
+        title,
+        genre,
+        artist_display,
+        artists,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -257,15 +330,18 @@ mod tests {
     use either::Either;
     use pretty_assertions::assert_eq;
 
-    use crate::new_database::{
-        album_insert::AlbumInsertable,
-        artist_insert::ArtistInsertable,
-        test_utils::gen_database,
-        track_insert::TrackInsertable,
-        track_ops::{
-            AlbumRead, ArtistRead, RowOrdering, TrackRead, get_all_tracks, get_last_position,
-            set_last_position,
+    use crate::{
+        new_database::{
+            album_insert::AlbumInsertable,
+            artist_insert::ArtistInsertable,
+            test_utils::gen_database,
+            track_insert::TrackInsertable,
+            track_ops::{
+                AlbumRead, ArtistRead, RowOrdering, TrackRead, get_all_tracks, get_last_position,
+                get_tracks_from_album, get_tracks_from_artist, set_last_position,
+            },
         },
+        track::TrackMetadata,
     };
 
     use super::get_all_artists_for_track;
@@ -451,5 +527,128 @@ mod tests {
         let err = set_last_position(&db.get_connection(), path, None).unwrap_err();
 
         assert!(err.to_string().contains("Track not found"));
+    }
+
+    #[test]
+    fn tracks_by_album() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumA".to_string()),
+            album_artist: Some("ArtistA".to_string()),
+            album_artists: Some(vec!["ArtistA".to_string()]),
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumA".to_string()),
+            album_artist: Some("ArtistA".to_string()),
+            album_artists: Some(vec!["ArtistA".to_string()]),
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA2".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumB".to_string()),
+            album_artist: Some("ArtistA".to_string()),
+            album_artists: Some(vec!["ArtistA".to_string()]),
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let res = get_tracks_from_album(
+            &db.get_connection(),
+            "AlbumA",
+            "ArtistA",
+            RowOrdering::IdAsc,
+        )
+        .unwrap();
+        let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
+
+        assert_eq!(&res, &["FileA1", "FileA2"]);
+    }
+
+    #[test]
+    fn tracks_by_artist() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumA".to_string()),
+            album_artist: Some("ArtistA".to_string()),
+            album_artists: Some(vec!["ArtistA".to_string()]),
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumA".to_string()),
+            album_artist: Some("ArtistB".to_string()),
+            album_artists: Some(vec!["ArtistB".to_string()]),
+            artist: Some("ArtistB".to_string()),
+            artists: Some(vec!["ArtistB".to_string()]),
+            title: Some("FileA2".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumB".to_string()),
+            album_artist: Some("ArtistB".to_string()),
+            album_artists: Some(vec!["ArtistB".to_string()]),
+            artist: Some("ArtistB".to_string()),
+            artists: Some(vec!["ArtistB".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let res =
+            get_tracks_from_artist(&db.get_connection(), "ArtistB", RowOrdering::IdAsc).unwrap();
+        let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
+
+        assert_eq!(&res, &["FileA2", "FileB1"]);
     }
 }
