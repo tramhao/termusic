@@ -360,29 +360,16 @@ pub fn track_exists(conn: &Connection, track: &Path) -> Result<bool> {
     let file_ext = file_ext.to_string_lossy();
 
     let mut stmt = conn.prepare(
-        "SELECT COUNT(tracks.id)
+        "SELECT tracks.id
             FROM tracks
             WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;",
     )?;
 
-    let count = stmt
-        .query_row(
-            named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext},
-            |row| {
-                let count: Integer = row.get(0).unwrap();
+    let exists = stmt.exists(
+        named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext},
+    )?;
 
-                Ok(count.max(0))
-            },
-        )
-        .or_else(|v| {
-            if v == rusqlite::Error::QueryReturnedNoRows {
-                Ok(0)
-            } else {
-                Err(v)
-            }
-        })?;
-
-    Ok(count != 0)
+    Ok(exists)
 }
 
 #[cfg(test)]

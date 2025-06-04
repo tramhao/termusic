@@ -106,26 +106,14 @@ pub fn album_exists(conn: &Connection, album: &str) -> Result<bool> {
     }
 
     let mut stmt = conn.prepare(
-        "SELECT COUNT(albums.id)
+        "SELECT albums.id
             FROM albums
             WHERE albums.title=:album_name;",
     )?;
 
-    let count = stmt
-        .query_row(named_params! {":album_name": album}, |row| {
-            let count: Integer = row.get(0).unwrap();
+    let exists = stmt.exists(named_params! {":album_name": album})?;
 
-            Ok(count.max(0))
-        })
-        .or_else(|v| {
-            if v == rusqlite::Error::QueryReturnedNoRows {
-                Ok(0)
-            } else {
-                Err(v)
-            }
-        })?;
-
-    Ok(count != 0)
+    Ok(exists)
 }
 
 /// Common function that converts a well-known named row to a [`AlbumRead`].
