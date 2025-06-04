@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use anyhow::{Context, Result};
+use indoc::indoc;
 use rusqlite::{Connection, named_params};
 
 use super::Integer;
@@ -48,15 +49,13 @@ impl InsertArtist<'_> {
     /// Insert or update the current data with the file as identifier.
     fn upsert(&self, conn: &Connection) -> Result<Integer> {
         // using "artist=artist" as "DO NOTHING" would not be returning the id
-        let mut stmt = conn.prepare_cached(
-            "
+        let mut stmt = conn.prepare_cached(indoc! {"
             INSERT INTO artists (artist, added_at)
             VALUES (:artist, :added_at)
             ON CONFLICT(artist) DO UPDATE SET 
                 artist=artist
             RETURNING id;
-        ",
-        )?;
+        "})?;
 
         let now = chrono::Utc::now().to_rfc3339();
 

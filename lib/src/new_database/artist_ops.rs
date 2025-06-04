@@ -1,4 +1,5 @@
 use anyhow::{Result, bail};
+use indoc::{formatdoc, indoc};
 use rusqlite::{Connection, Row, named_params};
 
 use crate::new_database::Integer;
@@ -44,12 +45,13 @@ impl RowOrdering {
 ///
 /// If the database schema does not match what is expected.
 pub fn get_all_artists(conn: &Connection, order: RowOrdering) -> Result<Vec<ArtistRead>> {
-    let stmt = format!(
-        "SELECT artists.id AS artist_id, artists.artist
-    FROM artists
-    ORDER BY {};",
+    let stmt = formatdoc! {"
+        SELECT artists.id AS artist_id, artists.artist
+        FROM artists
+        ORDER BY {};
+        ",
         order.as_sql()
-    );
+    };
     let mut stmt = conn.prepare(&stmt)?;
 
     let result: Vec<ArtistRead> = stmt
@@ -73,11 +75,11 @@ pub fn get_artist(conn: &Connection, artist: &str) -> Result<ArtistRead> {
         bail!("Given artist is empty!");
     }
 
-    let mut stmt = conn.prepare(
-        "SELECT artists.id AS artist_id, artists.artist
-            FROM artists
-            WHERE artists.artist=:artist_name;",
-    )?;
+    let mut stmt = conn.prepare(indoc! {"
+        SELECT artists.id AS artist_id, artists.artist
+        FROM artists
+        WHERE artists.artist=:artist_name;
+    "})?;
 
     let result: ArtistRead = stmt.query_row(named_params! {":artist_name": artist}, |row| {
         let artist_read = common_row_to_artistread(row);
@@ -98,11 +100,11 @@ pub fn artist_exists(conn: &Connection, artist: &str) -> Result<bool> {
         bail!("Given artist is empty!");
     }
 
-    let mut stmt = conn.prepare(
-        "SELECT artists.id
-            FROM artists
-            WHERE artists.artist=:artist_name;",
-    )?;
+    let mut stmt = conn.prepare(indoc! {"
+        SELECT artists.id
+        FROM artists
+        WHERE artists.artist=:artist_name;
+    "})?;
 
     let exists = stmt.exists(named_params! {":artist_name": artist})?;
 
