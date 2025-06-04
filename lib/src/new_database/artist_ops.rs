@@ -99,26 +99,14 @@ pub fn artist_exists(conn: &Connection, artist: &str) -> Result<bool> {
     }
 
     let mut stmt = conn.prepare(
-        "SELECT COUNT(artists.id)
+        "SELECT artists.id
             FROM artists
             WHERE artists.artist=:artist_name;",
     )?;
 
-    let count = stmt
-        .query_row(named_params! {":artist_name": artist}, |row| {
-            let count: Integer = row.get(0).unwrap();
+    let exists = stmt.exists(named_params! {":artist_name": artist})?;
 
-            Ok(count.max(0))
-        })
-        .or_else(|v| {
-            if v == rusqlite::Error::QueryReturnedNoRows {
-                Ok(0)
-            } else {
-                Err(v)
-            }
-        })?;
-
-    Ok(count != 0)
+    Ok(exists)
 }
 
 /// Common function that converts a well-known named row to a [`ArtistRead`].
