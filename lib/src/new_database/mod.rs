@@ -24,6 +24,7 @@ use crate::{
 pub type Integer = i64;
 
 mod album_insert;
+pub mod album_ops;
 mod artist_insert;
 pub mod artist_ops;
 mod migrate;
