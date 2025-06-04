@@ -87,15 +87,6 @@ impl InsertAlbum<'_> {
 
         Ok(id)
     }
-
-    // TODO: the following functions should be on a different struct
-
-    /// Count all rows currently in the `albums` database
-    fn count_all(conn: &Connection) -> Result<Integer> {
-        let count = conn.query_row("SELECT COUNT(id) FROM albums;", [], |v| v.get(0))?;
-
-        Ok(count)
-    }
 }
 
 /// Stores references for insertion into `albums_artist` directly
@@ -123,21 +114,13 @@ impl InsertAlbumArtistMapping {
 
         Ok(())
     }
-
-    // TODO: the following functions should be on a different struct
-
-    /// Count all rows currently in the `albums_artist` database
-    fn count_all(conn: &Connection) -> Result<Integer> {
-        let count = conn.query_row("SELECT COUNT(album) FROM albums_artist;", [], |v| v.get(0))?;
-
-        Ok(count)
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::new_database::{
         album_insert::{InsertAlbum, InsertAlbumArtistMapping},
+        album_ops::{count_all_albums, count_all_albums_artist_mapping},
         artist_insert::ArtistInsertable,
         test_utils::gen_database,
     };
@@ -164,7 +147,7 @@ mod tests {
         // check that insertion and upsertion(update) return the same id
         assert_eq!(new_id, id);
 
-        let count = InsertAlbum::count_all(&db).unwrap();
+        let count = count_all_albums(&db).unwrap();
 
         assert_eq!(count, 1);
     }
@@ -198,7 +181,7 @@ mod tests {
 
         mapping.upsert(&db).unwrap();
 
-        let count = InsertAlbumArtistMapping::count_all(&db).unwrap();
+        let count = count_all_albums_artist_mapping(&db).unwrap();
 
         assert_eq!(count, 1);
     }
