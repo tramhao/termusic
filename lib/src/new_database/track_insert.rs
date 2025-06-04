@@ -2,6 +2,7 @@ use std::{borrow::Cow, ffi::OsStr, path::Path, time::Duration};
 
 use anyhow::{Context, Result, bail};
 use either::Either;
+use indoc::indoc;
 use rusqlite::{Connection, named_params};
 
 use super::{Integer, album_insert::AlbumInsertable, artist_insert::ArtistInsertable};
@@ -223,13 +224,13 @@ struct InsertTrack<'a> {
 impl InsertTrack<'_> {
     /// Insert or update the current data with the file paths as identifiers.
     fn upsert(&self, conn: &Connection) -> Result<Integer> {
-        let mut stmt = conn.prepare_cached("
+        let mut stmt = conn.prepare_cached(indoc!{"
             INSERT INTO tracks (file_dir, file_stem, file_ext, duration, last_position, added_at, album)
             VALUES (:file_dir, :file_stem, :file_ext, :duration, :last_position, :added_at, :album)
             ON CONFLICT(file_dir, file_stem, file_ext) DO UPDATE SET 
                 duration=excluded.duration, album=excluded.album
             RETURNING id;
-        ")?;
+        "})?;
 
         let now = chrono::Utc::now().to_rfc3339();
         let duration = self.duration.map(|v| v.as_secs());
@@ -267,15 +268,13 @@ struct InsertTrackMetadata<'a> {
 impl InsertTrackMetadata<'_> {
     /// Insert or update the current data with the file as identifier.
     fn upsert(&self, conn: &Connection) -> Result<Integer> {
-        let mut stmt = conn.prepare_cached(
-            "
+        let mut stmt = conn.prepare_cached(indoc! {"
             INSERT INTO tracks_metadata (track, title, genre, artist_display)
             VALUES (:track, :title, :genre, :artist_display)
             ON CONFLICT(track) DO UPDATE SET 
                 title=excluded.title, genre=excluded.genre, artist_display=excluded.artist_display
             RETURNING track;
-        ",
-        )?;
+        "})?;
 
         let id = stmt.query_row(
             named_params! {
@@ -301,13 +300,11 @@ struct InsertTrackArtistMapping {
 impl InsertTrackArtistMapping {
     /// Insert the current data, not caring about the id that was inserted
     fn upsert(&self, conn: &Connection) -> Result<()> {
-        let mut stmt = conn.prepare_cached(
-            "
+        let mut stmt = conn.prepare_cached(indoc! {"
             INSERT INTO tracks_artists (track, artist)
             VALUES (:track, :artist)
             ON CONFLICT(track, artist) DO NOTHING;
-        ",
-        )?;
+        "})?;
 
         stmt.execute(named_params! {
             ":track": self.track,

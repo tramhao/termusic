@@ -1,4 +1,5 @@
 use anyhow::{Result, bail};
+use indoc::{formatdoc, indoc};
 use rusqlite::{Connection, Row, named_params};
 
 use crate::new_database::{
@@ -53,12 +54,13 @@ impl RowOrdering {
 ///
 /// If the database schema does not match what is expected.
 pub fn get_all_albums(conn: &Connection, order: RowOrdering) -> Result<Vec<AlbumRead>> {
-    let stmt = format!(
-        "SELECT albums.id as album_id, albums.title, albums.artist_display
-    FROM albums
-    ORDER BY {};",
+    let stmt = formatdoc! {"
+        SELECT albums.id as album_id, albums.title, albums.artist_display
+        FROM albums
+        ORDER BY {};
+        ",
         order.as_sql()
-    );
+    };
     let mut stmt = conn.prepare(&stmt)?;
 
     let result: Vec<AlbumRead> = stmt
@@ -79,10 +81,11 @@ pub fn get_all_albums(conn: &Connection, order: RowOrdering) -> Result<Vec<Album
 /// If the database schema does not match what is expected.
 // maybe this should be in "artist_ops" instead?
 pub fn get_all_artists_for_album(conn: &Connection, album_id: Integer) -> Result<Vec<ArtistRead>> {
-    let stmt = "SELECT artists.id AS artist_id, artists.artist FROM artists
-    INNER JOIN albums_artists ON albums_artists.album=(:album_id)
-    WHERE artists.id=albums_artists.artist;";
-    let mut stmt = conn.prepare(stmt)?;
+    let mut stmt = conn.prepare(indoc! {"
+        SELECT artists.id AS artist_id, artists.artist FROM artists
+        INNER JOIN albums_artists ON albums_artists.album=(:album_id)
+        WHERE artists.id=albums_artists.artist;
+    "})?;
 
     let result: Vec<ArtistRead> = stmt
         .query_map(named_params! {":album_id": album_id}, |row| {
@@ -105,11 +108,11 @@ pub fn album_exists(conn: &Connection, album: &str) -> Result<bool> {
         bail!("Given album is empty!");
     }
 
-    let mut stmt = conn.prepare(
-        "SELECT albums.id
-            FROM albums
-            WHERE albums.title=:album_name;",
-    )?;
+    let mut stmt = conn.prepare(indoc! {"
+        SELECT albums.id
+        FROM albums
+        WHERE albums.title=:album_name;
+    "})?;
 
     let exists = stmt.exists(named_params! {":album_name": album})?;
 

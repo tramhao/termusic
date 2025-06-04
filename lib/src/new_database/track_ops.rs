@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::{Result, bail};
+use indoc::{formatdoc, indoc};
 use rusqlite::{Connection, Row, named_params};
 
 use crate::new_database::{
@@ -96,11 +97,18 @@ impl RowOrdering {
 ///
 /// If the database schema does not match what is expected.
 pub fn get_all_tracks(conn: &Connection, order: RowOrdering) -> Result<Vec<TrackRead>> {
-    let stmt = format!("SELECT tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position, tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre, albums.id AS album_id, albums.title AS album_title
-    FROM tracks
-    LEFT JOIN tracks_metadata ON tracks.id = tracks_metadata.track
-    LEFT JOIN albums ON tracks.album = albums.id
-    ORDER BY {};", order.as_sql());
+    let stmt = formatdoc! {"
+        SELECT 
+            tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
+            albums.id AS album_id, albums.title AS album_title
+        FROM tracks
+        LEFT JOIN tracks_metadata ON tracks.id = tracks_metadata.track
+        LEFT JOIN albums ON tracks.album = albums.id
+        ORDER BY {};
+        ",
+        order.as_sql()
+    };
     let mut stmt = conn.prepare(&stmt)?;
 
     let result: Vec<TrackRead> = stmt
@@ -121,10 +129,11 @@ pub fn get_all_tracks(conn: &Connection, order: RowOrdering) -> Result<Vec<Track
 /// If the database schema does not match what is expected.
 // maybe this should be in "artist_ops" instead?
 pub fn get_all_artists_for_track(conn: &Connection, track_id: Integer) -> Result<Vec<ArtistRead>> {
-    let stmt = "SELECT artists.id AS artist_id, artists.artist FROM artists
-    INNER JOIN tracks_artists ON tracks_artists.track=:track_id
-    WHERE artists.id=tracks_artists.artist;";
-    let mut stmt = conn.prepare(stmt)?;
+    let mut stmt = conn.prepare(indoc! {"
+        SELECT artists.id AS artist_id, artists.artist FROM artists
+        INNER JOIN tracks_artists ON tracks_artists.track=:track_id
+        WHERE artists.id=tracks_artists.artist;
+    "})?;
 
     let result: Vec<ArtistRead> = stmt
         .query_map(named_params! {":track_id": track_id}, |row| {
@@ -148,10 +157,10 @@ pub fn get_last_position(conn: &Connection, track: &Path) -> Result<Option<Durat
     let file_stem = file_stem.to_string_lossy();
     let file_ext = file_ext.to_string_lossy();
 
-    let mut stmt = conn.prepare_cached(
-        "SELECT last_position FROM tracks
-WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;",
-    )?;
+    let mut stmt = conn.prepare_cached(indoc!{"
+        SELECT last_position FROM tracks
+        WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;
+    "})?;
 
     let result: Option<Integer> = stmt.query_row(
         named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext},
@@ -175,10 +184,10 @@ pub fn set_last_position(conn: &Connection, track: &Path, to: Option<Duration>) 
 
     let last_position = to.map(|v| v.as_secs());
 
-    let mut stmt = conn.prepare_cached(
-        "UPDATE tracks SET last_position=:last_position
-            WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;",
-    )?;
+    let mut stmt = conn.prepare_cached(indoc!{"
+        UPDATE tracks SET last_position=:last_position
+        WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;
+    "})?;
 
     let affected = stmt.execute(named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext, ":last_position": last_position})?;
 
@@ -201,12 +210,19 @@ pub fn get_tracks_from_album(
     album_artist: &str,
     order: RowOrdering,
 ) -> Result<Vec<TrackRead>> {
-    let stmt = format!("SELECT tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position, tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre, albums.id AS album_id, albums.title AS album_title
-    FROM tracks
-    LEFT JOIN tracks_metadata ON tracks.id = tracks_metadata.track
-    LEFT JOIN albums ON tracks.album = albums.id
-    WHERE albums.title=:album_title AND albums.artist_display=:album_artist
-    ORDER BY {};", order.as_sql());
+    let stmt = formatdoc! {"
+        SELECT 
+            tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
+            albums.id AS album_id, albums.title AS album_title
+        FROM tracks
+        LEFT JOIN tracks_metadata ON tracks.id=tracks_metadata.track
+        LEFT JOIN albums ON tracks.album = albums.id
+        WHERE albums.title=:album_title AND albums.artist_display=:album_artist
+        ORDER BY {};
+        ",
+        order.as_sql()
+    };
     let mut stmt = conn.prepare(&stmt)?;
 
     let result: Vec<TrackRead> = stmt
@@ -233,14 +249,21 @@ pub fn get_tracks_from_artist(
     artist: &str,
     order: RowOrdering,
 ) -> Result<Vec<TrackRead>> {
-    let stmt = format!("SELECT tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position, tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre, albums.id AS album_id, albums.title AS album_title
-    FROM tracks
-    LEFT JOIN tracks_metadata ON tracks.id = tracks_metadata.track
-    LEFT JOIN albums ON tracks.album = albums.id
-    INNER JOIN tracks_artists ON tracks.id = tracks_artists.track
-    INNER JOIN artists ON artists.id=tracks_artists.artist
-    WHERE artists.artist=:artist
-    ORDER BY {};", order.as_sql());
+    let stmt = formatdoc! {"
+        SELECT 
+            tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
+            albums.id AS album_id, albums.title AS album_title
+        FROM tracks
+        LEFT JOIN tracks_metadata ON tracks.id=tracks_metadata.track
+        LEFT JOIN albums ON tracks.album = albums.id
+        INNER JOIN tracks_artists ON tracks.id = tracks_artists.track
+        INNER JOIN artists ON artists.id=tracks_artists.artist
+        WHERE artists.artist=:artist
+        ORDER BY {};
+        ",
+        order.as_sql()
+    };
     let mut stmt = conn.prepare(&stmt)?;
 
     let result: Vec<TrackRead> = stmt
@@ -264,12 +287,19 @@ pub fn get_tracks_from_genre(
     genre: &str,
     order: RowOrdering,
 ) -> Result<Vec<TrackRead>> {
-    let stmt = format!("SELECT tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position, tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre, albums.id AS album_id, albums.title AS album_title
-    FROM tracks
-    INNER JOIN tracks_metadata ON tracks.id = tracks_metadata.track
-    LEFT JOIN albums ON tracks.album = albums.id
-    WHERE tracks_metadata.genre=:genre
-    ORDER BY {};", order.as_sql());
+    let stmt = formatdoc! {"
+        SELECT
+            tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
+            albums.id AS album_id, albums.title AS album_title
+        FROM tracks
+        INNER JOIN tracks_metadata ON tracks.id=tracks_metadata.track
+        LEFT JOIN albums ON tracks.album = albums.id
+        WHERE tracks_metadata.genre=:genre
+        ORDER BY {};
+        ",
+        order.as_sql()
+    };
     let mut stmt = conn.prepare(&stmt)?;
 
     let result: Vec<TrackRead> = stmt
@@ -359,11 +389,11 @@ pub fn track_exists(conn: &Connection, track: &Path) -> Result<bool> {
     let file_stem = file_stem.to_string_lossy();
     let file_ext = file_ext.to_string_lossy();
 
-    let mut stmt = conn.prepare(
-        "SELECT tracks.id
-            FROM tracks
-            WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;",
-    )?;
+    let mut stmt = conn.prepare(indoc!{"
+        SELECT tracks.id
+        FROM tracks
+        WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext;
+    "})?;
 
     let exists = stmt.exists(
         named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext},
