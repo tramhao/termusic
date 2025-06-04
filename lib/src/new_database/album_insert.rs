@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use anyhow::{Context, Result};
+use indoc::indoc;
 use rusqlite::{named_params, Connection};
 
 use super::{artist_insert::ArtistInsertable, either::Either, Integer};
@@ -67,15 +68,13 @@ impl InsertAlbum<'_> {
     /// Insert or update the current data with the `title` and `artist_display` as identifier.
     fn upsert(&self, conn: &Connection) -> Result<Integer> {
         // using "title=title" as "DO NOTHING" would not be returning the id
-        let mut stmt = conn.prepare_cached(
-            "
+        let mut stmt = conn.prepare_cached(indoc! {"
             INSERT INTO albums (title, artist_display)
             VALUES (:title, :artist_display)
             ON CONFLICT(title, artist_display) DO UPDATE SET
                 title=title
             RETURNING id;
-        ",
-        )?;
+        "})?;
 
         let id = stmt.query_row(
             named_params! {
@@ -99,13 +98,11 @@ struct InsertAlbumArtistMapping {
 impl InsertAlbumArtistMapping {
     /// Insert the current data, not caring about the id that was inserted
     fn upsert(&self, conn: &Connection) -> Result<()> {
-        let mut stmt = conn.prepare_cached(
-            "
+        let mut stmt = conn.prepare_cached(indoc! {"
             INSERT INTO albums_artists (album, artist)
             VALUES (:album, :artist)
             ON CONFLICT(album, artist) DO NOTHING;
-        ",
-        )?;
+        "})?;
 
         stmt.execute(named_params! {
             ":album": self.album,
