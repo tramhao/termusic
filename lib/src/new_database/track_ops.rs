@@ -7,7 +7,10 @@ use std::{
 use anyhow::{Result, bail};
 use rusqlite::{Connection, Row, named_params};
 
-use crate::new_database::track_insert::path_to_db_comp;
+use crate::new_database::{
+    artist_ops::{ArtistRead, common_row_to_artistread},
+    track_insert::path_to_db_comp,
+};
 
 use super::Integer;
 
@@ -27,44 +30,44 @@ pub fn count_all_track_metadata(conn: &Connection) -> Result<Integer> {
     Ok(count)
 }
 
+/// Count all rows currently in the `tracks_artists` database
+#[cfg(test)]
+pub(super) fn count_all_track_artist_mapping(conn: &Connection) -> Result<Integer> {
+    let count = conn.query_row("SELECT COUNT(track) FROM tracks_artists;", [], |v| v.get(0))?;
+
+    Ok(count)
+}
+
 /// The lowest information required for a [`TrackRead`] to identify a Album.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlbumRead {
-    id: Integer,
+    pub id: Integer,
 
-    title: String,
-}
-
-/// The lowest information required for a [`TrackRead`] to identify a Artist.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ArtistRead {
-    id: Integer,
-
-    name: String,
+    pub title: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrackRead {
-    id: Integer,
+    pub id: Integer,
 
     // Track identifier
-    file_dir: PathBuf,
-    file_stem: OsString,
-    file_ext: OsString,
+    pub file_dir: PathBuf,
+    pub file_stem: OsString,
+    pub file_ext: OsString,
 
     // Direct data on `tracks`
-    duration: Option<Duration>,
-    last_position: Option<Duration>,
+    pub duration: Option<Duration>,
+    pub last_position: Option<Duration>,
     /// Either a reference to a insertable to look-up or a direct integer to use as reference into `albums`.
-    album: Option<AlbumRead>,
+    pub album: Option<AlbumRead>,
 
     // Data on `tracks_metadata`
-    title: Option<String>,
-    genre: Option<String>,
-    artist_display: Option<String>,
+    pub title: Option<String>,
+    pub genre: Option<String>,
+    pub artist_display: Option<String>,
 
     // mapped metadata
-    artists: Vec<ArtistRead>,
+    pub artists: Vec<ArtistRead>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -116,6 +119,7 @@ pub fn get_all_tracks(conn: &Connection, order: RowOrdering) -> Result<Vec<Track
 /// # Panics
 ///
 /// If the database schema does not match what is expected.
+// maybe this should be in "artist_ops" instead?
 pub fn get_all_artists_for_track(conn: &Connection, track_id: Integer) -> Result<Vec<ArtistRead>> {
     let stmt = "SELECT artists.id AS artist_id, artists.artist FROM artists
     INNER JOIN tracks_artists ON tracks_artists.track=:track_id
@@ -124,13 +128,9 @@ pub fn get_all_artists_for_track(conn: &Connection, track_id: Integer) -> Result
 
     let result: Vec<ArtistRead> = stmt
         .query_map(named_params! {":track_id": track_id}, |row| {
-            let artist_id = row.get("artist_id").unwrap();
-            let artist_name = row.get("artist").unwrap();
+            let artist_read = common_row_to_artistread(row);
 
-            Ok(ArtistRead {
-                id: artist_id,
-                name: artist_name,
-            })
+            Ok(artist_read)
         })?
         .collect::<Result<Vec<_>, rusqlite::Error>>()?;
 
