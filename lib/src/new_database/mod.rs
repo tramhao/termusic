@@ -25,6 +25,7 @@ pub type Integer = i64;
 
 mod album_insert;
 mod artist_insert;
+pub mod artist_ops;
 mod migrate;
 mod track_insert;
 pub mod track_ops;

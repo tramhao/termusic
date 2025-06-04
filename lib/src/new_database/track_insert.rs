@@ -316,15 +316,6 @@ impl InsertTrackArtistMapping {
 
         Ok(())
     }
-
-    // TODO: the following functions should be on a different struct
-
-    /// Count all rows currently in the `tracks_artists` database
-    fn count_all(conn: &Connection) -> Result<Integer> {
-        let count = conn.query_row("SELECT COUNT(track) FROM tracks_artists;", [], |v| v.get(0))?;
-
-        Ok(count)
-    }
 }
 
 #[cfg(test)]
@@ -335,7 +326,7 @@ mod tests {
         artist_insert::ArtistInsertable,
         test_utils::gen_database,
         track_insert::{InsertTrackArtistMapping, InsertTrackMetadata},
-        track_ops::{count_all_track_metadata, count_all_tracks},
+        track_ops::{count_all_track_artist_mapping, count_all_track_metadata, count_all_tracks},
     };
 
     use super::InsertTrack;
@@ -443,7 +434,7 @@ mod tests {
 
         mapping.upsert(&db).unwrap();
 
-        let count = InsertTrackArtistMapping::count_all(&db).unwrap();
+        let count = count_all_track_artist_mapping(&db).unwrap();
 
         assert_eq!(count, 1);
     }

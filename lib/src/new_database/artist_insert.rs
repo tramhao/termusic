@@ -70,20 +70,13 @@ impl InsertArtist<'_> {
 
         Ok(id)
     }
-
-    // TODO: the following functions should be on a different struct
-
-    /// Count all rows currently in the `artists` database
-    fn count_all(conn: &Connection) -> Result<Integer> {
-        let count = conn.query_row("SELECT COUNT(id) FROM artists;", [], |v| v.get(0))?;
-
-        Ok(count)
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::new_database::{artist_insert::InsertArtist, test_utils::gen_database};
+    use crate::new_database::{
+        artist_insert::InsertArtist, artist_ops::count_all_artists, test_utils::gen_database,
+    };
 
     /// Simple test that [`InsertArtist::upsert`] works correctly
     /// both with insertion and updating.
@@ -104,7 +97,7 @@ mod tests {
         // check that insertion and upsertion(update) return the same id
         assert_eq!(new_id, id);
 
-        let count = InsertArtist::count_all(&db).unwrap();
+        let count = count_all_artists(&db).unwrap();
 
         assert_eq!(count, 1);
     }
