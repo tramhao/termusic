@@ -616,10 +616,6 @@ impl Display for DurationFmtShort {
     }
 }
 
-/// The default and most common separators used for artists.
-pub const DEFAULT_ARTIST_SEPARATORS: &[&str] =
-    &[",", ";", "&", "ft.", "feat.", "/", "|", "×", "、", " x "];
-
 /// See [`TrackMetadata`] for explanation of values.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[allow(clippy::struct_excessive_bools)] // configuration, this is not a state machine
