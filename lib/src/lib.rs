@@ -9,7 +9,7 @@
 pub mod config;
 pub mod ids;
 pub mod invidious;
-pub mod library_db;
+pub mod new_database;
 pub mod player;
 pub mod playlist;
 pub mod podcast;

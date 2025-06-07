@@ -1,0 +1,4 @@
+# This config file is still necessary if we want to further refine lints
+# see https://github.com/rust-lang/rust-clippy/issues/13712
+
+doc-valid-idents = ["ID3v2", "MiB"]
