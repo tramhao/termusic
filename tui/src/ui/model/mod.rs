@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
+use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
@@ -415,7 +416,7 @@ impl Model {
             tx_to_main.clone(),
             download_tracker.clone(),
             &path,
-            config_server.read().get_library_scan_depth(),
+            ScanDepth::Limited(2),
             None,
         );
 

@@ -251,7 +251,7 @@ impl Model {
             self.tx_to_main.clone(),
             self.download_tracker.clone(),
             path,
-            self.config_server.read().get_library_scan_depth(),
+            ScanDepth::Limited(2),
             focus_node,
         );
     }

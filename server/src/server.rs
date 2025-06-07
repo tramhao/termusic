@@ -718,7 +718,7 @@ fn get_config(args: &cli::Args) -> Result<ServerOverlay> {
         settings: config,
         music_dir_overwrite: music_dir,
         disable_discord_status: args.disable_discord,
-        library_scan_depth: max_depth,
+        metadata_scan_depth: max_depth,
     };
 
     Ok(overlay)

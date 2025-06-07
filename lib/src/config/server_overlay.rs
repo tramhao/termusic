@@ -17,18 +17,18 @@ pub struct ServerOverlay {
     pub music_dir_overwrite: Option<PathBuf>,
     /// Overwrite disabling the discord status setting
     pub disable_discord_status: bool,
-    /// Overwrite the Library scan depth
-    pub library_scan_depth: Option<ScanDepth>,
+    /// Overwrite the Metadata scan depth
+    pub metadata_scan_depth: Option<ScanDepth>,
 }
 
 impl ServerOverlay {
     /// Get the Library scan depth, either the overwrite if present, otherwise the config itself
     #[must_use]
-    pub fn get_library_scan_depth(&self) -> ScanDepth {
-        if let Some(v) = self.library_scan_depth {
+    pub fn get_metadata_scan_depth(&self) -> ScanDepth {
+        if let Some(v) = self.metadata_scan_depth {
             v
         } else {
-            self.settings.player.library_scan_depth
+            self.settings.metadata.directory_scan_depth
         }
     }
 
