@@ -487,7 +487,7 @@ pub enum PLMsg {
     /// Change focus to the previous view
     PlaylistTableBlurUp,
     /// Add a directory / file to the playlist
-    Add(String),
+    Add(PathBuf),
     /// Remove INDEX from playlist
     Delete(usize),
     /// Clear the Playlist

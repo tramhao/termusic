@@ -54,11 +54,10 @@ pub fn filetype_supported(path: &Path) -> bool {
     }
 }
 
+/// Check if the given path has a extension that matches well-known playlists that are supported by us.
 #[must_use]
-pub fn is_playlist(current_node: &str) -> bool {
-    let p = Path::new(current_node);
-
-    match p.extension() {
+pub fn is_playlist(path: &Path) -> bool {
+    match path.extension() {
         Some(ext) if ext == "m3u" => true,
         Some(ext) if ext == "m3u8" => true,
         Some(ext) if ext == "pls" => true,
@@ -109,8 +108,7 @@ pub fn create_podcast_dir(config: &ServerOverlay, pod_title: String) -> Result<P
 }
 
 /// Parse the playlist at `current_node`(from the tui tree) and return the media paths
-pub fn playlist_get_vec(current_node: &str) -> Result<Vec<String>> {
-    let playlist_path = Path::new(current_node);
+pub fn playlist_get_vec(playlist_path: &Path) -> Result<Vec<String>> {
     // get the directory the playlist is in
     let playlist_directory = absolute_path(
         playlist_path

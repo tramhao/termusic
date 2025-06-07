@@ -1,6 +1,6 @@
 //! SPDX-License-Identifier: MIT
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::anyhow;
@@ -519,7 +519,7 @@ impl Model {
             DBMsg::AddPlaylist(index) => {
                 if !self.dw.search_tracks.is_empty() {
                     if let Some(track) = self.dw.search_tracks.get(index) {
-                        let file = track.file.clone();
+                        let file = PathBuf::from(&track.file);
                         if let Err(e) = self.playlist_add(&file) {
                             self.mount_error_popup(e.context("playlist add"));
                         }

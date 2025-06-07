@@ -587,7 +587,7 @@ impl Model {
         for record in all_items
             .into_iter()
             .filter_map(std::result::Result::ok)
-            .filter(|p| is_playlist(&p.path().to_string_lossy()))
+            .filter(|p| is_playlist(p.path()))
         {
             let full_path_name = record.path().to_string_lossy().to_string();
             vec.push(full_path_name);
@@ -605,7 +605,8 @@ impl Model {
     ) -> Option<Vec<TrackDB>> {
         match criteria {
             SearchCriteria::Playlist => {
-                if let Ok(vec) = playlist_get_vec(val) {
+                let path = Path::new(val);
+                if let Ok(vec) = playlist_get_vec(path) {
                     let mut vec_db = Vec::with_capacity(vec.len());
                     for item in vec {
                         if let Ok(i) = self.db.get_record_by_path(&item) {

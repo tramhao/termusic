@@ -272,8 +272,8 @@ impl Model {
     }
 
     /// Add a playlist (like m3u) to the playlist.
-    fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
-        let vec = playlist_get_vec(current_node)?;
+    fn playlist_add_playlist(&mut self, playlist_path: &Path) -> Result<()> {
+        let vec = playlist_get_vec(playlist_path)?;
 
         let sources = vec
             .into_iter()
@@ -325,13 +325,12 @@ impl Model {
     /// Add the `current_node`, regardless if it is a Track, dir, playlist, etc.
     ///
     /// See [`Model::playlist_add_episode`] for podcast episode adding
-    pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {
-        let p: &Path = Path::new(&current_node);
-        if !p.exists() {
+    pub fn playlist_add(&mut self, path: &Path) -> Result<()> {
+        if !path.exists() {
             return Ok(());
         }
-        if p.is_dir() {
-            let new_items_vec = Self::library_dir_children(p);
+        if path.is_dir() {
+            let new_items_vec = Self::library_dir_children(path);
 
             let sources = new_items_vec
                 .into_iter()
@@ -347,21 +346,21 @@ impl Model {
 
             return Ok(());
         }
-        self.playlist_add_item(current_node)?;
+        self.playlist_add_item(path)?;
         self.playlist_sync();
         Ok(())
     }
 
     /// Add a Track or a Playlist to the playlist
-    fn playlist_add_item(&mut self, current_node: &str) -> Result<()> {
-        if is_playlist(current_node) {
-            self.playlist_add_playlist(current_node)?;
+    fn playlist_add_item(&mut self, path: &Path) -> Result<()> {
+        if is_playlist(path) {
+            self.playlist_add_playlist(path)?;
             return Ok(());
         }
-        let source = if current_node.starts_with("http") {
-            PlaylistTrackSource::Url(current_node.to_string())
+        let source = if path.starts_with("http") {
+            PlaylistTrackSource::Url(path.to_string_lossy().to_string())
         } else {
-            PlaylistTrackSource::Path(current_node.to_string())
+            PlaylistTrackSource::Path(path.to_string_lossy().to_string())
         };
 
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
