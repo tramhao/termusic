@@ -1,11 +1,5 @@
 //! SPDX-License-Identifier: MIT
 
-mod kugou;
-pub mod lrc;
-mod migu;
-mod netease_v2;
-mod service;
-
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::thread::{self, sleep};
@@ -17,13 +11,19 @@ use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use lofty::TextEncoding;
+use service::SongTagService;
 use tokio::sync::mpsc::UnboundedSender;
 use ytd_rs::{Arg, YoutubeDL};
 
 use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
 use crate::utils::get_parent_folder;
-use service::SongTagService;
+
+mod kugou;
+pub mod lrc;
+mod migu;
+mod netease_v2;
+mod service;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SongTag {
