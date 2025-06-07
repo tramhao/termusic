@@ -108,7 +108,7 @@ impl Database {
                 .filter_map(Result::ok)
                 // only process files which we support
                 .filter(|v| v.file_type().is_file())
-                .filter(|v| filetype_supported(&v.path().to_string_lossy()))
+                .filter(|v| filetype_supported(v.path()))
         };
         let db = self.clone();
 
