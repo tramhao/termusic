@@ -18,6 +18,7 @@
 - Feat(server): on rusty backend, allow choosing which speed modifier to use in the config.
 - Feat(server): on rusty backend, allow configuring file buffer size.
 - Feat(server): on rusty backend, allow configuring decoded(ring) buffer size.
+- Feat(server): add extra config section for metadata scanning and parsing.
 - Fix: due to the Track database re-implementation, a bug where the database could grow with duplicated paths is fixed.
 - Fix(tui): set `ueberzug` command to `--silent`.
 - Fix(tui): force viuer to use the terminal image protocol that was probed at the beginning.
