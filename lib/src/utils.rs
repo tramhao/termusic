@@ -34,14 +34,12 @@ pub fn get_pin_yin(input: &str) -> String {
 
 // TODO: decide filetype supported by backend instead of in library
 #[must_use]
-pub fn filetype_supported(current_node: &str) -> bool {
-    let p = Path::new(current_node);
-
-    if p.starts_with("http") {
+pub fn filetype_supported(path: &Path) -> bool {
+    if path.starts_with("http") {
         return true;
     }
 
-    match p.extension() {
+    match path.extension() {
         Some(ext) if ext == "mkv" || ext == "mka" => true,
         Some(ext) if ext == "mp3" => true,
         Some(ext) if ext == "aiff" => true,
