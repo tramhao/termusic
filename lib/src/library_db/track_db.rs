@@ -289,3 +289,53 @@ impl Indexable for &Track {
         self.duration().unwrap_or_default()
     }
 }
+
+impl Indexable for crate::new_database::track_ops::TrackRead {
+    fn meta_file(&self) -> Option<&str> {
+        // BAD; dont keep this for long
+        let pathbuf = self.as_pathbuf().into_boxed_path();
+        let path = Box::leak(pathbuf);
+        path.to_str()
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.album.as_ref().map(|v| v.title.as_str())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist_display.as_deref()
+    }
+
+    fn meta_duration(&self) -> Duration {
+        self.duration.unwrap_or_default()
+    }
+}
+
+impl Indexable for &crate::new_database::track_ops::TrackRead {
+    fn meta_file(&self) -> Option<&str> {
+        // BAD; dont keep this for long
+        let pathbuf = self.as_pathbuf().into_boxed_path();
+        let path = Box::leak(pathbuf);
+        path.to_str()
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.album.as_ref().map(|v| v.title.as_str())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist_display.as_deref()
+    }
+
+    fn meta_duration(&self) -> Duration {
+        self.duration.unwrap_or_default()
+    }
+}
