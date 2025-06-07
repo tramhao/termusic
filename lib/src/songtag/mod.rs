@@ -27,7 +27,7 @@ mod migu;
 mod netease_v2;
 mod service;
 
-use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use crate::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
