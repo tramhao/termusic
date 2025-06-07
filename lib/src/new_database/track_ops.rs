@@ -294,14 +294,22 @@ pub fn get_tracks_from_artist(
 
 /// Get all tracks associated with a genre.
 ///
+/// Note `None` will use `IS NULL` to find all tracks without a genre.
+///
 /// # Panics
 ///
 /// If the database schema does not match what is expected.
 pub fn get_tracks_from_genre(
     conn: &Connection,
-    genre: &str,
+    genre: Option<&str>,
     order: RowOrdering,
 ) -> Result<Vec<TrackRead>> {
+    let (where_clause, params): (&str, &[(&str, &str)]) = if let Some(genre) = genre {
+        ("tracks_metadata.genre=:genre", &[(":genre", genre)])
+    } else {
+        ("tracks_metadata.genre IS NULL", &[])
+    };
+
     let stmt = formatdoc! {"
         SELECT
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
@@ -310,7 +318,7 @@ pub fn get_tracks_from_genre(
         FROM tracks
         INNER JOIN tracks_metadata ON tracks.id=tracks_metadata.track
         LEFT JOIN albums ON tracks.album = albums.id
-        WHERE tracks_metadata.genre=:genre
+        WHERE {where_clause}
         ORDER BY {};
         ",
         order.as_sql()
@@ -318,7 +326,7 @@ pub fn get_tracks_from_genre(
     let mut stmt = conn.prepare(&stmt)?;
 
     let result: Vec<TrackRead> = stmt
-        .query_map(named_params! {":genre": genre}, |row| {
+        .query_map(params, |row| {
             let trackread = common_row_to_trackread(conn, row);
 
             Ok(trackread)
@@ -358,6 +366,42 @@ pub fn get_tracks_from_directory(
 
     let result: Vec<TrackRead> = stmt
         .query_map(named_params! {":dir": dir}, |row| {
+            let trackread = common_row_to_trackread(conn, row);
+
+            Ok(trackread)
+        })?
+        .collect::<Result<Vec<_>, rusqlite::Error>>()?;
+
+    Ok(result)
+}
+
+/// Get all tracks that match a genre `like`.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn get_tracks_from_genre_like(
+    conn: &Connection,
+    genre_like: &str,
+    order: RowOrdering,
+) -> Result<Vec<TrackRead>> {
+    let stmt = formatdoc! {"
+        SELECT
+            tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
+            albums.id AS album_id, albums.title AS album_title
+        FROM tracks
+        INNER JOIN tracks_metadata ON tracks.id = tracks_metadata.track
+        LEFT JOIN albums ON tracks.album = albums.id
+        WHERE tracks_metadata.genre LIKE :genre_like
+        ORDER BY {};
+        ",
+        order.as_sql()
+    };
+    let mut stmt = conn.prepare(&stmt)?;
+
+    let result: Vec<TrackRead> = stmt
+        .query_map(named_params! {":genre_like": genre_like}, |row| {
             let trackread = common_row_to_trackread(conn, row);
 
             Ok(trackread)
@@ -491,13 +535,36 @@ pub fn track_exists(conn: &Connection, track: &Path) -> Result<bool> {
     Ok(exists)
 }
 
+/// Get all genres that are currently in the database.
+/// Note that `NULL` will be mapped to `[unknown]`
+///
+/// # Panics
+///
+/// If sqlite somehow does not return what is expected.
+pub fn all_distinct_genres(conn: &Connection) -> Result<Vec<String>> {
+    let mut stmt = conn.prepare(indoc! {"
+        SELECT DISTINCT tracks_metadata.genre
+        FROM tracks_metadata
+        ",
+    })?;
+
+    let result: Vec<String> = stmt
+        .query_map(named_params! {}, |row| {
+            let res = row.get(0).unwrap_or_else(|_| "[unknown]".to_string());
+            Ok(res)
+        })?
+        .collect::<Result<Vec<_>, rusqlite::Error>>()?;
+
+    Ok(result)
+}
+
 /// Get all distinct directories.
 ///
 /// # Panics
 ///
 /// If sqlite somehow does not return what is expected.
 pub fn all_distinct_directories(conn: &Connection) -> Result<Vec<String>> {
-    let mut stmt = conn.prepare(&indoc! {"
+    let mut stmt = conn.prepare(indoc! {"
         SELECT DISTINCT tracks.file_dir
         FROM tracks
         ",
@@ -532,9 +599,9 @@ mod tests {
             track_insert::TrackInsertable,
             track_ops::{
                 AlbumRead, ArtistRead, RowOrdering, TrackRead, all_distinct_directories,
-                get_all_tracks, get_last_position, get_track_from_path, get_tracks_from_album,
-                get_tracks_from_artist, get_tracks_from_directory, get_tracks_from_genre,
-                set_last_position, track_exists,
+                all_distinct_genres, get_all_tracks, get_last_position, get_track_from_path,
+                get_tracks_from_album, get_tracks_from_artist, get_tracks_from_directory,
+                get_tracks_from_genre, get_tracks_from_genre_like, set_last_position, track_exists,
             },
         },
         track::TrackMetadata,
@@ -894,10 +961,181 @@ mod tests {
             .try_insert_or_update(&db.get_connection())
             .unwrap();
 
-        let res = get_tracks_from_genre(&db.get_connection(), "Rock", RowOrdering::IdAsc).unwrap();
+        let res =
+            get_tracks_from_genre(&db.get_connection(), Some("Rock"), RowOrdering::IdAsc).unwrap();
         let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
 
         assert_eq!(&res, &["FileA1"]);
+    }
+
+    #[test]
+    fn tracks_by_genre_like() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Rock".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA2".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Pop".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: None,
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let res =
+            get_tracks_from_genre_like(&db.get_connection(), "%pop%", RowOrdering::IdAsc).unwrap();
+        let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
+
+        assert_eq!(&res, &["FileA2"]);
+    }
+
+    #[test]
+    fn tracks_by_genre_null() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Rock".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA2".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Pop".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: None,
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let res = get_tracks_from_genre(&db.get_connection(), None, RowOrdering::IdAsc).unwrap();
+        let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
+
+        assert_eq!(&res, &["FileB1"]);
+    }
+
+    #[test]
+    fn genre_distinct() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Rock".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA2".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Pop".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: None,
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileB2".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            genre: Some("Rock".to_string()),
+            ..Default::default()
+        };
+        let insertable =
+            TrackInsertable::try_from_track(Path::new("/somewhere/fileB2.ext"), &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let res = all_distinct_genres(&db.get_connection()).unwrap();
+
+        assert_eq!(&res, &["Rock", "Pop", "[unknown]"]);
     }
 
     #[test]
