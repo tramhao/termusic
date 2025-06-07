@@ -15,7 +15,7 @@ use walkdir::DirEntry;
 use crate::{
     config::{ServerOverlay, v2::server::ScanDepth},
     track::{DEFAULT_ARTIST_SEPARATORS, MetadataOptions, parse_metadata_from_file},
-    utils::filetype_supported,
+    utils::{filetype_supported, get_app_new_database_path},
 };
 
 /// Sqlite / rusqlite integer type alias.
@@ -61,6 +61,15 @@ impl Database {
         let conn = Connection::open(path).context("open/create database")?;
 
         Self::new_from_connection(conn)
+    }
+
+    /// Create a new database at the default app config path.
+    ///
+    /// # Panics
+    ///
+    /// see [`new`](Self::new).
+    pub fn new_default_path() -> Result<Self> {
+        Self::new(&get_app_new_database_path()?)
     }
 
     /// Get a lock to the underlying connection to start operations.
