@@ -1,14 +1,15 @@
 use std::borrow::Cow;
 use std::path::Path;
+use std::time::Duration;
 
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
-use termusiclib::library_db::{Indexable, SearchCriteria};
+use termusiclib::library_db::SearchCriteria;
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, artist_ops, track_ops, Either};
-use termusiclib::track::DurationFmtShort;
+use termusiclib::track::{DurationFmtShort, Track};
 use termusiclib::types::{DBMsg, GSMsg, Msg};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
@@ -467,6 +468,114 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
     }
 }
 
+/// Get various values for matching.
+///
+/// [`wildmatch`] requires matching against strings.
+/// Aside from just matching, it is also used to display the found matches.
+pub trait Matchable {
+    fn meta_file(&self) -> Option<Cow<'_, str>>;
+    fn meta_title(&self) -> Option<&str>;
+    fn meta_album(&self) -> Option<&str>;
+    fn meta_artist(&self) -> Option<&str>;
+    fn meta_duration(&self) -> Option<Duration>;
+}
+
+impl Matchable for Track {
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        self.as_track()
+            .and_then(|v| v.path().to_str())
+            .map(Cow::from)
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.album())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        self.duration()
+    }
+}
+
+impl Matchable for &Track {
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        self.as_track()
+            .and_then(|v| v.path().to_str())
+            .map(Cow::from)
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.album())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        self.duration()
+    }
+}
+
+impl Matchable for track_ops::TrackRead {
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        let pathbuf = self.as_pathbuf();
+        let _ = pathbuf.to_str()?;
+        Some(pathbuf.into_os_string().into_string().unwrap().into())
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.album.as_ref().map(|v| v.title.as_str())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist_display.as_deref()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        self.duration
+    }
+}
+
+impl Matchable for &track_ops::TrackRead {
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        let pathbuf = self.as_pathbuf();
+        let _ = pathbuf.to_str()?;
+        Some(pathbuf.into_os_string().into_string().unwrap().into())
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.album.as_ref().map(|v| v.title.as_str())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist_display.as_deref()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        self.duration
+    }
+}
+
 impl Model {
     pub fn database_sync_tracks(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
@@ -834,7 +943,7 @@ impl Model {
         self.database_sync_results();
     }
 
-    fn match_record<T: Indexable>(record: &T, search: &str) -> bool {
+    fn match_record<T: Matchable>(record: &T, search: &str) -> bool {
         let artist_match: bool = if let Some(artist) = record.meta_artist() {
             wildmatch::WildMatch::new(search).matches(&artist.to_lowercase())
         } else {
@@ -853,7 +962,7 @@ impl Model {
         artist_match || title_match || album_match
     }
 
-    pub fn update_search<'a, T: Indexable>(
+    pub fn update_search<'a, T: Matchable>(
         indexable_songs: &'a [T],
         input: &'a str,
     ) -> impl Iterator<Item = &'a T> {
@@ -863,7 +972,7 @@ impl Model {
             .filter(move |&record| Model::match_record(record, &search))
     }
 
-    pub fn build_table<T: Indexable, I: Iterator<Item = T>>(data: I) -> Table {
+    pub fn build_table<T: Matchable, I: Iterator<Item = T>>(data: I) -> Table {
         let mut peekable_data = data.peekable();
         let mut table: TableBuilder = TableBuilder::default();
         if peekable_data.peek().is_none() {
@@ -878,8 +987,12 @@ impl Model {
                 table.add_row();
             }
 
-            let duration = DurationFmtShort(record.meta_duration());
-            let duration_string = format!("[{duration:^6.6}]");
+            let duration_string = if let Some(dur) = record.meta_duration() {
+                let duration = DurationFmtShort(dur);
+                format!("[{duration:^6.6}]")
+            } else {
+                "[--:--]".to_string()
+            };
 
             table
                 .add_col(TextSpan::new(duration_string))
@@ -888,7 +1001,9 @@ impl Model {
                         .fg(tuirealm::ratatui::style::Color::LightYellow),
                 )
                 .add_col(TextSpan::new(record.meta_title().unwrap_or(UNKNOWN_TITLE)).bold())
-                .add_col(TextSpan::new(record.meta_file().unwrap_or(UNKNOWN_FILE)));
+                .add_col(TextSpan::new(
+                    record.meta_file().unwrap_or(Cow::Borrowed(UNKNOWN_FILE)),
+                ));
         }
         table.build()
     }
