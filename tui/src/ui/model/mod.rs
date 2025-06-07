@@ -9,7 +9,6 @@ use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
 use termusiclib::ids::Id;
-use termusiclib::library_db::SearchCriteria;
 use termusiclib::new_database::Database;
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
@@ -19,7 +18,7 @@ use termusiclib::songtag::SongTag;
 use termusiclib::songtag::lrc::Lyric;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::track::{LyricData, MediaTypesSimple, Track};
-use termusiclib::types::{Msg, YoutubeOptions};
+use termusiclib::types::{Msg, SearchCriteria, YoutubeOptions};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;

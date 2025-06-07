@@ -4,7 +4,6 @@ use std::sync::Arc;
 use crate::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
 use crate::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
 use crate::invidious::{Instance, YoutubeVideo};
-use crate::library_db::SearchCriteria;
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
 use anyhow::{Result, anyhow};
@@ -620,6 +619,30 @@ impl YoutubeOptions {
     #[must_use]
     pub const fn page(&self) -> u32 {
         self.page
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SearchCriteria {
+    Artist,
+    Album,
+
+    // TODO: the values below are current unused
+    Genre,
+    Directory,
+    Playlist,
+}
+
+impl SearchCriteria {
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SearchCriteria::Artist => "artist",
+            SearchCriteria::Album => "album",
+            SearchCriteria::Genre => "genre",
+            SearchCriteria::Directory => "directory",
+            SearchCriteria::Playlist => "playlist",
+        }
     }
 }
 
