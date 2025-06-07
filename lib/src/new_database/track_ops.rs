@@ -607,6 +607,36 @@ mod tests {
 
     use super::get_all_artists_for_track;
 
+    /// Unix / DOS path handling, because depending on the system paths would otherwise not be absolute
+    fn test_path(path: &Path) -> PathBuf {
+        if cfg!(windows) {
+            let mut pathbuf = PathBuf::from("C:\\");
+            pathbuf.push(path);
+
+            pathbuf
+        } else {
+            path.to_path_buf()
+        }
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_path_absolute_unix() {
+        let path = test_path(Path::new("/somewhere/else"));
+        assert!(path.is_absolute());
+
+        assert_eq!(path, Path::new("/somewhere/else"));
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_path_absolute_windows() {
+        let path = test_path(Path::new("/somewhere/else"));
+        assert!(path.is_absolute());
+
+        assert_eq!(path, Path::new("C:\\somewhere\\else"));
+    }
+
     #[test]
     fn artists_for_track() {
         let db = gen_database();
@@ -703,7 +733,7 @@ mod tests {
         let db = gen_database();
 
         let track = TrackInsertable {
-            file_dir: Path::new("/somewhere"),
+            file_dir: &test_path(Path::new("/somewhere")),
             file_stem: OsStr::new("file"),
             file_ext: OsStr::new("ext"),
             duration: Some(Duration::from_secs(10)),
@@ -721,7 +751,7 @@ mod tests {
             artist_display: Some("ArtistA"),
             artists: vec![Either::Left(ArtistInsertable { artist: "ArtistA" }.into())],
         };
-        let path = Path::new("/somewhere/file.ext");
+        let path = &test_path(Path::new("/somewhere/file.ext"));
         let _track_id = track.try_insert_or_update(&db.get_connection()).unwrap();
 
         let last_position = get_last_position(&db.get_connection(), path).unwrap();
@@ -740,7 +770,7 @@ mod tests {
         let db = gen_database();
 
         let track = TrackInsertable {
-            file_dir: Path::new("/somewhere"),
+            file_dir: &test_path(Path::new("/somewhere")),
             file_stem: OsStr::new("file"),
             file_ext: OsStr::new("ext"),
             duration: Some(Duration::from_secs(10)),
@@ -758,7 +788,7 @@ mod tests {
             artist_display: Some("ArtistA"),
             artists: vec![Either::Left(ArtistInsertable { artist: "ArtistA" }.into())],
         };
-        let path = Path::new("/somewhere/file.ext");
+        let path = &test_path(Path::new("/somewhere/file.ext"));
         let _track_id = track.try_insert_or_update(&db.get_connection()).unwrap();
 
         let last_position = get_last_position(&db.get_connection(), path).unwrap();
@@ -776,7 +806,7 @@ mod tests {
     fn last_position_not_found() {
         let db = gen_database();
 
-        let path = Path::new("/somewhere/file.ext");
+        let path = &test_path(Path::new("/somewhere/file.ext"));
 
         // get
         let err = get_last_position(&db.get_connection(), path).unwrap_err();
@@ -804,8 +834,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -820,8 +850,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -836,8 +866,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -868,8 +898,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -884,8 +914,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -900,8 +930,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -925,8 +955,8 @@ mod tests {
             genre: Some("Rock".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -939,8 +969,8 @@ mod tests {
             genre: Some("Pop".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -953,8 +983,8 @@ mod tests {
             genre: None,
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -978,8 +1008,8 @@ mod tests {
             genre: Some("Rock".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -992,8 +1022,8 @@ mod tests {
             genre: Some("Pop".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1006,8 +1036,8 @@ mod tests {
             genre: None,
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1031,8 +1061,8 @@ mod tests {
             genre: Some("Rock".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1045,8 +1075,8 @@ mod tests {
             genre: Some("Pop".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1059,8 +1089,8 @@ mod tests {
             genre: None,
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1083,8 +1113,8 @@ mod tests {
             genre: Some("Rock".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1097,8 +1127,8 @@ mod tests {
             genre: Some("Pop".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileA2.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileA2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1111,8 +1141,8 @@ mod tests {
             genre: None,
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileB1.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1125,8 +1155,8 @@ mod tests {
             genre: Some("Rock".to_string()),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/fileB2.ext"), &metadata).unwrap();
+        let path = &test_path(Path::new("/somewhere/fileB2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1145,7 +1175,7 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let path = Path::new("/somewhere/fileA1.ext");
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
         let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
@@ -1155,7 +1185,11 @@ mod tests {
 
         assert!(res);
 
-        let res = track_exists(&db.get_connection(), Path::new("/somewhere/else.ext")).unwrap();
+        let res = track_exists(
+            &db.get_connection(),
+            &test_path(Path::new("/somewhere/else.ext")),
+        )
+        .unwrap();
 
         assert!(!res);
     }
@@ -1169,7 +1203,7 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let path = Path::new("/somewhere/fileA1.ext");
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
         let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
@@ -1179,8 +1213,11 @@ mod tests {
 
         assert_eq!(res.title, Some("FileA1".to_string()));
 
-        let err = get_track_from_path(&db.get_connection(), Path::new("/somewhere/else.ext"))
-            .unwrap_err();
+        let err = get_track_from_path(
+            &db.get_connection(),
+            &test_path(Path::new("/somewhere/else.ext")),
+        )
+        .unwrap_err();
         let err = err.downcast::<rusqlite::Error>().unwrap();
 
         assert_eq!(err, rusqlite::Error::QueryReturnedNoRows);
@@ -1222,9 +1259,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/dirA/fileA1.ext"), &metadata)
-                .unwrap();
+        let path = &test_path(Path::new("/somewhere/dirA/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1239,9 +1275,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/dirA/fileA2.ext"), &metadata)
-                .unwrap();
+        let path = &test_path(Path::new("/somewhere/dirA/fileA2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1256,16 +1291,21 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/dirB/fileB1.ext"), &metadata)
-                .unwrap();
+        let path = &test_path(Path::new("/somewhere/dirB/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
 
         let res = all_distinct_directories(&db.get_connection()).unwrap();
 
-        assert_eq!(&res, &["/somewhere/dirA", "/somewhere/dirB"]);
+        assert_eq!(
+            &res,
+            &[
+                test_path(Path::new("/somewhere/dirA")).to_string_lossy(),
+                test_path(Path::new("/somewhere/dirB")).to_string_lossy()
+            ]
+        );
     }
 
     #[test]
@@ -1282,9 +1322,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/dirA/fileA1.ext"), &metadata)
-                .unwrap();
+        let path = &test_path(Path::new("/somewhere/dirA/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1299,9 +1338,8 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/dirA/fileA2.ext"), &metadata)
-                .unwrap();
+        let path = &test_path(Path::new("/somewhere/dirA/fileA2.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
@@ -1316,16 +1354,15 @@ mod tests {
             duration: Some(Duration::from_secs(10)),
             ..Default::default()
         };
-        let insertable =
-            TrackInsertable::try_from_track(Path::new("/somewhere/dirB/fileB1.ext"), &metadata)
-                .unwrap();
+        let path = &test_path(Path::new("/somewhere/dirB/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
         let _ = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
 
         let res = get_tracks_from_directory(
             &db.get_connection(),
-            Path::new("/somewhere/dirA"),
+            &test_path(Path::new("/somewhere/dirA")),
             RowOrdering::IdAsc,
         )
         .unwrap();
