@@ -8,9 +8,11 @@
 - Change(tui): change config editor's theme preview elements to be in a dynamic grid.
 - Feat(tui): make the Config editor dynamically size elements.
 - Feat(tui): make the Config editor (at least rudementally) scrollable.
+- Feat: re-implement the Track database to allow for more search options. (Note that the old database is NOT automatically deleted)
 - Fix(tui): allow usage of key `Home`/`Pos1` in search lists.
 - Fix(tui): allow usage of key `Home`/`Pos1` and `End` in youtube search list.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
+- Fix: due to the Track database re-implementation, a bug where the database could grow with duplicated paths is fixed.
 
 ### [V0.11.0]
 - Released on: July 1, 2025.
