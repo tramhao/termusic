@@ -4,6 +4,7 @@ use std::sync::Arc;
 use crate::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
 use crate::ids::{IdConfigEditor, IdKey};
 use crate::invidious::{Instance, YoutubeVideo};
+use crate::library_db::SearchCriteria;
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
 use anyhow::{anyhow, Result};
@@ -425,7 +426,7 @@ pub enum DBMsg {
     CriteriaBlurDown,
     CriteriaBlurUp,
     /// Search Results (for view `Result`) from a `Database`(view) index
-    SearchResult(usize),
+    SearchResult(SearchCriteria),
     SearchResultBlurDown,
     SearchResultBlurUp,
     /// Serarch Tracks (for view `Tracks`) from a `Result`(view) index
