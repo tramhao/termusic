@@ -65,6 +65,37 @@ pub fn get_all_artists(conn: &Connection, order: RowOrdering) -> Result<Vec<Arti
     Ok(result)
 }
 
+/// Get all the Artists that match `like`.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn get_all_artists_like(
+    conn: &Connection,
+    like: &str,
+    order: RowOrdering,
+) -> Result<Vec<ArtistRead>> {
+    let stmt = formatdoc! {"
+        SELECT artists.id AS artist_id, artists.artist
+        FROM artists
+        WHERE artists.artist LIKE :like
+        ORDER BY {};
+        ",
+        order.as_sql()
+    };
+    let mut stmt = conn.prepare(&stmt)?;
+
+    let result: Vec<ArtistRead> = stmt
+        .query_map(named_params! {":like": like}, |row| {
+            let artist_read = common_row_to_artistread(row);
+
+            Ok(artist_read)
+        })?
+        .collect::<Result<Vec<_>, rusqlite::Error>>()?;
+
+    Ok(result)
+}
+
 /// Get a specific artist.
 ///
 /// # Panics
@@ -130,7 +161,9 @@ mod tests {
 
     use crate::new_database::{
         artist_insert::ArtistInsertable,
-        artist_ops::{RowOrdering, artist_exists, get_all_artists, get_artist},
+        artist_ops::{
+            RowOrdering, artist_exists, get_all_artists, get_all_artists_like, get_artist,
+        },
         test_utils::gen_database,
     };
 
@@ -151,6 +184,26 @@ mod tests {
             .collect();
 
         assert_eq!(artists, &["ArtistA", "ArtistB"]);
+    }
+
+    #[test]
+    fn all_artists_like() {
+        let db = gen_database();
+
+        let artist = ArtistInsertable { artist: "ArtistA" };
+        let _artist_id = artist.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let artist = ArtistInsertable { artist: "ArtistB" };
+        let _artist_id = artist.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let artists: Vec<String> =
+            get_all_artists_like(&db.get_connection(), "%artista%", RowOrdering::IdAsc)
+                .unwrap()
+                .into_iter()
+                .map(|v| v.name)
+                .collect();
+
+        assert_eq!(artists, &["ArtistA"]);
     }
 
     #[test]
