@@ -163,7 +163,7 @@ impl Database {
                 match track_ops::track_exists(&db.conn.lock(), path) {
                     Ok(true) => continue,
                     Err(err) => {
-                        error!("Error checking if {path:#?} exists: {err:#?}");
+                        warn!("Error checking if {path:#?} exists: {err:#?}");
                         continue;
                     }
                     Ok(false) => (),
@@ -188,7 +188,7 @@ impl Database {
             ) {
                 Ok(v) => v,
                 Err(err) => {
-                    error!("Error scanning path {path:#?}: {err:#?}");
+                    warn!("Error scanning path {path:#?}: {err:#?}");
                     continue;
                 }
             };
@@ -196,7 +196,7 @@ impl Database {
             let db_track = match TrackInsertable::try_from_track(path, &track_metadata) {
                 Ok(v) => v,
                 Err(err) => {
-                    error!("Error converting to database track {path:#?}: {err:#?}");
+                    warn!("Error converting to database track {path:#?}: {err:#?}");
                     continue;
                 }
             };
@@ -204,7 +204,7 @@ impl Database {
             let _id = match db_track.try_insert_or_update(&db.conn.lock()) {
                 Ok(v) => v,
                 Err(err) => {
-                    error!("Error inserting or updating {path:#?}: {err:#?}");
+                    warn!("Error inserting or updating {path:#?}: {err:#?}");
                     continue;
                 }
             };
