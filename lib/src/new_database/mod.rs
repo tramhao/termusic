@@ -14,7 +14,7 @@ use walkdir::DirEntry;
 
 use crate::{
     config::{v2::server::ScanDepth, ServerOverlay},
-    track::{parse_metadata_from_file, MetadataOptions, DEFAULT_ARTIST_SEPARATORS},
+    track::{parse_metadata_from_file, MetadataOptions},
     utils::{filetype_supported, get_app_new_database_path},
 };
 
@@ -123,6 +123,7 @@ impl Database {
 
         let handle = Handle::current();
         let handle_1 = handle.clone();
+        let separators = config.settings.metadata.artist_separators.clone();
 
         // first spawn a task to acquire a permit, then spawn a blocking task as WalkDir and rusqlite are sync-only.
         handle.spawn(async move {
@@ -132,7 +133,8 @@ impl Database {
             };
 
             handle_1.spawn_blocking(move || {
-                Self::process_iter(walker, permit, &db, &path, replace_metadata);
+                let separators: Vec<&str> = separators.iter().map(String::as_str).collect();
+                Self::process_iter(walker, permit, &db, &path, replace_metadata, &separators);
             });
         });
 
@@ -148,6 +150,7 @@ impl Database {
         db: &Self,
         path: &Path,
         replace_metadata: bool,
+        separators: &[&str],
     ) {
         // keep the permit for the entirety of this function
         let _permit = permit;
@@ -181,8 +184,7 @@ impl Database {
                     album_artists: true,
                     artist: true,
                     artists: true,
-                    // TODO: allow this to be configurable
-                    artist_separators: DEFAULT_ARTIST_SEPARATORS,
+                    artist_separators: separators,
                     title: true,
                     duration: true,
                     genre: true,
