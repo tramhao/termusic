@@ -32,6 +32,8 @@ mod migrate;
 mod track_insert;
 pub mod track_ops;
 
+pub use either::Either;
+
 #[allow(clippy::doc_markdown)]
 /// The SQLite Database interface.
 ///
@@ -204,7 +206,7 @@ impl Database {
             created_updated += 1;
         }
 
-        info!("Finished Scanning {path:#?} with {created_updated} created or updated");
+        info!("Finished Scanning {path:#?} with {created_updated} created or updated tracks");
     }
 }
 
