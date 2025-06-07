@@ -173,6 +173,21 @@ impl<'a> TrackInsertable<'a> {
     }
 }
 
+/// Validate that the given `path` is UTF-8 compatible and is absolute.
+pub(super) fn validate_path(path: &Path) -> Result<()> {
+    // we could use "to_str_lossy", but then reconstructing (and probing) the path would not result in the same one
+    // we could also store the path components as binary, but realistically, all paths are UTF-8 compatible nowadays
+    if path.to_str().is_none() {
+        bail!("Given path is not UTF-8 compatible!");
+    }
+
+    if !path.is_absolute() {
+        bail!("Given path is not absolute!");
+    }
+
+    Ok(())
+}
+
 /// Convert a given `path` to the `(dir, stem, ext)` components.
 ///
 /// # Errors
@@ -181,15 +196,7 @@ impl<'a> TrackInsertable<'a> {
 /// - if the given `path` is not absolute
 /// - if the given `path` does not have components: parent, stem, ext
 pub(super) fn path_to_db_comp(path: &Path) -> Result<(&Path, &OsStr, &OsStr)> {
-    // we could use "to_str_lossy", but then reconstructing (and probing) the path would not result in the same one
-    // we could also store the path components as binary, but realistically, all paths are UTF-8 compatible nowadays
-    if path.to_str().is_none() {
-        bail!("Giben path is not UTF-8 compatible!");
-    }
-
-    if !path.is_absolute() {
-        bail!("Given path is not absolute!");
-    }
+    validate_path(path)?;
 
     let Some(file_dir) = path.parent() else {
         bail!("Given path does not have a parent!");
