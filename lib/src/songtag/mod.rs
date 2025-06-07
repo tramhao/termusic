@@ -1,35 +1,11 @@
-/*
- * MIT License
- *
- * termusic - Copyright (c) 2021 Larry Hao
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-mod kugou;
-pub mod lrc;
-mod migu;
-mod netease_v2;
-mod service;
+//! SPDX-License-Identifier: MIT
 
-use crate::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
-use crate::utils::get_parent_folder;
+use std::path::{Path, PathBuf};
+use std::sync::mpsc::Sender;
+use std::sync::Arc;
+use std::thread::{self, sleep};
+use std::time::Duration;
+
 use anyhow::{anyhow, bail, Result};
 use lofty::config::WriteOptions;
 use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
@@ -37,12 +13,17 @@ use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use lofty::TextEncoding;
 use service::SongTagService;
-use std::path::{Path, PathBuf};
-use std::sync::mpsc::Sender;
-use std::sync::Arc;
-use std::thread::{self, sleep};
-use std::time::Duration;
 use ytd_rs::{Arg, YoutubeDL};
+
+use crate::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
+use crate::utils::get_parent_folder;
+
+mod kugou;
+pub mod lrc;
+mod migu;
+mod netease_v2;
+mod service;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SongTag {
