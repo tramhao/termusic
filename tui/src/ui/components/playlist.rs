@@ -823,7 +823,8 @@ impl Model {
                     if record.title.contains("Unknown Title") {
                         continue;
                     }
-                    if filetype_supported(&record.file) {
+                    let path = Path::new(&record.file);
+                    if filetype_supported(path) {
                         result.push(record.clone());
                         i += 1;
                         if i > quantity - 1 {

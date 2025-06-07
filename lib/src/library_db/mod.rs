@@ -215,7 +215,7 @@ impl DataBase {
                 .into_iter()
                 .filter_map(std::result::Result::ok)
                 .filter(|f| f.file_type().is_file())
-                .filter(|f| filetype_supported(&f.path().to_string_lossy()))
+                .filter(|f| filetype_supported(f.path()))
             {
                 match Self::need_update(&conn, record.path()) {
                     Ok(true) => {
