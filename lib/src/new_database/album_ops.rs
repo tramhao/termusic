@@ -74,6 +74,37 @@ pub fn get_all_albums(conn: &Connection, order: RowOrdering) -> Result<Vec<Album
     Ok(result)
 }
 
+/// Get all the Albums that match `like`.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn get_all_albums_like(
+    conn: &Connection,
+    like: &str,
+    order: RowOrdering,
+) -> Result<Vec<AlbumRead>> {
+    let stmt = formatdoc! {"
+        SELECT albums.id as album_id, albums.title, albums.artist_display
+        FROM albums
+        WHERE albums.title LIKE :like
+        ORDER BY {};
+        ",
+        order.as_sql()
+    };
+    let mut stmt = conn.prepare(&stmt)?;
+
+    let result: Vec<AlbumRead> = stmt
+        .query_map(named_params! {":like": like}, |row| {
+            let album_read = common_row_to_album(conn, row);
+
+            Ok(album_read)
+        })?
+        .collect::<Result<Vec<_>, rusqlite::Error>>()?;
+
+    Ok(result)
+}
+
 /// Get all the artists for a given album.
 ///
 /// # Panics
@@ -150,7 +181,8 @@ mod tests {
     use crate::new_database::{
         album_insert::AlbumInsertable,
         album_ops::{
-            AlbumRead, RowOrdering, album_exists, get_all_albums, get_all_artists_for_album,
+            AlbumRead, RowOrdering, album_exists, get_all_albums, get_all_albums_like,
+            get_all_artists_for_album,
         },
         artist_insert::ArtistInsertable,
         artist_ops::ArtistRead,
@@ -225,6 +257,41 @@ mod tests {
                     }]
                 },
             ]
+        );
+    }
+
+    #[test]
+    fn all_albums_like() {
+        let db = gen_database();
+
+        let album = AlbumInsertable {
+            title: "AlbumA",
+            artist_display: "ArtistA",
+            artists: vec![Either::Left(ArtistInsertable { artist: "ArtistA" }.into())],
+        };
+        let _album_id = album.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let album = AlbumInsertable {
+            title: "AlbumB",
+            artist_display: "ArtistB",
+            artists: vec![Either::Left(ArtistInsertable { artist: "ArtistB" }.into())],
+        };
+        let _album_id = album.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let all_albums =
+            get_all_albums_like(&db.get_connection(), "%albuma%", RowOrdering::IdAsc).unwrap();
+
+        assert_eq!(
+            all_albums,
+            &[AlbumRead {
+                id: 1,
+                title: "AlbumA".to_string(),
+                artist_display: "ArtistA".to_string(),
+                artists: vec![ArtistRead {
+                    id: 1,
+                    name: "ArtistA".to_string()
+                }]
+            },]
         );
     }
 
