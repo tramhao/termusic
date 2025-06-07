@@ -245,8 +245,12 @@ impl Default for RememberLastPosition {
 pub struct PlayerSettings {
     /// Music Directories
     pub music_dirs: MusicDirsOwned,
+    /// Legacy value, this still exists so that existing (older)configs parse without error.
+    /// But the actual value will be unused and discared.
+    /// The following is the old description:
+    ///
     /// Max depth the TUI will scan for the music library tree
-    // TODO: this is a legacy option and should be transferred over to the tui config
+    #[serde(skip_serializing)]
     pub library_scan_depth: ScanDepth,
     /// Set if the position should be remembered for tracks
     pub remember_position: RememberLastPosition,
@@ -290,7 +294,7 @@ impl Default for PlayerSettings {
     fn default() -> Self {
         Self {
             music_dirs: default_music_dirs(),
-            library_scan_depth: ScanDepth::Limited(3),
+            library_scan_depth: ScanDepth::Limited(0),
             remember_position: RememberLastPosition::default(),
 
             loop_mode: LoopMode::default(),

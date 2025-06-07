@@ -105,7 +105,7 @@ impl Database {
         let walker = {
             let mut walker = walkdir::WalkDir::new(&path).follow_links(true);
 
-            if let ScanDepth::Limited(limit) = config.get_library_scan_depth() {
+            if let ScanDepth::Limited(limit) = config.get_metadata_scan_depth() {
                 walker = walker.max_depth(usize::try_from(limit).unwrap_or(usize::MAX));
             }
 
