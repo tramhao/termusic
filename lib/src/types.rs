@@ -425,7 +425,7 @@ pub enum DBMsg {
     CriteriaBlurDown,
     CriteriaBlurUp,
     /// Search Results (for view `Result`) from a `Database`(view) index
-    SearchResult(usize),
+    SearchResult(SearchCriteria),
     SearchResultBlurDown,
     SearchResultBlurUp,
     /// Serarch Tracks (for view `Tracks`) from a `Result`(view) index
@@ -486,7 +486,7 @@ pub enum PLMsg {
     /// Change focus to the previous view
     PlaylistTableBlurUp,
     /// Add a directory / file to the playlist
-    Add(String),
+    Add(PathBuf),
     /// Remove INDEX from playlist
     Delete(usize),
     /// Clear the Playlist
@@ -638,5 +638,41 @@ impl YoutubeOptions {
     #[must_use]
     pub const fn page(&self) -> u32 {
         self.page
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SearchCriteria {
+    Artist,
+    Album,
+
+    // TODO: the values below are current unused
+    Genre,
+    Directory,
+    Playlist,
+}
+
+impl SearchCriteria {
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SearchCriteria::Artist => "artist",
+            SearchCriteria::Album => "album",
+            SearchCriteria::Genre => "genre",
+            SearchCriteria::Directory => "directory",
+            SearchCriteria::Playlist => "playlist",
+        }
+    }
+}
+
+/// Constant strings for Unknown values
+pub mod const_unknown {
+    use crate::const_str;
+
+    const_str! {
+        UNKNOWN_ARTIST "Unknown Artist",
+        UNKNOWN_TITLE "Unknown Title",
+        UNKNOWN_ALBUM "Unknown Album",
+        UNKNOWN_FILE "Unknown File",
     }
 }

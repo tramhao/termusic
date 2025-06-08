@@ -88,14 +88,14 @@ impl MusicLibrary {
     /// Also known as going down the tree / adding file to playlist
     fn handle_right_key(&mut self) -> (CmdResult, Option<Msg>) {
         let current_node = self.component.tree_state().selected().unwrap();
-        let p: &Path = Path::new(current_node);
-        if p.is_dir() {
+        let path: &Path = Path::new(current_node);
+        if path.is_dir() {
             // TODO: try to load the directory if it is not loaded yet.
             (self.perform(Cmd::Custom(TREE_CMD_OPEN)), None)
         } else {
             (
                 CmdResult::None,
-                Some(Msg::Playlist(PLMsg::Add(current_node.to_string()))),
+                Some(Msg::Playlist(PLMsg::Add(path.to_path_buf()))),
             )
         }
     }
@@ -152,9 +152,9 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_dir.get() => {
                 let current_node = self.component.tree_state().selected().unwrap();
-                let p: &Path = Path::new(current_node);
-                if p.is_dir() {
-                    return Some(Msg::Playlist(PLMsg::Add(current_node.to_string())));
+                let path: &Path = Path::new(current_node);
+                if path.is_dir() {
+                    return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
                 }
                 CmdResult::None
             }
@@ -250,7 +250,7 @@ impl Model {
             self.tx_to_main.clone(),
             self.download_tracker.clone(),
             path,
-            self.config_server.read().get_library_scan_depth(),
+            ScanDepth::Limited(2),
             focus_node,
         );
     }
@@ -344,7 +344,16 @@ impl Model {
 
     /// Reload the library with the given `node` as a focus, also starts a new database sync worker for the current path.
     pub fn library_reload_with_node_focus(&mut self, node: Option<String>) {
-        self.db.sync_database(self.library.tree_path.as_path());
+        if let Err(err) = self.db.scan_path(
+            self.library.tree_path.as_path(),
+            &self.config_server.read_recursive(),
+            false,
+        ) {
+            error!(
+                "Error scanning path {:#?}: {err:#?}",
+                self.library.tree_path.display()
+            );
+        }
         self.database_reload();
         self.library_scan_dir(&self.library.tree_path, node);
     }

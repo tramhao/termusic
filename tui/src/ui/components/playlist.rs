@@ -9,9 +9,8 @@ use std::path::Path;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
-use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
-use termusiclib::library_db::SearchCriteria;
-use termusiclib::library_db::TrackDB;
+use termusiclib::new_database::track_ops::TrackRead;
+use termusiclib::new_database::{album_ops, track_ops};
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
     PlaylistTrackSource,
@@ -22,6 +21,7 @@ use termusiclib::player::{
 };
 use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
+use termusiclib::types::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::types::{GSMsg, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 
@@ -271,8 +271,8 @@ impl Model {
     }
 
     /// Add a playlist (like m3u) to the playlist.
-    fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
-        let vec = playlist_get_vec(current_node)?;
+    fn playlist_add_playlist(&mut self, playlist_path: &Path) -> Result<()> {
+        let vec = playlist_get_vec(playlist_path)?;
 
         let sources = vec
             .into_iter()
@@ -324,13 +324,12 @@ impl Model {
     /// Add the `current_node`, regardless if it is a Track, dir, playlist, etc.
     ///
     /// See [`Model::playlist_add_episode`] for podcast episode adding
-    pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {
-        let p: &Path = Path::new(&current_node);
-        if !p.exists() {
+    pub fn playlist_add(&mut self, path: &Path) -> Result<()> {
+        if !path.exists() {
             return Ok(());
         }
-        if p.is_dir() {
-            let new_items_vec = Self::library_dir_children(p);
+        if path.is_dir() {
+            let new_items_vec = Self::library_dir_children(path);
 
             let sources = new_items_vec
                 .into_iter()
@@ -346,21 +345,21 @@ impl Model {
 
             return Ok(());
         }
-        self.playlist_add_item(current_node)?;
+        self.playlist_add_item(path)?;
         self.playlist_sync();
         Ok(())
     }
 
     /// Add a Track or a Playlist to the playlist
-    fn playlist_add_item(&mut self, current_node: &str) -> Result<()> {
-        if is_playlist(current_node) {
-            self.playlist_add_playlist(current_node)?;
+    fn playlist_add_item(&mut self, path: &Path) -> Result<()> {
+        if is_playlist(path) {
+            self.playlist_add_playlist(path)?;
             return Ok(());
         }
-        let source = if current_node.starts_with("http") {
-            PlaylistTrackSource::Url(current_node.to_string())
+        let source = if path.starts_with("http") {
+            PlaylistTrackSource::Url(path.to_string_lossy().to_string())
         } else {
-            PlaylistTrackSource::Path(current_node.to_string())
+            PlaylistTrackSource::Path(path.to_string_lossy().to_string())
         };
 
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
@@ -374,10 +373,10 @@ impl Model {
     }
 
     /// Add [`TrackDB`] to the playlist
-    pub fn playlist_add_all_from_db(&mut self, vec: &[TrackDB]) {
+    pub fn playlist_add_all_from_db(&mut self, vec: &[TrackRead]) {
         let sources = vec
             .iter()
-            .map(|f| PlaylistTrackSource::Path(f.file.clone()))
+            .map(|f| PlaylistTrackSource::Path(f.as_pathbuf().to_string_lossy().to_string()))
             .collect();
 
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
@@ -813,16 +812,16 @@ impl Model {
         Some(val)
     }
 
-    pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackDB> {
-        let mut result = vec![];
-        if let Ok(vec) = self.db.get_all_records() {
+    pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackRead> {
+        let mut result = Vec::with_capacity(usize::try_from(quantity).unwrap_or_default());
+        let all_tracks =
+            track_ops::get_all_tracks(&self.db.get_connection(), track_ops::RowOrdering::IdAsc);
+        if let Ok(vec) = all_tracks {
             let mut i = 0;
             loop {
                 if let Some(record) = vec.choose(&mut rand::rng()) {
-                    if record.title.contains("Unknown Title") {
-                        continue;
-                    }
-                    if filetype_supported(&record.file) {
+                    let path = record.as_pathbuf();
+                    if filetype_supported(&path) {
                         result.push(record.clone());
                         i += 1;
                         if i > quantity - 1 {
@@ -835,22 +834,26 @@ impl Model {
         result
     }
 
-    pub fn playlist_get_random_album_tracks(&mut self, quantity: u32) -> Vec<TrackDB> {
-        let mut result = vec![];
-        if let Ok(vec) = self.db.get_all_records() {
+    pub fn playlist_get_random_album_tracks(&mut self, quantity: u32) -> Vec<TrackRead> {
+        let mut result = Vec::with_capacity(usize::try_from(quantity).unwrap_or_default());
+        let all_albums =
+            album_ops::get_all_albums(&self.db.get_connection(), album_ops::RowOrdering::IdAsc);
+        if let Ok(vec) = all_albums {
             loop {
                 if let Some(v) = vec.choose(&mut rand::rng()) {
-                    if v.album.contains("empty") {
-                        continue;
-                    }
-                    if let Ok(mut vec2) = self
-                        .db
-                        .get_record_by_criteria(&v.album, &SearchCriteria::Album)
-                    {
+                    let all_tracks_in_album = track_ops::get_tracks_from_album(
+                        &self.db.get_connection(),
+                        &v.title,
+                        &v.artist_display,
+                        track_ops::RowOrdering::IdAsc,
+                    );
+                    if let Ok(vec2) = all_tracks_in_album {
                         if vec2.len() < quantity as usize {
                             continue;
                         }
-                        result.append(&mut vec2);
+
+                        result.extend(vec2);
+
                         break;
                     }
                 }
