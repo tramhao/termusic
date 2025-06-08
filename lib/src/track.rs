@@ -763,9 +763,7 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetad
 
         if artists.is_empty() && !options.artist_separators.is_empty() {
             if let Some(artist) = tag.artist() {
-                let artists_iter = SplitArrayIter::new(&artist, options.artist_separators)
-                    .map(str::trim)
-                    .map(ToString::to_string);
+                let artists_iter = split_artists(&artist, options);
                 artists.extend(artists_iter);
             }
         }
@@ -796,9 +794,7 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetad
                 .get(&ItemKey::AlbumArtist)
                 .and_then(|v| v.value().text())
             {
-                let artists_iter = SplitArrayIter::new(album_artist, options.artist_separators)
-                    .map(str::trim)
-                    .map(ToString::to_string);
+                let artists_iter = split_artists(album_artist, options);
                 album_artists.extend(artists_iter);
             }
         }
@@ -826,6 +822,18 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetad
         get_lyrics_from_tags(tag, &mut lyric_frames);
         res.lyric_frames = Some(lyric_frames);
     }
+}
+
+/// Create a iterator which separates `artist` with options from `options`
+#[inline]
+fn split_artists<'a>(
+    artist: &'a str,
+    options: MetadataOptions<'a>,
+) -> impl Iterator<Item = String> + 'a {
+    SplitArrayIter::new(artist, options.artist_separators)
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(ToString::to_string)
 }
 
 /// Fetch all lyrics from the given Lofty tag into the given array.
