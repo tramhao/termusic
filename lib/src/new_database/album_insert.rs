@@ -5,6 +5,8 @@ use either::Either;
 use indoc::indoc;
 use rusqlite::{Connection, named_params};
 
+use crate::new_database::album_ops::delete_albums_artist_mapping_for;
+
 use super::{Integer, artist_insert::ArtistInsertable};
 
 #[derive(Debug, Clone)]
@@ -26,6 +28,12 @@ impl AlbumInsertable<'_> {
         };
 
         let id = insert_album.upsert(conn).context("albums")?;
+
+        // Note that the following will only delete mappings if the "artist display" did not change,
+        // if it did change, it would result in a unique album instead.
+
+        // delete all mappings for the current album, to wipe out old artist mappings, in case it is now referencing different ones
+        let _ = delete_albums_artist_mapping_for(conn, id)?;
 
         for artist in &self.artists {
             let artist = match artist {
@@ -116,9 +124,11 @@ impl InsertAlbumArtistMapping {
 
 #[cfg(test)]
 mod tests {
+    use either::Either;
+
     use crate::new_database::{
-        album_insert::{InsertAlbum, InsertAlbumArtistMapping},
-        album_ops::{count_all_albums, count_all_albums_artist_mapping},
+        album_insert::{AlbumInsertable, InsertAlbum, InsertAlbumArtistMapping},
+        album_ops::{count_all_albums, count_all_albums_artist_mapping, get_all_artists_for_album},
         artist_insert::ArtistInsertable,
         test_utils::gen_database,
     };
@@ -182,5 +192,64 @@ mod tests {
         let count = count_all_albums_artist_mapping(&db).unwrap();
 
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn should_delete_old_mapping_data() {
+        let db = gen_database();
+
+        let album = AlbumInsertable {
+            title: "AlbumA",
+            artist_display: "ArtistA-nickname feat. ArtistB",
+            artists: vec![
+                Either::Left(
+                    ArtistInsertable {
+                        artist: "LastName, ArtistA",
+                    }
+                    .into(),
+                ),
+                Either::Left(ArtistInsertable { artist: "ArtistB" }.into()),
+            ],
+        };
+        let album_id = album.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let mapping_counts = count_all_albums_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 2);
+
+        let all_artists: Vec<String> = get_all_artists_for_album(&db.get_connection(), album_id)
+            .unwrap()
+            .into_iter()
+            .map(|v| v.name)
+            .collect();
+
+        assert_eq!(all_artists, &["LastName, ArtistA", "ArtistB"]);
+
+        let album = AlbumInsertable {
+            title: "AlbumA",
+            artist_display: "ArtistA-nickname feat. ArtistB",
+            artists: vec![
+                Either::Left(
+                    ArtistInsertable {
+                        artist: "ArtistA LastName",
+                    }
+                    .into(),
+                ),
+                Either::Left(ArtistInsertable { artist: "ArtistB" }.into()),
+            ],
+        };
+        let album_id = album.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let mapping_counts = count_all_albums_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 2);
+
+        let all_artists: Vec<String> = get_all_artists_for_album(&db.get_connection(), album_id)
+            .unwrap()
+            .into_iter()
+            .map(|v| v.name)
+            .collect();
+
+        assert_eq!(all_artists, &["ArtistB", "ArtistA LastName"]);
     }
 }
