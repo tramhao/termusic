@@ -195,7 +195,7 @@ pub fn delete_albums_artist_mapping_for(conn: &Connection, album_id: Integer) ->
     Ok(affected)
 }
 
-/// Remove all albums that are unreferenced.
+/// Remove all albums that are unreferenced from `tracks`.
 ///
 /// Returns the number of deleted rows. Will return `Ok(0)` if the query did not do anything.
 ///
