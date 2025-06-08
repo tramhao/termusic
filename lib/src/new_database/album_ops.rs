@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 use indoc::{formatdoc, indoc};
-use rusqlite::{named_params, Connection, Row};
+use rusqlite::{named_params, Connection, OptionalExtension, Row};
 
 use crate::new_database::{
     artist_ops::{common_row_to_artistread, ArtistRead},
@@ -174,13 +174,34 @@ fn common_row_to_album(conn: &Connection, row: &Row<'_>) -> AlbumRead {
     }
 }
 
+/// Remove all albums-artists mappings for the given album.
+///
+/// Returns the number of deleted rows. Will return `Ok(0)` if the query did not do anything.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn delete_albums_artist_mapping_for(conn: &Connection, album_id: Integer) -> Result<usize> {
+    let mut stmt = conn.prepare_cached(indoc! {"
+        DELETE FROM albums_artists
+        WHERE albums_artists.album=:album_id;
+    "})?;
+
+    let affected = stmt
+        .execute(named_params! {":album_id": album_id})
+        .optional()?
+        .unwrap_or_default();
+
+    Ok(affected)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::new_database::{
         album_insert::AlbumInsertable,
         album_ops::{
-            album_exists, get_all_albums, get_all_albums_like, get_all_artists_for_album,
-            AlbumRead, RowOrdering,
+            album_exists, count_all_albums_artist_mapping, delete_albums_artist_mapping_for,
+            get_all_albums, get_all_albums_like, get_all_artists_for_album, AlbumRead, RowOrdering,
         },
         artist_insert::ArtistInsertable,
         artist_ops::ArtistRead,
@@ -312,5 +333,42 @@ mod tests {
         let res = album_exists(&db.get_connection(), "AlbumB").unwrap();
 
         assert!(!res);
+    }
+
+    #[test]
+    fn delete_albums_artists_mapping() {
+        let db = gen_database();
+
+        let album = AlbumInsertable {
+            title: "AlbumA",
+            artist_display: "ArtistA feat. ArtistB",
+            artists: vec![
+                Either::Left(ArtistInsertable { artist: "ArtistA" }.into()),
+                Either::Left(ArtistInsertable { artist: "ArtistB" }.into()),
+            ],
+        };
+        let album_id_a = album.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let album = AlbumInsertable {
+            title: "AlbumB",
+            artist_display: "ArtistA feat. ArtistB",
+            artists: vec![
+                Either::Left(ArtistInsertable { artist: "ArtistA" }.into()),
+                Either::Left(ArtistInsertable { artist: "ArtistB" }.into()),
+            ],
+        };
+        let _album_id = album.try_insert_or_update(&db.get_connection()).unwrap();
+
+        let mapping_counts = count_all_albums_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 4);
+
+        let affected = delete_albums_artist_mapping_for(&db.get_connection(), album_id_a).unwrap();
+
+        assert_eq!(affected, 2);
+
+        let mapping_counts = count_all_albums_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 2);
     }
 }
