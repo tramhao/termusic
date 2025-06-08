@@ -5,8 +5,9 @@ use std::{
 };
 
 use anyhow::{Result, bail};
+use either::Either;
 use indoc::{formatdoc, indoc};
-use rusqlite::{Connection, OptionalExtension, Row, named_params};
+use rusqlite::{Connection, OptionalExtension, Row, ToSql, named_params};
 
 use crate::new_database::{
     artist_ops::{ArtistRead, common_row_to_artistread},
@@ -580,33 +581,49 @@ pub fn all_distinct_directories(conn: &Connection) -> Result<Vec<String>> {
     Ok(result)
 }
 
-/// Remove all tracks-artists mappings for the given path.
+/// Remove all tracks-artists mappings for the given path or track id.
 ///
 /// Returns the number of deleted rows. Will return `Ok(0)` if the query did not do anything.
 ///
 /// # Panics
 ///
 /// If the database schema does not match what is expected.
-pub fn delete_tracks_artists_mapping_for(conn: &Connection, track: &Path) -> Result<usize> {
-    let (file_dir, file_stem, file_ext) = path_to_db_comp(track)?;
-    let file_dir = file_dir.to_string_lossy();
-    let file_stem = file_stem.to_string_lossy();
-    let file_ext = file_ext.to_string_lossy();
+pub fn delete_tracks_artists_mapping_for(
+    conn: &Connection,
+    track: Either<&Path, Integer>,
+) -> Result<usize> {
+    let (where_clause, params): (&str, &[(&str, &dyn ToSql)]) = match track {
+        Either::Left(path) => {
+            let (file_dir, file_stem, file_ext) = path_to_db_comp(path)?;
 
-    let mut stmt = conn.prepare_cached(indoc!{"
+            let where_c = indoc! {"
+                (
+                    SELECT tracks.id FROM tracks
+                    WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext
+                )
+            "};
+
+            // for some reason rust does not like the following "to_str().unwrap()" to be their own binding
+            (
+                where_c,
+                &[
+                    (":file_dir", &file_dir.to_str().unwrap()),
+                    (":file_stem", &file_stem.to_str().unwrap()),
+                    (":file_ext", &file_ext.to_str().unwrap()),
+                ],
+            )
+        }
+        Either::Right(ref id) => (":track_id", &[(":track_id", id)]),
+    };
+
+    let stmt = formatdoc! {"
         DELETE FROM tracks_artists
-        WHERE tracks_artists.track = (
-            SELECT tracks.id FROM tracks
-            WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext
-        );
-    "})?;
+        WHERE tracks_artists.track = {where_clause};
+    "};
 
-    let affected = stmt
-        .execute(
-            named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext},
-        )
-        .optional()?
-        .unwrap_or_default();
+    let mut stmt = conn.prepare_cached(&stmt)?;
+
+    let affected = stmt.execute(params).optional()?.unwrap_or_default();
 
     Ok(affected)
 }
@@ -626,7 +643,7 @@ mod tests {
         new_database::{
             album_insert::AlbumInsertable,
             artist_insert::ArtistInsertable,
-            test_utils::gen_database,
+            test_utils::{gen_database, test_path},
             track_insert::TrackInsertable,
             track_ops::{
                 AlbumRead, ArtistRead, RowOrdering, TrackRead, all_distinct_directories,
@@ -641,36 +658,6 @@ mod tests {
     };
 
     use super::get_all_artists_for_track;
-
-    /// Unix / DOS path handling, because depending on the system paths would otherwise not be absolute
-    fn test_path(path: &Path) -> PathBuf {
-        if cfg!(windows) {
-            let mut pathbuf = PathBuf::from("C:\\");
-            pathbuf.push(path);
-
-            pathbuf
-        } else {
-            path.to_path_buf()
-        }
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_path_absolute_unix() {
-        let path = test_path(Path::new("/somewhere/else"));
-        assert!(path.is_absolute());
-
-        assert_eq!(path, Path::new("/somewhere/else"));
-    }
-
-    #[test]
-    #[cfg(windows)]
-    fn test_path_absolute_windows() {
-        let path = test_path(Path::new("/somewhere/else"));
-        assert!(path.is_absolute());
-
-        assert_eq!(path, Path::new("C:\\somewhere\\else"));
-    }
 
     #[test]
     fn artists_for_track() {
@@ -1432,7 +1419,7 @@ mod tests {
         };
         let path = &test_path(Path::new("/somewhere/fileB1.ext"));
         let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
-        let _ = insertable
+        let track2_id = insertable
             .try_insert_or_update(&db.get_connection())
             .unwrap();
 
@@ -1440,12 +1427,23 @@ mod tests {
 
         assert_eq!(mapping_counts, 4);
 
-        let affected = delete_tracks_artists_mapping_for(&db.get_connection(), path_a1).unwrap();
+        let affected =
+            delete_tracks_artists_mapping_for(&db.get_connection(), Either::Left(path_a1)).unwrap();
 
         assert_eq!(affected, 2);
 
         let mapping_counts = count_all_track_artist_mapping(&db.get_connection()).unwrap();
 
         assert_eq!(mapping_counts, 2);
+
+        let affected =
+            delete_tracks_artists_mapping_for(&db.get_connection(), Either::Right(track2_id))
+                .unwrap();
+
+        assert_eq!(affected, 2);
+
+        let mapping_counts = count_all_track_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 0);
     }
 }
