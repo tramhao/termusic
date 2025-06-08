@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{Result, bail};
 use indoc::{formatdoc, indoc};
-use rusqlite::{Connection, Row, named_params};
+use rusqlite::{Connection, OptionalExtension, Row, named_params};
 
 use crate::new_database::{
     artist_ops::{ArtistRead, common_row_to_artistread},
@@ -580,6 +580,37 @@ pub fn all_distinct_directories(conn: &Connection) -> Result<Vec<String>> {
     Ok(result)
 }
 
+/// Remove all tracks-artists mappings for the given path.
+///
+/// Returns the number of deleted rows. Will return `Ok(0)` if the query did not do anything.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn delete_tracks_artists_mapping_for(conn: &Connection, track: &Path) -> Result<usize> {
+    let (file_dir, file_stem, file_ext) = path_to_db_comp(track)?;
+    let file_dir = file_dir.to_string_lossy();
+    let file_stem = file_stem.to_string_lossy();
+    let file_ext = file_ext.to_string_lossy();
+
+    let mut stmt = conn.prepare_cached(indoc!{"
+        DELETE FROM tracks_artists
+        WHERE tracks_artists.track = (
+            SELECT tracks.id FROM tracks
+            WHERE tracks.file_dir=:file_dir AND tracks.file_stem=:file_stem AND tracks.file_ext=:file_ext
+        );
+    "})?;
+
+    let affected = stmt
+        .execute(
+            named_params! {":file_dir": file_dir, ":file_stem": file_stem, ":file_ext": file_ext},
+        )
+        .optional()?
+        .unwrap_or_default();
+
+    Ok(affected)
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -599,9 +630,11 @@ mod tests {
             track_insert::TrackInsertable,
             track_ops::{
                 AlbumRead, ArtistRead, RowOrdering, TrackRead, all_distinct_directories,
-                all_distinct_genres, get_all_tracks, get_last_position, get_track_from_path,
-                get_tracks_from_album, get_tracks_from_artist, get_tracks_from_directory,
-                get_tracks_from_genre, get_tracks_from_genre_like, set_last_position, track_exists,
+                all_distinct_genres, count_all_track_artist_mapping,
+                delete_tracks_artists_mapping_for, get_all_tracks, get_last_position,
+                get_track_from_path, get_tracks_from_album, get_tracks_from_artist,
+                get_tracks_from_directory, get_tracks_from_genre, get_tracks_from_genre_like,
+                set_last_position, track_exists,
             },
         },
         track::TrackMetadata,
@@ -1371,5 +1404,48 @@ mod tests {
         let res: Vec<String> = res.into_iter().map(|v| v.title.unwrap()).collect();
 
         assert_eq!(&res, &["FileA1", "FileA2"]);
+    }
+
+    #[test]
+    fn delete_tracks_artists_mapping() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA feat. ArtistB".to_string()),
+            artists: Some(vec!["ArtistA".to_string(), "ArtistB".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let path_a1 = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path_a1, &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA feat. ArtistB".to_string()),
+            artists: Some(vec!["ArtistA".to_string(), "ArtistB".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let mapping_counts = count_all_track_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 4);
+
+        let affected = delete_tracks_artists_mapping_for(&db.get_connection(), path_a1).unwrap();
+
+        assert_eq!(affected, 2);
+
+        let mapping_counts = count_all_track_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 2);
     }
 }
