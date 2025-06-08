@@ -4,16 +4,16 @@ use std::{fmt::Debug, path::Path, sync::Arc};
 
 use anyhow::{Context, Result};
 use parking_lot::{Mutex, MutexGuard};
-use rusqlite::Connection;
-use tokio::{
-    runtime::Handle,
-    sync::{OwnedSemaphorePermit, Semaphore},
-};
+use rusqlite::{Connection, OptionalExtension};
+use tokio::{runtime::Handle, sync::Semaphore};
 use track_insert::TrackInsertable;
 use walkdir::DirEntry;
 
 use crate::{
     config::{ServerOverlay, v2::server::ScanDepth},
+    new_database::{
+        album_ops::delete_all_unreferenced_albums, artist_ops::delete_all_unreferenced_artists,
+    },
     track::{MetadataOptions, parse_metadata_from_file},
     utils::{filetype_supported, get_app_new_database_path},
 };
@@ -116,11 +116,28 @@ impl Database {
                 .filter(|v| v.file_type().is_file())
                 .filter(|v| filetype_supported(v.path()))
         };
-        let db = self.clone();
 
+        let separators = config.settings.metadata.artist_separators.clone();
+
+        self.spawn_worker(move |db| {
+            let separators: Vec<&str> = separators.iter().map(String::as_str).collect();
+            Self::process_iter(walker, &db, &path, replace_metadata, &separators);
+        });
+
+        Ok(())
+    }
+
+    /// Spawn a database worker, for work in the background.
+    ///
+    /// Will first spawn a task to await for a permit, then spawn a blocking task with the actual function.
+    fn spawn_worker<F>(&self, fun: F)
+    where
+        F: FnOnce(Self) + Send + 'static,
+    {
         let handle = Handle::current();
         let handle_1 = handle.clone();
-        let separators = config.settings.metadata.artist_separators.clone();
+
+        let db = self.clone();
 
         // first spawn a task to acquire a permit, then spawn a blocking task as WalkDir and rusqlite are sync-only.
         handle.spawn(async move {
@@ -130,12 +147,11 @@ impl Database {
             };
 
             handle_1.spawn_blocking(move || {
-                let separators: Vec<&str> = separators.iter().map(String::as_str).collect();
-                Self::process_iter(walker, permit, &db, &path, replace_metadata, &separators);
+                // this keeps the permit for the duration of this block / function
+                let _permit = permit;
+                fun(db);
             });
         });
-
-        Ok(())
     }
 
     /// The actual function to walk the iterator of files for [`Self::scan_path`].
@@ -143,14 +159,12 @@ impl Database {
     /// Expects `path` to be absolute.
     fn process_iter(
         walker: impl Iterator<Item = DirEntry>,
-        permit: OwnedSemaphorePermit,
         db: &Self,
         path: &Path,
         replace_metadata: bool,
         separators: &[&str],
     ) {
         // keep the permit for the entirety of this function
-        let _permit = permit;
         info!("Scanning {path:#?}");
 
         let mut created_updated: usize = 0;
@@ -216,6 +230,52 @@ impl Database {
 
         info!("Finished Scanning {path:#?} with {created_updated} created or updated");
     }
+
+    /// Spawn a worker to cleanup the database.
+    ///
+    /// This includes removing unreferenced albums and artists.
+    // TODO: also add option to check for all tracks to actually exist on disk
+    pub fn run_cleanup(&self) {
+        self.spawn_worker(move |db| {
+            if let Err(err) = Self::process_cleanup(&db) {
+                warn!("Error processing database cleanup: {err:#?}");
+            }
+        });
+    }
+
+    /// The actual function for work from [`run_cleanup`](Self::run_cleanup).
+    fn process_cleanup(db: &Self) -> Result<()> {
+        let conn = db.get_connection();
+
+        info!("Starting Database cleanup");
+
+        // note that albums have to be deleted first, as otherwise artists would not count
+        // as unreferenced if there is still a album, even if that is unreferenced itself.
+        let affected_albums = delete_all_unreferenced_albums(&conn)?;
+
+        info!("Deleted {affected_albums} Albums");
+
+        let affected_artists = delete_all_unreferenced_artists(&conn)?;
+
+        info!("Deleted {affected_artists} Artists");
+
+        // finally run optimize to reclaim freed space
+        exec_optimize(&conn)?;
+
+        info!("Finished Database cleanup");
+
+        Ok(())
+    }
+}
+
+/// Run SQLite operation `PRAGMA optimize`.
+fn exec_optimize(conn: &Connection) -> Result<()> {
+    let mut stmt = conn.prepare("PRAGMA optimize;")?;
+
+    // "PRAGMA optimize;" does not return any rows
+    let _ = stmt.execute([]).optional()?.unwrap_or_default();
+
+    Ok(())
 }
 
 #[cfg(test)]
