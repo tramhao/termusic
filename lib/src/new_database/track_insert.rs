@@ -5,8 +5,13 @@ use either::Either;
 use indoc::indoc;
 use rusqlite::{Connection, named_params};
 
-use super::{Integer, album_insert::AlbumInsertable, artist_insert::ArtistInsertable};
-use crate::track::TrackMetadata;
+use crate::{
+    new_database::{
+        Integer, album_insert::AlbumInsertable, artist_insert::ArtistInsertable,
+        track_ops::delete_tracks_artists_mapping_for,
+    },
+    track::TrackMetadata,
+};
 
 #[derive(Debug, Clone)]
 pub struct TrackInsertable<'a> {
@@ -122,6 +127,7 @@ impl<'a> TrackInsertable<'a> {
     /// Try to insert or update the current track's data.
     ///
     /// This will also insert all metadata, album and artists.
+    /// Note that this function will remove old mapping data for the given track, if it exists.
     pub fn try_insert_or_update(&self, conn: &Connection) -> Result<Integer> {
         let album = if let Some(album) = &self.album {
             let ret = match album {
@@ -155,6 +161,9 @@ impl<'a> TrackInsertable<'a> {
         };
 
         let _ = insert_metadata.upsert(conn).context("tracks_metadata")?;
+
+        // delete all mappings for the current file, to wipe out old artist mappings, in case it is now referencing different ones
+        let _ = delete_tracks_artists_mapping_for(conn, Either::Right(id))?;
 
         for artist in &self.artists {
             let artist = match artist {
@@ -324,13 +333,19 @@ impl InsertTrackArtistMapping {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
+    use std::{path::Path, time::Duration};
 
-    use crate::new_database::{
-        artist_insert::ArtistInsertable,
-        test_utils::gen_database,
-        track_insert::{InsertTrackArtistMapping, InsertTrackMetadata},
-        track_ops::{count_all_track_artist_mapping, count_all_track_metadata, count_all_tracks},
+    use crate::{
+        new_database::{
+            artist_insert::ArtistInsertable,
+            test_utils::{gen_database, test_path},
+            track_insert::{InsertTrackArtistMapping, InsertTrackMetadata, TrackInsertable},
+            track_ops::{
+                count_all_track_artist_mapping, count_all_track_metadata, count_all_tracks,
+                get_all_artists_for_track,
+            },
+        },
+        track::TrackMetadata,
     };
 
     use super::InsertTrack;
@@ -441,5 +456,59 @@ mod tests {
         let count = count_all_track_artist_mapping(&db).unwrap();
 
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn should_delete_old_mapping_data() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistA feat. ArtistB".to_string()),
+            artists: Some(vec!["ArtistA".to_string(), "ArtistB".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
+        let track_id = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let mapping_counts = count_all_track_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 2);
+
+        let all_artists: Vec<String> = get_all_artists_for_track(&db.get_connection(), track_id)
+            .unwrap()
+            .into_iter()
+            .map(|v| v.name)
+            .collect();
+
+        assert_eq!(all_artists, &["ArtistA", "ArtistB"]);
+
+        let metadata = TrackMetadata {
+            artist: Some("ArtistC feat. ArtistB".to_string()),
+            artists: Some(vec!["ArtistC".to_string(), "ArtistB".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
+        let track_id = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let mapping_counts = count_all_track_artist_mapping(&db.get_connection()).unwrap();
+
+        assert_eq!(mapping_counts, 2);
+
+        let all_artists: Vec<String> = get_all_artists_for_track(&db.get_connection(), track_id)
+            .unwrap()
+            .into_iter()
+            .map(|v| v.name)
+            .collect();
+
+        assert_eq!(all_artists, &["ArtistB", "ArtistC"]);
     }
 }

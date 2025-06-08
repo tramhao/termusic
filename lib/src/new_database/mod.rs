@@ -220,6 +220,8 @@ impl Database {
 
 #[cfg(test)]
 mod test_utils {
+    use std::path::{Path, PathBuf};
+
     use rusqlite::Connection;
 
     use super::Database;
@@ -232,5 +234,35 @@ mod test_utils {
     /// Open a new In-Memory database that is fully prepared
     pub fn gen_database() -> Database {
         Database::new_from_connection(gen_database_raw()).expect("db creation failed")
+    }
+
+    /// Unix / DOS path handling, because depending on the system paths would otherwise not be absolute
+    pub fn test_path(path: &Path) -> PathBuf {
+        if cfg!(windows) {
+            let mut pathbuf = PathBuf::from("C:\\");
+            pathbuf.push(path);
+
+            pathbuf
+        } else {
+            path.to_path_buf()
+        }
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_path_absolute_unix() {
+        let path = test_path(Path::new("/somewhere/else"));
+        assert!(path.is_absolute());
+
+        assert_eq!(path, Path::new("/somewhere/else"));
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_path_absolute_windows() {
+        let path = test_path(Path::new("/somewhere/else"));
+        assert!(path.is_absolute());
+
+        assert_eq!(path, Path::new("C:\\somewhere\\else"));
     }
 }
