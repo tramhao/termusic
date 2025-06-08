@@ -195,20 +195,52 @@ pub fn delete_albums_artist_mapping_for(conn: &Connection, album_id: Integer) ->
     Ok(affected)
 }
 
+/// Remove all albums that are unreferenced.
+///
+/// Returns the number of deleted rows. Will return `Ok(0)` if the query did not do anything.
+///
+/// # Panics
+///
+/// If the database schema does not match what is expected.
+pub fn delete_all_unreferenced_albums(conn: &Connection) -> Result<usize> {
+    // the following query is likely very slow compared to other queries
+    let mut stmt = conn.prepare_cached(indoc! {"
+        DELETE FROM albums
+        WHERE albums.id NOT IN (
+            SELECT tracks.album FROM tracks
+            WHERE tracks.album IS NOT NULL
+        );
+    "})?;
+
+    let affected = stmt
+        .execute(named_params! {})
+        .optional()?
+        .unwrap_or_default();
+
+    Ok(affected)
+}
+
 #[cfg(test)]
 mod tests {
+    use std::{path::Path, time::Duration};
+
     use either::Either;
 
-    use crate::new_database::{
-        album_insert::AlbumInsertable,
-        album_ops::{
-            AlbumRead, RowOrdering, album_exists, count_all_albums_artist_mapping,
-            delete_albums_artist_mapping_for, get_all_albums, get_all_albums_like,
-            get_all_artists_for_album,
+    use crate::{
+        new_database::{
+            album_insert::AlbumInsertable,
+            album_ops::{
+                AlbumRead, RowOrdering, album_exists, count_all_albums,
+                count_all_albums_artist_mapping, delete_albums_artist_mapping_for,
+                delete_all_unreferenced_albums, get_all_albums, get_all_albums_like,
+                get_all_artists_for_album,
+            },
+            artist_insert::ArtistInsertable,
+            artist_ops::ArtistRead,
+            test_utils::{gen_database, test_path},
+            track_insert::TrackInsertable,
         },
-        artist_insert::ArtistInsertable,
-        artist_ops::ArtistRead,
-        test_utils::gen_database,
+        track::TrackMetadata,
     };
 
     #[test]
@@ -372,5 +404,78 @@ mod tests {
         let mapping_counts = count_all_albums_artist_mapping(&db.get_connection()).unwrap();
 
         assert_eq!(mapping_counts, 2);
+    }
+
+    #[test]
+    fn delete_unreferenced_albums() {
+        let db = gen_database();
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumA".to_string()),
+            album_artist: Some("ArtistA".to_string()),
+            album_artists: Some(vec!["ArtistA".to_string()]),
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileA1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let path = &test_path(Path::new("/somewhere/fileA1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumB".to_string()),
+            album_artist: Some("ArtistA".to_string()),
+            album_artists: Some(vec!["ArtistA".to_string()]),
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let albums = count_all_albums(&db.get_connection()).unwrap();
+
+        assert_eq!(albums, 2);
+
+        let affected = delete_all_unreferenced_albums(&db.get_connection()).unwrap();
+
+        assert_eq!(affected, 0);
+
+        let metadata = TrackMetadata {
+            album: Some("AlbumA".to_string()),
+            album_artist: Some("ArtistA".to_string()),
+            album_artists: Some(vec!["ArtistA".to_string()]),
+            artist: Some("ArtistA".to_string()),
+            artists: Some(vec!["ArtistA".to_string()]),
+            title: Some("FileB1".to_string()),
+            duration: Some(Duration::from_secs(10)),
+            ..Default::default()
+        };
+        let path = &test_path(Path::new("/somewhere/fileB1.ext"));
+        let insertable = TrackInsertable::try_from_track(path, &metadata).unwrap();
+        let _ = insertable
+            .try_insert_or_update(&db.get_connection())
+            .unwrap();
+
+        let albums = count_all_albums(&db.get_connection()).unwrap();
+
+        assert_eq!(albums, 2);
+
+        let affected = delete_all_unreferenced_albums(&db.get_connection()).unwrap();
+
+        assert_eq!(affected, 1);
+
+        let albums = count_all_albums(&db.get_connection()).unwrap();
+
+        assert_eq!(albums, 1);
     }
 }
