@@ -5,8 +5,10 @@ use tuirealm::{
     command::{Cmd, CmdResult, Direction},
     event::{Key, KeyEvent},
     props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue},
-    AttrValue, Attribute, Event, MockComponent, NoUserEvent, State, StateValue,
+    AttrValue, Attribute, Event, MockComponent, State, StateValue,
 };
+
+use crate::ui::model::UserEvent;
 
 /// Struct for the Style of the [`YNConfirm`]
 #[derive(Debug, Clone, PartialEq)]
@@ -55,7 +57,7 @@ impl YNConfirm {
     ///
     /// `on_y` corresponds to pressing `Yes` and `on_n` to pressing `No`
     #[allow(clippy::needless_pass_by_value)]
-    pub fn on(&mut self, ev: Event<NoUserEvent>, on_y: Msg, on_n: Msg) -> Option<Msg> {
+    pub fn on(&mut self, ev: Event<UserEvent>, on_y: Msg, on_n: Msg) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {

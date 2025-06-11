@@ -27,7 +27,6 @@ use termusiclib::utils::get_app_config_path;
 use termusiclib::xywh;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tui_realm_treeview::Tree;
-use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 
 use super::components::TETrack;
@@ -35,10 +34,12 @@ use super::tui_cmd::TuiCmd;
 use crate::ui::Application;
 use crate::CombinedSettings;
 pub use download_tracker::DownloadTracker;
+pub use user_events::UserEvent;
 
 mod download_tracker;
 mod playlist;
 mod update;
+mod user_events;
 mod view;
 mod youtube_options;
 
@@ -289,7 +290,7 @@ pub struct Model {
     /// Tells whether to redraw interface
     pub redraw: bool,
     last_redraw: Instant,
-    pub app: Application<Id, Msg, NoUserEvent>,
+    pub app: Application<Id, Msg, UserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge<CrosstermTerminalAdapter>,
     pub tx_to_main: TxToMain,

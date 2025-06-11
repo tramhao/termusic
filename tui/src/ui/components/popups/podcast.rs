@@ -6,11 +6,11 @@ use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan},
-    Component, Event, MockComponent, NoUserEvent, State, StateValue,
+    Component, Event, MockComponent, State, StateValue,
 };
 
 use crate::ui::components::popups::DeleteConfirmInputPopup;
-use crate::ui::model::Model;
+use crate::ui::model::{Model, UserEvent};
 
 use super::{YNConfirm, YNConfirmStyle};
 
@@ -41,8 +41,8 @@ impl PodcastAddPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PodcastAddPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PodcastAddPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -108,8 +108,8 @@ impl FeedDeleteConfirmRadioPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for FeedDeleteConfirmRadioPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for FeedDeleteConfirmRadioPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::Podcast(PCMsg::FeedDeleteCloseOk),
@@ -158,8 +158,8 @@ impl PodcastSearchTablePopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PodcastSearchTablePopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {

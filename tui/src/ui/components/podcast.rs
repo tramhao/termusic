@@ -1,10 +1,10 @@
-use crate::ui::Model;
+use std::time::Duration;
+
 use anyhow::{anyhow, bail, Result};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use reqwest::ClientBuilder;
 use sanitize_filename::{sanitize_with_options, Options};
 use serde_json::Value;
-use std::time::Duration;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 use termusiclib::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
@@ -15,11 +15,12 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
 use tuirealm::props::{Borders, PropPayload, PropValue};
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
+    event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
-// left for debug
-// use std::io::Write;
+
+use crate::ui::model::UserEvent;
+use crate::ui::Model;
 
 #[derive(MockComponent)]
 pub struct FeedsList {
@@ -64,9 +65,9 @@ impl FeedsList {
     }
 }
 
-impl Component<Msg, NoUserEvent> for FeedsList {
+impl Component<Msg, UserEvent> for FeedsList {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -227,9 +228,9 @@ impl EpisodeList {
     }
 }
 
-impl Component<Msg, NoUserEvent> for EpisodeList {
+impl Component<Msg, UserEvent> for EpisodeList {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {

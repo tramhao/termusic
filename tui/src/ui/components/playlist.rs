@@ -1,11 +1,9 @@
-use crate::ui::model::TermusicLayout;
-use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
-use crate::ui::Model;
-use anyhow::{anyhow, bail, Context as _, Result};
-use rand::seq::IndexedRandom;
 use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
+
+use anyhow::{anyhow, bail, Context as _, Result};
+use rand::seq::IndexedRandom;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
@@ -24,7 +22,6 @@ use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::types::{GSMsg, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
-
 use tui_realm_stdlib::Table;
 use tuirealm::props::Borders;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
@@ -33,9 +30,13 @@ use tuirealm::{
     event::KeyModifiers,
 };
 use tuirealm::{
-    event::{Key, KeyEvent, NoUserEvent},
+    event::{Key, KeyEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
+
+use crate::ui::model::{TermusicLayout, UserEvent};
+use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
+use crate::ui::Model;
 
 #[derive(MockComponent)]
 pub struct Playlist {
@@ -78,9 +79,9 @@ impl Playlist {
     }
 }
 
-impl Component<Msg, NoUserEvent> for Playlist {
+impl Component<Msg, UserEvent> for Playlist {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {

@@ -3,10 +3,10 @@ use termusiclib::types::Msg;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     props::{Alignment, BorderType, Borders, Color, PropPayload, TextModifiers, TextSpan},
-    AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent,
+    AttrValue, Attribute, Component, Event, MockComponent,
 };
 
-use crate::ui::model::Model;
+use crate::ui::model::{Model, UserEvent};
 
 #[derive(MockComponent)]
 pub struct MessagePopup {
@@ -32,8 +32,8 @@ impl MessagePopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for MessagePopup {
-    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for MessagePopup {
+    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
         None
     }
 }

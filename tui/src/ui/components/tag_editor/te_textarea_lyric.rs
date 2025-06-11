@@ -26,9 +26,11 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
+
+use crate::ui::model::UserEvent;
 
 #[derive(MockComponent)]
 pub struct TETextareaLyric {
@@ -57,8 +59,8 @@ impl TETextareaLyric {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TETextareaLyric {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TETextareaLyric {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let _cmd_result = match ev {

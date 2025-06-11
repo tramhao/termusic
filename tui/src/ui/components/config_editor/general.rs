@@ -1,4 +1,3 @@
-use crate::ui::model::Model;
 /**
  * MIT License
  *
@@ -22,8 +21,6 @@ use crate::ui::model::Model;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::CombinedSettings;
-
 use anyhow::Result;
 use termusiclib::config::v2::tui::{keys::Keys, Alignment as XywhAlign};
 use termusiclib::config::SharedTuiSettings;
@@ -33,9 +30,12 @@ use tui_realm_stdlib::{Input, Radio};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{
     command::{Cmd, Direction, Position},
-    event::{Key, KeyEvent, NoUserEvent},
+    event::{Key, KeyEvent},
     Component, Event, MockComponent,
 };
+
+use crate::ui::model::{Model, UserEvent};
+use crate::CombinedSettings;
 
 #[derive(MockComponent)]
 pub struct MusicDir {
@@ -78,8 +78,8 @@ impl MusicDir {
     }
 }
 
-impl Component<Msg, NoUserEvent> for MusicDir {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for MusicDir {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -93,7 +93,7 @@ impl Component<Msg, NoUserEvent> for MusicDir {
 #[allow(clippy::needless_pass_by_value)]
 fn handle_input_ev(
     component: &mut dyn MockComponent,
-    ev: Event<NoUserEvent>,
+    ev: Event<UserEvent>,
     keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
@@ -190,8 +190,8 @@ impl ExitConfirmation {
     }
 }
 
-impl Component<Msg, NoUserEvent> for ExitConfirmation {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for ExitConfirmation {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -205,7 +205,7 @@ impl Component<Msg, NoUserEvent> for ExitConfirmation {
 #[allow(clippy::needless_pass_by_value)]
 fn handle_radio_ev(
     component: &mut dyn MockComponent,
-    ev: Event<NoUserEvent>,
+    ev: Event<UserEvent>,
     keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
@@ -278,8 +278,8 @@ impl PlaylistDisplaySymbol {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PlaylistDisplaySymbol {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PlaylistDisplaySymbol {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -329,8 +329,8 @@ impl PlaylistRandomTrack {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PlaylistRandomTrack {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PlaylistRandomTrack {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -383,8 +383,8 @@ impl PlaylistRandomAlbum {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PlaylistRandomAlbum {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PlaylistRandomAlbum {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -437,8 +437,8 @@ impl PodcastDir {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PodcastDir {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PodcastDir {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -491,8 +491,8 @@ impl PodcastSimulDownload {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PodcastSimulDownload {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PodcastSimulDownload {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -545,8 +545,8 @@ impl PodcastMaxRetries {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PodcastMaxRetries {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PodcastMaxRetries {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -589,8 +589,8 @@ impl AlbumPhotoAlign {
     }
 }
 
-impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for AlbumPhotoAlign {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -643,8 +643,8 @@ impl SaveLastPosition {
     }
 }
 
-impl Component<Msg, NoUserEvent> for SaveLastPosition {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for SaveLastPosition {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -689,8 +689,8 @@ impl ConfigSeekStep {
     }
 }
 
-impl Component<Msg, NoUserEvent> for ConfigSeekStep {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for ConfigSeekStep {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -728,8 +728,8 @@ impl KillDaemon {
     }
 }
 
-impl Component<Msg, NoUserEvent> for KillDaemon {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for KillDaemon {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -770,8 +770,8 @@ impl PlayerUseMpris {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PlayerUseMpris {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PlayerUseMpris {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -812,8 +812,8 @@ impl PlayerUseDiscord {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PlayerUseDiscord {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -859,8 +859,8 @@ impl PlayerPort {
     }
 }
 
-impl Component<Msg, NoUserEvent> for PlayerPort {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for PlayerPort {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -906,8 +906,8 @@ impl ExtraYtdlpArgs {
     }
 }
 
-impl Component<Msg, NoUserEvent> for ExtraYtdlpArgs {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for ExtraYtdlpArgs {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,

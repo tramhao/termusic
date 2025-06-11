@@ -1,3 +1,4 @@
+use crate::ui::model::UserEvent;
 use crate::ui::Model;
 use anyhow::{anyhow, Context, Result};
 use termusiclib::config::SharedTuiSettings;
@@ -30,7 +31,7 @@ use termusiclib::types::{Msg, SongTagRecordingResult, TEMsg, TFMsg};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
@@ -76,8 +77,8 @@ impl TETableLyricOptions {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TETableLyricOptions {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TETableLyricOptions {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {

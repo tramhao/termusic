@@ -1,7 +1,7 @@
 use termusiclib::{config::TuiOverlay, types::Msg};
-use tuirealm::{props::TextSpan, Component, Event, MockComponent, NoUserEvent};
+use tuirealm::{props::TextSpan, Component, Event, MockComponent};
 
-use crate::ui::components::LabelSpan;
+use crate::ui::{components::LabelSpan, model::UserEvent};
 
 #[derive(MockComponent)]
 pub struct Footer {
@@ -72,8 +72,8 @@ impl Footer {
     }
 }
 
-impl Component<Msg, NoUserEvent> for Footer {
-    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for Footer {
+    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
         None
     }
 }

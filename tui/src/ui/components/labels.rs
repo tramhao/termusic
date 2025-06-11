@@ -22,16 +22,18 @@
  * SOFTWARE.
  */
 use std::time::Instant;
+
 use termusiclib::config::TuiOverlay;
 use termusiclib::types::Msg;
 use tui_realm_stdlib::{Label, Span, Spinner};
 use tuirealm::command::{Cmd, CmdResult};
-use tuirealm::event::NoUserEvent;
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, PropPayload, PropValue, TextModifiers, TextSpan,
 };
 use tuirealm::ratatui::layout::Rect;
 use tuirealm::{Component, Event, Frame, MockComponent, State};
+
+use crate::ui::model::UserEvent;
 
 #[derive(MockComponent)]
 pub struct LabelGeneric {
@@ -51,8 +53,8 @@ impl LabelGeneric {
     }
 }
 
-impl Component<Msg, NoUserEvent> for LabelGeneric {
-    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for LabelGeneric {
+    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -80,8 +82,8 @@ impl LabelSpan {
     }
 }
 
-impl Component<Msg, NoUserEvent> for LabelSpan {
-    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for LabelSpan {
+    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -148,8 +150,8 @@ impl DownloadSpinner {
     }
 }
 
-impl Component<Msg, NoUserEvent> for DownloadSpinner {
-    fn on(&mut self, _: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for DownloadSpinner {
+    fn on(&mut self, _: Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
