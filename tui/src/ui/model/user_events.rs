@@ -1,2 +1,6 @@
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq)]
-pub enum UserEvent {}
+use crate::ui::msg::Msg;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UserEvent {
+    Forward(Msg),
+}

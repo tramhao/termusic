@@ -132,6 +132,10 @@ impl Component<Msg, UserEvent> for GlobalListener {
             Event::Keyboard(keyevent) if keyevent == keys.move_cover_art_keys.toggle_hide.get() => {
                 Some(Msg::Xywh(XYWHMsg::ToggleHidden))
             }
+
+            // just forward the message to "Update" as there is no way to bypass this component forwarding
+            Event::User(UserEvent::Forward(msg)) => Some(msg),
+
             _ => None,
         }
     }
@@ -265,6 +269,11 @@ impl Model {
                 SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
+            Sub::new(
+                // note that it does not matter what actual message is inside this "Forward" as "Discriminat" only compares "UserEvent" enum discriminants, not values
+                SubEventClause::Discriminant(UserEvent::Forward(Msg::ForceRedraw)),
+                SubClause::Always,
+            ),
         ]
     }
 
