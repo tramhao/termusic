@@ -261,23 +261,15 @@ impl MpvBackend {
                 let mut absolute_secs = secs + time_pos_seek;
                 absolute_secs = cmp::max(absolute_secs, 0);
                 absolute_secs = cmp::min(absolute_secs, duration_seek - 5);
-                let _ = mpv.pause();
                 let _ = mpv.command("seek", &[&format!("\"{absolute_secs}\""), "absolute"]);
-                let _ = mpv.unpause();
-                // let _ = message_tx
-                //     .send(PlayerMsg::Progress(time_pos_seek, duration_seek));
             }
             PlayerInternalCmd::SeekAbsolute(position) => {
-                let _ = mpv.pause();
-                while mpv
-                    .command("seek", &[&format_duration(position), "absolute"])
-                    .is_err()
+                while let Err(err) = mpv.command("seek", &[&format_duration(position), "absolute"])
                 {
+                    trace!("Error while absolutely seeking: {err:#?}");
                     // This is because we need to wait until the file is fully loaded.
                     std::thread::sleep(Duration::from_millis(100));
                 }
-                let _ = mpv.unpause();
-                // let _ = message_tx.send(PlayerMsg::Progress(secs, duration));
             }
             PlayerInternalCmd::Eos => {
                 if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {

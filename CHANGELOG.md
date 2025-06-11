@@ -30,6 +30,7 @@
 - Fix(server): on rusty backend, update `soundtouch` version to fix build issues on latest arch & gcc 15.
 - Fix(server): on mpv backend, fix possible race condition that could cause a panic by having `time-pos` event before `duration` event.
 - Fix(server): periodically save the playlist to disk, if modified. (Instead of only on exit)
+- Fix(server): on mpv backend, when seeking while paused, it now stays paused.
 - Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
 
 ### [V0.10.0]
