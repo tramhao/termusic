@@ -63,7 +63,7 @@ impl Playlist {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["Duration", "Artist", "Title", "Album"])
+                .headers(["Duration", "Artist", "Title", "Album"])
                 .column_spacing(2)
                 .widths(&[12, 20, 25, 43])
                 .table(

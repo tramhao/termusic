@@ -85,7 +85,7 @@ impl CEThemeSelectTable {
                 .rewind(true)
                 .step(4)
                 .row_height(1)
-                .headers(&["index", "Theme Name"])
+                .headers(["index", "Theme Name"])
                 .column_spacing(1)
                 .widths(&[18, 82])
                 .table(
@@ -215,7 +215,7 @@ impl CEColorSelect {
                 .inactive(Style::default().add_modifier(Modifier::BOLD).bg(color))
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
-                .choices(&choices)
+                .choices(choices)
                 .value(init_value),
             id,
             config,

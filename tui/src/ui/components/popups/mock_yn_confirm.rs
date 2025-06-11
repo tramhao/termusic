@@ -46,7 +46,7 @@ impl YNConfirm {
                 )
                 .title(title, style.title_alignment)
                 .rewind(true)
-                .choices(&["No", "Yes"])
+                .choices(["No", "Yes"])
                 .value(0)
         };
 

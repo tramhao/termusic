@@ -465,7 +465,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn show_message_timeout_label_help<S: AsRef<str>>(
+    pub fn show_message_timeout_label_help<S: Into<String>>(
         &mut self,
         active_msg: S,
         foreground: Option<Color>,
