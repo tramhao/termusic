@@ -1,10 +1,7 @@
-use crate::ui::model::{DownloadTracker, Model};
-use crate::ui::tui_cmd::TuiCmd;
-use crate::utils::get_pin_yin;
-use anyhow::{bail, Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename, DirEntry};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::Sender;
+
+use anyhow::{bail, Context, Result};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::SharedTuiSettings;
@@ -15,6 +12,10 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+
+use crate::ui::model::{DownloadTracker, Model, TxToMain};
+use crate::ui::tui_cmd::TuiCmd;
+use crate::utils::get_pin_yin;
 
 #[derive(MockComponent)]
 pub struct MusicLibrary {
@@ -263,7 +264,7 @@ impl Model {
     ///
     /// Executes [`Self::library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
     pub fn library_scan<P: Into<PathBuf>>(
-        tx: Sender<Msg>,
+        tx: TxToMain,
         download_tracker: DownloadTracker,
         path: P,
         depth: ScanDepth,

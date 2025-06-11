@@ -1,48 +1,29 @@
-/*
- * MIT License
- *
- * termusic - Copyright (c) 2021 Larry Hao
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+//! SPDX-License-Identifier: MIT
+
 mod kugou;
 pub mod lrc;
 mod migu;
 mod netease_v2;
 mod service;
 
-use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
-use crate::utils::get_parent_folder;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::thread::{self, sleep};
+use std::time::Duration;
+
 use anyhow::{anyhow, bail, Result};
 use lofty::config::WriteOptions;
 use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use lofty::TextEncoding;
-use service::SongTagService;
-use std::path::{Path, PathBuf};
-use std::sync::mpsc::Sender;
-use std::sync::Arc;
-use std::thread::{self, sleep};
-use std::time::Duration;
+use tokio::sync::mpsc::UnboundedSender;
 use ytd_rs::{Arg, YoutubeDL};
+
+use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
+use crate::utils::get_parent_folder;
+use service::SongTagService;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SongTag {
@@ -89,7 +70,7 @@ impl std::fmt::Display for ServiceProvider {
 }
 
 // Search function of 3 servers. Run in parallel to get results faster.
-pub async fn search(search_str: &str, tx_done: Sender<Msg>) {
+pub async fn search(search_str: &str, tx_done: UnboundedSender<Msg>) {
     let mut results: Vec<SongTag> = Vec::new();
 
     let handle_netease = async {
@@ -214,7 +195,7 @@ impl SongTag {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub async fn download(&self, file: &Path, tx_tageditor: &Sender<Msg>) -> Result<()> {
+    pub async fn download(&self, file: &Path, tx: UnboundedSender<Msg>) -> Result<()> {
         let p_parent = get_parent_folder(file);
         let artist = self
             .artist
@@ -281,7 +262,6 @@ impl SongTag {
 
         let ytd = YoutubeDL::new(&PathBuf::from(p_parent), args, &url)?;
 
-        let tx = tx_tageditor.clone();
         thread::spawn(move || -> Result<()> {
             tx.send(Msg::Download(DLMsg::DownloadRunning(
                 url.clone(),

@@ -103,7 +103,7 @@ async fn actual_main() -> Result<()> {
     let config = get_config(&args)?;
 
     if let Some(action) = args.action {
-        return execute_action(action, &config);
+        return execute_action(action, &config).await;
     }
 
     info!("Server starting...");
@@ -688,7 +688,7 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
     bail!("Error: non-existing directory '{}'", dir.display());
 }
 
-fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<()> {
+async fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<()> {
     match action {
         cli::Action::Import { file } => {
             println!("need to import from file {}", file.display());
@@ -698,6 +698,7 @@ fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<()> {
                 utils::get_app_config_path().context("getting app-config-path")?;
 
             podcast::import_from_opml(&config_dir_path, &config.settings.podcast, &path)
+                .await
                 .context("import opml")?;
         }
         cli::Action::Export { file } => {

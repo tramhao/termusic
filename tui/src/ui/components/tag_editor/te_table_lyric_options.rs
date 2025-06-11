@@ -286,7 +286,7 @@ impl Model {
             let file = song.path();
             // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
             // though i am not fully sure if that is 100% the case, this avoid the panic though
-            let tx_to_main = &self.tx_to_main;
+            let tx_to_main = self.tx_to_main.clone();
             tokio::task::block_in_place(move || {
                 Handle::current().block_on(song_tag.download(file, tx_to_main))
             })?;
