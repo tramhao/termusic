@@ -8,6 +8,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::types::{DBMsg, Msg, PCMsg};
 use termusiclib::utils::get_parent_folder;
+use tokio::runtime::Handle;
 use tui_realm_treeview::Tree;
 use tuirealm::EventListenerCfg;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
@@ -27,7 +28,6 @@ use crate::ui::utils::{
 };
 
 impl Model {
-    #[allow(clippy::too_many_lines)]
     pub fn init_app(
         tree: &Tree<String>,
         config: &SharedTuiSettings,
@@ -36,8 +36,10 @@ impl Model {
 
         let mut app: Application<Id, Msg, UserEvent> = Application::init(
             EventListenerCfg::default()
-                .crossterm_input_listener(Duration::from_millis(20), 20)
+                .with_handle(Handle::current())
+                .async_crossterm_input_listener(Duration::ZERO, 10)
                 .poll_timeout(Duration::from_millis(10))
+                .async_tick(true)
                 .tick_interval(Duration::from_secs(1)),
         );
 
