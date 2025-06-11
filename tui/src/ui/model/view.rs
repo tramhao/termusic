@@ -5,6 +5,7 @@ use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
+use tokio::sync::mpsc::UnboundedReceiver;
 use tui_realm_treeview::Tree;
 use tuirealm::EventListenerCfg;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
@@ -19,6 +20,7 @@ use crate::ui::components::{
     Playlist, Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
+use crate::ui::model::ports::rx_main::PortRxMain;
 use crate::ui::model::{Model, TermusicLayout, UserEvent};
 use crate::ui::msg::{DBMsg, Msg, PCMsg};
 use crate::ui::utils::{
@@ -29,6 +31,7 @@ impl Model {
     pub fn init_app(
         tree: &Tree<String>,
         config: &SharedTuiSettings,
+        rx_to_main: UnboundedReceiver<Msg>,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
 
@@ -38,7 +41,8 @@ impl Model {
                 .async_crossterm_input_listener(Duration::ZERO, 10)
                 .poll_timeout(Duration::from_millis(10))
                 .async_tick(true)
-                .tick_interval(Duration::from_secs(1)),
+                .tick_interval(Duration::from_secs(1))
+                .add_async_port(Box::new(PortRxMain::new(rx_to_main)), Duration::ZERO, 10),
         );
 
         Self::mount_main(&mut app, config, tree).unwrap();

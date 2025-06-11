@@ -1030,13 +1030,6 @@ impl Model {
         }
     }
 
-    // update other messages
-    pub fn update_outside_msg(&mut self) {
-        if let Ok(msg) = self.rx_to_main.try_recv() {
-            self.update(Some(msg));
-        }
-    }
-
     /// Handle & update [`SavePlaylistMsg`] related components.
     fn update_save_playlist(&mut self, msg: SavePlaylistMsg) -> Option<Msg> {
         match msg {
