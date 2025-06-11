@@ -23,8 +23,10 @@ use termusicplayback::{
     PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
 };
 use tokio::runtime::Handle;
+use tokio::select;
 use tokio::sync::{broadcast, oneshot};
 use tokio::task::JoinHandle;
+use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::server::TcpIncoming;
 use tonic::transport::Server;
@@ -152,6 +154,11 @@ async fn actual_main() -> Result<()> {
         start_service(&config, music_player_service, service_cancel_token.clone()).await?;
 
     let tokio_handle = Handle::current();
+
+    let cancel_token = service_cancel_token.clone();
+    let playlist_c = playlist.clone();
+    start_playlist_save_interval(tokio_handle.clone(), cancel_token, playlist_c);
+
     let (player_handle_os_tx, player_handle_os_rx) = oneshot::channel();
     let player_handle = std::thread::Builder::new()
         .name("main player loop".into())
@@ -187,6 +194,36 @@ async fn actual_main() -> Result<()> {
     info!("Bye");
 
     Ok(())
+}
+
+const PLAYLIST_SAVE_INTERVAL: Duration = Duration::from_secs(30);
+
+/// Spawn a task to periodically save the playlist to disk, if modified.
+fn start_playlist_save_interval(
+    handle: Handle,
+    cancel_token: CancellationToken,
+    playlist: SharedPlaylist,
+) {
+    handle.spawn(async move {
+        let mut timer = tokio::time::interval_at(
+            Instant::now() + PLAYLIST_SAVE_INTERVAL,
+            PLAYLIST_SAVE_INTERVAL,
+        );
+        loop {
+            select! {
+                _ = timer.tick() => {
+                    match playlist.write().save_if_modified() {
+                        Err(err) => warn!("Error saving playlist in interval: {err:#?}"),
+                        Ok(true) => debug!("Saved playlist in interval"),
+                        Ok(false) => ()
+                    }
+                },
+                _ = cancel_token.cancelled() => {
+                    break;
+                }
+            }
+        }
+    });
 }
 
 /// Start the [`MusicPlayerService`] with the according transport protocol.

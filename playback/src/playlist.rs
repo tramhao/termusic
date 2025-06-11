@@ -50,6 +50,9 @@ pub struct Playlist {
     /// Indicator if the playlist should advance the `current_*` and `next_*` values
     need_proceed_to_next: bool,
     stream_tx: StreamTX,
+
+    /// Indicator if we need to save the playlist for interval saving
+    is_modified: bool,
 }
 
 impl Playlist {
@@ -69,6 +72,7 @@ impl Playlist {
             next_track_index: None,
             need_proceed_to_next: false,
             stream_tx,
+            is_modified: false,
         }
     }
 
@@ -90,6 +94,7 @@ impl Playlist {
     /// Advance the playlist to the next track.
     pub fn proceed(&mut self) {
         debug!("need to proceed to next: {}", self.need_proceed_to_next);
+        self.is_modified = true;
         if self.need_proceed_to_next {
             self.next();
         } else {
@@ -182,15 +187,16 @@ impl Playlist {
         Ok((current_track_index, playlist_items))
     }
 
-    /// Run [`load`](Self::load), but also apply the values directly to the current instance
+    /// Run [`load`](Self::load), but also apply the values directly to the current instance.
     ///
     /// # Errors
     ///
-    /// see [`load`](Self::load)
+    /// See [`load`](Self::load)
     pub fn load_apply(&mut self) -> Result<()> {
         let (current_track_index, tracks) = Self::load()?;
         self.current_track_index = current_track_index;
         self.tracks = tracks;
+        self.is_modified = false;
 
         Ok(())
     }
@@ -236,18 +242,25 @@ impl Playlist {
 
         self.current_track_index = current_track_index;
         self.tracks = playlist_items;
+        self.is_modified = true;
 
         Ok(())
     }
 
     /// Reload the current playlist from the file. This function does not save beforehand.
     ///
+    /// This is currently 1:1 the same as [`Self::load_apply`],
+    /// but has some slight different semantic meaning in that [`Self::load_apply`] is meant for a new Playlist instance.
+    ///
     /// # Errors
+    ///
     /// See [`Self::load`]
     pub fn reload_tracks(&mut self) -> Result<()> {
         let (current_track_index, tracks) = Self::load()?;
         self.tracks = tracks;
         self.current_track_index = current_track_index;
+        self.is_modified = false;
+
         Ok(())
     }
 
@@ -256,6 +269,7 @@ impl Playlist {
     /// Path in `$config$/playlist.log`
     ///
     /// # Errors
+    ///
     /// Errors could happen when writing files
     pub fn save(&mut self) -> Result<()> {
         let path = get_playlist_path()?;
@@ -264,6 +278,7 @@ impl Playlist {
 
         // If the playlist is empty, truncate the file, but dont write anything else (like a index number)
         if self.is_empty() {
+            self.is_modified = false;
             return Ok(());
         }
 
@@ -280,8 +295,28 @@ impl Playlist {
         }
 
         writer.flush()?;
+        self.is_modified = false;
 
         Ok(())
+    }
+
+    /// Run [`Self::save`] only if [`Self::is_modified`] is `true`.
+    ///
+    /// This is mainly used for saving in intervals and not writing if nothing changed.
+    ///
+    /// Returns `true` if saving was performed.
+    ///
+    /// # Errors
+    ///
+    /// See [`Self::save`]
+    pub fn save_if_modified(&mut self) -> Result<bool> {
+        if self.is_modified {
+            self.save()?;
+
+            return Ok(true);
+        }
+
+        Ok(false)
     }
 
     /// Change to the next track.
@@ -362,6 +397,7 @@ impl Playlist {
         self.set_next_track(None);
         self.set_current_track_index(new_index);
         self.proceed_false();
+        self.is_modified = true;
 
         Ok(())
     }
@@ -391,6 +427,7 @@ impl Playlist {
         if !self.played_index.is_empty() {
             if let Some(index) = self.played_index.pop() {
                 self.current_track_index = index;
+                self.is_modified = true;
                 return;
             }
         }
@@ -407,6 +444,7 @@ impl Playlist {
                 self.current_track_index = self.get_random_index();
             }
         }
+        self.is_modified = true;
     }
 
     #[must_use]
@@ -429,6 +467,7 @@ impl Playlist {
             } else if index == self.current_track_index - 1 {
                 self.current_track_index -= 1;
             }
+            self.is_modified = true;
         }
     }
 
@@ -442,6 +481,7 @@ impl Playlist {
             } else if index == self.current_track_index + 1 {
                 self.current_track_index += 1;
             }
+            self.is_modified = true;
         }
     }
 
@@ -469,6 +509,7 @@ impl Playlist {
             index_a,
             index_b,
         }));
+        self.is_modified = true;
 
         Ok(())
     }
@@ -617,6 +658,7 @@ impl Playlist {
         ));
 
         self.tracks.push(track);
+        self.is_modified = true;
     }
 
     /// Add many Paths/Urls to the playlist.
@@ -653,6 +695,7 @@ impl Playlist {
         if track_str.starts_with("http") {
             let track = Self::track_from_uri(track_str);
             self.tracks.push(track);
+            self.is_modified = true;
             return Ok(());
         }
 
@@ -668,6 +711,7 @@ impl Playlist {
         ));
 
         self.tracks.push(track);
+        self.is_modified = true;
 
         Ok(())
     }
@@ -705,6 +749,7 @@ impl Playlist {
                 ));
 
                 self.tracks.push(track);
+                self.is_modified = true;
             }
 
             return Ok(());
@@ -728,6 +773,7 @@ impl Playlist {
             ));
 
             self.tracks.insert(at_index, track);
+            self.is_modified = true;
             at_index += 1;
         }
 
@@ -1008,6 +1054,7 @@ impl Playlist {
                         trackid: track_source,
                     },
                 ));
+                self.is_modified = true;
             }
 
             match self.find_index_from_file(&current_track_file) {
