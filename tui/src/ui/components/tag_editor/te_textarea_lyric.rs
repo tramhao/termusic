@@ -53,7 +53,7 @@ impl TETextareaLyric {
                 .step(4)
                 .highlighted_str("\u{1f3b5}")
                 // .highlighted_str("🎵")
-                .text_rows(&[TextSpan::from("No lyrics.")])
+                .text_rows([TextSpan::from("No lyrics.")])
         };
         Self { component, config }
     }

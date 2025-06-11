@@ -143,7 +143,7 @@ impl PodcastSearchTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&[" Name ", " url "])
+                .headers([" Name ", " url "])
                 .column_spacing(3)
                 .widths(&[40, 60])
                 .table(

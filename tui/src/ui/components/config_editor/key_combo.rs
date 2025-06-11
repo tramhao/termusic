@@ -412,23 +412,26 @@ impl KeyCombo {
         self
     }
 
-    pub fn choices<S: AsRef<str>>(mut self, choices: &[S]) -> Self {
+    pub fn choices<S>(mut self, choices: impl IntoIterator<Item = S>) -> Self
+    where
+        S: Into<String>,
+    {
         self.attr(
             Attribute::Content,
             AttrValue::Payload(PropPayload::Vec(
                 choices
-                    .iter()
-                    .map(|x| PropValue::Str(x.as_ref().to_string()))
+                    .into_iter()
+                    .map(|x| PropValue::Str(x.into()))
                     .collect(),
             )),
         );
         self
     }
 
-    pub fn value<S: AsRef<str>>(mut self, i: usize, s: S) -> Self {
+    pub fn value<S: Into<String>>(mut self, i: usize, s: S) -> Self {
         // Set state
 
-        self.attr_input(Attribute::Value, AttrValue::String(s.as_ref().to_string()));
+        self.attr_input(Attribute::Value, AttrValue::String(s.into()));
 
         self.attr(
             Attribute::Value,
@@ -710,7 +713,7 @@ impl KeyCombo {
             .props
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style);
-        let mut block = get_block(borders, None, focus, inactive_style);
+        let mut block = get_block::<&str>(borders, None, focus, inactive_style);
         // Apply invalid style
         if focus && !self.is_valid() {
             if let Some(style) = self
@@ -1026,7 +1029,7 @@ mod test {
             .highlighted_color(Color::Red)
             .highlighted_str(">>")
             .title(" C'est oui ou bien c'est non? ", Alignment::Center)
-            .choices(&["Oui!", "Non", "Peut-être"])
+            .choices(["Oui!", "Non", "Peut-être"])
             .value(1, "")
             .rewind(false);
         assert_eq!(component.states.is_tab_open(), false);
@@ -1130,7 +1133,7 @@ impl KEModifierSelect {
             .rewind(false)
             .highlighted_color(config_r.settings.theme.fallback_highlight())
             .highlighted_str(">> ")
-            .choices(&choices)
+            .choices(choices)
             .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
             .invalid_style(Style::default().fg(Color::Red))
             .value(init_select, init_key);
