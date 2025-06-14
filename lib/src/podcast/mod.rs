@@ -7,13 +7,11 @@ pub mod episode;
 #[allow(clippy::module_inception)]
 mod podcast;
 
-use crate::config::v2::server::PodcastSettings;
-use crate::taskpool::TaskPool;
-use crate::types::{Msg, PCMsg};
-use db::Database;
-use episode::{Episode, EpisodeNoId};
-#[allow(clippy::module_name_repetitions)]
-pub use podcast::{Podcast, PodcastNoId};
+use std::fs::File;
+use std::io::Write as _;
+use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use bytes::Buf;
@@ -24,12 +22,14 @@ use reqwest::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
 use sanitize_filename::{sanitize_with_options, Options};
-use std::fs::File;
-use std::io::Write as _;
-use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Sender};
-use std::sync::LazyLock;
-use std::time::Duration;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
+
+use crate::config::v2::server::PodcastSettings;
+use crate::taskpool::TaskPool;
+use crate::types::{Msg, PCMsg};
+use db::Database;
+use episode::{Episode, EpisodeNoId};
+pub use podcast::{Podcast, PodcastNoId};
 
 // How many columns we need, minimum, before we display the
 // (unplayed/total) after the podcast title
@@ -79,7 +79,12 @@ impl PodcastFeed {
 /// Spawns a new task to check a feed and retrieve podcast data.
 ///
 /// If `tx_to_main` is closed, no errors will be throws and the task will continue
-pub fn check_feed(feed: PodcastFeed, max_retries: usize, tp: &TaskPool, tx_to_main: Sender<Msg>) {
+pub fn check_feed(
+    feed: PodcastFeed,
+    max_retries: usize,
+    tp: &TaskPool,
+    tx_to_main: UnboundedSender<Msg>,
+) {
     tp.execute(async move {
         let _ = tx_to_main.send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())));
         match get_feed_data(&feed.url, max_retries).await {
@@ -250,7 +255,7 @@ fn duration_to_int(duration: Option<&str>) -> Option<i32> {
 
 /// Imports a list of podcasts from OPML format, reading from a file. If the `replace` flag is set, this replaces all
 /// existing data in the database.
-pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -> Result<()> {
+pub async fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -> Result<()> {
     let xml = std::fs::read_to_string(file)
         .with_context(|| format!("Could not open OPML file: {}", file.display()))?;
 
@@ -294,7 +299,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
     println!("Importing {} podcasts...", podcast_list.len());
 
     let taskpool = TaskPool::new(usize::from(config.concurrent_downloads_max.get()));
-    let (tx_to_main, rx_to_main) = mpsc::channel();
+    let (tx_to_main, mut rx_to_main) = unbounded_channel();
 
     for pod in &podcast_list {
         check_feed(
@@ -307,7 +312,7 @@ pub fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &Path) -
 
     let mut msg_counter: usize = 0;
     let mut failure = false;
-    while let Some(message) = rx_to_main.iter().next() {
+    while let Some(message) = rx_to_main.recv().await {
         match message {
             Msg::Podcast(PCMsg::NewData(pod)) => {
                 msg_counter += 1;
@@ -443,7 +448,7 @@ pub fn download_list(
     dest: &Path,
     max_retries: usize,
     tp: &TaskPool,
-    tx_to_main: &Sender<Msg>,
+    tx_to_main: &UnboundedSender<Msg>,
 ) {
     // parse episode details and push to queue
     for ep in episodes {

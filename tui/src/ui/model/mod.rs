@@ -3,7 +3,6 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
-use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, bail, Context, Result};
@@ -26,9 +25,8 @@ use termusiclib::types::{Msg, YoutubeOptions};
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;
 use termusiclib::xywh;
-use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tui_realm_treeview::Tree;
-use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 
 use super::components::TETrack;
@@ -36,10 +34,12 @@ use super::tui_cmd::TuiCmd;
 use crate::ui::Application;
 use crate::CombinedSettings;
 pub use download_tracker::DownloadTracker;
+pub use user_events::UserEvent;
 
 mod download_tracker;
 mod playlist;
 mod update;
+mod user_events;
 mod view;
 mod youtube_options;
 
@@ -282,17 +282,19 @@ impl ExtraLyricData {
     }
 }
 
+pub type TxToMain = UnboundedSender<Msg>;
+
 pub struct Model {
     /// Indicates that the application must quit
     pub quit: bool,
     /// Tells whether to redraw interface
     pub redraw: bool,
     last_redraw: Instant,
-    pub app: Application<Id, Msg, NoUserEvent>,
+    pub app: Application<Id, Msg, UserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge<CrosstermTerminalAdapter>,
-    pub tx_to_main: Sender<Msg>,
-    pub rx_to_main: Receiver<Msg>,
+    pub tx_to_main: TxToMain,
+    pub rx_to_main: UnboundedReceiver<Msg>,
     /// Sender for Player Commands
     pub cmd_to_server_tx: UnboundedSender<TuiCmd>,
 
@@ -399,7 +401,7 @@ impl Model {
                 .concurrent_downloads_max
                 .get(),
         ));
-        let (tx_to_main, rx_to_main) = mpsc::channel();
+        let (tx_to_main, rx_to_main) = unbounded_channel();
 
         let app = Self::init_app(&tree, &config_tui);
 

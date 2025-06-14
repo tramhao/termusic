@@ -25,7 +25,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, Borders, Color, PropPayload, PropValue, Style, TextModifiers};
 use tuirealm::ratatui::layout::Rect;
 use tuirealm::ratatui::widgets::{BorderType, Paragraph};
@@ -33,7 +33,7 @@ use tuirealm::{
     AttrValue, Attribute, Component, Event, Frame, MockComponent, Props, State, StateValue,
 };
 
-use crate::ui::model::Model;
+use crate::ui::model::{Model, UserEvent};
 
 /// ## Counter
 ///
@@ -240,8 +240,8 @@ impl TECounterDelete {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TECounterDelete {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TECounterDelete {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let keys = &self.config.read().settings.keys;
         // Get command
         let _cmd = match ev {

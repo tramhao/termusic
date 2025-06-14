@@ -1,3 +1,4 @@
+use crate::ui::model::UserEvent;
 /**
  * MIT License
  *
@@ -30,7 +31,7 @@ use termusiclib::types::{GSMsg, Msg};
 use tui_realm_stdlib::{Input, Table};
 use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
@@ -76,8 +77,8 @@ impl GSInputPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for GSInputPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for GSInputPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -310,8 +311,8 @@ impl GSTablePopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for GSTablePopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for GSTablePopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {

@@ -25,9 +25,11 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, InputType};
 use tuirealm::{Component, Event, MockComponent};
+
+use crate::ui::model::UserEvent;
 
 /// Common Field Properties and event handling
 #[derive(MockComponent)]
@@ -58,7 +60,7 @@ impl EditField {
 
     /// Basically [`Component::on`] but with custom extra parameters
     #[allow(clippy::needless_pass_by_value)]
-    pub fn on(&mut self, ev: Event<NoUserEvent>, on_key_down: Msg, on_key_up: Msg) -> Option<Msg> {
+    pub fn on(&mut self, ev: Event<UserEvent>, on_key_down: Msg, on_key_up: Msg) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         match ev {
@@ -147,8 +149,8 @@ impl TEInputArtist {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TEInputArtist {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TEInputArtist {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurDown)),
@@ -170,8 +172,8 @@ impl TEInputTitle {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TEInputTitle {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TEInputTitle {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurDown)),
@@ -193,8 +195,8 @@ impl TEInputAlbum {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TEInputAlbum {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TEInputAlbum {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurDown)),
@@ -216,8 +218,8 @@ impl TEInputGenre {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TEInputGenre {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TEInputGenre {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurDown)),

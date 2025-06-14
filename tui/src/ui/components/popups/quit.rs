@@ -24,9 +24,9 @@ use termusiclib::ids::Id;
  * SOFTWARE.
  */
 use termusiclib::types::Msg;
-use tuirealm::{props::Alignment, Component, Event, MockComponent, NoUserEvent};
+use tuirealm::{props::Alignment, Component, Event, MockComponent};
 
-use crate::ui::model::Model;
+use crate::ui::model::{Model, UserEvent};
 
 use super::{YNConfirm, YNConfirmStyle};
 
@@ -50,8 +50,8 @@ impl QuitPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for QuitPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for QuitPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component
             .on(ev, Msg::QuitPopupCloseOk, Msg::QuitPopupCloseCancel)
     }

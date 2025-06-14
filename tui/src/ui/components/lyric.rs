@@ -1,7 +1,8 @@
 use std::sync::LazyLock;
 
-use crate::ui::model::ExtraLyricData;
-use crate::ui::{model::TermusicLayout, Model};
+use anyhow::{anyhow, Result};
+use regex::Regex;
+use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::player::RunningStatus;
@@ -9,19 +10,17 @@ use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaTypes;
 use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{LyricMsg, Msg};
-
-use anyhow::{anyhow, Result};
-use regex::Regex;
-use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderType, Borders, PropPayload, PropValue, TextSpan,
 };
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use super::TETrack;
+use crate::ui::model::{ExtraLyricData, UserEvent};
+use crate::ui::{model::TermusicLayout, Model};
 
 /// Regex for finding <br/> tags -- also captures any surrounding
 /// line breaks
@@ -64,8 +63,8 @@ impl Lyric {
     }
 }
 
-impl Component<Msg, NoUserEvent> for Lyric {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for Lyric {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let _cmd_result = match ev {

@@ -1,10 +1,7 @@
-use crate::ui::model::{DownloadTracker, Model};
-use crate::ui::tui_cmd::TuiCmd;
-use crate::utils::get_pin_yin;
-use anyhow::{bail, Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename, DirEntry};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::Sender;
+
+use anyhow::{bail, Context, Result};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::SharedTuiSettings;
@@ -12,9 +9,13 @@ use termusiclib::ids::Id;
 use termusiclib::types::{GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+
+use crate::ui::model::{DownloadTracker, Model, TxToMain, UserEvent};
+use crate::ui::tui_cmd::TuiCmd;
+use crate::utils::get_pin_yin;
 
 #[derive(MockComponent)]
 pub struct MusicLibrary {
@@ -101,9 +102,9 @@ impl MusicLibrary {
     }
 }
 
-impl Component<Msg, NoUserEvent> for MusicLibrary {
+impl Component<Msg, UserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         // When init, open root
         if self.init {
             let root = self.component.tree().root();
@@ -263,7 +264,7 @@ impl Model {
     ///
     /// Executes [`Self::library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
     pub fn library_scan<P: Into<PathBuf>>(
-        tx: Sender<Msg>,
+        tx: TxToMain,
         download_tracker: DownloadTracker,
         path: P,
         depth: ScanDepth,

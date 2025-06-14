@@ -1,27 +1,12 @@
-/**
- * MIT License
- *
- * tui-realm - Copyright (C) 2021 Christian Visintin
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-use crate::ui::model::{Model, ViuerSupported};
+//! SPDX-License-Identifier: MIT
+
+#[cfg(any(
+    feature = "cover-viuer-iterm",
+    feature = "cover-viuer-kitty",
+    feature = "cover-viuer-sixel"
+))]
+use std::io::Write;
+
 #[cfg(any(
     feature = "cover-viuer-iterm",
     feature = "cover-viuer-kitty",
@@ -32,17 +17,12 @@ use anyhow::Result;
 use bytes::Buf;
 use image::DynamicImage;
 use lofty::picture::Picture;
-#[cfg(any(
-    feature = "cover-viuer-iterm",
-    feature = "cover-viuer-kitty",
-    feature = "cover-viuer-sixel"
-))]
-use std::io::Write;
-use std::sync::mpsc::Sender;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::track::MediaTypes;
 use termusiclib::types::{DLMsg, ImageWrapper, Msg};
 use tokio::runtime::Handle;
+
+use crate::ui::model::{Model, TxToMain, ViuerSupported};
 
 impl Model {
     pub fn xywh_move_left(&mut self) {
@@ -182,7 +162,7 @@ impl Model {
     }
 
     /// Fetch the given url as a image and send events when done or error.
-    async fn fetch_podcast_image(tx: Sender<Msg>, url: String) {
+    async fn fetch_podcast_image(tx: TxToMain, url: String) {
         match reqwest::get(&url).await {
             Ok(result) => {
                 if result.status() != reqwest::StatusCode::OK {

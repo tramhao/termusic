@@ -12,11 +12,12 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::Borders;
 use tuirealm::props::{Alignment, BorderType, Table, TableBuilder, TextSpan};
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
+    event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
 
 use super::popups::{YNConfirm, YNConfirmStyle};
+use crate::ui::model::UserEvent;
 use crate::ui::Model;
 
 #[derive(MockComponent)]
@@ -70,8 +71,8 @@ impl DBListCriteria {
     }
 }
 
-impl Component<Msg, NoUserEvent> for DBListCriteria {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for DBListCriteria {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -181,8 +182,8 @@ impl AddAlbumConfirm {
     }
 }
 
-impl Component<Msg, NoUserEvent> for AddAlbumConfirm {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for AddAlbumConfirm {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::DataBase(DBMsg::AddAllResultsToPlaylist),
@@ -234,9 +235,9 @@ impl DBListSearchResult {
     }
 }
 
-impl Component<Msg, NoUserEvent> for DBListSearchResult {
+impl Component<Msg, UserEvent> for DBListSearchResult {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -391,8 +392,8 @@ impl DBListSearchTracks {
     }
 }
 
-impl Component<Msg, NoUserEvent> for DBListSearchTracks {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for DBListSearchTracks {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {

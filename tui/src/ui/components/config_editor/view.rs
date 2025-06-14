@@ -1,6 +1,6 @@
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
-use crate::ui::model::{ConfigEditorLayout, Model};
+use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::utils::draw_area_in_absolute;
 use crate::ui::Application;
 use anyhow::{bail, Result};
@@ -36,7 +36,6 @@ use termusiclib::types::Msg;
  */
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use termusiclib::THEME_DIR;
-use tuirealm::event::NoUserEvent;
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
 use tuirealm::ratatui::widgets::Clear;
@@ -205,7 +204,7 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
-    fn view_config_editor_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, NoUserEvent>) {
+    fn view_config_editor_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, UserEvent>) {
         // -- popups
         if app.mounted(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup)) {
             let popup = draw_area_in_absolute(f.area(), 50, 3);

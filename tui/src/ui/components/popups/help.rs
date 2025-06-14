@@ -9,10 +9,10 @@ use tuirealm::{
     command::{Cmd, CmdResult, Direction},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan},
-    Component, Event, MockComponent, NoUserEvent,
+    Component, Event, MockComponent,
 };
 
-use crate::ui::model::Model;
+use crate::ui::model::{Model, UserEvent};
 
 #[derive(MockComponent)]
 pub struct HelpPopup {
@@ -282,8 +282,8 @@ impl HelpPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for HelpPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for HelpPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {

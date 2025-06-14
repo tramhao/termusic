@@ -6,10 +6,10 @@ use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, InputType},
-    Component, Event, MockComponent, NoUserEvent, State, StateValue,
+    Component, Event, MockComponent, State, StateValue,
 };
 
-use crate::ui::model::Model;
+use crate::ui::model::{Model, UserEvent};
 
 use super::{YNConfirm, YNConfirmStyle};
 
@@ -37,8 +37,8 @@ impl DeleteConfirmRadioPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for DeleteConfirmRadioPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for DeleteConfirmRadioPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component
             .on(ev, Msg::DeleteConfirmCloseOk, Msg::DeleteConfirmCloseCancel)
     }
@@ -78,8 +78,8 @@ impl DeleteConfirmInputPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for DeleteConfirmInputPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for DeleteConfirmInputPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..

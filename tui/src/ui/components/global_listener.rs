@@ -4,11 +4,11 @@ use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::types::{
     ConfigEditorMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, SavePlaylistMsg, XYWHMsg,
 };
-
-use crate::ui::Model;
 use tui_realm_stdlib::Phantom;
-use tuirealm::event::NoUserEvent;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
+
+use crate::ui::model::UserEvent;
+use crate::ui::Model;
 
 #[derive(MockComponent)]
 pub struct GlobalListener {
@@ -25,9 +25,9 @@ impl GlobalListener {
     }
 }
 
-impl Component<Msg, NoUserEvent> for GlobalListener {
+impl Component<Msg, UserEvent> for GlobalListener {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let keys = &self.config.read().settings.keys;
         match ev {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
@@ -135,7 +135,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
 impl Model {
     /// global listener subscriptions
     #[allow(clippy::too_many_lines)]
-    pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, NoUserEvent>> {
+    pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, UserEvent>> {
         vec![
             // Sub::new(
             //     SubEventClause::Keyboard(keys.escape.get()),

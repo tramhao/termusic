@@ -7,10 +7,10 @@ use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, InputType},
-    Component, Event, MockComponent, NoUserEvent, State, StateValue,
+    Component, Event, MockComponent, State, StateValue,
 };
 
-use crate::ui::model::Model;
+use crate::ui::model::{Model, UserEvent};
 
 use super::{YNConfirm, YNConfirmStyle};
 
@@ -38,8 +38,8 @@ impl SavePlaylistPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for SavePlaylistPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -119,8 +119,8 @@ impl SavePlaylistConfirmPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for SavePlaylistConfirmPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for SavePlaylistConfirmPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::SavePlaylist(SavePlaylistMsg::ConfirmCloseOk(self.filename.clone())),

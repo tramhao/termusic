@@ -28,10 +28,10 @@ use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     event::{Key, KeyEvent},
     props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan},
-    Component, Event, MockComponent, NoUserEvent,
+    Component, Event, MockComponent,
 };
 
-use crate::ui::model::Model;
+use crate::ui::model::{Model, UserEvent};
 
 #[derive(MockComponent)]
 pub struct ErrorPopup {
@@ -63,8 +63,8 @@ impl ErrorPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for ErrorPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for ErrorPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         match ev {

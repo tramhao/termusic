@@ -84,7 +84,7 @@ async fn actual_main() -> Result<()> {
     ctrl_c_handler().expect("Error setting Ctrl-C handler");
 
     if let Some(action) = args.action {
-        return execute_action(action, &config);
+        return execute_action(action, &config).await;
     }
 
     // launch the daemon if it isn't already
@@ -165,6 +165,8 @@ async fn actual_main() -> Result<()> {
 
     let mut ui = UI::new(config, client).await?;
     ui.run().await?;
+
+    info!("Bye");
 
     Ok(())
 }
@@ -373,7 +375,7 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
     bail!("Error: non-existing directory '{}'", dir.display());
 }
 
-fn execute_action(action: cli::Action, config: &CombinedSettings) -> Result<()> {
+async fn execute_action(action: cli::Action, config: &CombinedSettings) -> Result<()> {
     match action {
         cli::Action::Import { file } => {
             println!("need to import from file {}", file.display());
@@ -382,12 +384,12 @@ fn execute_action(action: cli::Action, config: &CombinedSettings) -> Result<()> 
             let config_dir_path =
                 utils::get_app_config_path().context("getting app-config-path")?;
 
-            podcast::import_from_opml(
-                &config_dir_path,
-                &config.server.read().settings.podcast,
-                &path,
-            )
-            .context("import opml")?;
+            // to not hold a mutexguard across await points
+            let config_c = config.server.read().settings.podcast.clone();
+
+            podcast::import_from_opml(&config_dir_path, &config_c, &path)
+                .await
+                .context("import opml")?;
         }
         cli::Action::Export { file } => {
             println!("need to export to file {}", file.display());
