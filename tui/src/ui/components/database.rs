@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use either::Either;
+use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
@@ -19,6 +21,144 @@ use tuirealm::{
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::model::UserEvent;
 use crate::ui::Model;
+
+/// Helper trait to accomedate mutable access to `self` while also allowing access to other `self` properties for [`common_list_movement`].
+trait OnKeyDB {
+    fn on_key_tab(&self) -> Msg;
+    fn on_key_backtab(&self) -> Msg;
+}
+
+/// Common matches for [`List`] component movement and events
+fn common_list_movement<C: MockComponent + OnKeyDB>(
+    comp: &mut C,
+    keys: &Keys,
+    ev: &Event<UserEvent>,
+) -> Option<Either<CmdResult, Msg>> {
+    let res = match ev {
+        Event::Keyboard(KeyEvent {
+            code: Key::Up,
+            modifiers: KeyModifiers::NONE,
+        }) => comp.perform(Cmd::Move(Direction::Up)),
+        Event::Keyboard(key) if *key == keys.navigation_keys.up.get() => {
+            comp.perform(Cmd::Move(Direction::Up))
+        }
+
+        Event::Keyboard(KeyEvent {
+            code: Key::Down,
+            modifiers: KeyModifiers::NONE,
+        }) => {
+            if let Some(AttrValue::Table(t)) = comp.query(Attribute::Content) {
+                if let State::One(StateValue::Usize(index)) = comp.state() {
+                    if index >= t.len() - 1 {
+                        return Some(Either::Right(comp.on_key_tab()));
+                    }
+                }
+            }
+            comp.perform(Cmd::Move(Direction::Down))
+        }
+        Event::Keyboard(key) if *key == keys.navigation_keys.down.get() => {
+            if let Some(AttrValue::Table(t)) = comp.query(Attribute::Content) {
+                if let State::One(StateValue::Usize(index)) = comp.state() {
+                    if index >= t.len() - 1 {
+                        return Some(Either::Right(comp.on_key_tab()));
+                    }
+                }
+            }
+            comp.perform(Cmd::Move(Direction::Down))
+        }
+
+        Event::Keyboard(KeyEvent {
+            code: Key::PageUp,
+            modifiers: KeyModifiers::NONE,
+        }) => comp.perform(Cmd::Scroll(Direction::Up)),
+        Event::Keyboard(KeyEvent {
+            code: Key::PageDown,
+            modifiers: KeyModifiers::NONE,
+        }) => comp.perform(Cmd::Scroll(Direction::Down)),
+
+        Event::Keyboard(KeyEvent {
+            code: Key::Home,
+            modifiers: KeyModifiers::NONE,
+        }) => comp.perform(Cmd::GoTo(Position::Begin)),
+        Event::Keyboard(key) if *key == keys.navigation_keys.goto_top.get() => {
+            comp.perform(Cmd::GoTo(Position::Begin))
+        }
+
+        Event::Keyboard(KeyEvent {
+            code: Key::End,
+            modifiers: KeyModifiers::NONE,
+        }) => comp.perform(Cmd::GoTo(Position::End)),
+        Event::Keyboard(key) if *key == keys.navigation_keys.goto_bottom.get() => {
+            comp.perform(Cmd::GoTo(Position::End))
+        }
+
+        Event::Keyboard(KeyEvent {
+            code: Key::Tab,
+            modifiers: KeyModifiers::NONE,
+        }) => return Some(Either::Right(comp.on_key_tab())),
+        Event::Keyboard(KeyEvent {
+            code: Key::BackTab,
+            modifiers: KeyModifiers::SHIFT,
+        }) => return Some(Either::Right(comp.on_key_backtab())),
+
+        _ => return None,
+    };
+
+    Some(Either::Left(res))
+}
+
+/// Like [`SearchCriteria`], but specific to TUI and mapping to & from a [`Table`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DBCriteria {
+    Artists,
+    Albums,
+    Genres,
+    Directories,
+    Playlists,
+}
+
+impl DBCriteria {
+    fn build_table() -> Table {
+        TableBuilder::default()
+            .add_col(TextSpan::from("Artist"))
+            .add_row()
+            .add_col(TextSpan::from("Album"))
+            .add_row()
+            .add_col(TextSpan::from("Genre"))
+            .add_row()
+            .add_col(TextSpan::from("Directory"))
+            .add_row()
+            .add_col(TextSpan::from("Playlists"))
+            .build()
+    }
+
+    /// Try to map the given table index to a variant, returns [`None`] if index is out of bounds.
+    fn from_table_index(idx: usize) -> Option<Self> {
+        // NOTE: this has to match whatever `build_table` produces
+        let res = match idx {
+            0 => Self::Artists,
+            1 => Self::Albums,
+            2 => Self::Genres,
+            3 => Self::Directories,
+            4 => Self::Playlists,
+            _ => return None,
+        };
+
+        Some(res)
+    }
+}
+
+impl From<DBCriteria> for SearchCriteria {
+    fn from(value: DBCriteria) -> Self {
+        match value {
+            DBCriteria::Artists => Self::Artist,
+            DBCriteria::Albums => Self::Album,
+            DBCriteria::Genres => Self::Genre,
+            DBCriteria::Directories => Self::Directory,
+            DBCriteria::Playlists => Self::Playlist,
+        }
+    }
+}
 
 #[derive(MockComponent)]
 pub struct DBListCriteria {
@@ -47,19 +187,7 @@ impl DBListCriteria {
                 .rewind(false)
                 .step(4)
                 .scroll(true)
-                .rows(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Artist"))
-                        .add_row()
-                        .add_col(TextSpan::from("Album"))
-                        .add_row()
-                        .add_col(TextSpan::from("Genre"))
-                        .add_row()
-                        .add_col(TextSpan::from("Directory"))
-                        .add_row()
-                        .add_col(TextSpan::from("Playlists"))
-                        .build(),
-                )
+                .rows(DBCriteria::build_table())
         };
 
         Self {
@@ -71,90 +199,48 @@ impl DBListCriteria {
     }
 }
 
+impl OnKeyDB for DBListCriteria {
+    fn on_key_tab(&self) -> Msg {
+        self.on_key_tab.clone()
+    }
+
+    fn on_key_backtab(&self) -> Msg {
+        self.on_key_backtab.clone()
+    }
+}
+
 impl Component<Msg, UserEvent> for DBListCriteria {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Down,
-                modifiers: KeyModifiers::NONE,
-            }) => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
-                        if index >= t.len() - 1 {
-                            return Some(self.on_key_tab.clone());
-                        }
-                    }
-                }
-                self.perform(Cmd::Move(Direction::Down))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Up,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Move(Direction::Up)),
-            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
-                        if index >= t.len() - 1 {
-                            return Some(self.on_key_tab.clone());
-                        }
-                    }
-                }
-                self.perform(Cmd::Move(Direction::Down))
-            }
-            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
-                self.perform(Cmd::Move(Direction::Up))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::PageDown,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Scroll(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::PageUp,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
-                self.perform(Cmd::GoTo(Position::Begin))
-            }
-            Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Home,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter,
-                modifiers: KeyModifiers::NONE,
-            }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::DataBase(DBMsg::SearchResult(index)));
+        let cmd_result = common_list_movement(self, keys, &ev).unwrap_or_else(|| {
+            let res = match ev {
+                Event::Keyboard(KeyEvent {
+                    code: Key::Enter,
+                    modifiers: KeyModifiers::NONE,
+                }) => {
+                    if let State::One(StateValue::Usize(index)) = self.state() {
+                        let criteria = DBCriteria::from_table_index(index)
+                            .expect("All table options to be mapped");
+                        return Either::Right(Msg::DataBase(DBMsg::SearchResult(criteria.into())));
+                    }
+                    CmdResult::None
                 }
-                CmdResult::None
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::End,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::GoTo(Position::End)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Tab,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(self.on_key_tab.clone()),
-            Event::Keyboard(KeyEvent {
-                code: Key::BackTab,
-                modifiers: KeyModifiers::SHIFT,
-            }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowDatabase))
-            }
-            _ => CmdResult::None,
-        };
+                Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
+                    return Either::Right(Msg::GeneralSearch(GSMsg::PopupShowDatabase))
+                }
+                _ => CmdResult::None,
+            };
+
+            Either::Left(res)
+        });
+
         match cmd_result {
-            CmdResult::None => None,
-            _ => Some(Msg::ForceRedraw),
+            Either::Left(CmdResult::None) => None,
+            Either::Right(msg) => Some(msg),
+            Either::Left(_) => Some(Msg::ForceRedraw),
         }
     }
 }
@@ -235,116 +321,60 @@ impl DBListSearchResult {
     }
 }
 
+impl OnKeyDB for DBListSearchResult {
+    fn on_key_tab(&self) -> Msg {
+        self.on_key_tab.clone()
+    }
+
+    fn on_key_backtab(&self) -> Msg {
+        self.on_key_backtab.clone()
+    }
+}
+
 impl Component<Msg, UserEvent> for DBListSearchResult {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Down,
-                modifiers: KeyModifiers::NONE,
-            }) => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
+
+        let cmd_result = common_list_movement(self, keys, &ev).unwrap_or_else(|| {
+            let res = match ev {
+                Event::Keyboard(KeyEvent {
+                    code: Key::Enter,
+                    modifiers: KeyModifiers::NONE,
+                }) => {
                     if let State::One(StateValue::Usize(index)) = self.state() {
-                        if index >= t.len() - 1 {
-                            return Some(self.on_key_tab.clone());
-                        }
+                        return Either::Right(Msg::DataBase(DBMsg::SearchTrack(index)));
                     }
+                    CmdResult::None
                 }
-                self.perform(Cmd::Move(Direction::Down))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Up,
-                modifiers: KeyModifiers::NONE,
-            }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    if index == 0 {
-                        return Some(self.on_key_backtab.clone());
-                    }
+
+                Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
+                    return Either::Right(Msg::GeneralSearch(GSMsg::PopupShowDatabase));
                 }
-                self.perform(Cmd::Move(Direction::Up))
-            }
-            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
+
+                Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_selected.get() => {
                     if let State::One(StateValue::Usize(index)) = self.state() {
-                        if index >= t.len() - 1 {
-                            return Some(self.on_key_tab.clone());
-                        }
+                        // Maybe we should also have a popup if it is anything other that "Album"?
+                        // Because things like "Genre" could be *very* big
+                        return Either::Right(Msg::DataBase(DBMsg::AddResultToPlaylist(index)));
                     }
+                    CmdResult::None
                 }
-                self.perform(Cmd::Move(Direction::Down))
-            }
-            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    if index == 0 {
-                        return Some(self.on_key_backtab.clone());
-                    }
+                Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_all.get() => {
+                    return Either::Right(Msg::DataBase(DBMsg::AddAllResultsConfirmShow));
                 }
-                self.perform(Cmd::Move(Direction::Up))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::PageDown,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Scroll(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::PageUp,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
-                self.perform(Cmd::GoTo(Position::Begin))
-            }
-            Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Home,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent {
-                code: Key::End,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::GoTo(Position::End)),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter,
-                modifiers: KeyModifiers::NONE,
-            }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::DataBase(DBMsg::SearchTrack(index)));
-                }
-                CmdResult::None
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Tab,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(self.on_key_tab.clone()),
-            Event::Keyboard(KeyEvent {
-                code: Key::BackTab,
-                modifiers: KeyModifiers::SHIFT,
-            }) => return Some(self.on_key_backtab.clone()),
+                _ => CmdResult::None,
+            };
 
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowDatabase))
-            }
+            Either::Left(res)
+        });
 
-            Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_selected.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    // Maybe we should also have a popup if it is anything other that "Album"?
-                    // Because things like "Genre" could be *very* big
-                    return Some(Msg::DataBase(DBMsg::AddResultToPlaylist(index)));
-                }
-                CmdResult::None
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_all.get() => {
-                return Some(Msg::DataBase(DBMsg::AddAllResultsConfirmShow))
-            }
-
-            _ => CmdResult::None,
-        };
         match cmd_result {
-            CmdResult::None => None,
-            _ => Some(Msg::ForceRedraw),
+            Either::Left(CmdResult::None) => None,
+            Either::Right(msg) => Some(msg),
+            Either::Left(_) => Some(Msg::ForceRedraw),
         }
     }
 }
@@ -392,88 +422,47 @@ impl DBListSearchTracks {
     }
 }
 
+impl OnKeyDB for DBListSearchTracks {
+    fn on_key_tab(&self) -> Msg {
+        self.on_key_tab.clone()
+    }
+
+    fn on_key_backtab(&self) -> Msg {
+        self.on_key_backtab.clone()
+    }
+}
+
 impl Component<Msg, UserEvent> for DBListSearchTracks {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
-        let cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Down,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up,
-                modifiers: KeyModifiers::NONE,
-            }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    if index == 0 {
-                        return Some(self.on_key_backtab.clone());
+
+        let cmd_result = common_list_movement(self, keys, &ev).unwrap_or_else(|| {
+            let res = match ev {
+                Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_selected.get() => {
+                    if let State::One(StateValue::Usize(index)) = self.state() {
+                        return Either::Right(Msg::DataBase(DBMsg::AddPlaylist(index)));
                     }
+                    CmdResult::None
                 }
-                self.perform(Cmd::Move(Direction::Up))
-            }
-            Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
-                self.perform(Cmd::Move(Direction::Down))
-            }
-            Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    if index == 0 {
-                        return Some(self.on_key_backtab.clone());
-                    }
+                Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_all.get() => {
+                    return Either::Right(Msg::DataBase(DBMsg::AddAllToPlaylist));
                 }
-                self.perform(Cmd::Move(Direction::Up))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::PageDown,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Scroll(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::PageUp,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
-                self.perform(Cmd::GoTo(Position::Begin))
-            }
-            Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Home,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent {
-                code: Key::End,
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::GoTo(Position::End)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Tab,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(self.on_key_tab.clone()),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::BackTab,
-                modifiers: KeyModifiers::SHIFT,
-            }) => return Some(self.on_key_backtab.clone()),
-
-            Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_selected.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::DataBase(DBMsg::AddPlaylist(index)));
+                Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
+                    return Either::Right(Msg::GeneralSearch(GSMsg::PopupShowDatabase));
                 }
-                CmdResult::None
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_all.get() => {
-                return Some(Msg::DataBase(DBMsg::AddAllToPlaylist))
-            }
 
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowDatabase))
-            }
+                _ => CmdResult::None,
+            };
 
-            _ => CmdResult::None,
-        };
+            Either::Left(res)
+        });
+
         match cmd_result {
-            CmdResult::None => None,
-            _ => Some(Msg::ForceRedraw),
+            Either::Left(CmdResult::None) => None,
+            Either::Right(msg) => Some(msg),
+            Either::Left(_) => Some(Msg::ForceRedraw),
         }
     }
 }
