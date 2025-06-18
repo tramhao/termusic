@@ -42,6 +42,15 @@ use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 
 impl Model {
+    pub fn view_config_editor(&mut self) {
+        match self.config_editor.layout {
+            ConfigEditorLayout::General => self.view_config_editor_general(),
+            ConfigEditorLayout::Color => self.view_config_editor_color(),
+            ConfigEditorLayout::Key1 => self.view_config_editor_key1(),
+            ConfigEditorLayout::Key2 => self.view_config_editor_key2(),
+        }
+    }
+
     #[allow(clippy::too_many_lines)]
     pub fn view_config_editor_general(&mut self) {
         self.terminal

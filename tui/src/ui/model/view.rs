@@ -20,7 +20,7 @@ use crate::ui::components::{
     FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
     Playlist, Progress, Source,
 };
-use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout, UserEvent};
+use crate::ui::model::{Model, TermusicLayout, UserEvent};
 use crate::ui::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute,
 };
@@ -149,12 +149,7 @@ impl Model {
                 self.view_tag_editor();
                 return;
             } else if self.app.mounted(&Id::ConfigEditor(IdConfigEditor::Header)) {
-                match self.config_editor.layout {
-                    ConfigEditorLayout::General => self.view_config_editor_general(),
-                    ConfigEditorLayout::Color => self.view_config_editor_color(),
-                    ConfigEditorLayout::Key1 => self.view_config_editor_key1(),
-                    ConfigEditorLayout::Key2 => self.view_config_editor_key2(),
-                }
+                self.view_config_editor();
                 return;
             }
 
