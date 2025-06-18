@@ -211,47 +211,35 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([Constraint::Min(2), Constraint::Length(1)])
-                    .split(f.area());
-                let chunks_left = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
-                    .split(chunks_main[0]);
+                let [chunks_main, _bottom_help] =
+                    Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
+                let [chunks_main_left, chunks_main_right] =
+                    Layout::horizontal([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+                        .areas(chunks_main);
 
-                let chunks_left_sections = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([
-                        Constraint::Length(DBListCriteria::num_options() + 2), // + 2 as this area still includes the borders
-                        // maybe resize based on which one is focused?
-                        Constraint::Fill(1),
-                        Constraint::Fill(2),
-                    ])
-                    .split(chunks_left[0]);
-                let chunks_right = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([
-                        Constraint::Min(2),
-                        Constraint::Length(3),
-                        Constraint::Length(4),
-                    ])
-                    .split(chunks_left[1]);
+                let [left_criteria, left_search_result, left_search_tracks] = Layout::vertical([
+                    Constraint::Length(DBListCriteria::num_options() + 2), // + 2 as this area still includes the borders
+                    // maybe resize based on which one is focused?
+                    Constraint::Fill(1),
+                    Constraint::Fill(2),
+                ])
+                .areas(chunks_main_left);
+                let [right_playlist, right_progress, right_lyric] = Layout::vertical([
+                    Constraint::Min(2),
+                    Constraint::Length(3),
+                    Constraint::Length(4),
+                ])
+                .areas(chunks_main_right);
 
+                self.app.view(&Id::DBListCriteria, f, left_criteria);
                 self.app
-                    .view(&Id::DBListCriteria, f, chunks_left_sections[0]);
+                    .view(&Id::DBListSearchResult, f, left_search_result);
                 self.app
-                    .view(&Id::DBListSearchResult, f, chunks_left_sections[1]);
-                self.app
-                    .view(&Id::DBListSearchTracks, f, chunks_left_sections[2]);
+                    .view(&Id::DBListSearchTracks, f, left_search_tracks);
 
-                self.app.view(&Id::Playlist, f, chunks_right[0]);
-                self.app.view(&Id::Progress, f, chunks_right[1]);
-                self.app.view(&Id::Lyric, f, chunks_right[2]);
+                self.app.view(&Id::Playlist, f, right_playlist);
+                self.app.view(&Id::Progress, f, right_progress);
+                self.app.view(&Id::Lyric, f, right_lyric);
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
             .expect("Expected to draw without error");
