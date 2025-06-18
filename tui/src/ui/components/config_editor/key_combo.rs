@@ -493,7 +493,7 @@ impl KeyCombo {
         let chunks = Layout::default()
             .direction(LayoutDirection::Vertical)
             .margin(0)
-            .constraints([Constraint::Length(2), Constraint::Min(1)].as_ref())
+            .constraints([Constraint::Length(2), Constraint::Min(1)])
             .split(area);
         // Render like "closed" tab in chunk 0
         let selected_text = match self.states.choices.get(self.states.selected) {
@@ -682,7 +682,7 @@ impl KeyCombo {
         let chunks = Layout::default()
             .direction(LayoutDirection::Horizontal)
             .margin(0)
-            .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
+            .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)])
             .split(area);
 
         let mut foreground = self

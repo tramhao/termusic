@@ -55,55 +55,47 @@ impl Model {
                     let chunks_main = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
-                        .constraints(
-                            [
-                                Constraint::Length(1),
-                                Constraint::Length(3),
-                                Constraint::Length(3),
-                                // Constraint::Length(3),
-                                Constraint::Min(2),
-                                Constraint::Length(1),
-                            ]
-                            .as_ref(),
-                        )
+                        .constraints([
+                            Constraint::Length(1),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            // Constraint::Length(3),
+                            Constraint::Min(2),
+                            Constraint::Length(1),
+                        ])
                         .split(f.area());
 
                     let chunks_row1 = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
-                        .constraints([Constraint::Ratio(2, 5), Constraint::Ratio(3, 5)].as_ref())
+                        .constraints([Constraint::Ratio(2, 5), Constraint::Ratio(3, 5)])
                         .split(chunks_main[1]);
                     let chunks_row2 = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
-                        .constraints(
-                            [
-                                Constraint::Ratio(1, 4),
-                                Constraint::Ratio(1, 4),
-                                Constraint::Ratio(1, 4),
-                                Constraint::Ratio(1, 4),
-                            ]
-                            .as_ref(),
-                        )
+                        .constraints([
+                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(1, 4),
+                        ])
                         .split(chunks_main[2]);
                     let chunks_row4 = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
-                        .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
+                        .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)])
                         .split(chunks_main[3]);
 
                     let chunks_row4_right = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
-                        .constraints(
-                            [Constraint::Length(select_lyric_len), Constraint::Min(2)].as_ref(),
-                        )
+                        .constraints([Constraint::Length(select_lyric_len), Constraint::Min(2)])
                         .split(chunks_row4[1]);
 
                     let chunks_row4_right_top = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
-                        .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                        .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
                         .split(chunks_row4_right[0]);
 
                     // -- footer
@@ -111,14 +103,11 @@ impl Model {
                         let chunks_footer = Layout::default()
                             .direction(Direction::Horizontal)
                             .margin(0)
-                            .constraints(
-                                [
-                                    Constraint::Length(1),
-                                    Constraint::Length(1),
-                                    Constraint::Min(10),
-                                ]
-                                .as_ref(),
-                            )
+                            .constraints([
+                                Constraint::Length(1),
+                                Constraint::Length(1),
+                                Constraint::Min(10),
+                            ])
                             .split(chunks_main[4]);
 
                         self.app.view(&Id::DownloadSpinner, f, chunks_footer[1]);

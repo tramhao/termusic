@@ -173,30 +173,27 @@ impl Model {
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(3),
-                            Constraint::Length(1),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([
+                        Constraint::Min(2),
+                        Constraint::Length(3),
+                        Constraint::Length(1),
+                    ])
                     .split(f.area());
                 let chunks_center = Layout::default()
                     .direction(Direction::Horizontal)
                     .margin(0)
-                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
                     .split(chunks_main[0]);
 
                 let chunks_left = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
                     .split(chunks_center[0]);
                 let chunks_right = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
                     .split(chunks_center[1]);
 
                 self.app.view(&Id::Podcast, f, chunks_left[0]);
@@ -217,38 +214,32 @@ impl Model {
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                    .constraints([Constraint::Min(2), Constraint::Length(1)])
                     .split(f.area());
                 let chunks_left = Layout::default()
                     .direction(Direction::Horizontal)
                     .margin(0)
-                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
                     .split(chunks_main[0]);
 
                 let chunks_left_sections = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(DBListCriteria::num_options() + 2), // + 2 as this area still includes the borders
-                            // maybe resize based on which one is focused?
-                            Constraint::Fill(1),
-                            Constraint::Fill(2),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([
+                        Constraint::Length(DBListCriteria::num_options() + 2), // + 2 as this area still includes the borders
+                        // maybe resize based on which one is focused?
+                        Constraint::Fill(1),
+                        Constraint::Fill(2),
+                    ])
                     .split(chunks_left[0]);
                 let chunks_right = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(3),
-                            Constraint::Length(4),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([
+                        Constraint::Min(2),
+                        Constraint::Length(3),
+                        Constraint::Length(4),
+                    ])
                     .split(chunks_left[1]);
 
                 self.app
@@ -273,24 +264,21 @@ impl Model {
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                    .constraints([Constraint::Min(2), Constraint::Length(1)])
                     .split(f.area());
                 let chunks_left = Layout::default()
                     .direction(Direction::Horizontal)
                     .margin(0)
-                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
                     .split(chunks_main[0]);
                 let chunks_right = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(3),
-                            Constraint::Length(4),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([
+                        Constraint::Min(2),
+                        Constraint::Length(3),
+                        Constraint::Length(4),
+                    ])
                     .split(chunks_left[1]);
 
                 self.app.view(&Id::Library, f, chunks_left[0]);
@@ -315,19 +303,16 @@ impl Model {
             let chunks_main = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(0)
-                .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                .constraints([Constraint::Min(2), Constraint::Length(1)])
                 .split(f.area());
             let chunks_footer = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
-                .constraints(
-                    [
-                        Constraint::Length(1),
-                        Constraint::Length(1),
-                        Constraint::Min(10),
-                    ]
-                    .as_ref(),
-                )
+                .constraints([
+                    Constraint::Length(1),
+                    Constraint::Length(1),
+                    Constraint::Min(10),
+                ])
                 .split(chunks_main[1]);
 
             app.view(&Id::DownloadSpinner, f, chunks_footer[1]);
@@ -336,7 +321,7 @@ impl Model {
             let chunks_main = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(0)
-                .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                .constraints([Constraint::Min(2), Constraint::Length(1)])
                 .split(f.area());
             app.view(&Id::Label, f, chunks_main[1]);
         }
@@ -371,13 +356,10 @@ impl Model {
             f.render_widget(Clear, popup);
             let popup_chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Length(3), // Input form
-                        Constraint::Min(2),    // Yes/No
-                    ]
-                    .as_ref(),
-                )
+                .constraints([
+                    Constraint::Length(3), // Input form
+                    Constraint::Min(2),    // Yes/No
+                ])
                 .split(popup);
             app.view(&Id::GeneralSearchInput, f, popup_chunks[0]);
             app.view(&Id::GeneralSearchTable, f, popup_chunks[1]);
@@ -398,7 +380,7 @@ impl Model {
             f.render_widget(Clear, popup);
             let popup_chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Length(3), Constraint::Length(3)].as_ref())
+                .constraints([Constraint::Length(3), Constraint::Length(3)])
                 .split(popup);
             app.view(&Id::SavePlaylistPopup, f, popup_chunks[0]);
             app.view(&Id::SavePlaylistLabel, f, popup_chunks[1]);
