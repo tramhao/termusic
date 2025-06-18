@@ -161,7 +161,7 @@ impl Model {
         }
     }
 
-    pub fn view_layout_podcast(&mut self) {
+    fn view_layout_podcast(&mut self) {
         self.terminal
             .raw_mut()
             .draw(|f| {
@@ -194,7 +194,7 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
-    pub fn view_layout_database(&mut self) {
+    fn view_layout_database(&mut self) {
         self.terminal
             .raw_mut()
             .draw(|f| {
@@ -233,7 +233,7 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
-    pub fn view_layout_treeview(&mut self) {
+    fn view_layout_treeview(&mut self) {
         self.terminal
             .raw_mut()
             .draw(|f| {

@@ -52,7 +52,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn view_config_editor_general(&mut self) {
+    fn view_config_editor_general(&mut self) {
         self.terminal
             .raw_mut()
             .draw(|f| {
@@ -208,7 +208,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn view_config_editor_color(&mut self) {
+    fn view_config_editor_color(&mut self) {
         let select_library_foreground_len = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
@@ -634,7 +634,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn view_config_editor_key1(&mut self) {
+    fn view_config_editor_key1(&mut self) {
         let select_global_quit_len = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))
@@ -1107,7 +1107,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn view_config_editor_key2(&mut self) {
+    fn view_config_editor_key2(&mut self) {
         let select_library_delete_len = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)))
