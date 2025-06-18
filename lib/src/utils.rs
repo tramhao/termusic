@@ -39,32 +39,24 @@ pub fn filetype_supported(path: &Path) -> bool {
         return true;
     }
 
-    match path.extension() {
-        Some(ext) if ext == "mkv" || ext == "mka" => true,
-        Some(ext) if ext == "mp3" => true,
-        Some(ext) if ext == "aiff" => true,
-        Some(ext) if ext == "flac" => true,
-        Some(ext) if ext == "m4a" => true,
-        Some(ext) if ext == "aac" => true,
-        Some(ext) if ext == "opus" => true,
-        Some(ext) if ext == "ogg" => true,
-        Some(ext) if ext == "wav" => true,
-        Some(ext) if ext == "webm" => true,
-        Some(_) | None => false,
-    }
+    let Some(ext) = path.extension().and_then(OsStr::to_str) else {
+        return false;
+    };
+
+    matches!(
+        ext,
+        "mkv" | "mka" | "mp3" | "aiff" | "flac" | "m4a" | "aac" | "opus" | "ogg" | "wav" | "webm"
+    )
 }
 
 /// Check if the given path has a extension that matches well-known playlists that are supported by us.
 #[must_use]
 pub fn is_playlist(path: &Path) -> bool {
-    match path.extension() {
-        Some(ext) if ext == "m3u" => true,
-        Some(ext) if ext == "m3u8" => true,
-        Some(ext) if ext == "pls" => true,
-        Some(ext) if ext == "asx" => true,
-        Some(ext) if ext == "xspf" => true,
-        Some(_) | None => false,
-    }
+    let Some(ext) = path.extension().and_then(OsStr::to_str) else {
+        return false;
+    };
+
+    matches!(ext, "m3u" | "m3u8" | "pls" | "asx" | "xspf")
 }
 
 /// Get the parent path of the given `path`, if there is none use the tempdir
