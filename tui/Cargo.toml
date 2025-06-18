@@ -60,6 +60,7 @@ reqwest.workspace = true
 parking_lot.workspace = true
 alphanumeric-sort.workspace = true
 pathdiff.workspace = true
+either.workspace = true
 
 
 [features]
