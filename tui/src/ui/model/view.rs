@@ -33,9 +33,6 @@ impl Model {
         config: &SharedTuiSettings,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
-        // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
-        // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
-        // which we will use to update the clock
 
         let mut app: Application<Id, Msg, UserEvent> = Application::init(
             EventListenerCfg::default()
