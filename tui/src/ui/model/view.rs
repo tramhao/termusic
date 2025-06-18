@@ -230,9 +230,10 @@ impl Model {
                     .margin(0)
                     .constraints(
                         [
-                            Constraint::Length(10),
-                            Constraint::Length(10),
-                            Constraint::Min(2),
+                            Constraint::Length(DBListCriteria::num_options() + 2), // + 2 as this area still includes the borders
+                            // maybe resize based on which one is focused?
+                            Constraint::Fill(1),
+                            Constraint::Fill(2),
                         ]
                         .as_ref(),
                     )

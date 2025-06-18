@@ -118,6 +118,12 @@ enum DBCriteria {
 }
 
 impl DBCriteria {
+    /// Number of elements in the table.
+    /// This is for example used to get exact space allocation for the layout.
+    ///
+    /// Note: keep this in-sync with [`Self::build_table`]
+    const NUM_OPTIONS: u16 = 5;
+
     fn build_table() -> Table {
         TableBuilder::default()
             .add_col(TextSpan::from("Artist"))
@@ -196,6 +202,12 @@ impl DBListCriteria {
             on_key_backtab,
             config,
         }
+    }
+
+    /// Get the number of static options in the list.
+    // See `DBCriteria::num_option` for actual implementation.
+    pub const fn num_options() -> u16 {
+        DBCriteria::NUM_OPTIONS
     }
 }
 
