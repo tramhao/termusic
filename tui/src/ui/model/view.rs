@@ -265,16 +265,16 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
-    #[allow(clippy::too_many_lines)]
-    fn view_layout_commons(
+    /// Draw the footer in the last line.
+    fn view_common_footer(
         f: &mut Frame<'_>,
         app: &mut Application<Id, Msg, UserEvent>,
         downloading_visible: bool,
     ) {
-        // -- footer
+        let [_content, bottom_label] =
+            Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
+
         if downloading_visible {
-            let [_content, bottom_label] =
-                Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
             let [_spacer, spinner, remainder] = Layout::horizontal([
                 Constraint::Length(1),
                 Constraint::Length(1),
@@ -285,12 +285,12 @@ impl Model {
             app.view(&Id::DownloadSpinner, f, spinner);
             app.view(&Id::Label, f, remainder);
         } else {
-            let [_content, bottom_label] =
-                Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
             app.view(&Id::Label, f, bottom_label);
         }
+    }
 
-        // -- popups
+    /// Draw any popup.
+    fn view_popups(f: &mut Frame<'_>, app: &mut Application<Id, Msg, UserEvent>) {
         if app.mounted(&Id::QuitPopup) {
             let popup = draw_area_in_absolute(f.area(), 30, 3);
             f.render_widget(Clear, popup);
@@ -367,6 +367,17 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::ErrorPopup, f, popup);
         }
+    }
+
+    /// Draw common things, like the bottom label and popups.
+    fn view_layout_commons(
+        f: &mut Frame<'_>,
+        app: &mut Application<Id, Msg, UserEvent>,
+        downloading_visible: bool,
+    ) {
+        Self::view_common_footer(f, app, downloading_visible);
+
+        Self::view_popups(f, app);
     }
 
     /// Mount / Remount a search popup for the provided source
