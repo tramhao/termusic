@@ -41,7 +41,7 @@ use tuirealm::props::{
     PropValue, Props, Style, TextModifiers,
 };
 use tuirealm::ratatui::{
-    layout::{Constraint, Direction as LayoutDirection, Layout, Rect},
+    layout::{Constraint, Layout, Rect},
     text::Span,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
@@ -490,11 +490,7 @@ impl KeyCombo {
             .and_then(AttrValue::as_color)
             .unwrap_or(foreground);
         // Prepare layout
-        let chunks = Layout::default()
-            .direction(LayoutDirection::Vertical)
-            .margin(0)
-            .constraints([Constraint::Length(2), Constraint::Min(1)])
-            .split(area);
+        let chunks = Layout::vertical([Constraint::Length(2), Constraint::Min(1)]).split(area);
         // Render like "closed" tab in chunk 0
         let selected_text = match self.states.choices.get(self.states.selected) {
             None => "",
@@ -679,11 +675,8 @@ impl KeyCombo {
     }
 
     fn render_input(&self, render: &mut Frame<'_>, area: Rect) {
-        let chunks = Layout::default()
-            .direction(LayoutDirection::Horizontal)
-            .margin(0)
-            .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)])
-            .split(area);
+        let chunks =
+            Layout::horizontal([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)]).split(area);
 
         let mut foreground = self
             .props
