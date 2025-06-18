@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Result};
+use indoc::indoc;
 use rusqlite::{params, Connection};
 use semver::Version;
 
@@ -98,14 +99,18 @@ fn update_version_col(conn: &Connection) -> Result<()> {
 fn update_version_exec(conn: &Connection, current_version: &Version, update: bool) -> Result<()> {
     if update {
         conn.execute(
-            "UPDATE version SET version = ?
-            WHERE id = ?;",
+            indoc! {"
+            UPDATE version SET version = ?
+            WHERE id = ?;
+            "},
             params![current_version.to_string(), 1],
         )?;
     } else {
         conn.execute(
-            "INSERT INTO version (id, version)
-            VALUES (?, ?)",
+            indoc! {"
+            INSERT INTO version (id, version)
+            VALUES (?, ?);
+            "},
             params![1, current_version.to_string()],
         )?;
     }

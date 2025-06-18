@@ -4,6 +4,7 @@ use std::{
     time::{Duration, UNIX_EPOCH},
 };
 
+use indoc::indoc;
 use rusqlite::{named_params, Connection, Row};
 
 use crate::track::{Track, TrackMetadata};
@@ -147,9 +148,10 @@ impl TrackDBInsertable<'_> {
     /// Insert the current [`TrackDBInsertable`] into the `tracks` table
     #[inline]
     pub fn insert_track(&self, con: &Connection) -> Result<usize, rusqlite::Error> {
-        con.execute(
-            "INSERT INTO tracks (artist, title, album, genre, file, duration, name, ext, directory, last_modified, last_position) 
-            values (:artist, :title, :album, :genre, :file, :duration, :name, :ext, :directory, :last_modified, :last_position)",
+        con.execute(indoc! {"
+            INSERT INTO tracks (artist, title, album, genre, file, duration, name, ext, directory, last_modified, last_position) 
+            VALUES (:artist, :title, :album, :genre, :file, :duration, :name, :ext, :directory, :last_modified, :last_position);
+            "},
             named_params![
                 ":artist": &self.artist,
                 ":title": &self.title,

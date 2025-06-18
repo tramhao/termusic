@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use indoc::indoc;
 use rusqlite::{named_params, params, Connection, Row};
 
 use crate::podcast::episode::EpisodeNoId;
@@ -105,11 +106,11 @@ impl<'a> EpisodeDBInsertable<'a> {
     /// Insert the current [`EpisodeDBInsertable`] into the `episodes` table
     #[inline]
     pub fn insert_episode(&self, con: &Connection) -> Result<usize, rusqlite::Error> {
-        let mut stmt = con.prepare_cached(
-            "INSERT INTO episodes (podcast_id, title, url, guid,
+        let mut stmt = con.prepare_cached(indoc! {"
+            INSERT INTO episodes (podcast_id, title, url, guid,
                 description, pubdate, duration, played, hidden, last_position, image_url)
-                VALUES (:podid, :title, :url, :guid, :description, :pubdate, :duration, :played, :hidden, :last_position, :image_url);",
-        )?;
+            VALUES (:podid, :title, :url, :guid, :description, :pubdate, :duration, :played, :hidden, :last_position, :image_url);
+        "})?;
         stmt.execute(named_params![
             ":podid": self.pod_id,
             ":title": self.title,
@@ -138,11 +139,11 @@ impl<'a> EpisodeDBInsertable<'a> {
         id: PodcastDBId,
         con: &Connection,
     ) -> Result<usize, rusqlite::Error> {
-        let mut stmt = con.prepare_cached(
-            "UPDATE episodes SET title = :title, url = :url,
-                    guid = :guid, description = :description, pubdate = :pubdate,
-                    duration = :duration, image_url = :image_url WHERE id = :epid;",
-        )?;
+        let mut stmt = con.prepare_cached(indoc! {"
+            UPDATE episodes SET title = :title, url = :url,
+                guid = :guid, description = :description, pubdate = :pubdate,
+            duration = :duration, image_url = :image_url WHERE id = :epid;
+        "})?;
         stmt.execute(named_params![
             ":title": self.title,
             ":url": self.url,
