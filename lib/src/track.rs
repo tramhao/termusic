@@ -24,6 +24,7 @@ use lru::LruCache;
 
 use crate::{
     player::playlist_helpers::PlaylistTrackSource, podcast::episode::Episode, songtag::lrc::Lyric,
+    utils::SplitArrayIter,
 };
 
 /// A simple no-value representation of [`MediaTypes`].
@@ -615,11 +616,23 @@ impl Display for DurationFmtShort {
     }
 }
 
+/// The default and most common separators used for artists.
+pub const DEFAULT_ARTIST_SEPARATORS: &[&str] =
+    &[",", ";", "&", "ft.", "feat.", "/", "|", "×", "、", " x "];
+
+/// See [`TrackMetadata`] for explanation of values.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
-#[allow(clippy::struct_excessive_bools)] // options, not a state machine
-pub struct MetadataOptions {
+#[allow(clippy::struct_excessive_bools)] // configuration, this is not a state machine
+pub struct MetadataOptions<'a> {
     pub album: bool,
+    pub album_artist: bool,
+    pub album_artists: bool,
     pub artist: bool,
+    pub artists: bool,
+    /// Separators for fallback parsing of a single `artist` value into multiple `artists`.
+    ///
+    /// See [`DEFAULT_ARTIST_SEPARATORS`].
+    pub artist_separators: &'a [&'a str],
     pub title: bool,
     pub duration: bool,
     pub genre: bool,
@@ -628,13 +641,17 @@ pub struct MetadataOptions {
     pub file_times: bool,
 }
 
-impl MetadataOptions {
+impl MetadataOptions<'_> {
     /// Enable all options
     #[must_use]
     pub fn all() -> Self {
         Self {
             album: true,
+            album_artist: true,
+            album_artists: true,
             artist: true,
+            artists: true,
+            artist_separators: &[],
             title: true,
             duration: true,
             genre: true,
@@ -645,14 +662,31 @@ impl MetadataOptions {
     }
 }
 
+/// For ID3v2 tags consult <https://exiftool.org/TagNames/ID3.html#v2_4>.
+///
+/// For common-usage consult <https://kodi.wiki/view/Music_tagging#Tags_Kodi_reads>.
+/// For common `TXX` tags consult <https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#artists>.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TrackMetadata {
+    /// ID3v2 tag `TALB` or equivalent
     pub album: Option<String>,
+    /// ID3v2 tag `TPE2` or equivalent
+    pub album_artist: Option<String>,
+    /// ID3v2 tag `TXX:ALBUMARTISTS` <https://kodi.wiki/view/Music_tagging#Tags_Kodi_reads>
+    pub album_artists: Option<Vec<String>>,
+    /// ID3v2 tag `TPE1` or equivalent
     pub artist: Option<String>,
+    /// ID3v2 tag `TXX:ARTISTS` <https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html>
+    pub artists: Option<Vec<String>>,
+    /// ID3v2 tag `TIT2` or equivalent
     pub title: Option<String>,
+    /// Total duration, this may or may not come from a tag
     pub duration: Option<Duration>,
+    /// ID3v2 tag `TCON` or equivalent
     pub genre: Option<String>,
+    /// ID3v2 tag `APIC` or equivalent
     pub cover: Option<Picture>,
+    /// ID3v2 tags `USLT` or equivalent
     pub lyric_frames: Option<Vec<Id3Lyrics>>,
     pub file_times: Option<FileTimes>,
 
@@ -666,7 +700,10 @@ pub struct FileTimes {
 }
 
 /// Try to parse all specified metadata in the given `options`.
-pub fn parse_metadata_from_file(path: &Path, options: MetadataOptions) -> Result<TrackMetadata> {
+pub fn parse_metadata_from_file(
+    path: &Path,
+    options: MetadataOptions<'_>,
+) -> Result<TrackMetadata> {
     let mut parse_options = ParseOptions::new();
 
     parse_options = parse_options.read_cover_art(options.cover);
@@ -705,7 +742,7 @@ pub fn parse_metadata_from_file(path: &Path, options: MetadataOptions) -> Result
 }
 
 /// The inner working to actually copy data from the given [`LoftyTag`] into the `res`ult
-fn handle_tag(tag: &LoftyTag, options: MetadataOptions, res: &mut TrackMetadata) {
+fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetadata) {
     if let Some(len_tag) = tag.get_string(&ItemKey::Length) {
         match len_tag.parse::<u64>() {
             Ok(v) => res.duration = Some(Duration::from_millis(v)),
@@ -718,8 +755,51 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions, res: &mut TrackMetadata)
     if options.artist {
         res.artist = tag.artist().map(Cow::into_owned);
     }
+    if options.artists {
+        let mut artists: Vec<String> = tag
+            .get_strings(&ItemKey::TrackArtists)
+            .map(ToString::to_string)
+            .collect();
+
+        if artists.is_empty() && !options.artist_separators.is_empty() {
+            if let Some(artist) = tag.artist() {
+                let artists_iter = split_artists(&artist, options);
+                artists.extend(artists_iter);
+            }
+        }
+
+        res.artists = Some(artists);
+    }
     if options.album {
         res.album = tag.album().map(Cow::into_owned);
+    }
+    if options.album_artist {
+        res.album_artist = tag
+            .get(&ItemKey::AlbumArtist)
+            .and_then(|v| v.value().text())
+            .map(ToString::to_string);
+    }
+    if options.album_artists {
+        // manual implementation as it currently does not exist upstream
+        // see https://github.com/Serial-ATA/lofty-rs/issues/522
+        // res.album_artists = Some(tag.get_strings(&ItemKey::AlbumArtists).map(ToString::to_string).collect());
+        // lofty already separates them from a "; "
+        let mut album_artists: Vec<String> = tag
+            .get_strings(&ItemKey::Unknown("ALBUMARTISTS".to_string()))
+            .map(ToString::to_string)
+            .collect();
+
+        if album_artists.is_empty() && !options.artist_separators.is_empty() {
+            if let Some(album_artist) = tag
+                .get(&ItemKey::AlbumArtist)
+                .and_then(|v| v.value().text())
+            {
+                let artists_iter = split_artists(album_artist, options);
+                album_artists.extend(artists_iter);
+            }
+        }
+
+        res.album_artists = Some(album_artists);
     }
     if options.title {
         res.title = tag.title().map(Cow::into_owned);
@@ -742,6 +822,18 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions, res: &mut TrackMetadata)
         get_lyrics_from_tags(tag, &mut lyric_frames);
         res.lyric_frames = Some(lyric_frames);
     }
+}
+
+/// Create a iterator which separates `artist` with options from `options`
+#[inline]
+fn split_artists<'a>(
+    artist: &'a str,
+    options: MetadataOptions<'a>,
+) -> impl Iterator<Item = String> + 'a {
+    SplitArrayIter::new(artist, options.artist_separators)
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(ToString::to_string)
 }
 
 /// Fetch all lyrics from the given Lofty tag into the given array.

@@ -830,7 +830,7 @@ impl Playlist {
     fn track_from_path(path_str: &str) -> Result<Track, PlaylistAddError> {
         let path = Path::new(path_str);
 
-        if !filetype_supported(path_str) {
+        if !filetype_supported(path) {
             error!("unsupported filetype: {path:#?}");
             let p = path.to_path_buf();
             let ext = path.extension().map(|v| v.to_string_lossy().to_string());

@@ -10,7 +10,7 @@ use termusiclib::types::{DBMsg, Msg, PCMsg};
 use termusiclib::utils::get_parent_folder;
 use tui_realm_treeview::Tree;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
-use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
+use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
 use tuirealm::EventListenerCfg;
 use tuirealm::{Frame, State, StateValue};
@@ -20,7 +20,7 @@ use crate::ui::components::{
     FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
     Playlist, Progress, Source,
 };
-use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout, UserEvent};
+use crate::ui::model::{Model, TermusicLayout, UserEvent};
 use crate::ui::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute,
 };
@@ -33,9 +33,6 @@ impl Model {
         config: &SharedTuiSettings,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
-        // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
-        // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
-        // which we will use to update the clock
 
         let mut app: Application<Id, Msg, UserEvent> = Application::init(
             EventListenerCfg::default()
@@ -149,12 +146,7 @@ impl Model {
                 self.view_tag_editor();
                 return;
             } else if self.app.mounted(&Id::ConfigEditor(IdConfigEditor::Header)) {
-                match self.config_editor.layout {
-                    ConfigEditorLayout::General => self.view_config_editor_general(),
-                    ConfigEditorLayout::Color => self.view_config_editor_color(),
-                    ConfigEditorLayout::Key1 => self.view_config_editor_key1(),
-                    ConfigEditorLayout::Key2 => self.view_config_editor_key2(),
-                }
+                self.view_config_editor();
                 return;
             }
 
@@ -166,181 +158,131 @@ impl Model {
         }
     }
 
-    pub fn view_layout_podcast(&mut self) {
+    fn view_layout_podcast(&mut self) {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(3),
-                            Constraint::Length(1),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(f.area());
-                let chunks_center = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-                    .split(chunks_main[0]);
+                let [chunks_main, progress, _bottom_help] = Layout::vertical([
+                    Constraint::Min(2),
+                    Constraint::Length(3),
+                    Constraint::Length(1),
+                ])
+                .areas(f.area());
+                let [center_left, center_right] =
+                    Layout::horizontal([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+                        .areas(chunks_main);
 
-                let chunks_left = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
-                    .split(chunks_center[0]);
-                let chunks_right = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
-                    .split(chunks_center[1]);
+                let [left_podcasts, left_episodes] =
+                    Layout::vertical([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+                        .areas(center_left);
+                let [right_playlist, right_lyric] =
+                    Layout::vertical([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+                        .areas(center_right);
 
-                self.app.view(&Id::Podcast, f, chunks_left[0]);
-                self.app.view(&Id::Episode, f, chunks_left[1]);
-                self.app.view(&Id::Playlist, f, chunks_right[0]);
-                self.app.view(&Id::Lyric, f, chunks_right[1]);
-                self.app.view(&Id::Progress, f, chunks_main[1]);
-                self.app.view(&Id::Label, f, chunks_main[2]);
+                self.app.view(&Id::Podcast, f, left_podcasts);
+                self.app.view(&Id::Episode, f, left_episodes);
 
-                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
-            })
-            .expect("Expected to draw without error");
-    }
-    pub fn view_layout_database(&mut self) {
-        self.terminal
-            .raw_mut()
-            .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                    .split(f.area());
-                let chunks_left = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-                    .split(chunks_main[0]);
-
-                let chunks_left_sections = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(10),
-                            Constraint::Length(10),
-                            Constraint::Min(2),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_left[0]);
-                let chunks_right = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(3),
-                            Constraint::Length(4),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_left[1]);
-
-                self.app
-                    .view(&Id::DBListCriteria, f, chunks_left_sections[0]);
-                self.app
-                    .view(&Id::DBListSearchResult, f, chunks_left_sections[1]);
-                self.app
-                    .view(&Id::DBListSearchTracks, f, chunks_left_sections[2]);
-
-                self.app.view(&Id::Playlist, f, chunks_right[0]);
-                self.app.view(&Id::Progress, f, chunks_right[1]);
-                self.app.view(&Id::Lyric, f, chunks_right[2]);
-                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
-            })
-            .expect("Expected to draw without error");
-    }
-
-    pub fn view_layout_treeview(&mut self) {
-        self.terminal
-            .raw_mut()
-            .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                    .split(f.area());
-                let chunks_left = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-                    .split(chunks_main[0]);
-                let chunks_right = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(3),
-                            Constraint::Length(4),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_left[1]);
-
-                self.app.view(&Id::Library, f, chunks_left[0]);
-                self.app.view(&Id::Playlist, f, chunks_right[0]);
-                self.app.view(&Id::Progress, f, chunks_right[1]);
-                self.app.view(&Id::Lyric, f, chunks_right[2]);
-                self.app.view(&Id::Label, f, chunks_main[1]);
+                self.app.view(&Id::Playlist, f, right_playlist);
+                self.app.view(&Id::Lyric, f, right_lyric);
+                self.app.view(&Id::Progress, f, progress);
 
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
             .expect("Expected to draw without error");
     }
 
-    #[allow(clippy::too_many_lines)]
-    fn view_layout_commons(
+    fn view_layout_database(&mut self) {
+        self.terminal
+            .raw_mut()
+            .draw(|f| {
+                let [chunks_main, _bottom_help] =
+                    Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
+                let [chunks_main_left, chunks_main_right] =
+                    Layout::horizontal([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+                        .areas(chunks_main);
+
+                let [left_criteria, left_search_result, left_search_tracks] = Layout::vertical([
+                    Constraint::Length(DBListCriteria::num_options() + 2), // + 2 as this area still includes the borders
+                    // maybe resize based on which one is focused?
+                    Constraint::Fill(1),
+                    Constraint::Fill(2),
+                ])
+                .areas(chunks_main_left);
+                let [right_playlist, right_progress, right_lyric] = Layout::vertical([
+                    Constraint::Min(2),
+                    Constraint::Length(3),
+                    Constraint::Length(4),
+                ])
+                .areas(chunks_main_right);
+
+                self.app.view(&Id::DBListCriteria, f, left_criteria);
+                self.app
+                    .view(&Id::DBListSearchResult, f, left_search_result);
+                self.app
+                    .view(&Id::DBListSearchTracks, f, left_search_tracks);
+
+                self.app.view(&Id::Playlist, f, right_playlist);
+                self.app.view(&Id::Progress, f, right_progress);
+                self.app.view(&Id::Lyric, f, right_lyric);
+
+                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
+            })
+            .expect("Expected to draw without error");
+    }
+
+    fn view_layout_treeview(&mut self) {
+        self.terminal
+            .raw_mut()
+            .draw(|f| {
+                let [chunks_main, _bottom_help] =
+                    Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
+                let [left_library, right] =
+                    Layout::horizontal([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+                        .areas(chunks_main);
+                let [right_playlist, right_progress, right_lyric] = Layout::vertical([
+                    Constraint::Min(2),
+                    Constraint::Length(3),
+                    Constraint::Length(4),
+                ])
+                .areas(right);
+
+                self.app.view(&Id::Library, f, left_library);
+
+                self.app.view(&Id::Playlist, f, right_playlist);
+                self.app.view(&Id::Progress, f, right_progress);
+                self.app.view(&Id::Lyric, f, right_lyric);
+
+                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
+            })
+            .expect("Expected to draw without error");
+    }
+
+    /// Draw the footer in the last line.
+    fn view_common_footer(
         f: &mut Frame<'_>,
         app: &mut Application<Id, Msg, UserEvent>,
         downloading_visible: bool,
     ) {
-        // -- footer
+        let [_content, bottom_label] =
+            Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
+
         if downloading_visible {
-            let chunks_main = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(0)
-                .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                .split(f.area());
-            let chunks_footer = Layout::default()
-                .direction(Direction::Horizontal)
-                .margin(0)
-                .constraints(
-                    [
-                        Constraint::Length(1),
-                        Constraint::Length(1),
-                        Constraint::Min(10),
-                    ]
-                    .as_ref(),
-                )
-                .split(chunks_main[1]);
+            let [_spacer, spinner, remainder] = Layout::horizontal([
+                Constraint::Length(1),
+                Constraint::Length(1),
+                Constraint::Min(10),
+            ])
+            .areas(bottom_label);
 
-            app.view(&Id::DownloadSpinner, f, chunks_footer[1]);
-            app.view(&Id::Label, f, chunks_footer[2]);
+            app.view(&Id::DownloadSpinner, f, spinner);
+            app.view(&Id::Label, f, remainder);
         } else {
-            let chunks_main = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(0)
-                .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                .split(f.area());
-            app.view(&Id::Label, f, chunks_main[1]);
+            app.view(&Id::Label, f, bottom_label);
         }
+    }
 
-        // -- popups
+    /// Draw any popup.
+    fn view_popups(f: &mut Frame<'_>, app: &mut Application<Id, Msg, UserEvent>) {
         if app.mounted(&Id::QuitPopup) {
             let popup = draw_area_in_absolute(f.area(), 30, 3);
             f.render_widget(Clear, popup);
@@ -368,16 +310,11 @@ impl Model {
         } else if app.mounted(&Id::GeneralSearchInput) {
             let popup = draw_area_in_relative(f.area(), 65, 68);
             f.render_widget(Clear, popup);
-            let popup_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Length(3), // Input form
-                        Constraint::Min(2),    // Yes/No
-                    ]
-                    .as_ref(),
-                )
-                .split(popup);
+            let popup_chunks = Layout::vertical([
+                Constraint::Length(3), // Input form
+                Constraint::Min(2),    // Yes/No
+            ])
+            .split(popup);
             app.view(&Id::GeneralSearchInput, f, popup_chunks[0]);
             app.view(&Id::GeneralSearchTable, f, popup_chunks[1]);
         } else if app.mounted(&Id::YoutubeSearchInputPopup) {
@@ -395,10 +332,8 @@ impl Model {
         } else if app.mounted(&Id::SavePlaylistPopup) {
             let popup = draw_area_in_absolute(f.area(), 76, 6);
             f.render_widget(Clear, popup);
-            let popup_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Length(3), Constraint::Length(3)].as_ref())
-                .split(popup);
+            let popup_chunks =
+                Layout::vertical([Constraint::Length(3), Constraint::Length(3)]).split(popup);
             app.view(&Id::SavePlaylistPopup, f, popup_chunks[0]);
             app.view(&Id::SavePlaylistLabel, f, popup_chunks[1]);
         } else if app.mounted(&Id::SavePlaylistConfirm) {
@@ -424,6 +359,17 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::ErrorPopup, f, popup);
         }
+    }
+
+    /// Draw common things, like the bottom label and popups.
+    fn view_layout_commons(
+        f: &mut Frame<'_>,
+        app: &mut Application<Id, Msg, UserEvent>,
+        downloading_visible: bool,
+    ) {
+        Self::view_common_footer(f, app, downloading_visible);
+
+        Self::view_popups(f, app);
     }
 
     /// Mount / Remount a search popup for the provided source

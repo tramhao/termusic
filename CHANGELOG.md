@@ -25,6 +25,7 @@
 - Fix(tui): escape key will now no longer also act as a quit key.
 - Fix(tui): changed the music library tree loading to be async.
 - Fix(tui): in the music library tree, when stepping out now the correct node if focused instead of the root node.
+- Fix(tui): limit Database `DataBase`(criteria) widget to size of elements it contains, now it wont grow beyond that and leave unused space.
 - Fix(server): with `rusty-soundtouch` on `rusty` backend, dont take initial samples until necessary.
 - Fix(server): on rusty backend, always decode and use `f32` samples. (instead of `i16`)
 - Fix(server): on rusty backend, update `soundtouch` version to fix build issues on latest arch & gcc 15.

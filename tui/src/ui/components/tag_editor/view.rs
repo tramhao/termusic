@@ -33,7 +33,7 @@ use std::borrow::Cow;
 use std::path::Path;
 use termusiclib::ids::{Id, IdTagEditor};
 use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
-use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
+use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
 use tuirealm::State;
 
@@ -52,74 +52,48 @@ impl Model {
                     };
                 if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
                     f.render_widget(Clear, f.area());
-                    let chunks_main = Layout::default()
-                        .direction(Direction::Vertical)
-                        .margin(0)
-                        .constraints(
-                            [
-                                Constraint::Length(1),
-                                Constraint::Length(3),
-                                Constraint::Length(3),
-                                // Constraint::Length(3),
-                                Constraint::Min(2),
-                                Constraint::Length(1),
-                            ]
-                            .as_ref(),
-                        )
-                        .split(f.area());
+                    let chunks_main = Layout::vertical([
+                        Constraint::Length(1),
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        // Constraint::Length(3),
+                        Constraint::Min(2),
+                        Constraint::Length(1),
+                    ])
+                    .split(f.area());
 
-                    let chunks_row1 = Layout::default()
-                        .direction(Direction::Horizontal)
-                        .margin(0)
-                        .constraints([Constraint::Ratio(2, 5), Constraint::Ratio(3, 5)].as_ref())
-                        .split(chunks_main[1]);
-                    let chunks_row2 = Layout::default()
-                        .direction(Direction::Horizontal)
-                        .margin(0)
-                        .constraints(
-                            [
-                                Constraint::Ratio(1, 4),
-                                Constraint::Ratio(1, 4),
-                                Constraint::Ratio(1, 4),
-                                Constraint::Ratio(1, 4),
-                            ]
-                            .as_ref(),
-                        )
-                        .split(chunks_main[2]);
-                    let chunks_row4 = Layout::default()
-                        .direction(Direction::Horizontal)
-                        .margin(0)
-                        .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
-                        .split(chunks_main[3]);
+                    let chunks_row1 =
+                        Layout::horizontal([Constraint::Ratio(2, 5), Constraint::Ratio(3, 5)])
+                            .split(chunks_main[1]);
+                    let chunks_row2 = Layout::horizontal([
+                        Constraint::Ratio(1, 4),
+                        Constraint::Ratio(1, 4),
+                        Constraint::Ratio(1, 4),
+                        Constraint::Ratio(1, 4),
+                    ])
+                    .split(chunks_main[2]);
+                    let chunks_row4 =
+                        Layout::horizontal([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)])
+                            .split(chunks_main[3]);
 
-                    let chunks_row4_right = Layout::default()
-                        .direction(Direction::Vertical)
-                        .margin(0)
-                        .constraints(
-                            [Constraint::Length(select_lyric_len), Constraint::Min(2)].as_ref(),
-                        )
-                        .split(chunks_row4[1]);
+                    let chunks_row4_right = Layout::vertical([
+                        Constraint::Length(select_lyric_len),
+                        Constraint::Min(2),
+                    ])
+                    .split(chunks_row4[1]);
 
-                    let chunks_row4_right_top = Layout::default()
-                        .direction(Direction::Horizontal)
-                        .margin(0)
-                        .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
-                        .split(chunks_row4_right[0]);
+                    let chunks_row4_right_top =
+                        Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+                            .split(chunks_row4_right[0]);
 
                     // -- footer
                     if self.download_tracker.visible() {
-                        let chunks_footer = Layout::default()
-                            .direction(Direction::Horizontal)
-                            .margin(0)
-                            .constraints(
-                                [
-                                    Constraint::Length(1),
-                                    Constraint::Length(1),
-                                    Constraint::Min(10),
-                                ]
-                                .as_ref(),
-                            )
-                            .split(chunks_main[4]);
+                        let chunks_footer = Layout::horizontal([
+                            Constraint::Length(1),
+                            Constraint::Length(1),
+                            Constraint::Min(10),
+                        ])
+                        .split(chunks_main[4]);
 
                         self.app.view(&Id::DownloadSpinner, f, chunks_footer[1]);
                         self.app.view(&Id::Label, f, chunks_footer[2]);

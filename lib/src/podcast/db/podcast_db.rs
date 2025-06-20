@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use indoc::indoc;
 use rusqlite::{named_params, params, Connection, Row};
 
 use super::{convert_date, PodcastDBId};
@@ -70,10 +71,10 @@ impl PodcastDBInsertable<'_> {
     /// Insert the current [`PodcastDBInsertable`] into the `podcasts` table
     #[inline]
     pub fn insert_podcast(&self, con: &Connection) -> Result<usize, rusqlite::Error> {
-        let mut stmt = con.prepare_cached(
-            "INSERT INTO podcasts (title, url, description, author, explicit, last_checked, image_url)
-            VALUES (:title, :url, :description, :author, :explicit, :last_checked, :image_url);",
-        )?;
+        let mut stmt = con.prepare_cached(indoc! {"
+            INSERT INTO podcasts (title, url, description, author, explicit, last_checked, image_url)
+            VALUES (:title, :url, :description, :author, :explicit, :last_checked, :image_url);
+        "})?;
         stmt.execute(named_params![
             ":title": self.title,
             ":url": self.url,
@@ -92,11 +93,11 @@ impl PodcastDBInsertable<'_> {
         id: PodcastDBId,
         con: &Connection,
     ) -> Result<usize, rusqlite::Error> {
-        let mut stmt = con.prepare_cached(
-            "UPDATE podcasts SET title = :title, url = :url, description = :description,
-            author = :author, explicit = :explicit, last_checked = :last_checked
-            WHERE id = :id;",
-        )?;
+        let mut stmt = con.prepare_cached(indoc! {"
+            UPDATE podcasts SET title = :title, url = :url, description = :description,
+                author = :author, explicit = :explicit, last_checked = :last_checked
+            WHERE id = :id;
+        "})?;
         stmt.execute(named_params![
             ":title": self.title,
             ":url": self.url,

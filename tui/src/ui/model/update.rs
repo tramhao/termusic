@@ -1,11 +1,10 @@
 //! SPDX-License-Identifier: MIT
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
-use termusiclib::library_db::SearchCriteria;
 use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg,
@@ -28,7 +27,7 @@ impl Update<Msg> for Model {
         // Match message
         match msg {
             Msg::ConfigEditor(m) => self.update_config_editor(m),
-            Msg::DataBase(m) => self.update_database_list(&m),
+            Msg::DataBase(m) => self.update_database_list(m),
 
             Msg::DeleteConfirmShow | Msg::DeleteConfirmCloseCancel | Msg::DeleteConfirmCloseOk => {
                 self.update_delete_confirmation(&msg)
@@ -496,7 +495,7 @@ impl Model {
 
         None
     }
-    fn update_database_list(&mut self, msg: &DBMsg) -> Option<Msg> {
+    fn update_database_list(&mut self, msg: DBMsg) -> Option<Msg> {
         match msg {
             DBMsg::CriteriaBlurDown | DBMsg::SearchTracksBlurUp => {
                 self.app.active(&Id::DBListSearchResult).ok();
@@ -510,17 +509,17 @@ impl Model {
             DBMsg::SearchResultBlurUp => {
                 self.app.active(&Id::DBListCriteria).ok();
             }
-            DBMsg::SearchResult(index) => {
-                self.dw.criteria = SearchCriteria::from(*index);
+            DBMsg::SearchResult(criteria) => {
+                self.dw.criteria = criteria;
                 self.database_update_search_results();
             }
             DBMsg::SearchTrack(index) => {
-                self.database_update_search_tracks(*index);
+                self.database_update_search_tracks(index);
             }
             DBMsg::AddPlaylist(index) => {
                 if !self.dw.search_tracks.is_empty() {
-                    if let Some(track) = self.dw.search_tracks.get(*index) {
-                        let file = track.file.clone();
+                    if let Some(track) = self.dw.search_tracks.get(index) {
+                        let file = PathBuf::from(&track.file);
                         if let Err(e) = self.playlist_add(&file) {
                             self.mount_error_popup(e.context("playlist add"));
                         }
@@ -533,7 +532,7 @@ impl Model {
             }
 
             DBMsg::AddResultToPlaylist(index) => {
-                if let Some(result) = self.dw.search_results.get(*index).cloned() {
+                if let Some(result) = self.dw.search_results.get(index).cloned() {
                     if let Some(result) =
                         self.database_get_tracks_by_criteria(self.dw.criteria, &result)
                     {

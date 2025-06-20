@@ -37,74 +37,63 @@ use termusiclib::types::Msg;
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use termusiclib::THEME_DIR;
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
-use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
+use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 
 impl Model {
+    pub fn view_config_editor(&mut self) {
+        match self.config_editor.layout {
+            ConfigEditorLayout::General => self.view_config_editor_general(),
+            ConfigEditorLayout::Color => self.view_config_editor_color(),
+            ConfigEditorLayout::Key1 => self.view_config_editor_key1(),
+            ConfigEditorLayout::Key2 => self.view_config_editor_key2(),
+        }
+    }
+
     #[allow(clippy::too_many_lines)]
-    pub fn view_config_editor_general(&mut self) {
+    fn view_config_editor_general(&mut self) {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(3),
-                            Constraint::Min(3),
-                            Constraint::Length(1),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(f.area());
+                let chunks_main = Layout::vertical([
+                    Constraint::Length(3),
+                    Constraint::Min(3),
+                    Constraint::Length(1),
+                ])
+                .split(f.area());
 
-                let chunks_middle = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
-                    .split(chunks_main[1]);
+                let chunks_middle =
+                    Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+                        .split(chunks_main[1]);
 
-                let chunks_middle_left = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[0]);
+                let chunks_middle_left = Layout::vertical([
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[0]);
 
-                let chunks_middle_right = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[1]);
+                let chunks_middle_right = Layout::vertical([
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[1]);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
                 self.app.view(
@@ -219,7 +208,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn view_config_editor_color(&mut self) {
+    fn view_config_editor_color(&mut self) {
         let select_library_foreground_len = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
@@ -376,154 +365,96 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(3), // config header
-                            Constraint::Min(3),
-                            Constraint::Length(1), // config footer
-                        ]
-                        .as_ref(),
-                    )
-                    .split(f.area());
+                let chunks_main = Layout::vertical([
+                    Constraint::Length(3), // config header
+                    Constraint::Min(3),
+                    Constraint::Length(1), // config footer
+                ])
+                .split(f.area());
 
-                let chunks_middle = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)].as_ref())
-                    .split(chunks_main[1]);
+                let chunks_middle =
+                    Layout::horizontal([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)])
+                        .split(chunks_main[1]);
 
-                let chunks_style = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                    .split(chunks_middle[1]);
+                let chunks_style =
+                    Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)])
+                        .split(chunks_middle[1]);
 
-                let chunks_style_top = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Ratio(1, 4), // library
-                            Constraint::Ratio(1, 4), // playlist
-                            Constraint::Ratio(1, 4), // progress
-                            Constraint::Ratio(1, 4), // lyric
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_style[0]);
+                let chunks_style_top = Layout::horizontal([
+                    Constraint::Ratio(1, 4), // library
+                    Constraint::Ratio(1, 4), // playlist
+                    Constraint::Ratio(1, 4), // progress
+                    Constraint::Ratio(1, 4), // lyric
+                ])
+                .split(chunks_style[0]);
 
-                let chunks_style_bottom = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Ratio(1, 4), // important popup
-                            Constraint::Ratio(1, 4), // unused...
-                            Constraint::Ratio(1, 4),
-                            Constraint::Ratio(1, 4),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_style[1]);
+                let chunks_style_bottom = Layout::horizontal([
+                    Constraint::Ratio(1, 4), // important popup
+                    Constraint::Ratio(1, 4), // unused...
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                ])
+                .split(chunks_style[1]);
 
-                let chunks_library = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(1),
-                            Constraint::Length(select_library_foreground_len),
-                            Constraint::Length(select_library_background_len),
-                            Constraint::Length(select_library_border_len),
-                            Constraint::Length(select_library_highlight_len),
-                            Constraint::Length(3),
-                            Constraint::Min(3),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_style_top[0]);
+                let chunks_library = Layout::vertical([
+                    Constraint::Length(1),
+                    Constraint::Length(select_library_foreground_len),
+                    Constraint::Length(select_library_background_len),
+                    Constraint::Length(select_library_border_len),
+                    Constraint::Length(select_library_highlight_len),
+                    Constraint::Length(3),
+                    Constraint::Min(3),
+                ])
+                .split(chunks_style_top[0]);
 
-                let chunks_playlist = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(1),
-                            Constraint::Length(select_playlist_foreground_len),
-                            Constraint::Length(select_playlist_background_len),
-                            Constraint::Length(select_playlist_border_len),
-                            Constraint::Length(select_playlist_highlight_len),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Min(3),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_style_top[1]);
+                let chunks_playlist = Layout::vertical([
+                    Constraint::Length(1),
+                    Constraint::Length(select_playlist_foreground_len),
+                    Constraint::Length(select_playlist_background_len),
+                    Constraint::Length(select_playlist_border_len),
+                    Constraint::Length(select_playlist_highlight_len),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(3),
+                ])
+                .split(chunks_style_top[1]);
 
-                let chunks_progress = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(1),
-                            Constraint::Length(select_progress_foreground_len),
-                            Constraint::Length(select_progress_background_len),
-                            Constraint::Length(select_progress_border_len),
-                            Constraint::Min(3),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_style_top[2]);
+                let chunks_progress = Layout::vertical([
+                    Constraint::Length(1),
+                    Constraint::Length(select_progress_foreground_len),
+                    Constraint::Length(select_progress_background_len),
+                    Constraint::Length(select_progress_border_len),
+                    Constraint::Min(3),
+                ])
+                .split(chunks_style_top[2]);
 
-                let chunks_lyric = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(1),
-                            Constraint::Length(select_lyric_foreground_len),
-                            Constraint::Length(select_lyric_background_len),
-                            Constraint::Length(select_lyric_border_len),
-                            Constraint::Min(3),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_style_top[3]);
+                let chunks_lyric = Layout::vertical([
+                    Constraint::Length(1),
+                    Constraint::Length(select_lyric_foreground_len),
+                    Constraint::Length(select_lyric_background_len),
+                    Constraint::Length(select_lyric_border_len),
+                    Constraint::Min(3),
+                ])
+                .split(chunks_style_top[3]);
 
-                let chunks_important_popup = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(1),
-                            Constraint::Length(select_important_popup_foreground_len),
-                            Constraint::Length(select_important_popup_background_len),
-                            Constraint::Length(select_important_popup_border_len),
-                            Constraint::Min(3),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_style_bottom[0]);
+                let chunks_important_popup = Layout::vertical([
+                    Constraint::Length(1),
+                    Constraint::Length(select_important_popup_foreground_len),
+                    Constraint::Length(select_important_popup_background_len),
+                    Constraint::Length(select_important_popup_border_len),
+                    Constraint::Min(3),
+                ])
+                .split(chunks_style_bottom[0]);
 
-                let chunks_fallback = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(1),
-                            Constraint::Length(select_fallback_foreground_len),
-                            Constraint::Length(select_fallback_background_len),
-                            Constraint::Length(select_fallback_border_len),
-                            Constraint::Length(select_fallback_highlight_len),
-                            Constraint::Min(3),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_style_bottom[1]);
+                let chunks_fallback = Layout::vertical([
+                    Constraint::Length(1),
+                    Constraint::Length(select_fallback_foreground_len),
+                    Constraint::Length(select_fallback_background_len),
+                    Constraint::Length(select_fallback_border_len),
+                    Constraint::Length(select_fallback_highlight_len),
+                    Constraint::Min(3),
+                ])
+                .split(chunks_style_bottom[1]);
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
@@ -703,7 +634,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn view_config_editor_key1(&mut self) {
+    fn view_config_editor_key1(&mut self) {
         let select_global_quit_len = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))
@@ -926,111 +857,75 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(3),
-                            Constraint::Min(3),
-                            Constraint::Length(1),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(f.area());
+                let chunks_main = Layout::vertical([
+                    Constraint::Length(3),
+                    Constraint::Min(3),
+                    Constraint::Length(1),
+                ])
+                .split(f.area());
 
-                let chunks_middle = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Ratio(1, 4),
-                            Constraint::Ratio(1, 4),
-                            Constraint::Ratio(1, 4),
-                            Constraint::Ratio(1, 4),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_main[1]);
+                let chunks_middle = Layout::horizontal([
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                ])
+                .split(chunks_main[1]);
 
-                let chunks_middle_column1 = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(select_global_quit_len),
-                            Constraint::Length(select_global_left_len),
-                            Constraint::Length(select_global_down_len),
-                            Constraint::Length(select_global_up_len),
-                            Constraint::Length(select_global_right_len),
-                            Constraint::Length(select_global_goto_top_len),
-                            Constraint::Length(select_global_goto_bottom_len),
-                            Constraint::Length(select_global_player_toggle_pause_len),
-                            Constraint::Length(select_global_player_next_len),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[0]);
+                let chunks_middle_column1 = Layout::vertical([
+                    Constraint::Length(select_global_quit_len),
+                    Constraint::Length(select_global_left_len),
+                    Constraint::Length(select_global_down_len),
+                    Constraint::Length(select_global_up_len),
+                    Constraint::Length(select_global_right_len),
+                    Constraint::Length(select_global_goto_top_len),
+                    Constraint::Length(select_global_goto_bottom_len),
+                    Constraint::Length(select_global_player_toggle_pause_len),
+                    Constraint::Length(select_global_player_next_len),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[0]);
 
-                let chunks_middle_column2 = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(select_global_player_previous_len),
-                            Constraint::Length(select_global_help_len),
-                            Constraint::Length(select_global_volume_up_len),
-                            Constraint::Length(select_global_volume_down_len),
-                            Constraint::Length(select_global_player_seek_forward_len),
-                            Constraint::Length(select_global_player_seek_backward_len),
-                            Constraint::Length(select_global_player_speed_up_len),
-                            Constraint::Length(select_global_player_speed_down_len),
-                            Constraint::Length(select_global_lyric_adjust_forward_len),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[1]);
-                let chunks_middle_column3 = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(select_global_lyric_adjust_backward_len),
-                            Constraint::Length(select_global_lyric_cycle_len),
-                            Constraint::Length(select_global_layout_treeview_len),
-                            Constraint::Length(select_global_layout_database_len),
-                            Constraint::Length(select_global_player_toggle_gapless_len),
-                            Constraint::Length(select_global_config_len),
-                            Constraint::Length(select_global_save_playlist),
-                            Constraint::Length(select_global_layout_podcast),
-                            Constraint::Length(select_global_xywh_move_left),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[2]);
+                let chunks_middle_column2 = Layout::vertical([
+                    Constraint::Length(select_global_player_previous_len),
+                    Constraint::Length(select_global_help_len),
+                    Constraint::Length(select_global_volume_up_len),
+                    Constraint::Length(select_global_volume_down_len),
+                    Constraint::Length(select_global_player_seek_forward_len),
+                    Constraint::Length(select_global_player_seek_backward_len),
+                    Constraint::Length(select_global_player_speed_up_len),
+                    Constraint::Length(select_global_player_speed_down_len),
+                    Constraint::Length(select_global_lyric_adjust_forward_len),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[1]);
+                let chunks_middle_column3 = Layout::vertical([
+                    Constraint::Length(select_global_lyric_adjust_backward_len),
+                    Constraint::Length(select_global_lyric_cycle_len),
+                    Constraint::Length(select_global_layout_treeview_len),
+                    Constraint::Length(select_global_layout_database_len),
+                    Constraint::Length(select_global_player_toggle_gapless_len),
+                    Constraint::Length(select_global_config_len),
+                    Constraint::Length(select_global_save_playlist),
+                    Constraint::Length(select_global_layout_podcast),
+                    Constraint::Length(select_global_xywh_move_left),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[2]);
 
-                let chunks_middle_column4 = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(select_global_xywh_move_right),
-                            Constraint::Length(select_global_xywh_move_up),
-                            Constraint::Length(select_global_xywh_move_down),
-                            Constraint::Length(select_global_xywh_zoom_in),
-                            Constraint::Length(select_global_xywh_zoom_out),
-                            Constraint::Length(select_global_xywh_hide),
-                            // Constraint::Length(select_global_xywh_hide),
-                            // Constraint::Length(select_global_xywh_hide),
-                            // Constraint::Length(select_global_xywh_hide),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[3]);
+                let chunks_middle_column4 = Layout::vertical([
+                    Constraint::Length(select_global_xywh_move_right),
+                    Constraint::Length(select_global_xywh_move_up),
+                    Constraint::Length(select_global_xywh_move_down),
+                    Constraint::Length(select_global_xywh_zoom_in),
+                    Constraint::Length(select_global_xywh_zoom_out),
+                    Constraint::Length(select_global_xywh_hide),
+                    // Constraint::Length(select_global_xywh_hide),
+                    // Constraint::Length(select_global_xywh_hide),
+                    // Constraint::Length(select_global_xywh_hide),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[3]);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
                 self.app
@@ -1212,7 +1107,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn view_config_editor_key2(&mut self) {
+    fn view_config_editor_key2(&mut self) {
         let select_library_delete_len = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)))
@@ -1427,111 +1322,75 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(3),
-                            Constraint::Min(3),
-                            Constraint::Length(1),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(f.area());
+                let chunks_main = Layout::vertical([
+                    Constraint::Length(3),
+                    Constraint::Min(3),
+                    Constraint::Length(1),
+                ])
+                .split(f.area());
 
-                let chunks_middle = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Ratio(1, 4),
-                            Constraint::Ratio(1, 4),
-                            Constraint::Ratio(1, 4),
-                            Constraint::Ratio(1, 4),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_main[1]);
+                let chunks_middle = Layout::horizontal([
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                ])
+                .split(chunks_main[1]);
 
-                let chunks_middle_column1 = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(select_library_tag_editor_len),
-                            Constraint::Length(select_library_delete_len),
-                            Constraint::Length(select_library_load_dir_len),
-                            Constraint::Length(select_library_yank_len),
-                            Constraint::Length(select_library_paste_len),
-                            Constraint::Length(select_library_search_len),
-                            Constraint::Length(select_library_search_youtube_len),
-                            Constraint::Length(select_playlist_delete_len),
-                            Constraint::Length(select_playlist_delete_all_len),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[0]);
-                let chunks_middle_column2 = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(select_playlist_search_len),
-                            Constraint::Length(select_playlist_shuffle_len),
-                            Constraint::Length(select_playlist_mode_cycle_len),
-                            Constraint::Length(select_playlist_play_selected_len),
-                            Constraint::Length(select_playlist_swap_down_len),
-                            Constraint::Length(select_playlist_swap_up_len),
-                            Constraint::Length(select_database_add_all_len),
-                            Constraint::Length(select_database_add_selected_len),
-                            Constraint::Length(select_playlist_random_album_len),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[1]);
+                let chunks_middle_column1 = Layout::vertical([
+                    Constraint::Length(select_library_tag_editor_len),
+                    Constraint::Length(select_library_delete_len),
+                    Constraint::Length(select_library_load_dir_len),
+                    Constraint::Length(select_library_yank_len),
+                    Constraint::Length(select_library_paste_len),
+                    Constraint::Length(select_library_search_len),
+                    Constraint::Length(select_library_search_youtube_len),
+                    Constraint::Length(select_playlist_delete_len),
+                    Constraint::Length(select_playlist_delete_all_len),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[0]);
+                let chunks_middle_column2 = Layout::vertical([
+                    Constraint::Length(select_playlist_search_len),
+                    Constraint::Length(select_playlist_shuffle_len),
+                    Constraint::Length(select_playlist_mode_cycle_len),
+                    Constraint::Length(select_playlist_play_selected_len),
+                    Constraint::Length(select_playlist_swap_down_len),
+                    Constraint::Length(select_playlist_swap_up_len),
+                    Constraint::Length(select_database_add_all_len),
+                    Constraint::Length(select_database_add_selected_len),
+                    Constraint::Length(select_playlist_random_album_len),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[1]);
 
-                let chunks_middle_column3 = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(select_playlist_random_tracks_len),
-                            Constraint::Length(library_switch_root_len),
-                            Constraint::Length(library_add_root_len),
-                            Constraint::Length(library_remove_root_len),
-                            Constraint::Length(podcast_mark_played_len),
-                            Constraint::Length(podcast_mark_all_played_len),
-                            Constraint::Length(podcast_ep_download_len),
-                            Constraint::Length(podcast_ep_delete_file_len),
-                            Constraint::Length(podcast_delete_feed_len),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[2]);
+                let chunks_middle_column3 = Layout::vertical([
+                    Constraint::Length(select_playlist_random_tracks_len),
+                    Constraint::Length(library_switch_root_len),
+                    Constraint::Length(library_add_root_len),
+                    Constraint::Length(library_remove_root_len),
+                    Constraint::Length(podcast_mark_played_len),
+                    Constraint::Length(podcast_mark_all_played_len),
+                    Constraint::Length(podcast_ep_download_len),
+                    Constraint::Length(podcast_ep_delete_file_len),
+                    Constraint::Length(podcast_delete_feed_len),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[2]);
 
-                let chunks_middle_column4 = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(podcast_delete_all_feeds_len),
-                            Constraint::Length(podcast_refresh_feed_len),
-                            Constraint::Length(podcast_refresh_all_feeds_len),
-                            Constraint::Length(podcast_search_add_feed_len),
-                            // Constraint::Length(podcast_mark_played_len),
-                            // Constraint::Length(podcast_mark_all_played_len),
-                            // Constraint::Length(podcast_ep_download_len),
-                            // Constraint::Length(podcast_ep_delete_file_len),
-                            // Constraint::Length(podcast_delete_feed_len),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_middle[3]);
+                let chunks_middle_column4 = Layout::vertical([
+                    Constraint::Length(podcast_delete_all_feeds_len),
+                    Constraint::Length(podcast_refresh_feed_len),
+                    Constraint::Length(podcast_refresh_all_feeds_len),
+                    Constraint::Length(podcast_search_add_feed_len),
+                    // Constraint::Length(podcast_mark_played_len),
+                    // Constraint::Length(podcast_mark_all_played_len),
+                    // Constraint::Length(podcast_ep_download_len),
+                    // Constraint::Length(podcast_ep_delete_file_len),
+                    // Constraint::Length(podcast_delete_feed_len),
+                    Constraint::Min(0),
+                ])
+                .split(chunks_middle[3]);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
                 self.app

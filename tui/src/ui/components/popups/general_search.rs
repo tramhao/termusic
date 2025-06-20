@@ -1,28 +1,7 @@
-use crate::ui::model::UserEvent;
-/**
- * MIT License
- *
- * termusic - Copyright (c) 2021 Larry Hao
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-use crate::ui::Model;
+//! SPDX-License-Identifier: MIT
+
+use std::path::Path;
+
 use anyhow::{anyhow, bail, Result};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
@@ -34,6 +13,9 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+
+use crate::ui::model::UserEvent;
+use crate::ui::Model;
 
 #[derive(MockComponent)]
 pub struct GSInputPopup {
@@ -440,7 +422,8 @@ impl Model {
                 if let Some(line) = table.get(index) {
                     if let Some(text_span) = line.get(1) {
                         let text = &text_span.content;
-                        self.playlist_add(text)?;
+                        let path = Path::new(text);
+                        self.playlist_add(path)?;
                     }
                 }
             }
@@ -530,7 +513,8 @@ impl Model {
 
     pub fn general_search_after_database_add_playlist(&mut self) -> Result<()> {
         let track = self.general_search_get_info(3)?;
-        self.playlist_add(&track)?;
+        let path = Path::new(&track);
+        self.playlist_add(path)?;
         Ok(())
     }
 

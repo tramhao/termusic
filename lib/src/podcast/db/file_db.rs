@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use indoc::indoc;
 use rusqlite::{named_params, params, Connection, Row};
 
 use super::PodcastDBId;
@@ -57,10 +58,10 @@ impl<'a> FileDBInsertable<'a> {
     /// Insert the current [`FileDBInsertable`] into the `files` table
     #[inline]
     pub fn insert_file(&self, con: &Connection) -> Result<usize, rusqlite::Error> {
-        let mut stmt = con.prepare_cached(
-            "INSERT INTO files (episode_id, path)
-                VALUES (:epid, :path);",
-        )?;
+        let mut stmt = con.prepare_cached(indoc! {"
+            INSERT INTO files (episode_id, path)
+            VALUES (:epid, :path);
+        "})?;
         stmt.execute(named_params![
             ":epid": self.episode_id,
             ":path": self.path.to_string_lossy()

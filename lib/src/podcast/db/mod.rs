@@ -6,6 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, Utc};
 use episode_db::{EpisodeDB, EpisodeDBInsertable};
 use file_db::{FileDB, FileDBInsertable};
+use indoc::indoc;
 use rusqlite::{params, Connection};
 
 use super::{Episode, EpisodeNoId, Podcast, PodcastNoId, RE_ARTICLES};
@@ -313,20 +314,20 @@ impl Database {
     /// Generates list of episodes for a given podcast.
     pub fn get_episodes(&self, pod_id: PodcastDBId, include_hidden: bool) -> Result<Vec<Episode>> {
         let mut stmt = if include_hidden {
-            self.conn.prepare_cached(
+            self.conn.prepare_cached(indoc! {
                 "SELECT episodes.id as epid, files.id as fileid, * FROM episodes
-                        LEFT JOIN files ON episodes.id = files.episode_id
-                        WHERE episodes.podcast_id = ?
-                        ORDER BY pubdate DESC;",
-            )?
+                LEFT JOIN files ON episodes.id = files.episode_id
+                WHERE episodes.podcast_id = ?
+                ORDER BY pubdate DESC;
+            "})?
         } else {
-            self.conn.prepare_cached(
-                "SELECT episodes.id as epid, files.id as fileid, * FROM episodes
-                        LEFT JOIN files ON episodes.id = files.episode_id
-                        WHERE episodes.podcast_id = ?
-                        AND episodes.hidden = 0
-                        ORDER BY pubdate DESC;",
-            )?
+            self.conn.prepare_cached(indoc! {"
+                SELECT episodes.id as epid, files.id as fileid, * FROM episodes
+                LEFT JOIN files ON episodes.id = files.episode_id
+                WHERE episodes.podcast_id = ?
+                AND episodes.hidden = 0
+                ORDER BY pubdate DESC;
+            "})?
         };
 
         let episodes = stmt
@@ -357,12 +358,12 @@ impl Database {
 
     /// Find a single Episode by its Url.
     pub fn get_episode_by_url(&self, ep_uri: &str) -> Result<Episode> {
-        let mut stmt = self.conn.prepare_cached(
-            "SELECT episodes.id as epid, files.id as fileid, * FROM episodes
-                    LEFT JOIN files ON episodes.id = files.episode_id
-                    WHERE episodes.url = ?
-                    ORDER BY pubdate DESC;",
-        )?;
+        let mut stmt = self.conn.prepare_cached(indoc! {"
+            SELECT episodes.id as epid, files.id as fileid, * FROM episodes
+            LEFT JOIN files ON episodes.id = files.episode_id
+            WHERE episodes.url = ?
+            ORDER BY pubdate DESC;
+        "})?;
 
         let episode = stmt
             .query_map(params![ep_uri], |row| {
