@@ -7,10 +7,11 @@ use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use glib::value::FromValue;
 use glib::{ControlFlow, FlagsClass};
-use gstreamer as gst;
 use gstreamer::bus::BusWatchGuard;
 use gstreamer::prelude::*;
+use gstreamer::{self as gst, ResourceError, StreamError};
 use gstreamer::{event::Seek, Element, SeekFlags, SeekType};
 use gstreamer::{ClockTime, StateChangeError, StateChangeSuccess};
 use parking_lot::Mutex;
@@ -86,6 +87,12 @@ impl PlaybinWrap {
         }
     }
 
+    /// Get a abitrary property.
+    #[inline]
+    fn get_prop<V: for<'b> FromValue<'b> + 'static>(&self, key: &str) -> V {
+        self.0.property(key)
+    }
+
     #[inline]
     fn get_position(&self) -> Option<ClockTime> {
         self.0.query_position::<ClockTime>()
@@ -152,6 +159,7 @@ impl PlaybinWrap {
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum PlayerInternalCmd {
     Eos,
+    Error,
     AboutToFinish,
     SkipNext,
     ReloadSpeed,
@@ -243,6 +251,9 @@ impl GStreamerBackend {
         let playbin = PlaybinWrap::new(playbin);
         let playbin_clone = playbin.clone();
         let main_tx_watcher = icmd_tx.clone();
+        // deduplicate errors, as gstreamer spams a bunch of the same error; stores the current-uri
+        let error_watcher: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+
         let bus_watch = playbin
             .0
             .bus()
@@ -254,6 +265,7 @@ impl GStreamerBackend {
                     &main_tx_watcher,
                     &eos_watcher,
                     &media_title_internal,
+                    &error_watcher,
                 )
             })
             .expect("Failed to connect to GStreamer message bus");
@@ -303,6 +315,7 @@ impl GStreamerBackend {
         main_tx: &mpsc::Sender<PlayerInternalCmd>,
         eos_watcher: &Arc<AtomicBool>,
         media_title: &Arc<Mutex<String>>,
+        error_watcher: &Arc<Mutex<Option<String>>>,
     ) -> ControlFlow {
         match msg.view() {
             gst::MessageView::Eos(_) => {
@@ -332,7 +345,46 @@ impl GStreamerBackend {
                 // HACK: gstreamer does not handle seek events before some undocumented time, see other note in main_rx handler
                 let _ = main_tx.blocking_send(PlayerInternalCmd::ReloadSpeed);
             }
-            gst::MessageView::Error(e) => error!("GStreamer Error: {}", e.error()),
+            gst::MessageView::Error(e) => {
+                let err = e.error();
+                error!("GStreamer Error: {err:#?}");
+
+                // KNOWN ISSUES:
+                // This implementation does not work when working with enqueuement, due to gstreamer somehow re-setting "uri" to "current-uri"
+                // instead of still being the error-ing manually set "uri"; this means that we dont know if the currently still playing
+                // track had a error (like decode or something) and should be aborted, or if it was because the new track that was enqueued
+                // had a error and should be skipped instead. Additionally, when this happens and we implement outside "next-uri" tracking, "EOS" will
+                // never get triggered for whatever reason. And finally, Errors themself contain no context about what triggered it.
+                // This effectively means that playback with gst will get stuck on "about to finish" enqueuement if the next track is something like "NotFound".
+
+                // https://gstreamer.freedesktop.org/documentation/gstreamer/gsterror.html?gi-language=c#GstResourceError
+                // this has to be done this way instead of a simple "matches!" call, due to glib not providing a way to get the "code"
+                if err.matches(ResourceError::NotFound)
+                    || err.matches(StreamError::Decode)
+                    || err.matches(StreamError::Demux)
+                    || err.matches(StreamError::CodecNotFound)
+                {
+                    let current_uri: String = playbin.get_prop("current-uri");
+                    let next_uri: String = playbin.get_prop("uri");
+                    trace!("current uri: {current_uri:#?}; next uri: {next_uri:#?}");
+
+                    // only send a error event if both uri's match as otherwise it is unclear which uri the error is for
+                    // though note that at least with gstreamer@0.23.5 they are basically always the same in this path for some reason
+                    if current_uri == next_uri {
+                        let mut lock = error_watcher.lock();
+
+                        // only send a error event if none for the current uri have already been sent
+                        if lock.as_ref().is_none_or(|v| v != &current_uri) {
+                            info!("Recoverable Error, sending Event");
+                            eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
+
+                            let _ = main_tx.blocking_send(PlayerInternalCmd::Error);
+
+                            *lock = Some(current_uri);
+                        }
+                    }
+                }
+            }
             gst::MessageView::Tag(tag) => {
                 if let Some(title) = tag.tags().get::<gst::tags::Title>() {
                     info!("Title: {}", title.get());
@@ -392,6 +444,11 @@ impl GStreamerBackend {
                         error!("error in sending Eos: {e}");
                     }
                 }
+                PlayerInternalCmd::Error => {
+                    if let Err(e) = cmd_tx.send(PlayerCmd::Error) {
+                        error!("error in sending Error: {e}");
+                    }
+                }
                 PlayerInternalCmd::AboutToFinish => {
                     info!("about to finish received by gstreamer internal");
                     if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
@@ -422,9 +479,8 @@ impl PlayerTrait for GStreamerBackend {
             .set_state(gst::State::Ready)
             .expect("set gst state ready error");
         set_uri_from_track(&self.playbin, track);
-        self.playbin
-            .set_state(gst::State::Playing)
-            .expect("set gst state playing error");
+        // state change can fail if for example the current file does not exist
+        let _ = self.playbin.set_state(gst::State::Playing);
     }
 
     fn volume(&self) -> Volume {
@@ -440,7 +496,8 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn pause(&mut self) {
-        self.playbin.pause().expect("set gst state paused error");
+        // state change can fail if for example the current file does not exist
+        let _ = self.playbin.pause();
     }
 
     fn resume(&mut self) {
