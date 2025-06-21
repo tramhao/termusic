@@ -11,8 +11,6 @@ use async_trait::async_trait;
 use parking_lot::Mutex;
 use rodio::OutputStream;
 use rodio::Source;
-use sink::{Sink, SourceOptions};
-use source::async_ring::{AsyncRingSource, AsyncRingSourceProvider, SeekData};
 use std::num::{NonZeroU16, NonZeroUsize};
 use stream_download::http::{
     reqwest::{
@@ -34,10 +32,13 @@ use termusiclib::track::{MediaTypes, Track};
 use tokio::runtime::Handle;
 use tokio::select;
 
+use crate::backends::rusty::decoder::SymphoniaDecoderError;
 use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
 use decoder::buffered_source::BufferedSource;
 use decoder::read_seek_source::ReadSeekSource;
 use decoder::{MediaTitleRx, MediaTitleType, Symphonia};
+use sink::{Sink, SourceOptions};
+use source::async_ring::{AsyncRingSource, AsyncRingSourceProvider, SeekData};
 
 mod decoder;
 mod icy_metadata;
@@ -323,7 +324,7 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
     common_options: &CommonAppendOptions,
     specific_options: &SpecificAppendOptions,
     func: F,
-) {
+) -> Result<(), SymphoniaDecoderError> {
     let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
     let (mut decoder, rx) = match Symphonia::new(
         mss,
@@ -332,7 +333,7 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
     ) {
         Err(err) => {
             error!("Error decoding '{trace}': {err:?}");
-            return;
+            return Err(err);
         }
         Ok(v) => v,
     };
@@ -369,6 +370,8 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
             },
         );
     }
+
+    Ok(())
 }
 
 /// The task that runs the decoder and writes to the ringbuffer, until a error or the consumer closes.
@@ -437,7 +440,7 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
     options: &CommonAppendOptions,
     total_duration_local: &ArcTotalDuration,
     media_title_fn: MT,
-) {
+) -> Result<(), SymphoniaDecoderError> {
     append_to_sink_inner(
         media_source,
         trace,
@@ -460,7 +463,7 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
                 }
             });
         },
-    );
+    )
 }
 
 /// Append the `media_source` to the `sink`, while setting duration to be unknown (to [`None`])
@@ -471,7 +474,7 @@ fn append_to_sink_no_duration(
     sink: &Sink,
     options: &CommonAppendOptions,
     total_duration_local: &ArcTotalDuration,
-) {
+) -> Result<(), SymphoniaDecoderError> {
     append_to_sink_inner(
         media_source,
         trace,
@@ -482,7 +485,7 @@ fn append_to_sink_no_duration(
             // remove old stale duration
             total_duration_local.lock().take();
         },
-    );
+    )
 }
 
 /// Append the `media_source` to the `sink`, while also setting `next_duration_opt`
@@ -498,7 +501,7 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
     media_title_fn: MT,
-) {
+) -> Result<(), SymphoniaDecoderError> {
     append_to_sink_inner(
         media_source,
         trace,
@@ -519,7 +522,7 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
                 }
             });
         },
-    );
+    )
 }
 
 /// Append the `media_source` to the `sink`, while also setting `next_duration_opt` to be unknown (to [`None`])
@@ -533,7 +536,7 @@ fn append_to_sink_queue_no_duration(
     options: &CommonAppendOptions,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
-) {
+) -> Result<(), SymphoniaDecoderError> {
     append_to_sink_inner(
         media_source,
         trace,
@@ -544,7 +547,7 @@ fn append_to_sink_queue_no_duration(
             // remove potential old stale duration
             next_duration_opt.take();
         },
-    );
+    )
 }
 
 /// Common handling of a `media_title` for a [`append_to_sink`] function
@@ -756,7 +759,7 @@ async fn queue_next(
                     },
                     next_duration_opt,
                     common_media_title_cb(media_title.clone()),
-                );
+                )?;
             } else {
                 append_to_sink(
                     Box::new(BufferedSource::new(file, options.file_buf_size)),
@@ -770,7 +773,7 @@ async fn queue_next(
                     },
                     total_duration,
                     common_media_title_cb(media_title.clone()),
-                );
+                )?;
             }
 
             Ok(())
@@ -848,7 +851,7 @@ async fn queue_next(
                         async_decode: false,
                     },
                     next_duration_opt,
-                );
+                )?;
             } else {
                 append_to_sink_no_duration(
                     media_source,
@@ -861,7 +864,7 @@ async fn queue_next(
                         async_decode: false,
                     },
                     total_duration,
-                );
+                )?;
             }
 
             Ok(())
@@ -884,7 +887,7 @@ async fn queue_next(
                         },
                         next_duration_opt,
                         common_media_title_cb(media_title.clone()),
-                    );
+                    )?;
                 } else {
                     append_to_sink(
                         Box::new(BufferedSource::new(file, options.file_buf_size)),
@@ -898,7 +901,7 @@ async fn queue_next(
                         },
                         total_duration,
                         common_media_title_cb(media_title.clone()),
-                    );
+                    )?;
                 }
                 return Ok(());
             }
@@ -930,7 +933,7 @@ async fn queue_next(
                     },
                     next_duration_opt,
                     common_media_title_cb(media_title.clone()),
-                );
+                )?;
             } else {
                 append_to_sink(
                     Box::new(ReadSeekSource::new(reader, file_len)),
@@ -944,7 +947,7 @@ async fn queue_next(
                     },
                     total_duration,
                     common_media_title_cb(media_title.clone()),
-                );
+                )?;
             }
             Ok(())
         }
