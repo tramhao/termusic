@@ -33,6 +33,7 @@
 - Fix(server): periodically save the playlist to disk, if modified. (Instead of only on exit)
 - Fix(server): on mpv backend, when seeking while paused, it now stays paused.
 - Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
+- Fix: allow `--log-file` arguments that dont have a directory component without error.
 
 ### [V0.10.0]
 - Released on: March 8, 2025.
