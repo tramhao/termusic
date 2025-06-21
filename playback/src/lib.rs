@@ -94,6 +94,14 @@ impl PlayerCmdSender {
     }
 }
 
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub enum PlayerErrorType {
+    /// The error happened for the currently playing track.
+    Current,
+    /// The error happened for the track that was tried to be enqueued.
+    Enqueue,
+}
+
 #[derive(Clone, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
@@ -116,6 +124,11 @@ pub enum PlayerCmd {
     TogglePause,
     VolumeDown,
     VolumeUp,
+    /// A Error happened in the backend (for example `NotFound`) that makes it unrecoverable to continue to play the current track.
+    /// This will basically be treated as a [`Eos`](PlayerCmd::Eos), with some extra handling.
+    ///
+    /// This should **not** be used if the whole backend is unrecoverable.
+    Error(PlayerErrorType),
 
     PlaylistPlaySpecific(PlaylistPlaySpecific),
     PlaylistAddTrack(PlaylistAddTrack),
@@ -141,6 +154,9 @@ pub struct GeneralPlayer {
     pub db_podcast: DBPod,
     pub cmd_tx: PlayerCmdSender,
     pub stream_tx: StreamTX,
+
+    /// Keep track of continues backend errors (like `NotFound`) to not keep trying infinitely.
+    pub errors_since_last_progress: usize,
 }
 
 impl GeneralPlayer {
@@ -189,7 +205,19 @@ impl GeneralPlayer {
             cmd_tx,
             stream_tx,
             current_track_updated: false,
+
+            errors_since_last_progress: 0,
         })
+    }
+
+    /// Increment the errors that happened by one.
+    pub fn increment_errors(&mut self) {
+        self.errors_since_last_progress += 1;
+    }
+
+    /// Reset errors that happened back to 0
+    pub fn reset_errors(&mut self) {
+        self.errors_since_last_progress = 0;
     }
 
     /// Create a new [`GeneralPlayer`], with the default Backend ([`BackendSelect::Rusty`])

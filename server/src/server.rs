@@ -3,6 +3,7 @@ mod logger;
 mod music_player_service;
 
 use std::net::SocketAddr;
+use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -20,7 +21,7 @@ use termusiclib::track::MediaTypesSimple;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
+    PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -37,6 +38,10 @@ extern crate log;
 pub const MAX_DEPTH: usize = 4;
 pub const VOLUME_STEP: VolumeSigned = 5;
 pub const SPEED_STEP: SpeedSigned = 1;
+
+/// The Limit of continues errors before stopping playback and awaiting user input to start something specific again.
+// SAFETY: using "unsafe" here as "const unwrap" is MSRV 1.83, we are currently on 1.82
+const BACKEND_ERROR_LIMIT: NonZeroUsize = unsafe { NonZeroUsize::new_unchecked(5) };
 
 /// Stats for the music player responses
 #[derive(Debug, Clone, PartialEq)]
@@ -385,6 +390,9 @@ fn player_loop(
     playlist: SharedPlaylist,
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
+
+    let mut had_enqueue_error = false;
+
     while let Some((cmd, cb)) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {
@@ -423,26 +431,23 @@ fn player_loop(
             }
             PlayerCmd::Eos => {
                 info!("Eos received");
-                let mut playlist = player.playlist.write();
-                if playlist.is_empty() {
-                    drop(playlist);
-                    player.stop();
-                    continue;
+                player_eos(&mut player, had_enqueue_error);
+                had_enqueue_error = false;
+            }
+            PlayerCmd::Error(ty) => {
+                info!("Error received: {ty:#?}");
+                player.increment_errors();
+
+                if ty == PlayerErrorType::Current {
+                    player_eos(&mut player, false);
+                } else {
+                    // delay handling until after finishing the current track
+                    had_enqueue_error = true;
                 }
-                debug!(
-                    "current track index: {:?}",
-                    playlist.get_current_track_index()
-                );
-                playlist.clear_current_track();
-                drop(playlist);
-                player.start_play();
-                debug!(
-                    "playing index is: {}",
-                    player.playlist.read().get_current_track_index()
-                );
             }
             PlayerCmd::GetProgress => {}
             PlayerCmd::SkipPrevious => {
+                player.reset_errors();
                 info!("skip to previous track");
                 player.player_save_last_position();
                 player.previous();
@@ -470,6 +475,7 @@ fn player_loop(
                 }
             }
             PlayerCmd::SkipNext => {
+                player.reset_errors();
                 info!("skip to next track.");
                 player.player_save_last_position();
                 player.next();
@@ -513,11 +519,22 @@ fn player_loop(
                     continue;
                 }
                 if let Some(progress) = player.get_progress() {
+                    let pl_status = playlist.status();
                     p_tick.progress = progress;
+
                     // the following function is "mut", which does not like having the immutable borrow to "playlist"
                     // so we have to unlock first then later re-acquire the handle for later parts
                     drop(playlist);
                     player.mpris_update_progress(&p_tick.progress);
+
+                    // only reset errors if position is either above 0 or total duration is available and is above 0
+                    if pl_status == RunningStatus::Running
+                        && (progress.total_duration.is_some_and(|v| v > Duration::ZERO)
+                            || progress.position.is_some_and(|v| v > Duration::ZERO))
+                    {
+                        player.reset_errors();
+                    }
+
                     playlist = player.playlist.read();
                 }
                 if player.current_track_updated {
@@ -592,6 +609,7 @@ fn player_loop(
             }
 
             PlayerCmd::PlaylistPlaySpecific(info) => {
+                player.reset_errors();
                 info!(
                     "play specific track, idx: {} id: {:#?}",
                     info.track_index, info.id
@@ -613,6 +631,7 @@ fn player_loop(
                 }
             }
             PlayerCmd::PlaylistClear => {
+                player.reset_errors();
                 player.playlist.write().clear();
             }
             PlayerCmd::PlaylistSwapTrack(info) => {
@@ -632,6 +651,44 @@ fn player_loop(
     }
 
     Ok(())
+}
+
+/// Common [`PlayerCmd::Eos`] handler.
+///
+/// Use `use_skip` to skip the next track instead of trying to play it.
+fn player_eos(player: &mut GeneralPlayer, use_skip: bool) {
+    let mut playlist = player.playlist.write();
+    if playlist.is_empty() {
+        drop(playlist);
+        player.stop();
+        return;
+    }
+    if player.errors_since_last_progress >= BACKEND_ERROR_LIMIT.get() {
+        error!(
+            "Stopping playback because too many errors happened in succession; Limit: {}",
+            BACKEND_ERROR_LIMIT.get()
+        );
+        drop(playlist);
+        // this path should also call stop, but currently stop on a non-empty playlist basically resets playback on tick
+        // player.stop();
+        return;
+    }
+    debug!(
+        "current track index: {:?}",
+        playlist.get_current_track_index()
+    );
+    playlist.clear_current_track();
+    drop(playlist);
+    // skip the next one as it had already errored via enqueuement, no need to try again
+    if use_skip {
+        player.next();
+    } else {
+        player.start_play();
+    }
+    debug!(
+        "playing index is: {}",
+        player.playlist.read().get_current_track_index()
+    );
 }
 
 /// Spawn the thread that periodically sends [`PlayerCmd::Tick`]
