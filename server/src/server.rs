@@ -21,7 +21,7 @@ use termusiclib::track::MediaTypesSimple;
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
+    PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -391,6 +391,8 @@ fn player_loop(
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
 
+    let mut had_enqueue_error = false;
+
     while let Some((cmd, cb)) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {
@@ -429,12 +431,19 @@ fn player_loop(
             }
             PlayerCmd::Eos => {
                 info!("Eos received");
-                player_eos(&mut player);
+                player_eos(&mut player, had_enqueue_error);
+                had_enqueue_error = false;
             }
-            PlayerCmd::Error => {
-                info!("Error received");
+            PlayerCmd::Error(ty) => {
+                info!("Error received: {ty:#?}");
                 player.increment_errors();
-                player_eos(&mut player);
+
+                if ty == PlayerErrorType::Current {
+                    player_eos(&mut player, false);
+                } else {
+                    // delay handling until after finishing the current track
+                    had_enqueue_error = true;
+                }
             }
             PlayerCmd::GetProgress => {}
             PlayerCmd::SkipPrevious => {
@@ -645,7 +654,9 @@ fn player_loop(
 }
 
 /// Common [`PlayerCmd::Eos`] handler.
-fn player_eos(player: &mut GeneralPlayer) {
+///
+/// Use `use_skip` to skip the next track instead of trying to play it.
+fn player_eos(player: &mut GeneralPlayer, use_skip: bool) {
     let mut playlist = player.playlist.write();
     if playlist.is_empty() {
         drop(playlist);
@@ -668,7 +679,12 @@ fn player_eos(player: &mut GeneralPlayer) {
     );
     playlist.clear_current_track();
     drop(playlist);
-    player.start_play();
+    // skip the next one as it had already errored via enqueuement, no need to try again
+    if use_skip {
+        player.next();
+    } else {
+        player.start_play();
+    }
     debug!(
         "playing index is: {}",
         player.playlist.read().get_current_track_index()

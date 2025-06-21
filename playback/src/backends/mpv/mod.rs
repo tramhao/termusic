@@ -150,7 +150,8 @@ impl MpvBackend {
                             // -17 = Unknown format
                             if matches!(raw_i32, -13 | -14 | -16 | -17) {
                                 // Note that mpv only errors for the current file and does not pre-evaluate / pre-emit errors for enqueuement
-                                let _ = cmd_tx.send(PlayerCmd::Error);
+                                let _ =
+                                    cmd_tx.send(PlayerCmd::Error(crate::PlayerErrorType::Current));
                             }
                         }
 

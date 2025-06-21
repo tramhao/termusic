@@ -94,6 +94,14 @@ impl PlayerCmdSender {
     }
 }
 
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub enum PlayerErrorType {
+    /// The error happened for the currently playing track.
+    Current,
+    /// The error happened for the track that was tried to be enqueued.
+    Enqueue,
+}
+
 #[derive(Clone, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
@@ -120,7 +128,7 @@ pub enum PlayerCmd {
     /// This will basically be treated as a [`Eos`](PlayerCmd::Eos), with some extra handling.
     ///
     /// This should **not** be used if the whole backend is unrecoverable.
-    Error,
+    Error(PlayerErrorType),
 
     PlaylistPlaySpecific(PlaylistPlaySpecific),
     PlaylistAddTrack(PlaylistAddTrack),

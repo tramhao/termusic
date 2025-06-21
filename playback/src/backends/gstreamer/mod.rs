@@ -19,7 +19,7 @@ use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaTypes, Track};
 use tokio::sync::mpsc;
 
-use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
+use crate::{MediaInfo, PlayerCmd, PlayerErrorType, PlayerProgress, PlayerTrait, Speed, Volume};
 
 /// This trait allows for easy conversion of a path to a URI for gstreamer
 trait PathToURI {
@@ -159,7 +159,7 @@ impl PlaybinWrap {
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum PlayerInternalCmd {
     Eos,
-    Error,
+    Error(PlayerErrorType),
     AboutToFinish,
     SkipNext,
     ReloadSpeed,
@@ -378,7 +378,8 @@ impl GStreamerBackend {
                             info!("Recoverable Error, sending Event");
                             eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
 
-                            let _ = main_tx.blocking_send(PlayerInternalCmd::Error);
+                            let _ = main_tx
+                                .blocking_send(PlayerInternalCmd::Error(PlayerErrorType::Current));
 
                             *lock = Some(current_uri);
                         }
@@ -444,8 +445,8 @@ impl GStreamerBackend {
                         error!("error in sending Eos: {e}");
                     }
                 }
-                PlayerInternalCmd::Error => {
-                    if let Err(e) = cmd_tx.send(PlayerCmd::Error) {
+                PlayerInternalCmd::Error(ty) => {
+                    if let Err(e) = cmd_tx.send(PlayerCmd::Error(ty)) {
                         error!("error in sending Error: {e}");
                     }
                 }
