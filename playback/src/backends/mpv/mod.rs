@@ -140,6 +140,20 @@ impl MpvBackend {
                     }
                     Err(err) => {
                         error!("Event Error: {err:?}");
+
+                        // only trigger recoverable errors for some error types
+                        if let libmpv::Error::Raw(raw_i32) = err {
+                            // https://github.com/mpv-player/mpv/blob/18defc8530caf7694b132a501e9c34476d4cef80/include/mpv/client.h#L278
+                            // -13 = Loading Failed (like File not Found)
+                            // -14 = AO Init failed
+                            // -16 = Nothing to Play (no video / audio streams)
+                            // -17 = Unknown format
+                            if matches!(raw_i32, -13 | -14 | -16 | -17) {
+                                // Note that mpv only errors for the current file and does not pre-evaluate / pre-emit errors for enqueuement
+                                let _ = cmd_tx.send(PlayerCmd::Error);
+                            }
+                        }
+
                         continue;
                     }
                 }
