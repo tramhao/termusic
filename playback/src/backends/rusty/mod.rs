@@ -610,6 +610,16 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                 .await
                 {
                     error!("Failed to enqueue track: {err:#?}");
+
+                    if options.enqueue {
+                        let _ = args
+                            .pcmd_tx
+                            .send(PlayerCmd::Error(crate::PlayerErrorType::Enqueue));
+                    } else {
+                        let _ = args
+                            .pcmd_tx
+                            .send(PlayerCmd::Error(crate::PlayerErrorType::Current));
+                    }
                 }
             }
             PlayerInternalCmd::TogglePause => {

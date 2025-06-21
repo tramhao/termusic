@@ -34,6 +34,7 @@
 - Fix(server): on mpv backend, when seeking while paused, it now stays paused.
 - Fix(server): on mpv backend, skip to next track on error (Like "File Not Found").
 - Fix(server): on gst backend, skip to next track if the current one has a error (Like "File Not Found"). Note that this has a limitation about not working with enqueuement.
+- Fix(server): on rusty backend, skip to next track on error (Like "File Not Found").
 - Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
 
 ### [V0.10.0]
