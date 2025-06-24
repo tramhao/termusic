@@ -31,6 +31,7 @@ mod lyric;
 mod music_library;
 mod playlist;
 mod podcast;
+mod dlna_server;
 mod popups;
 mod progress;
 #[allow(
@@ -51,6 +52,7 @@ pub use global_listener::GlobalListener;
 pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
+pub use dlna_server::DlnaServer;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
 pub use popups::general_search::{GSInputPopup, GSTablePopup, Source};

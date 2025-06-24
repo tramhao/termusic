@@ -18,7 +18,7 @@ use tuirealm::{Frame, State, StateValue};
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
-    Playlist, Progress, Source,
+    Playlist, DlnaServer, Progress, Source,
 };
 use crate::ui::model::{Model, TermusicLayout, UserEvent};
 use crate::ui::utils::{
@@ -93,6 +93,11 @@ impl Model {
                 Msg::DataBase(DBMsg::SearchTracksBlurDown),
                 Msg::DataBase(DBMsg::SearchTracksBlurUp),
             )),
+            Vec::new(),
+        )?;
+        app.mount(
+            Id::DlnaServer,
+            Box::new(DlnaServer::new(tree, None, config.clone())),
             Vec::new(),
         )?;
         app.mount(
