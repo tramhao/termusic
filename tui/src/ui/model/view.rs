@@ -159,8 +159,42 @@ impl Model {
                 TermusicLayout::TreeView => self.view_layout_treeview(),
                 TermusicLayout::DataBase => self.view_layout_database(),
                 TermusicLayout::Podcast => self.view_layout_podcast(),
+                TermusicLayout::DlnaServer => self.view_layout_dlnaserver(),
             }
         }
+    }
+
+    fn view_layout_dlnaserver(&mut self) {
+        self.terminal
+            .raw_mut()
+            .draw(|f| {
+                let [chunks_main, progress, _bottom_help] = Layout::vertical([
+                    Constraint::Min(2),
+                    Constraint::Length(3),
+                    Constraint::Length(1),
+                ])
+                    .areas(f.area());
+                let [center_left, center_right] =
+                    Layout::horizontal([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+                        .areas(chunks_main);
+
+                let [left_podcasts, left_episodes] =
+                    Layout::vertical([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+                        .areas(center_left);
+                let [right_playlist, right_lyric] =
+                    Layout::vertical([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+                        .areas(center_right);
+
+                //self.app.view(&Id::Podcast, f, left_podcasts);
+                //self.app.view(&Id::Episode, f, left_episodes);
+
+                //self.app.view(&Id::Playlist, f, right_playlist);
+                //self.app.view(&Id::Lyric, f, right_lyric);
+                //self.app.view(&Id::Progress, f, progress);
+
+                //Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
+            })
+            .expect("Expected to draw without error");
     }
 
     fn view_layout_podcast(&mut self) {

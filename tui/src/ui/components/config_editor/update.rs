@@ -920,6 +920,9 @@ impl Model {
             IdKey::GlobalLayoutDatabase => {
                 keys.select_view_keys.view_database = binding;
             }
+            IdKey::GlobalLayoutDlnaServer => {
+                keys.select_view_keys.view_dlnaserver = binding;
+            }
             IdKey::GlobalLeft => keys.navigation_keys.left = binding,
             IdKey::GlobalLyricAdjustForward => {
                 keys.lyric_keys.adjust_offset_forwards = binding;

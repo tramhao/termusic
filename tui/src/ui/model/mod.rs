@@ -48,6 +48,7 @@ pub enum TermusicLayout {
     TreeView,
     DataBase,
     Podcast,
+    DlnaServer,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Eq)]
