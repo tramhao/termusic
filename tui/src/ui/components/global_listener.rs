@@ -263,86 +263,81 @@ impl Model {
 
     /// Generate the Clause for any popups to not be mounted.
     fn no_popup_mounted_clause() -> SubClause<Id> {
-        let subclause1 = Self::no_popup_mounted_clause_1();
-        let subclause2 = Self::no_popup_mounted_clause_2();
-        SubClause::And(Box::new(subclause1), Box::new(subclause2))
+        let mut collection = Vec::new();
+
+        Self::podcast_popups(&mut collection);
+        Self::general_popups(&mut collection);
+
+        // dont leave much unused space, as this vec will basically stay for the entire duration of the app
+        collection.shrink_to_fit();
+
+        SubClause::Not(Box::new(SubClause::OrMany(collection)))
     }
 
-    fn no_popup_mounted_clause_2() -> SubClause<Id> {
-        SubClause::Not(Box::new(SubClause::Or(
-            Box::new(SubClause::IsMounted(Id::FeedDeleteConfirmRadioPopup)),
-            Box::new(SubClause::Or(
-                Box::new(SubClause::IsMounted(Id::FeedDeleteConfirmInputPopup)),
-                Box::new(SubClause::IsMounted(Id::PodcastSearchTablePopup)),
-            )),
-        )))
-    }
-
-    fn no_popup_mounted_clause_1() -> SubClause<Id> {
-        SubClause::Not(Box::new(Self::everywhere_popups(Box::new(
-            Self::delete_confirm_popups(Box::new(SubClause::Or(
-                Box::new(SubClause::IsMounted(Id::GeneralSearchInput)),
-                Box::new(SubClause::Or(
-                    Box::new(SubClause::IsMounted(Id::TagEditor(IdTagEditor::LabelHint))),
-                    Box::new(SubClause::Or(
-                        Box::new(SubClause::IsMounted(Id::ConfigEditor(
-                            IdConfigEditor::Footer,
-                        ))),
-                        Box::new(Self::youtube_search_popups(Box::new(SubClause::Or(
-                            Box::new(SubClause::IsMounted(Id::SavePlaylistPopup)),
-                            Box::new(SubClause::Or(
-                                Box::new(SubClause::IsMounted(Id::SavePlaylistConfirm)),
-                                Box::new(SubClause::Or(
-                                    Box::new(SubClause::IsMounted(Id::PodcastAddPopup)),
-                                    Box::new(SubClause::IsMounted(Id::DatabaseAddConfirmPopup)),
-                                )),
-                            )),
-                        )))),
-                    )),
-                )),
-            ))),
-        ))))
-    }
-
-    /// Youtube search popups, see [youtube search](super::popups::youtube_search)
+    /// Podcast related popups.
+    ///
+    /// The values added to `storage` are meant to be used in a [`SubClause::OrMany`].
     #[inline]
-    fn youtube_search_popups(or: Box<SubClause<Id>>) -> SubClause<Id> {
-        SubClause::Or(
-            Box::new(SubClause::IsMounted(Id::YoutubeSearchInputPopup)),
-            Box::new(SubClause::Or(
-                Box::new(SubClause::IsMounted(Id::YoutubeSearchTablePopup)),
-                Box::new(SubClause::Or(
-                    Box::new(SubClause::IsMounted(Id::YoutubeSearchTablePopup)),
-                    or,
-                )),
-            )),
-        )
+    fn podcast_popups(storage: &mut Vec<SubClause<Id>>) {
+        storage.extend([
+            SubClause::IsMounted(Id::FeedDeleteConfirmRadioPopup),
+            SubClause::IsMounted(Id::FeedDeleteConfirmInputPopup),
+            SubClause::IsMounted(Id::PodcastSearchTablePopup),
+            SubClause::IsMounted(Id::PodcastAddPopup),
+        ]);
     }
 
-    /// Delete confirmation popups, anything from the `deleteconfirm` module
+    /// Popups that dont relate to any other place specifically.
+    ///
+    /// The values added to `storage` are meant to be used in a [`SubClause::OrMany`].
     #[inline]
-    fn delete_confirm_popups(or: Box<SubClause<Id>>) -> SubClause<Id> {
-        SubClause::Or(
-            Box::new(SubClause::IsMounted(Id::DeleteConfirmInputPopup)),
-            Box::new(SubClause::Or(
-                Box::new(SubClause::IsMounted(Id::DeleteConfirmRadioPopup)),
-                or,
-            )),
-        )
+    fn general_popups(storage: &mut Vec<SubClause<Id>>) {
+        storage.extend(Self::everywhere_popups());
+        storage.extend(Self::delete_confirm_popups());
+        storage.extend(Self::youtube_search_popups());
+
+        storage.extend([
+            SubClause::IsMounted(Id::GeneralSearchInput),
+            SubClause::IsMounted(Id::TagEditor(IdTagEditor::LabelHint)),
+            SubClause::IsMounted(Id::ConfigEditor(IdConfigEditor::Footer)),
+            SubClause::IsMounted(Id::SavePlaylistPopup),
+            SubClause::IsMounted(Id::SavePlaylistConfirm),
+            SubClause::IsMounted(Id::DatabaseAddConfirmPopup),
+        ]);
     }
 
-    /// Popups that could happen everywhere
+    /// Youtube search popups, see [youtube search](super::popups::youtube_search).
+    ///
+    /// The values returned are meant to be used in a [`SubClause::OrMany`].
     #[inline]
-    fn everywhere_popups(or: Box<SubClause<Id>>) -> SubClause<Id> {
-        SubClause::Or(
-            Box::new(SubClause::IsMounted(Id::HelpPopup)),
-            Box::new(SubClause::Or(
-                Box::new(SubClause::IsMounted(Id::ErrorPopup)),
-                Box::new(SubClause::Or(
-                    Box::new(SubClause::IsMounted(Id::QuitPopup)),
-                    or,
-                )),
-            )),
-        )
+    fn youtube_search_popups() -> [SubClause<Id>; 3] {
+        [
+            SubClause::IsMounted(Id::YoutubeSearchInputPopup),
+            SubClause::IsMounted(Id::YoutubeSearchTablePopup),
+            SubClause::IsMounted(Id::YoutubeSearchTablePopup),
+        ]
+    }
+
+    /// Delete confirmation popups, anything from the `deleteconfirm` module.
+    ///
+    /// The values returned are meant to be used in a [`SubClause::OrMany`].
+    #[inline]
+    fn delete_confirm_popups() -> [SubClause<Id>; 2] {
+        [
+            SubClause::IsMounted(Id::DeleteConfirmInputPopup),
+            SubClause::IsMounted(Id::DeleteConfirmRadioPopup),
+        ]
+    }
+
+    /// Popups that could happen everywhere.
+    ///
+    /// The values returned are meant to be used in a [`SubClause::OrMany`].
+    #[inline]
+    fn everywhere_popups() -> [SubClause<Id>; 3] {
+        [
+            SubClause::IsMounted(Id::HelpPopup),
+            SubClause::IsMounted(Id::ErrorPopup),
+            SubClause::IsMounted(Id::QuitPopup),
+        ]
     }
 }
