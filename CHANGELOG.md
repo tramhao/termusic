@@ -32,6 +32,9 @@
 - Fix(server): on mpv backend, fix possible race condition that could cause a panic by having `time-pos` event before `duration` event.
 - Fix(server): periodically save the playlist to disk, if modified. (Instead of only on exit)
 - Fix(server): on mpv backend, when seeking while paused, it now stays paused.
+- Fix(server): on mpv backend, skip to next track on error (Like "File Not Found").
+- Fix(server): on gst backend, skip to next track if the current one has a error (Like "File Not Found"). Note that this has a limitation about not working with enqueuement.
+- Fix(server): on rusty backend, skip to next track on error (Like "File Not Found" or "Unknown Codec").
 - Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
 
 ### [V0.10.0]
