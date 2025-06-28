@@ -36,6 +36,7 @@
 - Fix(server): on gst backend, skip to next track if the current one has a error (Like "File Not Found"). Note that this has a limitation about not working with enqueuement.
 - Fix(server): on rusty backend, skip to next track on error (Like "File Not Found" or "Unknown Codec").
 - Fix: dont consider non-path Urls (podcasts, radio) for removal after a delete.
+- Fix: allow `--log-file` arguments that dont have a directory component without error.
 
 ### [V0.10.0]
 - Released on: March 8, 2025.
