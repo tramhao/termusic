@@ -70,7 +70,7 @@ pub fn setup(args: &Args) -> LoggerHandle {
     std::panic::set_hook(Box::new(move |panic| {
         // this works because rust will execute the panic hook before unwinding
         let backtrace = Backtrace::capture();
-        error!("Panic occured:\n{}\n{}", panic, backtrace);
+        error!("Panic occured:\n{panic}\n{backtrace}");
         original_hook(panic);
     }));
 

@@ -94,7 +94,7 @@ impl PlayerStats {
 fn main() -> Result<()> {
     // print error to the log and then throw it
     if let Err(err) = actual_main() {
-        error!("Error: {:?}", err);
+        error!("Error: {err:?}");
         return Err(err);
     }
 
@@ -281,7 +281,7 @@ async fn tcp_stream(config: &SharedServerSettings) -> Result<(TcpIncoming, Socke
     // see https://github.com/hyperium/tonic/issues/351
     let tcp_listener = tokio::net::TcpListener::bind(addr)
         .await
-        .with_context(|| format!("Error binding address: {}", addr))?;
+        .with_context(|| format!("Error binding address: {addr}"))?;
 
     // workaround as "TcpIncoming" does not provide a function to get the address
     let socket_addr = tcp_listener.local_addr()?;
@@ -454,7 +454,7 @@ fn player_loop(
             }
             PlayerCmd::ReloadConfig => {
                 if let Err(err) = player.reload_config() {
-                    error!("Reloading config failed, using old: {:#?}", err);
+                    error!("Reloading config failed, using old: {err:#?}");
                 }
             }
             PlayerCmd::ReloadPlaylist => {
@@ -482,7 +482,7 @@ fn player_loop(
             }
             PlayerCmd::SpeedDown => {
                 let new_speed = player.add_speed(-SPEED_STEP);
-                info!("after speed down: {}", new_speed);
+                info!("after speed down: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
                 let mut p_tick = playerstats.lock();
                 p_tick.speed = new_speed;
@@ -490,7 +490,7 @@ fn player_loop(
 
             PlayerCmd::SpeedUp => {
                 let new_speed = player.add_speed(SPEED_STEP);
-                info!("after speed up: {}", new_speed);
+                info!("after speed up: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
                 let mut p_tick = playerstats.lock();
                 p_tick.speed = new_speed;
@@ -587,7 +587,7 @@ fn player_loop(
                 info!("before volumedown: {}", player.volume());
                 let new_volume = player.add_volume(-VOLUME_STEP);
                 player.config.write().settings.player.volume = new_volume;
-                info!("after volumedown: {}", new_volume);
+                info!("after volumedown: {new_volume}");
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
                 player.mpris_volume_update();
@@ -596,7 +596,7 @@ fn player_loop(
                 info!("before volumeup: {}", player.volume());
                 let new_volume = player.add_volume(VOLUME_STEP);
                 player.config.write().settings.player.volume = new_volume;
-                info!("after volumeup: {}", new_volume);
+                info!("after volumeup: {new_volume}");
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
                 player.mpris_volume_update();

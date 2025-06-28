@@ -450,10 +450,7 @@ fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
         |decoder, media_title_rx| {
             // ensured to always exist if `specific_options.media_title = true`
             let mut media_title_rx = media_title_rx.unwrap();
-            std::mem::swap(
-                &mut *total_duration_local.lock(),
-                &mut decoder.total_duration(),
-            );
+            *total_duration_local.lock() = decoder.total_duration();
 
             let handle = Handle::current();
 
@@ -512,7 +509,7 @@ fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static, TD: Display>(
             // ensured to always exist if `specific_options.media_title = true`
             let mut media_title_rx = media_title_rx.unwrap();
 
-            std::mem::swap(next_duration_opt, &mut decoder.total_duration());
+            *next_duration_opt = decoder.total_duration();
 
             let handle = Handle::current();
 
