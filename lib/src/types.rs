@@ -415,6 +415,12 @@ pub enum LIMsg {
     TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DSMsg {
+    TreeStepInto(String),
+    TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DBMsg {
     /// Add all Track Results (from view `Tracks`) to the playlist

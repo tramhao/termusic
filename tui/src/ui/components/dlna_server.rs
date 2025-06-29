@@ -1,3 +1,4 @@
+use std::path::Path;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::types::{GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
@@ -12,11 +13,11 @@ use crate::ui::model::{DownloadTracker, Model, TxToMain, UserEvent};
 pub  struct DlnaServer {
     component: TreeView<String>,
     config: SharedTuiSettings,
-    pub  init: bool,
+    pub init: bool,
 }
 
 impl DlnaServer {
-    pub  fn new(
+    pub fn new(
         tree: &Tree<String>,
         initial_node: Option<String>,
         config: SharedTuiSettings,
@@ -44,11 +45,28 @@ impl DlnaServer {
                 .with_tree(tree.clone())
                 .initial_node(initial_node)
         };
-        
-        Self { 
-            component, 
-            config, 
-            init:  true 
+
+        Self {
+            component,
+            config,
+            init: true
+        }
+    }
+
+    fn handle_left_key(&mut self) -> CmdResult {
+        CmdResult::None
+    }
+    fn handle_right_key(&mut self) -> (CmdResult, Option<Msg>) {
+        let current_node = self.component.tree_state().selected().unwrap();
+        let path: &Path = Path::new(current_node);
+        if path.is_dir() {
+            // TODO: try to load the directory if it is not loaded yet.
+            (self.perform(Cmd::Custom(TREE_CMD_OPEN)), None)
+        } else {
+            (
+                CmdResult::None,
+                Some(Msg::Playlist(PLMsg::Add(path.to_path_buf()))),
+            )
         }
     }
 }
@@ -68,13 +86,40 @@ impl Component<Msg, UserEvent> for DlnaServer {
         let keys = &config.read().settings.keys;
         let result = match ev {
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.left.get() => {
-                //self.handle_left_key()
-                CmdResult::None
+                self.handle_left_key()
             }
-            //Event::Keyboard(KeyEvent {
-            //    code: Key::Left,
-            //    modifiers: KeyModifiers::NONE, 
-            //                }) => self.handle_left_key(),
+            Event::Keyboard(KeyEvent {
+                code: Key::Left,
+                modifiers: KeyModifiers::NONE, 
+            }) => self.handle_left_key(),
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
+                match self.handle_right_key() {
+                    (_, Some(msg)) => return Some(msg),
+                    (cmdresult, None) => cmdresult,
+                }
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Right,
+                modifiers: KeyModifiers::NONE,
+            }) => match self.handle_right_key() {
+                (_, Some(msg)) => return Some(msg),
+                (cmd_result, None) => cmd_result,
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Up,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Up)),
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+
             _ => CmdResult::None,
         };
         match result {
@@ -85,4 +130,8 @@ impl Component<Msg, UserEvent> for DlnaServer {
             _ => Some(Msg::ForceRedraw)
         }
     }
+}
+
+impl Model {
+    
 }
