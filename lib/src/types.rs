@@ -59,7 +59,7 @@ pub enum MainLayoutMsg {
     DataBase,
     /// Switch to the Podcast view
     Podcast,
-    /// Switch to the DLNA Server view
+    /// Switch to the DLNA server view
     DlnaServer,
 }
 

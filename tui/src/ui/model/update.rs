@@ -493,9 +493,36 @@ impl Model {
                 self.playlist_switch_layout();
             }
             MainLayoutMsg::DlnaServer => {
-                self.app.active(&Id::DlnaServer).ok();
+                let mut need_to_set_focus = true;
+                /*if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Podcast, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }
+
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Episode, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Playlist, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }
+
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Lyric, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }*/
+
+                if need_to_set_focus {
+                    self.app.active(&Id::DlnaServer).ok();
+                }
+
                 self.layout = TermusicLayout::DlnaServer;
-                self.playlist_switch_layout();
+                // self.playlist_switch_layout();
             }
         }
 
@@ -917,7 +944,9 @@ impl Model {
                     TermusicLayout::Podcast => {
                         self.update_layout(MainLayoutMsg::TreeView);
                     }
-                    TermusicLayout::DlnaServer => {}
+                    TermusicLayout::DlnaServer => {
+                        self.update_layout(MainLayoutMsg::TreeView);
+                    }
                 },
             }
         }
