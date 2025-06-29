@@ -74,6 +74,8 @@ pub struct Keys {
     pub playlist_keys: KeysPlaylist,
     #[serde(rename = "database")]
     pub database_keys: KeysDatabase,
+    //#[serde(rename = "dlnaserver")]
+    //pub dlna_server_keys: KeysDlnaServer,
     #[serde(rename = "podcast")]
     pub podcast_keys: KeysPodcast,
     #[serde(rename = "adjust_cover_art")]

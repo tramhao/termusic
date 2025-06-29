@@ -57,6 +57,15 @@ impl Footer {
                         "<{}>",
                         config.settings.keys.select_view_keys.view_podcasts
                     ))
+                        .fg(config.settings.theme.fallback_highlight())
+                        .bold(),
+                    TextSpan::new(" DLNA: ")
+                        .fg(config.settings.theme.fallback_foreground())
+                        .bold(),
+                    TextSpan::new(format!(
+                        "<{}>",
+                        config.settings.keys.select_view_keys.view_dlnaserver
+                    ))
                     .fg(config.settings.theme.fallback_highlight())
                     .bold(),
                     TextSpan::new(" Version: ")

@@ -59,6 +59,8 @@ pub enum MainLayoutMsg {
     DataBase,
     /// Switch to the Podcast view
     Podcast,
+    /// Switch to the DLNA Server view
+    DlnaServer,
 }
 
 /// Player relates messages
@@ -516,6 +518,7 @@ pub enum GSMsg {
     PopupShowPlaylist,
     PopupShowEpisode,
     PopupShowPodcast,
+    PopupShowDlnaServer,
     PopupCloseCancel,
     InputBlur,
     PopupUpdateDatabase(String),

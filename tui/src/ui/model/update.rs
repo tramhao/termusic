@@ -149,6 +149,7 @@ impl Model {
                 TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
                 TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
                 TermusicLayout::Podcast => self.app.active(&Id::Podcast).ok(),
+                TermusicLayout::DlnaServer => self.app.active(&Id::DlnaServer).ok(),
             },
         };
         None
@@ -491,6 +492,11 @@ impl Model {
                 self.podcast_sync_feeds_and_episodes();
                 self.playlist_switch_layout();
             }
+            MainLayoutMsg::DlnaServer => {
+                self.app.active(&Id::DlnaServer).ok();
+                self.layout = TermusicLayout::DlnaServer;
+                self.playlist_switch_layout();
+            }
         }
 
         None
@@ -650,6 +656,10 @@ impl Model {
     fn update_general_search(&mut self, msg: &GSMsg) {
         match msg {
             GSMsg::PopupShowDatabase => {
+                self.mount_search_database();
+                self.database_update_search("*");
+            }
+            GSMsg::PopupShowDlnaServer => {
                 self.mount_search_database();
                 self.database_update_search("*");
             }
@@ -820,6 +830,7 @@ impl Model {
                 TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
+                TermusicLayout::DlnaServer => assert!(self.app.active(&Id::DlnaServer).is_ok()),
             },
             PLMsg::NextSong => {
                 self.command(TuiCmd::SkipNext);
@@ -846,6 +857,7 @@ impl Model {
                     assert!(self.app.active(&Id::DBListSearchTracks).is_ok());
                 }
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
+                TermusicLayout::DlnaServer => assert!(self.app.active(&Id::DlnaServer).is_ok()),
             },
         }
     }
@@ -905,6 +917,7 @@ impl Model {
                     TermusicLayout::Podcast => {
                         self.update_layout(MainLayoutMsg::TreeView);
                     }
+                    TermusicLayout::DlnaServer => {}
                 },
             }
         }
