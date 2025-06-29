@@ -59,6 +59,8 @@ pub enum MainLayoutMsg {
     DataBase,
     /// Switch to the Podcast view
     Podcast,
+    /// Switch to the DLNA server view
+    DlnaServer,
 }
 
 /// Player relates messages
@@ -413,6 +415,12 @@ pub enum LIMsg {
     TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DSMsg {
+    TreeStepInto(String),
+    TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DBMsg {
     /// Add all Track Results (from view `Tracks`) to the playlist
@@ -516,6 +524,7 @@ pub enum GSMsg {
     PopupShowPlaylist,
     PopupShowEpisode,
     PopupShowPodcast,
+    PopupShowDlnaServer,
     PopupCloseCancel,
     InputBlur,
     PopupUpdateDatabase(String),

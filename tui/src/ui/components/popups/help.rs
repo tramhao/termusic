@@ -137,6 +137,9 @@ impl HelpPopup {
                         .add_col(Self::key(&[&keys.select_view_keys.view_podcasts]))
                         .add_col(Self::comment("Switch layout to podcast"))
                         .add_row()
+                        .add_col(Self::key(&[&keys.select_view_keys.view_dlnaserver]))
+                        .add_col(Self::comment("Switch layout to DLNA server"))
+                        .add_row()
                         .add_col(Self::key(&[
                             &keys.move_cover_art_keys.move_left,
                             &keys.move_cover_art_keys.move_right,

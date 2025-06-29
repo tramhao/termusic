@@ -810,6 +810,13 @@ impl Model {
             _ => 8,
         };
 
+        let select_global_layout_dlnaserver = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalLayoutDlnaServer),
+        )) {
+            Ok(State::One(_)) => 4,
+            _ => 8,
+        };
+
         let select_global_xywh_move_left = match self.app.state(&Id::ConfigEditor(
             IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft),
         )) {
@@ -908,6 +915,7 @@ impl Model {
                     Constraint::Length(select_global_config_len),
                     Constraint::Length(select_global_save_playlist),
                     Constraint::Length(select_global_layout_podcast),
+                    Constraint::Length(select_global_layout_dlnaserver),
                     Constraint::Length(select_global_xywh_move_left),
                     Constraint::Min(0),
                 ])
