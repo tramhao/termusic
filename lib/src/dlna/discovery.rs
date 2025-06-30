@@ -5,17 +5,21 @@ use crate::dlna::models::DlnaDevice;
 
 const EXTRA: &[&str; 1] = &["roomName"];
 
-pub  async fn discover_devices() -> Result<Vec<DlnaDevice>, Box<dyn Error>> {
+pub async fn discover_devices() -> Result<Vec<DlnaDevice>, Box<dyn Error>> {
     let mut dlna_devices = Vec::new();
+
+    let search_target = URN::device("schemas-upnp-org", "MediaServer", 1).into();
+    let devices =
+        rupnp::discover_with_properties(&search_target, Duration::from_secs(3), None, EXTRA)
+            .await?;
     
-    let search_target = URN::device("schema-upnp-org", "MediaServer", 1).into();
-    let devices = rupnp::discover_with_properties(&search_target, Duration::from_secs(3), None, EXTRA).await?;
-    
+    let mut id = 1;
     futures_util::pin_mut!(devices);
     while let Some(device) = devices.next().await {
         match device {
             Ok(device) => {
-                let dlna_device = convert_device(&device).await?;
+                let dlna_device = convert_device(&device, id).await?;
+                id += 1;
                 dlna_devices.push(dlna_device);
             }
             Err(e) => log::error!("Error discovering devices: {}", e),
@@ -25,10 +29,11 @@ pub  async fn discover_devices() -> Result<Vec<DlnaDevice>, Box<dyn Error>> {
     Ok(dlna_devices)
 }
 
-async fn convert_device(device: &Device) -> Result<DlnaDevice, Box<dyn Error>> {
+async fn convert_device(device: &Device, id: u32) -> Result<DlnaDevice, Box<dyn Error>> {
     let location = device.get_extra_property(EXTRA[0]).unwrap_or_default();
     
     Ok(DlnaDevice {
+        id,
         name: device.friendly_name().to_string(),
         uri: device.url().to_string(),
         udn: device.udn().to_string(),

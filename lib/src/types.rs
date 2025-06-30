@@ -9,6 +9,7 @@ use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
 use anyhow::{anyhow, Result};
 use image::DynamicImage;
+use crate::dlna::models::DlnaDevice;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Msg {
@@ -18,6 +19,7 @@ pub enum Msg {
     DeleteConfirmCloseCancel,
     DeleteConfirmCloseOk,
     DeleteConfirmShow,
+    DlnaServer(DSMsg),
     Download(DLMsg),
     ErrorPopupClose,
     GeneralSearch(GSMsg),
@@ -417,8 +419,8 @@ pub enum LIMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DSMsg {
-    TreeStepInto(String),
-    TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
+    //TreeStepInto(String),
+    TreeNodeReady(RecVec<String, String>, Option<String>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

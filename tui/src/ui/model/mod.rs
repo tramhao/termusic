@@ -73,7 +73,8 @@ pub struct MusicLibraryData {
 /// All data specific to a DLNA Media Server Widget
 #[derive(Debug)]
 pub  struct MediaServerData {
-    pub  tree: Tree<String>,
+    pub tree_path: String,
+    pub tree: Tree<String>,
 }
 
 /// All data specific to the Database Widget / View
@@ -430,6 +431,8 @@ impl Model {
         );
 
         let media_root = Self::loading_tree();
+        Self::discover_servers(tx_to_main.clone()).await;
+        
         Self {
             app,
             quit: false,
@@ -447,6 +450,7 @@ impl Model {
                 yanked_node_id: None,
             },
             media_server: MediaServerData {
+                tree_path: String::from(""),
                 tree: media_root,
             },
             

@@ -1,18 +1,22 @@
 use std::{error::Error, fmt::Write};
+use std::sync::Mutex;
 use rupnp::Device;
 use rupnp::ssdp::URN;
 use serde::de::IntoDeserializer;
+use tuirealm::ratatui::text::ToLine;
 use crate::dlna::models::{DlnaDevice, MediaContainer, MediaItem};
 
 #[derive(Debug)]
 pub struct MediaServerController {
     pub device: DlnaDevice,
+    already_run: bool,
 }
 
 impl MediaServerController {
     pub  fn new(device: DlnaDevice) -> Self {
         Self {
             device,
+            already_run: false,
         }
     }
     
@@ -25,8 +29,17 @@ impl MediaServerController {
         }
         Err("No ContentDirectory service found".into())
     }
-    
-    pub async fn browse_directory(&self, object_id: &str) -> Result<(), Box<dyn Error>> {
+
+    pub async fn browse_directory(&mut self, device: String) -> Result<MediaContainer, Box<dyn Error>> {
+        if self.already_run {
+            return Err("MediaServer already running".into());
+        }
+        self.already_run = true;
+        let mut container = MediaContainer{ id: "0".to_string(), name: device, childs: Vec::new(), items: Vec::new() };
+        self.do_browse_directory("0", container).await
+    }
+        
+    async fn do_browse_directory(&self, object_id: &str, mut container: MediaContainer) -> Result<MediaContainer, Box<dyn Error>> {
         let service = self.find_content_directory().await?;
         
         let mut args = String::new();
@@ -40,36 +53,38 @@ impl MediaServerController {
         let hash_result = service.action(&url, "Browser", &args).await?;
         let result = &hash_result["Result"];
         
-        self.parse_browse_result(&result).await
+        self.parse_browse_result(&result, container).await
     }
     
-    async fn parse_browse_result(&self, result_xml: &str) -> Result<(), Box<dyn Error>> {
-        let mut item_count = 0;
-        
+    async fn parse_browse_result(&self, result_xml: &str, mut container: MediaContainer) -> Result<MediaContainer, Box<dyn Error>> {
+        // let mut item_count = 0;
         if let Ok(didl) = xmltree::Element::parse(result_xml.as_bytes()) {
             for child in didl.children.iter() {
                 if let xmltree::XMLNode::Element(item_elem) = child {
                     if item_elem.name == "container" {
                         if let Some(media_container) = self.parse_media_container(item_elem) {
-                            println!("Container {}", media_container.name);
+                            // println!("Container {}", media_container.name);
                             if media_container.name == "Music" || media_container.name == "All Music" {
-                                Box::pin(self.browse_directory(media_container.id.as_str())).await?;
-
+                                let child_container = Box::pin(self.do_browse_directory(media_container.id.as_str(), media_container.clone())).await?;
+                                //container.childs.push(child_container);
+                                // return Ok(container)
+                                return Ok(child_container)
                             }
                             //Box::pin(self.browse_directory(media_container.id.as_str())).await?;
                         }
                     }
                     if item_elem.name == "item" {
                         if let Some(media_item) = self.parse_media_item(item_elem) {
-                            item_count += 1;
-                            println!("{}: {:?} - {} ({:?}) [{:?}] - {}", media_item.id, media_item.artist, media_item.title, media_item.album, media_item.duration, media_item.url);
+                            container.items.push(media_item);
+                            // item_count += 1;
+                            // println!("{}: {:?} - {} ({:?}) [{:?}] - {}", media_item.id, media_item.artist, media_item.title, media_item.album, media_item.duration, media_item.url);
                         }
                     }
                 }
             }
         }
-        println!("Found {} elements", item_count);
-        Ok(())
+        // println!("Found {} elements", item_count);
+        Ok(container)
     }
 
     fn parse_media_container(&self, item_elem: &xmltree::Element) -> Option<MediaContainer> {
@@ -80,7 +95,7 @@ impl MediaServerController {
             .and_then(|n| if let xmltree::XMLNode::Text(text) = n { Some(text.clone()) } else { None })
             .unwrap_or_else(|| "Unknown title".to_string());
 
-        Some( MediaContainer{ id,  name } )
+        Some( MediaContainer{ id,  name, childs: Vec::new(), items: Vec::new() } )
     }
 
     fn parse_media_item(&self, item_elem: &xmltree::Element) -> Option<MediaItem> {
@@ -90,6 +105,11 @@ impl MediaServerController {
             .and_then(|e| e.children.first())
             .and_then(|n| if let xmltree::XMLNode::Text(text) = n { Some(text.clone()) } else { None })
             .unwrap_or_else(|| "Unknown title".to_string());
+
+        let track = item_elem.get_child("originalTrackNumber")
+            .and_then(|e| e.children.first())
+            .and_then(|n| if let xmltree::XMLNode::Text(text) = n { Some(text.clone()) } else { None })
+            .unwrap_or_else(|| "0".to_string());
 
         let res = item_elem.get_child("res")
             .and_then(|e| e.children.first())
@@ -107,13 +127,19 @@ impl MediaServerController {
             .and_then(|e| e.children.first())
             .and_then(|n| if let xmltree::XMLNode::Text(text) = n { Some(text.clone()) } else { None });
 
+        let genre = item_elem.get_child("genre")
+            .and_then(|e| e.children.first())
+            .and_then(|n| if let xmltree::XMLNode::Text(text) = n { Some(text.clone()) } else { None });
+
         Some( MediaItem {
             id,
+            track,
             title,
             url: res,
             duration,
             artist,
             album,
+            genre,
         })
     }
 

@@ -6,10 +6,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::track::MediaTypesSimple;
-use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg,
-    SavePlaylistMsg, XYWHMsg, YSMsg,
-};
+use termusiclib::types::{DBMsg, DLMsg, DSMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg, SavePlaylistMsg, XYWHMsg, YSMsg};
 use tokio::runtime::Handle;
 use tokio::time::sleep;
 use tuirealm::props::{AttrValue, Attribute};
@@ -57,6 +54,10 @@ impl Update<Msg> for Model {
             }
             Msg::Library(m) => {
                 self.update_library(m);
+                None
+            }
+            Msg::DlnaServer(m) => {
+                self.update_mediaserver(m);
                 None
             }
             Msg::GeneralSearch(m) => {
@@ -625,7 +626,14 @@ impl Model {
             }
         }
     }
-
+    fn update_mediaserver(&mut self, msg: DSMsg) {
+        match msg {
+            DSMsg::TreeNodeReady(vec, focus_node) => {
+                self.mediaserver_apply_as_tree(vec, focus_node);
+            }
+        }
+    }
+    
     fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
             YSMsg::InputPopupShow => {
