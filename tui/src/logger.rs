@@ -35,7 +35,6 @@ pub fn setup(args: &Args) -> LoggerHandle {
                 .parent()
                 .is_some_and(|v| !v.to_string_lossy().is_empty())
             {
-                eprintln!("what {:#?}", args.log_options.log_file.parent());
                 args.log_options.log_file.clone()
             } else {
                 let mut path = PathBuf::from(".");
