@@ -3,6 +3,7 @@
 ### next
 - Unreleased
 - Change: updated MSRV to 1.85
+- Change: updated to `2024` edition
 
 ### [V0.11.0]
 - Released on: July 1, 2025.
