@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -912,19 +912,28 @@ mod test {
                 code: Key::Char('a'),
                 modifier: KeyModifiers::SHIFT,
             };
-            assert_eq!("[code]\ntype = \"Char\"\nargs = \"a\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 1\n", &helper_tostring(val));
+            assert_eq!(
+                "[code]\ntype = \"Char\"\nargs = \"a\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 1\n",
+                &helper_tostring(val)
+            );
 
             let val = BindingForEvent {
                 code: Key::Char('x'),
                 modifier: KeyModifiers::SHIFT | KeyModifiers::CONTROL | KeyModifiers::ALT,
             };
-            assert_eq!("[code]\ntype = \"Char\"\nargs = \"x\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 7\n", &helper_tostring(val));
+            assert_eq!(
+                "[code]\ntype = \"Char\"\nargs = \"x\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 7\n",
+                &helper_tostring(val)
+            );
 
             let val = BindingForEvent {
                 code: Key::Char('s'),
                 modifier: KeyModifiers::SHIFT | KeyModifiers::ALT,
             };
-            assert_eq!("[code]\ntype = \"Char\"\nargs = \"s\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 5\n", &helper_tostring(val));
+            assert_eq!(
+                "[code]\ntype = \"Char\"\nargs = \"s\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 5\n",
+                &helper_tostring(val)
+            );
         }
 
         #[test]

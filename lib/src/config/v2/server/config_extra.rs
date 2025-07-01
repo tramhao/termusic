@@ -2,8 +2,8 @@ use std::{borrow::Cow, fmt::Write as _, path::Path};
 
 use anyhow::{Context, Result};
 use figment::{
-    providers::{Format, Toml},
     Figment,
+    providers::{Format, Toml},
 };
 use serde::{Deserialize, Serialize};
 

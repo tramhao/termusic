@@ -1,4 +1,3 @@
-use crate::config::v2::server::ScanDepth;
 /**
  * MIT License
  *
@@ -23,11 +22,12 @@ use crate::config::v2::server::ScanDepth;
  * SOFTWARE.
  */
 use crate::config::ServerOverlay;
-use crate::track::{parse_metadata_from_file, MetadataOptions, Track, TrackMetadata};
+use crate::config::v2::server::ScanDepth;
+use crate::track::{MetadataOptions, Track, TrackMetadata, parse_metadata_from_file};
 use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
 use anyhow::Context;
 use parking_lot::Mutex;
-use rusqlite::{params, Connection, Error, Result};
+use rusqlite::{Connection, Error, Result, params};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -37,7 +37,7 @@ use track_db::TrackDBInsertable;
 mod migration;
 mod track_db;
 
-pub use track_db::{const_unknown, Indexable, TrackDB};
+pub use track_db::{Indexable, TrackDB, const_unknown};
 
 #[allow(clippy::doc_markdown)]
 /// The SQLite Database interface.

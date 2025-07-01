@@ -1,16 +1,16 @@
 //! SPDX-License-Identifier: MIT
 
 use std::cmp;
-use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use libmpv::Mpv;
 use libmpv::{
-    events::{Event, PropertyData},
     Format,
+    events::{Event, PropertyData},
 };
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;

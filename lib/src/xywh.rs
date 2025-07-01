@@ -1,5 +1,5 @@
 use crate::config::v2::tui::{Alignment, CoverArtPosition};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use image::DynamicImage;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

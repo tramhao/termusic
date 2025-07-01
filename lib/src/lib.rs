@@ -23,7 +23,7 @@ pub mod xywh;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 pub static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
 
 #[macro_use]

@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use id3::frame::Lyrics;
 use lofty::{
     config::WriteOptions,
@@ -16,7 +16,7 @@ use lofty::{
 };
 use termusiclib::{
     songtag::lrc::Lyric,
-    track::{parse_metadata_from_file, LyricData, MetadataOptions, Track},
+    track::{LyricData, MetadataOptions, Track, parse_metadata_from_file},
 };
 
 use crate::ui::model::ExtraLyricData;

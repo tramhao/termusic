@@ -3,10 +3,10 @@ use termusiclib::ids::Id;
 use termusiclib::types::Msg;
 use tui_realm_stdlib::Input;
 use tuirealm::{
+    Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, InputType},
-    Component, Event, MockComponent, State, StateValue,
 };
 
 use crate::ui::model::{Model, UserEvent};
@@ -129,33 +129,35 @@ impl Model {
     /// Mount a [`DeleteConfirmRadioPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
     /// as [`Id::DeleteConfirmRadioPopup`].
     pub fn mount_confirm_radio(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::DeleteConfirmRadioPopup,
-                Box::new(DeleteConfirmRadioPopup::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::DeleteConfirmRadioPopup,
+                    Box::new(DeleteConfirmRadioPopup::new(self.config_tui.clone())),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::DeleteConfirmRadioPopup).is_ok());
     }
 
     /// Mount a [`DeleteConfirmInputPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
     /// as [`Id::DeleteConfirmInputPopup`].
     pub fn mount_confirm_input(&mut self, title: &str) {
-        assert!(self
-            .app
-            .remount(
-                Id::DeleteConfirmInputPopup,
-                Box::new(DeleteConfirmInputPopup::new(
-                    &self.config_tui.read(),
-                    title,
-                    Msg::DeleteConfirmCloseOk,
-                    Msg::DeleteConfirmCloseCancel
-                )),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::DeleteConfirmInputPopup,
+                    Box::new(DeleteConfirmInputPopup::new(
+                        &self.config_tui.read(),
+                        title,
+                        Msg::DeleteConfirmCloseOk,
+                        Msg::DeleteConfirmCloseCancel
+                    )),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::DeleteConfirmInputPopup).is_ok());
     }
 }

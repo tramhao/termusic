@@ -1,13 +1,13 @@
-use std::fs::{remove_dir_all, remove_file, rename, DirEntry};
+use std::fs::{DirEntry, remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
-use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use termusiclib::config::v2::server::ScanDepth;
+use anyhow::{Context, Result, bail};
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::v2::server::ScanDepth;
+use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::ids::Id;
 use termusiclib::types::{GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
-use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
+use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE, Tree, TreeView};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
@@ -192,30 +192,30 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 },
             ) => return Some(Msg::Library(LIMsg::TreeBlur)),
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.delete.get() => {
-                return Some(Msg::DeleteConfirmShow)
+                return Some(Msg::DeleteConfirmShow);
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
-                return Some(Msg::Library(LIMsg::Yank))
+                return Some(Msg::Library(LIMsg::Yank));
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.paste.get() => {
-                return Some(Msg::Library(LIMsg::Paste))
+                return Some(Msg::Library(LIMsg::Paste));
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.cycle_root.get() => {
-                return Some(Msg::Library(LIMsg::SwitchRoot))
+                return Some(Msg::Library(LIMsg::SwitchRoot));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.add_root.get() => {
-                return Some(Msg::Library(LIMsg::AddRoot))
+                return Some(Msg::Library(LIMsg::AddRoot));
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.remove_root.get() => {
-                return Some(Msg::Library(LIMsg::RemoveRoot))
+                return Some(Msg::Library(LIMsg::RemoveRoot));
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary))
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.youtube_search.get() => {
-                return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow))
+                return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow));
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.open_tag_editor.get() => {
                 let current_node = self.component.tree_state().selected().unwrap();

@@ -1,7 +1,7 @@
 use std::{
     fmt::Display,
     net::{IpAddr, SocketAddr},
-    num::{NonZeroU32, NonZeroU8},
+    num::{NonZeroU8, NonZeroU32},
     path::PathBuf,
 };
 
@@ -482,9 +482,9 @@ mod v1_interop {
     use std::num::TryFromIntError;
 
     use super::{
-        backends::BackendSettings, Backend, ComSettings, LoopMode, NonZeroU32, NonZeroU8,
-        PlayerSettings, PodcastSettings, PositionYesNo, PositionYesNoLower, RememberLastPosition,
-        ScanDepth, SeekStep, ServerSettings,
+        Backend, ComSettings, LoopMode, NonZeroU8, NonZeroU32, PlayerSettings, PodcastSettings,
+        PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
+        ServerSettings, backends::BackendSettings,
     };
     use crate::config::v1;
 
@@ -529,7 +529,9 @@ mod v1_interop {
     #[derive(Debug, Clone, PartialEq, thiserror::Error)]
     pub enum ServerSettingsConvertError {
         /// Recieved a zero value expecting a non-zero value
-        #[error("Zero value where expecting a non-zero value. old-config key: '{old_key}', new-config key: '{new_key}', error: {source}")]
+        #[error(
+            "Zero value where expecting a non-zero value. old-config key: '{old_key}', new-config key: '{new_key}', error: {source}"
+        )]
         ZeroValue {
             old_key: &'static str,
             new_key: &'static str,

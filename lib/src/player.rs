@@ -1,5 +1,5 @@
 #![allow(clippy::module_name_repetitions)]
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 
 // using lower mod to restrict clippy
 #[allow(clippy::pedantic)]
@@ -364,7 +364,7 @@ fn clamp_u16(val: u32) -> u16 {
 pub mod playlist_helpers {
     use anyhow::Context;
 
-    use super::{protobuf, unwrap_msg, PlaylistTracksToRemoveClear};
+    use super::{PlaylistTracksToRemoveClear, protobuf, unwrap_msg};
 
     /// A Id / Source for a given Track
     #[derive(Debug, Clone, PartialEq)]

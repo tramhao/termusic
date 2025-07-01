@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use regex::Regex;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
@@ -20,7 +20,7 @@ use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use super::TETrack;
 use crate::ui::model::{ExtraLyricData, UserEvent};
-use crate::ui::{model::TermusicLayout, Model};
+use crate::ui::{Model, model::TermusicLayout};
 
 /// Regex for finding <br/> tags -- also captures any surrounding
 /// line breaks
@@ -124,14 +124,15 @@ impl Component<Msg, UserEvent> for Lyric {
 
 impl Model {
     pub fn lyric_reload(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::Lyric,
-                Box::new(Lyric::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::Lyric,
+                    Box::new(Lyric::new(self.config_tui.clone())),
+                    Vec::new()
+                )
+                .is_ok()
+        );
         self.lyric_update_title();
         self.lyric_set_lyric(self.lyric_line.clone());
     }

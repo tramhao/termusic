@@ -8,13 +8,13 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::{bail, Context as _, Result};
+use anyhow::{Context as _, Result, bail};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
-use termusiclib::config::{new_shared_server_settings, ServerOverlay, SharedServerSettings};
+use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
 use termusiclib::track::MediaTypesSimple;
@@ -29,8 +29,8 @@ use tokio::sync::{broadcast, oneshot};
 use tokio::task::JoinHandle;
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
-use tonic::transport::server::TcpIncoming;
 use tonic::transport::Server;
+use tonic::transport::server::TcpIncoming;
 
 #[macro_use]
 extern crate log;

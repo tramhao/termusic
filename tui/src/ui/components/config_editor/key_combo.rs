@@ -23,9 +23,9 @@ use std::fmt::Display;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use anyhow::{bail, Result};
-use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
+use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
 use termusiclib::ids::{Id, IdConfigEditor, IdKey};
 use termusiclib::types::{ConfigEditorMsg, KFMsg, Msg};
 use tui_realm_stdlib::utils::get_block;

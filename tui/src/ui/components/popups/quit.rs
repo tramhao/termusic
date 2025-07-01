@@ -24,7 +24,7 @@ use termusiclib::ids::Id;
  * SOFTWARE.
  */
 use termusiclib::types::Msg;
-use tuirealm::{props::Alignment, Component, Event, MockComponent};
+use tuirealm::{Component, Event, MockComponent, props::Alignment};
 
 use crate::ui::model::{Model, UserEvent};
 
@@ -60,14 +60,15 @@ impl Component<Msg, UserEvent> for QuitPopup {
 impl Model {
     /// Mount quit popup
     pub fn mount_quit_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::QuitPopup,
-                Box::new(QuitPopup::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::QuitPopup,
+                    Box::new(QuitPopup::new(self.config_tui.clone())),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::QuitPopup).is_ok());
     }
 }

@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use termusiclib::config::{v2::server::Backend as ConfigBackend, SharedServerSettings};
+use termusiclib::config::{SharedServerSettings, v2::server::Backend as ConfigBackend};
 
 use crate::{PlayerCmdSender, PlayerTrait};
 
@@ -53,7 +53,7 @@ impl TryFrom<ConfigBackend> for BackendSelect {
             _ => {
                 return Err(BackendSelectConvertError::UnavailableBackend(
                     value.to_string(),
-                ))
+                ));
             }
         })
     }

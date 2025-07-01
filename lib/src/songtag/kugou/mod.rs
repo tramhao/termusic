@@ -25,7 +25,7 @@ mod model;
 
 use crate::{songtag::service::SongTagServiceError, utils::random_ascii};
 
-use super::{service::SongTagService, ServiceProvider, SongTag, UrlTypes};
+use super::{ServiceProvider, SongTag, UrlTypes, service::SongTagService};
 use anyhow::anyhow;
 use bytes::Buf;
 use lofty::picture::Picture;

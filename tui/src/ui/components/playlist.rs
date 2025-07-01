@@ -2,14 +2,14 @@ use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
 
-use anyhow::{anyhow, bail, Context as _, Result};
+use anyhow::{Context as _, Result, anyhow, bail};
 use rand::seq::IndexedRandom;
-use termusiclib::config::v2::server::LoopMode;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::v2::server::LoopMode;
 use termusiclib::ids::Id;
-use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::library_db::SearchCriteria;
 use termusiclib::library_db::TrackDB;
+use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
     PlaylistTrackSource,
@@ -26,17 +26,17 @@ use tui_realm_stdlib::Table;
 use tuirealm::props::Borders;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::{
+    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
+    event::{Key, KeyEvent},
+};
+use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::KeyModifiers,
 };
-use tuirealm::{
-    event::{Key, KeyEvent},
-    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
-};
 
+use crate::ui::Model;
 use crate::ui::model::{TermusicLayout, UserEvent};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
-use crate::ui::Model;
 
 #[derive(MockComponent)]
 pub struct Playlist {
@@ -132,19 +132,19 @@ impl Component<Msg, UserEvent> for Playlist {
             Event::Keyboard(key) if key == keys.playlist_keys.delete.get() => {
                 match self.component.state() {
                     State::One(StateValue::Usize(index_selected)) => {
-                        return Some(Msg::Playlist(PLMsg::Delete(index_selected)))
+                        return Some(Msg::Playlist(PLMsg::Delete(index_selected)));
                     }
                     _ => CmdResult::None,
                 }
             }
             Event::Keyboard(key) if key == keys.playlist_keys.delete_all.get() => {
-                return Some(Msg::Playlist(PLMsg::DeleteAll))
+                return Some(Msg::Playlist(PLMsg::DeleteAll));
             }
             Event::Keyboard(key) if key == keys.playlist_keys.shuffle.get() => {
-                return Some(Msg::Playlist(PLMsg::Shuffle))
+                return Some(Msg::Playlist(PLMsg::Shuffle));
             }
             Event::Keyboard(key) if key == keys.playlist_keys.cycle_loop_mode.get() => {
-                return Some(Msg::Playlist(PLMsg::LoopModeCycle))
+                return Some(Msg::Playlist(PLMsg::LoopModeCycle));
             }
             Event::Keyboard(key) if key == keys.playlist_keys.play_selected.get() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
@@ -163,7 +163,7 @@ impl Component<Msg, UserEvent> for Playlist {
                 CmdResult::None
             }
             Event::Keyboard(key) if key == keys.playlist_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist))
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist));
             }
             Event::Keyboard(key) if key == keys.playlist_keys.swap_down.get() => {
                 match self.component.state() {
@@ -200,14 +200,15 @@ impl Component<Msg, UserEvent> for Playlist {
 
 impl Model {
     pub fn playlist_reload(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::Playlist,
-                Box::new(Playlist::new(self.config_tui.clone())),
-                Vec::new()
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::Playlist,
+                    Box::new(Playlist::new(self.config_tui.clone())),
+                    Vec::new()
+                )
+                .is_ok()
+        );
         self.playlist_switch_layout();
         self.playlist_sync();
     }
@@ -792,14 +793,15 @@ impl Model {
 
     /// Select the given index in the playlist list component
     pub fn playlist_locate(&mut self, index: usize) {
-        assert!(self
-            .app
-            .attr(
-                &Id::Playlist,
-                Attribute::Value,
-                AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .attr(
+                    &Id::Playlist,
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
+                )
+                .is_ok()
+        );
     }
 
     /// Get the current selected index in the playlist list component

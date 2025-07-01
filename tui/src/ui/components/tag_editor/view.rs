@@ -32,10 +32,10 @@ use anyhow::Result;
 use std::borrow::Cow;
 use std::path::Path;
 use termusiclib::ids::{Id, IdTagEditor};
+use tuirealm::State;
 use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
-use tuirealm::State;
 
 use super::TETrack;
 
@@ -372,45 +372,49 @@ impl Model {
 
     /// Set the Lyric section of the tag-editor to "No Lyrics" (ie clear state)
     fn init_by_song_no_lyric(&mut self) {
-        assert!(self
-            .app
-            .attr(
-                &Id::TagEditor(IdTagEditor::SelectLyric),
-                Attribute::Content,
-                AttrValue::Payload(PropPayload::Vec(
-                    ["Empty"]
-                        .iter()
-                        .map(|x| PropValue::Str((*x).to_string()))
-                        .collect(),
-                )),
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .attr(
-                &Id::TagEditor(IdTagEditor::CounterDelete),
-                Attribute::Value,
-                AttrValue::Payload(PropPayload::None),
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .attr(
+                    &Id::TagEditor(IdTagEditor::SelectLyric),
+                    Attribute::Content,
+                    AttrValue::Payload(PropPayload::Vec(
+                        ["Empty"]
+                            .iter()
+                            .map(|x| PropValue::Str((*x).to_string()))
+                            .collect(),
+                    )),
+                )
+                .is_ok()
+        );
+        assert!(
+            self.app
+                .attr(
+                    &Id::TagEditor(IdTagEditor::CounterDelete),
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::None),
+                )
+                .is_ok()
+        );
 
-        assert!(self
-            .app
-            .attr(
-                &Id::TagEditor(IdTagEditor::TextareaLyric),
-                Attribute::Title,
-                AttrValue::Title(("Empty Lyrics".to_string(), Alignment::Left))
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .attr(
-                &Id::TagEditor(IdTagEditor::TextareaLyric),
-                Attribute::Text,
-                AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
-                    "No Lyrics."
-                )),]))
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .attr(
+                    &Id::TagEditor(IdTagEditor::TextareaLyric),
+                    Attribute::Title,
+                    AttrValue::Title(("Empty Lyrics".to_string(), Alignment::Left))
+                )
+                .is_ok()
+        );
+        assert!(
+            self.app
+                .attr(
+                    &Id::TagEditor(IdTagEditor::TextareaLyric),
+                    Attribute::Text,
+                    AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(
+                        TextSpan::from("No Lyrics.")
+                    ),]))
+                )
+                .is_ok()
+        );
     }
 }

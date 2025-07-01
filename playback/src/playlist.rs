@@ -5,23 +5,23 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use parking_lot::RwLock;
 use pathdiff::diff_paths;
-use rand::seq::SliceRandom;
 use rand::Rng;
-use termusiclib::config::v2::server::LoopMode;
+use rand::seq::SliceRandom;
 use termusiclib::config::SharedServerSettings;
-use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
-use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
-use termusiclib::player::playlist_helpers::PlaylistTrackSource;
-use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
+use termusiclib::config::v2::server::LoopMode;
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistShuffledInfo;
 use termusiclib::player::PlaylistSwapInfo;
 use termusiclib::player::PlaylistTracks;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
+use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
+use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
+use termusiclib::player::playlist_helpers::PlaylistTrackSource;
+use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
 use termusiclib::player::{self, RunningStatus};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
@@ -795,11 +795,17 @@ impl Playlist {
         let at_index = usize::try_from(tracks.at_index).unwrap();
 
         if at_index >= self.tracks.len() {
-            bail!("at_index is higher than the length of the playlist! at_index is \"{at_index}\" and playlist length is \"{}\"", self.tracks.len());
+            bail!(
+                "at_index is higher than the length of the playlist! at_index is \"{at_index}\" and playlist length is \"{}\"",
+                self.tracks.len()
+            );
         }
 
         if at_index + tracks.tracks.len().saturating_sub(1) >= self.tracks.len() {
-            bail!("at_index + tracks to remove is higher than the length of the playlist! playlist lenght is \"{}\"", self.tracks.len());
+            bail!(
+                "at_index + tracks to remove is higher than the length of the playlist! playlist lenght is \"{}\"",
+                self.tracks.len()
+            );
         }
 
         for input_track in tracks.tracks {

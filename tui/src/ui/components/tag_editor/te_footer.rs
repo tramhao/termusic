@@ -1,5 +1,5 @@
 use termusiclib::{config::TuiOverlay, types::Msg};
-use tuirealm::{props::TextSpan, Component, Event, MockComponent};
+use tuirealm::{Component, Event, MockComponent, props::TextSpan};
 
 use crate::ui::{components::LabelSpan, model::UserEvent};
 
