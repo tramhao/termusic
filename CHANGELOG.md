@@ -3,6 +3,7 @@
 ### next
 - Unreleased
 - Change: updated MSRV to 1.85
+- Change: updated to `2024` edition
 - Change(tui): increase connection timeout from 5s to 30s, but print a message on original time.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
 

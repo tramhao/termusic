@@ -4,7 +4,7 @@ members = ["lib", "playback", "server", "tui"]
 
 [workspace.package]
 authors = ["tramhao <haoxinkui@gmail.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
 repository = "https://github.com/tramhao/termusic"
