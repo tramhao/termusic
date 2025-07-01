@@ -1,6 +1,7 @@
 ## ChangeLog
 
-### next
+### [V0.11.0]
+- Released on: July 1, 2025.
 - Change: updated MSRV to 1.82.
 - Change: support Unix Domain Sockets in addition to HTTP transport. (Note that UDS is only available for `unix` targets)
 - Change: change default transport protocol to be UDS on `unix` systems.

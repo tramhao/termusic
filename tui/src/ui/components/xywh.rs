@@ -260,7 +260,9 @@ impl Model {
                     width: Some(xywh.width),
                     height: None,
                     // Force the specific protocol we probed for earlier
+                    #[cfg(feature = "cover-viuer-iterm")]
                     use_iterm: self.viuer_supported == ViuerSupported::ITerm,
+                    #[cfg(feature = "cover-viuer-kitty")]
                     use_kitty: self.viuer_supported == ViuerSupported::Kitty,
                     #[cfg(feature = "cover-viuer-sixel")]
                     use_sixel: self.viuer_supported == ViuerSupported::Sixel,
