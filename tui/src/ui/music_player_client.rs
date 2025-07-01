@@ -143,7 +143,7 @@ impl Playback {
 
     pub async fn subscribe_to_stream_updates(
         &mut self,
-    ) -> Result<impl Stream<Item = Result<termusiclib::player::StreamUpdates>>> {
+    ) -> Result<impl Stream<Item = Result<termusiclib::player::StreamUpdates>> + use<>> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.subscribe_server_updates(request).await?;
         let response = response.into_inner().map(|res| res.map_err(Into::into));
