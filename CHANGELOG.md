@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+- Unreleased
+- Change: updated MSRV to 1.85
+
 ### [V0.11.0]
 - Released on: July 1, 2025.
 - Change: updated MSRV to 1.82.
