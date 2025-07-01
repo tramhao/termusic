@@ -1,9 +1,9 @@
 use std::fmt::Display;
 use std::fs::File;
 use std::path::Path;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
@@ -13,11 +13,11 @@ use rodio::OutputStream;
 use rodio::Source;
 use std::num::{NonZeroU16, NonZeroUsize};
 use stream_download::http::{
-    reqwest::{
-        header::{HeaderMap, HeaderValue},
-        Client,
-    },
     HttpStream,
+    reqwest::{
+        Client,
+        header::{HeaderMap, HeaderValue},
+    },
 };
 use stream_download::source::SourceStream;
 use stream_download::storage::bounded::BoundedStorageProvider;

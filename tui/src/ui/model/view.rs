@@ -3,18 +3,19 @@
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::types::{DBMsg, Msg, PCMsg};
 use termusiclib::utils::get_parent_folder;
 use tui_realm_treeview::Tree;
+use tuirealm::EventListenerCfg;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
-use tuirealm::EventListenerCfg;
 use tuirealm::{Frame, State, StateValue};
 
+use crate::ui::Application;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
@@ -24,7 +25,6 @@ use crate::ui::model::{Model, TermusicLayout, UserEvent};
 use crate::ui::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute,
 };
-use crate::ui::Application;
 
 impl Model {
     #[allow(clippy::too_many_lines)]
@@ -44,13 +44,14 @@ impl Model {
         Self::mount_main(&mut app, config, tree).unwrap();
 
         // Mount global hotkey listener
-        assert!(app
-            .mount(
+        assert!(
+            app.mount(
                 Id::GlobalListener,
                 Box::new(GlobalListener::new(config.clone())),
                 Self::subscribe(&config.read().settings.keys),
             )
-            .is_ok());
+            .is_ok()
+        );
         // Active library
         assert!(app.active(&Id::Library).is_ok());
         app

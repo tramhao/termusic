@@ -5,12 +5,12 @@ use std::sync::Arc;
 use std::thread::{self, sleep};
 use std::time::Duration;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
+use lofty::TextEncoding;
 use lofty::config::WriteOptions;
 use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
-use lofty::TextEncoding;
 use service::SongTagService;
 use tokio::sync::mpsc::UnboundedSender;
 use ytd_rs::{Arg, YoutubeDL};

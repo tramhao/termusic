@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
 use rand::seq::SliceRandom;
 use serde_json::Value;
 // left for debug

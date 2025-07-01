@@ -1,13 +1,13 @@
 use std::{collections::HashMap, time::Duration};
 
 use anyhow::anyhow;
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use bytes::Buf as _;
 use libaes::Cipher;
 use lofty::picture::Picture;
 use model::{to_lyric, to_song_info, to_song_url};
 use num_bigint::BigUint;
-use rand::{rngs::OsRng, TryRngCore};
+use rand::{TryRngCore, rngs::OsRng};
 use reqwest::{Client, ClientBuilder, RequestBuilder};
 
 use crate::songtag::ServiceProvider;

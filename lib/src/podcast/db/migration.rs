@@ -1,6 +1,6 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use indoc::indoc;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use semver::Version;
 
 /// The Current Database schema version this application is meant to run against

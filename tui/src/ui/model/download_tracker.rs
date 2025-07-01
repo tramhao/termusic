@@ -111,7 +111,9 @@ impl DownloadTracker {
     pub fn message_download_error_response(&self, title: &str) -> String {
         let len = self.len();
         if len > 0 {
-            format!(" Failed to download item: {title:^.10}! No response from website. {len} downloads are still running. ",)
+            format!(
+                " Failed to download item: {title:^.10}! No response from website. {len} downloads are still running. ",
+            )
         } else {
             format!(" Failed to download item: {title:^.20}. No response from website.")
         }

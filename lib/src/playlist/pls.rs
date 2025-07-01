@@ -1,6 +1,6 @@
 //! Decode File and Title parts from simple playlist PLS files
 
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::{HashMap, hash_map::Entry};
 
 use super::PlaylistValue;
 

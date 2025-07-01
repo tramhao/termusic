@@ -31,8 +31,8 @@ use reqwest::{Client, ClientBuilder};
 use std::time::Duration;
 
 use super::{
-    service::{SongTagService, SongTagServiceError, SongTagServiceErrorWhere},
     ServiceProvider, SongTag, UrlTypes,
+    service::{SongTagService, SongTagServiceError, SongTagServiceErrorWhere},
 };
 
 const URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";

@@ -3,7 +3,7 @@ use std::{fmt, num::NonZeroU64, time::Duration};
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
-        codecs::{self, CodecParameters, CODEC_TYPE_NULL},
+        codecs::{self, CODEC_TYPE_NULL, CodecParameters},
         errors::Error,
         formats::{FormatOptions, FormatReader, SeekMode, SeekTo, Track},
         io::MediaSourceStream,
@@ -15,7 +15,7 @@ use symphonia::{
 };
 use tokio::sync::mpsc;
 
-use super::{source::SampleType, Source};
+use super::{Source, source::SampleType};
 
 pub mod buffered_source;
 pub mod read_seek_source;

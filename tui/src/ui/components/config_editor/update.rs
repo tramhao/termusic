@@ -1,4 +1,3 @@
-use crate::ui::tui_cmd::TuiCmd;
 /**
  * MIT License
  *
@@ -23,13 +22,14 @@ use crate::ui::tui_cmd::TuiCmd;
  * SOFTWARE.
  */
 use crate::ui::Model;
+use crate::ui::tui_cmd::TuiCmd;
 use anyhow::Context;
 use termusiclib::config::new_shared_tui_settings;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::v2::tui::keys::KeyBinding;
-use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::theme::ThemeColors;
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::ids::{Id, IdConfigEditor, IdKey};
 use termusiclib::types::{ConfigEditorMsg, KFMsg, Msg};
 use termusiclib::utils::get_app_config_path;

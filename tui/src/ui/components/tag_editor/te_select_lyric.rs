@@ -65,7 +65,7 @@ impl Component<Msg, UserEvent> for TESelectLyric {
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                return Some(Msg::TagEditor(TEMsg::TERename))
+                return Some(Msg::TagEditor(TEMsg::TERename));
             }
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => match self.state() {
                 State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose)),
@@ -76,7 +76,7 @@ impl Component<Msg, UserEvent> for TESelectLyric {
                 _ => self.perform(Cmd::Cancel),
             },
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
@@ -86,7 +86,7 @@ impl Component<Msg, UserEvent> for TESelectLyric {
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 match self.state() {
                     State::One(_) => {
-                        return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp)))
+                        return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp)));
                     }
                     _ => self.perform(Cmd::Move(Direction::Up)),
                 }
@@ -94,7 +94,7 @@ impl Component<Msg, UserEvent> for TESelectLyric {
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
                 match self.state() {
                     State::One(_) => {
-                        return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)))
+                        return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)));
                     }
                     _ => self.perform(Cmd::Move(Direction::Down)),
                 }
@@ -103,13 +103,13 @@ impl Component<Msg, UserEvent> for TESelectLyric {
                 code: Key::Down, ..
             }) => match self.state() {
                 State::One(_) => {
-                    return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)))
+                    return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)));
                 }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
                 State::One(_) => {
-                    return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp)))
+                    return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp)));
                 }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },

@@ -450,8 +450,10 @@ mod tests {
             AlacrittyColor::from_hex("#01010101"),
             Err(ColorParseError::IncorrectLength(8))
         );
-        assert!(AlacrittyColor::from_hex("#ZZZZZZ")
-            .unwrap_err()
-            .is_parseint_error());
+        assert!(
+            AlacrittyColor::from_hex("#ZZZZZZ")
+                .unwrap_err()
+                .is_parseint_error()
+        );
     }
 }

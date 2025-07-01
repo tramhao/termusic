@@ -25,22 +25,22 @@ mod cli;
 mod logger;
 mod ui;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use flexi_logger::LogSpecification;
 use parking_lot::Mutex;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
 use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::{
-    new_shared_server_settings, new_shared_tui_settings, ServerOverlay, SharedServerSettings,
-    SharedTuiSettings, TuiOverlay,
+    ServerOverlay, SharedServerSettings, SharedTuiSettings, TuiOverlay, new_shared_server_settings,
+    new_shared_tui_settings,
 };
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::task::AbortHandle;

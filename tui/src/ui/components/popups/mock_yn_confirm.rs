@@ -2,10 +2,10 @@ use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::types::Msg;
 use tui_realm_stdlib::Radio;
 use tuirealm::{
+    AttrValue, Attribute, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction},
     event::{Key, KeyEvent},
     props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue},
-    AttrValue, Attribute, Event, MockComponent, State, StateValue,
 };
 
 use crate::ui::model::UserEvent;

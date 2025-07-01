@@ -3,10 +3,10 @@ use termusiclib::ids::Id;
 use termusiclib::types::{Msg, PCMsg};
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::{
+    Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan},
-    Component, Event, MockComponent, State, StateValue,
 };
 
 use crate::ui::components::popups::DeleteConfirmInputPopup;
@@ -164,10 +164,10 @@ impl Component<Msg, UserEvent> for PodcastSearchTablePopup {
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
+                return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel));
             }
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
-                return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
+                return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel));
             }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
@@ -223,14 +223,15 @@ impl Component<Msg, UserEvent> for PodcastSearchTablePopup {
 
 impl Model {
     pub fn mount_feed_delete_confirm_radio(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::FeedDeleteConfirmRadioPopup,
-                Box::new(FeedDeleteConfirmRadioPopup::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::FeedDeleteConfirmRadioPopup,
+                    Box::new(FeedDeleteConfirmRadioPopup::new(self.config_tui.clone())),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::FeedDeleteConfirmRadioPopup).is_ok());
     }
 
@@ -240,19 +241,20 @@ impl Model {
         }
     }
     pub fn mount_feed_delete_confirm_input(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::FeedDeleteConfirmInputPopup,
-                Box::new(DeleteConfirmInputPopup::new(
-                    &self.config_tui.read(),
-                    "You're about the erase all feeds.",
-                    Msg::Podcast(PCMsg::FeedsDeleteCloseOk),
-                    Msg::Podcast(PCMsg::FeedsDeleteCloseCancel)
-                )),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::FeedDeleteConfirmInputPopup,
+                    Box::new(DeleteConfirmInputPopup::new(
+                        &self.config_tui.read(),
+                        "You're about the erase all feeds.",
+                        Msg::Podcast(PCMsg::FeedsDeleteCloseOk),
+                        Msg::Podcast(PCMsg::FeedsDeleteCloseCancel)
+                    )),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::FeedDeleteConfirmInputPopup).is_ok());
     }
     pub fn umount_feed_delete_confirm_input(&mut self) {
@@ -262,14 +264,15 @@ impl Model {
     }
 
     pub fn mount_podcast_search_table(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::PodcastSearchTablePopup,
-                Box::new(PodcastSearchTablePopup::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::PodcastSearchTablePopup,
+                    Box::new(PodcastSearchTablePopup::new(self.config_tui.clone())),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::PodcastSearchTablePopup).is_ok());
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
@@ -323,14 +326,15 @@ impl Model {
     }
 
     pub fn mount_podcast_add_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::PodcastAddPopup,
-                Box::new(PodcastAddPopup::new(&self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::PodcastAddPopup,
+                    Box::new(PodcastAddPopup::new(&self.config_tui.read())),
+                    vec![]
+                )
+                .is_ok()
+        );
 
         assert!(self.app.active(&Id::PodcastAddPopup).is_ok());
     }

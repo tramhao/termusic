@@ -5,7 +5,7 @@ use std::{
 };
 
 use indoc::indoc;
-use rusqlite::{named_params, Connection, Row};
+use rusqlite::{Connection, Row, named_params};
 
 use crate::track::{Track, TrackMetadata};
 

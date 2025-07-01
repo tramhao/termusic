@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 
 use crate::utils::StringUtils;
 
-use super::{Menuable, EPISODE_DURATION_LENGTH, EPISODE_PUBDATE_LENGTH};
+use super::{EPISODE_DURATION_LENGTH, EPISODE_PUBDATE_LENGTH, Menuable};
 
 /// Struct holding data about an individual podcast episode. Most of this
 /// is metadata, but if the episode has been downloaded to the local

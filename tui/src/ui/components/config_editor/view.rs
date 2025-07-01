@@ -1,12 +1,13 @@
+use crate::ui::Application;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::utils::draw_area_in_absolute;
-use crate::ui::Application;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use include_dir::DirEntry;
-use std::num::{NonZeroU32, NonZeroU8};
+use std::num::{NonZeroU8, NonZeroU32};
 use std::path::PathBuf;
+use termusiclib::THEME_DIR;
 use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::ids::{Id, IdConfigEditor, IdKey};
@@ -35,7 +36,6 @@ use termusiclib::types::Msg;
  * SOFTWARE.
  */
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
-use termusiclib::THEME_DIR;
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
@@ -1575,10 +1575,11 @@ impl Model {
         self.remount_config_keys().unwrap();
 
         // Active Config Editor
-        assert!(self
-            .app
-            .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
-            .is_ok());
+        assert!(
+            self.app
+                .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+                .is_ok()
+        );
 
         if let Err(e) = self.theme_select_load_themes() {
             self.mount_error_popup(e.context("load themes"));
@@ -1605,14 +1606,15 @@ impl Model {
 
         self.umount_config_keys().unwrap();
 
-        assert!(self
-            .app
-            .remount(
-                Id::GlobalListener,
-                Box::new(GlobalListener::new(self.config_tui.clone())),
-                Self::subscribe(&self.config_tui.read().settings.keys),
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::GlobalListener,
+                    Box::new(GlobalListener::new(self.config_tui.clone())),
+                    Self::subscribe(&self.config_tui.read().settings.keys),
+                )
+                .is_ok()
+        );
 
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
@@ -1628,17 +1630,18 @@ impl Model {
             ConfigEditorLayout::Key2 => self.config_editor.layout = ConfigEditorLayout::General,
         }
 
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(
-                    self.config_editor.layout,
-                    &self.config_tui.read()
-                )),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::ConfigEditor(IdConfigEditor::Header),
+                    Box::new(CEHeader::new(
+                        self.config_editor.layout,
+                        &self.config_tui.read()
+                    )),
+                    vec![]
+                )
+                .is_ok()
+        );
         match self.config_editor.layout {
             ConfigEditorLayout::General => self
                 .app
@@ -1663,18 +1666,20 @@ impl Model {
 
     /// Mount quit popup
     pub fn mount_config_save_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::ConfigSavePopup),
-                Box::new(ConfigSavePopup::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .active(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::ConfigEditor(IdConfigEditor::ConfigSavePopup),
+                    Box::new(ConfigSavePopup::new(self.config_tui.clone())),
+                    vec![]
+                )
+                .is_ok()
+        );
+        assert!(
+            self.app
+                .active(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
+                .is_ok()
+        );
     }
 
     #[allow(clippy::too_many_lines)]
@@ -1967,13 +1972,14 @@ impl Model {
 
             index.unwrap_or(0)
         };
-        assert!(self
-            .app
-            .attr(
-                &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
-                Attribute::Value,
-                AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .attr(
+                    &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
+                )
+                .is_ok()
+        );
     }
 }

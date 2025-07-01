@@ -5,7 +5,7 @@ use std::sync::{Arc, LazyLock};
 use std::thread;
 use std::time::Duration;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
@@ -137,11 +137,11 @@ impl Model {
 
         if let Some(domain) = &self.youtube_options.invidious_instance.domain {
             let title = format!(
-                    "\u{2500}\u{2500}\u{2500} Page {} \u{2500}\u{2500}\u{2500}\u{2524} {} \u{251c}\u{2500}\u{2500} {} \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
-                    self.youtube_options.page(),
-                    "Tab/Shift+Tab switch pages",
-                    domain,
-                );
+                "\u{2500}\u{2500}\u{2500} Page {} \u{2500}\u{2500}\u{2500}\u{2524} {} \u{251c}\u{2500}\u{2500} {} \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
+                self.youtube_options.page(),
+                "Tab/Shift+Tab switch pages",
+                domain,
+            );
             self.app
                 .attr(
                     &Id::YoutubeSearchTablePopup,

@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 use indoc::indoc;
-use rusqlite::{named_params, params, Connection, Row};
+use rusqlite::{Connection, Row, named_params, params};
 
-use super::{convert_date, PodcastDBId};
+use super::{PodcastDBId, convert_date};
 use crate::podcast::PodcastNoId;
 
 /// A struct representing a podcast feed in the database

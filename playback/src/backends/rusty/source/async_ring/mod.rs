@@ -2,8 +2,8 @@ use std::{fmt::Debug, future::Future, iter::FusedIterator, sync::Arc, time::Dura
 
 use anyhow::anyhow;
 use async_ringbuf::{
-    traits::{AsyncConsumer, AsyncProducer, Consumer, Observer, Split},
     AsyncHeapRb,
+    traits::{AsyncConsumer, AsyncProducer, Consumer, Observer, Split},
 };
 use parking_lot::RwLock;
 use rodio::Source;
@@ -798,10 +798,10 @@ mod tests {
         use symphonia::core::audio::{Channels, SignalSpec};
 
         use crate::backends::rusty::source::{
-            async_ring::{
-                AsyncRingSource, MessageDataFirst, MessageSpec, RingMsgWrite2, MIN_RING_SIZE,
-            },
             SampleType,
+            async_ring::{
+                AsyncRingSource, MIN_RING_SIZE, MessageDataFirst, MessageSpec, RingMsgWrite2,
+            },
         };
 
         #[tokio::test]

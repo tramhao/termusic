@@ -26,12 +26,14 @@ use crate::songtag::UrlTypes;
  * SOFTWARE.
  */
 use super::super::{ServiceProvider, SongTag};
-use base64::{engine::general_purpose, Engine as _};
-use serde_json::{from_str, json, Value};
+use base64::{Engine as _, engine::general_purpose};
+use serde_json::{Value, from_str, json};
 
 #[derive(Debug, thiserror::Error)]
 pub enum KugouParseError {
-    #[error("Expected field \"{field}\" to have code \"{expected}\", got \"{got}\", errcode: \"{errcode:#?}\"")]
+    #[error(
+        "Expected field \"{field}\" to have code \"{expected}\", got \"{got}\", errcode: \"{errcode:#?}\""
+    )]
     UnexpectedStatus {
         field: &'static str,
         got: String,

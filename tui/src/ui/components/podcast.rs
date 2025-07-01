@@ -1,13 +1,13 @@
 use std::time::Duration;
 
-use anyhow::{anyhow, bail, Result};
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use anyhow::{Result, anyhow, bail};
+use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use reqwest::ClientBuilder;
-use sanitize_filename::{sanitize_with_options, Options};
+use sanitize_filename::{Options, sanitize_with_options};
 use serde_json::Value;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
-use termusiclib::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
+use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
 use termusiclib::types::{GSMsg, Msg, PCMsg};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::List;
@@ -15,12 +15,12 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
 use tuirealm::props::{Borders, PropPayload, PropValue};
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
+    event::{Key, KeyEvent, KeyModifiers},
 };
 
-use crate::ui::model::UserEvent;
 use crate::ui::Model;
+use crate::ui::model::UserEvent;
 
 #[derive(MockComponent)]
 pub struct FeedsList {
@@ -174,7 +174,7 @@ impl Component<Msg, UserEvent> for FeedsList {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowPodcast))
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowPodcast));
             }
             _ => CmdResult::None,
         };
@@ -342,7 +342,7 @@ impl Component<Msg, UserEvent> for EpisodeList {
                 CmdResult::None
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowEpisode))
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowEpisode));
             }
             _ => CmdResult::None,
         };
@@ -1041,23 +1041,25 @@ impl Model {
     }
 
     pub fn podcast_locate_episode(&mut self, pod_index: usize, ep_index: usize) {
-        assert!(self
-            .app
-            .attr(
-                &Id::Podcast,
-                Attribute::Value,
-                AttrValue::Payload(PropPayload::One(PropValue::Usize(pod_index))),
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .attr(
+                    &Id::Podcast,
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::Usize(pod_index))),
+                )
+                .is_ok()
+        );
         self.podcast_sync_episodes().ok();
-        assert!(self
-            .app
-            .attr(
-                &Id::Episode,
-                Attribute::Value,
-                AttrValue::Payload(PropPayload::One(PropValue::Usize(ep_index))),
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .attr(
+                    &Id::Episode,
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::Usize(ep_index))),
+                )
+                .is_ok()
+        );
         // update description of episode
         self.lyric_update();
     }
