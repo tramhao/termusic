@@ -273,8 +273,7 @@ impl TETrack {
         if !self.lyric_frames.is_empty() {
             for lyric in &self.lyric_frames {
                 let lang = if lyric.lang.len() == 3 {
-                    let lang = lyric.lang.as_bytes()[0..3].try_into().unwrap();
-                    lang
+                    lyric.lang.as_bytes()[0..3].try_into().unwrap()
                 } else {
                     *b"eng"
                 };
