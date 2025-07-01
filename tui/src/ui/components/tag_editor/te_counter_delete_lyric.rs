@@ -246,10 +246,10 @@ impl Component<Msg, UserEvent> for TECounterDelete {
         // Get command
         let _cmd = match ev {
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                return Some(Msg::TagEditor(TEMsg::TERename))
+                return Some(Msg::TagEditor(TEMsg::TERename));
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
@@ -260,20 +260,20 @@ impl Component<Msg, UserEvent> for TECounterDelete {
                 code: Key::Down, ..
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown))),
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)));
             }
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
             }
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)));
             }
 
             Event::Keyboard(KeyEvent {

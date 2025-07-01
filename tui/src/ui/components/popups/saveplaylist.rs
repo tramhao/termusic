@@ -4,10 +4,10 @@ use termusiclib::ids::Id;
 use termusiclib::types::{Msg, SavePlaylistMsg};
 use tui_realm_stdlib::Input;
 use tuirealm::{
+    Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, InputType},
-    Component, Event, MockComponent, State, StateValue,
 };
 
 use crate::ui::model::{Model, UserEvent};
@@ -79,7 +79,7 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
                 State::One(StateValue::String(input_string)) => {
                     return Some(Msg::SavePlaylist(SavePlaylistMsg::PopupCloseOk(
                         input_string,
-                    )))
+                    )));
                 }
                 _ => CmdResult::None,
             },
@@ -131,14 +131,15 @@ impl Component<Msg, UserEvent> for SavePlaylistConfirmPopup {
 
 impl Model {
     pub fn mount_save_playlist(&mut self) -> Result<()> {
-        assert!(self
-            .app
-            .remount(
-                Id::SavePlaylistPopup,
-                Box::new(SavePlaylistPopup::new(&self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::SavePlaylistPopup,
+                    Box::new(SavePlaylistPopup::new(&self.config_tui.read())),
+                    vec![]
+                )
+                .is_ok()
+        );
 
         self.remount_save_playlist_label("")?;
         assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
@@ -153,17 +154,18 @@ impl Model {
     }
 
     pub fn mount_save_playlist_confirm(&mut self, filename: &str) {
-        assert!(self
-            .app
-            .remount(
-                Id::SavePlaylistConfirm,
-                Box::new(SavePlaylistConfirmPopup::new(
-                    self.config_tui.clone(),
-                    filename
-                )),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::SavePlaylistConfirm,
+                    Box::new(SavePlaylistConfirmPopup::new(
+                        self.config_tui.clone(),
+                        filename
+                    )),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::SavePlaylistConfirm).is_ok());
     }
 

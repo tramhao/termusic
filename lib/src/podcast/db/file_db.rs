@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use indoc::indoc;
-use rusqlite::{named_params, params, Connection, Row};
+use rusqlite::{Connection, Row, named_params, params};
 
 use super::PodcastDBId;
 

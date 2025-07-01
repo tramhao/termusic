@@ -14,7 +14,7 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use reqwest::Url;
 
 use crate::utils;

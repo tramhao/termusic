@@ -2,12 +2,12 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use ahash::AHashMap;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use chrono::{DateTime, Utc};
 use episode_db::{EpisodeDB, EpisodeDBInsertable};
 use file_db::{FileDB, FileDBInsertable};
 use indoc::indoc;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 
 use super::{Episode, EpisodeNoId, Podcast, PodcastNoId, RE_ARTICLES};
 use crate::track::Track;

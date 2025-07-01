@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use either::Either;
-use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::ids::Id;
 use termusiclib::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
 use termusiclib::library_db::{Indexable, SearchCriteria, TrackDB};
@@ -14,13 +14,13 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::Borders;
 use tuirealm::props::{Alignment, BorderType, Table, TableBuilder, TextSpan};
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
+    event::{Key, KeyEvent, KeyModifiers},
 };
 
 use super::popups::{YNConfirm, YNConfirmStyle};
-use crate::ui::model::UserEvent;
 use crate::ui::Model;
+use crate::ui::model::UserEvent;
 
 /// Helper trait to accomedate mutable access to `self` while also allowing access to other `self` properties for [`common_list_movement`].
 trait OnKeyDB {
@@ -241,7 +241,7 @@ impl Component<Msg, UserEvent> for DBListCriteria {
                 }
 
                 Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                    return Either::Right(Msg::GeneralSearch(GSMsg::PopupShowDatabase))
+                    return Either::Right(Msg::GeneralSearch(GSMsg::PopupShowDatabase));
                 }
                 _ => CmdResult::None,
             };
@@ -673,43 +673,46 @@ impl Model {
     }
 
     pub fn database_reload(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::DBListCriteria,
-                Box::new(DBListCriteria::new(
-                    self.config_tui.clone(),
-                    Msg::DataBase(DBMsg::CriteriaBlurDown),
-                    Msg::DataBase(DBMsg::CriteriaBlurUp)
-                )),
-                Vec::new()
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::DBListCriteria,
+                    Box::new(DBListCriteria::new(
+                        self.config_tui.clone(),
+                        Msg::DataBase(DBMsg::CriteriaBlurDown),
+                        Msg::DataBase(DBMsg::CriteriaBlurUp)
+                    )),
+                    Vec::new()
+                )
+                .is_ok()
+        );
 
-        assert!(self
-            .app
-            .remount(
-                Id::DBListSearchResult,
-                Box::new(DBListSearchResult::new(
-                    self.config_tui.clone(),
-                    Msg::DataBase(DBMsg::SearchResultBlurDown),
-                    Msg::DataBase(DBMsg::SearchResultBlurUp)
-                )),
-                Vec::new()
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
-                Id::DBListSearchTracks,
-                Box::new(DBListSearchTracks::new(
-                    self.config_tui.clone(),
-                    Msg::DataBase(DBMsg::SearchTracksBlurDown),
-                    Msg::DataBase(DBMsg::SearchTracksBlurUp)
-                )),
-                Vec::new()
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::DBListSearchResult,
+                    Box::new(DBListSearchResult::new(
+                        self.config_tui.clone(),
+                        Msg::DataBase(DBMsg::SearchResultBlurDown),
+                        Msg::DataBase(DBMsg::SearchResultBlurUp)
+                    )),
+                    Vec::new()
+                )
+                .is_ok()
+        );
+        assert!(
+            self.app
+                .remount(
+                    Id::DBListSearchTracks,
+                    Box::new(DBListSearchTracks::new(
+                        self.config_tui.clone(),
+                        Msg::DataBase(DBMsg::SearchTracksBlurDown),
+                        Msg::DataBase(DBMsg::SearchTracksBlurUp)
+                    )),
+                    Vec::new()
+                )
+                .is_ok()
+        );
 
         self.dw.reset_search_results();
         self.database_sync_tracks();

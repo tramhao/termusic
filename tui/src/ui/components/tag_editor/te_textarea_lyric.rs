@@ -65,20 +65,20 @@ impl Component<Msg, UserEvent> for TETextareaLyric {
         let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                return Some(Msg::TagEditor(TEMsg::TERename))
+                return Some(Msg::TagEditor(TEMsg::TERename));
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurDown)))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurDown)));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurUp))),
             Event::Keyboard(k) if k == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
             }
             Event::Keyboard(k) if k == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..

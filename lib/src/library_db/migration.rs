@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use rusqlite::Connection;
 
 /// The Current Database schema version this application is meant to run against
@@ -40,7 +40,9 @@ pub(super) fn migrate(conn: &Connection) -> Result<()> {
 
     if user_version < LOWEST_MIGRATEABLE_VERSION && user_version != 0 {
         // TODO: maybe we should just error out or have the whole file deleted instead of just resetting parts
-        warn!("Found Database, but had lower than lowest migrateable version, resetting! Version: {user_version}");
+        warn!(
+            "Found Database, but had lower than lowest migrateable version, resetting! Version: {user_version}"
+        );
 
         conn.execute("DROP TABLE tracks", [])
             .context("Dropping \"tracks\" table")?;

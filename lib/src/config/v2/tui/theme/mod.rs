@@ -286,7 +286,9 @@ impl From<ThemeColor> for String {
 pub enum ThemeColorHexParseError {
     #[error("Failed to parse color because of {0}")]
     ParseIntError(#[from] ParseIntError),
-    #[error("Failed to parse color because of incorrect length {0}, expected prefix \"#\" or \"0x\" and length 6")]
+    #[error(
+        "Failed to parse color because of incorrect length {0}, expected prefix \"#\" or \"0x\" and length 6"
+    )]
     IncorrectLength(usize),
     #[error("Failed to parse color becazse of unknown prefix \"{0}\", expected \"#\" or \"0x\"")]
     UnknownPrefix(String),

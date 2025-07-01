@@ -3,7 +3,7 @@
 use std::{backtrace::Backtrace, path::PathBuf};
 
 use colored::{Color, Colorize};
-use flexi_logger::{style, DeferredNow, FileSpec, Logger, LoggerHandle, Record};
+use flexi_logger::{DeferredNow, FileSpec, Logger, LoggerHandle, Record, style};
 
 use crate::cli::Args;
 

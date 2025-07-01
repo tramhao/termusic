@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -81,7 +81,7 @@ pub struct Keys {
 
 impl Keys {
     // In order to check if duplicate keys are configured, please ensure all are included here
-    fn iter_global(&self) -> impl Iterator<Item = BindingForEvent> {
+    fn iter_global(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
         once(self.global_esc)
             .chain(once(self.global_quit))
             .chain(once(self.global_left))
@@ -121,7 +121,7 @@ impl Keys {
         // .chain(once(self.config_save))
     }
 
-    fn iter_library(&self) -> impl Iterator<Item = BindingForEvent> {
+    fn iter_library(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
         once(self.library_load_dir)
             .chain(once(self.library_delete))
             .chain(once(self.library_yank))
@@ -134,7 +134,7 @@ impl Keys {
             .chain(once(self.library_remove_root))
     }
 
-    fn iter_playlist(&self) -> impl Iterator<Item = BindingForEvent> {
+    fn iter_playlist(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
         once(self.playlist_delete)
             .chain(once(self.playlist_delete_all))
             .chain(once(self.playlist_shuffle))
@@ -147,7 +147,7 @@ impl Keys {
             .chain(once(self.playlist_add_random_tracks))
     }
 
-    fn iter_podcast(&self) -> impl Iterator<Item = BindingForEvent> {
+    fn iter_podcast(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
         once(self.podcast_search_add_feed)
             .chain(once(self.podcast_refresh_feed))
             .chain(once(self.podcast_refresh_all_feeds))
@@ -155,7 +155,7 @@ impl Keys {
             .chain(once(self.podcast_delete_all_feeds))
     }
 
-    fn iter_episode(&self) -> impl Iterator<Item = BindingForEvent> {
+    fn iter_episode(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
         once(self.podcast_mark_played)
             .chain(once(self.podcast_mark_all_played))
             .chain(once(self.podcast_episode_download))
@@ -912,19 +912,28 @@ mod test {
                 code: Key::Char('a'),
                 modifier: KeyModifiers::SHIFT,
             };
-            assert_eq!("[code]\ntype = \"Char\"\nargs = \"a\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 1\n", &helper_tostring(val));
+            assert_eq!(
+                "[code]\ntype = \"Char\"\nargs = \"a\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 1\n",
+                &helper_tostring(val)
+            );
 
             let val = BindingForEvent {
                 code: Key::Char('x'),
                 modifier: KeyModifiers::SHIFT | KeyModifiers::CONTROL | KeyModifiers::ALT,
             };
-            assert_eq!("[code]\ntype = \"Char\"\nargs = \"x\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 7\n", &helper_tostring(val));
+            assert_eq!(
+                "[code]\ntype = \"Char\"\nargs = \"x\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 7\n",
+                &helper_tostring(val)
+            );
 
             let val = BindingForEvent {
                 code: Key::Char('s'),
                 modifier: KeyModifiers::SHIFT | KeyModifiers::ALT,
             };
-            assert_eq!("[code]\ntype = \"Char\"\nargs = \"s\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 5\n", &helper_tostring(val));
+            assert_eq!(
+                "[code]\ntype = \"Char\"\nargs = \"s\"\n\n[modifier]\ntype = \"KeyModifiers\"\nbits = 5\n",
+                &helper_tostring(val)
+            );
         }
 
         #[test]

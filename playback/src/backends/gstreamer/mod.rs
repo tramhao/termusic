@@ -1,8 +1,8 @@
 //! SPDX-License-Identifier: MIT
 
 use std::path::Path;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use anyhow::Result;
@@ -12,8 +12,8 @@ use glib::{ControlFlow, FlagsClass};
 use gstreamer::bus::BusWatchGuard;
 use gstreamer::prelude::*;
 use gstreamer::{self as gst, ResourceError, StreamError};
-use gstreamer::{event::Seek, Element, SeekFlags, SeekType};
 use gstreamer::{ClockTime, StateChangeError, StateChangeSuccess};
+use gstreamer::{Element, SeekFlags, SeekType, event::Seek};
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaTypes, Track};

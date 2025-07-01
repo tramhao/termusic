@@ -7,7 +7,7 @@ use std::{
     process::{Child, Command},
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use pinyin::ToPinyin;
 use rand::Rng;
 use unicode_segmentation::UnicodeSegmentation;

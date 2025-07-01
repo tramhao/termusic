@@ -1,6 +1,6 @@
 use super::super::{ServiceProvider, SongTag};
 use crate::songtag::UrlTypes;
-use serde_json::{from_str, Value};
+use serde_json::{Value, from_str};
 
 #[derive(Debug, thiserror::Error)]
 pub enum NeteaseParseError {

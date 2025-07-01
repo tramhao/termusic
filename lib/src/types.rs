@@ -7,7 +7,7 @@ use crate::invidious::{Instance, YoutubeVideo};
 use crate::library_db::SearchCriteria;
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use image::DynamicImage;
 
 #[derive(Clone, PartialEq, Eq, Debug)]

@@ -9,8 +9,8 @@ use tui_realm_stdlib::ProgressBar;
 use tuirealm::props::{Alignment, BorderType, Borders, PropPayload, PropValue};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
 
-use crate::ui::model::UserEvent;
 use crate::ui::Model;
+use crate::ui::model::UserEvent;
 
 #[derive(MockComponent)]
 pub struct Progress {
@@ -47,14 +47,15 @@ impl Component<Msg, UserEvent> for Progress {
 
 impl Model {
     pub fn progress_reload(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::Progress,
-                Box::new(Progress::new(&self.config_tui.read())),
-                Vec::new()
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::Progress,
+                    Box::new(Progress::new(&self.config_tui.read())),
+                    Vec::new()
+                )
+                .is_ok()
+        );
         self.progress_update_title();
     }
 

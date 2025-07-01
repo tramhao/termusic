@@ -24,11 +24,13 @@ use crate::songtag::UrlTypes;
  * SOFTWARE.
  */
 use super::super::{ServiceProvider, SongTag};
-use serde_json::{from_str, json, Value};
+use serde_json::{Value, from_str, json};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MiguParseError {
-    #[error("Expected field \"{field}\" to have value \"{expected}\", got \"{got}\", error message: \"{errmsg:#?}\"")]
+    #[error(
+        "Expected field \"{field}\" to have value \"{expected}\", got \"{got}\", error message: \"{errmsg:#?}\""
+    )]
     UnexpectedStatus {
         field: &'static str,
         got: String,

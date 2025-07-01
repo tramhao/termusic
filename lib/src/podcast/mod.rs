@@ -13,16 +13,16 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use bytes::Buf;
 use chrono::{DateTime, Utc};
-use opml::{Body, Head, Outline, OPML};
+use opml::{Body, Head, OPML, Outline};
 use regex::Regex;
 use reqwest::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
-use sanitize_filename::{sanitize_with_options, Options};
-use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
+use sanitize_filename::{Options, sanitize_with_options};
+use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
 
 use crate::config::v2::server::PodcastSettings;
 use crate::taskpool::TaskPool;
@@ -259,9 +259,9 @@ pub async fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &P
     let xml = std::fs::read_to_string(file)
         .with_context(|| format!("Could not open OPML file: {}", file.display()))?;
 
-    let mut podcast_list = import_opml_feeds(&xml).with_context(|| {
-        "Could not properly parse OPML file -- file may be formatted improperly or corrupted."
-    })?;
+    let mut podcast_list = import_opml_feeds(&xml).with_context(
+        || "Could not properly parse OPML file -- file may be formatted improperly or corrupted.",
+    )?;
 
     if podcast_list.is_empty() {
         println!("No podcasts to import.");

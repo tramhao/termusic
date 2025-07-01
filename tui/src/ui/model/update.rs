@@ -12,11 +12,11 @@ use termusiclib::types::{
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
-use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::Update;
+use tuirealm::props::{AttrValue, Attribute};
 
 use crate::ui::tui_cmd::TuiCmd;
-use crate::ui::{model::TermusicLayout, Model};
+use crate::ui::{Model, model::TermusicLayout};
 
 impl Update<Msg> for Model {
     #[allow(clippy::too_many_lines)]
