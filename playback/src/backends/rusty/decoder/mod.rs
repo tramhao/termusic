@@ -280,13 +280,12 @@ impl Symphonia {
         unsafe {
             // re-interpret the SampleType slice as a u8 slice with the same byte-length.
             let len = size_of_val(self.buffer.samples());
-            let ret = std::slice::from_raw_parts(
+            std::slice::from_raw_parts(
                 self.buffer.samples()[self.current_frame_offset..]
                     .as_ptr()
                     .cast::<u8>(),
                 len,
-            );
-            ret
+            )
         }
     }
 
