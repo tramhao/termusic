@@ -40,8 +40,7 @@ pub const VOLUME_STEP: VolumeSigned = 5;
 pub const SPEED_STEP: SpeedSigned = 1;
 
 /// The Limit of continues errors before stopping playback and awaiting user input to start something specific again.
-// SAFETY: using "unsafe" here as "const unwrap" is MSRV 1.83, we are currently on 1.82
-const BACKEND_ERROR_LIMIT: NonZeroUsize = unsafe { NonZeroUsize::new_unchecked(5) };
+const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
 
 /// Stats for the music player responses
 #[derive(Debug, Clone, PartialEq)]
