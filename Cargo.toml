@@ -54,7 +54,7 @@ libmpv-sirno = "2.0.2-fork.1"
 # lofty 0.22.3 updates to MSRV 1.85
 lofty = "0.22.2"
 log = "0.4.27"
-flexi_logger = "0.31.0"
+flexi_logger = "0.31.2"
 colored = "3.0"
 md5 = "0.7"
 num-bigint = "0.4"

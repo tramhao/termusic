@@ -1,6 +1,6 @@
 //! Module for all Logger related things
 
-use std::{backtrace::Backtrace, path::PathBuf};
+use std::backtrace::Backtrace;
 
 use colored::{Color, Colorize};
 use flexi_logger::{style, DeferredNow, FileSpec, Logger, LoggerHandle, Record};
@@ -28,24 +28,8 @@ pub fn setup(args: &Args) -> LoggerHandle {
                 logger = logger.format_for_files(log_format);
             }
 
-            // workaround for https://github.com/emabee/flexi_logger/issues/194
-            let path = if args
-                .log_options
-                .log_file
-                .parent()
-                .is_some_and(|v| !v.to_string_lossy().is_empty())
-            {
-                eprintln!("what {:#?}", args.log_options.log_file.parent());
-                args.log_options.log_file.clone()
-            } else {
-                let mut path = PathBuf::from(".");
-                path.push(&args.log_options.log_file);
-
-                path
-            };
-
-            let filespec =
-                FileSpec::try_from(&path).expect("Expected logging file to be parsed correctly");
+            let filespec = FileSpec::try_from(&args.log_options.log_file)
+                .expect("Expected logging file to be parsed correctly");
             logger = logger
                 .log_to_file(filespec)
                 .append()
