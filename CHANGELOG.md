@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+- Unreleased
+- Fix(server): on linux+mpris, set volume on start instead of only on change.
+
 ### [V0.11.0]
 - Released on: July 1, 2025.
 - Change: updated MSRV to 1.82.
