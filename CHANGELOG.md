@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+- Unreleased
+- Change(tui): increase connection timeout from 5s to 30s, but print a message on original time.
+
 ### [V0.11.0]
 - Released on: July 1, 2025.
 - Change: updated MSRV to 1.82.
