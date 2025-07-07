@@ -182,7 +182,13 @@ impl GeneralPlayer {
         let db = DataBase::new(&config_read)?;
 
         let mpris = if config.read().settings.player.use_mediacontrols {
-            Some(mpris::Mpris::new(cmd_tx.clone()))
+            let mut mpris = mpris::Mpris::new(cmd_tx.clone());
+
+            // set volume on start, as souvlaki (0.8.2) defaults to 1.0 until set by us
+            // also otherwise we only set this once the volume actually changes or mpris is re-started via config reload
+            mpris.update_volume(backend.as_player().volume());
+
+            Some(mpris)
         } else {
             None
         };
