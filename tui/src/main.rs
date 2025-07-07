@@ -43,6 +43,7 @@ use termusiclib::config::{
     SharedTuiSettings, TuiOverlay,
 };
 use termusiclib::player::music_player_client::MusicPlayerClient;
+use tokio::task::AbortHandle;
 
 use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::{podcast, utils};
@@ -171,9 +172,11 @@ async fn actual_main() -> Result<()> {
     Ok(())
 }
 
-/// Timeout to give up connecting
-const WAIT_TIMEOUT: Duration = Duration::from_secs(5);
-/// Time to sleep
+/// Timeout to give up connecting.
+const WAIT_TIMEOUT: Duration = Duration::from_secs(30);
+/// Timeout until writing "Taking longer than expected" message.
+const WAIT_MESSAGE_TIME: Duration = Duration::from_secs(5);
+/// Time to sleep between connect tries.
 const WAIT_INTERVAL: Duration = Duration::from_millis(100);
 
 /// Wait until the [`MusicPlayerClient`] is connected on the correct transport protocol.
@@ -209,6 +212,8 @@ async fn wait_till_connected_tcp(
     let mut sys = sysinfo::System::new();
     let sys_pid = Pid::from_u32(pid);
     let start_time = Instant::now();
+    let _msg_handle = start_message_timeout();
+
     loop {
         if Instant::now() > start_time + WAIT_TIMEOUT {
             anyhow::bail!(
@@ -267,6 +272,8 @@ async fn wait_till_connected_uds(
     let mut sys = sysinfo::System::new();
     let sys_pid = Pid::from_u32(pid);
     let start_time = Instant::now();
+    let _msg_handle = start_message_timeout();
+
     loop {
         if Instant::now() > start_time + WAIT_TIMEOUT {
             anyhow::bail!(
@@ -305,6 +312,31 @@ async fn wait_till_connected_uds(
             }
             Ok(client) => return Ok((client, addr)),
         }
+    }
+}
+
+/// Start a task to print a message if the connection time is longer than [`WAIT_MESSAGE_TIME`].
+///
+/// And cancel this task if the handle is dropped. This makes it easy to not print once the TUI is up and
+/// we dont need to explicitly abort it in each return case.
+fn start_message_timeout() -> AbortOnDropHandle {
+    // This is a task so that if somehow connecting is blocking and not doing the loop, we can still print the message
+
+    let handle = tokio::spawn(async {
+        tokio::time::sleep(WAIT_MESSAGE_TIME).await;
+        eprintln!("Connecting is taking more time than expected...");
+    });
+
+    AbortOnDropHandle(handle.abort_handle())
+}
+
+/// As the name implies, calls [`AbortHandle::abort`] on [`drop`].
+#[derive(Debug)]
+struct AbortOnDropHandle(AbortHandle);
+
+impl Drop for AbortOnDropHandle {
+    fn drop(&mut self) {
+        self.0.abort();
     }
 }
 
