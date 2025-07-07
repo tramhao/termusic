@@ -14,7 +14,7 @@ pub struct MessagePopup {
 }
 
 impl MessagePopup {
-    pub fn new<S: AsRef<str>>(title: S, msg: S) -> Self {
+    pub fn new<S: Into<String>>(title: S, msg: S) -> Self {
         Self {
             component: Paragraph::default()
                 .borders(
@@ -26,8 +26,8 @@ impl MessagePopup {
                 // .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
-                .title(title.as_ref(), Alignment::Center)
-                .text(vec![TextSpan::from(msg.as_ref().to_string())].as_slice()),
+                .title(title.into(), Alignment::Center)
+                .text(vec![TextSpan::from(msg)]),
         }
     }
 }

@@ -52,7 +52,7 @@ impl TESelectLyric {
                 .rewind(true)
                 .highlighted_color(config.settings.theme.library_highlight())
                 .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
-                .choices(&["No Lyric"])
+                .choices(["No Lyric"])
         };
 
         Self { component, config }

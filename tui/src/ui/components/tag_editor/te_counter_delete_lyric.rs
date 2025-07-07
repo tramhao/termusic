@@ -166,7 +166,7 @@ impl MockComponent for Counter {
                 .and_then(AttrValue::as_style);
             frame.render_widget(
                 Paragraph::new(text)
-                    .block(get_block(borders, Some(title), focus, inactive_style))
+                    .block(get_block(borders, Some(&title), focus, inactive_style))
                     .style(
                         Style::default()
                             .fg(foreground)

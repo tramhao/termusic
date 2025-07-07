@@ -56,7 +56,7 @@ impl Lyric {
                 // .wrap(true)
                 .step(4)
                 .highlighted_str(&config.settings.theme.style.playlist.highlight_symbol)
-                .text_rows(&[TextSpan::new(format!("{}.", RunningStatus::Stopped))])
+                .text_rows([TextSpan::new(format!("{}.", RunningStatus::Stopped))])
         };
 
         Self { component, config }

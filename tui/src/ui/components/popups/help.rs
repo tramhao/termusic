@@ -54,7 +54,7 @@ impl HelpPopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["Key", "Function"])
+                .headers(["Key", "Function"])
                 .column_spacing(3)
                 .widths(&[40, 60])
                 .table(

@@ -52,7 +52,7 @@ impl CEHeader {
                         .modifiers(BorderType::Plain)
                         .sides(BorderSides::BOTTOM),
                 )
-                .choices(&[
+                .choices([
                     "General Configuration",
                     "Themes and Colors",
                     "Keys Global",
@@ -84,7 +84,7 @@ pub struct CEFooter {
 impl CEFooter {
     pub fn new(config: &TuiOverlay) -> Self {
         Self {
-            component: Span::default().spans(&[
+            component: Span::default().spans([
                 TextSpan::new(" Save parameters: ").bold(),
                 TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
                     .bold()
