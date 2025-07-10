@@ -37,6 +37,7 @@ pub struct Keys {
     pub global_config_open: BindingForEvent,
     pub global_save_playlist: BindingForEvent,
     pub global_layout_podcast: BindingForEvent,
+    pub global_layout_dlnaserver: BindingForEvent,
     pub global_xywh_move_left: BindingForEvent,
     pub global_xywh_move_right: BindingForEvent,
     pub global_xywh_move_up: BindingForEvent,
@@ -111,6 +112,7 @@ impl Keys {
             .chain(once(self.global_config_open))
             .chain(once(self.global_save_playlist))
             .chain(once(self.global_layout_podcast))
+            .chain(once(self.global_layout_dlnaserver))
             .chain(once(self.global_xywh_move_left))
             .chain(once(self.global_xywh_move_right))
             .chain(once(self.global_xywh_move_up))
@@ -801,6 +803,10 @@ impl Default for Keys {
             },
             global_layout_podcast: BindingForEvent {
                 code: Key::Char('3'),
+                modifier: KeyModifiers::NONE,
+            },
+            global_layout_dlnaserver: BindingForEvent {
+                code: Key::Char('4'),
                 modifier: KeyModifiers::NONE,
             },
             podcast_search_add_feed: BindingForEvent {

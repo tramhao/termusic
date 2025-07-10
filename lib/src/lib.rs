@@ -20,6 +20,7 @@ pub mod types;
 pub mod ueberzug;
 pub mod utils;
 pub mod xywh;
+pub mod dlna;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 

@@ -91,6 +91,11 @@ impl Component<Msg, UserEvent> for GlobalListener {
                 Some(Msg::Layout(MainLayoutMsg::Podcast))
             }
 
+            Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_dlnaserver.get() => {
+                Some(Msg::Layout(MainLayoutMsg::DlnaServer))
+            }
+
+
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.toggle_prefetch.get() => {
                 Some(Msg::Player(PlayerMsg::ToggleGapless))
             }
@@ -207,6 +212,10 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.select_view_keys.view_library.get()),
+                Self::no_popup_mounted_clause(),
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.select_view_keys.view_dlnaserver.get()),
                 Self::no_popup_mounted_clause(),
             ),
             Sub::new(
