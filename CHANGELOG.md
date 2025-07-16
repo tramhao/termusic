@@ -5,7 +5,10 @@
 - Change: updated MSRV to 1.85
 - Change: updated to `2024` edition
 - Change(tui): increase connection timeout from 5s to 30s, but print a message on original time.
+- Feat: re-implement the Track database to allow for more search options. (Note that the old database is NOT automatically deleted)
+- Feat(server): add extra config section for metadata scanning and parsing.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
+- Fix: due to the Track database re-implementation, a bug where the database could grow with duplicated paths is fixed.
 
 ### [V0.11.0]
 - Released on: July 1, 2025.
@@ -16,7 +19,6 @@
 - Change(tui): rename cli option `--disable-cover`  to `--hide-cover`.
 - Change(tui): dont depend on `termusicplayback` anymore.
 - Feat: allow setting the backend in the `server.toml` config.
-- Feat: re-implement the Track database to allow for more search options. (Note that the old database is NOT automatically deleted)
 - Feat(tui): add new cli option `--disable-cover` which actually disables all cover probing and behaves as if no cover features are enabled.
 - Feat(tui): add native theme support. Useful for example for `pywal`.
 - Feat(tui): allow using "add single / add all" keys on Database `Result` view.
@@ -26,8 +28,6 @@
 - Feat(server): on rusty backend, allow choosing which speed modifier to use in the config.
 - Feat(server): on rusty backend, allow configuring file buffer size.
 - Feat(server): on rusty backend, allow configuring decoded(ring) buffer size.
-- Feat(server): add extra config section for metadata scanning and parsing.
-- Fix: due to the Track database re-implementation, a bug where the database could grow with duplicated paths is fixed.
 - Fix(tui): set `ueberzug` command to `--silent`.
 - Fix(tui): force viuer to use the terminal image protocol that was probed at the beginning.
 - Fix(tui): add CTRL+C handler for when TUI key-reading is not active yet or not active anymore.
