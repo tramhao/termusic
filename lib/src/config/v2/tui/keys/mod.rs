@@ -1250,7 +1250,9 @@ pub enum KeyParseError {
     /// Error when multiple keys are found (like "Q+E")
     ///
     /// Listing (`key_bind`, (`old_key`, `new_key`))
-    #[error("Failed to parse Key because multiple non-modifier keys were found, keys: [{old_key}, {new_key}], input: {input:#?}")]
+    #[error(
+        "Failed to parse Key because multiple non-modifier keys were found, keys: [{old_key}, {new_key}], input: {input:#?}"
+    )]
     MultipleKeys {
         input: String,
         old_key: String,
@@ -1808,8 +1810,8 @@ impl From<SupportedModifiers> for tuievents::KeyModifiers {
 
 mod v1_interop {
     use super::{
-        tuievents, KeyBinding, Keys, KeysConfigEditor, KeysDatabase, KeysLibrary, KeysLyric,
-        KeysMoveCoverArt, KeysNavigation, KeysPlayer, KeysPlaylist, KeysPodcast, KeysSelectView,
+        KeyBinding, Keys, KeysConfigEditor, KeysDatabase, KeysLibrary, KeysLyric, KeysMoveCoverArt,
+        KeysNavigation, KeysPlayer, KeysPlaylist, KeysPodcast, KeysSelectView, tuievents,
     };
     use crate::config::v1;
 
@@ -2619,8 +2621,8 @@ mod test {
 
     mod keys {
         use figment::{
-            providers::{Format, Toml},
             Figment,
+            providers::{Format, Toml},
         };
         use pretty_assertions::assert_eq;
 

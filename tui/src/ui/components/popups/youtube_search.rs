@@ -151,10 +151,10 @@ impl Component<Msg, UserEvent> for YSTablePopup {
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
+                return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel));
             }
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
-                return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
+                return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel));
             }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
@@ -210,26 +210,28 @@ impl Component<Msg, UserEvent> for YSTablePopup {
 
 impl Model {
     pub fn mount_youtube_search_input(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::YoutubeSearchInputPopup,
-                Box::new(YSInputPopup::new(&self.config_tui.read())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::YoutubeSearchInputPopup,
+                    Box::new(YSInputPopup::new(&self.config_tui.read())),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::YoutubeSearchInputPopup).is_ok());
     }
 
     pub fn mount_youtube_search_table(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::YoutubeSearchTablePopup,
-                Box::new(YSTablePopup::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::YoutubeSearchTablePopup,
+                    Box::new(YSTablePopup::new(self.config_tui.clone())),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));

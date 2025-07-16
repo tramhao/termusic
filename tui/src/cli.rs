@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use clap::{builder::ArgPredicate, ArgAction, Parser, Subcommand, ValueEnum};
+use clap::{ArgAction, Parser, Subcommand, ValueEnum, builder::ArgPredicate};
 use std::path::PathBuf;
 use termusiclib::config::v2::server::Backend as ConfigBackend;
 

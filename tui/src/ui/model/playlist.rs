@@ -1,10 +1,10 @@
 use std::fmt::Write as _;
 use std::path::Path;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use pathdiff::diff_paths;
-use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistTrackSource};
 use termusiclib::player::PlaylistRemoveTrackInfo;
+use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistTrackSource};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::MediaTypes;
 use termusiclib::utils::get_parent_folder;

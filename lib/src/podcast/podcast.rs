@@ -5,8 +5,8 @@ use chrono::{DateTime, Utc};
 use crate::utils::StringUtils;
 
 use super::{
-    episode::{Episode, EpisodeNoId},
     Menuable, PODCAST_UNPLAYED_TOTALS_LENGTH,
+    episode::{Episode, EpisodeNoId},
 };
 
 /// Struct holding data about an individual podcast feed. This includes a

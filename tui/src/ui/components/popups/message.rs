@@ -2,8 +2,8 @@ use termusiclib::ids::Id;
 use termusiclib::types::Msg;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
-    props::{Alignment, BorderType, Borders, Color, PropPayload, TextModifiers, TextSpan},
     AttrValue, Attribute, Component, Event, MockComponent,
+    props::{Alignment, BorderType, Borders, Color, PropPayload, TextModifiers, TextSpan},
 };
 
 use crate::ui::model::{Model, UserEvent};
@@ -40,14 +40,15 @@ impl Component<Msg, UserEvent> for MessagePopup {
 
 impl Model {
     pub fn mount_message(&mut self, title: &str, text: &str) {
-        assert!(self
-            .app
-            .remount(
-                Id::MessagePopup,
-                Box::new(MessagePopup::new(title, text)),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::MessagePopup,
+                    Box::new(MessagePopup::new(title, text)),
+                    vec![]
+                )
+                .is_ok()
+        );
     }
 
     /// ### `umount_message`

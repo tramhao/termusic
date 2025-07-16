@@ -26,9 +26,9 @@ use termusiclib::ids::Id;
 use termusiclib::types::Msg;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
+    Component, Event, MockComponent,
     event::{Key, KeyEvent},
     props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan},
-    Component, Event, MockComponent,
 };
 
 use crate::ui::model::{Model, UserEvent};
@@ -83,14 +83,15 @@ impl Model {
     /// Mount error and give focus to it
     // This should likely be refactored to be "std::error::Error", but see https://github.com/dtolnay/anyhow/issues/63 on why it was easier this way
     pub fn mount_error_popup<E: Into<anyhow::Error>>(&mut self, err: E) {
-        assert!(self
-            .app
-            .remount(
-                Id::ErrorPopup,
-                Box::new(ErrorPopup::new(self.config_tui.clone(), err)),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::ErrorPopup,
+                    Box::new(ErrorPopup::new(self.config_tui.clone(), err)),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.app.active(&Id::ErrorPopup).is_ok());
     }
 

@@ -1,15 +1,15 @@
 use std::fmt::Write as _;
 
-use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::ids::Id;
 use termusiclib::types::Msg;
 use tui_realm_stdlib::Table;
 use tuirealm::{
+    Component, Event, MockComponent,
     command::{Cmd, CmdResult, Direction},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan},
-    Component, Event, MockComponent,
 };
 
 use crate::ui::model::{Model, UserEvent};
@@ -322,14 +322,15 @@ impl Component<Msg, UserEvent> for HelpPopup {
 impl Model {
     /// Mount help popup
     pub fn mount_help_popup(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::HelpPopup,
-                Box::new(HelpPopup::new(self.config_tui.clone())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.app
+                .remount(
+                    Id::HelpPopup,
+                    Box::new(HelpPopup::new(self.config_tui.clone())),
+                    vec![]
+                )
+                .is_ok()
+        );
         self.update_photo().ok();
         assert!(self.app.active(&Id::HelpPopup).is_ok());
     }

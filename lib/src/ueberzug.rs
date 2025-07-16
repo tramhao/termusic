@@ -1,6 +1,6 @@
 use crate::xywh::Xywh;
 use anyhow::Context;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use std::ffi::OsStr;
 use std::io::Read as _;
 use std::io::Write;
@@ -67,14 +67,17 @@ impl UeInstance {
         // Ueberzug takes an area given in chars and fits the image to
         // that area (from the top left).
         //   draw_offset.y += (draw_size.y - size.y) - (draw_size.y - size.y) / 2;
-        let cmd = format!("{{\"action\":\"add\",\"scaler\":\"forced_cover\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
-        // let cmd = format!("{{\"action\":\"add\",\"scaler\":\"fit_contain\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
-        // TODO: right now the y position of ueberzug is not consistent, and could be a 0.5 difference
-                // draw_xywh.x, draw_xywh.y-1,
-                draw_xywh.x, draw_xywh.y,//-1 + (draw_xywh.width-draw_xywh.height) % 2,
-                draw_xywh.width,draw_xywh.height/2,//+ (draw_xywh.width-draw_xywh.height)%2,
-                url,
-            );
+        let cmd = format!(
+            "{{\"action\":\"add\",\"scaler\":\"forced_cover\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
+            // let cmd = format!("{{\"action\":\"add\",\"scaler\":\"fit_contain\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
+            // TODO: right now the y position of ueberzug is not consistent, and could be a 0.5 difference
+            // draw_xywh.x, draw_xywh.y-1,
+            draw_xywh.x,
+            draw_xywh.y, //-1 + (draw_xywh.width-draw_xywh.height) % 2,
+            draw_xywh.width,
+            draw_xywh.height / 2, //+ (draw_xywh.width-draw_xywh.height)%2,
+            url,
+        );
 
         // debug!(
         //     "draw_xywh.x = {}, draw_xywh.y = {}, draw_wyxh.width = {}, draw_wyxh.height = {}",

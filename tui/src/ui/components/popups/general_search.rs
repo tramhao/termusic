@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
 use termusiclib::track::MediaTypes;
@@ -14,8 +14,8 @@ use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
-use crate::ui::model::UserEvent;
 use crate::ui::Model;
+use crate::ui::model::UserEvent;
 
 #[derive(MockComponent)]
 pub struct GSInputPopup {
@@ -92,7 +92,7 @@ impl Component<Msg, UserEvent> for GSInputPopup {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::GeneralSearch(GSMsg::InputBlur))
+                return Some(Msg::GeneralSearch(GSMsg::InputBlur));
             }
             _ => CmdResult::None,
         };
@@ -299,10 +299,10 @@ impl Component<Msg, UserEvent> for GSTablePopup {
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
+                return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel));
             }
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
+                return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel));
             }
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
@@ -336,22 +336,22 @@ impl Component<Msg, UserEvent> for GSTablePopup {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::GeneralSearch(GSMsg::TableBlur))
+                return Some(Msg::GeneralSearch(GSMsg::TableBlur));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
                 match self.source {
                     Source::Library => {
-                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist))
+                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist));
                     }
                     Source::Playlist => {
-                        return Some(Msg::GeneralSearch(GSMsg::PopupClosePlaylistPlaySelected))
+                        return Some(Msg::GeneralSearch(GSMsg::PopupClosePlaylistPlaySelected));
                     }
                     Source::Database => {
-                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseDatabaseAddPlaylist))
+                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseDatabaseAddPlaylist));
                     }
                     Source::Episode => {
-                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseEpisodeAddPlaylist))
+                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseEpisodeAddPlaylist));
                     }
                     Source::Podcast => return None,
                 }
@@ -360,17 +360,17 @@ impl Component<Msg, UserEvent> for GSTablePopup {
                 code: Key::Enter, ..
             }) => match self.source {
                 Source::Library => {
-                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkLibraryLocate))
+                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkLibraryLocate));
                 }
                 Source::Playlist => {
-                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPlaylistLocate))
+                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPlaylistLocate));
                 }
                 Source::Database => return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel)),
                 Source::Episode => {
-                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkEpisodeLocate))
+                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkEpisodeLocate));
                 }
                 Source::Podcast => {
-                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPodcastLocate))
+                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPodcastLocate));
                 }
             },
             _ => CmdResult::None,
@@ -400,14 +400,15 @@ impl Model {
                 if let Some(line) = table.get(index) {
                     if let Some(text_span) = line.get(1) {
                         let node = text_span.content.clone();
-                        assert!(self
-                            .app
-                            .attr(
-                                &Id::Library,
-                                Attribute::Custom(TREE_INITIAL_NODE),
-                                AttrValue::String(node),
-                            )
-                            .is_ok());
+                        assert!(
+                            self.app
+                                .attr(
+                                    &Id::Library,
+                                    Attribute::Custom(TREE_INITIAL_NODE),
+                                    AttrValue::String(node),
+                                )
+                                .is_ok()
+                        );
                     }
                 }
             }

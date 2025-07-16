@@ -22,9 +22,9 @@
  * SOFTWARE.
  */
 use anyhow::Result;
-use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
-use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::v2::tui::theme::ThemeWrap;
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::ids::{Id, IdConfigEditor};
 use termusiclib::types::{ConfigEditorMsg, Msg};
 use tui_realm_stdlib::{Input, Label, Select, Table};

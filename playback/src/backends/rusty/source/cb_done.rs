@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use rodio::{source::SeekError, Source};
+use rodio::{Source, source::SeekError};
 
 use super::SampleType;
 

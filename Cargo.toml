@@ -4,7 +4,7 @@ members = ["lib", "playback", "server", "tui"]
 
 [workspace.package]
 authors = ["tramhao <haoxinkui@gmail.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
 repository = "https://github.com/tramhao/termusic"
@@ -17,7 +17,7 @@ categories = [
 ]
 readme = "./README.md"
 version = "0.11.0"
-rust-version = "1.82"
+rust-version = "1.85"
 
 [workspace.dependencies]
 # "version" key is required, as per https://github.com/rust-lang/cargo/issues/11133

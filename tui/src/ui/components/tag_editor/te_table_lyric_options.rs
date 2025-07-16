@@ -1,6 +1,6 @@
-use crate::ui::model::UserEvent;
 use crate::ui::Model;
-use anyhow::{anyhow, Context, Result};
+use crate::ui::model::UserEvent;
+use anyhow::{Context, Result, anyhow};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::{Id, IdTagEditor};
 /**
@@ -26,7 +26,7 @@ use termusiclib::ids::{Id, IdTagEditor};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::songtag::{search, SongTag};
+use termusiclib::songtag::{SongTag, search};
 use termusiclib::types::{Msg, SongTagRecordingResult, TEMsg, TFMsg};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
@@ -85,7 +85,7 @@ impl Component<Msg, UserEvent> for TETableLyricOptions {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(
                     TFMsg::TableLyricOptionsBlurDown,
-                )))
+                )));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
@@ -93,18 +93,18 @@ impl Component<Msg, UserEvent> for TETableLyricOptions {
             }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(
                     TFMsg::TableLyricOptionsBlurUp,
-                )))
+                )));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                return Some(Msg::TagEditor(TEMsg::TERename))
+                return Some(Msg::TagEditor(TEMsg::TERename));
             }
 
             Event::Keyboard(k) if k == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
             }
             Event::Keyboard(k) if k == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
@@ -175,10 +175,11 @@ impl Model {
         }
         self.songtag_options = items;
         self.te_sync_songtag_options();
-        assert!(self
-            .app
-            .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
-            .is_ok());
+        assert!(
+            self.app
+                .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
+                .is_ok()
+        );
     }
 
     /// Build the Songtag Results table and assign it

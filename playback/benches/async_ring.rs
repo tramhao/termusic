@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use criterion::{criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use symphonia::core::audio::Channels;
 use termusicplayback::__bench::async_ring::AsyncRingSource;
 use tokio::runtime::Builder;

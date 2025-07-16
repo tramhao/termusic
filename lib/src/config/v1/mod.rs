@@ -25,10 +25,10 @@ mod key;
 mod theme;
 
 use crate::utils::get_app_config_path;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use figment::{
-    providers::{Format, Serialized, Toml},
     Figment,
+    providers::{Format, Serialized, Toml},
 };
 use image::DynamicImage;
 pub use key::{BindingForEvent, Keys};

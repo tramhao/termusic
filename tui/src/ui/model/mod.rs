@@ -5,7 +5,7 @@ use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
@@ -15,9 +15,9 @@ use termusiclib::library_db::TrackDB;
 use termusiclib::library_db::{DataBase, SearchCriteria};
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::{PlaylistTracks, RunningStatus};
-use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed};
-use termusiclib::songtag::lrc::Lyric;
+use termusiclib::podcast::{Podcast, PodcastFeed, db::Database as DBPod};
 use termusiclib::songtag::SongTag;
+use termusiclib::songtag::lrc::Lyric;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::track::{LyricData, MediaTypesSimple, Track};
 use termusiclib::types::{Msg, YoutubeOptions};
@@ -25,14 +25,14 @@ use termusiclib::types::{Msg, YoutubeOptions};
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;
 use termusiclib::xywh;
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tui_realm_treeview::Tree;
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 
 use super::components::TETrack;
 use super::tui_cmd::TuiCmd;
-use crate::ui::Application;
 use crate::CombinedSettings;
+use crate::ui::Application;
 pub use download_tracker::DownloadTracker;
 pub use user_events::UserEvent;
 
