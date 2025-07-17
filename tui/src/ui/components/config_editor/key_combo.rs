@@ -1162,6 +1162,7 @@ impl KEModifierSelect {
             IdKey::GlobalHelp => keys.select_view_keys.open_help.mod_key(),
             IdKey::GlobalLayoutTreeview => keys.select_view_keys.view_library.mod_key(),
             IdKey::GlobalLayoutDatabase => keys.select_view_keys.view_database.mod_key(),
+            IdKey::GlobalLayoutDlnaServer => keys.select_view_keys.view_dlnaserver.mod_key(),
             IdKey::GlobalLeft => keys.navigation_keys.left.mod_key(),
             IdKey::GlobalLyricAdjustForward => keys.lyric_keys.adjust_offset_forwards.mod_key(),
             IdKey::GlobalLyricAdjustBackward => keys.lyric_keys.adjust_offset_backwards.mod_key(),

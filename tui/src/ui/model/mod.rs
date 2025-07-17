@@ -48,6 +48,7 @@ pub enum TermusicLayout {
     TreeView,
     DataBase,
     Podcast,
+    DlnaServer,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Eq)]
@@ -67,6 +68,13 @@ pub struct MusicLibraryData {
     pub tree: Tree<String>,
     /// The Node that a yank & paste was started on
     pub yanked_node_id: Option<String>,
+}
+
+/// All data specific to a DLNA Media Server Widget
+#[derive(Debug)]
+pub  struct MediaServerData {
+    pub tree_path: String,
+    pub tree: Tree<String>,
 }
 
 /// All data specific to the Database Widget / View
@@ -304,6 +312,7 @@ pub struct Model {
 
     pub layout: TermusicLayout,
     pub library: MusicLibraryData,
+    pub media_server: MediaServerData,
     pub dw: DatabaseWidgetData,
     pub podcast: PodcastWidgetData,
     pub config_editor: ConfigEditorData,
@@ -421,6 +430,9 @@ impl Model {
             None,
         );
 
+        let media_root = Self::loading_tree();
+        Self::discover_servers(tx_to_main.clone()).await;
+        
         Self {
             app,
             quit: false,
@@ -437,6 +449,11 @@ impl Model {
                 tree,
                 yanked_node_id: None,
             },
+            media_server: MediaServerData {
+                tree_path: String::from(""),
+                tree: media_root,
+            },
+            
             // TODO: Consider making YoutubeOptions async and use async reqwest in YoutubeOptions
             // and avoid this `spawn_blocking` call.
             youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)

@@ -6,10 +6,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::track::MediaTypesSimple;
-use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg,
-    SavePlaylistMsg, XYWHMsg, YSMsg,
-};
+use termusiclib::types::{DBMsg, DLMsg, DSMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg, SavePlaylistMsg, XYWHMsg, YSMsg};
 use tokio::runtime::Handle;
 use tokio::time::sleep;
 use tuirealm::Update;
@@ -57,6 +54,10 @@ impl Update<Msg> for Model {
             }
             Msg::Library(m) => {
                 self.update_library(m);
+                None
+            }
+            Msg::DlnaServer(m) => {
+                self.update_mediaserver(m);
                 None
             }
             Msg::GeneralSearch(m) => {
@@ -149,6 +150,7 @@ impl Model {
                 TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
                 TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
                 TermusicLayout::Podcast => self.app.active(&Id::Podcast).ok(),
+                TermusicLayout::DlnaServer => self.app.active(&Id::DlnaServer).ok(),
             },
         };
         None
@@ -491,6 +493,38 @@ impl Model {
                 self.podcast_sync_feeds_and_episodes();
                 self.playlist_switch_layout();
             }
+            MainLayoutMsg::DlnaServer => {
+                let mut need_to_set_focus = true;
+                /*if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Podcast, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }
+
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Episode, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Playlist, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }
+
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Lyric, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }*/
+
+                if need_to_set_focus {
+                    self.app.active(&Id::DlnaServer).ok();
+                }
+
+                self.layout = TermusicLayout::DlnaServer;
+                // self.playlist_switch_layout();
+            }
         }
 
         None
@@ -592,7 +626,14 @@ impl Model {
             }
         }
     }
-
+    fn update_mediaserver(&mut self, msg: DSMsg) {
+        match msg {
+            DSMsg::TreeNodeReady(vec, focus_node) => {
+                self.mediaserver_apply_as_tree(vec, focus_node);
+            }
+        }
+    }
+    
     fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
             YSMsg::InputPopupShow => {
@@ -650,6 +691,10 @@ impl Model {
     fn update_general_search(&mut self, msg: &GSMsg) {
         match msg {
             GSMsg::PopupShowDatabase => {
+                self.mount_search_database();
+                self.database_update_search("*");
+            }
+            GSMsg::PopupShowDlnaServer => {
                 self.mount_search_database();
                 self.database_update_search("*");
             }
@@ -820,6 +865,7 @@ impl Model {
                 TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
+                TermusicLayout::DlnaServer => assert!(self.app.active(&Id::DlnaServer).is_ok()),
             },
             PLMsg::NextSong => {
                 self.command(TuiCmd::SkipNext);
@@ -846,6 +892,7 @@ impl Model {
                     assert!(self.app.active(&Id::DBListSearchTracks).is_ok());
                 }
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
+                TermusicLayout::DlnaServer => assert!(self.app.active(&Id::DlnaServer).is_ok()),
             },
         }
     }
@@ -903,6 +950,9 @@ impl Model {
                 MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => match self.layout {
                     TermusicLayout::TreeView | TermusicLayout::DataBase => {}
                     TermusicLayout::Podcast => {
+                        self.update_layout(MainLayoutMsg::TreeView);
+                    }
+                    TermusicLayout::DlnaServer => {
                         self.update_layout(MainLayoutMsg::TreeView);
                     }
                 },

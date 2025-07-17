@@ -20,7 +20,7 @@ use crate::ui::Application;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
     FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
-    Playlist, Progress, Source,
+    Playlist, DlnaServer, Progress, Source,
 };
 use crate::ui::model::{Model, TermusicLayout, UserEvent};
 use crate::ui::utils::{
@@ -99,6 +99,11 @@ impl Model {
             Vec::new(),
         )?;
         app.mount(
+            Id::DlnaServer,
+            Box::new(DlnaServer::new(tree, None, config.clone())),
+            Vec::new(),
+        )?;
+        app.mount(
             Id::Playlist,
             Box::new(Playlist::new(config.clone())),
             Vec::new(),
@@ -157,6 +162,7 @@ impl Model {
                 TermusicLayout::TreeView => self.view_layout_treeview(),
                 TermusicLayout::DataBase => self.view_layout_database(),
                 TermusicLayout::Podcast => self.view_layout_podcast(),
+                TermusicLayout::DlnaServer => self.view_layout_dlnaserver(),
             }
         }
     }
@@ -250,6 +256,33 @@ impl Model {
                 .areas(right);
 
                 self.app.view(&Id::Library, f, left_library);
+
+                self.app.view(&Id::Playlist, f, right_playlist);
+                self.app.view(&Id::Progress, f, right_progress);
+                self.app.view(&Id::Lyric, f, right_lyric);
+
+                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
+            })
+            .expect("Expected to draw without error");
+    }
+
+    fn view_layout_dlnaserver(&mut self) {
+        self.terminal
+            .raw_mut()
+            .draw(|f| {
+                let [chunks_main, _bottom_help] =
+                    Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
+                let [left_dlnaserver, right] =
+                    Layout::horizontal([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+                        .areas(chunks_main);
+                let [right_playlist, right_progress, right_lyric] = Layout::vertical([
+                    Constraint::Min(2),
+                    Constraint::Length(3),
+                    Constraint::Length(4),
+                ])
+                    .areas(right);
+
+                self.app.view(&Id::DlnaServer, f, left_dlnaserver);
 
                 self.app.view(&Id::Playlist, f, right_playlist);
                 self.app.view(&Id::Progress, f, right_progress);
