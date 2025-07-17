@@ -130,7 +130,7 @@ impl YSTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["Duration", "Name"])
+                .headers(["Duration", "Name"])
                 .column_spacing(3)
                 .widths(&[20, 80])
                 .table(

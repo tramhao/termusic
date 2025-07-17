@@ -179,7 +179,7 @@ impl ExitConfirmation {
                     .color(config_r.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["Yes", "No"])
+            .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
             .title(" Show exit confirmation? ", Alignment::Left)
@@ -267,7 +267,7 @@ impl PlaylistDisplaySymbol {
                     .color(config_r.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["Yes", "No"])
+            .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
             .title(" Display symbol in playlist title? ", Alignment::Left)
@@ -578,7 +578,7 @@ impl AlbumPhotoAlign {
                     .color(config_r.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
+            .choices(["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
             .title(" Album Photo Align: ", Alignment::Left)
@@ -629,7 +629,7 @@ impl SaveLastPosition {
                     .color(config_tui.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["Unsupported", "No", "Yes"])
+            .choices(["Unsupported", "No", "Yes"])
             .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
             .title(" Remember last played position: ", Alignment::Left)
@@ -675,7 +675,7 @@ impl ConfigSeekStep {
                     .color(config_tui.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["Unsupported"])
+            .choices(["Unsupported"])
             .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
             .title(" Seek step in seconds: ", Alignment::Left)
@@ -717,7 +717,7 @@ impl KillDaemon {
                     .color(config_r.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["Yes", "No"])
+            .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
             .title(" Kill daemon when quit termusic? ", Alignment::Left)
@@ -756,7 +756,7 @@ impl PlayerUseMpris {
                     .color(config_tui.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["Yes", "No"])
+            .choices(["Yes", "No"])
             .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
             .title(" Support Mpris? ", Alignment::Left)
@@ -798,7 +798,7 @@ impl PlayerUseDiscord {
                     .color(config_tui.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
-            .choices(&["Yes", "No"])
+            .choices(["Yes", "No"])
             .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
             .title(" Update discord rpc? ", Alignment::Left)

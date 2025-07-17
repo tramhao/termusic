@@ -176,7 +176,7 @@ impl GSTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["idx", "File name"])
+                .headers(["idx", "File name"])
                 .column_spacing(3)
                 .widths(&[5, 95])
                 .table(
@@ -201,7 +201,7 @@ impl GSTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["Duration", "Artist", "Title"])
+                .headers(["Duration", "Artist", "Title"])
                 .column_spacing(3)
                 .widths(&[14, 30, 56])
                 .table(
@@ -225,7 +225,7 @@ impl GSTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["Duration", "Artist", "Title"])
+                .headers(["Duration", "Artist", "Title"])
                 .column_spacing(3)
                 .widths(&[14, 30, 56])
                 .table(
@@ -249,7 +249,7 @@ impl GSTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["idx", "Episode Title"])
+                .headers(["idx", "Episode Title"])
                 .column_spacing(3)
                 .widths(&[5, 95])
                 .table(
@@ -273,7 +273,7 @@ impl GSTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["idx", "Podcast Title"])
+                .headers(["idx", "Podcast Title"])
                 .column_spacing(3)
                 .widths(&[5, 95])
                 .table(

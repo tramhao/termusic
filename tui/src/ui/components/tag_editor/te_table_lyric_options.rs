@@ -61,7 +61,7 @@ impl TETableLyricOptions {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["Artist", "Title", "Album", "api", "Copyright Info"])
+                .headers(["Artist", "Title", "Album", "api", "Copyright Info"])
                 .column_spacing(1)
                 .widths(&[20, 20, 20, 10, 30])
                 .table(
