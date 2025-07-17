@@ -7,9 +7,8 @@ use rand::seq::IndexedRandom;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::ids::Id;
-use termusiclib::library_db::SearchCriteria;
-use termusiclib::library_db::TrackDB;
-use termusiclib::library_db::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
+use termusiclib::new_database::track_ops::TrackRead;
+use termusiclib::new_database::{album_ops, track_ops};
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
     PlaylistTrackSource,
@@ -20,6 +19,7 @@ use termusiclib::player::{
 };
 use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
+use termusiclib::types::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::types::{GSMsg, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 use tui_realm_stdlib::Table;
@@ -375,10 +375,10 @@ impl Model {
     }
 
     /// Add [`TrackDB`] to the playlist
-    pub fn playlist_add_all_from_db(&mut self, vec: &[TrackDB]) {
+    pub fn playlist_add_all_from_db(&mut self, vec: &[TrackRead]) {
         let sources = vec
             .iter()
-            .map(|f| PlaylistTrackSource::Path(f.file.clone()))
+            .map(|f| PlaylistTrackSource::Path(f.as_pathbuf().to_string_lossy().to_string()))
             .collect();
 
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
@@ -815,17 +815,16 @@ impl Model {
         Some(val)
     }
 
-    pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackDB> {
-        let mut result = vec![];
-        if let Ok(vec) = self.db.get_all_records() {
+    pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackRead> {
+        let mut result = Vec::with_capacity(usize::try_from(quantity).unwrap_or_default());
+        let all_tracks =
+            track_ops::get_all_tracks(&self.db.get_connection(), track_ops::RowOrdering::IdAsc);
+        if let Ok(vec) = all_tracks {
             let mut i = 0;
             loop {
                 if let Some(record) = vec.choose(&mut rand::rng()) {
-                    if record.title.contains("Unknown Title") {
-                        continue;
-                    }
-                    let path = Path::new(&record.file);
-                    if filetype_supported(path) {
+                    let path = record.as_pathbuf();
+                    if filetype_supported(&path) {
                         result.push(record.clone());
                         i += 1;
                         if i > quantity - 1 {
@@ -838,22 +837,26 @@ impl Model {
         result
     }
 
-    pub fn playlist_get_random_album_tracks(&mut self, quantity: u32) -> Vec<TrackDB> {
-        let mut result = vec![];
-        if let Ok(vec) = self.db.get_all_records() {
+    pub fn playlist_get_random_album_tracks(&mut self, quantity: u32) -> Vec<TrackRead> {
+        let mut result = Vec::with_capacity(usize::try_from(quantity).unwrap_or_default());
+        let all_albums =
+            album_ops::get_all_albums(&self.db.get_connection(), album_ops::RowOrdering::IdAsc);
+        if let Ok(vec) = all_albums {
             loop {
                 if let Some(v) = vec.choose(&mut rand::rng()) {
-                    if v.album.contains("empty") {
-                        continue;
-                    }
-                    if let Ok(mut vec2) = self
-                        .db
-                        .get_record_by_criteria(&v.album, &SearchCriteria::Album)
-                    {
+                    let all_tracks_in_album = track_ops::get_tracks_from_album(
+                        &self.db.get_connection(),
+                        &v.title,
+                        &v.artist_display,
+                        track_ops::RowOrdering::IdAsc,
+                    );
+                    if let Ok(vec2) = all_tracks_in_album {
                         if vec2.len() < quantity as usize {
                             continue;
                         }
-                        result.append(&mut vec2);
+
+                        result.extend(vec2);
+
                         break;
                     }
                 }

@@ -5,7 +5,10 @@
 - Change: updated MSRV to 1.85
 - Change: updated to `2024` edition
 - Change(tui): increase connection timeout from 5s to 30s, but print a message on original time.
+- Feat: re-implement the Track database to allow for more search options. (Note that the old database is NOT automatically deleted)
+- Feat(server): add extra config section for metadata scanning and parsing.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
+- Fix: due to the Track database re-implementation, a bug where the database could grow with duplicated paths is fixed.
 
 ### [V0.11.0]
 - Released on: July 1, 2025.

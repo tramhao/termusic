@@ -9,10 +9,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::track::MediaTypesSimple;
 use backends::BackendSettings;
+use metadata::MetadataSettings;
 
 pub mod backends;
 /// Extra things necessary for a config file, like wrappers for versioning
 pub mod config_extra;
+pub mod metadata;
 
 pub type MusicDirsOwned = Vec<PathBuf>;
 
@@ -24,6 +26,7 @@ pub struct ServerSettings {
     pub player: PlayerSettings,
     pub podcast: PodcastSettings,
     pub backends: BackendSettings,
+    pub metadata: MetadataSettings,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -242,9 +245,12 @@ impl Default for RememberLastPosition {
 pub struct PlayerSettings {
     /// Music Directories
     pub music_dirs: MusicDirsOwned,
-    /// Max depth for music library scanning
+    /// Legacy value, this still exists so that existing (older)configs parse without error.
+    /// But the actual value will be unused and discared.
+    /// The following is the old description:
     ///
-    /// This for example affects how deep the auto-tag extraction will go
+    /// Max depth the TUI will scan for the music library tree
+    #[serde(skip_serializing)]
     pub library_scan_depth: ScanDepth,
     /// Set if the position should be remembered for tracks
     pub remember_position: RememberLastPosition,
@@ -288,7 +294,7 @@ impl Default for PlayerSettings {
     fn default() -> Self {
         Self {
             music_dirs: default_music_dirs(),
-            library_scan_depth: ScanDepth::Limited(10),
+            library_scan_depth: ScanDepth::Limited(0),
             remember_position: RememberLastPosition::default(),
 
             loop_mode: LoopMode::default(),
@@ -486,7 +492,7 @@ mod v1_interop {
         PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
         ServerSettings, backends::BackendSettings,
     };
-    use crate::config::v1;
+    use crate::config::{v1, v2::server::metadata::MetadataSettings};
 
     impl From<v1::Loop> for LoopMode {
         fn from(value: v1::Loop) -> Self {
@@ -608,6 +614,7 @@ mod v1_interop {
                 player: player_settings,
                 podcast: podcast_settings,
                 backends: BackendSettings::default(),
+                metadata: MetadataSettings::default(),
             })
         }
     }
