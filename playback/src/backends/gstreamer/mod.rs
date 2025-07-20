@@ -1,5 +1,3 @@
-//! SPDX-License-Identifier: MIT
-
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;

@@ -1,5 +1,3 @@
-//! SPDX-License-Identifier: MIT
-
 use std::cmp;
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, Sender};

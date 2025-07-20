@@ -1,5 +1,3 @@
-//! SPDX-License-Identifier: MIT
-
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 use std::thread;

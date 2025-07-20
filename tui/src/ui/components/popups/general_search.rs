@@ -1,5 +1,3 @@
-//! SPDX-License-Identifier: MIT
-
 use std::path::Path;
 
 use anyhow::{Result, anyhow, bail};
