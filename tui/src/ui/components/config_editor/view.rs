@@ -1,5 +1,6 @@
 use crate::ui::Application;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
+use crate::ui::components::raw::dynamic_grid::DynamicGrid;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::utils::draw_area_in_absolute;
@@ -40,6 +41,42 @@ use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
+
+// NOTE: the macros either have to be in a different file OR be defined *before* they are used, otherwise they are not in scope
+
+/// Chain many values together and `max` value from it.
+///
+/// Equivalent to manually chaining `val1.max(val2.max(val3))`.
+macro_rules! max {
+    ($first:ident$(,)?) => {
+        $first
+    };
+    (
+        $first:ident
+        $(
+            , $second:ident
+        )* $(,)?
+    ) => {
+        $first.max(max!($($second,)*))
+    }
+}
+
+/// Chain many values together and satured added value from it.
+///
+/// Equivalent to manually chaining `val1.saturating_add(val2.saturating_add(val3))`.
+macro_rules! sat_add {
+    ($first:expr$(,)?) => {
+        $first
+    };
+    (
+        $first:expr
+        $(
+            , $second:expr
+        )* $(,)?
+    ) => {
+        $first.saturating_add(sat_add!($($second,)*))
+    }
+}
 
 impl Model {
     pub fn view_config_editor(&mut self) {
@@ -209,28 +246,28 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_color(&mut self) {
-        let select_library_foreground_len = match self
+        let select_library_foreground_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_library_background_len = match self
+        let select_library_background_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_library_border_len = match self
+        let select_library_border_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_library_highlight_len = match self
+        let select_library_highlight_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))
         {
@@ -238,28 +275,28 @@ impl Model {
             _ => 8,
         };
 
-        let select_playlist_foreground_len = match self
+        let select_playlist_foreground_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistForeground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_playlist_background_len = match self
+        let select_playlist_background_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistBackground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_playlist_border_len = match self
+        let select_playlist_border_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistBorder))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_playlist_highlight_len = match self
+        let select_playlist_highlight_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlight))
         {
@@ -267,21 +304,21 @@ impl Model {
             _ => 8,
         };
 
-        let select_progress_foreground_len = match self
+        let select_progress_foreground_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_progress_background_len = match self
+        let select_progress_background_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ProgressBackground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_progress_border_len = match self
+        let select_progress_border_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))
         {
@@ -289,21 +326,21 @@ impl Model {
             _ => 8,
         };
 
-        let select_lyric_foreground_len = match self
+        let select_lyric_foreground_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LyricForeground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_lyric_background_len = match self
+        let select_lyric_background_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LyricBackground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_lyric_border_len = match self
+        let select_lyric_border_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
         {
@@ -311,21 +348,21 @@ impl Model {
             _ => 8,
         };
 
-        let select_important_popup_foreground_len = match self
+        let select_important_popup_foreground_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_important_popup_background_len = match self
+        let select_important_popup_background_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_important_popup_border_len = match self
+        let select_important_popup_border_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))
         {
@@ -333,28 +370,28 @@ impl Model {
             _ => 8,
         };
 
-        let select_fallback_foreground_len = match self
+        let select_fallback_foreground_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_fallback_background_len = match self
+        let select_fallback_background_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_fallback_border_len = match self
+        let select_fallback_border_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))
         {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_fallback_highlight_len = match self
+        let select_fallback_highlight_len: u16 = match self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))
         {
@@ -372,29 +409,66 @@ impl Model {
                 ])
                 .areas(f.area());
 
-                let chunks_middle =
+                let [left, right] =
                     Layout::horizontal([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)])
-                        .split(chunks_main);
+                        .areas(chunks_main);
 
-                let chunks_style =
-                    Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)])
-                        .split(chunks_middle[1]);
+                let library_height = sat_add! {
+                    1u16, // label
+                    select_library_foreground_len,
+                    select_library_background_len,
+                    select_library_border_len,
+                    select_library_highlight_len,
+                    3u16, // highlight symbol
+                };
+                let playlist_height = sat_add! {
+                    1u16, // label
+                    select_playlist_foreground_len,
+                    select_playlist_background_len,
+                    select_playlist_border_len,
+                    select_playlist_highlight_len,
+                    3u16, // highlight symbol
+                    3u16, // current track symbol,
+                };
+                let progress_height = sat_add! {
+                    1u16, // label
+                    select_progress_foreground_len,
+                    select_progress_background_len,
+                    select_progress_border_len
+                };
+                let lyric_height = sat_add! {
+                    1u16, // label
+                    select_lyric_foreground_len,
+                    select_lyric_background_len,
+                    select_lyric_border_len
+                };
+                let important_popup_height = sat_add! {
+                    1u16, // label
+                    select_important_popup_foreground_len,
+                    select_important_popup_background_len,
+                    select_important_popup_border_len
+                };
+                let fallback_height = sat_add! {
+                    1u16, // label
+                    select_fallback_foreground_len,
+                    select_fallback_background_len,
+                    select_fallback_border_len,
+                    select_fallback_highlight_len
+                };
 
-                let chunks_style_top = Layout::horizontal([
-                    Constraint::Ratio(1, 4), // library
-                    Constraint::Ratio(1, 4), // playlist
-                    Constraint::Ratio(1, 4), // progress
-                    Constraint::Ratio(1, 4), // lyric
-                ])
-                .split(chunks_style[0]);
+                let max_height = max! {
+                    library_height,
+                    playlist_height,
+                    progress_height,
+                    lyric_height,
+                    important_popup_height,
+                    fallback_height
+                };
 
-                let chunks_style_bottom = Layout::horizontal([
-                    Constraint::Ratio(1, 4), // important popup
-                    Constraint::Ratio(1, 4), // unused...
-                    Constraint::Ratio(1, 4),
-                    Constraint::Ratio(1, 4),
-                ])
-                .split(chunks_style[1]);
+                let cells = DynamicGrid::new(6, max_height, 16 + 2)
+                    .with_row_spacing(1)
+                    .draw_row_low_space()
+                    .split(right);
 
                 let chunks_library = Layout::vertical([
                     Constraint::Length(1),
@@ -403,9 +477,9 @@ impl Model {
                     Constraint::Length(select_library_border_len),
                     Constraint::Length(select_library_highlight_len),
                     Constraint::Length(3),
-                    Constraint::Min(3),
+                    Constraint::Min(0),
                 ])
-                .split(chunks_style_top[0]);
+                .split(cells[0]);
 
                 let chunks_playlist = Layout::vertical([
                     Constraint::Length(1),
@@ -415,36 +489,36 @@ impl Model {
                     Constraint::Length(select_playlist_highlight_len),
                     Constraint::Length(3),
                     Constraint::Length(3),
-                    Constraint::Min(3),
+                    Constraint::Min(0),
                 ])
-                .split(chunks_style_top[1]);
+                .split(cells[1]);
 
                 let chunks_progress = Layout::vertical([
                     Constraint::Length(1),
                     Constraint::Length(select_progress_foreground_len),
                     Constraint::Length(select_progress_background_len),
                     Constraint::Length(select_progress_border_len),
-                    Constraint::Min(3),
+                    Constraint::Min(0),
                 ])
-                .split(chunks_style_top[2]);
+                .split(cells[2]);
 
                 let chunks_lyric = Layout::vertical([
                     Constraint::Length(1),
                     Constraint::Length(select_lyric_foreground_len),
                     Constraint::Length(select_lyric_background_len),
                     Constraint::Length(select_lyric_border_len),
-                    Constraint::Min(3),
+                    Constraint::Min(0),
                 ])
-                .split(chunks_style_top[3]);
+                .split(cells[3]);
 
                 let chunks_important_popup = Layout::vertical([
                     Constraint::Length(1),
                     Constraint::Length(select_important_popup_foreground_len),
                     Constraint::Length(select_important_popup_background_len),
                     Constraint::Length(select_important_popup_border_len),
-                    Constraint::Min(3),
+                    Constraint::Min(0),
                 ])
-                .split(chunks_style_bottom[0]);
+                .split(cells[4]);
 
                 let chunks_fallback = Layout::vertical([
                     Constraint::Length(1),
@@ -452,18 +526,15 @@ impl Model {
                     Constraint::Length(select_fallback_background_len),
                     Constraint::Length(select_fallback_border_len),
                     Constraint::Length(select_fallback_highlight_len),
-                    Constraint::Min(3),
+                    Constraint::Min(0),
                 ])
-                .split(chunks_style_bottom[1]);
+                .split(cells[5]);
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
 
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
-                    f,
-                    chunks_middle[0],
-                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect), f, left);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
 
