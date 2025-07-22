@@ -28,10 +28,8 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
 use termusiclib::ids::{Id, IdConfigEditor, IdKey};
 use termusiclib::types::{ConfigEditorMsg, KFMsg, Msg};
-use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::ratatui::layout::Position as LayoutPosition;
 use tuirealm::ratatui::widgets::ListDirection;
 use tuirealm::{Component, Event, Frame, MockComponent, State, StateValue};
 use unicode_width::UnicodeWidthStr;
@@ -437,6 +435,10 @@ impl KeyCombo {
             Attribute::Value,
             AttrValue::Payload(PropPayload::One(PropValue::Usize(i))),
         );
+
+        // we want to show them at the beginning
+        self.states_input.cursor_at_begin();
+
         self
     }
 
@@ -678,15 +680,17 @@ impl KeyCombo {
     }
 
     fn render_input(&self, render: &mut Frame<'_>, area: Rect) {
+        // apply the area block offset that "render_X_tab" already draws
+        let area = Block::new().borders(BorderSides::all()).inner(area);
         let chunks =
             Layout::horizontal([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)]).split(area);
 
-        let mut foreground = self
+        let foreground = self
             .props
             .get_ref(Attribute::Foreground)
             .and_then(AttrValue::as_color)
             .unwrap_or(Color::Reset);
-        let mut background = self
+        let background = self
             .props
             .get_ref(Attribute::Background)
             .and_then(AttrValue::as_color)
@@ -696,13 +700,13 @@ impl KeyCombo {
             .get_ref(Attribute::TextProps)
             .and_then(AttrValue::as_text_modifiers)
             .unwrap_or(TextModifiers::empty());
-        let borders = self
-            .props
-            .get_ref(Attribute::Borders)
-            .and_then(AttrValue::as_borders)
-            // Note: Borders should be copy-able
-            .map_or(Borders::default(), Clone::clone)
-            .sides(BorderSides::NONE);
+        // let borders = self
+        //     .props
+        //     .get_ref(Attribute::Borders)
+        //     .and_then(AttrValue::as_borders)
+        //     // Note: Borders should be copy-able
+        //     .map_or(Borders::default(), Clone::clone)
+        //     .sides(BorderSides::NONE);
 
         let focus = self
             .props
@@ -713,19 +717,24 @@ impl KeyCombo {
             .props
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style);
-        let mut block = get_block::<&str>(borders, None, focus, inactive_style);
-        // Apply invalid style
-        if focus && !self.is_valid() {
-            if let Some(style) = self
-                .props
-                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
-                .and_then(AttrValue::as_style)
-            {
-                block = block.borders(BorderSides::NONE);
-                foreground = style.fg.unwrap_or(Color::Reset);
-                background = style.bg.unwrap_or(Color::Reset);
-            }
-        }
+        // the block is drawn by "render_open_tab" or "render_closed_tab"
+        // let mut block = get_block::<&str>(borders, None, focus, inactive_style);
+        // // Apply invalid style
+        // if focus && !self.is_valid() {
+        //     if let Some(style) = self
+        //         .props
+        //         .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+        //         .and_then(AttrValue::as_style)
+        //     {
+        //         block = block.borders(BorderSides::NONE);
+        //         foreground = style.fg.unwrap_or(Color::Reset);
+        //         background = style.bg.unwrap_or(Color::Reset);
+        //     }
+        // }
+
+        let block_render_area = chunks[1];
+        let block_inner_area = block_render_area;
+
         let text_to_display = self.states_input.render_value();
         let show_placeholder = text_to_display.is_empty();
         // Choose whether to show placeholder; if placeholder is unset, show nothing
@@ -757,15 +766,19 @@ impl KeyCombo {
         // Create widget
         let p: Paragraph<'_> = Paragraph::new(text_to_display)
             .style(paragraph_style)
-            .block(block);
-        render.render_widget(p, chunks[1]);
+            /* .block(block) */;
+        render.render_widget(p, block_render_area);
         // Set cursor, if focus
         if focus {
-            let x: u16 = chunks[1].x
+            let x: u16 = block_inner_area.x
                 + calc_utf8_cursor_position(
                     &self.states_input.render_value_chars()[0..self.states_input.cursor],
                 );
-            render.set_cursor_position(LayoutPosition { x, y: area.y + 1 });
+            let x = x.min(block_inner_area.x + block_inner_area.width);
+            render.set_cursor_position(tuirealm::ratatui::prelude::Position {
+                x,
+                y: block_inner_area.y,
+            });
         }
     }
 
@@ -874,7 +887,7 @@ impl MockComponent for KeyCombo {
                     CmdResult::Submit(self.state())
                 } else {
                     self.states.open_tab();
-                    CmdResult::None
+                    CmdResult::Changed(self.state())
                 }
             }
 
@@ -890,19 +903,19 @@ impl MockComponent for KeyCombo {
             }
             Cmd::Move(Direction::Left) => {
                 self.states_input.decr_cursor();
-                CmdResult::None
+                CmdResult::Changed(self.state())
             }
             Cmd::Move(Direction::Right) => {
                 self.states_input.incr_cursor();
-                CmdResult::None
+                CmdResult::Changed(self.state())
             }
             Cmd::GoTo(Position::Begin) => {
                 self.states_input.cursor_at_begin();
-                CmdResult::None
+                CmdResult::Changed(self.state())
             }
             Cmd::GoTo(Position::End) => {
                 self.states_input.cursor_at_end();
-                CmdResult::None
+                CmdResult::Changed(self.state())
             }
             Cmd::Type(ch) => {
                 // Push char to input
@@ -1083,7 +1096,10 @@ mod test {
         // Tab should be closed
         assert_eq!(component.states.is_tab_open(), false);
         // Re open
-        assert_eq!(component.perform(Cmd::Submit), CmdResult::None);
+        assert_eq!(
+            component.perform(Cmd::Submit),
+            CmdResult::Changed(State::None)
+        );
         assert_eq!(component.states.is_tab_open(), true);
         // Move arrows
         assert_eq!(
