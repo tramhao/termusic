@@ -44,6 +44,7 @@ use tuirealm::ratatui::{
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
 
+use crate::ui::components::vendored::tui_realm_stdlib_input::InputStates;
 use crate::ui::model::{Model, UserEvent};
 
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
@@ -222,99 +223,6 @@ impl SelectStates {
     }
 }
 
-#[derive(Default)]
-pub struct InputStates {
-    pub input: Vec<char>, // Current input
-    pub cursor: usize,    // Input position
-}
-
-impl InputStates {
-    /// ### `append`
-    ///
-    /// Append, if possible according to input type, the character to the input vec
-    pub fn append(&mut self, ch: char, max_len: Option<usize>) {
-        // Check if max length has been reached
-        if self.input.len() < max_len.unwrap_or(usize::MAX) {
-            // Check whether can push
-            self.input.insert(self.cursor, ch);
-            self.incr_cursor();
-        }
-    }
-
-    /// ### `backspace`
-    ///
-    /// Delete element at cursor -1; then decrement cursor by 1
-    pub fn backspace(&mut self) {
-        if self.cursor > 0 && !self.input.is_empty() {
-            self.input.remove(self.cursor - 1);
-            // Decrement cursor
-            self.cursor -= 1;
-        }
-    }
-
-    /// ### `delete`
-    ///
-    /// Delete element at cursor
-    pub fn delete(&mut self) {
-        if self.cursor < self.input.len() {
-            self.input.remove(self.cursor);
-        }
-    }
-
-    /// ### `incr_cursor`
-    ///
-    /// Increment cursor value by one if possible
-    pub fn incr_cursor(&mut self) {
-        if self.cursor < self.input.len() {
-            self.cursor += 1;
-        }
-    }
-
-    /// ### `cursoro_at_begin`
-    ///
-    /// Place cursor at the begin of the input
-    pub fn cursor_at_begin(&mut self) {
-        self.cursor = 0;
-    }
-
-    /// ### `cursor_at_end`
-    ///
-    /// Place cursor at the end of the input
-    pub fn cursor_at_end(&mut self) {
-        self.cursor = self.input.len();
-    }
-
-    /// ### `decr_cursor`
-    ///
-    /// Decrement cursor value by one if possible
-    pub fn decr_cursor(&mut self) {
-        if self.cursor > 0 {
-            self.cursor -= 1;
-        }
-    }
-
-    /// ### `render_value`
-    ///
-    /// Get value as string to render
-    pub fn render_value(&self) -> String {
-        self.render_value_chars().iter().collect::<String>()
-    }
-
-    /// ### `render_value_chars`
-    ///
-    /// Get the current input as a slice
-    pub fn render_value_chars(&self) -> &[char] {
-        &self.input
-    }
-
-    /// ### `get_value`
-    ///
-    /// Get value as string
-    pub fn get_value(&self) -> String {
-        self.input.iter().collect()
-    }
-}
-
 // -- component
 
 #[derive(Default)]
@@ -462,7 +370,8 @@ impl KeyCombo {
             self.states_input.cursor = 0;
             let max_len = self.get_input_len();
             for ch in input {
-                self.states_input.append(ch, max_len);
+                self.states_input
+                    .append(ch, &tuirealm::props::InputType::Text, max_len);
             }
         }
     }
@@ -679,7 +588,7 @@ impl KeyCombo {
         render.render_widget(p, area);
     }
 
-    fn render_input(&self, render: &mut Frame<'_>, area: Rect) {
+    fn render_input(&mut self, render: &mut Frame<'_>, area: Rect) {
         // apply the area block offset that "render_X_tab" already draws
         let area = Block::new().borders(BorderSides::all()).inner(area);
         let chunks =
@@ -735,7 +644,11 @@ impl KeyCombo {
         let block_render_area = chunks[1];
         let block_inner_area = block_render_area;
 
-        let text_to_display = self.states_input.render_value();
+        self.states_input.update_width(block_inner_area.width);
+
+        let text_to_display = self
+            .states_input
+            .render_value_offset(tuirealm::props::InputType::Text);
         let show_placeholder = text_to_display.is_empty();
         // Choose whether to show placeholder; if placeholder is unset, show nothing
         let text_to_display: &str = if show_placeholder {
@@ -772,7 +685,13 @@ impl KeyCombo {
         if focus {
             let x: u16 = block_inner_area.x
                 + calc_utf8_cursor_position(
-                    &self.states_input.render_value_chars()[0..self.states_input.cursor],
+                    &self
+                        .states_input
+                        .render_value_chars(tuirealm::props::InputType::Text)
+                        [0..self.states_input.cursor],
+                )
+                .saturating_sub(
+                    u16::try_from(self.states_input.display_offset).unwrap_or(u16::MAX),
                 );
             let x = x.min(block_inner_area.x + block_inner_area.width);
             render.set_cursor_position(tuirealm::ratatui::prelude::Position {
@@ -920,7 +839,11 @@ impl MockComponent for KeyCombo {
             Cmd::Type(ch) => {
                 // Push char to input
                 let prev_len = self.states_input.input.len();
-                self.states_input.append(ch, self.get_input_len());
+                self.states_input.append(
+                    ch,
+                    &tuirealm::props::InputType::Text,
+                    self.get_input_len(),
+                );
                 // Message on change
                 if prev_len == self.states_input.input.len() {
                     CmdResult::None

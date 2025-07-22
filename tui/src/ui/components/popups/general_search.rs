@@ -7,7 +7,7 @@ use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
 use termusiclib::track::MediaTypes;
 use termusiclib::types::{GSMsg, Msg};
-use tui_realm_stdlib::{Input, Table};
+use tui_realm_stdlib::Table;
 use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -15,6 +15,7 @@ use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, T
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::Model;
+use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::model::UserEvent;
 
 #[derive(MockComponent)]
