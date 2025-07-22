@@ -246,158 +246,47 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_color(&mut self) {
-        let select_library_foreground_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_background_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_border_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_highlight_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
+        ///
+        /// Macro to apply "DRY"(Dont-Repeat-Yourself) to reduce function length.
+        macro_rules! is_expanded {
+            ($id:expr, $yes:expr, $no:expr) => {
+                match self.app.state(&Id::ConfigEditor($id)) {
+                    Ok(State::One(_)) => $no,
+                    _ => $yes,
+                }
+            };
+        }
 
-        let select_playlist_foreground_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistForeground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_playlist_background_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistBackground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_playlist_border_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistBorder))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_playlist_highlight_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlight))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let library_foreground_len: u16 = is_expanded!(IdConfigEditor::LibraryForeground, 8, 3);
+        let library_background_len: u16 = is_expanded!(IdConfigEditor::LibraryBackground, 8, 3);
+        let library_border_len: u16 = is_expanded!(IdConfigEditor::LibraryBorder, 8, 3);
+        let library_highlight_len: u16 = is_expanded!(IdConfigEditor::LibraryHighlight, 8, 3);
 
-        let select_progress_foreground_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_progress_background_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ProgressBackground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_progress_border_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let playlist_foreground_len: u16 = is_expanded!(IdConfigEditor::PlaylistForeground, 8, 3);
+        let playlist_background_len: u16 = is_expanded!(IdConfigEditor::PlaylistBackground, 8, 3);
+        let playlist_border_len: u16 = is_expanded!(IdConfigEditor::PlaylistBorder, 8, 3);
+        let playlist_highlight_len: u16 = is_expanded!(IdConfigEditor::PlaylistHighlight, 8, 3);
 
-        let select_lyric_foreground_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::LyricForeground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_lyric_background_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::LyricBackground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_lyric_border_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let progress_foreground_len: u16 = is_expanded!(IdConfigEditor::ProgressForeground, 8, 3);
+        let progress_background_len: u16 = is_expanded!(IdConfigEditor::ProgressBackground, 8, 3);
+        let progress_border_len: u16 = is_expanded!(IdConfigEditor::ProgressBorder, 8, 3);
 
-        let select_important_popup_foreground_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_important_popup_background_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_important_popup_border_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let lyric_foreground_len: u16 = is_expanded!(IdConfigEditor::LyricForeground, 8, 3);
+        let lyric_background_len: u16 = is_expanded!(IdConfigEditor::LyricBackground, 8, 3);
+        let lyric_border_len: u16 = is_expanded!(IdConfigEditor::LyricBorder, 8, 3);
 
-        let select_fallback_foreground_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_fallback_background_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_fallback_border_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_fallback_highlight_len: u16 = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let important_popup_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::ImportantPopupForeground, 8, 3);
+        let important_popup_background_len: u16 =
+            is_expanded!(IdConfigEditor::ImportantPopupBackground, 8, 3);
+        let important_popup_border_len: u16 =
+            is_expanded!(IdConfigEditor::ImportantPopupBorder, 8, 3);
+
+        let fallback_foreground_len: u16 = is_expanded!(IdConfigEditor::FallbackForeground, 8, 3);
+        let fallback_background_len: u16 = is_expanded!(IdConfigEditor::FallbackBackground, 8, 3);
+        let fallback_border_len: u16 = is_expanded!(IdConfigEditor::FallbackBorder, 8, 3);
+        let fallback_highlight_len: u16 = is_expanded!(IdConfigEditor::FallbackHighlight, 8, 3);
 
         self.terminal
             .raw_mut()
@@ -415,45 +304,45 @@ impl Model {
 
                 let library_height = sat_add! {
                     1u16, // label
-                    select_library_foreground_len,
-                    select_library_background_len,
-                    select_library_border_len,
-                    select_library_highlight_len,
+                    library_foreground_len,
+                    library_background_len,
+                    library_border_len,
+                    library_highlight_len,
                     3u16, // highlight symbol
                 };
                 let playlist_height = sat_add! {
                     1u16, // label
-                    select_playlist_foreground_len,
-                    select_playlist_background_len,
-                    select_playlist_border_len,
-                    select_playlist_highlight_len,
+                    playlist_foreground_len,
+                    playlist_background_len,
+                    playlist_border_len,
+                    playlist_highlight_len,
                     3u16, // highlight symbol
                     3u16, // current track symbol,
                 };
                 let progress_height = sat_add! {
                     1u16, // label
-                    select_progress_foreground_len,
-                    select_progress_background_len,
-                    select_progress_border_len
+                    progress_foreground_len,
+                    progress_background_len,
+                    progress_border_len
                 };
                 let lyric_height = sat_add! {
                     1u16, // label
-                    select_lyric_foreground_len,
-                    select_lyric_background_len,
-                    select_lyric_border_len
+                    lyric_foreground_len,
+                    lyric_background_len,
+                    lyric_border_len
                 };
                 let important_popup_height = sat_add! {
                     1u16, // label
-                    select_important_popup_foreground_len,
-                    select_important_popup_background_len,
-                    select_important_popup_border_len
+                    important_popup_foreground_len,
+                    important_popup_background_len,
+                    important_popup_border_len
                 };
                 let fallback_height = sat_add! {
                     1u16, // label
-                    select_fallback_foreground_len,
-                    select_fallback_background_len,
-                    select_fallback_border_len,
-                    select_fallback_highlight_len
+                    fallback_foreground_len,
+                    fallback_background_len,
+                    fallback_border_len,
+                    fallback_highlight_len
                 };
 
                 let max_height = max! {
@@ -472,10 +361,10 @@ impl Model {
 
                 let chunks_library = Layout::vertical([
                     Constraint::Length(1),
-                    Constraint::Length(select_library_foreground_len),
-                    Constraint::Length(select_library_background_len),
-                    Constraint::Length(select_library_border_len),
-                    Constraint::Length(select_library_highlight_len),
+                    Constraint::Length(library_foreground_len),
+                    Constraint::Length(library_background_len),
+                    Constraint::Length(library_border_len),
+                    Constraint::Length(library_highlight_len),
                     Constraint::Length(3),
                     Constraint::Min(0),
                 ])
@@ -483,10 +372,10 @@ impl Model {
 
                 let chunks_playlist = Layout::vertical([
                     Constraint::Length(1),
-                    Constraint::Length(select_playlist_foreground_len),
-                    Constraint::Length(select_playlist_background_len),
-                    Constraint::Length(select_playlist_border_len),
-                    Constraint::Length(select_playlist_highlight_len),
+                    Constraint::Length(playlist_foreground_len),
+                    Constraint::Length(playlist_background_len),
+                    Constraint::Length(playlist_border_len),
+                    Constraint::Length(playlist_highlight_len),
                     Constraint::Length(3),
                     Constraint::Length(3),
                     Constraint::Min(0),
@@ -495,37 +384,37 @@ impl Model {
 
                 let chunks_progress = Layout::vertical([
                     Constraint::Length(1),
-                    Constraint::Length(select_progress_foreground_len),
-                    Constraint::Length(select_progress_background_len),
-                    Constraint::Length(select_progress_border_len),
+                    Constraint::Length(progress_foreground_len),
+                    Constraint::Length(progress_background_len),
+                    Constraint::Length(progress_border_len),
                     Constraint::Min(0),
                 ])
                 .split(cells[2]);
 
                 let chunks_lyric = Layout::vertical([
                     Constraint::Length(1),
-                    Constraint::Length(select_lyric_foreground_len),
-                    Constraint::Length(select_lyric_background_len),
-                    Constraint::Length(select_lyric_border_len),
+                    Constraint::Length(lyric_foreground_len),
+                    Constraint::Length(lyric_background_len),
+                    Constraint::Length(lyric_border_len),
                     Constraint::Min(0),
                 ])
                 .split(cells[3]);
 
                 let chunks_important_popup = Layout::vertical([
                     Constraint::Length(1),
-                    Constraint::Length(select_important_popup_foreground_len),
-                    Constraint::Length(select_important_popup_background_len),
-                    Constraint::Length(select_important_popup_border_len),
+                    Constraint::Length(important_popup_foreground_len),
+                    Constraint::Length(important_popup_background_len),
+                    Constraint::Length(important_popup_border_len),
                     Constraint::Min(0),
                 ])
                 .split(cells[4]);
 
                 let chunks_fallback = Layout::vertical([
                     Constraint::Length(1),
-                    Constraint::Length(select_fallback_foreground_len),
-                    Constraint::Length(select_fallback_background_len),
-                    Constraint::Length(select_fallback_border_len),
-                    Constraint::Length(select_fallback_highlight_len),
+                    Constraint::Length(fallback_foreground_len),
+                    Constraint::Length(fallback_background_len),
+                    Constraint::Length(fallback_border_len),
+                    Constraint::Length(fallback_highlight_len),
                     Constraint::Min(0),
                 ])
                 .split(cells[5]);
@@ -706,216 +595,113 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_key1(&mut self) {
-        let select_global_quit_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_left_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::Left),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_right_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::Right),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::Up),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_down_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::Down),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_goto_top_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoTop),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_goto_bottom_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoBottom),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_player_toggle_pause_len = match self.app.state(&Id::ConfigEditor(
+        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
+        ///
+        /// Macro to apply "DRY"(Dont-Repeat-Yourself) to reduce function length.
+        macro_rules! is_expanded {
+            ($id:expr, $yes:expr, $no:expr) => {
+                match self.app.state(&Id::ConfigEditor($id)) {
+                    Ok(State::One(_)) => $no,
+                    _ => $yes,
+                }
+            };
+        }
+
+        let global_quit_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit), 8, 3);
+        let global_left_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Left), 8, 3);
+        let global_right_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Right), 8, 3);
+        let global_up_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Up), 8, 3);
+        let global_down_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Down), 8, 3);
+        let global_goto_top_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoTop), 8, 3);
+        let global_goto_bottom_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoBottom), 8, 3);
+        let global_player_toggle_pause_len = is_expanded!(
             IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerTogglePause),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_player_next_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerNext),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_player_previous_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerPrevious),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
+        let global_player_next_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerNext), 8, 3);
+        let global_player_previous_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerPrevious), 8, 3);
 
-        let select_global_help_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::Help),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let global_help_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Help), 8, 3);
 
-        let select_global_volume_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeUp),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let global_volume_up_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeUp), 8, 3);
 
-        let select_global_volume_down_len = match self.app.state(&Id::ConfigEditor(
+        let global_volume_down_len = is_expanded!(
             IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeDown),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let select_global_player_seek_forward_len = match self.app.state(&Id::ConfigEditor(
+        let global_player_seek_forward_len = is_expanded!(
             IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekForward),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_player_seek_backward_len = match self.app.state(&Id::ConfigEditor(
+            8,
+            3
+        );
+        let global_player_seek_backward_len = is_expanded!(
             IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekBackward),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_player_speed_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedUp),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_player_speed_down_len = match self.app.state(&Id::ConfigEditor(
+            8,
+            3
+        );
+        let global_player_speed_up_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedUp), 8, 3);
+        let global_player_speed_down_len = is_expanded!(
             IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedDown),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let select_global_lyric_adjust_forward_len = match self.app.state(&Id::ConfigEditor(
+        let global_lyric_adjust_forward_len = is_expanded!(
             IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustForward),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_lyric_adjust_backward_len = match self.app.state(&Id::ConfigEditor(
+            8,
+            3
+        );
+        let global_lyric_adjust_backward_len = is_expanded!(
             IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustBackward),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_lyric_cycle_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricCycle),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_layout_treeview_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutTreeview),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
+        let global_lyric_cycle_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricCycle), 8, 3);
+        let global_layout_treeview_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutTreeview), 8, 3);
 
-        let select_global_layout_database_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutDatabase),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let global_layout_database_len =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutDatabase), 8, 3);
 
-        let select_global_player_toggle_gapless_len = match self.app.state(&Id::ConfigEditor(
+        let global_player_toggle_gapless_len = is_expanded!(
             IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerToggleGapless),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let select_global_config_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::Config),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let global_config_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Config), 8, 3);
 
-        let select_global_save_playlist = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::SavePlaylist),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let global_save_playlist =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::SavePlaylist), 8, 3);
 
-        let select_global_layout_podcast = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPodcast),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let global_layout_podcast =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPodcast), 8, 3);
 
-        let select_global_xywh_move_left = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let global_xywh_move_left =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft), 8, 3);
 
-        let select_global_xywh_move_right = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveRight),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_xywh_move_up = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveUp),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_xywh_move_down = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveDown),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_xywh_zoom_in = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomIn),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_xywh_zoom_out = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomOut),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_global_xywh_hide = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhHide),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let global_xywh_move_right =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveRight), 8, 3);
+        let global_xywh_move_up =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveUp), 8, 3);
+        let global_xywh_move_down =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveDown), 8, 3);
+        let global_xywh_zoom_in =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomIn), 8, 3);
+        let global_xywh_zoom_out =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomOut), 8, 3);
+        let global_xywh_hide =
+            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhHide,), 8, 3);
 
         self.terminal
             .raw_mut()
@@ -936,53 +722,53 @@ impl Model {
                 .split(chunks_main);
 
                 let chunks_middle_column1 = Layout::vertical([
-                    Constraint::Length(select_global_quit_len),
-                    Constraint::Length(select_global_left_len),
-                    Constraint::Length(select_global_down_len),
-                    Constraint::Length(select_global_up_len),
-                    Constraint::Length(select_global_right_len),
-                    Constraint::Length(select_global_goto_top_len),
-                    Constraint::Length(select_global_goto_bottom_len),
-                    Constraint::Length(select_global_player_toggle_pause_len),
-                    Constraint::Length(select_global_player_next_len),
+                    Constraint::Length(global_quit_len),
+                    Constraint::Length(global_left_len),
+                    Constraint::Length(global_down_len),
+                    Constraint::Length(global_up_len),
+                    Constraint::Length(global_right_len),
+                    Constraint::Length(global_goto_top_len),
+                    Constraint::Length(global_goto_bottom_len),
+                    Constraint::Length(global_player_toggle_pause_len),
+                    Constraint::Length(global_player_next_len),
                     Constraint::Min(0),
                 ])
                 .split(chunks_middle[0]);
 
                 let chunks_middle_column2 = Layout::vertical([
-                    Constraint::Length(select_global_player_previous_len),
-                    Constraint::Length(select_global_help_len),
-                    Constraint::Length(select_global_volume_up_len),
-                    Constraint::Length(select_global_volume_down_len),
-                    Constraint::Length(select_global_player_seek_forward_len),
-                    Constraint::Length(select_global_player_seek_backward_len),
-                    Constraint::Length(select_global_player_speed_up_len),
-                    Constraint::Length(select_global_player_speed_down_len),
-                    Constraint::Length(select_global_lyric_adjust_forward_len),
+                    Constraint::Length(global_player_previous_len),
+                    Constraint::Length(global_help_len),
+                    Constraint::Length(global_volume_up_len),
+                    Constraint::Length(global_volume_down_len),
+                    Constraint::Length(global_player_seek_forward_len),
+                    Constraint::Length(global_player_seek_backward_len),
+                    Constraint::Length(global_player_speed_up_len),
+                    Constraint::Length(global_player_speed_down_len),
+                    Constraint::Length(global_lyric_adjust_forward_len),
                     Constraint::Min(0),
                 ])
                 .split(chunks_middle[1]);
                 let chunks_middle_column3 = Layout::vertical([
-                    Constraint::Length(select_global_lyric_adjust_backward_len),
-                    Constraint::Length(select_global_lyric_cycle_len),
-                    Constraint::Length(select_global_layout_treeview_len),
-                    Constraint::Length(select_global_layout_database_len),
-                    Constraint::Length(select_global_player_toggle_gapless_len),
-                    Constraint::Length(select_global_config_len),
-                    Constraint::Length(select_global_save_playlist),
-                    Constraint::Length(select_global_layout_podcast),
-                    Constraint::Length(select_global_xywh_move_left),
+                    Constraint::Length(global_lyric_adjust_backward_len),
+                    Constraint::Length(global_lyric_cycle_len),
+                    Constraint::Length(global_layout_treeview_len),
+                    Constraint::Length(global_layout_database_len),
+                    Constraint::Length(global_player_toggle_gapless_len),
+                    Constraint::Length(global_config_len),
+                    Constraint::Length(global_save_playlist),
+                    Constraint::Length(global_layout_podcast),
+                    Constraint::Length(global_xywh_move_left),
                     Constraint::Min(0),
                 ])
                 .split(chunks_middle[2]);
 
                 let chunks_middle_column4 = Layout::vertical([
-                    Constraint::Length(select_global_xywh_move_right),
-                    Constraint::Length(select_global_xywh_move_up),
-                    Constraint::Length(select_global_xywh_move_down),
-                    Constraint::Length(select_global_xywh_zoom_in),
-                    Constraint::Length(select_global_xywh_zoom_out),
-                    Constraint::Length(select_global_xywh_hide),
+                    Constraint::Length(global_xywh_move_right),
+                    Constraint::Length(global_xywh_move_up),
+                    Constraint::Length(global_xywh_move_down),
+                    Constraint::Length(global_xywh_zoom_in),
+                    Constraint::Length(global_xywh_zoom_out),
+                    Constraint::Length(global_xywh_hide),
                     Constraint::Min(0),
                 ])
                 .split(chunks_middle[3]);
@@ -1169,212 +955,154 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_key2(&mut self) {
-        let select_library_delete_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibraryDelete),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_load_dir_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibraryLoadDir),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_yank_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibraryYank),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_paste_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibraryPaste),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_search_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibrarySearch),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_search_youtube_len = match self.app.state(&Id::ConfigEditor(
+        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
+        ///
+        /// Macro to apply "DRY"(Dont-Repeat-Yourself) to reduce function length.
+        macro_rules! is_expanded {
+            ($id:expr, $yes:expr, $no:expr) => {
+                match self.app.state(&Id::ConfigEditor($id)) {
+                    Ok(State::One(_)) => $no,
+                    _ => $yes,
+                }
+            };
+        }
+
+        let library_delete_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::LibraryDelete), 8, 3);
+        let library_load_dir_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::LibraryLoadDir), 8, 3);
+        let library_yank_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::LibraryYank), 8, 3);
+        let library_paste_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::LibraryPaste), 8, 3);
+        let library_search_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::LibrarySearch), 8, 3);
+        let library_search_youtube_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::LibrarySearchYoutube),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_tag_editor_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibraryTagEditor),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_playlist_delete_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PlaylistDelete),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_playlist_delete_all_len = match self.app.state(&Id::ConfigEditor(
+            8,
+            3
+        );
+        let library_tag_editor_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::LibraryTagEditor), 8, 3);
+        let playlist_delete_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::PlaylistDelete), 8, 3);
+        let playlist_delete_all_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PlaylistDeleteAll),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let select_playlist_shuffle_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PlaylistShuffle),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let playlist_shuffle_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::PlaylistShuffle), 8, 3);
 
-        let select_playlist_mode_cycle_len = match self.app.state(&Id::ConfigEditor(
+        let playlist_mode_cycle_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PlaylistModeCycle),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_playlist_search_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PlaylistSearch),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_playlist_play_selected_len = match self.app.state(&Id::ConfigEditor(
+            8,
+            3
+        );
+        let playlist_search_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSearch), 8, 3);
+        let playlist_play_selected_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PlaylistPlaySelected),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let select_playlist_swap_down_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapDown),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let playlist_swap_down_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapDown), 8, 3);
 
-        let select_playlist_swap_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapUp),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let playlist_swap_up_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapUp), 8, 3);
 
-        let select_database_add_all_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddAll),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let database_add_all_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddAll), 8, 3);
 
-        let select_database_add_selected_len = match self.app.state(&Id::ConfigEditor(
+        let database_add_selected_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddSelected),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let select_playlist_random_album_len = match self.app.state(&Id::ConfigEditor(
+        let playlist_random_album_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PlaylistAddRandomAlbum),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let select_playlist_random_tracks_len = match self.app.state(&Id::ConfigEditor(
+        let playlist_random_tracks_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PlaylistAddRandomTracks),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let library_switch_root_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibrarySwitchRoot),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let library_switch_root_len = is_expanded!(
+            IdConfigEditor::KeyOther(IdKeyOther::LibrarySwitchRoot,),
+            8,
+            3
+        );
 
-        let library_add_root_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibraryAddRoot),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let library_add_root_len =
+            is_expanded!(IdConfigEditor::KeyOther(IdKeyOther::LibraryAddRoot,), 8, 3);
 
-        let library_remove_root_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::LibraryRemoveRoot),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let library_remove_root_len = is_expanded!(
+            IdConfigEditor::KeyOther(IdKeyOther::LibraryRemoveRoot,),
+            8,
+            3
+        );
 
-        let podcast_mark_played_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkPlayed),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let podcast_mark_played_len = is_expanded!(
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkPlayed,),
+            8,
+            3
+        );
 
-        let podcast_mark_all_played_len = match self.app.state(&Id::ConfigEditor(
+        let podcast_mark_all_played_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkAllPlayed),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let podcast_ep_download_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDownload),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let podcast_ep_download_len = is_expanded!(
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDownload,),
+            8,
+            3
+        );
 
-        let podcast_ep_delete_file_len = match self.app.state(&Id::ConfigEditor(
+        let podcast_ep_delete_file_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDeleteFile),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let podcast_delete_feed_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteFeed),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let podcast_delete_feed_len = is_expanded!(
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteFeed,),
+            8,
+            3
+        );
 
-        let podcast_delete_all_feeds_len = match self.app.state(&Id::ConfigEditor(
+        let podcast_delete_all_feeds_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteAllFeeds),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let podcast_search_add_feed_len = match self.app.state(&Id::ConfigEditor(
+        let podcast_search_add_feed_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PodcastSearchAddFeed),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
-        let podcast_refresh_feed_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshFeed),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+        let podcast_refresh_feed_len = is_expanded!(
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshFeed,),
+            8,
+            3
+        );
 
-        let podcast_refresh_all_feeds_len = match self.app.state(&Id::ConfigEditor(
+        let podcast_refresh_all_feeds_len = is_expanded!(
             IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshAllFeeds),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
+            8,
+            3
+        );
 
         self.terminal
             .raw_mut()
@@ -1395,34 +1123,34 @@ impl Model {
                 .split(chunks_main);
 
                 let chunks_middle_column1 = Layout::vertical([
-                    Constraint::Length(select_library_tag_editor_len),
-                    Constraint::Length(select_library_delete_len),
-                    Constraint::Length(select_library_load_dir_len),
-                    Constraint::Length(select_library_yank_len),
-                    Constraint::Length(select_library_paste_len),
-                    Constraint::Length(select_library_search_len),
-                    Constraint::Length(select_library_search_youtube_len),
-                    Constraint::Length(select_playlist_delete_len),
-                    Constraint::Length(select_playlist_delete_all_len),
+                    Constraint::Length(library_tag_editor_len),
+                    Constraint::Length(library_delete_len),
+                    Constraint::Length(library_load_dir_len),
+                    Constraint::Length(library_yank_len),
+                    Constraint::Length(library_paste_len),
+                    Constraint::Length(library_search_len),
+                    Constraint::Length(library_search_youtube_len),
+                    Constraint::Length(playlist_delete_len),
+                    Constraint::Length(playlist_delete_all_len),
                     Constraint::Min(0),
                 ])
                 .split(chunks_middle[0]);
                 let chunks_middle_column2 = Layout::vertical([
-                    Constraint::Length(select_playlist_search_len),
-                    Constraint::Length(select_playlist_shuffle_len),
-                    Constraint::Length(select_playlist_mode_cycle_len),
-                    Constraint::Length(select_playlist_play_selected_len),
-                    Constraint::Length(select_playlist_swap_down_len),
-                    Constraint::Length(select_playlist_swap_up_len),
-                    Constraint::Length(select_database_add_all_len),
-                    Constraint::Length(select_database_add_selected_len),
-                    Constraint::Length(select_playlist_random_album_len),
+                    Constraint::Length(playlist_search_len),
+                    Constraint::Length(playlist_shuffle_len),
+                    Constraint::Length(playlist_mode_cycle_len),
+                    Constraint::Length(playlist_play_selected_len),
+                    Constraint::Length(playlist_swap_down_len),
+                    Constraint::Length(playlist_swap_up_len),
+                    Constraint::Length(database_add_all_len),
+                    Constraint::Length(database_add_selected_len),
+                    Constraint::Length(playlist_random_album_len),
                     Constraint::Min(0),
                 ])
                 .split(chunks_middle[1]);
 
                 let chunks_middle_column3 = Layout::vertical([
-                    Constraint::Length(select_playlist_random_tracks_len),
+                    Constraint::Length(playlist_random_tracks_len),
                     Constraint::Length(library_switch_root_len),
                     Constraint::Length(library_add_root_len),
                     Constraint::Length(library_remove_root_len),
