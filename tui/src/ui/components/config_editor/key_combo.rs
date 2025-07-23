@@ -27,7 +27,7 @@ use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
 use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
-use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsg, Msg};
+use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsgGlobal, KFMsgOther, Msg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -1473,8 +1473,12 @@ impl ConfigGlobalQuit {
                 " Quit ",
                 IdKey::Global(IdKeyGlobal::Quit),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalQuitBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalQuitBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalQuitBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalQuitBlurUp,
+                )),
             ),
         }
     }
@@ -1498,8 +1502,12 @@ impl ConfigGlobalLeft {
                 " Left ",
                 IdKey::Global(IdKeyGlobal::Left),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLeftBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLeftBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLeftBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLeftBlurUp,
+                )),
             ),
         }
     }
@@ -1523,8 +1531,12 @@ impl ConfigGlobalDown {
                 " Down ",
                 IdKey::Global(IdKeyGlobal::Down),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalDownBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalDownBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalDownBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalDownBlurUp,
+                )),
             ),
         }
     }
@@ -1547,8 +1559,12 @@ impl ConfigGlobalRight {
                 " Right ",
                 IdKey::Global(IdKeyGlobal::Right),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalRightBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalRightBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalRightBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalRightBlurUp,
+                )),
             ),
         }
     }
@@ -1571,8 +1587,10 @@ impl ConfigGlobalUp {
                 " Up ",
                 IdKey::Global(IdKeyGlobal::Up),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalUpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalUpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::GlobalUpBlurUp)),
             ),
         }
     }
@@ -1596,8 +1614,12 @@ impl ConfigGlobalGotoTop {
                 " Goto Top ",
                 IdKey::Global(IdKeyGlobal::GotoTop),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoTopBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoTopBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalGotoTopBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalGotoTopBlurUp,
+                )),
             ),
         }
     }
@@ -1621,8 +1643,12 @@ impl ConfigGlobalGotoBottom {
                 " Goto Bottom ",
                 IdKey::Global(IdKeyGlobal::GotoBottom),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoBottomBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoBottomBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalGotoBottomBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalGotoBottomBlurUp,
+                )),
             ),
         }
     }
@@ -1646,11 +1672,11 @@ impl ConfigGlobalPlayerTogglePause {
                 " Pause Toggle ",
                 IdKey::Global(IdKeyGlobal::PlayerTogglePause),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerTogglePauseBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerTogglePauseBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerTogglePauseBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerTogglePauseBlurUp,
                 )),
             ),
         }
@@ -1675,8 +1701,12 @@ impl ConfigGlobalPlayerNext {
                 " Next Song ",
                 IdKey::Global(IdKeyGlobal::PlayerNext),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerNextBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerNextBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerNextBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerNextBlurUp,
+                )),
             ),
         }
     }
@@ -1700,10 +1730,12 @@ impl ConfigGlobalPlayerPrevious {
                 " Previous Song ",
                 IdKey::Global(IdKeyGlobal::PlayerPrevious),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerPreviousBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerPreviousBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerPreviousBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerPreviousBlurUp,
+                )),
             ),
         }
     }
@@ -1727,8 +1759,12 @@ impl ConfigGlobalHelp {
                 " Help ",
                 IdKey::Global(IdKeyGlobal::Help),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalHelpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalHelpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalHelpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalHelpBlurUp,
+                )),
             ),
         }
     }
@@ -1751,8 +1787,12 @@ impl ConfigGlobalVolumeUp {
                 " Volume + ",
                 IdKey::Global(IdKeyGlobal::PlayerVolumeUp),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeUpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerVolumeUpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerVolumeUpBlurUp,
+                )),
             ),
         }
     }
@@ -1776,8 +1816,12 @@ impl ConfigGlobalVolumeDown {
                 " Volume - ",
                 IdKey::Global(IdKeyGlobal::PlayerVolumeDown),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeDownBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeDownBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerVolumeDownBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerVolumeDownBlurUp,
+                )),
             ),
         }
     }
@@ -1801,11 +1845,11 @@ impl ConfigGlobalPlayerSeekForward {
                 " Seek Forward ",
                 IdKey::Global(IdKeyGlobal::PlayerSeekForward),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSeekForwardBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerSeekForwardBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSeekForwardBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerSeekForwardBlurUp,
                 )),
             ),
         }
@@ -1830,11 +1874,11 @@ impl ConfigGlobalPlayerSeekBackward {
                 " Seek Backward ",
                 IdKey::Global(IdKeyGlobal::PlayerSeekBackward),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSeekBackwardBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerSeekBackwardBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSeekBackwardBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerSeekBackwardBlurUp,
                 )),
             ),
         }
@@ -1859,10 +1903,12 @@ impl ConfigGlobalPlayerSpeedUp {
                 " Speed Up ",
                 IdKey::Global(IdKeyGlobal::PlayerSpeedUp),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSpeedUpBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerSpeedUpBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerSpeedUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerSpeedUpBlurUp,
+                )),
             ),
         }
     }
@@ -1886,11 +1932,11 @@ impl ConfigGlobalPlayerSpeedDown {
                 " Speed Down ",
                 IdKey::Global(IdKeyGlobal::PlayerSpeedDown),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSpeedDownBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerSpeedDownBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSpeedDownBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerSpeedDownBlurUp,
                 )),
             ),
         }
@@ -1915,11 +1961,11 @@ impl ConfigGlobalLyricAdjustForward {
                 " Lyric Forward ",
                 IdKey::Global(IdKeyGlobal::LyricAdjustForward),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLyricAdjustForwardBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLyricAdjustForwardBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLyricAdjustForwardBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLyricAdjustForwardBlurUp,
                 )),
             ),
         }
@@ -1944,11 +1990,11 @@ impl ConfigGlobalLyricAdjustBackward {
                 " Lyric Backward ",
                 IdKey::Global(IdKeyGlobal::LyricAdjustBackward),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLyricAdjustBackwardBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLyricAdjustBackwardBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLyricAdjustBackwardBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLyricAdjustBackwardBlurUp,
                 )),
             ),
         }
@@ -1973,8 +2019,12 @@ impl ConfigGlobalLyricCycle {
                 " Lyric Cycle ",
                 IdKey::Global(IdKeyGlobal::LyricCycle),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLyricCycleBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLyricCycleBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLyricCycleBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLyricCycleBlurUp,
+                )),
             ),
         }
     }
@@ -1998,10 +2048,12 @@ impl ConfigGlobalLayoutTreeview {
                 " Layout Tree ",
                 IdKey::Global(IdKeyGlobal::LayoutTreeview),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLayoutTreeviewBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLayoutTreeviewBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutTreeviewBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLayoutTreeviewBlurUp,
+                )),
             ),
         }
     }
@@ -2025,10 +2077,12 @@ impl ConfigGlobalLayoutDatabase {
                 " Layout DataBase ",
                 IdKey::Global(IdKeyGlobal::LayoutDatabase),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLayoutDatabaseBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLayoutDatabaseBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutDatabaseBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLayoutDatabaseBlurUp,
+                )),
             ),
         }
     }
@@ -2052,11 +2106,11 @@ impl ConfigGlobalPlayerToggleGapless {
                 " Gapless Toggle ",
                 IdKey::Global(IdKeyGlobal::PlayerToggleGapless),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerToggleGaplessBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerToggleGaplessBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerToggleGaplessBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalPlayerToggleGaplessBlurUp,
                 )),
             ),
         }
@@ -2081,8 +2135,12 @@ impl ConfigLibraryDelete {
                 " Library Delete ",
                 IdKey::Other(IdKeyOther::LibraryDelete),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryDeleteBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryDeleteBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryDeleteBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryDeleteBlurUp,
+                )),
             ),
         }
     }
@@ -2106,8 +2164,12 @@ impl ConfigLibraryLoadDir {
                 " Library Load Dir ",
                 IdKey::Other(IdKeyOther::LibraryLoadDir),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryLoadDirBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryLoadDirBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryLoadDirBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryLoadDirBlurUp,
+                )),
             ),
         }
     }
@@ -2131,8 +2193,12 @@ impl ConfigLibraryYank {
                 " Library Yank ",
                 IdKey::Other(IdKeyOther::LibraryYank),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryYankBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryYankBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryYankBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryYankBlurUp,
+                )),
             ),
         }
     }
@@ -2156,8 +2222,12 @@ impl ConfigLibraryPaste {
                 " Library Paste ",
                 IdKey::Other(IdKeyOther::LibraryPaste),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryPasteBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryPasteBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryPasteBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryPasteBlurUp,
+                )),
             ),
         }
     }
@@ -2181,8 +2251,12 @@ impl ConfigLibrarySearch {
                 " Library Search ",
                 IdKey::Other(IdKeyOther::LibrarySearch),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySearchBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySearchBlurUp,
+                )),
             ),
         }
     }
@@ -2206,10 +2280,12 @@ impl ConfigLibrarySearchYoutube {
                 " Library Search Youtube ",
                 IdKey::Other(IdKeyOther::LibrarySearchYoutube),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::LibrarySearchYoutubeBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySearchYoutubeBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchYoutubeBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySearchYoutubeBlurUp,
+                )),
             ),
         }
     }
@@ -2233,8 +2309,12 @@ impl ConfigLibraryTagEditor {
                 " Library Tag Editor ",
                 IdKey::Other(IdKeyOther::LibraryTagEditor),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryTagEditorBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryTagEditorBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryTagEditorBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryTagEditorBlurUp,
+                )),
             ),
         }
     }
@@ -2258,8 +2338,12 @@ impl ConfigPlaylistDelete {
                 " Playlist Delete ",
                 IdKey::Other(IdKeyOther::PlaylistDelete),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistDeleteBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistDeleteBlurUp,
+                )),
             ),
         }
     }
@@ -2283,8 +2367,12 @@ impl ConfigPlaylistDeleteAll {
                 " Playlist Delete All ",
                 IdKey::Other(IdKeyOther::PlaylistDeleteAll),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteAllBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteAllBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistDeleteAllBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistDeleteAllBlurUp,
+                )),
             ),
         }
     }
@@ -2308,8 +2396,12 @@ impl ConfigPlaylistShuffle {
                 " Playlist Shuffle ",
                 IdKey::Other(IdKeyOther::PlaylistShuffle),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistShuffleBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistShuffleBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistShuffleBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistShuffleBlurUp,
+                )),
             ),
         }
     }
@@ -2333,8 +2425,12 @@ impl ConfigPlaylistModeCycle {
                 " Playlist Mode Cycle ",
                 IdKey::Other(IdKeyOther::PlaylistModeCycle),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistModeCycleBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistModeCycleBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistModeCycleBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistModeCycleBlurUp,
+                )),
             ),
         }
     }
@@ -2358,10 +2454,12 @@ impl ConfigPlaylistPlaySelected {
                 " Playlist Play Selected ",
                 IdKey::Other(IdKeyOther::PlaylistPlaySelected),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistPlaySelectedBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistPlaySelectedBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistPlaySelectedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistPlaySelectedBlurUp,
+                )),
             ),
         }
     }
@@ -2385,8 +2483,12 @@ impl ConfigPlaylistSearch {
                 " Playlist Search ",
                 IdKey::Other(IdKeyOther::PlaylistSearch),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSearchBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSearchBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSearchBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSearchBlurUp,
+                )),
             ),
         }
     }
@@ -2410,8 +2512,12 @@ impl ConfigPlaylistSwapDown {
                 " Playlist Swap Down ",
                 IdKey::Other(IdKeyOther::PlaylistSwapDown),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapDownBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapDownBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSwapDownBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSwapDownBlurUp,
+                )),
             ),
         }
     }
@@ -2435,8 +2541,12 @@ impl ConfigPlaylistSwapUp {
                 " Playlist Swap Up ",
                 IdKey::Other(IdKeyOther::PlaylistSwapUp),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapUpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSwapUpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSwapUpBlurUp,
+                )),
             ),
         }
     }
@@ -2460,8 +2570,12 @@ impl ConfigDatabaseAddAll {
                 " Database Add All ",
                 IdKey::Other(IdKeyOther::DatabaseAddAll),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddAllBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddAllBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::DatabaseAddAllBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::DatabaseAddAllBlurUp,
+                )),
             ),
         }
     }
@@ -2485,10 +2599,12 @@ impl ConfigDatabaseAddSelected {
                 " Database Add Selected ",
                 IdKey::Other(IdKeyOther::DatabaseAddSelected),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::DatabaseAddSelectedBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::DatabaseAddSelectedBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddSelectedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::DatabaseAddSelectedBlurUp,
+                )),
             ),
         }
     }
@@ -2512,8 +2628,12 @@ impl ConfigGlobalConfig {
                 " Config Editor ",
                 IdKey::Global(IdKeyGlobal::Config),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalConfigBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalConfigBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalConfigBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalConfigBlurUp,
+                )),
             ),
         }
     }
@@ -2537,11 +2657,11 @@ impl ConfigPlaylistAddRandomAlbum {
                 " Playlist Select Album ",
                 IdKey::Other(IdKeyOther::PlaylistAddRandomAlbum),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistAddRandomAlbumBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistAddRandomAlbumBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistAddRandomAlbumBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistAddRandomAlbumBlurUp,
                 )),
             ),
         }
@@ -2566,11 +2686,11 @@ impl ConfigPlaylistAddRandomTracks {
                 " Playlist Select Tracks ",
                 IdKey::Other(IdKeyOther::PlaylistAddRandomTracks),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistAddRandomTracksBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistAddRandomTracksBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistAddRandomTracksBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistAddRandomTracksBlurUp,
                 )),
             ),
         }
@@ -2595,8 +2715,12 @@ impl ConfigLibrarySwitchRoot {
                 " Library Switch Root ",
                 IdKey::Other(IdKeyOther::LibrarySwitchRoot),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySwitchRootBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySwitchRootBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySwitchRootBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySwitchRootBlurUp,
+                )),
             ),
         }
     }
@@ -2620,8 +2744,12 @@ impl ConfigLibraryAddRoot {
                 " Library Add Root ",
                 IdKey::Other(IdKeyOther::LibraryAddRoot),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryAddRootBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryAddRootBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryAddRootBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryAddRootBlurUp,
+                )),
             ),
         }
     }
@@ -2645,8 +2773,12 @@ impl ConfigLibraryRemoveRoot {
                 " Library Remove Root ",
                 IdKey::Other(IdKeyOther::LibraryRemoveRoot),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryRemoveRootBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryRemoveRootBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryRemoveRootBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryRemoveRootBlurUp,
+                )),
             ),
         }
     }
@@ -2670,8 +2802,12 @@ impl ConfigGlobalSavePlaylist {
                 " Global Save Playlist ",
                 IdKey::Global(IdKeyGlobal::SavePlaylist),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalSavePlaylistBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalSavePlaylistBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalSavePlaylistBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalSavePlaylistBlurUp,
+                )),
             ),
         }
     }
@@ -2695,10 +2831,12 @@ impl ConfigGlobalLayoutPodcast {
                 " Layout Podcast ",
                 IdKey::Global(IdKeyGlobal::LayoutPodcast),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLayoutPodcastBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLayoutPodcastBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutPodcastBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalLayoutPodcastBlurUp,
+                )),
             ),
         }
     }
@@ -2722,8 +2860,12 @@ impl ConfigGlobalXywhMoveLeft {
                 " Photo move left ",
                 IdKey::Global(IdKeyGlobal::XywhMoveLeft),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveLeftBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveLeftBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhMoveLeftBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhMoveLeftBlurUp,
+                )),
             ),
         }
     }
@@ -2747,10 +2889,12 @@ impl ConfigGlobalXywhMoveRight {
                 " Photo move right ",
                 IdKey::Global(IdKeyGlobal::XywhMoveRight),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalXywhMoveRightBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhMoveRightBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveRightBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhMoveRightBlurUp,
+                )),
             ),
         }
     }
@@ -2773,8 +2917,12 @@ impl ConfigGlobalXywhMoveUp {
                 " Photo move up ",
                 IdKey::Global(IdKeyGlobal::XywhMoveUp),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveUpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhMoveUpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhMoveUpBlurUp,
+                )),
             ),
         }
     }
@@ -2797,8 +2945,12 @@ impl ConfigGlobalXywhMoveDown {
                 " Photo move down ",
                 IdKey::Global(IdKeyGlobal::XywhMoveDown),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveDownBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveDownBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhMoveDownBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhMoveDownBlurUp,
+                )),
             ),
         }
     }
@@ -2822,8 +2974,12 @@ impl ConfigGlobalXywhZoomIn {
                 " Photo zoom in ",
                 IdKey::Global(IdKeyGlobal::XywhZoomIn),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomInBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomInBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhZoomInBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhZoomInBlurUp,
+                )),
             ),
         }
     }
@@ -2846,8 +3002,12 @@ impl ConfigGlobalXywhZoomOut {
                 " Photo zoom out ",
                 IdKey::Global(IdKeyGlobal::XywhZoomOut),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomOutBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomOutBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhZoomOutBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhZoomOutBlurUp,
+                )),
             ),
         }
     }
@@ -2871,8 +3031,12 @@ impl ConfigGlobalXywhHide {
                 " Photo hide ",
                 IdKey::Global(IdKeyGlobal::XywhHide),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhHideBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhHideBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhHideBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GlobalXywhHideBlurUp,
+                )),
             ),
         }
     }
@@ -2896,8 +3060,12 @@ impl ConfigPodcastMarkPlayed {
                 " Episode Mark Played",
                 IdKey::Other(IdKeyOther::PodcastMarkPlayed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkPlayedBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkPlayedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastMarkPlayedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastMarkPlayedBlurUp,
+                )),
             ),
         }
     }
@@ -2921,10 +3089,12 @@ impl ConfigPodcastMarkAllPlayed {
                 " Episode mark all played ",
                 IdKey::Other(IdKeyOther::PodcastMarkAllPlayed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastMarkAllPlayedBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastMarkAllPlayedBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkAllPlayedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastMarkAllPlayedBlurUp,
+                )),
             ),
         }
     }
@@ -2948,8 +3118,12 @@ impl ConfigPodcastEpDownload {
                 " Episode download",
                 IdKey::Other(IdKeyOther::PodcastEpDownload),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDownloadBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDownloadBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastEpDownloadBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastEpDownloadBlurUp,
+                )),
             ),
         }
     }
@@ -2973,10 +3147,12 @@ impl ConfigPodcastEpDeleteFile {
                 " Episode delete file ",
                 IdKey::Other(IdKeyOther::PodcastEpDeleteFile),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastEpDeleteFileBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastEpDeleteFileBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDeleteFileBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastEpDeleteFileBlurUp,
+                )),
             ),
         }
     }
@@ -3000,8 +3176,12 @@ impl ConfigPodcastDeleteFeed {
                 " Podcast delete feed ",
                 IdKey::Other(IdKeyOther::PodcastDeleteFeed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastDeleteFeedBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastDeleteFeedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastDeleteFeedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastDeleteFeedBlurUp,
+                )),
             ),
         }
     }
@@ -3025,11 +3205,11 @@ impl ConfigPodcastDeleteAllFeeds {
                 " Delete all feeds ",
                 IdKey::Other(IdKeyOther::PodcastDeleteAllFeeds),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastDeleteAllFeedsBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastDeleteAllFeedsBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastDeleteAllFeedsBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastDeleteAllFeedsBlurUp,
                 )),
             ),
         }
@@ -3054,10 +3234,12 @@ impl ConfigPodcastSearchAddFeed {
                 " Podcast search add feed ",
                 IdKey::Other(IdKeyOther::PodcastSearchAddFeed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastSearchAddFeedBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastSearchAddFeedBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastSearchAddFeedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastSearchAddFeedBlurUp,
+                )),
             ),
         }
     }
@@ -3081,8 +3263,12 @@ impl ConfigPodcastRefreshFeed {
                 " Refresh feed ",
                 IdKey::Other(IdKeyOther::PodcastRefreshFeed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastRefreshFeedBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastRefreshFeedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastRefreshFeedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastRefreshFeedBlurUp,
+                )),
             ),
         }
     }
@@ -3106,11 +3292,11 @@ impl ConfigPodcastRefreshAllFeeds {
                 " Refresh all feeds ",
                 IdKey::Other(IdKeyOther::PodcastRefreshAllFeeds),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastRefreshAllFeedsBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastRefreshAllFeedsBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastRefreshAllFeedsBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastRefreshAllFeedsBlurUp,
                 )),
             ),
         }
