@@ -9,7 +9,7 @@ use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
 use termusiclib::types::{
-    ConfigEditorMsg, IdKey, KFGLOBAL_FOCUS_ORDER, KFMsgGlobal, KFMsgOther, Msg,
+    ConfigEditorMsg, IdKey, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg,
 };
 use termusiclib::utils::get_app_config_path;
 
@@ -410,7 +410,7 @@ impl Model {
     }
 
     /// Handle focus of the "Key Global" tab
-    fn update_key_focus_global(&mut self, msg: KFMsgGlobal) {
+    fn update_key_focus_global(&mut self, msg: KFMsg) {
         let focus_elem = self.app.focus().and_then(|v| {
             if let Id::ConfigEditor(IdConfigEditor::KeyGlobal(key)) = *v {
                 Some(IdKey::Global(key))
@@ -428,12 +428,12 @@ impl Model {
         };
 
         let focus = match msg {
-            KFMsgGlobal::Next => KFGLOBAL_FOCUS_ORDER
+            KFMsg::Next => KFGLOBAL_FOCUS_ORDER
                 .iter()
                 .skip_while(|v| **v != focus_elem)
                 .nth(1)
                 .unwrap_or(&KFGLOBAL_FOCUS_ORDER[0]),
-            KFMsgGlobal::Previous => KFGLOBAL_FOCUS_ORDER
+            KFMsg::Previous => KFGLOBAL_FOCUS_ORDER
                 .iter()
                 .rev()
                 .skip_while(|v| **v != focus_elem)
@@ -445,249 +445,38 @@ impl Model {
     }
 
     /// Handle focus for the "Key Other" tab
-    #[allow(clippy::too_many_lines)]
-    fn update_key_focus_other(&mut self, msg: KFMsgOther) {
-        match msg {
-            KFMsgOther::PodcastSearchAddFeedBlurDown | KFMsgOther::LibraryDeleteBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibraryTagEditor,
-                    )))
-                    .ok();
+    fn update_key_focus_other(&mut self, msg: KFMsg) {
+        let focus_elem = self.app.focus().and_then(|v| {
+            if let Id::ConfigEditor(IdConfigEditor::KeyOther(key)) = *v {
+                Some(IdKey::Other(key))
+            } else {
+                None
             }
+        });
 
-            KFMsgOther::LibraryTagEditorBlurDown | KFMsgOther::LibraryLoadDirBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibraryDelete,
-                    )))
-                    .ok();
-            }
+        // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
+        let Some(focus_elem) = focus_elem else {
+            let _ = self
+                .app
+                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into()));
+            return;
+        };
 
-            KFMsgOther::LibraryDeleteBlurDown | KFMsgOther::LibraryYankBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibraryLoadDir,
-                    )))
-                    .ok();
-            }
+        let focus = match msg {
+            KFMsg::Next => KFOTHER_FOCUS_ORDER
+                .iter()
+                .skip_while(|v| **v != focus_elem)
+                .nth(1)
+                .unwrap_or(&KFOTHER_FOCUS_ORDER[0]),
+            KFMsg::Previous => KFOTHER_FOCUS_ORDER
+                .iter()
+                .rev()
+                .skip_while(|v| **v != focus_elem)
+                .nth(1)
+                .unwrap_or(KFOTHER_FOCUS_ORDER.last().unwrap()),
+        };
 
-            KFMsgOther::LibraryLoadDirBlurDown | KFMsgOther::LibraryPasteBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibraryYank,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::LibraryYankBlurDown | KFMsgOther::LibrarySearchBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibraryPaste,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::LibraryPasteBlurDown | KFMsgOther::LibrarySearchYoutubeBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibrarySearch,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::LibrarySearchBlurDown | KFMsgOther::PlaylistDeleteBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibrarySearchYoutube,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::LibrarySearchYoutubeBlurDown | KFMsgOther::PlaylistDeleteAllBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistDelete,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistDeleteBlurDown | KFMsgOther::PlaylistSearchBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistDeleteAll,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistDeleteAllBlurDown | KFMsgOther::PlaylistShuffleBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistSearch,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistSearchBlurDown | KFMsgOther::PlaylistModeCycleBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistShuffle,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistShuffleBlurDown | KFMsgOther::PlaylistPlaySelectedBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistModeCycle,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistModeCycleBlurDown | KFMsgOther::PlaylistSwapDownBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistPlaySelected,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistPlaySelectedBlurDown | KFMsgOther::PlaylistSwapUpBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistSwapDown,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistSwapDownBlurDown | KFMsgOther::DatabaseAddAllBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistSwapUp,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistSwapUpBlurDown | KFMsgOther::DatabaseAddSelectedBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::DatabaseAddAll,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::DatabaseAddAllBlurDown | KFMsgOther::PlaylistAddRandomAlbumBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::DatabaseAddSelected,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::DatabaseAddSelectedBlurDown | KFMsgOther::PlaylistAddRandomTracksBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistAddRandomAlbum,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistAddRandomAlbumBlurDown | KFMsgOther::LibrarySwitchRootBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PlaylistAddRandomTracks,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::PlaylistAddRandomTracksBlurDown | KFMsgOther::LibraryAddRootBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibrarySwitchRoot,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::LibrarySwitchRootBlurDown | KFMsgOther::LibraryRemoveRootBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibraryAddRoot,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::LibraryAddRootBlurDown | KFMsgOther::PodcastMarkPlayedBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::LibraryRemoveRoot,
-                    )))
-                    .ok();
-            }
-
-            KFMsgOther::LibraryRemoveRootBlurDown | KFMsgOther::PodcastMarkAllPlayedBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastMarkPlayed,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::PodcastMarkPlayedBlurDown | KFMsgOther::PodcastEpDownloadBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastMarkAllPlayed,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::PodcastMarkAllPlayedBlurDown | KFMsgOther::PodcastEpDeleteFileBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastEpDownload,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::PodcastEpDownloadBlurDown | KFMsgOther::PodcastDeleteFeedBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastEpDeleteFile,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::PodcastEpDeleteFileBlurDown | KFMsgOther::PodcastDeleteAllFeedsBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastDeleteFeed,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::PodcastDeleteFeedBlurDown | KFMsgOther::PodcastRefreshFeedBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastDeleteAllFeeds,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::PodcastDeleteAllFeedsBlurDown
-            | KFMsgOther::PodcastRefreshAllFeedsBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastRefreshFeed,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::PodcastRefreshFeedBlurDown | KFMsgOther::PodcastSearchAddFeedBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastRefreshAllFeeds,
-                    )))
-                    .ok();
-            }
-            KFMsgOther::PodcastRefreshAllFeedsBlurDown | KFMsgOther::LibraryTagEditorBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
-                        IdKeyOther::PodcastSearchAddFeed,
-                    )))
-                    .ok();
-            }
-        }
+        let _ = self.app.active(&Id::ConfigEditor(focus.into()));
     }
 
     // cannot reduce a match statement

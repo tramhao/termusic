@@ -195,8 +195,8 @@ pub enum ConfigEditorMsg {
     ExtraYtdlpArgsBlurDown,
     ExtraYtdlpArgsBlurUp,
     Open,
-    KeyFocusGlobal(KFMsgGlobal),
-    KeyFocusOther(KFMsgOther),
+    KeyFocusGlobal(KFMsg),
+    KeyFocusOther(KFMsg),
     MusicDirBlurDown,
     MusicDirBlurUp,
 
@@ -325,79 +325,49 @@ pub const KFGLOBAL_FOCUS_ORDER: &[IdKey] = &[
     IdKey::Global(IdKeyGlobal::XywhHide),
 ];
 
+/// This array defines the order the IDs listed are displayed and which gains next / previous focus.
+pub const KFOTHER_FOCUS_ORDER: &[IdKey] = &[
+    // library keys
+    IdKey::Other(IdKeyOther::LibraryAddRoot),
+    IdKey::Other(IdKeyOther::LibraryRemoveRoot),
+    IdKey::Other(IdKeyOther::LibrarySwitchRoot),
+    IdKey::Other(IdKeyOther::LibraryDelete),
+    IdKey::Other(IdKeyOther::LibraryLoadDir),
+    IdKey::Other(IdKeyOther::LibraryYank),
+    IdKey::Other(IdKeyOther::LibraryPaste),
+    IdKey::Other(IdKeyOther::LibrarySearch),
+    IdKey::Other(IdKeyOther::LibrarySearchYoutube),
+    IdKey::Other(IdKeyOther::LibraryTagEditor),
+    // playlist keys
+    IdKey::Other(IdKeyOther::PlaylistShuffle),
+    IdKey::Other(IdKeyOther::PlaylistModeCycle),
+    IdKey::Other(IdKeyOther::PlaylistPlaySelected),
+    IdKey::Other(IdKeyOther::PlaylistSearch),
+    IdKey::Other(IdKeyOther::PlaylistSwapUp),
+    IdKey::Other(IdKeyOther::PlaylistSwapDown),
+    IdKey::Other(IdKeyOther::PlaylistDelete),
+    IdKey::Other(IdKeyOther::PlaylistDeleteAll),
+    IdKey::Other(IdKeyOther::PlaylistAddRandomAlbum),
+    IdKey::Other(IdKeyOther::PlaylistAddRandomTracks),
+    // database keys
+    IdKey::Other(IdKeyOther::DatabaseAddAll),
+    IdKey::Other(IdKeyOther::DatabaseAddSelected),
+    // podcast keys
+    IdKey::Other(IdKeyOther::PodcastSearchAddFeed),
+    IdKey::Other(IdKeyOther::PodcastMarkPlayed),
+    IdKey::Other(IdKeyOther::PodcastMarkAllPlayed),
+    IdKey::Other(IdKeyOther::PodcastEpDownload),
+    IdKey::Other(IdKeyOther::PodcastEpDeleteFile),
+    IdKey::Other(IdKeyOther::PodcastDeleteFeed),
+    IdKey::Other(IdKeyOther::PodcastDeleteAllFeeds),
+    IdKey::Other(IdKeyOther::PodcastRefreshFeed),
+    IdKey::Other(IdKeyOther::PodcastRefreshAllFeeds),
+];
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum KFMsgGlobal {
+pub enum KFMsg {
     Next,
     Previous,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum KFMsgOther {
-    LibraryAddRootBlurDown,
-    LibraryAddRootBlurUp,
-    LibraryRemoveRootBlurDown,
-    LibraryRemoveRootBlurUp,
-    LibrarySwitchRootBlurDown,
-    LibrarySwitchRootBlurUp,
-    LibraryDeleteBlurDown,
-    LibraryDeleteBlurUp,
-    LibraryLoadDirBlurDown,
-    LibraryLoadDirBlurUp,
-    LibraryYankBlurDown,
-    LibraryYankBlurUp,
-    LibraryPasteBlurDown,
-    LibraryPasteBlurUp,
-    LibrarySearchBlurDown,
-    LibrarySearchBlurUp,
-    LibrarySearchYoutubeBlurDown,
-    LibrarySearchYoutubeBlurUp,
-    LibraryTagEditorBlurDown,
-    LibraryTagEditorBlurUp,
-
-    PlaylistShuffleBlurDown,
-    PlaylistShuffleBlurUp,
-    PlaylistModeCycleBlurDown,
-    PlaylistModeCycleBlurUp,
-    PlaylistPlaySelectedBlurDown,
-    PlaylistPlaySelectedBlurUp,
-    PlaylistSearchBlurDown,
-    PlaylistSearchBlurUp,
-    PlaylistSwapUpBlurDown,
-    PlaylistSwapUpBlurUp,
-    PlaylistSwapDownBlurDown,
-    PlaylistSwapDownBlurUp,
-    PlaylistDeleteBlurDown,
-    PlaylistDeleteBlurUp,
-    PlaylistDeleteAllBlurDown,
-    PlaylistDeleteAllBlurUp,
-    PlaylistAddRandomAlbumBlurDown,
-    PlaylistAddRandomAlbumBlurUp,
-    PlaylistAddRandomTracksBlurDown,
-    PlaylistAddRandomTracksBlurUp,
-
-    DatabaseAddAllBlurDown,
-    DatabaseAddAllBlurUp,
-    DatabaseAddSelectedBlurDown,
-    DatabaseAddSelectedBlurUp,
-
-    PodcastSearchAddFeedBlurDown,
-    PodcastSearchAddFeedBlurUp,
-    PodcastMarkPlayedBlurDown,
-    PodcastMarkPlayedBlurUp,
-    PodcastMarkAllPlayedBlurDown,
-    PodcastMarkAllPlayedBlurUp,
-    PodcastEpDownloadBlurDown,
-    PodcastEpDownloadBlurUp,
-    PodcastEpDeleteFileBlurDown,
-    PodcastEpDeleteFileBlurUp,
-    PodcastDeleteFeedBlurDown,
-    PodcastDeleteFeedBlurUp,
-    PodcastDeleteAllFeedsBlurDown,
-    PodcastDeleteAllFeedsBlurUp,
-    PodcastRefreshFeedBlurDown,
-    PodcastRefreshFeedBlurUp,
-    PodcastRefreshAllFeedsBlurDown,
-    PodcastRefreshAllFeedsBlurUp,
 }
 
 /// Basically a Tree Node, but without having to include `tui-realm-treeview` as another dependency for lib
@@ -655,7 +625,7 @@ impl YoutubeOptions {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::KFGLOBAL_FOCUS_ORDER;
+    use crate::types::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
 
     // ensure that assumptions about "KFGLOBAL_FOCUS_ORDER[0]" can be made correctly
     #[test]
@@ -663,5 +633,13 @@ mod tests {
     #[allow(clippy::const_is_empty)]
     fn kfglobal_focus_order_should_be_nonzero() {
         assert!(!KFGLOBAL_FOCUS_ORDER.is_empty());
+    }
+
+    // ensure that assumptions about "KFOTHER_FOCUS_ORDER[0]" can be made correctly
+    #[test]
+    // clippy complains that it is always "false", but if the array actually *is* empty, then rust will **NOT** complain on "[0]" access
+    #[allow(clippy::const_is_empty)]
+    fn kfother_focus_order_should_be_nonzero() {
+        assert!(!KFOTHER_FOCUS_ORDER.is_empty());
     }
 }
