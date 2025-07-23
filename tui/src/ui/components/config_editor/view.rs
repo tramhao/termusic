@@ -12,7 +12,7 @@ use termusiclib::THEME_DIR;
 use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
-use termusiclib::types::Msg;
+use termusiclib::types::{IdKey, KFGLOBAL_FOCUS_ORDER, Msg};
 /**
  * MIT License
  *
@@ -38,7 +38,7 @@ use termusiclib::types::Msg;
  */
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
-use tuirealm::ratatui::layout::{Constraint, Layout};
+use tuirealm::ratatui::layout::{Constraint, Layout, Rect};
 use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 
@@ -592,116 +592,8 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
-    #[allow(clippy::too_many_lines)]
+    /// Draw the keys for tab "Key Global"
     fn view_config_editor_key1(&mut self) {
-        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
-        ///
-        /// Macro to apply "DRY"(Dont-Repeat-Yourself) to reduce function length.
-        macro_rules! is_expanded {
-            ($id:expr, $yes:expr, $no:expr) => {
-                match self.app.state(&Id::ConfigEditor($id)) {
-                    Ok(State::One(_)) => $no,
-                    _ => $yes,
-                }
-            };
-        }
-
-        let global_quit_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit), 8, 3);
-        let global_left_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Left), 8, 3);
-        let global_right_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Right), 8, 3);
-        let global_up_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Up), 8, 3);
-        let global_down_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Down), 8, 3);
-        let global_goto_top_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoTop), 8, 3);
-        let global_goto_bottom_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoBottom), 8, 3);
-        let global_player_toggle_pause_len = is_expanded!(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerTogglePause),
-            8,
-            3
-        );
-        let global_player_next_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerNext), 8, 3);
-        let global_player_previous_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerPrevious), 8, 3);
-
-        let global_help_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Help), 8, 3);
-
-        let global_volume_up_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeUp), 8, 3);
-
-        let global_volume_down_len = is_expanded!(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeDown),
-            8,
-            3
-        );
-
-        let global_player_seek_forward_len = is_expanded!(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekForward),
-            8,
-            3
-        );
-        let global_player_seek_backward_len = is_expanded!(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekBackward),
-            8,
-            3
-        );
-        let global_player_speed_up_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedUp), 8, 3);
-        let global_player_speed_down_len = is_expanded!(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedDown),
-            8,
-            3
-        );
-
-        let global_lyric_adjust_forward_len = is_expanded!(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustForward),
-            8,
-            3
-        );
-        let global_lyric_adjust_backward_len = is_expanded!(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustBackward),
-            8,
-            3
-        );
-        let global_lyric_cycle_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricCycle), 8, 3);
-        let global_layout_treeview_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutTreeview), 8, 3);
-
-        let global_layout_database_len =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutDatabase), 8, 3);
-
-        let global_player_toggle_gapless_len = is_expanded!(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerToggleGapless),
-            8,
-            3
-        );
-
-        let global_config_len = is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::Config), 8, 3);
-
-        let global_save_playlist =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::SavePlaylist), 8, 3);
-
-        let global_layout_podcast =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPodcast), 8, 3);
-
-        let global_xywh_move_left =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft), 8, 3);
-
-        let global_xywh_move_right =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveRight), 8, 3);
-        let global_xywh_move_up =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveUp), 8, 3);
-        let global_xywh_move_down =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveDown), 8, 3);
-        let global_xywh_zoom_in =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomIn), 8, 3);
-        let global_xywh_zoom_out =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomOut), 8, 3);
-        let global_xywh_hide =
-            is_expanded!(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhHide,), 8, 3);
-
         self.terminal
             .raw_mut()
             .draw(|f| {
@@ -712,282 +604,19 @@ impl Model {
                 ])
                 .areas(f.area());
 
-                // NOTE: the elements below have to be in the order they are draw and blurred(focused) in:
-                let height_elems = to_boxed_slice! {
-                    global_quit_len,
-                    global_left_len,
-                    global_down_len,
-                    global_up_len,
-                    global_right_len,
-                    global_goto_top_len,
-                    global_goto_bottom_len,
-                    global_player_toggle_pause_len,
-                    global_player_next_len,
-                    global_player_previous_len,
-
-                    global_help_len,
-
-                    global_volume_up_len,
-                    global_volume_down_len,
-
-                    global_player_seek_forward_len,
-                    global_player_seek_backward_len,
-                    global_player_speed_up_len,
-                    global_player_speed_down_len,
-                    global_lyric_adjust_forward_len,
-                    global_lyric_adjust_backward_len,
-                    global_lyric_cycle_len,
-
-                    global_layout_treeview_len,
-                    global_layout_database_len,
-                    global_player_toggle_gapless_len,
-
-                    global_config_len,
-                    global_save_playlist,
-
-                    global_layout_podcast,
-
-                    global_xywh_move_left,
-                    global_xywh_move_right,
-                    global_xywh_move_up,
-                    global_xywh_move_down,
-                    global_xywh_zoom_in,
-                    global_xywh_zoom_out,
-                    global_xywh_hide,
-                };
-
-                let focus_elem = self
-                    .app
-                    .focus()
-                    .and_then(|v| {
-                        if let Id::ConfigEditor(IdConfigEditor::KeyGlobal(key)) = *v {
-                            Some(key)
-                        } else {
-                            None
-                        }
-                    })
-                    .map(|v| match v {
-                        IdKeyGlobal::Quit => 0,
-                        IdKeyGlobal::Left => 1,
-                        IdKeyGlobal::Down => 2,
-                        IdKeyGlobal::Up => 3,
-                        IdKeyGlobal::Right => 4,
-                        IdKeyGlobal::GotoTop => 5,
-                        IdKeyGlobal::GotoBottom => 6,
-                        IdKeyGlobal::PlayerTogglePause => 7,
-                        IdKeyGlobal::PlayerNext => 8,
-                        IdKeyGlobal::PlayerPrevious => 9,
-                        IdKeyGlobal::Help => 10,
-                        IdKeyGlobal::PlayerVolumeUp => 11,
-                        IdKeyGlobal::PlayerVolumeDown => 12,
-                        IdKeyGlobal::PlayerSeekForward => 13,
-                        IdKeyGlobal::PlayerSeekBackward => 14,
-                        IdKeyGlobal::PlayerSpeedUp => 15,
-                        IdKeyGlobal::PlayerSpeedDown => 16,
-                        IdKeyGlobal::LyricAdjustForward => 17,
-                        IdKeyGlobal::LyricAdjustBackward => 18,
-                        IdKeyGlobal::LyricCycle => 19,
-                        IdKeyGlobal::LayoutTreeview => 20,
-                        IdKeyGlobal::LayoutDatabase => 21,
-                        IdKeyGlobal::PlayerToggleGapless => 22,
-                        IdKeyGlobal::Config => 23,
-                        IdKeyGlobal::SavePlaylist => 24,
-                        IdKeyGlobal::LayoutPodcast => 25,
-                        IdKeyGlobal::XywhMoveLeft => 26,
-                        IdKeyGlobal::XywhMoveRight => 27,
-                        IdKeyGlobal::XywhMoveUp => 28,
-                        IdKeyGlobal::XywhMoveDown => 29,
-                        IdKeyGlobal::XywhZoomIn => 30,
-                        IdKeyGlobal::XywhZoomOut => 31,
-                        IdKeyGlobal::XywhHide => 32,
-                    });
-
-                let cells = DynamicHeightGrid::new(height_elems, 23 + 2)
-                    .draw_row_low_space()
-                    .distribute_row_space()
-                    .focus_node(focus_elem)
-                    .split(chunks_main);
-
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
 
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit)),
-                    f,
-                    cells[0],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Left)),
-                    f,
-                    cells[1],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Down)),
-                    f,
-                    cells[2],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Up)),
-                    f,
-                    cells[3],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Right)),
-                    f,
-                    cells[4],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoTop)),
-                    f,
-                    cells[5],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoBottom)),
-                    f,
-                    cells[6],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerTogglePause)),
-                    f,
-                    cells[7],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerNext)),
-                    f,
-                    cells[8],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerPrevious)),
-                    f,
-                    cells[9],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Help)),
-                    f,
-                    cells[10],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeUp)),
-                    f,
-                    cells[11],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeDown)),
-                    f,
-                    cells[12],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekForward)),
-                    f,
-                    cells[13],
-                );
+                KeyDisplay::new(KFGLOBAL_FOCUS_ORDER, 23 + 2).view(&mut self.app, chunks_main, f);
 
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekBackward)),
-                    f,
-                    cells[14],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedUp)),
-                    f,
-                    cells[15],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedDown)),
-                    f,
-                    cells[16],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustForward)),
-                    f,
-                    cells[17],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustBackward)),
-                    f,
-                    cells[18],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricCycle)),
-                    f,
-                    cells[19],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutTreeview)),
-                    f,
-                    cells[20],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutDatabase)),
-                    f,
-                    cells[21],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerToggleGapless)),
-                    f,
-                    cells[22],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Config)),
-                    f,
-                    cells[23],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::SavePlaylist)),
-                    f,
-                    cells[24],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPodcast)),
-                    f,
-                    cells[25],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft)),
-                    f,
-                    cells[26],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveRight)),
-                    f,
-                    cells[27],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveUp)),
-                    f,
-                    cells[28],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveDown)),
-                    f,
-                    cells[29],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomIn)),
-                    f,
-                    cells[30],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomOut)),
-                    f,
-                    cells[31],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhHide)),
-                    f,
-                    cells[32],
-                );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
             .expect("Expected to draw without error");
     }
 
+    /// Draw the keys for tab "Key Other"
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_key2(&mut self) {
         /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
@@ -1503,9 +1132,7 @@ impl Model {
                 .ok(),
             ConfigEditorLayout::Key1 => self
                 .app
-                .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                    IdKeyGlobal::Quit,
-                )))
+                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into()))
                 .ok(),
             ConfigEditorLayout::Key2 => self
                 .app
@@ -1833,5 +1460,108 @@ impl Model {
                 )
                 .is_ok()
         );
+    }
+}
+
+/// Enum which determines what [`KeyDisplay`] will and look for focus.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum KeyDisplayType {
+    Global,
+    Other,
+}
+
+/// Helper type to draw "Key" tabs.
+#[derive(Debug)]
+struct KeyDisplay<'a> {
+    elems: &'a [IdKey],
+    discriminant: KeyDisplayType,
+    width: u16,
+}
+
+impl<'a> KeyDisplay<'a> {
+    /// Create a new instance, where the elements `elems` are drawn in that order with at least a width of `width`.
+    ///
+    /// NOTE: all given [`IdKey`]s need to be of the same discriminant!
+    pub fn new(elems: &'a [IdKey], width: u16) -> Self {
+        // figure out which kind of tab is draw by looking at the first element
+        let discriminant = std::mem::discriminant(&IdConfigEditor::from(&elems[0]));
+
+        let discriminant = if discriminant
+            == std::mem::discriminant(&IdConfigEditor::KeyGlobal(IdKeyGlobal::Config))
+        {
+            KeyDisplayType::Global
+        } else if discriminant
+            == std::mem::discriminant(&IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddAll))
+        {
+            KeyDisplayType::Other
+        } else {
+            unimplemented!("Invalid Discriminant: {:#?}", discriminant)
+        };
+
+        Self {
+            elems,
+            discriminant,
+            width,
+        }
+    }
+
+    /// Actually draw the elements in the current instance.
+    pub fn view(&self, model: &mut Application<Id, Msg, UserEvent>, area: Rect, f: &mut Frame<'_>) {
+        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
+        ///
+        /// Macro to apply "DRY"(Dont-Repeat-Yourself) to reduce function length.
+        macro_rules! is_expanded {
+            ($id:expr, $yes:expr, $no:expr) => {
+                match model.state(&Id::ConfigEditor($id)) {
+                    Ok(State::One(_)) => $no,
+                    _ => $yes,
+                }
+            };
+        }
+
+        // determine what heights each element should have
+        let mut elems_heights = Vec::with_capacity(self.elems.len());
+
+        for id in self.elems {
+            elems_heights.push(is_expanded!(IdConfigEditor::from(id), 8, 3));
+        }
+
+        // find the focused element, if any
+        let focus_elem = model
+            .focus()
+            .and_then(|v| match self.discriminant {
+                KeyDisplayType::Global => {
+                    if let Id::ConfigEditor(IdConfigEditor::KeyGlobal(key)) = *v {
+                        Some(IdKey::Global(key))
+                    } else {
+                        None
+                    }
+                }
+                KeyDisplayType::Other => {
+                    if let Id::ConfigEditor(IdConfigEditor::KeyOther(key)) = *v {
+                        Some(IdKey::Other(key))
+                    } else {
+                        None
+                    }
+                }
+            })
+            .and_then(|focus| {
+                self.elems
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| **v == focus)
+                    .map(|(idx, _)| idx)
+            });
+
+        let cells = DynamicHeightGrid::new(elems_heights, self.width)
+            .draw_row_low_space()
+            .distribute_row_space()
+            .focus_node(focus_elem)
+            .split(area);
+
+        // actually draw each element
+        for (id, cell) in self.elems.iter().zip(cells.iter()) {
+            model.view(&Id::ConfigEditor(id.into()), f, *cell);
+        }
     }
 }
