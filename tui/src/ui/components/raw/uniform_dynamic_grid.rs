@@ -33,6 +33,7 @@ pub struct UniformDynamicGrid {
     distribute_row_space: bool,
 }
 
+#[allow(dead_code)]
 impl UniformDynamicGrid {
     pub fn new(elems: usize, elem_height: u16, elem_width: u16) -> Self {
         Self {

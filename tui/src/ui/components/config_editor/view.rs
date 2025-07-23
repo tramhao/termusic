@@ -1,6 +1,6 @@
 use crate::ui::Application;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
-use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
+use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::utils::draw_area_in_absolute;
@@ -44,24 +44,7 @@ use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 
 // NOTE: the macros either have to be in a different file OR be defined *before* they are used, otherwise they are not in scope
 
-/// Chain many values together and `max` value from it.
-///
-/// Equivalent to manually chaining `val1.max(val2.max(val3))`.
-macro_rules! max {
-    ($first:ident$(,)?) => {
-        $first
-    };
-    (
-        $first:ident
-        $(
-            , $second:ident
-        )* $(,)?
-    ) => {
-        $first.max(max!($($second,)*))
-    }
-}
-
-/// Chain many values together and satured added value from it.
+/// Chain many values together and saturated added value from it.
 ///
 /// Equivalent to manually chaining `val1.saturating_add(val2.saturating_add(val3))`.
 macro_rules! sat_add {
@@ -75,6 +58,23 @@ macro_rules! sat_add {
         )* $(,)?
     ) => {
         $first.saturating_add(sat_add!($($second,)*))
+    }
+}
+
+/// Convert to a `Box<[]>`, but allow spacing without formatting messing it up.
+///
+/// Equivalent to manually doing `Box::from([val1, val2])`.
+macro_rules! to_boxed_slice {
+    ($first:expr$(,)?) => {
+        $first
+    };
+    (
+        $first:expr
+        $(
+            , $second:expr
+        )* $(,)?
+    ) => {
+        Box::from([$first, $($second,)*])
     }
 }
 
@@ -345,16 +345,17 @@ impl Model {
                     fallback_highlight_len
                 };
 
-                let max_height = max! {
+                // NOTE: the elements below have to be in the order they are draw and blurred(focused) in:
+                let elem_height = to_boxed_slice! {
                     library_height,
                     playlist_height,
                     progress_height,
                     lyric_height,
                     important_popup_height,
-                    fallback_height
+                    fallback_height,
                 };
 
-                let cells = UniformDynamicGrid::new(6, max_height, 16 + 2)
+                let cells = DynamicHeightGrid::new(elem_height, 16 + 2)
                     .with_row_spacing(1)
                     .draw_row_low_space()
                     .distribute_row_space()
@@ -490,7 +491,6 @@ impl Model {
                     f,
                     chunks_playlist[5],
                 );
-
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
                     f,
@@ -529,7 +529,6 @@ impl Model {
                     f,
                     chunks_lyric[1],
                 );
-
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::LyricBackground),
                     f,
@@ -551,7 +550,6 @@ impl Model {
                     f,
                     chunks_important_popup[1],
                 );
-
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground),
                     f,
@@ -714,20 +712,21 @@ impl Model {
                 ])
                 .areas(f.area());
 
-                let max_height = max! {
-                    global_layout_treeview_len,
-                    global_layout_database_len,
-                    global_layout_podcast,
-
+                // NOTE: the elements below have to be in the order they are draw and blurred(focused) in:
+                let height_elems = to_boxed_slice! {
                     global_quit_len,
                     global_left_len,
-                    global_right_len,
-                    global_up_len,
                     global_down_len,
+                    global_up_len,
+                    global_right_len,
                     global_goto_top_len,
                     global_goto_bottom_len,
+                    global_player_toggle_pause_len,
+                    global_player_next_len,
+                    global_player_previous_len,
 
                     global_help_len,
+
                     global_volume_up_len,
                     global_volume_down_len,
 
@@ -735,18 +734,18 @@ impl Model {
                     global_player_seek_backward_len,
                     global_player_speed_up_len,
                     global_player_speed_down_len,
-                    global_player_toggle_gapless_len,
-                    global_player_toggle_pause_len,
-                    global_player_next_len,
-                    global_player_previous_len,
-
                     global_lyric_adjust_forward_len,
                     global_lyric_adjust_backward_len,
                     global_lyric_cycle_len,
 
-                    global_config_len,
+                    global_layout_treeview_len,
+                    global_layout_database_len,
+                    global_player_toggle_gapless_len,
 
+                    global_config_len,
                     global_save_playlist,
+
+                    global_layout_podcast,
 
                     global_xywh_move_left,
                     global_xywh_move_right,
@@ -754,10 +753,10 @@ impl Model {
                     global_xywh_move_down,
                     global_xywh_zoom_in,
                     global_xywh_zoom_out,
-                    global_xywh_hide
+                    global_xywh_hide,
                 };
 
-                let cells = UniformDynamicGrid::new(33, max_height, 23 + 2)
+                let cells = DynamicHeightGrid::new(height_elems, 23 + 2)
                     .draw_row_low_space()
                     .distribute_row_space()
                     .split(chunks_main);
@@ -1103,31 +1102,34 @@ impl Model {
                 ])
                 .areas(f.area());
 
-                let max_height = max! {
+                // NOTE: the elements below have to be in the order they are draw and blurred(focused) in:
+                let elem_height = to_boxed_slice! {
+                    library_tag_editor_len,
                     library_delete_len,
                     library_load_dir_len,
                     library_yank_len,
                     library_paste_len,
                     library_search_len,
                     library_search_youtube_len,
-                    library_tag_editor_len,
-                    library_switch_root_len,
-                    library_add_root_len,
-                    library_remove_root_len,
 
                     playlist_delete_len,
                     playlist_delete_all_len,
+                    playlist_search_len,
                     playlist_shuffle_len,
                     playlist_mode_cycle_len,
-                    playlist_search_len,
                     playlist_play_selected_len,
                     playlist_swap_down_len,
                     playlist_swap_up_len,
-                    playlist_random_album_len,
-                    playlist_random_tracks_len,
 
                     database_add_all_len,
                     database_add_selected_len,
+
+                    playlist_random_album_len,
+                    playlist_random_tracks_len,
+
+                    library_switch_root_len,
+                    library_add_root_len,
+                    library_remove_root_len,
 
                     podcast_mark_played_len,
                     podcast_mark_all_played_len,
@@ -1135,12 +1137,12 @@ impl Model {
                     podcast_ep_delete_file_len,
                     podcast_delete_feed_len,
                     podcast_delete_all_feeds_len,
-                    podcast_search_add_feed_len,
                     podcast_refresh_feed_len,
                     podcast_refresh_all_feeds_len,
+                    podcast_search_add_feed_len,
                 };
 
-                let cells = UniformDynamicGrid::new(31, max_height, 25 + 2)
+                let cells = DynamicHeightGrid::new(elem_height, 25 + 2)
                     .draw_row_low_space()
                     .distribute_row_space()
                     .split(chunks_main);
