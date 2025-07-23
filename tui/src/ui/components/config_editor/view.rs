@@ -56,16 +56,16 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::vertical([
-                    Constraint::Length(3),
+                let [header, chunks_main, footer] = Layout::vertical([
+                    Constraint::Length(3), // config header
                     Constraint::Min(3),
-                    Constraint::Length(1),
+                    Constraint::Length(1), // config footer
                 ])
-                .split(f.area());
+                .areas(f.area());
 
                 let chunks_middle =
                     Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
-                        .split(chunks_main[1]);
+                        .split(chunks_main);
 
                 let chunks_middle_left = Layout::vertical([
                     Constraint::Length(3),
@@ -95,7 +95,7 @@ impl Model {
                 ])
                 .split(chunks_middle[1]);
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
+                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::MusicDir),
                     f,
@@ -186,7 +186,7 @@ impl Model {
                 );
 
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
+                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
 
                 Self::view_config_editor_commons(f, &mut self.app);
             })
@@ -365,16 +365,16 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::vertical([
+                let [header, chunks_main, footer] = Layout::vertical([
                     Constraint::Length(3), // config header
                     Constraint::Min(3),
                     Constraint::Length(1), // config footer
                 ])
-                .split(f.area());
+                .areas(f.area());
 
                 let chunks_middle =
                     Layout::horizontal([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)])
-                        .split(chunks_main[1]);
+                        .split(chunks_main);
 
                 let chunks_style =
                     Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -457,7 +457,7 @@ impl Model {
                 .split(chunks_style_bottom[1]);
 
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
+                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
@@ -465,7 +465,7 @@ impl Model {
                     chunks_middle[0],
                 );
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
+                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::LibraryLabel),
@@ -849,12 +849,12 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::vertical([
-                    Constraint::Length(3),
+                let [header, chunks_main, footer] = Layout::vertical([
+                    Constraint::Length(3), // config header
                     Constraint::Min(3),
-                    Constraint::Length(1),
+                    Constraint::Length(1), // config footer
                 ])
-                .split(f.area());
+                .areas(f.area());
 
                 let chunks_middle = Layout::horizontal([
                     Constraint::Ratio(1, 4),
@@ -862,7 +862,7 @@ impl Model {
                     Constraint::Ratio(1, 4),
                     Constraint::Ratio(1, 4),
                 ])
-                .split(chunks_main[1]);
+                .split(chunks_main);
 
                 let chunks_middle_column1 = Layout::vertical([
                     Constraint::Length(select_global_quit_len),
@@ -912,16 +912,14 @@ impl Model {
                     Constraint::Length(select_global_xywh_zoom_in),
                     Constraint::Length(select_global_xywh_zoom_out),
                     Constraint::Length(select_global_xywh_hide),
-                    // Constraint::Length(select_global_xywh_hide),
-                    // Constraint::Length(select_global_xywh_hide),
-                    // Constraint::Length(select_global_xywh_hide),
                     Constraint::Min(0),
                 ])
                 .split(chunks_middle[3]);
+
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
+                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
+                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit)),
@@ -1310,12 +1308,12 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunks_main = Layout::vertical([
-                    Constraint::Length(3),
+                let [header, chunks_main, footer] = Layout::vertical([
+                    Constraint::Length(3), // config header
                     Constraint::Min(3),
-                    Constraint::Length(1),
+                    Constraint::Length(1), // config footer
                 ])
-                .split(f.area());
+                .areas(f.area());
 
                 let chunks_middle = Layout::horizontal([
                     Constraint::Ratio(1, 4),
@@ -1323,7 +1321,7 @@ impl Model {
                     Constraint::Ratio(1, 4),
                     Constraint::Ratio(1, 4),
                 ])
-                .split(chunks_main[1]);
+                .split(chunks_main);
 
                 let chunks_middle_column1 = Layout::vertical([
                     Constraint::Length(select_library_tag_editor_len),
@@ -1371,18 +1369,14 @@ impl Model {
                     Constraint::Length(podcast_refresh_feed_len),
                     Constraint::Length(podcast_refresh_all_feeds_len),
                     Constraint::Length(podcast_search_add_feed_len),
-                    // Constraint::Length(podcast_mark_played_len),
-                    // Constraint::Length(podcast_mark_all_played_len),
-                    // Constraint::Length(podcast_ep_download_len),
-                    // Constraint::Length(podcast_ep_delete_file_len),
-                    // Constraint::Length(podcast_delete_feed_len),
                     Constraint::Min(0),
                 ])
                 .split(chunks_middle[3]);
+
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
+                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
+                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryTagEditor)),
