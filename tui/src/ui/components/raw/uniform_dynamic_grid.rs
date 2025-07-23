@@ -8,7 +8,7 @@ use tuirealm::ratatui::{
 };
 
 type Rects = Rc<[Rect]>;
-type Cache = LruCache<(Rect, DynamicGrid), Rects>;
+type Cache = LruCache<(Rect, UniformDynamicGrid), Rects>;
 
 const CACHE_SIZE: NonZeroUsize = NonZeroUsize::new(10).unwrap();
 
@@ -24,7 +24,7 @@ thread_local! {
 /// A dynamic grid where all elements are of `elem_height` and `elem_width`.
 /// Split automatically into rows and colums, if there is not enough space on the current row.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, PartialOrd, Eq)]
-pub struct DynamicGrid {
+pub struct UniformDynamicGrid {
     elems: usize,
     elem_width: u16,
     elem_height: u16,
@@ -32,7 +32,7 @@ pub struct DynamicGrid {
     draw_row_low_space: bool,
 }
 
-impl DynamicGrid {
+impl UniformDynamicGrid {
     pub fn new(elems: usize, elem_height: u16, elem_width: u16) -> Self {
         Self {
             elems,
@@ -115,7 +115,7 @@ impl DynamicGrid {
 }
 
 /// Debug-only visualization of the areas
-impl Widget for DynamicGrid {
+impl Widget for UniformDynamicGrid {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let cells = self.split(area);
 
@@ -132,13 +132,13 @@ mod tests {
     use pretty_assertions::assert_eq;
     use tuirealm::ratatui::layout::Rect;
 
-    use super::DynamicGrid;
+    use super::UniformDynamicGrid;
 
     #[test]
     fn should_split_all_single_row() {
         let area = Rect::new(0, 0, 30, 3);
 
-        let areas = DynamicGrid::new(3, 3, 10).split(area);
+        let areas = UniformDynamicGrid::new(3, 3, 10).split(area);
 
         assert_eq!(areas.len(), 3);
         assert_eq!(areas[0], Rect::new(0, 0, 10, 3));
@@ -150,7 +150,7 @@ mod tests {
     fn should_split_all_2_rows() {
         let area = Rect::new(0, 0, 20, 6);
 
-        let areas = DynamicGrid::new(3, 3, 10).split(area);
+        let areas = UniformDynamicGrid::new(3, 3, 10).split(area);
 
         assert_eq!(areas.len(), 3);
         assert_eq!(areas[0], Rect::new(0, 0, 10, 3));
@@ -162,7 +162,7 @@ mod tests {
     fn should_not_split_new_row_low_space() {
         let area = Rect::new(0, 0, 20, 3);
 
-        let areas = DynamicGrid::new(3, 3, 10).split(area);
+        let areas = UniformDynamicGrid::new(3, 3, 10).split(area);
 
         assert_eq!(areas.len(), 3);
         assert_eq!(areas[0], Rect::new(0, 0, 10, 3));
@@ -174,7 +174,9 @@ mod tests {
     fn should_split_new_row_low_space() {
         let area = Rect::new(0, 0, 20, 3);
 
-        let areas = DynamicGrid::new(3, 3, 10).draw_row_low_space().split(area);
+        let areas = UniformDynamicGrid::new(3, 3, 10)
+            .draw_row_low_space()
+            .split(area);
 
         assert_eq!(areas.len(), 3);
         assert_eq!(areas[0], Rect::new(0, 0, 10, 3));
@@ -186,7 +188,9 @@ mod tests {
     fn should_have_row_spacing() {
         let area = Rect::new(0, 0, 20, 7);
 
-        let areas = DynamicGrid::new(3, 3, 10).with_row_spacing(1).split(area);
+        let areas = UniformDynamicGrid::new(3, 3, 10)
+            .with_row_spacing(1)
+            .split(area);
 
         assert_eq!(areas.len(), 3);
         assert_eq!(areas[0], Rect::new(0, 0, 10, 3));

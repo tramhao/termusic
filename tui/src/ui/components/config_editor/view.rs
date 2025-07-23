@@ -1,6 +1,6 @@
 use crate::ui::Application;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
-use crate::ui::components::raw::dynamic_grid::DynamicGrid;
+use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::utils::draw_area_in_absolute;
@@ -354,7 +354,7 @@ impl Model {
                     fallback_height
                 };
 
-                let cells = DynamicGrid::new(6, max_height, 16 + 2)
+                let cells = UniformDynamicGrid::new(6, max_height, 16 + 2)
                     .with_row_spacing(1)
                     .draw_row_low_space()
                     .split(right);
@@ -756,7 +756,7 @@ impl Model {
                     global_xywh_hide
                 };
 
-                let cells = DynamicGrid::new(33, max_height, 23 + 2)
+                let cells = UniformDynamicGrid::new(33, max_height, 23 + 2)
                     .draw_row_low_space()
                     .split(chunks_main);
 
@@ -1138,7 +1138,7 @@ impl Model {
                     podcast_refresh_all_feeds_len,
                 };
 
-                let cells = DynamicGrid::new(31, max_height, 25 + 2)
+                let cells = UniformDynamicGrid::new(31, max_height, 25 + 2)
                     .draw_row_low_space()
                     .split(chunks_main);
 
