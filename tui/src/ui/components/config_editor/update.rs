@@ -436,14 +436,14 @@ impl Model {
             KFMsg::GlobalXywhHideBlurDown | KFMsg::GlobalLeftBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalQuit,
+                        IdKeyGlobal::Quit,
                     )))
                     .ok();
             }
             KFMsg::GlobalQuitBlurDown | KFMsg::GlobalDownBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLeft,
+                        IdKeyGlobal::Left,
                     )))
                     .ok();
             }
@@ -451,7 +451,7 @@ impl Model {
             KFMsg::GlobalLeftBlurDown | KFMsg::GlobalUpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalDown,
+                        IdKeyGlobal::Down,
                     )))
                     .ok();
             }
@@ -459,7 +459,7 @@ impl Model {
             KFMsg::GlobalDownBlurDown | KFMsg::GlobalRightBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalUp,
+                        IdKeyGlobal::Up,
                     )))
                     .ok();
             }
@@ -467,70 +467,70 @@ impl Model {
             KFMsg::GlobalUpBlurDown | KFMsg::GlobalGotoTopBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalRight,
+                        IdKeyGlobal::Right,
                     )))
                     .ok();
             }
             KFMsg::GlobalRightBlurDown | KFMsg::GlobalGotoBottomBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalGotoTop,
+                        IdKeyGlobal::GotoTop,
                     )))
                     .ok();
             }
             KFMsg::GlobalGotoTopBlurDown | KFMsg::GlobalPlayerTogglePauseBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalGotoBottom,
+                        IdKeyGlobal::GotoBottom,
                     )))
                     .ok();
             }
             KFMsg::GlobalGotoBottomBlurDown | KFMsg::GlobalPlayerNextBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerTogglePause,
+                        IdKeyGlobal::PlayerTogglePause,
                     )))
                     .ok();
             }
             KFMsg::GlobalPlayerTogglePauseBlurDown | KFMsg::GlobalPlayerPreviousBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerNext,
+                        IdKeyGlobal::PlayerNext,
                     )))
                     .ok();
             }
             KFMsg::GlobalPlayerNextBlurDown | KFMsg::GlobalHelpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerPrevious,
+                        IdKeyGlobal::PlayerPrevious,
                     )))
                     .ok();
             }
             KFMsg::GlobalPlayerPreviousBlurDown | KFMsg::GlobalVolumeUpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalHelp,
+                        IdKeyGlobal::Help,
                     )))
                     .ok();
             }
             KFMsg::GlobalHelpBlurDown | KFMsg::GlobalVolumeDownBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerVolumeUp,
+                        IdKeyGlobal::PlayerVolumeUp,
                     )))
                     .ok();
             }
             KFMsg::GlobalVolumeUpBlurDown | KFMsg::GlobalPlayerSeekForwardBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerVolumeDown,
+                        IdKeyGlobal::PlayerVolumeDown,
                     )))
                     .ok();
             }
             KFMsg::GlobalVolumeDownBlurDown | KFMsg::GlobalPlayerSeekBackwardBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerSeekForward,
+                        IdKeyGlobal::PlayerSeekForward,
                     )))
                     .ok();
             }
@@ -538,7 +538,7 @@ impl Model {
             KFMsg::GlobalPlayerSeekForwardBlurDown | KFMsg::GlobalPlayerSpeedUpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerSeekBackward,
+                        IdKeyGlobal::PlayerSeekBackward,
                     )))
                     .ok();
             }
@@ -546,7 +546,7 @@ impl Model {
             KFMsg::GlobalPlayerSeekBackwardBlurDown | KFMsg::GlobalPlayerSpeedDownBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerSpeedUp,
+                        IdKeyGlobal::PlayerSpeedUp,
                     )))
                     .ok();
             }
@@ -554,7 +554,7 @@ impl Model {
             KFMsg::GlobalPlayerSpeedUpBlurDown | KFMsg::GlobalLyricAdjustForwardBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerSpeedDown,
+                        IdKeyGlobal::PlayerSpeedDown,
                     )))
                     .ok();
             }
@@ -562,7 +562,7 @@ impl Model {
             KFMsg::GlobalPlayerSpeedDownBlurDown | KFMsg::GlobalLyricAdjustBackwardBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLyricAdjustForward,
+                        IdKeyGlobal::LyricAdjustForward,
                     )))
                     .ok();
             }
@@ -570,7 +570,7 @@ impl Model {
             KFMsg::GlobalLyricAdjustForwardBlurDown | KFMsg::GlobalLyricCycleBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLyricAdjustBackward,
+                        IdKeyGlobal::LyricAdjustBackward,
                     )))
                     .ok();
             }
@@ -578,7 +578,7 @@ impl Model {
             KFMsg::GlobalLyricAdjustBackwardBlurDown | KFMsg::GlobalLayoutTreeviewBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLyricCycle,
+                        IdKeyGlobal::LyricCycle,
                     )))
                     .ok();
             }
@@ -586,7 +586,7 @@ impl Model {
             KFMsg::GlobalLyricCycleBlurDown | KFMsg::GlobalLayoutDatabaseBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLayoutTreeview,
+                        IdKeyGlobal::LayoutTreeview,
                     )))
                     .ok();
             }
@@ -594,7 +594,7 @@ impl Model {
             KFMsg::GlobalLayoutTreeviewBlurDown | KFMsg::GlobalPlayerToggleGaplessBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLayoutDatabase,
+                        IdKeyGlobal::LayoutDatabase,
                     )))
                     .ok();
             }
@@ -602,7 +602,7 @@ impl Model {
             KFMsg::GlobalLayoutDatabaseBlurDown | KFMsg::GlobalConfigBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerToggleGapless,
+                        IdKeyGlobal::PlayerToggleGapless,
                     )))
                     .ok();
             }
@@ -610,7 +610,7 @@ impl Model {
             KFMsg::GlobalPlayerToggleGaplessBlurDown | KFMsg::GlobalSavePlaylistBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalConfig,
+                        IdKeyGlobal::Config,
                     )))
                     .ok();
             }
@@ -618,7 +618,7 @@ impl Model {
             KFMsg::GlobalConfigBlurDown | KFMsg::GlobalLayoutPodcastBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalSavePlaylist,
+                        IdKeyGlobal::SavePlaylist,
                     )))
                     .ok();
             }
@@ -626,56 +626,56 @@ impl Model {
             KFMsg::GlobalSavePlaylistBlurDown | KFMsg::GlobalXywhMoveLeftBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLayoutPodcast,
+                        IdKeyGlobal::LayoutPodcast,
                     )))
                     .ok();
             }
             KFMsg::GlobalLayoutPodcastBlurDown | KFMsg::GlobalXywhMoveRightBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalXywhMoveLeft,
+                        IdKeyGlobal::XywhMoveLeft,
                     )))
                     .ok();
             }
             KFMsg::GlobalXywhMoveLeftBlurDown | KFMsg::GlobalXywhMoveUpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalXywhMoveRight,
+                        IdKeyGlobal::XywhMoveRight,
                     )))
                     .ok();
             }
             KFMsg::GlobalXywhMoveRightBlurDown | KFMsg::GlobalXywhMoveDownBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalXywhMoveUp,
+                        IdKeyGlobal::XywhMoveUp,
                     )))
                     .ok();
             }
             KFMsg::GlobalXywhMoveUpBlurDown | KFMsg::GlobalXywhZoomInBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalXywhMoveDown,
+                        IdKeyGlobal::XywhMoveDown,
                     )))
                     .ok();
             }
             KFMsg::GlobalXywhMoveDownBlurDown | KFMsg::GlobalXywhZoomOutBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalXywhZoomIn,
+                        IdKeyGlobal::XywhZoomIn,
                     )))
                     .ok();
             }
             KFMsg::GlobalXywhZoomInBlurDown | KFMsg::GlobalXywhHideBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalXywhZoomOut,
+                        IdKeyGlobal::XywhZoomOut,
                     )))
                     .ok();
             }
             KFMsg::GlobalXywhZoomOutBlurDown | KFMsg::GlobalQuitBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalXywhHide,
+                        IdKeyGlobal::XywhHide,
                     )))
                     .ok();
             }
@@ -935,57 +935,57 @@ impl Model {
             IdKey::Other(IdKeyOther::DatabaseAddSelected) => {
                 keys.database_keys.add_selected = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalConfig) => keys.select_view_keys.open_config = binding,
-            IdKey::Global(IdKeyGlobal::GlobalDown) => keys.navigation_keys.down = binding,
-            IdKey::Global(IdKeyGlobal::GlobalGotoBottom) => {
+            IdKey::Global(IdKeyGlobal::Config) => keys.select_view_keys.open_config = binding,
+            IdKey::Global(IdKeyGlobal::Down) => keys.navigation_keys.down = binding,
+            IdKey::Global(IdKeyGlobal::GotoBottom) => {
                 keys.navigation_keys.goto_bottom = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalGotoTop) => keys.navigation_keys.goto_top = binding,
-            IdKey::Global(IdKeyGlobal::GlobalHelp) => keys.select_view_keys.open_help = binding,
-            IdKey::Global(IdKeyGlobal::GlobalLayoutTreeview) => {
+            IdKey::Global(IdKeyGlobal::GotoTop) => keys.navigation_keys.goto_top = binding,
+            IdKey::Global(IdKeyGlobal::Help) => keys.select_view_keys.open_help = binding,
+            IdKey::Global(IdKeyGlobal::LayoutTreeview) => {
                 keys.select_view_keys.view_library = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalLayoutDatabase) => {
+            IdKey::Global(IdKeyGlobal::LayoutDatabase) => {
                 keys.select_view_keys.view_database = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalLeft) => keys.navigation_keys.left = binding,
-            IdKey::Global(IdKeyGlobal::GlobalLyricAdjustForward) => {
+            IdKey::Global(IdKeyGlobal::Left) => keys.navigation_keys.left = binding,
+            IdKey::Global(IdKeyGlobal::LyricAdjustForward) => {
                 keys.lyric_keys.adjust_offset_forwards = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalLyricAdjustBackward) => {
+            IdKey::Global(IdKeyGlobal::LyricAdjustBackward) => {
                 keys.lyric_keys.adjust_offset_backwards = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalLyricCycle) => keys.lyric_keys.cycle_frames = binding,
-            IdKey::Global(IdKeyGlobal::GlobalPlayerToggleGapless) => {
+            IdKey::Global(IdKeyGlobal::LyricCycle) => keys.lyric_keys.cycle_frames = binding,
+            IdKey::Global(IdKeyGlobal::PlayerToggleGapless) => {
                 keys.player_keys.toggle_prefetch = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalPlayerTogglePause) => {
+            IdKey::Global(IdKeyGlobal::PlayerTogglePause) => {
                 keys.player_keys.toggle_pause = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalPlayerNext) => keys.player_keys.next_track = binding,
-            IdKey::Global(IdKeyGlobal::GlobalPlayerPrevious) => {
+            IdKey::Global(IdKeyGlobal::PlayerNext) => keys.player_keys.next_track = binding,
+            IdKey::Global(IdKeyGlobal::PlayerPrevious) => {
                 keys.player_keys.previous_track = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalPlayerSeekForward) => {
+            IdKey::Global(IdKeyGlobal::PlayerSeekForward) => {
                 keys.player_keys.seek_forward = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalPlayerSeekBackward) => {
+            IdKey::Global(IdKeyGlobal::PlayerSeekBackward) => {
                 keys.player_keys.seek_backward = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalPlayerSpeedUp) => keys.player_keys.speed_up = binding,
-            IdKey::Global(IdKeyGlobal::GlobalPlayerSpeedDown) => {
+            IdKey::Global(IdKeyGlobal::PlayerSpeedUp) => keys.player_keys.speed_up = binding,
+            IdKey::Global(IdKeyGlobal::PlayerSpeedDown) => {
                 keys.player_keys.speed_down = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalQuit) => keys.quit = binding,
-            IdKey::Global(IdKeyGlobal::GlobalRight) => keys.navigation_keys.right = binding,
-            IdKey::Global(IdKeyGlobal::GlobalUp) => keys.navigation_keys.up = binding,
-            IdKey::Global(IdKeyGlobal::GlobalPlayerVolumeDown) => {
+            IdKey::Global(IdKeyGlobal::Quit) => keys.quit = binding,
+            IdKey::Global(IdKeyGlobal::Right) => keys.navigation_keys.right = binding,
+            IdKey::Global(IdKeyGlobal::Up) => keys.navigation_keys.up = binding,
+            IdKey::Global(IdKeyGlobal::PlayerVolumeDown) => {
                 keys.player_keys.volume_down = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalPlayerVolumeUp) => {
+            IdKey::Global(IdKeyGlobal::PlayerVolumeUp) => {
                 keys.player_keys.volume_up = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalSavePlaylist) => {
+            IdKey::Global(IdKeyGlobal::SavePlaylist) => {
                 keys.player_keys.save_playlist = binding;
             }
             IdKey::Other(IdKeyOther::LibraryDelete) => keys.library_keys.delete = binding,
@@ -1020,28 +1020,28 @@ impl Model {
             IdKey::Other(IdKeyOther::LibrarySwitchRoot) => keys.library_keys.cycle_root = binding,
             IdKey::Other(IdKeyOther::LibraryAddRoot) => keys.library_keys.add_root = binding,
             IdKey::Other(IdKeyOther::LibraryRemoveRoot) => keys.library_keys.remove_root = binding,
-            IdKey::Global(IdKeyGlobal::GlobalLayoutPodcast) => {
+            IdKey::Global(IdKeyGlobal::LayoutPodcast) => {
                 keys.select_view_keys.view_podcasts = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalXywhMoveLeft) => {
+            IdKey::Global(IdKeyGlobal::XywhMoveLeft) => {
                 keys.move_cover_art_keys.move_left = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalXywhMoveRight) => {
+            IdKey::Global(IdKeyGlobal::XywhMoveRight) => {
                 keys.move_cover_art_keys.move_right = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalXywhMoveUp) => {
+            IdKey::Global(IdKeyGlobal::XywhMoveUp) => {
                 keys.move_cover_art_keys.move_up = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalXywhMoveDown) => {
+            IdKey::Global(IdKeyGlobal::XywhMoveDown) => {
                 keys.move_cover_art_keys.move_down = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalXywhZoomIn) => {
+            IdKey::Global(IdKeyGlobal::XywhZoomIn) => {
                 keys.move_cover_art_keys.increase_size = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalXywhZoomOut) => {
+            IdKey::Global(IdKeyGlobal::XywhZoomOut) => {
                 keys.move_cover_art_keys.decrease_size = binding;
             }
-            IdKey::Global(IdKeyGlobal::GlobalXywhHide) => {
+            IdKey::Global(IdKeyGlobal::XywhHide) => {
                 keys.move_cover_art_keys.toggle_hide = binding;
             }
             IdKey::Other(IdKeyOther::PodcastMarkPlayed) => keys.podcast_keys.mark_played = binding,

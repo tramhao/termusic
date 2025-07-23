@@ -636,211 +636,211 @@ impl Model {
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_key1(&mut self) {
         let select_global_quit_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalQuit),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_left_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLeft),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::Left),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_right_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalRight),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::Right),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalUp),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::Up),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_down_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalDown),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::Down),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_goto_top_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalGotoTop),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoTop),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_goto_bottom_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalGotoBottom),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoBottom),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_toggle_pause_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerTogglePause),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerTogglePause),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_next_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerNext),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerNext),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_previous_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerPrevious),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerPrevious),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_help_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalHelp),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::Help),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_volume_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerVolumeUp),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeUp),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_volume_down_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerVolumeDown),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeDown),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_player_seek_forward_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSeekForward),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekForward),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_seek_backward_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSeekBackward),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekBackward),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_speed_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSpeedUp),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedUp),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_speed_down_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSpeedDown),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedDown),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_lyric_adjust_forward_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLyricAdjustForward),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustForward),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_lyric_adjust_backward_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLyricAdjustBackward),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustBackward),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_lyric_cycle_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLyricCycle),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricCycle),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_layout_treeview_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutTreeview),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutTreeview),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_layout_database_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutDatabase),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutDatabase),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_player_toggle_gapless_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerToggleGapless),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerToggleGapless),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_config_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalConfig),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::Config),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_save_playlist = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalSavePlaylist),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::SavePlaylist),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_layout_podcast = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutPodcast),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPodcast),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_xywh_move_left = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveLeft),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_xywh_move_right = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveRight),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveRight),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_move_up = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveUp),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveUp),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_move_down = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveDown),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveDown),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_zoom_in = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhZoomIn),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomIn),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_zoom_out = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhZoomOut),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomOut),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_hide = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhHide),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhHide),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
@@ -924,188 +924,172 @@ impl Model {
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalQuit)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit)),
                     f,
                     chunks_middle_column1[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLeft)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Left)),
                     f,
                     chunks_middle_column1[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalDown)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Down)),
                     f,
                     chunks_middle_column1[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Up)),
                     f,
                     chunks_middle_column1[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalRight)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Right)),
                     f,
                     chunks_middle_column1[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalGotoTop)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoTop)),
                     f,
                     chunks_middle_column1[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalGotoBottom)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoBottom)),
                     f,
                     chunks_middle_column1[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerTogglePause,
-                    )),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerTogglePause)),
                     f,
                     chunks_middle_column1[7],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerNext)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerNext)),
                     f,
                     chunks_middle_column1[8],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerPrevious)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerPrevious)),
                     f,
                     chunks_middle_column2[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalHelp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Help)),
                     f,
                     chunks_middle_column2[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerVolumeUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeUp)),
                     f,
                     chunks_middle_column2[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerVolumeDown,
-                    )),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeDown)),
                     f,
                     chunks_middle_column2[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerSeekForward,
-                    )),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekForward)),
                     f,
                     chunks_middle_column2[4],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerSeekBackward,
-                    )),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekBackward)),
                     f,
                     chunks_middle_column2[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSpeedUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedUp)),
                     f,
                     chunks_middle_column2[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerSpeedDown,
-                    )),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedDown)),
                     f,
                     chunks_middle_column2[7],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLyricAdjustForward,
-                    )),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustForward)),
                     f,
                     chunks_middle_column2[8],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalLyricAdjustBackward,
-                    )),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustBackward)),
                     f,
                     chunks_middle_column3[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLyricCycle)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricCycle)),
                     f,
                     chunks_middle_column3[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutTreeview)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutTreeview)),
                     f,
                     chunks_middle_column3[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutDatabase)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutDatabase)),
                     f,
                     chunks_middle_column3[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                        IdKeyGlobal::GlobalPlayerToggleGapless,
-                    )),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerToggleGapless)),
                     f,
                     chunks_middle_column3[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalConfig)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Config)),
                     f,
                     chunks_middle_column3[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalSavePlaylist)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::SavePlaylist)),
                     f,
                     chunks_middle_column3[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutPodcast)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPodcast)),
                     f,
                     chunks_middle_column3[7],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveLeft)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft)),
                     f,
                     chunks_middle_column3[8],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveRight)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveRight)),
                     f,
                     chunks_middle_column4[0],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveUp)),
                     f,
                     chunks_middle_column4[1],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveDown)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveDown)),
                     f,
                     chunks_middle_column4[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhZoomIn)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomIn)),
                     f,
                     chunks_middle_column4[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhZoomOut)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomOut)),
                     f,
                     chunks_middle_column4[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhHide)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhHide)),
                     f,
                     chunks_middle_column4[5],
                 );
@@ -1660,7 +1644,7 @@ impl Model {
             ConfigEditorLayout::Key1 => self
                 .app
                 .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
-                    IdKeyGlobal::GlobalQuit,
+                    IdKeyGlobal::Quit,
                 )))
                 .ok(),
             ConfigEditorLayout::Key2 => self
