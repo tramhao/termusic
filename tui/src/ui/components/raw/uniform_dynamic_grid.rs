@@ -30,6 +30,7 @@ pub struct UniformDynamicGrid {
     elem_height: u16,
     row_spacing: u16,
     draw_row_low_space: bool,
+    distribute_row_space: bool,
 }
 
 impl UniformDynamicGrid {
@@ -40,6 +41,7 @@ impl UniformDynamicGrid {
             elem_height,
             row_spacing: 0,
             draw_row_low_space: false,
+            distribute_row_space: false,
         }
     }
 
@@ -56,6 +58,14 @@ impl UniformDynamicGrid {
     /// Default: `false`
     pub fn draw_row_low_space(mut self) -> Self {
         self.draw_row_low_space = true;
+        self
+    }
+
+    /// Distribute remaining row space among the elements in the row.
+    ///
+    /// Default: `false`
+    pub fn distribute_row_space(mut self) -> Self {
+        self.distribute_row_space = true;
         self
     }
 
@@ -95,9 +105,15 @@ impl UniformDynamicGrid {
             .areas(remaining_area);
             remaining_area = remainder;
 
-            let constraints = (0..elems_per_row).map(|_| Constraint::Length(self.elem_width));
+            let chunks = if self.distribute_row_space {
+                let constraints = (0..elems_per_row).map(|_| Constraint::Min(self.elem_width));
 
-            let chunks = Layout::horizontal(constraints).split(row_area);
+                Layout::horizontal(constraints).split(row_area)
+            } else {
+                let constraints = (0..elems_per_row).map(|_| Constraint::Length(self.elem_width));
+
+                Layout::horizontal(constraints).split(row_area)
+            };
 
             for chunk in chunks.iter() {
                 // only add as many cells as there are requested elements
@@ -200,5 +216,19 @@ mod tests {
         assert_eq!(areas[0], Rect::new(0, 0, 10, 3));
         assert_eq!(areas[1], Rect::new(10, 0, 10, 3));
         assert_eq!(areas[2], Rect::new(0, 4, 10, 3));
+    }
+
+    #[test]
+    fn should_split_all_single_row_no_leftover_space() {
+        let area = Rect::new(0, 0, 33, 3);
+
+        let areas = UniformDynamicGrid::new(3, 3, 10)
+            .distribute_row_space()
+            .split(area);
+
+        assert_eq!(areas.len(), 3);
+        assert_eq!(areas[0], Rect::new(0, 0, 11, 3));
+        assert_eq!(areas[1], Rect::new(11, 0, 11, 3));
+        assert_eq!(areas[2], Rect::new(22, 0, 11, 3));
     }
 }
