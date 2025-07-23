@@ -1101,63 +1101,46 @@ impl Model {
                 ])
                 .areas(f.area());
 
-                let chunks_middle = Layout::horizontal([
-                    Constraint::Ratio(1, 4),
-                    Constraint::Ratio(1, 4),
-                    Constraint::Ratio(1, 4),
-                    Constraint::Ratio(1, 4),
-                ])
-                .split(chunks_main);
+                let max_height = max! {
+                    library_delete_len,
+                    library_load_dir_len,
+                    library_yank_len,
+                    library_paste_len,
+                    library_search_len,
+                    library_search_youtube_len,
+                    library_tag_editor_len,
+                    library_switch_root_len,
+                    library_add_root_len,
+                    library_remove_root_len,
 
-                let chunks_middle_column1 = Layout::vertical([
-                    Constraint::Length(library_tag_editor_len),
-                    Constraint::Length(library_delete_len),
-                    Constraint::Length(library_load_dir_len),
-                    Constraint::Length(library_yank_len),
-                    Constraint::Length(library_paste_len),
-                    Constraint::Length(library_search_len),
-                    Constraint::Length(library_search_youtube_len),
-                    Constraint::Length(playlist_delete_len),
-                    Constraint::Length(playlist_delete_all_len),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[0]);
-                let chunks_middle_column2 = Layout::vertical([
-                    Constraint::Length(playlist_search_len),
-                    Constraint::Length(playlist_shuffle_len),
-                    Constraint::Length(playlist_mode_cycle_len),
-                    Constraint::Length(playlist_play_selected_len),
-                    Constraint::Length(playlist_swap_down_len),
-                    Constraint::Length(playlist_swap_up_len),
-                    Constraint::Length(database_add_all_len),
-                    Constraint::Length(database_add_selected_len),
-                    Constraint::Length(playlist_random_album_len),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[1]);
+                    playlist_delete_len,
+                    playlist_delete_all_len,
+                    playlist_shuffle_len,
+                    playlist_mode_cycle_len,
+                    playlist_search_len,
+                    playlist_play_selected_len,
+                    playlist_swap_down_len,
+                    playlist_swap_up_len,
+                    playlist_random_album_len,
+                    playlist_random_tracks_len,
 
-                let chunks_middle_column3 = Layout::vertical([
-                    Constraint::Length(playlist_random_tracks_len),
-                    Constraint::Length(library_switch_root_len),
-                    Constraint::Length(library_add_root_len),
-                    Constraint::Length(library_remove_root_len),
-                    Constraint::Length(podcast_mark_played_len),
-                    Constraint::Length(podcast_mark_all_played_len),
-                    Constraint::Length(podcast_ep_download_len),
-                    Constraint::Length(podcast_ep_delete_file_len),
-                    Constraint::Length(podcast_delete_feed_len),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[2]);
+                    database_add_all_len,
+                    database_add_selected_len,
 
-                let chunks_middle_column4 = Layout::vertical([
-                    Constraint::Length(podcast_delete_all_feeds_len),
-                    Constraint::Length(podcast_refresh_feed_len),
-                    Constraint::Length(podcast_refresh_all_feeds_len),
-                    Constraint::Length(podcast_search_add_feed_len),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[3]);
+                    podcast_mark_played_len,
+                    podcast_mark_all_played_len,
+                    podcast_ep_download_len,
+                    podcast_ep_delete_file_len,
+                    podcast_delete_feed_len,
+                    podcast_delete_all_feeds_len,
+                    podcast_search_add_feed_len,
+                    podcast_refresh_feed_len,
+                    podcast_refresh_all_feeds_len,
+                };
+
+                let cells = DynamicGrid::new(31, max_height, 25 + 2)
+                    .draw_row_low_space()
+                    .split(chunks_main);
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
@@ -1167,93 +1150,93 @@ impl Model {
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryTagEditor)),
                     f,
-                    chunks_middle_column1[0],
+                    cells[0],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryDelete)),
                     f,
-                    chunks_middle_column1[1],
+                    cells[1],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryLoadDir)),
                     f,
-                    chunks_middle_column1[2],
+                    cells[2],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryYank)),
                     f,
-                    chunks_middle_column1[3],
+                    cells[3],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryPaste)),
                     f,
-                    chunks_middle_column1[4],
+                    cells[4],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySearch)),
                     f,
-                    chunks_middle_column1[5],
+                    cells[5],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySearchYoutube)),
                     f,
-                    chunks_middle_column1[6],
+                    cells[6],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistDelete)),
                     f,
-                    chunks_middle_column1[7],
+                    cells[7],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistDeleteAll)),
                     f,
-                    chunks_middle_column1[8],
+                    cells[8],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSearch)),
                     f,
-                    chunks_middle_column2[0],
+                    cells[9],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistShuffle)),
                     f,
-                    chunks_middle_column2[1],
+                    cells[10],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistModeCycle)),
                     f,
-                    chunks_middle_column2[2],
+                    cells[11],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistPlaySelected)),
                     f,
-                    chunks_middle_column2[3],
+                    cells[12],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapDown)),
                     f,
-                    chunks_middle_column2[4],
+                    cells[13],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapUp)),
                     f,
-                    chunks_middle_column2[5],
+                    cells[14],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddAll)),
                     f,
-                    chunks_middle_column2[6],
+                    cells[15],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddSelected)),
                     f,
-                    chunks_middle_column2[7],
+                    cells[16],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistAddRandomAlbum)),
                     f,
-                    chunks_middle_column2[8],
+                    cells[17],
                 );
 
                 self.app.view(
@@ -1261,71 +1244,71 @@ impl Model {
                         IdKeyOther::PlaylistAddRandomTracks,
                     )),
                     f,
-                    chunks_middle_column3[0],
+                    cells[18],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySwitchRoot)),
                     f,
-                    chunks_middle_column3[1],
+                    cells[19],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryAddRoot)),
                     f,
-                    chunks_middle_column3[2],
+                    cells[20],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryRemoveRoot)),
                     f,
-                    chunks_middle_column3[3],
+                    cells[21],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkPlayed)),
                     f,
-                    chunks_middle_column3[4],
+                    cells[22],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkAllPlayed)),
                     f,
-                    chunks_middle_column3[5],
+                    cells[23],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDownload)),
                     f,
-                    chunks_middle_column3[6],
+                    cells[24],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDeleteFile)),
                     f,
-                    chunks_middle_column3[7],
+                    cells[25],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteFeed)),
                     f,
-                    chunks_middle_column3[8],
+                    cells[26],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteAllFeeds)),
                     f,
-                    chunks_middle_column4[0],
+                    cells[27],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshFeed)),
                     f,
-                    chunks_middle_column4[1],
+                    cells[28],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshAllFeeds)),
                     f,
-                    chunks_middle_column4[2],
+                    cells[29],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastSearchAddFeed)),
                     f,
-                    chunks_middle_column4[3],
+                    cells[30],
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
