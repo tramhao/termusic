@@ -75,6 +75,8 @@ impl UniformDynamicGrid {
 
         let mut remaining_elems = 0..self.elems;
 
+        let elems_per_row = remaining_area.width / self.elem_width;
+
         while !remaining_elems.is_empty()
             && !remaining_area.is_empty()
             && (remaining_area.height >= self.elem_height || self.draw_row_low_space)
@@ -85,7 +87,7 @@ impl UniformDynamicGrid {
             } else {
                 self.row_spacing
             };
-            let [_row_spacer, mut remaining_row_area, remainder] = Layout::vertical([
+            let [_row_spacer, row_area, remainder] = Layout::vertical([
                 Constraint::Length(spacing),
                 Constraint::Length(self.elem_height),
                 Constraint::Fill(0),
@@ -93,15 +95,17 @@ impl UniformDynamicGrid {
             .areas(remaining_area);
             remaining_area = remainder;
 
-            while remaining_row_area.width >= self.elem_width && remaining_elems.next().is_some() {
-                let [col, _remaining] =
-                    Layout::vertical([Constraint::Length(self.elem_height), Constraint::Fill(0)])
-                        .areas(remaining_row_area);
-                let [col, remaining] =
-                    Layout::horizontal([Constraint::Length(self.elem_width), Constraint::Fill(0)])
-                        .areas(col);
-                remaining_row_area = remaining;
-                cells.push(col);
+            let constraints = (0..elems_per_row).map(|_| Constraint::Length(self.elem_width));
+
+            let chunks = Layout::horizontal(constraints).split(row_area);
+
+            for chunk in chunks.iter() {
+                // only add as many cells as there are requested elements
+                if remaining_elems.next().is_none() {
+                    break;
+                }
+
+                cells.push(*chunk);
             }
         }
 
