@@ -713,65 +713,52 @@ impl Model {
                 ])
                 .areas(f.area());
 
-                let chunks_middle = Layout::horizontal([
-                    Constraint::Ratio(1, 4),
-                    Constraint::Ratio(1, 4),
-                    Constraint::Ratio(1, 4),
-                    Constraint::Ratio(1, 4),
-                ])
-                .split(chunks_main);
+                let max_height = max! {
+                    global_layout_treeview_len,
+                    global_layout_database_len,
+                    global_layout_podcast,
 
-                let chunks_middle_column1 = Layout::vertical([
-                    Constraint::Length(global_quit_len),
-                    Constraint::Length(global_left_len),
-                    Constraint::Length(global_down_len),
-                    Constraint::Length(global_up_len),
-                    Constraint::Length(global_right_len),
-                    Constraint::Length(global_goto_top_len),
-                    Constraint::Length(global_goto_bottom_len),
-                    Constraint::Length(global_player_toggle_pause_len),
-                    Constraint::Length(global_player_next_len),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[0]);
+                    global_quit_len,
+                    global_left_len,
+                    global_right_len,
+                    global_up_len,
+                    global_down_len,
+                    global_goto_top_len,
+                    global_goto_bottom_len,
 
-                let chunks_middle_column2 = Layout::vertical([
-                    Constraint::Length(global_player_previous_len),
-                    Constraint::Length(global_help_len),
-                    Constraint::Length(global_volume_up_len),
-                    Constraint::Length(global_volume_down_len),
-                    Constraint::Length(global_player_seek_forward_len),
-                    Constraint::Length(global_player_seek_backward_len),
-                    Constraint::Length(global_player_speed_up_len),
-                    Constraint::Length(global_player_speed_down_len),
-                    Constraint::Length(global_lyric_adjust_forward_len),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[1]);
-                let chunks_middle_column3 = Layout::vertical([
-                    Constraint::Length(global_lyric_adjust_backward_len),
-                    Constraint::Length(global_lyric_cycle_len),
-                    Constraint::Length(global_layout_treeview_len),
-                    Constraint::Length(global_layout_database_len),
-                    Constraint::Length(global_player_toggle_gapless_len),
-                    Constraint::Length(global_config_len),
-                    Constraint::Length(global_save_playlist),
-                    Constraint::Length(global_layout_podcast),
-                    Constraint::Length(global_xywh_move_left),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[2]);
+                    global_help_len,
+                    global_volume_up_len,
+                    global_volume_down_len,
 
-                let chunks_middle_column4 = Layout::vertical([
-                    Constraint::Length(global_xywh_move_right),
-                    Constraint::Length(global_xywh_move_up),
-                    Constraint::Length(global_xywh_move_down),
-                    Constraint::Length(global_xywh_zoom_in),
-                    Constraint::Length(global_xywh_zoom_out),
-                    Constraint::Length(global_xywh_hide),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[3]);
+                    global_player_seek_forward_len,
+                    global_player_seek_backward_len,
+                    global_player_speed_up_len,
+                    global_player_speed_down_len,
+                    global_player_toggle_gapless_len,
+                    global_player_toggle_pause_len,
+                    global_player_next_len,
+                    global_player_previous_len,
+
+                    global_lyric_adjust_forward_len,
+                    global_lyric_adjust_backward_len,
+                    global_lyric_cycle_len,
+
+                    global_config_len,
+
+                    global_save_playlist,
+
+                    global_xywh_move_left,
+                    global_xywh_move_right,
+                    global_xywh_move_up,
+                    global_xywh_move_down,
+                    global_xywh_zoom_in,
+                    global_xywh_zoom_out,
+                    global_xywh_hide
+                };
+
+                let cells = DynamicGrid::new(33, max_height, 23 + 2)
+                    .draw_row_low_space()
+                    .split(chunks_main);
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
@@ -781,172 +768,172 @@ impl Model {
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit)),
                     f,
-                    chunks_middle_column1[0],
+                    cells[0],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Left)),
                     f,
-                    chunks_middle_column1[1],
+                    cells[1],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Down)),
                     f,
-                    chunks_middle_column1[2],
+                    cells[2],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Up)),
                     f,
-                    chunks_middle_column1[3],
+                    cells[3],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Right)),
                     f,
-                    chunks_middle_column1[4],
+                    cells[4],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoTop)),
                     f,
-                    chunks_middle_column1[5],
+                    cells[5],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoBottom)),
                     f,
-                    chunks_middle_column1[6],
+                    cells[6],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerTogglePause)),
                     f,
-                    chunks_middle_column1[7],
+                    cells[7],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerNext)),
                     f,
-                    chunks_middle_column1[8],
+                    cells[8],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerPrevious)),
                     f,
-                    chunks_middle_column2[0],
+                    cells[9],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Help)),
                     f,
-                    chunks_middle_column2[1],
+                    cells[10],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeUp)),
                     f,
-                    chunks_middle_column2[2],
+                    cells[11],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeDown)),
                     f,
-                    chunks_middle_column2[3],
+                    cells[12],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekForward)),
                     f,
-                    chunks_middle_column2[4],
+                    cells[13],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekBackward)),
                     f,
-                    chunks_middle_column2[5],
+                    cells[14],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedUp)),
                     f,
-                    chunks_middle_column2[6],
+                    cells[15],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedDown)),
                     f,
-                    chunks_middle_column2[7],
+                    cells[16],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustForward)),
                     f,
-                    chunks_middle_column2[8],
+                    cells[17],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustBackward)),
                     f,
-                    chunks_middle_column3[0],
+                    cells[18],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricCycle)),
                     f,
-                    chunks_middle_column3[1],
+                    cells[19],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutTreeview)),
                     f,
-                    chunks_middle_column3[2],
+                    cells[20],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutDatabase)),
                     f,
-                    chunks_middle_column3[3],
+                    cells[21],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerToggleGapless)),
                     f,
-                    chunks_middle_column3[4],
+                    cells[22],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Config)),
                     f,
-                    chunks_middle_column3[5],
+                    cells[23],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::SavePlaylist)),
                     f,
-                    chunks_middle_column3[6],
+                    cells[24],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPodcast)),
                     f,
-                    chunks_middle_column3[7],
+                    cells[25],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft)),
                     f,
-                    chunks_middle_column3[8],
+                    cells[26],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveRight)),
                     f,
-                    chunks_middle_column4[0],
+                    cells[27],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveUp)),
                     f,
-                    chunks_middle_column4[1],
+                    cells[28],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveDown)),
                     f,
-                    chunks_middle_column4[2],
+                    cells[29],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomIn)),
                     f,
-                    chunks_middle_column4[3],
+                    cells[30],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomOut)),
                     f,
-                    chunks_middle_column4[4],
+                    cells[31],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhHide)),
                     f,
-                    chunks_middle_column4[5],
+                    cells[32],
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
