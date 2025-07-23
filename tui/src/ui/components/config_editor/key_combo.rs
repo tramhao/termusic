@@ -1473,12 +1473,8 @@ impl ConfigGlobalQuit {
                 " Quit ",
                 IdKey::Global(IdKeyGlobal::Quit),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalQuitBlurDown,
-                )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalQuitBlurUp,
-                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::QuitBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::QuitBlurUp)),
             ),
         }
     }
@@ -1502,12 +1498,8 @@ impl ConfigGlobalLeft {
                 " Left ",
                 IdKey::Global(IdKeyGlobal::Left),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLeftBlurDown,
-                )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLeftBlurUp,
-                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::LeftBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::LeftBlurUp)),
             ),
         }
     }
@@ -1531,12 +1523,8 @@ impl ConfigGlobalDown {
                 " Down ",
                 IdKey::Global(IdKeyGlobal::Down),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalDownBlurDown,
-                )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalDownBlurUp,
-                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::DownBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::DownBlurUp)),
             ),
         }
     }
@@ -1559,12 +1547,8 @@ impl ConfigGlobalRight {
                 " Right ",
                 IdKey::Global(IdKeyGlobal::Right),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalRightBlurDown,
-                )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalRightBlurUp,
-                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::RightBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::RightBlurUp)),
             ),
         }
     }
@@ -1587,10 +1571,8 @@ impl ConfigGlobalUp {
                 " Up ",
                 IdKey::Global(IdKeyGlobal::Up),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalUpBlurDown,
-                )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::GlobalUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::UpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::UpBlurUp)),
             ),
         }
     }
@@ -1615,11 +1597,9 @@ impl ConfigGlobalGotoTop {
                 IdKey::Global(IdKeyGlobal::GotoTop),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalGotoTopBlurDown,
+                    KFMsgGlobal::GotoTopBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalGotoTopBlurUp,
-                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::GotoTopBlurUp)),
             ),
         }
     }
@@ -1644,10 +1624,10 @@ impl ConfigGlobalGotoBottom {
                 IdKey::Global(IdKeyGlobal::GotoBottom),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalGotoBottomBlurDown,
+                    KFMsgGlobal::GotoBottomBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalGotoBottomBlurUp,
+                    KFMsgGlobal::GotoBottomBlurUp,
                 )),
             ),
         }
@@ -1673,10 +1653,10 @@ impl ConfigGlobalPlayerTogglePause {
                 IdKey::Global(IdKeyGlobal::PlayerTogglePause),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerTogglePauseBlurDown,
+                    KFMsgGlobal::PlayerTogglePauseBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerTogglePauseBlurUp,
+                    KFMsgGlobal::PlayerTogglePauseBlurUp,
                 )),
             ),
         }
@@ -1702,10 +1682,10 @@ impl ConfigGlobalPlayerNext {
                 IdKey::Global(IdKeyGlobal::PlayerNext),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerNextBlurDown,
+                    KFMsgGlobal::PlayerNextBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerNextBlurUp,
+                    KFMsgGlobal::PlayerNextBlurUp,
                 )),
             ),
         }
@@ -1731,10 +1711,10 @@ impl ConfigGlobalPlayerPrevious {
                 IdKey::Global(IdKeyGlobal::PlayerPrevious),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerPreviousBlurDown,
+                    KFMsgGlobal::PlayerPreviousBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerPreviousBlurUp,
+                    KFMsgGlobal::PlayerPreviousBlurUp,
                 )),
             ),
         }
@@ -1759,12 +1739,8 @@ impl ConfigGlobalHelp {
                 " Help ",
                 IdKey::Global(IdKeyGlobal::Help),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalHelpBlurDown,
-                )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalHelpBlurUp,
-                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::HelpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::HelpBlurUp)),
             ),
         }
     }
@@ -1788,10 +1764,10 @@ impl ConfigGlobalVolumeUp {
                 IdKey::Global(IdKeyGlobal::PlayerVolumeUp),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerVolumeUpBlurDown,
+                    KFMsgGlobal::PlayerVolumeUpBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerVolumeUpBlurUp,
+                    KFMsgGlobal::PlayerVolumeUpBlurUp,
                 )),
             ),
         }
@@ -1817,10 +1793,10 @@ impl ConfigGlobalVolumeDown {
                 IdKey::Global(IdKeyGlobal::PlayerVolumeDown),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerVolumeDownBlurDown,
+                    KFMsgGlobal::PlayerVolumeDownBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerVolumeDownBlurUp,
+                    KFMsgGlobal::PlayerVolumeDownBlurUp,
                 )),
             ),
         }
@@ -1846,10 +1822,10 @@ impl ConfigGlobalPlayerSeekForward {
                 IdKey::Global(IdKeyGlobal::PlayerSeekForward),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerSeekForwardBlurDown,
+                    KFMsgGlobal::PlayerSeekForwardBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerSeekForwardBlurUp,
+                    KFMsgGlobal::PlayerSeekForwardBlurUp,
                 )),
             ),
         }
@@ -1875,10 +1851,10 @@ impl ConfigGlobalPlayerSeekBackward {
                 IdKey::Global(IdKeyGlobal::PlayerSeekBackward),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerSeekBackwardBlurDown,
+                    KFMsgGlobal::PlayerSeekBackwardBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerSeekBackwardBlurUp,
+                    KFMsgGlobal::PlayerSeekBackwardBlurUp,
                 )),
             ),
         }
@@ -1904,10 +1880,10 @@ impl ConfigGlobalPlayerSpeedUp {
                 IdKey::Global(IdKeyGlobal::PlayerSpeedUp),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerSpeedUpBlurDown,
+                    KFMsgGlobal::PlayerSpeedUpBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerSpeedUpBlurUp,
+                    KFMsgGlobal::PlayerSpeedUpBlurUp,
                 )),
             ),
         }
@@ -1933,10 +1909,10 @@ impl ConfigGlobalPlayerSpeedDown {
                 IdKey::Global(IdKeyGlobal::PlayerSpeedDown),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerSpeedDownBlurDown,
+                    KFMsgGlobal::PlayerSpeedDownBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerSpeedDownBlurUp,
+                    KFMsgGlobal::PlayerSpeedDownBlurUp,
                 )),
             ),
         }
@@ -1962,10 +1938,10 @@ impl ConfigGlobalLyricAdjustForward {
                 IdKey::Global(IdKeyGlobal::LyricAdjustForward),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLyricAdjustForwardBlurDown,
+                    KFMsgGlobal::LyricAdjustForwardBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLyricAdjustForwardBlurUp,
+                    KFMsgGlobal::LyricAdjustForwardBlurUp,
                 )),
             ),
         }
@@ -1991,10 +1967,10 @@ impl ConfigGlobalLyricAdjustBackward {
                 IdKey::Global(IdKeyGlobal::LyricAdjustBackward),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLyricAdjustBackwardBlurDown,
+                    KFMsgGlobal::LyricAdjustBackwardBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLyricAdjustBackwardBlurUp,
+                    KFMsgGlobal::LyricAdjustBackwardBlurUp,
                 )),
             ),
         }
@@ -2020,10 +1996,10 @@ impl ConfigGlobalLyricCycle {
                 IdKey::Global(IdKeyGlobal::LyricCycle),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLyricCycleBlurDown,
+                    KFMsgGlobal::LyricCycleBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLyricCycleBlurUp,
+                    KFMsgGlobal::LyricCycleBlurUp,
                 )),
             ),
         }
@@ -2049,10 +2025,10 @@ impl ConfigGlobalLayoutTreeview {
                 IdKey::Global(IdKeyGlobal::LayoutTreeview),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLayoutTreeviewBlurDown,
+                    KFMsgGlobal::LayoutTreeviewBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLayoutTreeviewBlurUp,
+                    KFMsgGlobal::LayoutTreeviewBlurUp,
                 )),
             ),
         }
@@ -2078,10 +2054,10 @@ impl ConfigGlobalLayoutDatabase {
                 IdKey::Global(IdKeyGlobal::LayoutDatabase),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLayoutDatabaseBlurDown,
+                    KFMsgGlobal::LayoutDatabaseBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLayoutDatabaseBlurUp,
+                    KFMsgGlobal::LayoutDatabaseBlurUp,
                 )),
             ),
         }
@@ -2107,10 +2083,10 @@ impl ConfigGlobalPlayerToggleGapless {
                 IdKey::Global(IdKeyGlobal::PlayerToggleGapless),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerToggleGaplessBlurDown,
+                    KFMsgGlobal::PlayerToggleGaplessBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalPlayerToggleGaplessBlurUp,
+                    KFMsgGlobal::PlayerToggleGaplessBlurUp,
                 )),
             ),
         }
@@ -2628,12 +2604,8 @@ impl ConfigGlobalConfig {
                 " Config Editor ",
                 IdKey::Global(IdKeyGlobal::Config),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalConfigBlurDown,
-                )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalConfigBlurUp,
-                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::ConfigBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::ConfigBlurUp)),
             ),
         }
     }
@@ -2803,10 +2775,10 @@ impl ConfigGlobalSavePlaylist {
                 IdKey::Global(IdKeyGlobal::SavePlaylist),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalSavePlaylistBlurDown,
+                    KFMsgGlobal::SavePlaylistBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalSavePlaylistBlurUp,
+                    KFMsgGlobal::SavePlaylistBlurUp,
                 )),
             ),
         }
@@ -2832,10 +2804,10 @@ impl ConfigGlobalLayoutPodcast {
                 IdKey::Global(IdKeyGlobal::LayoutPodcast),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLayoutPodcastBlurDown,
+                    KFMsgGlobal::LayoutPodcastBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalLayoutPodcastBlurUp,
+                    KFMsgGlobal::LayoutPodcastBlurUp,
                 )),
             ),
         }
@@ -2861,10 +2833,10 @@ impl ConfigGlobalXywhMoveLeft {
                 IdKey::Global(IdKeyGlobal::XywhMoveLeft),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhMoveLeftBlurDown,
+                    KFMsgGlobal::XywhMoveLeftBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhMoveLeftBlurUp,
+                    KFMsgGlobal::XywhMoveLeftBlurUp,
                 )),
             ),
         }
@@ -2890,10 +2862,10 @@ impl ConfigGlobalXywhMoveRight {
                 IdKey::Global(IdKeyGlobal::XywhMoveRight),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhMoveRightBlurDown,
+                    KFMsgGlobal::XywhMoveRightBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhMoveRightBlurUp,
+                    KFMsgGlobal::XywhMoveRightBlurUp,
                 )),
             ),
         }
@@ -2918,10 +2890,10 @@ impl ConfigGlobalXywhMoveUp {
                 IdKey::Global(IdKeyGlobal::XywhMoveUp),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhMoveUpBlurDown,
+                    KFMsgGlobal::XywhMoveUpBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhMoveUpBlurUp,
+                    KFMsgGlobal::XywhMoveUpBlurUp,
                 )),
             ),
         }
@@ -2946,10 +2918,10 @@ impl ConfigGlobalXywhMoveDown {
                 IdKey::Global(IdKeyGlobal::XywhMoveDown),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhMoveDownBlurDown,
+                    KFMsgGlobal::XywhMoveDownBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhMoveDownBlurUp,
+                    KFMsgGlobal::XywhMoveDownBlurUp,
                 )),
             ),
         }
@@ -2975,10 +2947,10 @@ impl ConfigGlobalXywhZoomIn {
                 IdKey::Global(IdKeyGlobal::XywhZoomIn),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhZoomInBlurDown,
+                    KFMsgGlobal::XywhZoomInBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhZoomInBlurUp,
+                    KFMsgGlobal::XywhZoomInBlurUp,
                 )),
             ),
         }
@@ -3003,10 +2975,10 @@ impl ConfigGlobalXywhZoomOut {
                 IdKey::Global(IdKeyGlobal::XywhZoomOut),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhZoomOutBlurDown,
+                    KFMsgGlobal::XywhZoomOutBlurDown,
                 )),
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhZoomOutBlurUp,
+                    KFMsgGlobal::XywhZoomOutBlurUp,
                 )),
             ),
         }
@@ -3032,11 +3004,9 @@ impl ConfigGlobalXywhHide {
                 IdKey::Global(IdKeyGlobal::XywhHide),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhHideBlurDown,
+                    KFMsgGlobal::XywhHideBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
-                    KFMsgGlobal::GlobalXywhHideBlurUp,
-                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::XywhHideBlurUp)),
             ),
         }
     }

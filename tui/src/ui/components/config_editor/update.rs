@@ -434,14 +434,14 @@ impl Model {
     #[allow(clippy::too_many_lines)]
     fn update_key_focus_global(&mut self, msg: KFMsgGlobal) {
         match msg {
-            KFMsgGlobal::GlobalXywhHideBlurDown | KFMsgGlobal::GlobalLeftBlurUp => {
+            KFMsgGlobal::XywhHideBlurDown | KFMsgGlobal::LeftBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::Quit,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalQuitBlurDown | KFMsgGlobal::GlobalDownBlurUp => {
+            KFMsgGlobal::QuitBlurDown | KFMsgGlobal::DownBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::Left,
@@ -449,7 +449,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalLeftBlurDown | KFMsgGlobal::GlobalUpBlurUp => {
+            KFMsgGlobal::LeftBlurDown | KFMsgGlobal::UpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::Down,
@@ -457,7 +457,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalDownBlurDown | KFMsgGlobal::GlobalRightBlurUp => {
+            KFMsgGlobal::DownBlurDown | KFMsgGlobal::RightBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::Up,
@@ -465,73 +465,70 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalUpBlurDown | KFMsgGlobal::GlobalGotoTopBlurUp => {
+            KFMsgGlobal::UpBlurDown | KFMsgGlobal::GotoTopBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::Right,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalRightBlurDown | KFMsgGlobal::GlobalGotoBottomBlurUp => {
+            KFMsgGlobal::RightBlurDown | KFMsgGlobal::GotoBottomBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::GotoTop,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalGotoTopBlurDown | KFMsgGlobal::GlobalPlayerTogglePauseBlurUp => {
+            KFMsgGlobal::GotoTopBlurDown | KFMsgGlobal::PlayerTogglePauseBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::GotoBottom,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalGotoBottomBlurDown | KFMsgGlobal::GlobalPlayerNextBlurUp => {
+            KFMsgGlobal::GotoBottomBlurDown | KFMsgGlobal::PlayerNextBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerTogglePause,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalPlayerTogglePauseBlurDown
-            | KFMsgGlobal::GlobalPlayerPreviousBlurUp => {
+            KFMsgGlobal::PlayerTogglePauseBlurDown | KFMsgGlobal::PlayerPreviousBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerNext,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalPlayerNextBlurDown | KFMsgGlobal::GlobalHelpBlurUp => {
+            KFMsgGlobal::PlayerNextBlurDown | KFMsgGlobal::HelpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerPrevious,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalPlayerPreviousBlurDown | KFMsgGlobal::GlobalPlayerVolumeUpBlurUp => {
+            KFMsgGlobal::PlayerPreviousBlurDown | KFMsgGlobal::PlayerVolumeUpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::Help,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalHelpBlurDown | KFMsgGlobal::GlobalPlayerVolumeDownBlurUp => {
+            KFMsgGlobal::HelpBlurDown | KFMsgGlobal::PlayerVolumeDownBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerVolumeUp,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalPlayerVolumeUpBlurDown
-            | KFMsgGlobal::GlobalPlayerSeekForwardBlurUp => {
+            KFMsgGlobal::PlayerVolumeUpBlurDown | KFMsgGlobal::PlayerSeekForwardBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerVolumeDown,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalPlayerVolumeDownBlurDown
-            | KFMsgGlobal::GlobalPlayerSeekBackwardBlurUp => {
+            KFMsgGlobal::PlayerVolumeDownBlurDown | KFMsgGlobal::PlayerSeekBackwardBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerSeekForward,
@@ -539,8 +536,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalPlayerSeekForwardBlurDown
-            | KFMsgGlobal::GlobalPlayerSpeedUpBlurUp => {
+            KFMsgGlobal::PlayerSeekForwardBlurDown | KFMsgGlobal::PlayerSpeedUpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerSeekBackward,
@@ -548,8 +544,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalPlayerSeekBackwardBlurDown
-            | KFMsgGlobal::GlobalPlayerSpeedDownBlurUp => {
+            KFMsgGlobal::PlayerSeekBackwardBlurDown | KFMsgGlobal::PlayerSpeedDownBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerSpeedUp,
@@ -557,8 +552,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalPlayerSpeedUpBlurDown
-            | KFMsgGlobal::GlobalLyricAdjustForwardBlurUp => {
+            KFMsgGlobal::PlayerSpeedUpBlurDown | KFMsgGlobal::LyricAdjustForwardBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerSpeedDown,
@@ -566,8 +560,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalPlayerSpeedDownBlurDown
-            | KFMsgGlobal::GlobalLyricAdjustBackwardBlurUp => {
+            KFMsgGlobal::PlayerSpeedDownBlurDown | KFMsgGlobal::LyricAdjustBackwardBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::LyricAdjustForward,
@@ -575,7 +568,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalLyricAdjustForwardBlurDown | KFMsgGlobal::GlobalLyricCycleBlurUp => {
+            KFMsgGlobal::LyricAdjustForwardBlurDown | KFMsgGlobal::LyricCycleBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::LyricAdjustBackward,
@@ -583,8 +576,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalLyricAdjustBackwardBlurDown
-            | KFMsgGlobal::GlobalLayoutTreeviewBlurUp => {
+            KFMsgGlobal::LyricAdjustBackwardBlurDown | KFMsgGlobal::LayoutTreeviewBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::LyricCycle,
@@ -592,7 +584,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalLyricCycleBlurDown | KFMsgGlobal::GlobalLayoutDatabaseBlurUp => {
+            KFMsgGlobal::LyricCycleBlurDown | KFMsgGlobal::LayoutDatabaseBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::LayoutTreeview,
@@ -600,8 +592,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalLayoutTreeviewBlurDown
-            | KFMsgGlobal::GlobalPlayerToggleGaplessBlurUp => {
+            KFMsgGlobal::LayoutTreeviewBlurDown | KFMsgGlobal::PlayerToggleGaplessBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::LayoutDatabase,
@@ -609,7 +600,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalLayoutDatabaseBlurDown | KFMsgGlobal::GlobalConfigBlurUp => {
+            KFMsgGlobal::LayoutDatabaseBlurDown | KFMsgGlobal::ConfigBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::PlayerToggleGapless,
@@ -617,8 +608,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalPlayerToggleGaplessBlurDown
-            | KFMsgGlobal::GlobalSavePlaylistBlurUp => {
+            KFMsgGlobal::PlayerToggleGaplessBlurDown | KFMsgGlobal::SavePlaylistBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::Config,
@@ -626,7 +616,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalConfigBlurDown | KFMsgGlobal::GlobalLayoutPodcastBlurUp => {
+            KFMsgGlobal::ConfigBlurDown | KFMsgGlobal::LayoutPodcastBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::SavePlaylist,
@@ -634,56 +624,56 @@ impl Model {
                     .ok();
             }
 
-            KFMsgGlobal::GlobalSavePlaylistBlurDown | KFMsgGlobal::GlobalXywhMoveLeftBlurUp => {
+            KFMsgGlobal::SavePlaylistBlurDown | KFMsgGlobal::XywhMoveLeftBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::LayoutPodcast,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalLayoutPodcastBlurDown | KFMsgGlobal::GlobalXywhMoveRightBlurUp => {
+            KFMsgGlobal::LayoutPodcastBlurDown | KFMsgGlobal::XywhMoveRightBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::XywhMoveLeft,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalXywhMoveLeftBlurDown | KFMsgGlobal::GlobalXywhMoveUpBlurUp => {
+            KFMsgGlobal::XywhMoveLeftBlurDown | KFMsgGlobal::XywhMoveUpBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::XywhMoveRight,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalXywhMoveRightBlurDown | KFMsgGlobal::GlobalXywhMoveDownBlurUp => {
+            KFMsgGlobal::XywhMoveRightBlurDown | KFMsgGlobal::XywhMoveDownBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::XywhMoveUp,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalXywhMoveUpBlurDown | KFMsgGlobal::GlobalXywhZoomInBlurUp => {
+            KFMsgGlobal::XywhMoveUpBlurDown | KFMsgGlobal::XywhZoomInBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::XywhMoveDown,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalXywhMoveDownBlurDown | KFMsgGlobal::GlobalXywhZoomOutBlurUp => {
+            KFMsgGlobal::XywhMoveDownBlurDown | KFMsgGlobal::XywhZoomOutBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::XywhZoomIn,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalXywhZoomInBlurDown | KFMsgGlobal::GlobalXywhHideBlurUp => {
+            KFMsgGlobal::XywhZoomInBlurDown | KFMsgGlobal::XywhHideBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::XywhZoomOut,
                     )))
                     .ok();
             }
-            KFMsgGlobal::GlobalXywhZoomOutBlurDown | KFMsgGlobal::GlobalQuitBlurUp => {
+            KFMsgGlobal::XywhZoomOutBlurDown | KFMsgGlobal::QuitBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                         IdKeyGlobal::XywhHide,
