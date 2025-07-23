@@ -30,6 +30,7 @@ pub struct DynamicHeightGrid {
     row_spacing: u16,
     draw_row_low_space: bool,
     distribute_row_space: bool,
+    focus_node: Option<usize>,
 }
 
 impl DynamicHeightGrid {
@@ -40,6 +41,7 @@ impl DynamicHeightGrid {
             row_spacing: 0,
             draw_row_low_space: false,
             distribute_row_space: false,
+            focus_node: None,
         }
     }
 
@@ -67,6 +69,14 @@ impl DynamicHeightGrid {
         self
     }
 
+    /// Set a node to skip to.
+    ///
+    /// Automatically figures out which row this node is on and does not allocate area to previous rows.
+    pub fn focus_node(mut self, focus: Option<usize>) -> Self {
+        self.focus_node = focus;
+        self
+    }
+
     /// Split `area` into `elems`, will always be `elems` amount.
     /// Elements areas that dont fit are `Rect(0,0,0,0)`.
     pub fn split(&self, area: Rect) -> Rects {
@@ -85,12 +95,57 @@ impl DynamicHeightGrid {
 
         let elems_per_row = remaining_area.width / self.elem_width;
 
+        // too low area to even a single element, return all 0-length areas
+        if elems_per_row == 0 {
+            // fill the vec to be "elems" amount with 0-width/height rects.
+            for _ in remaining_elems {
+                cells.push(Rect::default());
+            }
+
+            return cells.into();
+        }
+
+        // only run total height calculation for skip if a skip is defined
+        let mut rows_to_skip = if let Some(focus_idx) = self.focus_node {
+            // get the total height this grid would consume if fully allocating all elements
+            let total_height = self
+                .elems_height
+                .clone()
+                .chunks(usize::from(elems_per_row))
+                .fold(0usize, |acc, v| {
+                    acc + usize::from(v.iter().copied().max().unwrap_or_default())
+                });
+
+            // dont skip rows if all elements fit into the area
+            if total_height > usize::from(remaining_area.height) {
+                focus_idx
+                    .checked_div(usize::from(elems_per_row))
+                    .unwrap_or_default()
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+
         while remaining_elems
             .peek()
             .is_some_and(|v| (remaining_area.height >= **v) || self.draw_row_low_space)
             && !remaining_area.is_empty()
             && remaining_area.height > 0
         {
+            if rows_to_skip > 0 {
+                for _ in 0..elems_per_row {
+                    if remaining_elems.next().is_none() {
+                        break;
+                    }
+
+                    cells.push(Rect::default());
+                }
+                rows_to_skip -= 1;
+                continue;
+            }
+
             // dont add a spacing for the first row
             let spacing = if remaining_area == area {
                 0
@@ -125,7 +180,7 @@ impl DynamicHeightGrid {
                 if remaining_area.height < elem_height && !self.draw_row_low_space {
                     break;
                 }
-                // actuall advance the iterator
+                // actually advance the iterator
                 remaining_elems.next();
 
                 chunk.height = elem_height.min(remaining_area.height);
@@ -169,6 +224,20 @@ mod tests {
     use tuirealm::ratatui::layout::Rect;
 
     use super::DynamicHeightGrid;
+
+    #[test]
+    fn should_zero_on_zero_area() {
+        // test to know if there is a infinite loop on too low area
+        let area = Rect::new(0, 0, 0, 0);
+        let elems = [3, 3, 3];
+
+        let areas = DynamicHeightGrid::new(elems, 10).split(area);
+
+        assert_eq!(areas.len(), 3);
+        assert_eq!(areas[0], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[1], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[2], Rect::new(0, 0, 0, 0));
+    }
 
     #[test]
     fn should_split_all_single_row_uniform() {
@@ -310,5 +379,39 @@ mod tests {
         assert_eq!(areas[2], Rect::new(0, 4, 10, 2));
 
         assert!(area.contains(areas[2].positions().last().unwrap()));
+    }
+
+    #[test]
+    fn should_not_skip_if_enough_area() {
+        let area = Rect::new(0, 0, 20, 7);
+        let elems = [3, 4, 3];
+
+        let areas = DynamicHeightGrid::new(elems, 10)
+            .focus_node(Some(2))
+            .split(area);
+
+        assert_eq!(areas.len(), 3);
+        assert_eq!(areas[0], Rect::new(0, 0, 10, 3));
+        assert_eq!(areas[1], Rect::new(10, 0, 10, 4));
+        assert_eq!(areas[2], Rect::new(0, 4, 10, 3));
+    }
+
+    #[test]
+    fn should_skip_if_not_enough_area() {
+        let area = Rect::new(0, 0, 30, 7);
+        let elems = [3, 4, 3, 4, 3, 3, 4];
+
+        let areas = DynamicHeightGrid::new(elems, 10)
+            .focus_node(Some(3))
+            .split(area);
+
+        assert_eq!(areas.len(), 7);
+        assert_eq!(areas[0], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[1], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[2], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[3], Rect::new(0, 0, 10, 4));
+        assert_eq!(areas[4], Rect::new(10, 0, 10, 3));
+        assert_eq!(areas[5], Rect::new(20, 0, 10, 3));
+        assert_eq!(areas[6], Rect::new(0, 0, 0, 0));
     }
 }
