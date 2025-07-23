@@ -756,9 +756,56 @@ impl Model {
                     global_xywh_hide,
                 };
 
+                let focus_elem = self
+                    .app
+                    .focus()
+                    .and_then(|v| {
+                        if let Id::ConfigEditor(IdConfigEditor::KeyGlobal(key)) = *v {
+                            Some(key)
+                        } else {
+                            None
+                        }
+                    })
+                    .map(|v| match v {
+                        IdKeyGlobal::Quit => 0,
+                        IdKeyGlobal::Left => 1,
+                        IdKeyGlobal::Down => 2,
+                        IdKeyGlobal::Up => 3,
+                        IdKeyGlobal::Right => 4,
+                        IdKeyGlobal::GotoTop => 5,
+                        IdKeyGlobal::GotoBottom => 6,
+                        IdKeyGlobal::PlayerTogglePause => 7,
+                        IdKeyGlobal::PlayerNext => 8,
+                        IdKeyGlobal::PlayerPrevious => 9,
+                        IdKeyGlobal::Help => 10,
+                        IdKeyGlobal::PlayerVolumeUp => 11,
+                        IdKeyGlobal::PlayerVolumeDown => 12,
+                        IdKeyGlobal::PlayerSeekForward => 13,
+                        IdKeyGlobal::PlayerSeekBackward => 14,
+                        IdKeyGlobal::PlayerSpeedUp => 15,
+                        IdKeyGlobal::PlayerSpeedDown => 16,
+                        IdKeyGlobal::LyricAdjustForward => 17,
+                        IdKeyGlobal::LyricAdjustBackward => 18,
+                        IdKeyGlobal::LyricCycle => 19,
+                        IdKeyGlobal::LayoutTreeview => 20,
+                        IdKeyGlobal::LayoutDatabase => 21,
+                        IdKeyGlobal::PlayerToggleGapless => 22,
+                        IdKeyGlobal::Config => 23,
+                        IdKeyGlobal::SavePlaylist => 24,
+                        IdKeyGlobal::LayoutPodcast => 25,
+                        IdKeyGlobal::XywhMoveLeft => 26,
+                        IdKeyGlobal::XywhMoveRight => 27,
+                        IdKeyGlobal::XywhMoveUp => 28,
+                        IdKeyGlobal::XywhMoveDown => 29,
+                        IdKeyGlobal::XywhZoomIn => 30,
+                        IdKeyGlobal::XywhZoomOut => 31,
+                        IdKeyGlobal::XywhHide => 32,
+                    });
+
                 let cells = DynamicHeightGrid::new(height_elems, 23 + 2)
                     .draw_row_low_space()
                     .distribute_row_space()
+                    .focus_node(focus_elem)
                     .split(chunks_main);
 
                 self.app
@@ -1142,9 +1189,54 @@ impl Model {
                     podcast_search_add_feed_len,
                 };
 
+                let focus_elem = self
+                    .app
+                    .focus()
+                    .and_then(|v| {
+                        if let Id::ConfigEditor(IdConfigEditor::KeyOther(key)) = *v {
+                            Some(key)
+                        } else {
+                            None
+                        }
+                    })
+                    .map(|v| match v {
+                        IdKeyOther::LibraryTagEditor => 0,
+                        IdKeyOther::LibraryDelete => 1,
+                        IdKeyOther::LibraryLoadDir => 2,
+                        IdKeyOther::LibraryYank => 3,
+                        IdKeyOther::LibraryPaste => 4,
+                        IdKeyOther::LibrarySearch => 5,
+                        IdKeyOther::LibrarySearchYoutube => 6,
+                        IdKeyOther::PlaylistDelete => 7,
+                        IdKeyOther::PlaylistDeleteAll => 8,
+                        IdKeyOther::PlaylistSearch => 9,
+                        IdKeyOther::PlaylistShuffle => 10,
+                        IdKeyOther::PlaylistModeCycle => 11,
+                        IdKeyOther::PlaylistPlaySelected => 12,
+                        IdKeyOther::PlaylistSwapDown => 13,
+                        IdKeyOther::PlaylistSwapUp => 14,
+                        IdKeyOther::DatabaseAddAll => 15,
+                        IdKeyOther::DatabaseAddSelected => 16,
+                        IdKeyOther::PlaylistAddRandomAlbum => 17,
+                        IdKeyOther::PlaylistAddRandomTracks => 18,
+                        IdKeyOther::LibrarySwitchRoot => 19,
+                        IdKeyOther::LibraryAddRoot => 20,
+                        IdKeyOther::LibraryRemoveRoot => 21,
+                        IdKeyOther::PodcastMarkPlayed => 22,
+                        IdKeyOther::PodcastMarkAllPlayed => 23,
+                        IdKeyOther::PodcastEpDownload => 24,
+                        IdKeyOther::PodcastEpDeleteFile => 25,
+                        IdKeyOther::PodcastDeleteFeed => 26,
+                        IdKeyOther::PodcastDeleteAllFeeds => 27,
+                        IdKeyOther::PodcastRefreshFeed => 28,
+                        IdKeyOther::PodcastRefreshAllFeeds => 29,
+                        IdKeyOther::PodcastSearchAddFeed => 30,
+                    });
+
                 let cells = DynamicHeightGrid::new(elem_height, 25 + 2)
                     .draw_row_low_space()
                     .distribute_row_space()
+                    .focus_node(focus_elem)
                     .split(chunks_main);
 
                 self.app
