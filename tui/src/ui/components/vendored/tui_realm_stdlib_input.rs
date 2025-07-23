@@ -8,7 +8,7 @@ Copyright (c) 2021-2024 Christian Visintin
 //! extra testing in [PR 37](https://github.com/veeso/tui-realm-stdlib/pull/37)
 //! and inclusion earlier than the release of a next version.
 //!
-//! Based on <https://github.com/veeso/tui-realm-stdlib/pull/37/commits/2fecc9a492448d097893179bcaf2de8442309b0a>.
+//! Based on <https://github.com/veeso/tui-realm-stdlib/pull/37/commits/a52a9fec9ebf669ddd3f7c718ac001552d9c07c6>.
 //!
 //! Below is the original description
 
@@ -399,7 +399,7 @@ impl MockComponent for Input {
             render.render_widget(p, area);
 
             // Set cursor, if focus
-            if focus {
+            if focus && !block_inner_area.is_empty() {
                 let x: u16 = block_inner_area.x
                     + calc_utf8_cursor_position(
                         &self.states.render_value_chars(itype)[0..self.states.cursor],
