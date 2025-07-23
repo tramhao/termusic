@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
-use crate::ids::{IdConfigEditor, IdKey};
+use crate::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
 use crate::invidious::{Instance, YoutubeVideo};
 use crate::library_db::SearchCriteria;
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
@@ -145,6 +145,12 @@ pub enum DLMsg {
 pub enum LyricMsg {
     LyricTextAreaBlurUp,
     LyricTextAreaBlurDown,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+pub enum IdKey {
+    Global(IdKeyGlobal),
+    Other(IdKeyOther),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

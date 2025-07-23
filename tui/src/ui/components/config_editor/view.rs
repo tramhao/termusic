@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use termusiclib::THEME_DIR;
 use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
-use termusiclib::ids::{Id, IdConfigEditor, IdKey};
+use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
 use termusiclib::types::Msg;
 /**
  * MIT License
@@ -635,221 +635,213 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_key1(&mut self) {
-        let select_global_quit_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))
-        {
+        let select_global_quit_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalQuit),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_global_left_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)))
-        {
+        let select_global_left_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLeft),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_global_right_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)))
-        {
+        let select_global_right_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalRight),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_global_up_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)))
-        {
+        let select_global_up_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalUp),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_global_down_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)))
-        {
+        let select_global_down_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalDown),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_global_goto_top_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)))
-        {
+        let select_global_goto_top_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalGotoTop),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_goto_bottom_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalGotoBottom),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalGotoBottom),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_toggle_pause_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalPlayerTogglePause),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerTogglePause),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_next_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalPlayerNext),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerNext),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_previous_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalPlayerPrevious),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerPrevious),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let select_global_help_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)))
-        {
+        let select_global_help_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalHelp),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_volume_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalVolumeUp),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerVolumeUp),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_volume_down_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalVolumeDown),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerVolumeDown),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_player_seek_forward_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalPlayerSeekForward),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSeekForward),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_seek_backward_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalPlayerSeekBackward),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSeekBackward),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_speed_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalPlayerSpeedUp),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSpeedUp),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_player_speed_down_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalPlayerSpeedDown),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSpeedDown),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_lyric_adjust_forward_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalLyricAdjustForward),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLyricAdjustForward),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_lyric_adjust_backward_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalLyricAdjustBackward),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLyricAdjustBackward),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_lyric_cycle_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalLyricCycle),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLyricCycle),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_layout_treeview_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalLayoutTreeview),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutTreeview),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_layout_database_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalLayoutDatabase),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutDatabase),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_player_toggle_gapless_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalPlayerToggleGapless),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerToggleGapless),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let select_global_config_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)))
-        {
+        let select_global_config_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalConfig),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_save_playlist = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalSavePlaylist),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalSavePlaylist),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_layout_podcast = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalLayoutPodcast),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutPodcast),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_xywh_move_left = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveLeft),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_global_xywh_move_right = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalXywhMoveRight),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveRight),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_move_up = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalXywhMoveUp),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveUp),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_move_down = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalXywhMoveDown),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveDown),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_zoom_in = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalXywhZoomIn),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhZoomIn),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_global_xywh_zoom_out = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::GlobalXywhZoomOut),
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhZoomOut),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_global_xywh_hide = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalXywhHide,
-        ))) {
+        let select_global_xywh_hide = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhHide),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
@@ -932,172 +924,188 @@ impl Model {
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalQuit)),
                     f,
                     chunks_middle_column1[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLeft)),
                     f,
                     chunks_middle_column1[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalDown)),
                     f,
                     chunks_middle_column1[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalUp)),
                     f,
                     chunks_middle_column1[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalRight)),
                     f,
                     chunks_middle_column1[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalGotoTop)),
                     f,
                     chunks_middle_column1[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoBottom)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalGotoBottom)),
                     f,
                     chunks_middle_column1[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerTogglePause)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GlobalPlayerTogglePause,
+                    )),
                     f,
                     chunks_middle_column1[7],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerNext)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerNext)),
                     f,
                     chunks_middle_column1[8],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerPrevious)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerPrevious)),
                     f,
                     chunks_middle_column2[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalHelp)),
                     f,
                     chunks_middle_column2[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerVolumeUp)),
                     f,
                     chunks_middle_column2[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeDown)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GlobalPlayerVolumeDown,
+                    )),
                     f,
                     chunks_middle_column2[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekForward)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GlobalPlayerSeekForward,
+                    )),
                     f,
                     chunks_middle_column2[4],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekBackward)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GlobalPlayerSeekBackward,
+                    )),
                     f,
                     chunks_middle_column2[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalPlayerSpeedUp)),
                     f,
                     chunks_middle_column2[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedDown)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GlobalPlayerSpeedDown,
+                    )),
                     f,
                     chunks_middle_column2[7],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustForward)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GlobalLyricAdjustForward,
+                    )),
                     f,
                     chunks_middle_column2[8],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustBackward)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GlobalLyricAdjustBackward,
+                    )),
                     f,
                     chunks_middle_column3[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricCycle)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLyricCycle)),
                     f,
                     chunks_middle_column3[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutTreeview)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutTreeview)),
                     f,
                     chunks_middle_column3[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutDatabase)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutDatabase)),
                     f,
                     chunks_middle_column3[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerToggleGapless)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GlobalPlayerToggleGapless,
+                    )),
                     f,
                     chunks_middle_column3[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalConfig)),
                     f,
                     chunks_middle_column3[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalSavePlaylist)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalSavePlaylist)),
                     f,
                     chunks_middle_column3[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutPodcast)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalLayoutPodcast)),
                     f,
                     chunks_middle_column3[7],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveLeft)),
                     f,
                     chunks_middle_column3[8],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveRight)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveRight)),
                     f,
                     chunks_middle_column4[0],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveUp)),
                     f,
                     chunks_middle_column4[1],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveDown)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhMoveDown)),
                     f,
                     chunks_middle_column4[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomIn)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhZoomIn)),
                     f,
                     chunks_middle_column4[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomOut)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhZoomOut)),
                     f,
                     chunks_middle_column4[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhHide)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GlobalXywhHide)),
                     f,
                     chunks_middle_column4[5],
                 );
@@ -1108,212 +1116,208 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_key2(&mut self) {
-        let select_library_delete_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)))
-        {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
-        let select_library_load_dir_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::LibraryLoadDir),
+        let select_library_delete_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::LibraryDelete),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_library_yank_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)))
-        {
+        let select_library_load_dir_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::LibraryLoadDir),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_library_paste_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)))
-        {
+        let select_library_yank_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::LibraryYank),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_library_search_len = match self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)))
-        {
+        let select_library_paste_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::LibraryPaste),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_search_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::LibrarySearch),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_library_search_youtube_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::LibrarySearchYoutube),
+            IdConfigEditor::KeyOther(IdKeyOther::LibrarySearchYoutube),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_library_tag_editor_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::LibraryTagEditor),
+            IdConfigEditor::KeyOther(IdKeyOther::LibraryTagEditor),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_playlist_delete_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistDelete),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistDelete),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_playlist_delete_all_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistDeleteAll),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistDeleteAll),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_playlist_shuffle_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistShuffle),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistShuffle),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_playlist_mode_cycle_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistModeCycle),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistModeCycle),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_playlist_search_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistSearch),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistSearch),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
         let select_playlist_play_selected_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistPlaySelected),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistPlaySelected),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_playlist_swap_down_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistSwapDown),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapDown),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_playlist_swap_up_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistSwapUp),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapUp),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_database_add_all_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::DatabaseAddAll),
+            IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddAll),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_database_add_selected_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::DatabaseAddSelected),
+            IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddSelected),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_playlist_random_album_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistAddRandomAlbum),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let select_playlist_random_tracks_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistAddRandomTracks),
+            IdConfigEditor::KeyOther(IdKeyOther::PlaylistAddRandomTracks),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let library_switch_root_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibrarySwitchRoot,
-        ))) {
+        let library_switch_root_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::LibrarySwitchRoot),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let library_add_root_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibraryAddRoot,
-        ))) {
+        let library_add_root_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::LibraryAddRoot),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let library_remove_root_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibraryRemoveRoot,
-        ))) {
+        let library_remove_root_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::LibraryRemoveRoot),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let podcast_mark_played_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastMarkPlayed,
-        ))) {
+        let podcast_mark_played_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkPlayed),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let podcast_mark_all_played_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed),
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkAllPlayed),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let podcast_ep_download_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastEpDownload,
-        ))) {
+        let podcast_ep_download_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDownload),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let podcast_ep_delete_file_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PodcastEpDeleteFile),
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDeleteFile),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let podcast_delete_feed_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastDeleteFeed,
-        ))) {
+        let podcast_delete_feed_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteFeed),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let podcast_delete_all_feeds_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds),
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteAllFeeds),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let podcast_search_add_feed_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PodcastSearchAddFeed),
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastSearchAddFeed),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
-        let podcast_refresh_feed_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastRefreshFeed,
-        ))) {
+        let podcast_refresh_feed_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshFeed),
+        )) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
 
         let podcast_refresh_all_feeds_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds),
+            IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshAllFeeds),
         )) {
             Ok(State::One(_)) => 3,
             _ => 8,
@@ -1397,163 +1401,165 @@ impl Model {
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryTagEditor)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryTagEditor)),
                     f,
                     chunks_middle_column1[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryDelete)),
                     f,
                     chunks_middle_column1[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryLoadDir)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryLoadDir)),
                     f,
                     chunks_middle_column1[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryYank)),
                     f,
                     chunks_middle_column1[3],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryPaste)),
                     f,
                     chunks_middle_column1[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySearch)),
                     f,
                     chunks_middle_column1[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearchYoutube)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySearchYoutube)),
                     f,
                     chunks_middle_column1[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDelete)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistDelete)),
                     f,
                     chunks_middle_column1[7],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDeleteAll)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistDeleteAll)),
                     f,
                     chunks_middle_column1[8],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSearch)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSearch)),
                     f,
                     chunks_middle_column2[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistShuffle)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistShuffle)),
                     f,
                     chunks_middle_column2[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistModeCycle)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistModeCycle)),
                     f,
                     chunks_middle_column2[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistPlaySelected)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistPlaySelected)),
                     f,
                     chunks_middle_column2[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapDown)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapDown)),
                     f,
                     chunks_middle_column2[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapUp)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapUp)),
                     f,
                     chunks_middle_column2[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddAll)),
                     f,
                     chunks_middle_column2[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddSelected)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddSelected)),
                     f,
                     chunks_middle_column2[7],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistAddRandomAlbum)),
                     f,
                     chunks_middle_column2[8],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomTracks)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistAddRandomTracks,
+                    )),
                     f,
                     chunks_middle_column3[0],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySwitchRoot)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySwitchRoot)),
                     f,
                     chunks_middle_column3[1],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryAddRoot)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryAddRoot)),
                     f,
                     chunks_middle_column3[2],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryRemoveRoot)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryRemoveRoot)),
                     f,
                     chunks_middle_column3[3],
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkPlayed)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkPlayed)),
                     f,
                     chunks_middle_column3[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkAllPlayed)),
                     f,
                     chunks_middle_column3[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDownload)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDownload)),
                     f,
                     chunks_middle_column3[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDeleteFile)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDeleteFile)),
                     f,
                     chunks_middle_column3[7],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteFeed)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteFeed)),
                     f,
                     chunks_middle_column3[8],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteAllFeeds)),
                     f,
                     chunks_middle_column4[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshFeed)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshFeed)),
                     f,
                     chunks_middle_column4[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshAllFeeds)),
                     f,
                     chunks_middle_column4[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastSearchAddFeed)),
+                    &Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastSearchAddFeed)),
                     f,
                     chunks_middle_column4[3],
                 );
@@ -1653,12 +1659,14 @@ impl Model {
                 .ok(),
             ConfigEditorLayout::Key1 => self
                 .app
-                .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))
+                .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                    IdKeyGlobal::GlobalQuit,
+                )))
                 .ok(),
             ConfigEditorLayout::Key2 => self
                 .app
-                .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                    IdKey::LibraryTagEditor,
+                .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                    IdKeyOther::LibraryTagEditor,
                 )))
                 .ok(),
         };
