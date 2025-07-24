@@ -100,9 +100,42 @@ impl Model {
                 ])
                 .areas(f.area());
 
+                let focus_elem = self
+                    .app
+                    .focus()
+                    .and_then(|v| {
+                        if let Id::ConfigEditor(id) = *v {
+                            Some(id)
+                        } else {
+                            None
+                        }
+                    })
+                    .and_then(|v| {
+                        Some(match v {
+                            IdConfigEditor::MusicDir => 0,
+                            IdConfigEditor::ExitConfirmation => 1,
+                            IdConfigEditor::PlaylistDisplaySymbol => 2,
+                            IdConfigEditor::PlaylistRandomTrack => 3,
+                            IdConfigEditor::PlaylistRandomAlbum => 4,
+                            IdConfigEditor::PodcastDir => 5,
+                            IdConfigEditor::PodcastSimulDownload => 6,
+                            IdConfigEditor::PodcastMaxRetries => 7,
+                            IdConfigEditor::AlbumPhotoAlign => 8,
+                            IdConfigEditor::SaveLastPosition => 9,
+                            IdConfigEditor::SeekStep => 10,
+                            IdConfigEditor::KillDamon => 11,
+                            IdConfigEditor::PlayerUseMpris => 12,
+                            IdConfigEditor::PlayerUseDiscord => 13,
+                            IdConfigEditor::PlayerPort => 14,
+                            IdConfigEditor::ExtraYtdlpArgs => 15,
+                            _ => return None,
+                        })
+                    });
+
                 let cells = UniformDynamicGrid::new(16, 3, 56 + 2)
                     .draw_row_low_space()
                     .distribute_row_space()
+                    .focus_node(focus_elem)
                     .split(chunks_main);
 
                 self.app
