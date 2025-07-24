@@ -31,6 +31,7 @@ pub struct UniformDynamicGrid {
     row_spacing: u16,
     draw_row_low_space: bool,
     distribute_row_space: bool,
+    focus_node: Option<usize>,
 }
 
 #[allow(dead_code)]
@@ -43,6 +44,7 @@ impl UniformDynamicGrid {
             row_spacing: 0,
             draw_row_low_space: false,
             distribute_row_space: false,
+            focus_node: None,
         }
     }
 
@@ -70,6 +72,14 @@ impl UniformDynamicGrid {
         self
     }
 
+    /// Set a node to skip to.
+    ///
+    /// Automatically figures out which row this node is on and does not allocate area to previous rows.
+    pub fn focus_node(mut self, focus: Option<usize>) -> Self {
+        self.focus_node = focus;
+        self
+    }
+
     /// Split `area` into `elems`, will always be `elems` amount.
     /// Elements areas that dont fit are `Rect(0,0,0,0)`.
     pub fn split(&self, area: Rect) -> Rects {
@@ -88,10 +98,48 @@ impl UniformDynamicGrid {
 
         let elems_per_row = remaining_area.width / self.elem_width;
 
+        // only run total height calculation for skip if a skip is defined
+        let mut rows_to_skip = if let Some(focus_idx) = self.focus_node {
+            let mut rows = self.elems / usize::from(elems_per_row);
+            // integer division cuts-off the decimal, or said differently, rounds down
+            // but in those cases we want to add another row to round-up.
+            // the most proper way would be to use floating point division, but rust does not greatly
+            // support converting >u32 to floating points, so this workaround is used instead for our purposes.
+            if (self.elems % usize::from(elems_per_row)) != 0 {
+                rows += 1;
+            }
+
+            // get the total height this grid would consume if fully allocating all elements
+            let total_height = usize::from(self.elem_height) * rows;
+
+            // dont skip rows if all elements fit into the area
+            if total_height > usize::from(remaining_area.height) {
+                focus_idx
+                    .checked_div(usize::from(elems_per_row))
+                    .unwrap_or_default()
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+
         while !remaining_elems.is_empty()
             && !remaining_area.is_empty()
             && (remaining_area.height >= self.elem_height || self.draw_row_low_space)
         {
+            if rows_to_skip > 0 {
+                for _ in 0..elems_per_row {
+                    if remaining_elems.next().is_none() {
+                        break;
+                    }
+
+                    cells.push(Rect::default());
+                }
+                rows_to_skip -= 1;
+                continue;
+            }
+
             // dont add a spacing for the first row
             let spacing = if remaining_area == area {
                 0
@@ -154,6 +202,19 @@ mod tests {
     use tuirealm::ratatui::layout::Rect;
 
     use super::UniformDynamicGrid;
+
+    #[test]
+    fn should_zero_on_zero_area() {
+        // test to know if there is a infinite loop on too low area
+        let area = Rect::new(0, 0, 0, 0);
+
+        let areas = UniformDynamicGrid::new(3, 3, 10).split(area);
+
+        assert_eq!(areas.len(), 3);
+        assert_eq!(areas[0], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[1], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[2], Rect::new(0, 0, 0, 0));
+    }
 
     #[test]
     fn should_split_all_single_row() {
@@ -231,5 +292,37 @@ mod tests {
         assert_eq!(areas[0], Rect::new(0, 0, 11, 3));
         assert_eq!(areas[1], Rect::new(11, 0, 11, 3));
         assert_eq!(areas[2], Rect::new(22, 0, 11, 3));
+    }
+
+    #[test]
+    fn should_not_skip_if_enough_area() {
+        let area = Rect::new(0, 0, 20, 6);
+
+        let areas = UniformDynamicGrid::new(3, 3, 10)
+            .focus_node(Some(2))
+            .split(area);
+
+        assert_eq!(areas.len(), 3);
+        assert_eq!(areas[0], Rect::new(0, 0, 10, 3));
+        assert_eq!(areas[1], Rect::new(10, 0, 10, 3));
+        assert_eq!(areas[2], Rect::new(0, 3, 10, 3));
+    }
+
+    #[test]
+    fn should_skip_if_not_enough_area() {
+        let area = Rect::new(0, 0, 30, 7);
+
+        let areas = UniformDynamicGrid::new(7, 3, 10)
+            .focus_node(Some(3))
+            .split(area);
+
+        assert_eq!(areas.len(), 7);
+        assert_eq!(areas[0], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[1], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[2], Rect::new(0, 0, 0, 0));
+        assert_eq!(areas[3], Rect::new(0, 0, 10, 3));
+        assert_eq!(areas[4], Rect::new(10, 0, 10, 3));
+        assert_eq!(areas[5], Rect::new(20, 0, 10, 3));
+        assert_eq!(areas[6], Rect::new(0, 3, 10, 3));
     }
 }
