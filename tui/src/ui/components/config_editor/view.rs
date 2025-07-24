@@ -1,6 +1,7 @@
 use crate::ui::Application;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
+use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::utils::draw_area_in_absolute;
@@ -88,7 +89,6 @@ impl Model {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     fn view_config_editor_general(&mut self) {
         self.terminal
             .raw_mut()
@@ -100,126 +100,87 @@ impl Model {
                 ])
                 .areas(f.area());
 
-                let chunks_middle =
-                    Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
-                        .split(chunks_main);
+                let cells = UniformDynamicGrid::new(16, 3, 56 + 2)
+                    .draw_row_low_space()
+                    .distribute_row_space()
+                    .split(chunks_main);
 
-                let chunks_middle_left = Layout::vertical([
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[0]);
-
-                let chunks_middle_right = Layout::vertical([
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Min(0),
-                ])
-                .split(chunks_middle[1]);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::MusicDir),
-                    f,
-                    chunks_middle_left[0],
-                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::MusicDir), f, cells[0]);
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
                     f,
-                    chunks_middle_left[1],
+                    cells[1],
                 );
+
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
                     f,
-                    chunks_middle_left[2],
+                    cells[2],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
                     f,
-                    chunks_middle_left[3],
+                    cells[3],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
                     f,
-                    chunks_middle_left[4],
+                    cells[4],
                 );
 
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PodcastDir),
-                    f,
-                    chunks_middle_left[5],
-                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::PodcastDir), f, cells[5]);
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
                     f,
-                    chunks_middle_left[6],
+                    cells[6],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
                     f,
-                    chunks_middle_left[7],
+                    cells[7],
                 );
+
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
                     f,
-                    chunks_middle_right[0],
+                    cells[8],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
                     f,
-                    chunks_middle_right[1],
+                    cells[9],
                 );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::SeekStep),
-                    f,
-                    chunks_middle_right[2],
-                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::SeekStep), f, cells[10]);
 
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::KillDamon),
-                    f,
-                    chunks_middle_right[3],
-                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::KillDamon), f, cells[11]);
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
                     f,
-                    chunks_middle_right[4],
+                    cells[12],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
                     f,
-                    chunks_middle_right[5],
+                    cells[13],
                 );
 
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlayerPort),
-                    f,
-                    chunks_middle_right[6],
-                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::PlayerPort), f, cells[14]);
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs),
                     f,
-                    chunks_middle_right[7],
+                    cells[15],
                 );
 
                 self.app
@@ -230,6 +191,7 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
+    /// Draw common Popups while in the config editor
     fn view_config_editor_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, UserEvent>) {
         // -- popups
         if app.mounted(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup)) {
