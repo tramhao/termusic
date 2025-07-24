@@ -625,7 +625,7 @@ impl YoutubeOptions {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
+    use crate::types::{IdKey, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
 
     // ensure that assumptions about "KFGLOBAL_FOCUS_ORDER[0]" can be made correctly
     #[test]
@@ -635,11 +635,33 @@ mod tests {
         assert!(!KFGLOBAL_FOCUS_ORDER.is_empty());
     }
 
+    // i dont think there is a compile-time way to ensure only a specific enum variant is used, so test here
+    #[test]
+    fn kfglobal_focus_order_should_only_contain_global() {
+        for entry in KFGLOBAL_FOCUS_ORDER {
+            assert_eq!(
+                std::mem::discriminant(entry),
+                std::mem::discriminant(&IdKey::Global(crate::ids::IdKeyGlobal::Config))
+            );
+        }
+    }
+
     // ensure that assumptions about "KFOTHER_FOCUS_ORDER[0]" can be made correctly
     #[test]
     // clippy complains that it is always "false", but if the array actually *is* empty, then rust will **NOT** complain on "[0]" access
     #[allow(clippy::const_is_empty)]
     fn kfother_focus_order_should_be_nonzero() {
         assert!(!KFOTHER_FOCUS_ORDER.is_empty());
+    }
+
+    // i dont think there is a compile-time way to ensure only a specific enum variant is used, so test here
+    #[test]
+    fn kfother_focus_order_should_only_contain_other() {
+        for entry in KFOTHER_FOCUS_ORDER {
+            assert_eq!(
+                std::mem::discriminant(entry),
+                std::mem::discriminant(&IdKey::Other(crate::ids::IdKeyOther::DatabaseAddAll))
+            );
+        }
     }
 }
