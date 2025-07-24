@@ -89,6 +89,8 @@ impl Model {
         }
     }
 
+    /// Draw the keys for tab "General"
+    #[allow(clippy::too_many_lines)]
     fn view_config_editor_general(&mut self) {
         self.terminal
             .raw_mut()
@@ -239,6 +241,7 @@ impl Model {
         }
     }
 
+    /// Draw the keys for tab "Themes and Colors"
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_color(&mut self) {
         /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
@@ -350,10 +353,57 @@ impl Model {
                     fallback_height,
                 };
 
+                let focus_elem = self
+                    .app
+                    .focus()
+                    .and_then(|v| {
+                        if let Id::ConfigEditor(id) = *v {
+                            Some(id)
+                        } else {
+                            None
+                        }
+                    })
+                    .and_then(|v| {
+                        Some(match v {
+                            IdConfigEditor::LibraryLabel
+                            | IdConfigEditor::LibraryForeground
+                            | IdConfigEditor::LibraryBackground
+                            | IdConfigEditor::LibraryBorder
+                            | IdConfigEditor::LibraryHighlight
+                            | IdConfigEditor::LibraryHighlightSymbol => 0,
+                            IdConfigEditor::PlaylistLabel
+                            | IdConfigEditor::PlaylistForeground
+                            | IdConfigEditor::PlaylistBackground
+                            | IdConfigEditor::PlaylistBorder
+                            | IdConfigEditor::PlaylistHighlight
+                            | IdConfigEditor::PlaylistHighlightSymbol
+                            | IdConfigEditor::CurrentlyPlayingTrackSymbol => 1,
+                            IdConfigEditor::ProgressLabel
+                            | IdConfigEditor::ProgressForeground
+                            | IdConfigEditor::ProgressBackground
+                            | IdConfigEditor::ProgressBorder => 2,
+                            IdConfigEditor::LyricLabel
+                            | IdConfigEditor::LyricForeground
+                            | IdConfigEditor::LyricBackground
+                            | IdConfigEditor::LyricBorder => 3,
+                            IdConfigEditor::ImportantPopupLabel
+                            | IdConfigEditor::ImportantPopupForeground
+                            | IdConfigEditor::ImportantPopupBackground
+                            | IdConfigEditor::ImportantPopupBorder => 4,
+                            IdConfigEditor::FallbackLabel
+                            | IdConfigEditor::FallbackForeground
+                            | IdConfigEditor::FallbackBackground
+                            | IdConfigEditor::FallbackBorder
+                            | IdConfigEditor::FallbackHighlight => 5,
+                            _ => return None,
+                        })
+                    });
+
                 let cells = DynamicHeightGrid::new(elem_height, 16 + 2)
                     .with_row_spacing(1)
                     .draw_row_low_space()
                     .distribute_row_space()
+                    .focus_node(focus_elem)
                     .split(right);
 
                 let chunks_library = Layout::vertical([
