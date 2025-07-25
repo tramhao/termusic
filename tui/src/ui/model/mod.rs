@@ -1,5 +1,3 @@
-//! SPDX-License-Identifier: MIT
-
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
