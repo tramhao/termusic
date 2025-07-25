@@ -27,7 +27,7 @@ use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::ids::{Id, IdConfigEditor};
 use termusiclib::types::{ConfigEditorMsg, Msg};
-use tui_realm_stdlib::{Input, Label, Select, Table};
+use tui_realm_stdlib::{Label, Select, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
@@ -36,6 +36,7 @@ use tuirealm::props::{
 use tuirealm::ratatui::style::Modifier;
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
+use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::model::{Model, UserEvent};
 
 const COLOR_LIST: [ColorTermusic; 19] = [
