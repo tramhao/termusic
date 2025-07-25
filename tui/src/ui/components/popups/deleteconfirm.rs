@@ -1,7 +1,6 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
 use termusiclib::types::Msg;
-use tui_realm_stdlib::Input;
 use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
@@ -9,9 +8,9 @@ use tuirealm::{
     props::{Alignment, BorderType, Borders, InputType},
 };
 
-use crate::ui::model::{Model, UserEvent};
-
 use super::{YNConfirm, YNConfirmStyle};
+use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
+use crate::ui::model::{Model, UserEvent};
 
 /// Component for a "Are you sure to delete? Y/N" popup
 ///

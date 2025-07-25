@@ -18,6 +18,7 @@ mod progress;
 )]
 /// Tag Editor Controls
 mod tag_editor;
+mod vendored;
 mod xywh;
 
 // -- export
