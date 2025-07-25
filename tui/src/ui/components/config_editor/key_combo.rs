@@ -26,8 +26,9 @@ use std::fmt::Display;
 use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
-use termusiclib::ids::{Id, IdConfigEditor, IdKey};
-use termusiclib::types::{ConfigEditorMsg, KFMsg, Msg};
+use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
+use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsgGlobal, KFMsgOther, Msg};
+use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::ratatui::widgets::ListDirection;
@@ -1090,72 +1091,127 @@ impl KEModifierSelect {
     /// Get the Selected Modifier choice index for the given [`IdKey`] and the key representation as string
     ///
     /// Returns `(mod_list_index, key_str)`
+    #[allow(clippy::too_many_lines)]
     fn init_modifier_select(id: IdKey, keys: &Keys) -> (usize, String) {
         let mod_key = match id {
-            IdKey::DatabaseAddAll => keys.database_keys.add_all.mod_key(),
-            IdKey::DatabaseAddSelected => keys.database_keys.add_selected.mod_key(),
-            IdKey::GlobalConfig => keys.select_view_keys.open_config.mod_key(),
-            IdKey::GlobalDown => keys.navigation_keys.down.mod_key(),
-            IdKey::GlobalGotoBottom => keys.navigation_keys.goto_bottom.mod_key(),
-            IdKey::GlobalGotoTop => keys.navigation_keys.goto_top.mod_key(),
-            IdKey::GlobalHelp => keys.select_view_keys.open_help.mod_key(),
-            IdKey::GlobalLayoutTreeview => keys.select_view_keys.view_library.mod_key(),
-            IdKey::GlobalLayoutDatabase => keys.select_view_keys.view_database.mod_key(),
-            IdKey::GlobalLeft => keys.navigation_keys.left.mod_key(),
-            IdKey::GlobalLyricAdjustForward => keys.lyric_keys.adjust_offset_forwards.mod_key(),
-            IdKey::GlobalLyricAdjustBackward => keys.lyric_keys.adjust_offset_backwards.mod_key(),
-            IdKey::GlobalLyricCycle => keys.lyric_keys.cycle_frames.mod_key(),
-            IdKey::GlobalPlayerToggleGapless => keys.player_keys.toggle_prefetch.mod_key(),
-            IdKey::GlobalPlayerTogglePause => keys.player_keys.toggle_pause.mod_key(),
-            IdKey::GlobalPlayerNext => keys.player_keys.next_track.mod_key(),
-            IdKey::GlobalPlayerPrevious => keys.player_keys.previous_track.mod_key(),
-            IdKey::GlobalPlayerSeekForward => keys.player_keys.seek_forward.mod_key(),
-            IdKey::GlobalPlayerSeekBackward => keys.player_keys.seek_backward.mod_key(),
-            IdKey::GlobalPlayerSpeedUp => keys.player_keys.speed_up.mod_key(),
-            IdKey::GlobalPlayerSpeedDown => keys.player_keys.speed_down.mod_key(),
-            IdKey::GlobalQuit => keys.quit.mod_key(),
-            IdKey::GlobalRight => keys.navigation_keys.right.mod_key(),
-            IdKey::GlobalUp => keys.navigation_keys.up.mod_key(),
-            IdKey::GlobalVolumeDown => keys.player_keys.volume_down.mod_key(),
-            IdKey::GlobalVolumeUp => keys.player_keys.volume_up.mod_key(),
-            IdKey::GlobalSavePlaylist => keys.player_keys.save_playlist.mod_key(),
-            IdKey::LibraryDelete => keys.library_keys.delete.mod_key(),
-            IdKey::LibraryLoadDir => keys.library_keys.load_dir.mod_key(),
-            IdKey::LibraryPaste => keys.library_keys.paste.mod_key(),
-            IdKey::LibrarySearch => keys.library_keys.search.mod_key(),
-            IdKey::LibrarySearchYoutube => keys.library_keys.youtube_search.mod_key(),
-            IdKey::LibraryTagEditor => keys.library_keys.open_tag_editor.mod_key(),
-            IdKey::LibraryYank => keys.library_keys.yank.mod_key(),
-            IdKey::PlaylistDelete => keys.playlist_keys.delete.mod_key(),
-            IdKey::PlaylistDeleteAll => keys.playlist_keys.delete_all.mod_key(),
-            IdKey::PlaylistShuffle => keys.playlist_keys.shuffle.mod_key(),
-            IdKey::PlaylistModeCycle => keys.playlist_keys.cycle_loop_mode.mod_key(),
-            IdKey::PlaylistPlaySelected => keys.playlist_keys.play_selected.mod_key(),
-            IdKey::PlaylistSearch => keys.playlist_keys.search.mod_key(),
-            IdKey::PlaylistSwapDown => keys.playlist_keys.swap_down.mod_key(),
-            IdKey::PlaylistSwapUp => keys.playlist_keys.swap_up.mod_key(),
-            IdKey::PlaylistAddRandomAlbum => keys.playlist_keys.add_random_album.mod_key(),
-            IdKey::PlaylistAddRandomTracks => keys.playlist_keys.add_random_songs.mod_key(),
-            IdKey::LibrarySwitchRoot => keys.library_keys.cycle_root.mod_key(),
-            IdKey::LibraryAddRoot => keys.library_keys.add_root.mod_key(),
-            IdKey::LibraryRemoveRoot => keys.library_keys.remove_root.mod_key(),
-            IdKey::GlobalLayoutPodcast => keys.select_view_keys.view_podcasts.mod_key(),
-            IdKey::GlobalXywhMoveLeft => keys.move_cover_art_keys.move_left.mod_key(),
-            IdKey::GlobalXywhMoveRight => keys.move_cover_art_keys.move_right.mod_key(),
-            IdKey::GlobalXywhMoveUp => keys.move_cover_art_keys.move_up.mod_key(),
-            IdKey::GlobalXywhMoveDown => keys.move_cover_art_keys.move_down.mod_key(),
-            IdKey::GlobalXywhZoomIn => keys.move_cover_art_keys.increase_size.mod_key(),
-            IdKey::GlobalXywhZoomOut => keys.move_cover_art_keys.decrease_size.mod_key(),
-            IdKey::GlobalXywhHide => keys.move_cover_art_keys.toggle_hide.mod_key(),
-            IdKey::PodcastMarkPlayed => keys.podcast_keys.mark_played.mod_key(),
-            IdKey::PodcastMarkAllPlayed => keys.podcast_keys.mark_all_played.mod_key(),
-            IdKey::PodcastEpDownload => keys.podcast_keys.download_episode.mod_key(),
-            IdKey::PodcastEpDeleteFile => keys.podcast_keys.delete_local_episode.mod_key(),
-            IdKey::PodcastDeleteFeed => keys.podcast_keys.delete_feed.mod_key(),
-            IdKey::PodcastDeleteAllFeeds => keys.podcast_keys.delete_all_feeds.mod_key(),
-            IdKey::PodcastSearchAddFeed => keys.podcast_keys.search.mod_key(),
-            IdKey::PodcastRefreshFeed => keys.podcast_keys.refresh_feed.mod_key(),
-            IdKey::PodcastRefreshAllFeeds => keys.podcast_keys.refresh_all_feeds.mod_key(),
+            IdKey::Other(IdKeyOther::DatabaseAddAll) => keys.database_keys.add_all.mod_key(),
+            IdKey::Other(IdKeyOther::DatabaseAddSelected) => {
+                keys.database_keys.add_selected.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::Config) => keys.select_view_keys.open_config.mod_key(),
+            IdKey::Global(IdKeyGlobal::Down) => keys.navigation_keys.down.mod_key(),
+            IdKey::Global(IdKeyGlobal::GotoBottom) => keys.navigation_keys.goto_bottom.mod_key(),
+            IdKey::Global(IdKeyGlobal::GotoTop) => keys.navigation_keys.goto_top.mod_key(),
+            IdKey::Global(IdKeyGlobal::Help) => keys.select_view_keys.open_help.mod_key(),
+            IdKey::Global(IdKeyGlobal::LayoutTreeview) => {
+                keys.select_view_keys.view_library.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::LayoutDatabase) => {
+                keys.select_view_keys.view_database.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::Left) => keys.navigation_keys.left.mod_key(),
+            IdKey::Global(IdKeyGlobal::LyricAdjustForward) => {
+                keys.lyric_keys.adjust_offset_forwards.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::LyricAdjustBackward) => {
+                keys.lyric_keys.adjust_offset_backwards.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::LyricCycle) => keys.lyric_keys.cycle_frames.mod_key(),
+            IdKey::Global(IdKeyGlobal::PlayerToggleGapless) => {
+                keys.player_keys.toggle_prefetch.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::PlayerTogglePause) => {
+                keys.player_keys.toggle_pause.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::PlayerNext) => keys.player_keys.next_track.mod_key(),
+            IdKey::Global(IdKeyGlobal::PlayerPrevious) => keys.player_keys.previous_track.mod_key(),
+            IdKey::Global(IdKeyGlobal::PlayerSeekForward) => {
+                keys.player_keys.seek_forward.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::PlayerSeekBackward) => {
+                keys.player_keys.seek_backward.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::PlayerSpeedUp) => keys.player_keys.speed_up.mod_key(),
+            IdKey::Global(IdKeyGlobal::PlayerSpeedDown) => keys.player_keys.speed_down.mod_key(),
+            IdKey::Global(IdKeyGlobal::Quit) => keys.quit.mod_key(),
+            IdKey::Global(IdKeyGlobal::Right) => keys.navigation_keys.right.mod_key(),
+            IdKey::Global(IdKeyGlobal::Up) => keys.navigation_keys.up.mod_key(),
+            IdKey::Global(IdKeyGlobal::PlayerVolumeDown) => keys.player_keys.volume_down.mod_key(),
+            IdKey::Global(IdKeyGlobal::PlayerVolumeUp) => keys.player_keys.volume_up.mod_key(),
+            IdKey::Global(IdKeyGlobal::SavePlaylist) => keys.player_keys.save_playlist.mod_key(),
+            IdKey::Other(IdKeyOther::LibraryDelete) => keys.library_keys.delete.mod_key(),
+            IdKey::Other(IdKeyOther::LibraryLoadDir) => keys.library_keys.load_dir.mod_key(),
+            IdKey::Other(IdKeyOther::LibraryPaste) => keys.library_keys.paste.mod_key(),
+            IdKey::Other(IdKeyOther::LibrarySearch) => keys.library_keys.search.mod_key(),
+            IdKey::Other(IdKeyOther::LibrarySearchYoutube) => {
+                keys.library_keys.youtube_search.mod_key()
+            }
+            IdKey::Other(IdKeyOther::LibraryTagEditor) => {
+                keys.library_keys.open_tag_editor.mod_key()
+            }
+            IdKey::Other(IdKeyOther::LibraryYank) => keys.library_keys.yank.mod_key(),
+            IdKey::Other(IdKeyOther::PlaylistDelete) => keys.playlist_keys.delete.mod_key(),
+            IdKey::Other(IdKeyOther::PlaylistDeleteAll) => keys.playlist_keys.delete_all.mod_key(),
+            IdKey::Other(IdKeyOther::PlaylistShuffle) => keys.playlist_keys.shuffle.mod_key(),
+            IdKey::Other(IdKeyOther::PlaylistModeCycle) => {
+                keys.playlist_keys.cycle_loop_mode.mod_key()
+            }
+            IdKey::Other(IdKeyOther::PlaylistPlaySelected) => {
+                keys.playlist_keys.play_selected.mod_key()
+            }
+            IdKey::Other(IdKeyOther::PlaylistSearch) => keys.playlist_keys.search.mod_key(),
+            IdKey::Other(IdKeyOther::PlaylistSwapDown) => keys.playlist_keys.swap_down.mod_key(),
+            IdKey::Other(IdKeyOther::PlaylistSwapUp) => keys.playlist_keys.swap_up.mod_key(),
+            IdKey::Other(IdKeyOther::PlaylistAddRandomAlbum) => {
+                keys.playlist_keys.add_random_album.mod_key()
+            }
+            IdKey::Other(IdKeyOther::PlaylistAddRandomTracks) => {
+                keys.playlist_keys.add_random_songs.mod_key()
+            }
+            IdKey::Other(IdKeyOther::LibrarySwitchRoot) => keys.library_keys.cycle_root.mod_key(),
+            IdKey::Other(IdKeyOther::LibraryAddRoot) => keys.library_keys.add_root.mod_key(),
+            IdKey::Other(IdKeyOther::LibraryRemoveRoot) => keys.library_keys.remove_root.mod_key(),
+            IdKey::Global(IdKeyGlobal::LayoutPodcast) => {
+                keys.select_view_keys.view_podcasts.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::XywhMoveLeft) => {
+                keys.move_cover_art_keys.move_left.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::XywhMoveRight) => {
+                keys.move_cover_art_keys.move_right.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::XywhMoveUp) => keys.move_cover_art_keys.move_up.mod_key(),
+            IdKey::Global(IdKeyGlobal::XywhMoveDown) => {
+                keys.move_cover_art_keys.move_down.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::XywhZoomIn) => {
+                keys.move_cover_art_keys.increase_size.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::XywhZoomOut) => {
+                keys.move_cover_art_keys.decrease_size.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::XywhHide) => keys.move_cover_art_keys.toggle_hide.mod_key(),
+            IdKey::Other(IdKeyOther::PodcastMarkPlayed) => keys.podcast_keys.mark_played.mod_key(),
+            IdKey::Other(IdKeyOther::PodcastMarkAllPlayed) => {
+                keys.podcast_keys.mark_all_played.mod_key()
+            }
+            IdKey::Other(IdKeyOther::PodcastEpDownload) => {
+                keys.podcast_keys.download_episode.mod_key()
+            }
+            IdKey::Other(IdKeyOther::PodcastEpDeleteFile) => {
+                keys.podcast_keys.delete_local_episode.mod_key()
+            }
+            IdKey::Other(IdKeyOther::PodcastDeleteFeed) => keys.podcast_keys.delete_feed.mod_key(),
+            IdKey::Other(IdKeyOther::PodcastDeleteAllFeeds) => {
+                keys.podcast_keys.delete_all_feeds.mod_key()
+            }
+            IdKey::Other(IdKeyOther::PodcastSearchAddFeed) => keys.podcast_keys.search.mod_key(),
+            IdKey::Other(IdKeyOther::PodcastRefreshFeed) => {
+                keys.podcast_keys.refresh_feed.mod_key()
+            }
+            IdKey::Other(IdKeyOther::PodcastRefreshAllFeeds) => {
+                keys.podcast_keys.refresh_all_feeds.mod_key()
+            }
         };
 
         (MyModifiers::from_modifier_list_index(mod_key.0), mod_key.1)
@@ -1355,10 +1411,10 @@ impl ConfigGlobalQuit {
         Self {
             component: KEModifierSelect::new(
                 " Quit ",
-                IdKey::GlobalQuit,
+                IdKey::Global(IdKeyGlobal::Quit),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalQuitBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalQuitBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::QuitBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::QuitBlurUp)),
             ),
         }
     }
@@ -1380,10 +1436,10 @@ impl ConfigGlobalLeft {
         Self {
             component: KEModifierSelect::new(
                 " Left ",
-                IdKey::GlobalLeft,
+                IdKey::Global(IdKeyGlobal::Left),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLeftBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLeftBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::LeftBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::LeftBlurUp)),
             ),
         }
     }
@@ -1405,10 +1461,10 @@ impl ConfigGlobalDown {
         Self {
             component: KEModifierSelect::new(
                 " Down ",
-                IdKey::GlobalDown,
+                IdKey::Global(IdKeyGlobal::Down),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalDownBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalDownBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::DownBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::DownBlurUp)),
             ),
         }
     }
@@ -1429,10 +1485,10 @@ impl ConfigGlobalRight {
         Self {
             component: KEModifierSelect::new(
                 " Right ",
-                IdKey::GlobalRight,
+                IdKey::Global(IdKeyGlobal::Right),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalRightBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalRightBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::RightBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::RightBlurUp)),
             ),
         }
     }
@@ -1453,10 +1509,10 @@ impl ConfigGlobalUp {
         Self {
             component: KEModifierSelect::new(
                 " Up ",
-                IdKey::GlobalUp,
+                IdKey::Global(IdKeyGlobal::Up),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalUpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::UpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::UpBlurUp)),
             ),
         }
     }
@@ -1478,10 +1534,12 @@ impl ConfigGlobalGotoTop {
         Self {
             component: KEModifierSelect::new(
                 " Goto Top ",
-                IdKey::GlobalGotoTop,
+                IdKey::Global(IdKeyGlobal::GotoTop),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoTopBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoTopBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GotoTopBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::GotoTopBlurUp)),
             ),
         }
     }
@@ -1503,10 +1561,14 @@ impl ConfigGlobalGotoBottom {
         Self {
             component: KEModifierSelect::new(
                 " Goto Bottom ",
-                IdKey::GlobalGotoBottom,
+                IdKey::Global(IdKeyGlobal::GotoBottom),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoBottomBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoBottomBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GotoBottomBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::GotoBottomBlurUp,
+                )),
             ),
         }
     }
@@ -1528,13 +1590,13 @@ impl ConfigGlobalPlayerTogglePause {
         Self {
             component: KEModifierSelect::new(
                 " Pause Toggle ",
-                IdKey::GlobalPlayerTogglePause,
+                IdKey::Global(IdKeyGlobal::PlayerTogglePause),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerTogglePauseBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerTogglePauseBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerTogglePauseBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerTogglePauseBlurUp,
                 )),
             ),
         }
@@ -1557,10 +1619,14 @@ impl ConfigGlobalPlayerNext {
         Self {
             component: KEModifierSelect::new(
                 " Next Song ",
-                IdKey::GlobalPlayerNext,
+                IdKey::Global(IdKeyGlobal::PlayerNext),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerNextBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerNextBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerNextBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerNextBlurUp,
+                )),
             ),
         }
     }
@@ -1582,12 +1648,14 @@ impl ConfigGlobalPlayerPrevious {
         Self {
             component: KEModifierSelect::new(
                 " Previous Song ",
-                IdKey::GlobalPlayerPrevious,
+                IdKey::Global(IdKeyGlobal::PlayerPrevious),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerPreviousBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerPreviousBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerPreviousBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerPreviousBlurUp,
+                )),
             ),
         }
     }
@@ -1609,10 +1677,10 @@ impl ConfigGlobalHelp {
         Self {
             component: KEModifierSelect::new(
                 " Help ",
-                IdKey::GlobalHelp,
+                IdKey::Global(IdKeyGlobal::Help),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalHelpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalHelpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::HelpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::HelpBlurUp)),
             ),
         }
     }
@@ -1633,10 +1701,14 @@ impl ConfigGlobalVolumeUp {
         Self {
             component: KEModifierSelect::new(
                 " Volume + ",
-                IdKey::GlobalVolumeUp,
+                IdKey::Global(IdKeyGlobal::PlayerVolumeUp),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeUpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerVolumeUpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerVolumeUpBlurUp,
+                )),
             ),
         }
     }
@@ -1658,10 +1730,14 @@ impl ConfigGlobalVolumeDown {
         Self {
             component: KEModifierSelect::new(
                 " Volume - ",
-                IdKey::GlobalVolumeDown,
+                IdKey::Global(IdKeyGlobal::PlayerVolumeDown),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeDownBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeDownBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerVolumeDownBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerVolumeDownBlurUp,
+                )),
             ),
         }
     }
@@ -1683,13 +1759,13 @@ impl ConfigGlobalPlayerSeekForward {
         Self {
             component: KEModifierSelect::new(
                 " Seek Forward ",
-                IdKey::GlobalPlayerSeekForward,
+                IdKey::Global(IdKeyGlobal::PlayerSeekForward),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSeekForwardBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerSeekForwardBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSeekForwardBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerSeekForwardBlurUp,
                 )),
             ),
         }
@@ -1712,13 +1788,13 @@ impl ConfigGlobalPlayerSeekBackward {
         Self {
             component: KEModifierSelect::new(
                 " Seek Backward ",
-                IdKey::GlobalPlayerSeekBackward,
+                IdKey::Global(IdKeyGlobal::PlayerSeekBackward),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSeekBackwardBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerSeekBackwardBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSeekBackwardBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerSeekBackwardBlurUp,
                 )),
             ),
         }
@@ -1741,12 +1817,14 @@ impl ConfigGlobalPlayerSpeedUp {
         Self {
             component: KEModifierSelect::new(
                 " Speed Up ",
-                IdKey::GlobalPlayerSpeedUp,
+                IdKey::Global(IdKeyGlobal::PlayerSpeedUp),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSpeedUpBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerSpeedUpBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerSpeedUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerSpeedUpBlurUp,
+                )),
             ),
         }
     }
@@ -1768,13 +1846,13 @@ impl ConfigGlobalPlayerSpeedDown {
         Self {
             component: KEModifierSelect::new(
                 " Speed Down ",
-                IdKey::GlobalPlayerSpeedDown,
+                IdKey::Global(IdKeyGlobal::PlayerSpeedDown),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSpeedDownBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerSpeedDownBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerSpeedDownBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerSpeedDownBlurUp,
                 )),
             ),
         }
@@ -1797,13 +1875,13 @@ impl ConfigGlobalLyricAdjustForward {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Forward ",
-                IdKey::GlobalLyricAdjustForward,
+                IdKey::Global(IdKeyGlobal::LyricAdjustForward),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLyricAdjustForwardBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LyricAdjustForwardBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLyricAdjustForwardBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LyricAdjustForwardBlurUp,
                 )),
             ),
         }
@@ -1826,13 +1904,13 @@ impl ConfigGlobalLyricAdjustBackward {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Backward ",
-                IdKey::GlobalLyricAdjustBackward,
+                IdKey::Global(IdKeyGlobal::LyricAdjustBackward),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLyricAdjustBackwardBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LyricAdjustBackwardBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLyricAdjustBackwardBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LyricAdjustBackwardBlurUp,
                 )),
             ),
         }
@@ -1855,10 +1933,14 @@ impl ConfigGlobalLyricCycle {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Cycle ",
-                IdKey::GlobalLyricCycle,
+                IdKey::Global(IdKeyGlobal::LyricCycle),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLyricCycleBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLyricCycleBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LyricCycleBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LyricCycleBlurUp,
+                )),
             ),
         }
     }
@@ -1880,12 +1962,14 @@ impl ConfigGlobalLayoutTreeview {
         Self {
             component: KEModifierSelect::new(
                 " Layout Tree ",
-                IdKey::GlobalLayoutTreeview,
+                IdKey::Global(IdKeyGlobal::LayoutTreeview),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLayoutTreeviewBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LayoutTreeviewBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutTreeviewBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LayoutTreeviewBlurUp,
+                )),
             ),
         }
     }
@@ -1907,12 +1991,14 @@ impl ConfigGlobalLayoutDatabase {
         Self {
             component: KEModifierSelect::new(
                 " Layout DataBase ",
-                IdKey::GlobalLayoutDatabase,
+                IdKey::Global(IdKeyGlobal::LayoutDatabase),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLayoutDatabaseBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LayoutDatabaseBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutDatabaseBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LayoutDatabaseBlurUp,
+                )),
             ),
         }
     }
@@ -1934,13 +2020,13 @@ impl ConfigGlobalPlayerToggleGapless {
         Self {
             component: KEModifierSelect::new(
                 " Gapless Toggle ",
-                IdKey::GlobalPlayerToggleGapless,
+                IdKey::Global(IdKeyGlobal::PlayerToggleGapless),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerToggleGaplessBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerToggleGaplessBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalPlayerToggleGaplessBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::PlayerToggleGaplessBlurUp,
                 )),
             ),
         }
@@ -1963,10 +2049,14 @@ impl ConfigLibraryDelete {
         Self {
             component: KEModifierSelect::new(
                 " Library Delete ",
-                IdKey::LibraryDelete,
+                IdKey::Other(IdKeyOther::LibraryDelete),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryDeleteBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryDeleteBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryDeleteBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryDeleteBlurUp,
+                )),
             ),
         }
     }
@@ -1988,10 +2078,14 @@ impl ConfigLibraryLoadDir {
         Self {
             component: KEModifierSelect::new(
                 " Library Load Dir ",
-                IdKey::LibraryLoadDir,
+                IdKey::Other(IdKeyOther::LibraryLoadDir),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryLoadDirBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryLoadDirBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryLoadDirBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryLoadDirBlurUp,
+                )),
             ),
         }
     }
@@ -2013,10 +2107,14 @@ impl ConfigLibraryYank {
         Self {
             component: KEModifierSelect::new(
                 " Library Yank ",
-                IdKey::LibraryYank,
+                IdKey::Other(IdKeyOther::LibraryYank),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryYankBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryYankBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryYankBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryYankBlurUp,
+                )),
             ),
         }
     }
@@ -2038,10 +2136,14 @@ impl ConfigLibraryPaste {
         Self {
             component: KEModifierSelect::new(
                 " Library Paste ",
-                IdKey::LibraryPaste,
+                IdKey::Other(IdKeyOther::LibraryPaste),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryPasteBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryPasteBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryPasteBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryPasteBlurUp,
+                )),
             ),
         }
     }
@@ -2063,10 +2165,14 @@ impl ConfigLibrarySearch {
         Self {
             component: KEModifierSelect::new(
                 " Library Search ",
-                IdKey::LibrarySearch,
+                IdKey::Other(IdKeyOther::LibrarySearch),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySearchBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySearchBlurUp,
+                )),
             ),
         }
     }
@@ -2088,12 +2194,14 @@ impl ConfigLibrarySearchYoutube {
         Self {
             component: KEModifierSelect::new(
                 " Library Search Youtube ",
-                IdKey::LibrarySearchYoutube,
+                IdKey::Other(IdKeyOther::LibrarySearchYoutube),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::LibrarySearchYoutubeBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySearchYoutubeBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchYoutubeBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySearchYoutubeBlurUp,
+                )),
             ),
         }
     }
@@ -2115,10 +2223,14 @@ impl ConfigLibraryTagEditor {
         Self {
             component: KEModifierSelect::new(
                 " Library Tag Editor ",
-                IdKey::LibraryTagEditor,
+                IdKey::Other(IdKeyOther::LibraryTagEditor),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryTagEditorBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryTagEditorBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryTagEditorBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryTagEditorBlurUp,
+                )),
             ),
         }
     }
@@ -2140,10 +2252,14 @@ impl ConfigPlaylistDelete {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Delete ",
-                IdKey::PlaylistDelete,
+                IdKey::Other(IdKeyOther::PlaylistDelete),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistDeleteBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistDeleteBlurUp,
+                )),
             ),
         }
     }
@@ -2165,10 +2281,14 @@ impl ConfigPlaylistDeleteAll {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Delete All ",
-                IdKey::PlaylistDeleteAll,
+                IdKey::Other(IdKeyOther::PlaylistDeleteAll),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteAllBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteAllBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistDeleteAllBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistDeleteAllBlurUp,
+                )),
             ),
         }
     }
@@ -2190,10 +2310,14 @@ impl ConfigPlaylistShuffle {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Shuffle ",
-                IdKey::PlaylistShuffle,
+                IdKey::Other(IdKeyOther::PlaylistShuffle),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistShuffleBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistShuffleBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistShuffleBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistShuffleBlurUp,
+                )),
             ),
         }
     }
@@ -2215,10 +2339,14 @@ impl ConfigPlaylistModeCycle {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Mode Cycle ",
-                IdKey::PlaylistModeCycle,
+                IdKey::Other(IdKeyOther::PlaylistModeCycle),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistModeCycleBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistModeCycleBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistModeCycleBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistModeCycleBlurUp,
+                )),
             ),
         }
     }
@@ -2240,12 +2368,14 @@ impl ConfigPlaylistPlaySelected {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Play Selected ",
-                IdKey::PlaylistPlaySelected,
+                IdKey::Other(IdKeyOther::PlaylistPlaySelected),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistPlaySelectedBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistPlaySelectedBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistPlaySelectedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistPlaySelectedBlurUp,
+                )),
             ),
         }
     }
@@ -2267,10 +2397,14 @@ impl ConfigPlaylistSearch {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Search ",
-                IdKey::PlaylistSearch,
+                IdKey::Other(IdKeyOther::PlaylistSearch),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSearchBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSearchBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSearchBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSearchBlurUp,
+                )),
             ),
         }
     }
@@ -2292,10 +2426,14 @@ impl ConfigPlaylistSwapDown {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Swap Down ",
-                IdKey::PlaylistSwapDown,
+                IdKey::Other(IdKeyOther::PlaylistSwapDown),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapDownBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapDownBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSwapDownBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSwapDownBlurUp,
+                )),
             ),
         }
     }
@@ -2317,10 +2455,14 @@ impl ConfigPlaylistSwapUp {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Swap Up ",
-                IdKey::PlaylistSwapUp,
+                IdKey::Other(IdKeyOther::PlaylistSwapUp),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapUpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSwapUpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistSwapUpBlurUp,
+                )),
             ),
         }
     }
@@ -2342,10 +2484,14 @@ impl ConfigDatabaseAddAll {
         Self {
             component: KEModifierSelect::new(
                 " Database Add All ",
-                IdKey::DatabaseAddAll,
+                IdKey::Other(IdKeyOther::DatabaseAddAll),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddAllBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddAllBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::DatabaseAddAllBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::DatabaseAddAllBlurUp,
+                )),
             ),
         }
     }
@@ -2367,12 +2513,14 @@ impl ConfigDatabaseAddSelected {
         Self {
             component: KEModifierSelect::new(
                 " Database Add Selected ",
-                IdKey::DatabaseAddSelected,
+                IdKey::Other(IdKeyOther::DatabaseAddSelected),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::DatabaseAddSelectedBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::DatabaseAddSelectedBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddSelectedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::DatabaseAddSelectedBlurUp,
+                )),
             ),
         }
     }
@@ -2394,10 +2542,10 @@ impl ConfigGlobalConfig {
         Self {
             component: KEModifierSelect::new(
                 " Config Editor ",
-                IdKey::GlobalConfig,
+                IdKey::Global(IdKeyGlobal::Config),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalConfigBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalConfigBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::ConfigBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::ConfigBlurUp)),
             ),
         }
     }
@@ -2419,13 +2567,13 @@ impl ConfigPlaylistAddRandomAlbum {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Album ",
-                IdKey::PlaylistAddRandomAlbum,
+                IdKey::Other(IdKeyOther::PlaylistAddRandomAlbum),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistAddRandomAlbumBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistAddRandomAlbumBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistAddRandomAlbumBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistAddRandomAlbumBlurUp,
                 )),
             ),
         }
@@ -2448,13 +2596,13 @@ impl ConfigPlaylistAddRandomTracks {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Tracks ",
-                IdKey::PlaylistAddRandomTracks,
+                IdKey::Other(IdKeyOther::PlaylistAddRandomTracks),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistAddRandomTracksBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistAddRandomTracksBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PlaylistAddRandomTracksBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PlaylistAddRandomTracksBlurUp,
                 )),
             ),
         }
@@ -2477,10 +2625,14 @@ impl ConfigLibrarySwitchRoot {
         Self {
             component: KEModifierSelect::new(
                 " Library Switch Root ",
-                IdKey::LibrarySwitchRoot,
+                IdKey::Other(IdKeyOther::LibrarySwitchRoot),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySwitchRootBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySwitchRootBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySwitchRootBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibrarySwitchRootBlurUp,
+                )),
             ),
         }
     }
@@ -2502,10 +2654,14 @@ impl ConfigLibraryAddRoot {
         Self {
             component: KEModifierSelect::new(
                 " Library Add Root ",
-                IdKey::LibraryAddRoot,
+                IdKey::Other(IdKeyOther::LibraryAddRoot),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryAddRootBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryAddRootBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryAddRootBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryAddRootBlurUp,
+                )),
             ),
         }
     }
@@ -2527,10 +2683,14 @@ impl ConfigLibraryRemoveRoot {
         Self {
             component: KEModifierSelect::new(
                 " Library Remove Root ",
-                IdKey::LibraryRemoveRoot,
+                IdKey::Other(IdKeyOther::LibraryRemoveRoot),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryRemoveRootBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryRemoveRootBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryRemoveRootBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::LibraryRemoveRootBlurUp,
+                )),
             ),
         }
     }
@@ -2552,10 +2712,14 @@ impl ConfigGlobalSavePlaylist {
         Self {
             component: KEModifierSelect::new(
                 " Global Save Playlist ",
-                IdKey::GlobalSavePlaylist,
+                IdKey::Global(IdKeyGlobal::SavePlaylist),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalSavePlaylistBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalSavePlaylistBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::SavePlaylistBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::SavePlaylistBlurUp,
+                )),
             ),
         }
     }
@@ -2577,12 +2741,14 @@ impl ConfigGlobalLayoutPodcast {
         Self {
             component: KEModifierSelect::new(
                 " Layout Podcast ",
-                IdKey::GlobalLayoutPodcast,
+                IdKey::Global(IdKeyGlobal::LayoutPodcast),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalLayoutPodcastBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LayoutPodcastBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutPodcastBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::LayoutPodcastBlurUp,
+                )),
             ),
         }
     }
@@ -2604,10 +2770,14 @@ impl ConfigGlobalXywhMoveLeft {
         Self {
             component: KEModifierSelect::new(
                 " Photo move left ",
-                IdKey::GlobalXywhMoveLeft,
+                IdKey::Global(IdKeyGlobal::XywhMoveLeft),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveLeftBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveLeftBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhMoveLeftBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhMoveLeftBlurUp,
+                )),
             ),
         }
     }
@@ -2629,12 +2799,14 @@ impl ConfigGlobalXywhMoveRight {
         Self {
             component: KEModifierSelect::new(
                 " Photo move right ",
-                IdKey::GlobalXywhMoveRight,
+                IdKey::Global(IdKeyGlobal::XywhMoveRight),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::GlobalXywhMoveRightBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhMoveRightBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveRightBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhMoveRightBlurUp,
+                )),
             ),
         }
     }
@@ -2655,10 +2827,14 @@ impl ConfigGlobalXywhMoveUp {
         Self {
             component: KEModifierSelect::new(
                 " Photo move up ",
-                IdKey::GlobalXywhMoveUp,
+                IdKey::Global(IdKeyGlobal::XywhMoveUp),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveUpBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveUpBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhMoveUpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhMoveUpBlurUp,
+                )),
             ),
         }
     }
@@ -2679,10 +2855,14 @@ impl ConfigGlobalXywhMoveDown {
         Self {
             component: KEModifierSelect::new(
                 " Photo move down ",
-                IdKey::GlobalXywhMoveDown,
+                IdKey::Global(IdKeyGlobal::XywhMoveDown),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveDownBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveDownBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhMoveDownBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhMoveDownBlurUp,
+                )),
             ),
         }
     }
@@ -2704,10 +2884,14 @@ impl ConfigGlobalXywhZoomIn {
         Self {
             component: KEModifierSelect::new(
                 " Photo zoom in ",
-                IdKey::GlobalXywhZoomIn,
+                IdKey::Global(IdKeyGlobal::XywhZoomIn),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomInBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomInBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhZoomInBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhZoomInBlurUp,
+                )),
             ),
         }
     }
@@ -2728,10 +2912,14 @@ impl ConfigGlobalXywhZoomOut {
         Self {
             component: KEModifierSelect::new(
                 " Photo zoom out ",
-                IdKey::GlobalXywhZoomOut,
+                IdKey::Global(IdKeyGlobal::XywhZoomOut),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomOutBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomOutBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhZoomOutBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhZoomOutBlurUp,
+                )),
             ),
         }
     }
@@ -2753,10 +2941,12 @@ impl ConfigGlobalXywhHide {
         Self {
             component: KEModifierSelect::new(
                 " Photo hide ",
-                IdKey::GlobalXywhHide,
+                IdKey::Global(IdKeyGlobal::XywhHide),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhHideBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhHideBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(
+                    KFMsgGlobal::XywhHideBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsgGlobal::XywhHideBlurUp)),
             ),
         }
     }
@@ -2778,10 +2968,14 @@ impl ConfigPodcastMarkPlayed {
         Self {
             component: KEModifierSelect::new(
                 " Episode Mark Played",
-                IdKey::PodcastMarkPlayed,
+                IdKey::Other(IdKeyOther::PodcastMarkPlayed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkPlayedBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkPlayedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastMarkPlayedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastMarkPlayedBlurUp,
+                )),
             ),
         }
     }
@@ -2803,12 +2997,14 @@ impl ConfigPodcastMarkAllPlayed {
         Self {
             component: KEModifierSelect::new(
                 " Episode mark all played ",
-                IdKey::PodcastMarkAllPlayed,
+                IdKey::Other(IdKeyOther::PodcastMarkAllPlayed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastMarkAllPlayedBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastMarkAllPlayedBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkAllPlayedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastMarkAllPlayedBlurUp,
+                )),
             ),
         }
     }
@@ -2830,10 +3026,14 @@ impl ConfigPodcastEpDownload {
         Self {
             component: KEModifierSelect::new(
                 " Episode download",
-                IdKey::PodcastEpDownload,
+                IdKey::Other(IdKeyOther::PodcastEpDownload),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDownloadBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDownloadBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastEpDownloadBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastEpDownloadBlurUp,
+                )),
             ),
         }
     }
@@ -2855,12 +3055,14 @@ impl ConfigPodcastEpDeleteFile {
         Self {
             component: KEModifierSelect::new(
                 " Episode delete file ",
-                IdKey::PodcastEpDeleteFile,
+                IdKey::Other(IdKeyOther::PodcastEpDeleteFile),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastEpDeleteFileBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastEpDeleteFileBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDeleteFileBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastEpDeleteFileBlurUp,
+                )),
             ),
         }
     }
@@ -2882,10 +3084,14 @@ impl ConfigPodcastDeleteFeed {
         Self {
             component: KEModifierSelect::new(
                 " Podcast delete feed ",
-                IdKey::PodcastDeleteFeed,
+                IdKey::Other(IdKeyOther::PodcastDeleteFeed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastDeleteFeedBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastDeleteFeedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastDeleteFeedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastDeleteFeedBlurUp,
+                )),
             ),
         }
     }
@@ -2907,13 +3113,13 @@ impl ConfigPodcastDeleteAllFeeds {
         Self {
             component: KEModifierSelect::new(
                 " Delete all feeds ",
-                IdKey::PodcastDeleteAllFeeds,
+                IdKey::Other(IdKeyOther::PodcastDeleteAllFeeds),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastDeleteAllFeedsBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastDeleteAllFeedsBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastDeleteAllFeedsBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastDeleteAllFeedsBlurUp,
                 )),
             ),
         }
@@ -2936,12 +3142,14 @@ impl ConfigPodcastSearchAddFeed {
         Self {
             component: KEModifierSelect::new(
                 " Podcast search add feed ",
-                IdKey::PodcastSearchAddFeed,
+                IdKey::Other(IdKeyOther::PodcastSearchAddFeed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastSearchAddFeedBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastSearchAddFeedBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastSearchAddFeedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastSearchAddFeedBlurUp,
+                )),
             ),
         }
     }
@@ -2963,10 +3171,14 @@ impl ConfigPodcastRefreshFeed {
         Self {
             component: KEModifierSelect::new(
                 " Refresh feed ",
-                IdKey::PodcastRefreshFeed,
+                IdKey::Other(IdKeyOther::PodcastRefreshFeed),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastRefreshFeedBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastRefreshFeedBlurUp)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastRefreshFeedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastRefreshFeedBlurUp,
+                )),
             ),
         }
     }
@@ -2988,13 +3200,13 @@ impl ConfigPodcastRefreshAllFeeds {
         Self {
             component: KEModifierSelect::new(
                 " Refresh all feeds ",
-                IdKey::PodcastRefreshAllFeeds,
+                IdKey::Other(IdKeyOther::PodcastRefreshAllFeeds),
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastRefreshAllFeedsBlurDown,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastRefreshAllFeedsBlurDown,
                 )),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
-                    KFMsg::PodcastRefreshAllFeedsBlurUp,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(
+                    KFMsgOther::PodcastRefreshAllFeedsBlurUp,
                 )),
             ),
         }
@@ -3024,112 +3236,112 @@ impl Model {
     fn remount_config_keys_global(&mut self) -> Result<()> {
         // Key 1: Global keys
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Quit)),
             Box::new(ConfigGlobalQuit::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Left)),
             Box::new(ConfigGlobalLeft::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Right)),
             Box::new(ConfigGlobalRight::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Up)),
             Box::new(ConfigGlobalUp::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Down)),
             Box::new(ConfigGlobalDown::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoTop)),
             Box::new(ConfigGlobalGotoTop::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoBottom)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::GotoBottom)),
             Box::new(ConfigGlobalGotoBottom::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerTogglePause)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerTogglePause)),
             Box::new(ConfigGlobalPlayerTogglePause::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerNext)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerNext)),
             Box::new(ConfigGlobalPlayerNext::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerPrevious)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerPrevious)),
             Box::new(ConfigGlobalPlayerPrevious::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Help)),
             Box::new(ConfigGlobalHelp::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeUp)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeUp)),
             Box::new(ConfigGlobalVolumeUp::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeDown)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeDown)),
             Box::new(ConfigGlobalVolumeDown::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekForward)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekForward)),
             Box::new(ConfigGlobalPlayerSeekForward::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekBackward)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSeekBackward)),
             Box::new(ConfigGlobalPlayerSeekBackward::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedUp)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedUp)),
             Box::new(ConfigGlobalPlayerSpeedUp::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedDown)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerSpeedDown)),
             Box::new(ConfigGlobalPlayerSpeedDown::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustForward)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustForward)),
             Box::new(ConfigGlobalLyricAdjustForward::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustBackward)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricAdjustBackward)),
             Box::new(ConfigGlobalLyricAdjustBackward::new(
                 self.config_tui.clone(),
             )),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricCycle)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LyricCycle)),
             Box::new(ConfigGlobalLyricCycle::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerToggleGapless)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerToggleGapless)),
             Box::new(ConfigGlobalPlayerToggleGapless::new(
                 self.config_tui.clone(),
             )),
@@ -3137,67 +3349,67 @@ impl Model {
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutTreeview)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutTreeview)),
             Box::new(ConfigGlobalLayoutTreeview::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutDatabase)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutDatabase)),
             Box::new(ConfigGlobalLayoutDatabase::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::Config)),
             Box::new(ConfigGlobalConfig::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalSavePlaylist)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::SavePlaylist)),
             Box::new(ConfigGlobalSavePlaylist::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutPodcast)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPodcast)),
             Box::new(ConfigGlobalLayoutPodcast::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft)),
             Box::new(ConfigGlobalXywhMoveLeft::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveRight)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveRight)),
             Box::new(ConfigGlobalXywhMoveRight::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveUp)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveUp)),
             Box::new(ConfigGlobalXywhMoveUp::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveDown)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveDown)),
             Box::new(ConfigGlobalXywhMoveDown::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomIn)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomIn)),
             Box::new(ConfigGlobalXywhZoomIn::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomOut)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhZoomOut)),
             Box::new(ConfigGlobalXywhZoomOut::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhHide)),
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhHide)),
             Box::new(ConfigGlobalXywhHide::new(self.config_tui.clone())),
             Vec::new(),
         )?;
@@ -3208,55 +3420,55 @@ impl Model {
     /// Mount / Remount the Config-Editor's Third Page, the Library key-combos
     fn remount_config_keys_library(&mut self) -> Result<()> {
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryDelete)),
             Box::new(ConfigLibraryDelete::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryLoadDir)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryLoadDir)),
             Box::new(ConfigLibraryLoadDir::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryYank)),
             Box::new(ConfigLibraryYank::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryPaste)),
             Box::new(ConfigLibraryPaste::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySearch)),
             Box::new(ConfigLibrarySearch::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearchYoutube)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySearchYoutube)),
             Box::new(ConfigLibrarySearchYoutube::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryTagEditor)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryTagEditor)),
             Box::new(ConfigLibraryTagEditor::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySwitchRoot)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibrarySwitchRoot)),
             Box::new(ConfigLibrarySwitchRoot::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryAddRoot)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryAddRoot)),
             Box::new(ConfigLibraryAddRoot::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryRemoveRoot)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::LibraryRemoveRoot)),
             Box::new(ConfigLibraryRemoveRoot::new(self.config_tui.clone())),
             Vec::new(),
         )?;
@@ -3267,53 +3479,55 @@ impl Model {
     /// Mount / Remount the Config-Editor's Third Page, the Playlist key-combos
     fn remount_config_keys_playlist(&mut self) -> Result<()> {
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDelete)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistDelete)),
             Box::new(ConfigPlaylistDelete::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDeleteAll)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistDeleteAll)),
             Box::new(ConfigPlaylistDeleteAll::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistShuffle)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistShuffle)),
             Box::new(ConfigPlaylistShuffle::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSearch)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSearch)),
             Box::new(ConfigPlaylistSearch::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistPlaySelected)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistPlaySelected)),
             Box::new(ConfigPlaylistPlaySelected::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistModeCycle)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistModeCycle)),
             Box::new(ConfigPlaylistModeCycle::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapDown)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapDown)),
             Box::new(ConfigPlaylistSwapDown::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapUp)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSwapUp)),
             Box::new(ConfigPlaylistSwapUp::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomAlbum)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistAddRandomAlbum)),
             Box::new(ConfigPlaylistAddRandomAlbum::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddRandomTracks)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(
+                IdKeyOther::PlaylistAddRandomTracks,
+            )),
             Box::new(ConfigPlaylistAddRandomTracks::new(self.config_tui.clone())),
             Vec::new(),
         )?;
@@ -3324,13 +3538,13 @@ impl Model {
     /// Mount / Remount the Config-Editor's Third Page, the Database key-combos
     fn remount_config_keys_database(&mut self) -> Result<()> {
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddAll)),
             Box::new(ConfigDatabaseAddAll::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddSelected)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::DatabaseAddSelected)),
             Box::new(ConfigDatabaseAddSelected::new(self.config_tui.clone())),
             Vec::new(),
         )?;
@@ -3341,47 +3555,47 @@ impl Model {
     /// Mount / Remount the Config-Editor's Third Page, the Podcast key-combos
     fn remount_config_keys_podcast(&mut self) -> Result<()> {
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkPlayed)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkPlayed)),
             Box::new(ConfigPodcastMarkPlayed::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastMarkAllPlayed)),
             Box::new(ConfigPodcastMarkAllPlayed::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDownload)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDownload)),
             Box::new(ConfigPodcastEpDownload::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDeleteFile)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastEpDeleteFile)),
             Box::new(ConfigPodcastEpDeleteFile::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteFeed)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteFeed)),
             Box::new(ConfigPodcastDeleteFeed::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastDeleteAllFeeds)),
             Box::new(ConfigPodcastDeleteAllFeeds::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshFeed)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshFeed)),
             Box::new(ConfigPodcastRefreshFeed::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastRefreshAllFeeds)),
             Box::new(ConfigPodcastRefreshAllFeeds::new(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastSearchAddFeed)),
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PodcastSearchAddFeed)),
             Box::new(ConfigPodcastSearchAddFeed::new(self.config_tui.clone())),
             Vec::new(),
         )?;
@@ -3401,136 +3615,182 @@ impl Model {
     }
 
     /// Unmount the Config-Editor's Third Page, the Global key-combos
+    #[allow(clippy::too_many_lines)]
     fn umount_config_keys_global(&mut self) -> Result<()> {
         // umount keys global
         self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))?;
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::Quit,
+            )))?;
         self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)))?;
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::Left,
+            )))?;
         self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)))?;
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::Right,
+            )))?;
         self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)))?;
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::Up,
+            )))?;
         self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)))?;
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::Down,
+            )))?;
         self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalGotoBottom,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalPlayerTogglePause,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalPlayerNext,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalPlayerPrevious,
-        )))?;
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::GotoTop,
+            )))?;
         self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalVolumeUp,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalVolumeDown,
-        )))?;
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::GotoBottom,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerTogglePause,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerNext,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerPrevious,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::Help,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerVolumeUp,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerVolumeDown,
+            )))?;
 
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalPlayerSeekForward,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalPlayerSeekBackward,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalPlayerSpeedUp,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalPlayerSpeedDown,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalLyricAdjustForward,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalLyricAdjustBackward,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalLyricCycle,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalLayoutDatabase,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalLayoutTreeview,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalPlayerToggleGapless,
-        )))?;
         self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)))?;
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerSeekForward,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerSeekBackward,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerSpeedUp,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerSpeedDown,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::LyricAdjustForward,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::LyricAdjustBackward,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::LyricCycle,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::LayoutDatabase,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::LayoutTreeview,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::PlayerToggleGapless,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::Config,
+            )))?;
 
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalSavePlaylist,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalLayoutPodcast,
-        )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::SavePlaylist,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::LayoutPodcast,
+            )))?;
 
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalXywhMoveLeft,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalXywhMoveRight,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalXywhMoveUp,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalXywhMoveDown,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalXywhZoomIn,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalXywhZoomOut,
-        )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::GlobalXywhHide,
-        )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::XywhMoveLeft,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::XywhMoveRight,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::XywhMoveUp,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::XywhMoveDown,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::XywhZoomIn,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::XywhZoomOut,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::XywhHide,
+            )))?;
 
         Ok(())
     }
 
     /// Unmount the Config-Editor's Third Page, the Library key-combos
     fn umount_config_keys_library(&mut self) -> Result<()> {
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibraryLoadDir,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibraryDelete,
         )))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibrarySearchYoutube,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibraryLoadDir,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibraryTagEditor,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibraryYank,
         )))?;
-
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibrarySwitchRoot,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibraryPaste,
         )))?;
-
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibraryAddRoot,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibrarySearch,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibrarySearchYoutube,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibraryTagEditor,
         )))?;
 
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::LibraryRemoveRoot,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibrarySwitchRoot,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibraryAddRoot,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::LibraryRemoveRoot,
         )))?;
 
         Ok(())
@@ -3538,37 +3798,37 @@ impl Model {
 
     /// Unmount the Config-Editor's Third Page, the Playlist key-combos
     fn umount_config_keys_playlist(&mut self) -> Result<()> {
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistDelete,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistDelete,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistDeleteAll,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistDeleteAll,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistShuffle,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistShuffle,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistModeCycle,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistModeCycle,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistPlaySelected,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistPlaySelected,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistSearch,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistSearch,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistSwapDown,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistSwapDown,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistSwapUp,
-        )))?;
-
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistAddRandomAlbum,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistSwapUp,
         )))?;
 
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PlaylistAddRandomTracks,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistAddRandomAlbum,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistAddRandomTracks,
         )))?;
 
         Ok(())
@@ -3576,8 +3836,8 @@ impl Model {
 
     /// Unmount the Config-Editor's Third Page, the Database key-combos
     fn umount_config_keys_database(&mut self) -> Result<()> {
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::DatabaseAddAll,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::DatabaseAddAll,
         )))?;
 
         Ok(())
@@ -3585,32 +3845,32 @@ impl Model {
 
     /// Unmount the Config-Editor's Third Page, the Podcast key-combos
     fn umount_config_keys_podcast(&mut self) -> Result<()> {
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastMarkPlayed,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastMarkPlayed,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastMarkAllPlayed,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastMarkAllPlayed,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastEpDownload,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastEpDownload,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastEpDeleteFile,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastEpDeleteFile,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastDeleteFeed,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastDeleteFeed,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastDeleteAllFeeds,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastDeleteAllFeeds,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastRefreshFeed,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastRefreshFeed,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastRefreshAllFeeds,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastRefreshAllFeeds,
         )))?;
-        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Key(
-            IdKey::PodcastSearchAddFeed,
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PodcastSearchAddFeed,
         )))?;
 
         Ok(())

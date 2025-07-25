@@ -7,8 +7,8 @@ use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
-use termusiclib::ids::{Id, IdConfigEditor, IdKey};
-use termusiclib::types::{ConfigEditorMsg, KFMsg, Msg};
+use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
+use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsgGlobal, KFMsgOther, Msg};
 use termusiclib::utils::get_app_config_path;
 
 /// How many Themes there are without actual files and always exist
@@ -351,7 +351,8 @@ impl Model {
             }
 
             ConfigEditorMsg::KeyChange(id, binding) => self.update_key(id, binding),
-            ConfigEditorMsg::KeyFocus(msg) => self.update_key_focus(msg),
+            ConfigEditorMsg::KeyFocusGlobal(msg) => self.update_key_focus_global(msg),
+            ConfigEditorMsg::KeyFocusOther(msg) => self.update_key_focus_other(msg),
         }
         None
     }
@@ -406,469 +407,499 @@ impl Model {
         self.remount_config_color(&config, Some(index)).unwrap();
     }
 
+    /// Handle focus of the "Key Global" tab
     #[allow(clippy::too_many_lines)]
-    fn update_key_focus(&mut self, msg: KFMsg) {
+    fn update_key_focus_global(&mut self, msg: KFMsgGlobal) {
         match msg {
-            // Focus of key global page
-            KFMsg::GlobalXywhHideBlurDown | KFMsg::GlobalLeftBlurUp => {
+            KFMsgGlobal::XywhHideBlurDown | KFMsgGlobal::LeftBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))
-                    .ok();
-            }
-            KFMsg::GlobalQuitBlurDown | KFMsg::GlobalDownBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)))
-                    .ok();
-            }
-
-            KFMsg::GlobalLeftBlurDown | KFMsg::GlobalUpBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)))
-                    .ok();
-            }
-
-            KFMsg::GlobalDownBlurDown | KFMsg::GlobalRightBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)))
-                    .ok();
-            }
-
-            KFMsg::GlobalUpBlurDown | KFMsg::GlobalGotoTopBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)))
-                    .ok();
-            }
-            KFMsg::GlobalRightBlurDown | KFMsg::GlobalGotoBottomBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)))
-                    .ok();
-            }
-            KFMsg::GlobalGotoTopBlurDown | KFMsg::GlobalPlayerTogglePauseBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalGotoBottom,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::Quit,
                     )))
                     .ok();
             }
-            KFMsg::GlobalGotoBottomBlurDown | KFMsg::GlobalPlayerNextBlurUp => {
+            KFMsgGlobal::QuitBlurDown | KFMsgGlobal::DownBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalPlayerTogglePause,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalPlayerTogglePauseBlurDown | KFMsg::GlobalPlayerPreviousBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalPlayerNext,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalPlayerNextBlurDown | KFMsg::GlobalHelpBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalPlayerPrevious,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalPlayerPreviousBlurDown | KFMsg::GlobalVolumeUpBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)))
-                    .ok();
-            }
-            KFMsg::GlobalHelpBlurDown | KFMsg::GlobalVolumeDownBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalVolumeUp,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalVolumeUpBlurDown | KFMsg::GlobalPlayerSeekForwardBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalVolumeDown,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalVolumeDownBlurDown | KFMsg::GlobalPlayerSeekBackwardBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalPlayerSeekForward,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::Left,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalPlayerSeekForwardBlurDown | KFMsg::GlobalPlayerSpeedUpBlurUp => {
+            KFMsgGlobal::LeftBlurDown | KFMsgGlobal::UpBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalPlayerSeekBackward,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::Down,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalPlayerSeekBackwardBlurDown | KFMsg::GlobalPlayerSpeedDownBlurUp => {
+            KFMsgGlobal::DownBlurDown | KFMsgGlobal::RightBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalPlayerSpeedUp,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::Up,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalPlayerSpeedUpBlurDown | KFMsg::GlobalLyricAdjustForwardBlurUp => {
+            KFMsgGlobal::UpBlurDown | KFMsgGlobal::GotoTopBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalPlayerSpeedDown,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::Right,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::RightBlurDown | KFMsgGlobal::GotoBottomBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GotoTop,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::GotoTopBlurDown | KFMsgGlobal::PlayerTogglePauseBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::GotoBottom,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::GotoBottomBlurDown | KFMsgGlobal::PlayerNextBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerTogglePause,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::PlayerTogglePauseBlurDown | KFMsgGlobal::PlayerPreviousBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerNext,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::PlayerNextBlurDown | KFMsgGlobal::HelpBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerPrevious,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::PlayerPreviousBlurDown | KFMsgGlobal::PlayerVolumeUpBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::Help,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::HelpBlurDown | KFMsgGlobal::PlayerVolumeDownBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerVolumeUp,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::PlayerVolumeUpBlurDown | KFMsgGlobal::PlayerSeekForwardBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerVolumeDown,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::PlayerVolumeDownBlurDown | KFMsgGlobal::PlayerSeekBackwardBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerSeekForward,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalPlayerSpeedDownBlurDown | KFMsg::GlobalLyricAdjustBackwardBlurUp => {
+            KFMsgGlobal::PlayerSeekForwardBlurDown | KFMsgGlobal::PlayerSpeedUpBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalLyricAdjustForward,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerSeekBackward,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalLyricAdjustForwardBlurDown | KFMsg::GlobalLyricCycleBlurUp => {
+            KFMsgGlobal::PlayerSeekBackwardBlurDown | KFMsgGlobal::PlayerSpeedDownBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalLyricAdjustBackward,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerSpeedUp,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalLyricAdjustBackwardBlurDown | KFMsg::GlobalLayoutTreeviewBlurUp => {
+            KFMsgGlobal::PlayerSpeedUpBlurDown | KFMsgGlobal::LyricAdjustForwardBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalLyricCycle,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerSpeedDown,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalLyricCycleBlurDown | KFMsg::GlobalLayoutDatabaseBlurUp => {
+            KFMsgGlobal::PlayerSpeedDownBlurDown | KFMsgGlobal::LyricAdjustBackwardBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalLayoutTreeview,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::LyricAdjustForward,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalLayoutTreeviewBlurDown | KFMsg::GlobalPlayerToggleGaplessBlurUp => {
+            KFMsgGlobal::LyricAdjustForwardBlurDown | KFMsgGlobal::LyricCycleBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalLayoutDatabase,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::LyricAdjustBackward,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalLayoutDatabaseBlurDown | KFMsg::GlobalConfigBlurUp => {
+            KFMsgGlobal::LyricAdjustBackwardBlurDown | KFMsgGlobal::LayoutTreeviewBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalPlayerToggleGapless,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::LyricCycle,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalPlayerToggleGaplessBlurDown | KFMsg::GlobalSavePlaylistBlurUp => {
+            KFMsgGlobal::LyricCycleBlurDown | KFMsgGlobal::LayoutDatabaseBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)))
-                    .ok();
-            }
-
-            KFMsg::GlobalConfigBlurDown | KFMsg::GlobalLayoutPodcastBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalSavePlaylist,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::LayoutTreeview,
                     )))
                     .ok();
             }
 
-            KFMsg::GlobalSavePlaylistBlurDown | KFMsg::GlobalXywhMoveLeftBlurUp => {
+            KFMsgGlobal::LayoutTreeviewBlurDown | KFMsgGlobal::PlayerToggleGaplessBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalLayoutPodcast,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalLayoutPodcastBlurDown | KFMsg::GlobalXywhMoveRightBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalXywhMoveLeft,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalXywhMoveLeftBlurDown | KFMsg::GlobalXywhMoveUpBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalXywhMoveRight,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalXywhMoveRightBlurDown | KFMsg::GlobalXywhMoveDownBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalXywhMoveUp,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalXywhMoveUpBlurDown | KFMsg::GlobalXywhZoomInBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalXywhMoveDown,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalXywhMoveDownBlurDown | KFMsg::GlobalXywhZoomOutBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalXywhZoomIn,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalXywhZoomInBlurDown | KFMsg::GlobalXywhHideBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalXywhZoomOut,
-                    )))
-                    .ok();
-            }
-            KFMsg::GlobalXywhZoomOutBlurDown | KFMsg::GlobalQuitBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::GlobalXywhHide,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::LayoutDatabase,
                     )))
                     .ok();
             }
 
-            // Focus of key 2 page
-            KFMsg::PodcastSearchAddFeedBlurDown | KFMsg::LibraryDeleteBlurUp => {
+            KFMsgGlobal::LayoutDatabaseBlurDown | KFMsgGlobal::ConfigBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::LibraryTagEditor,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::PlayerToggleGapless,
                     )))
                     .ok();
             }
 
-            KFMsg::LibraryTagEditorBlurDown | KFMsg::LibraryLoadDirBlurUp => {
+            KFMsgGlobal::PlayerToggleGaplessBlurDown | KFMsgGlobal::SavePlaylistBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)))
-                    .ok();
-            }
-
-            KFMsg::LibraryDeleteBlurDown | KFMsg::LibraryYankBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::LibraryLoadDir,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::Config,
                     )))
                     .ok();
             }
 
-            KFMsg::LibraryLoadDirBlurDown | KFMsg::LibraryPasteBlurUp => {
+            KFMsgGlobal::ConfigBlurDown | KFMsgGlobal::LayoutPodcastBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)))
-                    .ok();
-            }
-
-            KFMsg::LibraryYankBlurDown | KFMsg::LibrarySearchBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)))
-                    .ok();
-            }
-
-            KFMsg::LibraryPasteBlurDown | KFMsg::LibrarySearchYoutubeBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)))
-                    .ok();
-            }
-
-            KFMsg::LibrarySearchBlurDown | KFMsg::PlaylistDeleteBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::LibrarySearchYoutube,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::SavePlaylist,
                     )))
                     .ok();
             }
 
-            KFMsg::LibrarySearchYoutubeBlurDown | KFMsg::PlaylistDeleteAllBlurUp => {
+            KFMsgGlobal::SavePlaylistBlurDown | KFMsgGlobal::XywhMoveLeftBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistDelete,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::LayoutPodcast,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::LayoutPodcastBlurDown | KFMsgGlobal::XywhMoveRightBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::XywhMoveLeft,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::XywhMoveLeftBlurDown | KFMsgGlobal::XywhMoveUpBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::XywhMoveRight,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::XywhMoveRightBlurDown | KFMsgGlobal::XywhMoveDownBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::XywhMoveUp,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::XywhMoveUpBlurDown | KFMsgGlobal::XywhZoomInBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::XywhMoveDown,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::XywhMoveDownBlurDown | KFMsgGlobal::XywhZoomOutBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::XywhZoomIn,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::XywhZoomInBlurDown | KFMsgGlobal::XywhHideBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::XywhZoomOut,
+                    )))
+                    .ok();
+            }
+            KFMsgGlobal::XywhZoomOutBlurDown | KFMsgGlobal::QuitBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                        IdKeyGlobal::XywhHide,
+                    )))
+                    .ok();
+            }
+        }
+    }
+
+    /// Handle focus for the "Key Other" tab
+    #[allow(clippy::too_many_lines)]
+    fn update_key_focus_other(&mut self, msg: KFMsgOther) {
+        match msg {
+            KFMsgOther::PodcastSearchAddFeedBlurDown | KFMsgOther::LibraryDeleteBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibraryTagEditor,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistDeleteBlurDown | KFMsg::PlaylistSearchBlurUp => {
+            KFMsgOther::LibraryTagEditorBlurDown | KFMsgOther::LibraryLoadDirBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistDeleteAll,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibraryDelete,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistDeleteAllBlurDown | KFMsg::PlaylistShuffleBlurUp => {
+            KFMsgOther::LibraryDeleteBlurDown | KFMsgOther::LibraryYankBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistSearch,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibraryLoadDir,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistSearchBlurDown | KFMsg::PlaylistModeCycleBlurUp => {
+            KFMsgOther::LibraryLoadDirBlurDown | KFMsgOther::LibraryPasteBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistShuffle,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibraryYank,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistShuffleBlurDown | KFMsg::PlaylistPlaySelectedBlurUp => {
+            KFMsgOther::LibraryYankBlurDown | KFMsgOther::LibrarySearchBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistModeCycle,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibraryPaste,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistModeCycleBlurDown | KFMsg::PlaylistSwapDownBlurUp => {
+            KFMsgOther::LibraryPasteBlurDown | KFMsgOther::LibrarySearchYoutubeBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistPlaySelected,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibrarySearch,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistPlaySelectedBlurDown | KFMsg::PlaylistSwapUpBlurUp => {
+            KFMsgOther::LibrarySearchBlurDown | KFMsgOther::PlaylistDeleteBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistSwapDown,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibrarySearchYoutube,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistSwapDownBlurDown | KFMsg::DatabaseAddAllBlurUp => {
+            KFMsgOther::LibrarySearchYoutubeBlurDown | KFMsgOther::PlaylistDeleteAllBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistSwapUp,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistDelete,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistSwapUpBlurDown | KFMsg::DatabaseAddSelectedBlurUp => {
+            KFMsgOther::PlaylistDeleteBlurDown | KFMsgOther::PlaylistSearchBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::DatabaseAddAll,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistDeleteAll,
                     )))
                     .ok();
             }
 
-            KFMsg::DatabaseAddAllBlurDown | KFMsg::PlaylistAddRandomAlbumBlurUp => {
+            KFMsgOther::PlaylistDeleteAllBlurDown | KFMsgOther::PlaylistShuffleBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::DatabaseAddSelected,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistSearch,
                     )))
                     .ok();
             }
 
-            KFMsg::DatabaseAddSelectedBlurDown | KFMsg::PlaylistAddRandomTracksBlurUp => {
+            KFMsgOther::PlaylistSearchBlurDown | KFMsgOther::PlaylistModeCycleBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistAddRandomAlbum,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistShuffle,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistAddRandomAlbumBlurDown | KFMsg::LibrarySwitchRootBlurUp => {
+            KFMsgOther::PlaylistShuffleBlurDown | KFMsgOther::PlaylistPlaySelectedBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistAddRandomTracks,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistModeCycle,
                     )))
                     .ok();
             }
 
-            KFMsg::PlaylistAddRandomTracksBlurDown | KFMsg::LibraryAddRootBlurUp => {
+            KFMsgOther::PlaylistModeCycleBlurDown | KFMsgOther::PlaylistSwapDownBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::LibrarySwitchRoot,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistPlaySelected,
                     )))
                     .ok();
             }
 
-            KFMsg::LibrarySwitchRootBlurDown | KFMsg::LibraryRemoveRootBlurUp => {
+            KFMsgOther::PlaylistPlaySelectedBlurDown | KFMsgOther::PlaylistSwapUpBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::LibraryAddRoot,
-                    )))
-                    .ok();
-            }
-            KFMsg::LibraryAddRootBlurDown | KFMsg::PodcastMarkPlayedBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::LibraryRemoveRoot,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistSwapDown,
                     )))
                     .ok();
             }
 
-            KFMsg::LibraryRemoveRootBlurDown | KFMsg::PodcastMarkAllPlayedBlurUp => {
+            KFMsgOther::PlaylistSwapDownBlurDown | KFMsgOther::DatabaseAddAllBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastMarkPlayed,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistSwapUp,
                     )))
                     .ok();
             }
-            KFMsg::PodcastMarkPlayedBlurDown | KFMsg::PodcastEpDownloadBlurUp => {
+
+            KFMsgOther::PlaylistSwapUpBlurDown | KFMsgOther::DatabaseAddSelectedBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastMarkAllPlayed,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::DatabaseAddAll,
                     )))
                     .ok();
             }
-            KFMsg::PodcastMarkAllPlayedBlurDown | KFMsg::PodcastEpDeleteFileBlurUp => {
+
+            KFMsgOther::DatabaseAddAllBlurDown | KFMsgOther::PlaylistAddRandomAlbumBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastEpDownload,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::DatabaseAddSelected,
                     )))
                     .ok();
             }
-            KFMsg::PodcastEpDownloadBlurDown | KFMsg::PodcastDeleteFeedBlurUp => {
+
+            KFMsgOther::DatabaseAddSelectedBlurDown | KFMsgOther::PlaylistAddRandomTracksBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastEpDeleteFile,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistAddRandomAlbum,
                     )))
                     .ok();
             }
-            KFMsg::PodcastEpDeleteFileBlurDown | KFMsg::PodcastDeleteAllFeedsBlurUp => {
+
+            KFMsgOther::PlaylistAddRandomAlbumBlurDown | KFMsgOther::LibrarySwitchRootBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastDeleteFeed,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PlaylistAddRandomTracks,
                     )))
                     .ok();
             }
-            KFMsg::PodcastDeleteFeedBlurDown | KFMsg::PodcastRefreshFeedBlurUp => {
+
+            KFMsgOther::PlaylistAddRandomTracksBlurDown | KFMsgOther::LibraryAddRootBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastDeleteAllFeeds,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibrarySwitchRoot,
                     )))
                     .ok();
             }
-            KFMsg::PodcastDeleteAllFeedsBlurDown | KFMsg::PodcastRefreshAllFeedsBlurUp => {
+
+            KFMsgOther::LibrarySwitchRootBlurDown | KFMsgOther::LibraryRemoveRootBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastRefreshFeed,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibraryAddRoot,
                     )))
                     .ok();
             }
-            KFMsg::PodcastRefreshFeedBlurDown | KFMsg::PodcastSearchAddFeedBlurUp => {
+            KFMsgOther::LibraryAddRootBlurDown | KFMsgOther::PodcastMarkPlayedBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastRefreshAllFeeds,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::LibraryRemoveRoot,
                     )))
                     .ok();
             }
-            KFMsg::PodcastRefreshAllFeedsBlurDown | KFMsg::LibraryTagEditorBlurUp => {
+
+            KFMsgOther::LibraryRemoveRootBlurDown | KFMsgOther::PodcastMarkAllPlayedBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PodcastSearchAddFeed,
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastMarkPlayed,
+                    )))
+                    .ok();
+            }
+            KFMsgOther::PodcastMarkPlayedBlurDown | KFMsgOther::PodcastEpDownloadBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastMarkAllPlayed,
+                    )))
+                    .ok();
+            }
+            KFMsgOther::PodcastMarkAllPlayedBlurDown | KFMsgOther::PodcastEpDeleteFileBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastEpDownload,
+                    )))
+                    .ok();
+            }
+            KFMsgOther::PodcastEpDownloadBlurDown | KFMsgOther::PodcastDeleteFeedBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastEpDeleteFile,
+                    )))
+                    .ok();
+            }
+            KFMsgOther::PodcastEpDeleteFileBlurDown | KFMsgOther::PodcastDeleteAllFeedsBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastDeleteFeed,
+                    )))
+                    .ok();
+            }
+            KFMsgOther::PodcastDeleteFeedBlurDown | KFMsgOther::PodcastRefreshFeedBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastDeleteAllFeeds,
+                    )))
+                    .ok();
+            }
+            KFMsgOther::PodcastDeleteAllFeedsBlurDown
+            | KFMsgOther::PodcastRefreshAllFeedsBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastRefreshFeed,
+                    )))
+                    .ok();
+            }
+            KFMsgOther::PodcastRefreshFeedBlurDown | KFMsgOther::PodcastSearchAddFeedBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastRefreshAllFeeds,
+                    )))
+                    .ok();
+            }
+            KFMsgOther::PodcastRefreshAllFeedsBlurDown | KFMsgOther::LibraryTagEditorBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+                        IdKeyOther::PodcastSearchAddFeed,
                     )))
                     .ok();
             }
@@ -884,104 +915,138 @@ impl Model {
         let keys = &mut self.config_editor.key_config;
 
         match id {
-            IdKey::DatabaseAddAll => keys.database_keys.add_all = binding,
-            IdKey::DatabaseAddSelected => keys.database_keys.add_selected = binding,
-            IdKey::GlobalConfig => keys.select_view_keys.open_config = binding,
-            IdKey::GlobalDown => keys.navigation_keys.down = binding,
-            IdKey::GlobalGotoBottom => keys.navigation_keys.goto_bottom = binding,
-            IdKey::GlobalGotoTop => keys.navigation_keys.goto_top = binding,
-            IdKey::GlobalHelp => keys.select_view_keys.open_help = binding,
-            IdKey::GlobalLayoutTreeview => {
+            IdKey::Other(IdKeyOther::DatabaseAddAll) => keys.database_keys.add_all = binding,
+            IdKey::Other(IdKeyOther::DatabaseAddSelected) => {
+                keys.database_keys.add_selected = binding;
+            }
+            IdKey::Global(IdKeyGlobal::Config) => keys.select_view_keys.open_config = binding,
+            IdKey::Global(IdKeyGlobal::Down) => keys.navigation_keys.down = binding,
+            IdKey::Global(IdKeyGlobal::GotoBottom) => {
+                keys.navigation_keys.goto_bottom = binding;
+            }
+            IdKey::Global(IdKeyGlobal::GotoTop) => keys.navigation_keys.goto_top = binding,
+            IdKey::Global(IdKeyGlobal::Help) => keys.select_view_keys.open_help = binding,
+            IdKey::Global(IdKeyGlobal::LayoutTreeview) => {
                 keys.select_view_keys.view_library = binding;
             }
-            IdKey::GlobalLayoutDatabase => {
+            IdKey::Global(IdKeyGlobal::LayoutDatabase) => {
                 keys.select_view_keys.view_database = binding;
             }
-            IdKey::GlobalLeft => keys.navigation_keys.left = binding,
-            IdKey::GlobalLyricAdjustForward => {
+            IdKey::Global(IdKeyGlobal::Left) => keys.navigation_keys.left = binding,
+            IdKey::Global(IdKeyGlobal::LyricAdjustForward) => {
                 keys.lyric_keys.adjust_offset_forwards = binding;
             }
-            IdKey::GlobalLyricAdjustBackward => {
+            IdKey::Global(IdKeyGlobal::LyricAdjustBackward) => {
                 keys.lyric_keys.adjust_offset_backwards = binding;
             }
-            IdKey::GlobalLyricCycle => keys.lyric_keys.cycle_frames = binding,
-            IdKey::GlobalPlayerToggleGapless => {
+            IdKey::Global(IdKeyGlobal::LyricCycle) => keys.lyric_keys.cycle_frames = binding,
+            IdKey::Global(IdKeyGlobal::PlayerToggleGapless) => {
                 keys.player_keys.toggle_prefetch = binding;
             }
-            IdKey::GlobalPlayerTogglePause => {
+            IdKey::Global(IdKeyGlobal::PlayerTogglePause) => {
                 keys.player_keys.toggle_pause = binding;
             }
-            IdKey::GlobalPlayerNext => keys.player_keys.next_track = binding,
-            IdKey::GlobalPlayerPrevious => keys.player_keys.previous_track = binding,
-            IdKey::GlobalPlayerSeekForward => {
+            IdKey::Global(IdKeyGlobal::PlayerNext) => keys.player_keys.next_track = binding,
+            IdKey::Global(IdKeyGlobal::PlayerPrevious) => {
+                keys.player_keys.previous_track = binding;
+            }
+            IdKey::Global(IdKeyGlobal::PlayerSeekForward) => {
                 keys.player_keys.seek_forward = binding;
             }
-            IdKey::GlobalPlayerSeekBackward => {
+            IdKey::Global(IdKeyGlobal::PlayerSeekBackward) => {
                 keys.player_keys.seek_backward = binding;
             }
-            IdKey::GlobalPlayerSpeedUp => keys.player_keys.speed_up = binding,
-            IdKey::GlobalPlayerSpeedDown => keys.player_keys.speed_down = binding,
-            IdKey::GlobalQuit => keys.quit = binding,
-            IdKey::GlobalRight => keys.navigation_keys.right = binding,
-            IdKey::GlobalUp => keys.navigation_keys.up = binding,
-            IdKey::GlobalVolumeDown => keys.player_keys.volume_down = binding,
-            IdKey::GlobalVolumeUp => keys.player_keys.volume_up = binding,
-            IdKey::GlobalSavePlaylist => keys.player_keys.save_playlist = binding,
-            IdKey::LibraryDelete => keys.library_keys.delete = binding,
-            IdKey::LibraryLoadDir => keys.library_keys.load_dir = binding,
-            IdKey::LibraryPaste => keys.library_keys.paste = binding,
-            IdKey::LibrarySearch => keys.library_keys.search = binding,
-            IdKey::LibrarySearchYoutube => keys.library_keys.youtube_search = binding,
-            IdKey::LibraryTagEditor => keys.library_keys.open_tag_editor = binding,
-            IdKey::LibraryYank => keys.library_keys.yank = binding,
-            IdKey::PlaylistDelete => keys.playlist_keys.delete = binding,
-            IdKey::PlaylistDeleteAll => keys.playlist_keys.delete_all = binding,
-            IdKey::PlaylistShuffle => keys.playlist_keys.shuffle = binding,
-            IdKey::PlaylistModeCycle => keys.playlist_keys.cycle_loop_mode = binding,
-            IdKey::PlaylistPlaySelected => keys.playlist_keys.play_selected = binding,
-            IdKey::PlaylistSearch => keys.playlist_keys.search = binding,
-            IdKey::PlaylistSwapDown => keys.playlist_keys.swap_down = binding,
-            IdKey::PlaylistSwapUp => keys.playlist_keys.swap_up = binding,
-            IdKey::PlaylistAddRandomAlbum => {
+            IdKey::Global(IdKeyGlobal::PlayerSpeedUp) => keys.player_keys.speed_up = binding,
+            IdKey::Global(IdKeyGlobal::PlayerSpeedDown) => {
+                keys.player_keys.speed_down = binding;
+            }
+            IdKey::Global(IdKeyGlobal::Quit) => keys.quit = binding,
+            IdKey::Global(IdKeyGlobal::Right) => keys.navigation_keys.right = binding,
+            IdKey::Global(IdKeyGlobal::Up) => keys.navigation_keys.up = binding,
+            IdKey::Global(IdKeyGlobal::PlayerVolumeDown) => {
+                keys.player_keys.volume_down = binding;
+            }
+            IdKey::Global(IdKeyGlobal::PlayerVolumeUp) => {
+                keys.player_keys.volume_up = binding;
+            }
+            IdKey::Global(IdKeyGlobal::SavePlaylist) => {
+                keys.player_keys.save_playlist = binding;
+            }
+            IdKey::Other(IdKeyOther::LibraryDelete) => keys.library_keys.delete = binding,
+            IdKey::Other(IdKeyOther::LibraryLoadDir) => keys.library_keys.load_dir = binding,
+            IdKey::Other(IdKeyOther::LibraryPaste) => keys.library_keys.paste = binding,
+            IdKey::Other(IdKeyOther::LibrarySearch) => keys.library_keys.search = binding,
+            IdKey::Other(IdKeyOther::LibrarySearchYoutube) => {
+                keys.library_keys.youtube_search = binding;
+            }
+            IdKey::Other(IdKeyOther::LibraryTagEditor) => {
+                keys.library_keys.open_tag_editor = binding;
+            }
+            IdKey::Other(IdKeyOther::LibraryYank) => keys.library_keys.yank = binding,
+            IdKey::Other(IdKeyOther::PlaylistDelete) => keys.playlist_keys.delete = binding,
+            IdKey::Other(IdKeyOther::PlaylistDeleteAll) => keys.playlist_keys.delete_all = binding,
+            IdKey::Other(IdKeyOther::PlaylistShuffle) => keys.playlist_keys.shuffle = binding,
+            IdKey::Other(IdKeyOther::PlaylistModeCycle) => {
+                keys.playlist_keys.cycle_loop_mode = binding;
+            }
+            IdKey::Other(IdKeyOther::PlaylistPlaySelected) => {
+                keys.playlist_keys.play_selected = binding;
+            }
+            IdKey::Other(IdKeyOther::PlaylistSearch) => keys.playlist_keys.search = binding,
+            IdKey::Other(IdKeyOther::PlaylistSwapDown) => keys.playlist_keys.swap_down = binding,
+            IdKey::Other(IdKeyOther::PlaylistSwapUp) => keys.playlist_keys.swap_up = binding,
+            IdKey::Other(IdKeyOther::PlaylistAddRandomAlbum) => {
                 keys.playlist_keys.add_random_album = binding;
             }
-            IdKey::PlaylistAddRandomTracks => {
+            IdKey::Other(IdKeyOther::PlaylistAddRandomTracks) => {
                 keys.playlist_keys.add_random_songs = binding;
             }
-            IdKey::LibrarySwitchRoot => keys.library_keys.cycle_root = binding,
-            IdKey::LibraryAddRoot => keys.library_keys.add_root = binding,
-            IdKey::LibraryRemoveRoot => keys.library_keys.remove_root = binding,
-            IdKey::GlobalLayoutPodcast => {
+            IdKey::Other(IdKeyOther::LibrarySwitchRoot) => keys.library_keys.cycle_root = binding,
+            IdKey::Other(IdKeyOther::LibraryAddRoot) => keys.library_keys.add_root = binding,
+            IdKey::Other(IdKeyOther::LibraryRemoveRoot) => keys.library_keys.remove_root = binding,
+            IdKey::Global(IdKeyGlobal::LayoutPodcast) => {
                 keys.select_view_keys.view_podcasts = binding;
             }
-            IdKey::GlobalXywhMoveLeft => keys.move_cover_art_keys.move_left = binding,
-            IdKey::GlobalXywhMoveRight => {
+            IdKey::Global(IdKeyGlobal::XywhMoveLeft) => {
+                keys.move_cover_art_keys.move_left = binding;
+            }
+            IdKey::Global(IdKeyGlobal::XywhMoveRight) => {
                 keys.move_cover_art_keys.move_right = binding;
             }
-            IdKey::GlobalXywhMoveUp => keys.move_cover_art_keys.move_up = binding,
-            IdKey::GlobalXywhMoveDown => keys.move_cover_art_keys.move_down = binding,
-            IdKey::GlobalXywhZoomIn => {
+            IdKey::Global(IdKeyGlobal::XywhMoveUp) => {
+                keys.move_cover_art_keys.move_up = binding;
+            }
+            IdKey::Global(IdKeyGlobal::XywhMoveDown) => {
+                keys.move_cover_art_keys.move_down = binding;
+            }
+            IdKey::Global(IdKeyGlobal::XywhZoomIn) => {
                 keys.move_cover_art_keys.increase_size = binding;
             }
-            IdKey::GlobalXywhZoomOut => {
+            IdKey::Global(IdKeyGlobal::XywhZoomOut) => {
                 keys.move_cover_art_keys.decrease_size = binding;
             }
-            IdKey::GlobalXywhHide => keys.move_cover_art_keys.toggle_hide = binding,
-            IdKey::PodcastMarkPlayed => keys.podcast_keys.mark_played = binding,
-            IdKey::PodcastMarkAllPlayed => {
+            IdKey::Global(IdKeyGlobal::XywhHide) => {
+                keys.move_cover_art_keys.toggle_hide = binding;
+            }
+            IdKey::Other(IdKeyOther::PodcastMarkPlayed) => keys.podcast_keys.mark_played = binding,
+            IdKey::Other(IdKeyOther::PodcastMarkAllPlayed) => {
                 keys.podcast_keys.mark_all_played = binding;
             }
-            IdKey::PodcastEpDownload => keys.podcast_keys.download_episode = binding,
-            IdKey::PodcastEpDeleteFile => {
+            IdKey::Other(IdKeyOther::PodcastEpDownload) => {
+                keys.podcast_keys.download_episode = binding;
+            }
+            IdKey::Other(IdKeyOther::PodcastEpDeleteFile) => {
                 keys.podcast_keys.delete_local_episode = binding;
             }
-            IdKey::PodcastDeleteFeed => keys.podcast_keys.delete_feed = binding,
-            IdKey::PodcastDeleteAllFeeds => {
+            IdKey::Other(IdKeyOther::PodcastDeleteFeed) => keys.podcast_keys.delete_feed = binding,
+            IdKey::Other(IdKeyOther::PodcastDeleteAllFeeds) => {
                 keys.podcast_keys.delete_all_feeds = binding;
             }
-            IdKey::PodcastSearchAddFeed => keys.podcast_keys.search = binding,
-            IdKey::PodcastRefreshFeed => keys.podcast_keys.refresh_feed = binding,
-            IdKey::PodcastRefreshAllFeeds => {
+            IdKey::Other(IdKeyOther::PodcastSearchAddFeed) => keys.podcast_keys.search = binding,
+            IdKey::Other(IdKeyOther::PodcastRefreshFeed) => {
+                keys.podcast_keys.refresh_feed = binding;
+            }
+            IdKey::Other(IdKeyOther::PodcastRefreshAllFeeds) => {
                 keys.podcast_keys.refresh_all_feeds = binding;
             }
         }

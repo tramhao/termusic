@@ -71,15 +71,15 @@ pub(super) trait CheckConflict {
 /// Allows usage of calling one at a time:
 ///
 /// ```
-/// const_str!(1 + 1)
+/// once_chain!((&self.escape, "escape"))
 /// ```
 ///
-/// or multiple at a time to even save repeated `once_chain!` invokations:
+/// or multiple at a time to even save repeated `once_chain!` invocations:
 ///
 /// ```
-/// const_str! {
-///     1 + 1,
-///     2 + 2,
+/// once_chain! {
+///     (&self.escape, "escape"),
+///     (&self.quit, "quit"),
 /// }
 /// ```
 #[macro_export]
