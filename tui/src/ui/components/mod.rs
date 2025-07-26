@@ -10,6 +10,7 @@ mod playlist;
 mod podcast;
 mod popups;
 mod progress;
+mod raw;
 #[allow(
     clippy::match_bool,
     clippy::redundant_closure_for_method_calls,

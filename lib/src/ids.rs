@@ -124,6 +124,7 @@ pub enum IdKeyGlobal {
     Quit,
     Config,
     Help,
+    SavePlaylist,
 
     Up,
     Down,
@@ -131,7 +132,6 @@ pub enum IdKeyGlobal {
     Right,
     GotoBottom,
     GotoTop,
-    SavePlaylist,
 
     PlayerToggleGapless,
     PlayerTogglePause,
