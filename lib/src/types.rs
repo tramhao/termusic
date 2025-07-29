@@ -153,6 +153,24 @@ pub enum IdKey {
     Other(IdKeyOther),
 }
 
+impl From<&IdKey> for IdConfigEditor {
+    fn from(value: &IdKey) -> Self {
+        match *value {
+            IdKey::Global(id_key_global) => IdConfigEditor::KeyGlobal(id_key_global),
+            IdKey::Other(id_key_other) => IdConfigEditor::KeyOther(id_key_other),
+        }
+    }
+}
+
+impl From<IdKey> for IdConfigEditor {
+    fn from(value: IdKey) -> Self {
+        match value {
+            IdKey::Global(id_key_global) => IdConfigEditor::KeyGlobal(id_key_global),
+            IdKey::Other(id_key_other) => IdConfigEditor::KeyOther(id_key_other),
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ConfigEditorMsg {
     PodcastDirBlurDown,
@@ -177,8 +195,8 @@ pub enum ConfigEditorMsg {
     ExtraYtdlpArgsBlurDown,
     ExtraYtdlpArgsBlurUp,
     Open,
-    KeyFocusGlobal(KFMsgGlobal),
-    KeyFocusOther(KFMsgOther),
+    KeyFocusGlobal(KFMsg),
+    KeyFocusOther(KFMsg),
     MusicDirBlurDown,
     MusicDirBlurUp,
 
@@ -264,148 +282,92 @@ pub enum ConfigEditorMsg {
     FallbackHighlightBlurUp,
 }
 
+/// This array defines the order the IDs listed are displayed and which gains next / previous focus.
+pub const KFGLOBAL_FOCUS_ORDER: &[IdKey] = &[
+    // main layouts
+    IdKey::Global(IdKeyGlobal::LayoutTreeview),
+    IdKey::Global(IdKeyGlobal::LayoutDatabase),
+    IdKey::Global(IdKeyGlobal::LayoutPodcast),
+    // general global keys
+    IdKey::Global(IdKeyGlobal::Quit),
+    IdKey::Global(IdKeyGlobal::Config),
+    IdKey::Global(IdKeyGlobal::Help),
+    IdKey::Global(IdKeyGlobal::SavePlaylist),
+    // global navigation
+    IdKey::Global(IdKeyGlobal::Up),
+    IdKey::Global(IdKeyGlobal::Down),
+    IdKey::Global(IdKeyGlobal::Left),
+    IdKey::Global(IdKeyGlobal::Right),
+    IdKey::Global(IdKeyGlobal::GotoBottom),
+    IdKey::Global(IdKeyGlobal::GotoTop),
+    // global player controls
+    IdKey::Global(IdKeyGlobal::PlayerToggleGapless),
+    IdKey::Global(IdKeyGlobal::PlayerTogglePause),
+    IdKey::Global(IdKeyGlobal::PlayerNext),
+    IdKey::Global(IdKeyGlobal::PlayerPrevious),
+    IdKey::Global(IdKeyGlobal::PlayerSeekForward),
+    IdKey::Global(IdKeyGlobal::PlayerSeekBackward),
+    IdKey::Global(IdKeyGlobal::PlayerSpeedUp),
+    IdKey::Global(IdKeyGlobal::PlayerSpeedDown),
+    IdKey::Global(IdKeyGlobal::PlayerVolumeUp),
+    IdKey::Global(IdKeyGlobal::PlayerVolumeDown),
+    // lyric controls
+    IdKey::Global(IdKeyGlobal::LyricAdjustForward),
+    IdKey::Global(IdKeyGlobal::LyricAdjustBackward),
+    IdKey::Global(IdKeyGlobal::LyricCycle),
+    // coverart display adjustments
+    IdKey::Global(IdKeyGlobal::XywhMoveUp),
+    IdKey::Global(IdKeyGlobal::XywhMoveDown),
+    IdKey::Global(IdKeyGlobal::XywhMoveLeft),
+    IdKey::Global(IdKeyGlobal::XywhMoveRight),
+    IdKey::Global(IdKeyGlobal::XywhZoomIn),
+    IdKey::Global(IdKeyGlobal::XywhZoomOut),
+    IdKey::Global(IdKeyGlobal::XywhHide),
+];
+
+/// This array defines the order the IDs listed are displayed and which gains next / previous focus.
+pub const KFOTHER_FOCUS_ORDER: &[IdKey] = &[
+    // library keys
+    IdKey::Other(IdKeyOther::LibraryAddRoot),
+    IdKey::Other(IdKeyOther::LibraryRemoveRoot),
+    IdKey::Other(IdKeyOther::LibrarySwitchRoot),
+    IdKey::Other(IdKeyOther::LibraryDelete),
+    IdKey::Other(IdKeyOther::LibraryLoadDir),
+    IdKey::Other(IdKeyOther::LibraryYank),
+    IdKey::Other(IdKeyOther::LibraryPaste),
+    IdKey::Other(IdKeyOther::LibrarySearch),
+    IdKey::Other(IdKeyOther::LibrarySearchYoutube),
+    IdKey::Other(IdKeyOther::LibraryTagEditor),
+    // playlist keys
+    IdKey::Other(IdKeyOther::PlaylistShuffle),
+    IdKey::Other(IdKeyOther::PlaylistModeCycle),
+    IdKey::Other(IdKeyOther::PlaylistPlaySelected),
+    IdKey::Other(IdKeyOther::PlaylistSearch),
+    IdKey::Other(IdKeyOther::PlaylistSwapUp),
+    IdKey::Other(IdKeyOther::PlaylistSwapDown),
+    IdKey::Other(IdKeyOther::PlaylistDelete),
+    IdKey::Other(IdKeyOther::PlaylistDeleteAll),
+    IdKey::Other(IdKeyOther::PlaylistAddRandomAlbum),
+    IdKey::Other(IdKeyOther::PlaylistAddRandomTracks),
+    // database keys
+    IdKey::Other(IdKeyOther::DatabaseAddAll),
+    IdKey::Other(IdKeyOther::DatabaseAddSelected),
+    // podcast keys
+    IdKey::Other(IdKeyOther::PodcastSearchAddFeed),
+    IdKey::Other(IdKeyOther::PodcastMarkPlayed),
+    IdKey::Other(IdKeyOther::PodcastMarkAllPlayed),
+    IdKey::Other(IdKeyOther::PodcastEpDownload),
+    IdKey::Other(IdKeyOther::PodcastEpDeleteFile),
+    IdKey::Other(IdKeyOther::PodcastDeleteFeed),
+    IdKey::Other(IdKeyOther::PodcastDeleteAllFeeds),
+    IdKey::Other(IdKeyOther::PodcastRefreshFeed),
+    IdKey::Other(IdKeyOther::PodcastRefreshAllFeeds),
+];
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum KFMsgGlobal {
-    LayoutTreeviewBlurDown,
-    LayoutTreeviewBlurUp,
-    LayoutDatabaseBlurDown,
-    LayoutDatabaseBlurUp,
-    LayoutPodcastBlurDown,
-    LayoutPodcastBlurUp,
-
-    QuitBlurDown,
-    QuitBlurUp,
-    ConfigBlurDown,
-    ConfigBlurUp,
-    HelpBlurDown,
-    HelpBlurUp,
-    SavePlaylistBlurDown,
-    SavePlaylistBlurUp,
-
-    UpBlurDown,
-    UpBlurUp,
-    DownBlurDown,
-    DownBlurUp,
-    LeftBlurDown,
-    LeftBlurUp,
-    RightBlurDown,
-    RightBlurUp,
-    GotoBottomBlurDown,
-    GotoBottomBlurUp,
-    GotoTopBlurDown,
-    GotoTopBlurUp,
-
-    PlayerToggleGaplessBlurDown,
-    PlayerToggleGaplessBlurUp,
-    PlayerTogglePauseBlurDown,
-    PlayerTogglePauseBlurUp,
-    PlayerNextBlurDown,
-    PlayerNextBlurUp,
-    PlayerPreviousBlurDown,
-    PlayerPreviousBlurUp,
-    PlayerSeekForwardBlurDown,
-    PlayerSeekForwardBlurUp,
-    PlayerSeekBackwardBlurDown,
-    PlayerSeekBackwardBlurUp,
-    PlayerSpeedUpBlurDown,
-    PlayerSpeedUpBlurUp,
-    PlayerSpeedDownBlurDown,
-    PlayerSpeedDownBlurUp,
-    PlayerVolumeUpBlurDown,
-    PlayerVolumeUpBlurUp,
-    PlayerVolumeDownBlurDown,
-    PlayerVolumeDownBlurUp,
-
-    LyricAdjustForwardBlurDown,
-    LyricAdjustForwardBlurUp,
-    LyricAdjustBackwardBlurDown,
-    LyricAdjustBackwardBlurUp,
-    LyricCycleBlurDown,
-    LyricCycleBlurUp,
-
-    XywhMoveUpBlurDown,
-    XywhMoveUpBlurUp,
-    XywhMoveDownBlurDown,
-    XywhMoveDownBlurUp,
-    XywhMoveLeftBlurDown,
-    XywhMoveLeftBlurUp,
-    XywhMoveRightBlurDown,
-    XywhMoveRightBlurUp,
-    XywhZoomInBlurDown,
-    XywhZoomInBlurUp,
-    XywhZoomOutBlurDown,
-    XywhZoomOutBlurUp,
-    XywhHideBlurDown,
-    XywhHideBlurUp,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum KFMsgOther {
-    LibraryAddRootBlurDown,
-    LibraryAddRootBlurUp,
-    LibraryRemoveRootBlurDown,
-    LibraryRemoveRootBlurUp,
-    LibrarySwitchRootBlurDown,
-    LibrarySwitchRootBlurUp,
-    LibraryDeleteBlurDown,
-    LibraryDeleteBlurUp,
-    LibraryLoadDirBlurDown,
-    LibraryLoadDirBlurUp,
-    LibraryYankBlurDown,
-    LibraryYankBlurUp,
-    LibraryPasteBlurDown,
-    LibraryPasteBlurUp,
-    LibrarySearchBlurDown,
-    LibrarySearchBlurUp,
-    LibrarySearchYoutubeBlurDown,
-    LibrarySearchYoutubeBlurUp,
-    LibraryTagEditorBlurDown,
-    LibraryTagEditorBlurUp,
-
-    PlaylistShuffleBlurDown,
-    PlaylistShuffleBlurUp,
-    PlaylistModeCycleBlurDown,
-    PlaylistModeCycleBlurUp,
-    PlaylistPlaySelectedBlurDown,
-    PlaylistPlaySelectedBlurUp,
-    PlaylistSearchBlurDown,
-    PlaylistSearchBlurUp,
-    PlaylistSwapUpBlurDown,
-    PlaylistSwapUpBlurUp,
-    PlaylistSwapDownBlurDown,
-    PlaylistSwapDownBlurUp,
-    PlaylistDeleteBlurDown,
-    PlaylistDeleteBlurUp,
-    PlaylistDeleteAllBlurDown,
-    PlaylistDeleteAllBlurUp,
-    PlaylistAddRandomAlbumBlurDown,
-    PlaylistAddRandomAlbumBlurUp,
-    PlaylistAddRandomTracksBlurDown,
-    PlaylistAddRandomTracksBlurUp,
-
-    DatabaseAddAllBlurDown,
-    DatabaseAddAllBlurUp,
-    DatabaseAddSelectedBlurDown,
-    DatabaseAddSelectedBlurUp,
-
-    PodcastSearchAddFeedBlurDown,
-    PodcastSearchAddFeedBlurUp,
-    PodcastMarkPlayedBlurDown,
-    PodcastMarkPlayedBlurUp,
-    PodcastMarkAllPlayedBlurDown,
-    PodcastMarkAllPlayedBlurUp,
-    PodcastEpDownloadBlurDown,
-    PodcastEpDownloadBlurUp,
-    PodcastEpDeleteFileBlurDown,
-    PodcastEpDeleteFileBlurUp,
-    PodcastDeleteFeedBlurDown,
-    PodcastDeleteFeedBlurUp,
-    PodcastDeleteAllFeedsBlurDown,
-    PodcastDeleteAllFeedsBlurUp,
-    PodcastRefreshFeedBlurDown,
-    PodcastRefreshFeedBlurUp,
-    PodcastRefreshAllFeedsBlurDown,
-    PodcastRefreshAllFeedsBlurUp,
+pub enum KFMsg {
+    Next,
+    Previous,
 }
 
 /// Basically a Tree Node, but without having to include `tui-realm-treeview` as another dependency for lib
@@ -658,5 +620,48 @@ impl YoutubeOptions {
     #[must_use]
     pub const fn page(&self) -> u32 {
         self.page
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::types::{IdKey, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
+
+    // ensure that assumptions about "KFGLOBAL_FOCUS_ORDER[0]" can be made correctly
+    #[test]
+    // clippy complains that it is always "false", but if the array actually *is* empty, then rust will **NOT** complain on "[0]" access
+    #[allow(clippy::const_is_empty)]
+    fn kfglobal_focus_order_should_be_nonzero() {
+        assert!(!KFGLOBAL_FOCUS_ORDER.is_empty());
+    }
+
+    // i dont think there is a compile-time way to ensure only a specific enum variant is used, so test here
+    #[test]
+    fn kfglobal_focus_order_should_only_contain_global() {
+        for entry in KFGLOBAL_FOCUS_ORDER {
+            assert_eq!(
+                std::mem::discriminant(entry),
+                std::mem::discriminant(&IdKey::Global(crate::ids::IdKeyGlobal::Config))
+            );
+        }
+    }
+
+    // ensure that assumptions about "KFOTHER_FOCUS_ORDER[0]" can be made correctly
+    #[test]
+    // clippy complains that it is always "false", but if the array actually *is* empty, then rust will **NOT** complain on "[0]" access
+    #[allow(clippy::const_is_empty)]
+    fn kfother_focus_order_should_be_nonzero() {
+        assert!(!KFOTHER_FOCUS_ORDER.is_empty());
+    }
+
+    // i dont think there is a compile-time way to ensure only a specific enum variant is used, so test here
+    #[test]
+    fn kfother_focus_order_should_only_contain_other() {
+        for entry in KFOTHER_FOCUS_ORDER {
+            assert_eq!(
+                std::mem::discriminant(entry),
+                std::mem::discriminant(&IdKey::Other(crate::ids::IdKeyOther::DatabaseAddAll))
+            );
+        }
     }
 }
