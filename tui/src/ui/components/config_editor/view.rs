@@ -79,6 +79,20 @@ macro_rules! to_boxed_slice {
     }
 }
 
+/// Chain `app.views` together without having to repeat ourselfs (DRY).
+///
+/// A macro here uses way less lines than manually writing each `app.view` call out by hand.
+///
+/// Equivalent to manually writing out `app.view($id, $f, $cell)` for each id and cell.
+macro_rules! app_view {
+    (
+        $app:expr, $f:expr,
+        $($id:expr => $cell:expr$(,)?)*
+    ) => {
+        $($app.view($id, $f, $cell);)*
+    }
+}
+
 impl Model {
     pub fn view_config_editor(&mut self) {
         self.terminal
@@ -170,76 +184,33 @@ impl Model {
             .focus_node(focus_elem)
             .split(chunk_main);
 
-        app.view(&Id::ConfigEditor(IdConfigEditor::MusicDir), f, cells[0]);
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
-            f,
-            cells[1],
-        );
+        app_view! {
+            app, f,
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
-            f,
-            cells[2],
-        );
+            &Id::ConfigEditor(IdConfigEditor::MusicDir) => cells[0],
+            &Id::ConfigEditor(IdConfigEditor::ExitConfirmation) => cells[1],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
-            f,
-            cells[3],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
-            f,
-            cells[4],
-        );
+            &Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol) => cells[2],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack) => cells[3],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum) => cells[4],
 
-        app.view(&Id::ConfigEditor(IdConfigEditor::PodcastDir), f, cells[5]);
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
-            f,
-            cells[6],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
-            f,
-            cells[7],
-        );
+            &Id::ConfigEditor(IdConfigEditor::PodcastDir) => cells[5],
+            &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload) => cells[6],
+            &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries) => cells[7],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
-            f,
-            cells[8],
-        );
+            &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign) => cells[8],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
-            f,
-            cells[9],
-        );
-        app.view(&Id::ConfigEditor(IdConfigEditor::SeekStep), f, cells[10]);
+            &Id::ConfigEditor(IdConfigEditor::SaveLastPosition) => cells[9],
+            &Id::ConfigEditor(IdConfigEditor::SeekStep) => cells[10],
 
-        app.view(&Id::ConfigEditor(IdConfigEditor::KillDamon), f, cells[11]);
+            &Id::ConfigEditor(IdConfigEditor::KillDamon) => cells[11],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
-            f,
-            cells[12],
-        );
+            &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris) => cells[12],
+            &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord) => cells[13],
+            &Id::ConfigEditor(IdConfigEditor::PlayerPort) => cells[14],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
-            f,
-            cells[13],
-        );
-
-        app.view(&Id::ConfigEditor(IdConfigEditor::PlayerPort), f, cells[14]);
-
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs),
-            f,
-            cells[15],
-        );
+            &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs) => cells[15],
+        }
     }
 
     /// Draw common Popups while in the config editor
@@ -474,165 +445,49 @@ impl Model {
         ])
         .split(cells[5]);
 
-        app.view(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect), f, left);
+        app_view! {
+            app, f,
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LibraryLabel),
-            f,
-            chunks_library[0],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LibraryForeground),
-            f,
-            chunks_library[1],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LibraryBackground),
-            f,
-            chunks_library[2],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LibraryBorder),
-            f,
-            chunks_library[3],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
-            f,
-            chunks_library[4],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
-            f,
-            chunks_library[5],
-        );
+            &Id::ConfigEditor(IdConfigEditor::CEThemeSelect) => left,
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
-            f,
-            chunks_playlist[0],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistForeground),
-            f,
-            chunks_playlist[1],
-        );
+            &Id::ConfigEditor(IdConfigEditor::LibraryLabel) => chunks_library[0],
+            &Id::ConfigEditor(IdConfigEditor::LibraryForeground) => chunks_library[1],
+            &Id::ConfigEditor(IdConfigEditor::LibraryBackground) => chunks_library[2],
+            &Id::ConfigEditor(IdConfigEditor::LibraryBorder) => chunks_library[3],
+            &Id::ConfigEditor(IdConfigEditor::LibraryHighlight) => chunks_library[4],
+            &Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol) => chunks_library[5],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistBackground),
-            f,
-            chunks_playlist[2],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistBorder),
-            f,
-            chunks_playlist[3],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlight),
-            f,
-            chunks_playlist[4],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
-            f,
-            chunks_playlist[5],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
-            f,
-            chunks_playlist[6],
-        );
+            &Id::ConfigEditor(IdConfigEditor::PlaylistLabel) => chunks_playlist[0],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistForeground) => chunks_playlist[1],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ProgressLabel),
-            f,
-            chunks_progress[0],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ProgressForeground),
-            f,
-            chunks_progress[1],
-        );
+            &Id::ConfigEditor(IdConfigEditor::PlaylistBackground) => chunks_playlist[2],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistBorder) => chunks_playlist[3],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlight) => chunks_playlist[4],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol) => chunks_playlist[5],
+            &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol) => chunks_playlist[6],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ProgressBackground),
-            f,
-            chunks_progress[2],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ProgressBorder),
-            f,
-            chunks_progress[3],
-        );
+            &Id::ConfigEditor(IdConfigEditor::ProgressLabel) => chunks_progress[0],
+            &Id::ConfigEditor(IdConfigEditor::ProgressForeground) => chunks_progress[1],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LyricLabel),
-            f,
-            chunks_lyric[0],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LyricForeground),
-            f,
-            chunks_lyric[1],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LyricBackground),
-            f,
-            chunks_lyric[2],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::LyricBorder),
-            f,
-            chunks_lyric[3],
-        );
+            &Id::ConfigEditor(IdConfigEditor::ProgressBackground) => chunks_progress[2],
+            &Id::ConfigEditor(IdConfigEditor::ProgressBorder) => chunks_progress[3],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel),
-            f,
-            chunks_important_popup[0],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground),
-            f,
-            chunks_important_popup[1],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground),
-            f,
-            chunks_important_popup[2],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder),
-            f,
-            chunks_important_popup[3],
-        );
+            &Id::ConfigEditor(IdConfigEditor::LyricLabel) => chunks_lyric[0],
+            &Id::ConfigEditor(IdConfigEditor::LyricForeground) => chunks_lyric[1],
+            &Id::ConfigEditor(IdConfigEditor::LyricBackground) => chunks_lyric[2],
+            &Id::ConfigEditor(IdConfigEditor::LyricBorder) => chunks_lyric[3],
 
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::FallbackLabel),
-            f,
-            chunks_fallback[0],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::FallbackForeground),
-            f,
-            chunks_fallback[1],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::FallbackBackground),
-            f,
-            chunks_fallback[2],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::FallbackBorder),
-            f,
-            chunks_fallback[3],
-        );
-        app.view(
-            &Id::ConfigEditor(IdConfigEditor::FallbackHighlight),
-            f,
-            chunks_fallback[4],
-        );
+            &Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel) => chunks_important_popup[0],
+            &Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground) => chunks_important_popup[1],
+            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground) => chunks_important_popup[2],
+            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder) => chunks_important_popup[3],
+
+            &Id::ConfigEditor(IdConfigEditor::FallbackLabel) => chunks_fallback[0],
+            &Id::ConfigEditor(IdConfigEditor::FallbackForeground) => chunks_fallback[1],
+            &Id::ConfigEditor(IdConfigEditor::FallbackBackground) => chunks_fallback[2],
+            &Id::ConfigEditor(IdConfigEditor::FallbackBorder) => chunks_fallback[3],
+            &Id::ConfigEditor(IdConfigEditor::FallbackHighlight) => chunks_fallback[4],
+        }
     }
 
     /// Draw the keys for tab "Key Global"
