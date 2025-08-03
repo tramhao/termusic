@@ -9,6 +9,7 @@
 - Feat(tui): make the Config editor dynamically size elements.
 - Feat(tui): make the Config editor (at least rudementally) scrollable.
 - Fix(tui): allow usage of key `Home`/`Pos1` in search lists.
+- Fix(tui): allow usage of key `Home`/`Pos1` and `End` in youtube search list.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
 
 ### [V0.11.0]
