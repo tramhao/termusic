@@ -89,18 +89,34 @@ impl Model {
         }
     }
 
+    /// Split the frame area into header, main and footer,
+    /// also Draw the Header and footer and return the main area.
+    fn view_config_editor_common(
+        app: &mut Application<Id, Msg, UserEvent>,
+        f: &mut Frame<'_>,
+    ) -> Rect {
+        let [header, chunk_main, footer] = Layout::vertical([
+            Constraint::Length(3), // config header
+            Constraint::Min(3),
+            Constraint::Length(1), // config footer
+        ])
+        .areas(f.area());
+
+        app.view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
+
+        // draw before main chunk, to easily tell if something is overdrawing
+        app.view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
+
+        chunk_main
+    }
+
     /// Draw the keys for tab "General"
     #[allow(clippy::too_many_lines)]
     fn view_config_editor_general(&mut self) {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let [header, chunks_main, footer] = Layout::vertical([
-                    Constraint::Length(3), // config header
-                    Constraint::Min(3),
-                    Constraint::Length(1), // config footer
-                ])
-                .areas(f.area());
+                let chunk_main = Self::view_config_editor_common(&mut self.app, f);
 
                 let focus_elem = self
                     .app
@@ -138,10 +154,8 @@ impl Model {
                     .draw_row_low_space()
                     .distribute_row_space()
                     .focus_node(focus_elem)
-                    .split(chunks_main);
+                    .split(chunk_main);
 
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::MusicDir), f, cells[0]);
                 self.app.view(
@@ -218,16 +232,13 @@ impl Model {
                     cells[15],
                 );
 
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
-
-                Self::view_config_editor_commons(f, &mut self.app);
+                Self::view_config_editor_popups(&mut self.app, f);
             })
             .expect("Expected to draw without error");
     }
 
     /// Draw common Popups while in the config editor
-    fn view_config_editor_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, UserEvent>) {
+    fn view_config_editor_popups(app: &mut Application<Id, Msg, UserEvent>, f: &mut Frame<'_>) {
         // -- popups
         if app.mounted(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup)) {
             let popup = draw_area_in_absolute(f.area(), 50, 3);
@@ -289,16 +300,11 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let [header, chunks_main, footer] = Layout::vertical([
-                    Constraint::Length(3), // config header
-                    Constraint::Min(3),
-                    Constraint::Length(1), // config footer
-                ])
-                .areas(f.area());
+                let chunk_main = Self::view_config_editor_common(&mut self.app, f);
 
                 let [left, right] =
                     Layout::horizontal([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)])
-                        .areas(chunks_main);
+                        .areas(chunk_main);
 
                 let library_height = sat_add! {
                     1u16, // label
@@ -467,12 +473,7 @@ impl Model {
                 .split(cells[5]);
 
                 self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
-
-                self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect), f, left);
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::LibraryLabel),
@@ -632,7 +633,7 @@ impl Model {
                     chunks_fallback[4],
                 );
 
-                Self::view_config_editor_commons(f, &mut self.app);
+                Self::view_config_editor_popups(&mut self.app, f);
             })
             .expect("Expected to draw without error");
     }
@@ -642,21 +643,11 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let [header, chunks_main, footer] = Layout::vertical([
-                    Constraint::Length(3), // config header
-                    Constraint::Min(3),
-                    Constraint::Length(1), // config footer
-                ])
-                .areas(f.area());
+                let chunk_main = Self::view_config_editor_common(&mut self.app, f);
 
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
+                KeyDisplay::new(KFGLOBAL_FOCUS_ORDER, 23 + 2).view(&mut self.app, chunk_main, f);
 
-                KeyDisplay::new(KFGLOBAL_FOCUS_ORDER, 23 + 2).view(&mut self.app, chunks_main, f);
-
-                Self::view_config_editor_commons(f, &mut self.app);
+                Self::view_config_editor_popups(&mut self.app, f);
             })
             .expect("Expected to draw without error");
     }
@@ -666,21 +657,11 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let [header, chunks_main, footer] = Layout::vertical([
-                    Constraint::Length(3), // config header
-                    Constraint::Min(3),
-                    Constraint::Length(1), // config footer
-                ])
-                .areas(f.area());
+                let chunk_main = Self::view_config_editor_common(&mut self.app, f);
 
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
+                KeyDisplay::new(KFOTHER_FOCUS_ORDER, 25 + 2).view(&mut self.app, chunk_main, f);
 
-                KeyDisplay::new(KFOTHER_FOCUS_ORDER, 25 + 2).view(&mut self.app, chunks_main, f);
-
-                Self::view_config_editor_commons(f, &mut self.app);
+                Self::view_config_editor_popups(&mut self.app, f);
             })
             .expect("Expected to draw without error");
     }
