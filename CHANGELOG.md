@@ -8,6 +8,7 @@
 - Change(tui): change config editor's theme preview elements to be in a dynamic grid.
 - Feat(tui): make the Config editor dynamically size elements.
 - Feat(tui): make the Config editor (at least rudementally) scrollable.
+- Fix(tui): allow usage of key `Home`/`Pos1` in search lists.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
 
 ### [V0.11.0]
