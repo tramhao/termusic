@@ -45,6 +45,11 @@ struct Controls {
     ///
     /// Automatically gets reset to `false` once cleared.
     stopped: AtomicBool,
+    /// Stores whether to not send any [`PlayerCmd::Eos`] events while stopping.
+    /// Requires `stopped` to be set too.
+    ///
+    /// Automatically gets reset to `false` once cleared.
+    stopped_no_eos: AtomicBool,
     /// Stores the speed to be applied.
     speed: Mutex<f32>,
     /// Stores how many sources should be skipped.
@@ -96,6 +101,7 @@ impl Sink {
                 pause: AtomicBool::new(false),
                 volume: Mutex::new(1.0),
                 stopped: AtomicBool::new(false),
+                stopped_no_eos: AtomicBool::new(false),
                 seek: Mutex::new(None),
                 speed: Mutex::new(1.0),
                 to_clear: Mutex::new(0),
@@ -122,6 +128,7 @@ impl Sink {
                 self.sleep_until_end();
             }
             self.controls.stopped.store(false, Ordering::SeqCst);
+            self.controls.stopped_no_eos.store(false, Ordering::SeqCst);
         }
 
         let controls = self.controls.clone();
@@ -180,17 +187,20 @@ impl Sink {
         let sound_count = self.sound_count.clone();
         let pcmd_tx = self.pcmd_tx.clone();
         let picmd_tx = self.picmd_tx.clone();
+        let controls = self.controls.clone();
         let source = source.cbdone(move || {
             // the original function of `rodio::source::Done`, but we want to do more than that
             sound_count.fetch_sub(1, Ordering::Relaxed);
 
-            // using ".is_err()" here as the only error that can come from this channel is "Channel Closed"
-            if pcmd_tx.send(PlayerCmd::Eos).is_err() {
-                // not high priority, may log this on graceful exit because stop and player loop exit are not waiting on each-other
-                debug!("Player Channel is closed");
-            }
-            if picmd_tx.send(PlayerInternalCmd::Eos).is_err() {
-                error!("Player Internal Channel is closed");
+            if !controls.stopped_no_eos.load(Ordering::SeqCst) {
+                // using ".is_err()" here as the only error that can come from this channel is "Channel Closed"
+                if pcmd_tx.send(PlayerCmd::Eos).is_err() {
+                    // not high priority, may log this on graceful exit because stop and player loop exit are not waiting on each-other
+                    debug!("Player Channel is closed");
+                }
+                if picmd_tx.send(PlayerInternalCmd::Eos).is_err() {
+                    error!("Player Internal Channel is closed");
+                }
             }
         });
 
@@ -306,6 +316,13 @@ impl Sink {
     #[inline]
     pub fn stop(&self) {
         self.controls.stopped.store(true, Ordering::SeqCst);
+    }
+
+    /// Stops the sink by emptying the queue. Without sending EOS
+    #[inline]
+    pub fn stop_no_eos(&self) {
+        self.controls.stopped_no_eos.store(true, Ordering::SeqCst);
+        self.stop();
     }
 
     /// Sleeps the current thread until the sound ends.

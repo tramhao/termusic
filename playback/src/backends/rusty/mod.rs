@@ -746,6 +746,14 @@ async fn queue_next(
     next_duration_opt: &mut Option<Duration>,
     media_title: &Arc<Mutex<String>>,
 ) -> Result<()> {
+    // clear out the sources when we dont "enqueue" as we want to directly play it
+    if !options.enqueue && !sink.is_empty() {
+        // dont have the source that are cleared-out send a EOS as that the player-trait does not know about those sources
+        // and assumes the one that is about to be added has finished.
+        sink.stop_no_eos();
+        // not waiting here as the sink automatically does that on ".append"
+    }
+
     match track.inner() {
         MediaTypes::Track(track_data) => {
             *is_radio = false;
