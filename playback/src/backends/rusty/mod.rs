@@ -9,7 +9,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use parking_lot::Mutex;
-use rodio::OutputStream;
+use rodio::OutputStreamBuilder;
 use rodio::Source;
 use std::num::{NonZeroU16, NonZeroUsize};
 use stream_download::http::{
@@ -342,12 +342,12 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
 
     if common_options.async_decode {
         let handle = tokio::runtime::Handle::current();
-        let (spec, current_frame_len) = decoder.get_spec();
+        let (spec, current_span_len) = decoder.get_spec();
         let total_duration = decoder.total_duration();
         let (prod, cons) = AsyncRingSource::new(
             spec,
             total_duration,
-            current_frame_len,
+            current_span_len,
             common_options.ringbuf_size,
             handle.clone(),
         );
@@ -401,7 +401,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
 
         let spec_len = decoder.get_spec();
         if decoder.decode_once().is_none() {
-            trace!("Sending EOS");
+            trace!("Sending decoder EOS");
             prod.new_eos().await.ok()?;
         }
         let new_spec = decoder.get_spec();
@@ -585,8 +585,9 @@ async fn player_thread(mut args: PlayerThreadArgs) {
     // option to store enqueued's duration
     // note that the current implementation is only meant to have 1 enqueued next after the current playing song
     let mut next_duration_opt = None;
-    let (_stream, handle) = OutputStream::try_default().unwrap();
-    let sink = Sink::try_new(&handle, args.picmd_tx.clone(), args.pcmd_tx.clone()).unwrap();
+    let stream = OutputStreamBuilder::open_default_stream().unwrap();
+    let handle = stream.mixer();
+    let sink = Sink::try_new(handle, args.picmd_tx.clone(), args.pcmd_tx.clone());
     sink.set_speed(args.speed_inside as f32 / 10.0);
     sink.set_volume(f32::from(args.volume_inside.load(Ordering::SeqCst)) / 100.0);
     loop {

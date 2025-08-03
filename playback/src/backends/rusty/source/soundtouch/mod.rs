@@ -82,7 +82,7 @@ impl<I> Source for SoundTouchSource<I>
 where
     I: Source<Item = f32>,
 {
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         Some(self.min_samples)
     }
 

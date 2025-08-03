@@ -66,8 +66,8 @@ impl<I> Source for CustomSpeed<I>
 where
     I: Source<Item = SampleType>,
 {
-    fn current_frame_len(&self) -> Option<usize> {
-        self.as_source().current_frame_len()
+    fn current_span_len(&self) -> Option<usize> {
+        self.as_source().current_span_len()
     }
 
     fn channels(&self) -> u16 {

@@ -68,7 +68,7 @@ impl RingMsgWrite2 {
     /// This function will only write anything if there is enough space in the input buffer.
     pub fn try_write_spec(
         spec: SignalSpec,
-        current_frame_len: usize,
+        current_span_len: usize,
         buf: &mut [u8],
     ) -> PResult<()> {
         let size = Self::get_msg_size(MessageSpec::MESSAGE_SIZE);
@@ -79,7 +79,7 @@ impl RingMsgWrite2 {
         let ((), written) = Self::write_id(RingMessages::Spec, buf).unwrap();
         let buf = &mut buf[written..];
 
-        let ((), _written) = MessageSpec::try_write_buf(spec, current_frame_len, buf).unwrap();
+        let ((), _written) = MessageSpec::try_write_buf(spec, current_span_len, buf).unwrap();
 
         Ok(((), size))
     }
@@ -124,7 +124,7 @@ pub type PResult<T> = Result<(T, usize), usize>;
 pub struct MessageSpecResult {
     pub rate: u32,
     pub channels: u16,
-    pub current_frame_len: usize,
+    pub current_span_len: usize,
 }
 
 /// Read (and Write) a [`RingMessages::Spec`].
@@ -148,28 +148,24 @@ impl MessageSpec {
         // read u16
         let channels: [u8; 2] = buf[4..=5].try_into().unwrap();
         // read usize
-        let current_frame_len: [u8; USIZE_LEN] = buf[6..6 + USIZE_LEN].try_into().unwrap();
+        let current_span_len: [u8; USIZE_LEN] = buf[6..6 + USIZE_LEN].try_into().unwrap();
 
         let rate = u32::from_ne_bytes(rate);
         let channels = u16::from_ne_bytes(channels);
-        let current_frame_len = usize::from_ne_bytes(current_frame_len);
+        let current_span_len = usize::from_ne_bytes(current_span_len);
 
         Ok((
             MessageSpecResult {
                 rate,
                 channels,
-                current_frame_len,
+                current_span_len,
             },
             Self::MESSAGE_SIZE,
         ))
     }
 
     /// Try to write a message to the given buffer, or return how many bytes are still necessary
-    pub fn try_write_buf(
-        spec: SignalSpec,
-        current_frame_len: usize,
-        buf: &mut [u8],
-    ) -> PResult<()> {
+    pub fn try_write_buf(spec: SignalSpec, current_span_len: usize, buf: &mut [u8]) -> PResult<()> {
         if buf.len() < Self::MESSAGE_SIZE {
             return Err(Self::MESSAGE_SIZE - buf.len());
         }
@@ -177,7 +173,7 @@ impl MessageSpec {
         (buf[..=3]).copy_from_slice(&spec.rate.to_ne_bytes());
         let channels_u16 = u16::try_from(spec.channels.count()).unwrap();
         (buf[4..=5]).copy_from_slice(&channels_u16.to_ne_bytes());
-        (buf[6..6 + USIZE_LEN]).copy_from_slice(&current_frame_len.to_ne_bytes());
+        (buf[6..6 + USIZE_LEN]).copy_from_slice(&current_span_len.to_ne_bytes());
 
         Ok(((), Self::MESSAGE_SIZE))
     }
@@ -359,7 +355,7 @@ mod tests {
                 MessageSpecResult {
                     rate: 44000,
                     channels: 2,
-                    current_frame_len: 10,
+                    current_span_len: 10,
                 }
             );
         }
@@ -390,7 +386,7 @@ mod tests {
                 MessageSpecResult {
                     rate: 44000,
                     channels: 2,
-                    current_frame_len: 10,
+                    current_span_len: 10,
                 }
             );
         }
