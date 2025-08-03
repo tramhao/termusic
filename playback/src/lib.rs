@@ -393,6 +393,11 @@ impl GeneralPlayer {
     /// Switch & Play the previous track in the playlist
     pub fn previous(&mut self) {
         let mut playlist = self.playlist.write();
+
+        // KNOWN ISSUE: in rusty backend, if something had been enqueued already (gapless / prefetch)
+        // and we skip now, it will still have the pre-enqueued source in it and play it first, de-syncing the playlist and player
+        // the only "good" fix would be to refactor the backend to conform to the behavior we expect: EOF on current track, but no EOF for pre-enqueued skip.
+
         playlist.previous();
         playlist.proceed_false();
         drop(playlist);

@@ -181,7 +181,7 @@ impl Sink {
         let pcmd_tx = self.pcmd_tx.clone();
         let picmd_tx = self.picmd_tx.clone();
         let source = source.cbdone(move || {
-            // the original function of `rodio::source::Done`, but we want to do more thant that
+            // the original function of `rodio::source::Done`, but we want to do more than that
             sound_count.fetch_sub(1, Ordering::Relaxed);
 
             // using ".is_err()" here as the only error that can come from this channel is "Channel Closed"
