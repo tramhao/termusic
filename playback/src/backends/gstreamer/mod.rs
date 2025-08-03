@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use anyhow::Result;
@@ -174,6 +174,7 @@ pub struct GStreamerBackend {
 }
 
 impl GStreamerBackend {
+    #[allow(clippy::too_many_lines)]
     pub fn new(config: &ServerOverlay, cmd_tx: crate::PlayerCmdSender) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let ctx = glib::MainContext::default();
@@ -189,11 +190,22 @@ impl GStreamerBackend {
 
         let eos_watcher_clone = eos_watcher.clone();
 
+        // store whether a "About to finish" message had already been sent, to only give one instead spamming
+        // but they need to be reset on many occasions, like seek or stream start
+        let send_atf_watcher: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+        let send_atf_watcher_clone = send_atf_watcher.clone();
+
         // Asynchronous channel to communicate internal events
         let (icmd_tx, icmd_rx) = mpsc::channel(3);
 
         tokio::spawn(async move {
-            Self::channel_proxy_task(icmd_rx, &cmd_tx, &eos_watcher_clone).await;
+            Self::channel_proxy_task(
+                icmd_rx,
+                &cmd_tx,
+                &eos_watcher_clone,
+                &send_atf_watcher_clone,
+            )
+            .await;
         });
 
         let playbin = Box::new(gst::ElementFactory::make("playbin3"))
@@ -262,6 +274,7 @@ impl GStreamerBackend {
                     &playbin_clone,
                     &main_tx_watcher,
                     &eos_watcher,
+                    &send_atf_watcher,
                     &media_title_internal,
                     &error_watcher,
                 )
@@ -312,6 +325,7 @@ impl GStreamerBackend {
         playbin: &PlaybinWrap,
         main_tx: &mpsc::Sender<PlayerInternalCmd>,
         eos_watcher: &Arc<AtomicBool>,
+        send_atf_watcher: &Arc<AtomicBool>,
         media_title: &Arc<Mutex<String>>,
         error_watcher: &Arc<Mutex<Option<String>>>,
     ) -> ControlFlow {
@@ -335,6 +349,7 @@ impl GStreamerBackend {
                         .expect("Unable to send message to main()");
                 }
 
+                send_atf_watcher.store(false, Ordering::SeqCst);
                 eos_watcher.store(false, std::sync::atomic::Ordering::SeqCst);
 
                 // clear stored title on stream start (should work without conflicting in ::Tag)
@@ -435,10 +450,12 @@ impl GStreamerBackend {
         mut main_rx: mpsc::Receiver<PlayerInternalCmd>,
         cmd_tx: &crate::PlayerCmdSender,
         eos_watcher: &Arc<AtomicBool>,
+        send_atf_watcher: &Arc<AtomicBool>,
     ) {
         while let Some(msg) = main_rx.recv().await {
             match msg {
                 PlayerInternalCmd::Eos => {
+                    send_atf_watcher.store(false, Ordering::Relaxed);
                     if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                         error!("error in sending Eos: {e}");
                     }
@@ -450,13 +467,16 @@ impl GStreamerBackend {
                 }
                 PlayerInternalCmd::AboutToFinish => {
                     info!("about to finish received by gstreamer internal");
-                    if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
-                        error!("error in sending AboutToFinish: {e}");
+                    if !send_atf_watcher.swap(true, Ordering::Relaxed) {
+                        if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
+                            error!("error in sending AboutToFinish: {e}");
+                        }
                     }
                 }
                 PlayerInternalCmd::SkipNext => {
                     // store it here, as there will be no EOS event send by gst
                     eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
+                    send_atf_watcher.store(false, Ordering::Relaxed);
                     if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                         error!("error in sending SkipNext: {e}");
                     }

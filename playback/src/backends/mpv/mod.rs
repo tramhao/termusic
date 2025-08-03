@@ -123,18 +123,21 @@ impl MpvBackend {
         ev_ctx
             .observe_property("media-title", Format::String, 2)
             .expect("failed to watch media-title");
+
+        let mut args = MpvEventArgs {
+            icmd_tx,
+            cmd_tx,
+            media_title,
+            position,
+            total_duration,
+            send_atf: false,
+        };
+
         loop {
             if let Some(ev) = ev_ctx.wait_event(0.0) {
                 match ev {
                     Ok(ev) => {
-                        Self::handle_mpv_event(
-                            ev,
-                            icmd_tx,
-                            cmd_tx,
-                            media_title,
-                            position,
-                            total_duration,
-                        );
+                        Self::handle_mpv_event(ev, &mut args);
                     }
                     Err(err) => {
                         error!("Event Error: {err:?}");
@@ -168,28 +171,26 @@ impl MpvBackend {
     }
 
     /// Handle a given [`Event`].
-    fn handle_mpv_event(
-        ev: Event<'_>,
-        icmd_tx: &Sender<PlayerInternalCmd>,
-        cmd_tx: &crate::PlayerCmdSender,
-        media_title: &Arc<Mutex<String>>,
-        position: &Arc<Mutex<Duration>>,
-        total_duration: &ArcTotalDuration,
-    ) {
+    fn handle_mpv_event(ev: Event<'_>, args: &mut MpvEventArgs<'_>) {
         match ev {
             Event::StartFile => {
                 // Reset times on the start of a file / stream
-                total_duration.lock().take();
-                *position.lock() = Duration::ZERO;
+                args.total_duration.lock().take();
+                *args.position.lock() = Duration::ZERO;
+                args.send_atf = false;
             }
             Event::EndFile(e) => {
                 // error!("event end file {:?} received", e);
                 if e == 0 {
-                    let _ = icmd_tx.send(PlayerInternalCmd::Eos);
+                    let _ = args.icmd_tx.send(PlayerInternalCmd::Eos);
                 }
 
                 // clear stored title on end
-                media_title.lock().clear();
+                args.media_title.lock().clear();
+                args.send_atf = false;
+            }
+            Event::Seek => {
+                args.send_atf = false;
             }
             Event::PropertyChange {
                 name,
@@ -199,23 +200,28 @@ impl MpvBackend {
                 "duration" => {
                     if let PropertyData::Double(dur) = change {
                         // using "dur.max" because mpv *may* return a negative number
-                        *total_duration.lock() = Some(Duration::from_secs_f64(dur.max(0.0)));
+                        *args.total_duration.lock() = Some(Duration::from_secs_f64(dur.max(0.0)));
                     }
                 }
                 "time-pos" => {
                     if let PropertyData::Double(time_pos) = change {
                         // using "dur.max" because mpv *may* return a negative number
                         let time_pos = Duration::from_secs_f64(time_pos.max(0.0));
-                        *position.lock() = time_pos;
+                        *args.position.lock() = time_pos;
 
-                        // About to finish signal is a simulation of gstreamer, and used for gapless
-                        if let Some(total_duration) = *total_duration.lock() {
-                            let progress = time_pos.as_secs_f64() / total_duration.as_secs_f64();
-                            if progress >= 0.5
-                                && total_duration.saturating_sub(time_pos) < Duration::from_secs(2)
-                            {
-                                if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
-                                    error!("command AboutToFinish sent failed: {e}");
+                        // Send a "About to Finish" signal to start pre-fetching / enqueue the next track
+                        if !args.send_atf {
+                            if let Some(total_duration) = *args.total_duration.lock() {
+                                let progress =
+                                    time_pos.as_secs_f64() / total_duration.as_secs_f64();
+                                if progress >= 0.5
+                                    && total_duration.saturating_sub(time_pos)
+                                        < Duration::from_secs(2)
+                                {
+                                    if let Err(e) = args.cmd_tx.send(PlayerCmd::AboutToFinish) {
+                                        error!("command AboutToFinish sent failed: {e}");
+                                    }
+                                    args.send_atf = true;
                                 }
                             }
                         }
@@ -223,7 +229,7 @@ impl MpvBackend {
                 }
                 "media-title" => {
                     if let PropertyData::Str(title) = change {
-                        *media_title.lock() = title.to_string();
+                        *args.media_title.lock() = title.to_string();
                     }
                 }
                 &_ => {
@@ -291,6 +297,19 @@ impl MpvBackend {
             }
         }
     }
+}
+
+struct MpvEventArgs<'a> {
+    icmd_tx: &'a Sender<PlayerInternalCmd>,
+    cmd_tx: &'a crate::PlayerCmdSender,
+    media_title: &'a Arc<Mutex<String>>,
+    position: &'a Arc<Mutex<Duration>>,
+    total_duration: &'a ArcTotalDuration,
+
+    /// Stores whether a "About to Finish" message had already been send, to not spam the message.
+    ///
+    /// This needs to be reset in many occasions like Seek and Stream Start.
+    send_atf: bool,
 }
 
 /// Format a duration in "SS.mm" format
