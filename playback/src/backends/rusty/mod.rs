@@ -585,6 +585,10 @@ async fn player_thread(mut args: PlayerThreadArgs) {
     // option to store enqueued's duration
     // note that the current implementation is only meant to have 1 enqueued next after the current playing song
     let mut next_duration_opt = None;
+    // Tracks whether a "About to Finish" message had already been send or not, to not spam the messages.
+    // This needs to be reset on many occasions like Seek or Stream Start.
+    let mut send_atf = false;
+
     let stream = OutputStreamBuilder::open_default_stream().unwrap();
     let handle = stream.mixer();
     let sink = Sink::try_new(handle, args.picmd_tx.clone(), args.pcmd_tx.clone());
@@ -657,8 +661,8 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                 // error!("position in rusty backend is: {}", position);
                 *args.position.lock() = new_position;
 
-                // About to finish signal is a simulation of gstreamer, and used for gapless
-                if !is_radio {
+                // Send a "About to Finish" signal to start pre-fetching / enqueue the next track
+                if !is_radio && !send_atf {
                     if let Some(d) = *args.total_duration.lock() {
                         let progress = new_position.as_secs_f64() / d.as_secs_f64();
                         if progress >= 0.5
@@ -667,15 +671,18 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                             if let Err(e) = args.pcmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("command AboutToFinish sent failed: {e}");
                             }
+                            send_atf = true;
                         }
                     }
                 }
             }
             PlayerInternalCmd::SeekAbsolute(position) => {
+                send_atf = false;
                 sink.seek(position);
             }
 
             PlayerInternalCmd::SeekRelative(offset) => {
+                send_atf = false;
                 let paused = sink.is_paused();
                 if paused {
                     sink.set_volume(0.0);
@@ -702,6 +709,7 @@ async fn player_thread(mut args: PlayerThreadArgs) {
             }
 
             PlayerInternalCmd::Eos => {
+                send_atf = false;
                 // replace the current total_duration with the next one
                 // this is only present when QueueNext was used; which is only used if gapless is enabled
                 if next_duration_opt.is_some() {
@@ -738,6 +746,14 @@ async fn queue_next(
     next_duration_opt: &mut Option<Duration>,
     media_title: &Arc<Mutex<String>>,
 ) -> Result<()> {
+    // clear out the sources when we dont "enqueue" as we want to directly play it
+    if !options.enqueue && !sink.is_empty() {
+        // dont have the source that are cleared-out send a EOS as that the player-trait does not know about those sources
+        // and assumes the one that is about to be added has finished.
+        sink.stop_no_eos();
+        // not waiting here as the sink automatically does that on ".append"
+    }
+
     match track.inner() {
         MediaTypes::Track(track_data) => {
             *is_radio = false;

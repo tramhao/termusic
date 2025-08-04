@@ -13,6 +13,7 @@
 - Fix(tui): allow usage of key `Home`/`Pos1` in search lists.
 - Fix(tui): allow usage of key `Home`/`Pos1` and `End` in youtube search list.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
+- Fix(server): on rusty backend, behave correctly when a next/previous occurs while a source is pre-fetched.
 - Fix: due to the Track database re-implementation, a bug where the database could grow with duplicated paths is fixed.
 
 ### [V0.11.0]

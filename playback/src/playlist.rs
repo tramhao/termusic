@@ -37,7 +37,9 @@ pub struct Playlist {
     tracks: Vec<Track>,
     /// Index into `tracks` of which the current playing track is
     current_track_index: usize,
-    /// Index into `tracks` for the next track to play after the current
+    /// Index into `tracks` for the next track to play after the current.
+    ///
+    /// Practically only used for pre-enqueue / pre-fetch / gapless.
     next_track_index: Option<usize>,
     /// The currently playing [`Track`]. Does not need to be in `tracks`
     current_track: Option<Track>,
@@ -424,6 +426,9 @@ impl Playlist {
     ///
     /// This uses `played_index` vec, if available, otherwise uses [`LoopMode`].
     pub fn previous(&mut self) {
+        // unset next track as we now want a previous track instead of the next enqueued
+        self.set_next_track(None);
+
         if !self.played_index.is_empty() {
             if let Some(index) = self.played_index.pop() {
                 self.current_track_index = index;
