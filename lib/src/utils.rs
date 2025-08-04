@@ -45,18 +45,18 @@ pub fn filetype_supported(path: &Path) -> bool {
 
     matches!(
         ext,
-        "mkv" 
-            | "mka" 
-            | "mp3" 
-            | "aiff" 
-            | "aif" 
-            | "aifc" 
-            | "flac" 
-            | "m4a" 
-            | "aac" 
-            | "opus" 
-            | "ogg" 
-            | "wav" 
+        "mkv"
+            | "mka"
+            | "mp3"
+            | "aiff"
+            | "aif"
+            | "aifc"
+            | "flac"
+            | "m4a"
+            | "aac"
+            | "opus"
+            | "ogg"
+            | "wav"
             | "webm"
     )
 }
