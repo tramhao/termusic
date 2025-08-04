@@ -79,155 +79,142 @@ macro_rules! to_boxed_slice {
     }
 }
 
+/// Chain `app.views` together without having to repeat ourselfs (DRY).
+///
+/// A macro here uses way less lines than manually writing each `app.view` call out by hand.
+///
+/// Equivalent to manually writing out `app.view($id, $f, $cell)` for each id and cell.
+macro_rules! app_view {
+    (
+        $app:expr, $f:expr,
+        $($id:expr => $cell:expr$(,)?)*
+    ) => {
+        $($app.view($id, $f, $cell);)*
+    }
+}
+
 impl Model {
     pub fn view_config_editor(&mut self) {
-        match self.config_editor.layout {
-            ConfigEditorLayout::General => self.view_config_editor_general(),
-            ConfigEditorLayout::Color => self.view_config_editor_color(),
-            ConfigEditorLayout::Key1 => self.view_config_editor_key1(),
-            ConfigEditorLayout::Key2 => self.view_config_editor_key2(),
-        }
-    }
-
-    /// Draw the keys for tab "General"
-    #[allow(clippy::too_many_lines)]
-    fn view_config_editor_general(&mut self) {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let [header, chunks_main, footer] = Layout::vertical([
-                    Constraint::Length(3), // config header
-                    Constraint::Min(3),
-                    Constraint::Length(1), // config footer
-                ])
-                .areas(f.area());
+                let chunk_main = Self::view_config_editor_common(&mut self.app, f);
 
-                let focus_elem = self
-                    .app
-                    .focus()
-                    .and_then(|v| {
-                        if let Id::ConfigEditor(id) = *v {
-                            Some(id)
-                        } else {
-                            None
-                        }
-                    })
-                    .and_then(|v| {
-                        Some(match v {
-                            IdConfigEditor::MusicDir => 0,
-                            IdConfigEditor::ExitConfirmation => 1,
-                            IdConfigEditor::PlaylistDisplaySymbol => 2,
-                            IdConfigEditor::PlaylistRandomTrack => 3,
-                            IdConfigEditor::PlaylistRandomAlbum => 4,
-                            IdConfigEditor::PodcastDir => 5,
-                            IdConfigEditor::PodcastSimulDownload => 6,
-                            IdConfigEditor::PodcastMaxRetries => 7,
-                            IdConfigEditor::AlbumPhotoAlign => 8,
-                            IdConfigEditor::SaveLastPosition => 9,
-                            IdConfigEditor::SeekStep => 10,
-                            IdConfigEditor::KillDamon => 11,
-                            IdConfigEditor::PlayerUseMpris => 12,
-                            IdConfigEditor::PlayerUseDiscord => 13,
-                            IdConfigEditor::PlayerPort => 14,
-                            IdConfigEditor::ExtraYtdlpArgs => 15,
-                            _ => return None,
-                        })
-                    });
+                match self.config_editor.layout {
+                    ConfigEditorLayout::General => {
+                        Self::view_config_editor_general(&mut self.app, f, chunk_main);
+                    }
+                    ConfigEditorLayout::Color => {
+                        Self::view_config_editor_color(&mut self.app, f, chunk_main);
+                    }
+                    ConfigEditorLayout::Key1 => {
+                        Self::view_config_editor_key1(&mut self.app, f, chunk_main);
+                    }
+                    ConfigEditorLayout::Key2 => {
+                        Self::view_config_editor_key2(&mut self.app, f, chunk_main);
+                    }
+                }
 
-                let cells = UniformDynamicGrid::new(16, 3, 56 + 2)
-                    .draw_row_low_space()
-                    .distribute_row_space()
-                    .focus_node(focus_elem)
-                    .split(chunks_main);
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::MusicDir), f, cells[0]);
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
-                    f,
-                    cells[1],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
-                    f,
-                    cells[2],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
-                    f,
-                    cells[3],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
-                    f,
-                    cells[4],
-                );
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::PodcastDir), f, cells[5]);
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
-                    f,
-                    cells[6],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
-                    f,
-                    cells[7],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
-                    f,
-                    cells[8],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
-                    f,
-                    cells[9],
-                );
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::SeekStep), f, cells[10]);
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::KillDamon), f, cells[11]);
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
-                    f,
-                    cells[12],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
-                    f,
-                    cells[13],
-                );
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::PlayerPort), f, cells[14]);
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs),
-                    f,
-                    cells[15],
-                );
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
-
-                Self::view_config_editor_commons(f, &mut self.app);
+                Self::view_config_editor_popups(&mut self.app, f);
             })
             .expect("Expected to draw without error");
     }
 
+    /// Split the frame area into header, main and footer,
+    /// also Draw the Header and footer and return the main area.
+    fn view_config_editor_common(
+        app: &mut Application<Id, Msg, UserEvent>,
+        f: &mut Frame<'_>,
+    ) -> Rect {
+        let [header, chunk_main, footer] = Layout::vertical([
+            Constraint::Length(3), // config header
+            Constraint::Min(3),
+            Constraint::Length(1), // config footer
+        ])
+        .areas(f.area());
+
+        app.view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
+
+        // draw before main chunk, to easily tell if something is overdrawing
+        app.view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
+
+        chunk_main
+    }
+
+    /// Draw the keys for tab "General"
+    fn view_config_editor_general(
+        app: &mut Application<Id, Msg, UserEvent>,
+        f: &mut Frame<'_>,
+        chunk_main: Rect,
+    ) {
+        let focus_elem = app
+            .focus()
+            .and_then(|v| {
+                if let Id::ConfigEditor(id) = *v {
+                    Some(id)
+                } else {
+                    None
+                }
+            })
+            .and_then(|v| {
+                Some(match v {
+                    IdConfigEditor::MusicDir => 0,
+                    IdConfigEditor::ExitConfirmation => 1,
+                    IdConfigEditor::PlaylistDisplaySymbol => 2,
+                    IdConfigEditor::PlaylistRandomTrack => 3,
+                    IdConfigEditor::PlaylistRandomAlbum => 4,
+                    IdConfigEditor::PodcastDir => 5,
+                    IdConfigEditor::PodcastSimulDownload => 6,
+                    IdConfigEditor::PodcastMaxRetries => 7,
+                    IdConfigEditor::AlbumPhotoAlign => 8,
+                    IdConfigEditor::SaveLastPosition => 9,
+                    IdConfigEditor::SeekStep => 10,
+                    IdConfigEditor::KillDamon => 11,
+                    IdConfigEditor::PlayerUseMpris => 12,
+                    IdConfigEditor::PlayerUseDiscord => 13,
+                    IdConfigEditor::PlayerPort => 14,
+                    IdConfigEditor::ExtraYtdlpArgs => 15,
+                    _ => return None,
+                })
+            });
+
+        let cells = UniformDynamicGrid::new(16, 3, 56 + 2)
+            .draw_row_low_space()
+            .distribute_row_space()
+            .focus_node(focus_elem)
+            .split(chunk_main);
+
+        app_view! {
+            app, f,
+
+            &Id::ConfigEditor(IdConfigEditor::MusicDir) => cells[0],
+            &Id::ConfigEditor(IdConfigEditor::ExitConfirmation) => cells[1],
+
+            &Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol) => cells[2],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack) => cells[3],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum) => cells[4],
+
+            &Id::ConfigEditor(IdConfigEditor::PodcastDir) => cells[5],
+            &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload) => cells[6],
+            &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries) => cells[7],
+
+            &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign) => cells[8],
+
+            &Id::ConfigEditor(IdConfigEditor::SaveLastPosition) => cells[9],
+            &Id::ConfigEditor(IdConfigEditor::SeekStep) => cells[10],
+
+            &Id::ConfigEditor(IdConfigEditor::KillDamon) => cells[11],
+
+            &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris) => cells[12],
+            &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord) => cells[13],
+            &Id::ConfigEditor(IdConfigEditor::PlayerPort) => cells[14],
+
+            &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs) => cells[15],
+        }
+    }
+
     /// Draw common Popups while in the config editor
-    fn view_config_editor_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, UserEvent>) {
+    fn view_config_editor_popups(app: &mut Application<Id, Msg, UserEvent>, f: &mut Frame<'_>) {
         // -- popups
         if app.mounted(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup)) {
             let popup = draw_area_in_absolute(f.area(), 50, 3);
@@ -243,13 +230,17 @@ impl Model {
 
     /// Draw the keys for tab "Themes and Colors"
     #[allow(clippy::too_many_lines)]
-    fn view_config_editor_color(&mut self) {
+    fn view_config_editor_color(
+        app: &mut Application<Id, Msg, UserEvent>,
+        f: &mut Frame<'_>,
+        chunk_main: Rect,
+    ) {
         /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
         ///
         /// Macro to apply "DRY"(Dont-Repeat-Yourself) to reduce function length.
         macro_rules! is_expanded {
             ($id:expr, $yes:expr, $no:expr) => {
-                match self.app.state(&Id::ConfigEditor($id)) {
+                match app.state(&Id::ConfigEditor($id)) {
                     Ok(State::One(_)) => $no,
                     _ => $yes,
                 }
@@ -286,403 +277,235 @@ impl Model {
         let fallback_border_len: u16 = is_expanded!(IdConfigEditor::FallbackBorder, 8, 3);
         let fallback_highlight_len: u16 = is_expanded!(IdConfigEditor::FallbackHighlight, 8, 3);
 
-        self.terminal
-            .raw_mut()
-            .draw(|f| {
-                let [header, chunks_main, footer] = Layout::vertical([
-                    Constraint::Length(3), // config header
-                    Constraint::Min(3),
-                    Constraint::Length(1), // config footer
-                ])
-                .areas(f.area());
+        let [left, right] = Layout::horizontal([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)])
+            .areas(chunk_main);
 
-                let [left, right] =
-                    Layout::horizontal([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)])
-                        .areas(chunks_main);
+        let library_height = sat_add! {
+            1u16, // label
+            library_foreground_len,
+            library_background_len,
+            library_border_len,
+            library_highlight_len,
+            3u16, // highlight symbol
+        };
+        let playlist_height = sat_add! {
+            1u16, // label
+            playlist_foreground_len,
+            playlist_background_len,
+            playlist_border_len,
+            playlist_highlight_len,
+            3u16, // highlight symbol
+            3u16, // current track symbol,
+        };
+        let progress_height = sat_add! {
+            1u16, // label
+            progress_foreground_len,
+            progress_background_len,
+            progress_border_len
+        };
+        let lyric_height = sat_add! {
+            1u16, // label
+            lyric_foreground_len,
+            lyric_background_len,
+            lyric_border_len
+        };
+        let important_popup_height = sat_add! {
+            1u16, // label
+            important_popup_foreground_len,
+            important_popup_background_len,
+            important_popup_border_len
+        };
+        let fallback_height = sat_add! {
+            1u16, // label
+            fallback_foreground_len,
+            fallback_background_len,
+            fallback_border_len,
+            fallback_highlight_len
+        };
 
-                let library_height = sat_add! {
-                    1u16, // label
-                    library_foreground_len,
-                    library_background_len,
-                    library_border_len,
-                    library_highlight_len,
-                    3u16, // highlight symbol
-                };
-                let playlist_height = sat_add! {
-                    1u16, // label
-                    playlist_foreground_len,
-                    playlist_background_len,
-                    playlist_border_len,
-                    playlist_highlight_len,
-                    3u16, // highlight symbol
-                    3u16, // current track symbol,
-                };
-                let progress_height = sat_add! {
-                    1u16, // label
-                    progress_foreground_len,
-                    progress_background_len,
-                    progress_border_len
-                };
-                let lyric_height = sat_add! {
-                    1u16, // label
-                    lyric_foreground_len,
-                    lyric_background_len,
-                    lyric_border_len
-                };
-                let important_popup_height = sat_add! {
-                    1u16, // label
-                    important_popup_foreground_len,
-                    important_popup_background_len,
-                    important_popup_border_len
-                };
-                let fallback_height = sat_add! {
-                    1u16, // label
-                    fallback_foreground_len,
-                    fallback_background_len,
-                    fallback_border_len,
-                    fallback_highlight_len
-                };
+        // NOTE: the elements below have to be in the order they are draw and blurred(focused) in:
+        let elem_height = to_boxed_slice! {
+            library_height,
+            playlist_height,
+            progress_height,
+            lyric_height,
+            important_popup_height,
+            fallback_height,
+        };
 
-                // NOTE: the elements below have to be in the order they are draw and blurred(focused) in:
-                let elem_height = to_boxed_slice! {
-                    library_height,
-                    playlist_height,
-                    progress_height,
-                    lyric_height,
-                    important_popup_height,
-                    fallback_height,
-                };
-
-                let focus_elem = self
-                    .app
-                    .focus()
-                    .and_then(|v| {
-                        if let Id::ConfigEditor(id) = *v {
-                            Some(id)
-                        } else {
-                            None
-                        }
-                    })
-                    .and_then(|v| {
-                        Some(match v {
-                            IdConfigEditor::LibraryLabel
-                            | IdConfigEditor::LibraryForeground
-                            | IdConfigEditor::LibraryBackground
-                            | IdConfigEditor::LibraryBorder
-                            | IdConfigEditor::LibraryHighlight
-                            | IdConfigEditor::LibraryHighlightSymbol => 0,
-                            IdConfigEditor::PlaylistLabel
-                            | IdConfigEditor::PlaylistForeground
-                            | IdConfigEditor::PlaylistBackground
-                            | IdConfigEditor::PlaylistBorder
-                            | IdConfigEditor::PlaylistHighlight
-                            | IdConfigEditor::PlaylistHighlightSymbol
-                            | IdConfigEditor::CurrentlyPlayingTrackSymbol => 1,
-                            IdConfigEditor::ProgressLabel
-                            | IdConfigEditor::ProgressForeground
-                            | IdConfigEditor::ProgressBackground
-                            | IdConfigEditor::ProgressBorder => 2,
-                            IdConfigEditor::LyricLabel
-                            | IdConfigEditor::LyricForeground
-                            | IdConfigEditor::LyricBackground
-                            | IdConfigEditor::LyricBorder => 3,
-                            IdConfigEditor::ImportantPopupLabel
-                            | IdConfigEditor::ImportantPopupForeground
-                            | IdConfigEditor::ImportantPopupBackground
-                            | IdConfigEditor::ImportantPopupBorder => 4,
-                            IdConfigEditor::FallbackLabel
-                            | IdConfigEditor::FallbackForeground
-                            | IdConfigEditor::FallbackBackground
-                            | IdConfigEditor::FallbackBorder
-                            | IdConfigEditor::FallbackHighlight => 5,
-                            _ => return None,
-                        })
-                    });
-
-                let cells = DynamicHeightGrid::new(elem_height, 16 + 2)
-                    .with_row_spacing(1)
-                    .draw_row_low_space()
-                    .distribute_row_space()
-                    .focus_node(focus_elem)
-                    .split(right);
-
-                let chunks_library = Layout::vertical([
-                    Constraint::Length(1),
-                    Constraint::Length(library_foreground_len),
-                    Constraint::Length(library_background_len),
-                    Constraint::Length(library_border_len),
-                    Constraint::Length(library_highlight_len),
-                    Constraint::Length(3),
-                    Constraint::Min(0),
-                ])
-                .split(cells[0]);
-
-                let chunks_playlist = Layout::vertical([
-                    Constraint::Length(1),
-                    Constraint::Length(playlist_foreground_len),
-                    Constraint::Length(playlist_background_len),
-                    Constraint::Length(playlist_border_len),
-                    Constraint::Length(playlist_highlight_len),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Min(0),
-                ])
-                .split(cells[1]);
-
-                let chunks_progress = Layout::vertical([
-                    Constraint::Length(1),
-                    Constraint::Length(progress_foreground_len),
-                    Constraint::Length(progress_background_len),
-                    Constraint::Length(progress_border_len),
-                    Constraint::Min(0),
-                ])
-                .split(cells[2]);
-
-                let chunks_lyric = Layout::vertical([
-                    Constraint::Length(1),
-                    Constraint::Length(lyric_foreground_len),
-                    Constraint::Length(lyric_background_len),
-                    Constraint::Length(lyric_border_len),
-                    Constraint::Min(0),
-                ])
-                .split(cells[3]);
-
-                let chunks_important_popup = Layout::vertical([
-                    Constraint::Length(1),
-                    Constraint::Length(important_popup_foreground_len),
-                    Constraint::Length(important_popup_background_len),
-                    Constraint::Length(important_popup_border_len),
-                    Constraint::Min(0),
-                ])
-                .split(cells[4]);
-
-                let chunks_fallback = Layout::vertical([
-                    Constraint::Length(1),
-                    Constraint::Length(fallback_foreground_len),
-                    Constraint::Length(fallback_background_len),
-                    Constraint::Length(fallback_border_len),
-                    Constraint::Length(fallback_highlight_len),
-                    Constraint::Min(0),
-                ])
-                .split(cells[5]);
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect), f, left);
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LibraryLabel),
-                    f,
-                    chunks_library[0],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LibraryForeground),
-                    f,
-                    chunks_library[1],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LibraryBackground),
-                    f,
-                    chunks_library[2],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LibraryBorder),
-                    f,
-                    chunks_library[3],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
-                    f,
-                    chunks_library[4],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
-                    f,
-                    chunks_library[5],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
-                    f,
-                    chunks_playlist[0],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistForeground),
-                    f,
-                    chunks_playlist[1],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistBackground),
-                    f,
-                    chunks_playlist[2],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistBorder),
-                    f,
-                    chunks_playlist[3],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistHighlight),
-                    f,
-                    chunks_playlist[4],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
-                    f,
-                    chunks_playlist[5],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
-                    f,
-                    chunks_playlist[6],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ProgressLabel),
-                    f,
-                    chunks_progress[0],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ProgressForeground),
-                    f,
-                    chunks_progress[1],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ProgressBackground),
-                    f,
-                    chunks_progress[2],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ProgressBorder),
-                    f,
-                    chunks_progress[3],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LyricLabel),
-                    f,
-                    chunks_lyric[0],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LyricForeground),
-                    f,
-                    chunks_lyric[1],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LyricBackground),
-                    f,
-                    chunks_lyric[2],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::LyricBorder),
-                    f,
-                    chunks_lyric[3],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel),
-                    f,
-                    chunks_important_popup[0],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground),
-                    f,
-                    chunks_important_popup[1],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground),
-                    f,
-                    chunks_important_popup[2],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder),
-                    f,
-                    chunks_important_popup[3],
-                );
-
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::FallbackLabel),
-                    f,
-                    chunks_fallback[0],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::FallbackForeground),
-                    f,
-                    chunks_fallback[1],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::FallbackBackground),
-                    f,
-                    chunks_fallback[2],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::FallbackBorder),
-                    f,
-                    chunks_fallback[3],
-                );
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::FallbackHighlight),
-                    f,
-                    chunks_fallback[4],
-                );
-
-                Self::view_config_editor_commons(f, &mut self.app);
+        let focus_elem = app
+            .focus()
+            .and_then(|v| {
+                if let Id::ConfigEditor(id) = *v {
+                    Some(id)
+                } else {
+                    None
+                }
             })
-            .expect("Expected to draw without error");
+            .and_then(|v| {
+                Some(match v {
+                    IdConfigEditor::LibraryLabel
+                    | IdConfigEditor::LibraryForeground
+                    | IdConfigEditor::LibraryBackground
+                    | IdConfigEditor::LibraryBorder
+                    | IdConfigEditor::LibraryHighlight
+                    | IdConfigEditor::LibraryHighlightSymbol => 0,
+                    IdConfigEditor::PlaylistLabel
+                    | IdConfigEditor::PlaylistForeground
+                    | IdConfigEditor::PlaylistBackground
+                    | IdConfigEditor::PlaylistBorder
+                    | IdConfigEditor::PlaylistHighlight
+                    | IdConfigEditor::PlaylistHighlightSymbol
+                    | IdConfigEditor::CurrentlyPlayingTrackSymbol => 1,
+                    IdConfigEditor::ProgressLabel
+                    | IdConfigEditor::ProgressForeground
+                    | IdConfigEditor::ProgressBackground
+                    | IdConfigEditor::ProgressBorder => 2,
+                    IdConfigEditor::LyricLabel
+                    | IdConfigEditor::LyricForeground
+                    | IdConfigEditor::LyricBackground
+                    | IdConfigEditor::LyricBorder => 3,
+                    IdConfigEditor::ImportantPopupLabel
+                    | IdConfigEditor::ImportantPopupForeground
+                    | IdConfigEditor::ImportantPopupBackground
+                    | IdConfigEditor::ImportantPopupBorder => 4,
+                    IdConfigEditor::FallbackLabel
+                    | IdConfigEditor::FallbackForeground
+                    | IdConfigEditor::FallbackBackground
+                    | IdConfigEditor::FallbackBorder
+                    | IdConfigEditor::FallbackHighlight => 5,
+                    _ => return None,
+                })
+            });
+
+        let cells = DynamicHeightGrid::new(elem_height, 16 + 2)
+            .with_row_spacing(1)
+            .draw_row_low_space()
+            .distribute_row_space()
+            .focus_node(focus_elem)
+            .split(right);
+
+        let chunks_library = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Length(library_foreground_len),
+            Constraint::Length(library_background_len),
+            Constraint::Length(library_border_len),
+            Constraint::Length(library_highlight_len),
+            Constraint::Length(3),
+            Constraint::Min(0),
+        ])
+        .split(cells[0]);
+
+        let chunks_playlist = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Length(playlist_foreground_len),
+            Constraint::Length(playlist_background_len),
+            Constraint::Length(playlist_border_len),
+            Constraint::Length(playlist_highlight_len),
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Min(0),
+        ])
+        .split(cells[1]);
+
+        let chunks_progress = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Length(progress_foreground_len),
+            Constraint::Length(progress_background_len),
+            Constraint::Length(progress_border_len),
+            Constraint::Min(0),
+        ])
+        .split(cells[2]);
+
+        let chunks_lyric = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Length(lyric_foreground_len),
+            Constraint::Length(lyric_background_len),
+            Constraint::Length(lyric_border_len),
+            Constraint::Min(0),
+        ])
+        .split(cells[3]);
+
+        let chunks_important_popup = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Length(important_popup_foreground_len),
+            Constraint::Length(important_popup_background_len),
+            Constraint::Length(important_popup_border_len),
+            Constraint::Min(0),
+        ])
+        .split(cells[4]);
+
+        let chunks_fallback = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Length(fallback_foreground_len),
+            Constraint::Length(fallback_background_len),
+            Constraint::Length(fallback_border_len),
+            Constraint::Length(fallback_highlight_len),
+            Constraint::Min(0),
+        ])
+        .split(cells[5]);
+
+        app_view! {
+            app, f,
+
+            &Id::ConfigEditor(IdConfigEditor::CEThemeSelect) => left,
+
+            &Id::ConfigEditor(IdConfigEditor::LibraryLabel) => chunks_library[0],
+            &Id::ConfigEditor(IdConfigEditor::LibraryForeground) => chunks_library[1],
+            &Id::ConfigEditor(IdConfigEditor::LibraryBackground) => chunks_library[2],
+            &Id::ConfigEditor(IdConfigEditor::LibraryBorder) => chunks_library[3],
+            &Id::ConfigEditor(IdConfigEditor::LibraryHighlight) => chunks_library[4],
+            &Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol) => chunks_library[5],
+
+            &Id::ConfigEditor(IdConfigEditor::PlaylistLabel) => chunks_playlist[0],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistForeground) => chunks_playlist[1],
+
+            &Id::ConfigEditor(IdConfigEditor::PlaylistBackground) => chunks_playlist[2],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistBorder) => chunks_playlist[3],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlight) => chunks_playlist[4],
+            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol) => chunks_playlist[5],
+            &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol) => chunks_playlist[6],
+
+            &Id::ConfigEditor(IdConfigEditor::ProgressLabel) => chunks_progress[0],
+            &Id::ConfigEditor(IdConfigEditor::ProgressForeground) => chunks_progress[1],
+
+            &Id::ConfigEditor(IdConfigEditor::ProgressBackground) => chunks_progress[2],
+            &Id::ConfigEditor(IdConfigEditor::ProgressBorder) => chunks_progress[3],
+
+            &Id::ConfigEditor(IdConfigEditor::LyricLabel) => chunks_lyric[0],
+            &Id::ConfigEditor(IdConfigEditor::LyricForeground) => chunks_lyric[1],
+            &Id::ConfigEditor(IdConfigEditor::LyricBackground) => chunks_lyric[2],
+            &Id::ConfigEditor(IdConfigEditor::LyricBorder) => chunks_lyric[3],
+
+            &Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel) => chunks_important_popup[0],
+            &Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground) => chunks_important_popup[1],
+            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground) => chunks_important_popup[2],
+            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder) => chunks_important_popup[3],
+
+            &Id::ConfigEditor(IdConfigEditor::FallbackLabel) => chunks_fallback[0],
+            &Id::ConfigEditor(IdConfigEditor::FallbackForeground) => chunks_fallback[1],
+            &Id::ConfigEditor(IdConfigEditor::FallbackBackground) => chunks_fallback[2],
+            &Id::ConfigEditor(IdConfigEditor::FallbackBorder) => chunks_fallback[3],
+            &Id::ConfigEditor(IdConfigEditor::FallbackHighlight) => chunks_fallback[4],
+        }
     }
 
     /// Draw the keys for tab "Key Global"
-    fn view_config_editor_key1(&mut self) {
-        self.terminal
-            .raw_mut()
-            .draw(|f| {
-                let [header, chunks_main, footer] = Layout::vertical([
-                    Constraint::Length(3), // config header
-                    Constraint::Min(3),
-                    Constraint::Length(1), // config footer
-                ])
-                .areas(f.area());
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
-
-                KeyDisplay::new(KFGLOBAL_FOCUS_ORDER, 23 + 2).view(&mut self.app, chunks_main, f);
-
-                Self::view_config_editor_commons(f, &mut self.app);
-            })
-            .expect("Expected to draw without error");
+    fn view_config_editor_key1(
+        app: &mut Application<Id, Msg, UserEvent>,
+        f: &mut Frame<'_>,
+        chunk_main: Rect,
+    ) {
+        KeyDisplay::new(KFGLOBAL_FOCUS_ORDER, 23 + 2).view(app, chunk_main, f);
     }
 
     /// Draw the keys for tab "Key Other"
-    fn view_config_editor_key2(&mut self) {
-        self.terminal
-            .raw_mut()
-            .draw(|f| {
-                let [header, chunks_main, footer] = Layout::vertical([
-                    Constraint::Length(3), // config header
-                    Constraint::Min(3),
-                    Constraint::Length(1), // config footer
-                ])
-                .areas(f.area());
-
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
-                self.app
-                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);
-
-                KeyDisplay::new(KFOTHER_FOCUS_ORDER, 25 + 2).view(&mut self.app, chunks_main, f);
-
-                Self::view_config_editor_commons(f, &mut self.app);
-            })
-            .expect("Expected to draw without error");
+    fn view_config_editor_key2(
+        app: &mut Application<Id, Msg, UserEvent>,
+        f: &mut Frame<'_>,
+        chunk_main: Rect,
+    ) {
+        KeyDisplay::new(KFOTHER_FOCUS_ORDER, 25 + 2).view(app, chunk_main, f);
     }
 
     pub fn mount_config_editor(&mut self) {
