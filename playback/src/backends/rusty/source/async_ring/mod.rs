@@ -72,7 +72,7 @@ impl AsyncRingSourceProvider {
     pub async fn new_spec(
         &mut self,
         spec: SignalSpec,
-        current_frame_len: usize,
+        current_span_len: usize,
     ) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
         // SAFETY: we allocaed the exact necessary size, this can never fail
@@ -80,7 +80,7 @@ impl AsyncRingSourceProvider {
         //     clippy::missing_panics_doc,
         //     reason = "static buffer with exact size required created above"
         // )]
-        let _ = RingMsgWrite2::try_write_spec(spec, current_frame_len, &mut msg_buf).unwrap();
+        let _ = RingMsgWrite2::try_write_spec(spec, current_span_len, &mut msg_buf).unwrap();
 
         self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
 
@@ -197,13 +197,13 @@ impl AsyncRingSourceProvider {
     pub async fn process_seek(
         &mut self,
         spec: SignalSpec,
-        current_frame_len: usize,
+        current_span_len: usize,
         cb: oneshot::Sender<usize>,
     ) {
         self.data.take();
         let bytes_to_skip = self.inner.occupied_len();
         let _ = cb.send(bytes_to_skip);
-        let _ = self.new_spec(spec, current_frame_len).await;
+        let _ = self.new_spec(spec, current_span_len).await;
     }
 }
 
@@ -241,7 +241,7 @@ pub struct AsyncRingSource {
     channels: u16,
     rate: u32,
     /// Always above 0, unless EOS had been reached.
-    current_frame_len: usize,
+    current_span_len: usize,
     total_duration: Option<Duration>,
 }
 
@@ -255,7 +255,7 @@ impl AsyncRingSource {
     pub fn new(
         spec: SignalSpec,
         total_duration: Option<Duration>,
-        current_frame_len: usize,
+        current_span_len: usize,
         size: usize,
         handle: Handle,
     ) -> (AsyncRingSourceProvider, Self) {
@@ -274,7 +274,7 @@ impl AsyncRingSource {
                 .expect("Channel size to be within u16::MAX"),
             rate: spec.rate,
             total_duration,
-            current_frame_len,
+            current_span_len,
             last_msg: None,
             buf: StaticBuf::new(),
             handle,
@@ -439,8 +439,8 @@ impl AsyncRingSource {
 
 impl Source for AsyncRingSource {
     #[inline]
-    fn current_frame_len(&self) -> Option<usize> {
-        Some(self.current_frame_len)
+    fn current_span_len(&self) -> Option<usize> {
+        Some(self.current_span_len)
     }
 
     #[inline]
@@ -492,7 +492,7 @@ impl Iterator for AsyncRingSource {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_frame_len == 0 {
+        if self.current_span_len == 0 {
             return None;
         }
 
@@ -518,9 +518,9 @@ impl Iterator for AsyncRingSource {
                 RingMsgParse2::Eos => {
                     trace!("Reached EOS message");
                     let _ = self.seek_tx.take();
-                    // this indicates to rodio via Source::current_frame_len that there is no more data
+                    // this indicates to rodio via Source::current_span_len that there is no more data
                     // and we also use it to uphold the contract with FusedIterator.
-                    self.current_frame_len = 0;
+                    self.current_span_len = 0;
                     return None;
                 }
             }

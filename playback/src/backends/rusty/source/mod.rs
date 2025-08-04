@@ -1,7 +1,7 @@
 //! Custom rodio sources and extension trait
 
 pub use custom_speed::SpecificType;
-use rodio::{Sample, Source};
+use rodio::Source;
 
 #[cfg(feature = "rusty-soundtouch")]
 pub mod soundtouch;
@@ -16,10 +16,7 @@ pub type SampleType = f32;
 /// Extension trait for [`Source`] for additional custom modifiers
 #[allow(clippy::module_name_repetitions)]
 #[allow(dead_code)] // currently only used for "rusty-soundtouch"
-pub trait SourceExt: Source
-where
-    Self::Item: Sample,
-{
+pub trait SourceExt: Source {
     /// A custom [`Source`] implementation to abstract away which speed module gets chosen.
     fn custom_speed(
         self,
@@ -44,7 +41,6 @@ where
 
 impl<T> SourceExt for T
 where
-    Self::Item: Sample,
     T: Iterator,
     T: Source,
 {

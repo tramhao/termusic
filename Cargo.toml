@@ -96,7 +96,7 @@ symphonia = { version = "0.5.1", features = [
     "wav",
     "aiff"
 ] }
-rodio = { version = "0.20", default-features = false }
+rodio = { version = "0.21", default-features = false, features = ["playback"]}
 sysinfo = { version = "^0.35", default-features = false, features = ["system"] }
 textwrap = "0.16.2"
 tokio = { version = "1.45", features = ["sync", "macros", "rt","rt-multi-thread"] }

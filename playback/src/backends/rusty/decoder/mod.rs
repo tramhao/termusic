@@ -271,7 +271,7 @@ impl Symphonia {
 
     /// Get the current spec plus frame length.
     pub fn get_spec(&self) -> (SignalSpec, usize) {
-        (self.spec, self.current_frame_len().unwrap())
+        (self.spec, self.current_span_len().unwrap())
     }
 
     /// Get the current buffer interpreted as u8(bytes) in native encoding.
@@ -297,7 +297,7 @@ impl Symphonia {
 
 impl Source for Symphonia {
     #[inline]
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         Some(self.buffer.samples().len())
     }
 

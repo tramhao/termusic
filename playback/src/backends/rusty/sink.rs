@@ -6,7 +6,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::time::Duration;
 
 use parking_lot::{Mutex, RwLock};
-use rodio::{OutputStreamHandle, PlayError};
+use rodio::mixer::Mixer;
 use rodio::{Source, queue};
 
 use super::PlayerInternalCmd;
@@ -20,7 +20,7 @@ use crate::PlayerCmd;
 /// playing.
 pub struct Sink {
     /// The queue that the sources are added onto
-    queue_tx: Arc<queue::SourcesQueueInput<f32>>,
+    queue_tx: Arc<queue::SourcesQueueInput>,
     /// Stores the last added source's [`Receiver`] End-of-Stream oneshot channel.
     sleep_until_end: Mutex<Option<Receiver<()>>>,
 
@@ -72,13 +72,13 @@ impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
     pub fn try_new(
-        stream: &OutputStreamHandle,
+        mixer: &Mixer,
         picmd_tx: Sender<PlayerInternalCmd>,
         pcmd_tx: crate::PlayerCmdSender,
-    ) -> Result<Self, PlayError> {
+    ) -> Self {
         let (sink, queue_rx) = Self::new_idle(picmd_tx, pcmd_tx);
-        stream.play_raw(queue_rx)?;
-        Ok(sink)
+        mixer.add(queue_rx);
+        sink
     }
 
     /// Builds a new `Sink`.
@@ -86,7 +86,7 @@ impl Sink {
     pub fn new_idle(
         picmd_tx: Sender<PlayerInternalCmd>,
         pcmd_tx: crate::PlayerCmdSender,
-    ) -> (Self, queue::SourcesQueueOutput<f32>) {
+    ) -> (Self, queue::SourcesQueueOutput) {
         let (queue_tx, queue_rx) = queue::queue(true);
 
         let sink = Sink {
