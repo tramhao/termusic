@@ -616,10 +616,6 @@ impl Display for DurationFmtShort {
     }
 }
 
-/// The default and most common separators used for artists.
-pub const DEFAULT_ARTIST_SEPARATORS: &[&str] =
-    &[",", ";", "&", "ft.", "feat.", "/", "|", "×", "、", " x "];
-
 /// See [`TrackMetadata`] for explanation of values.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[allow(clippy::struct_excessive_bools)] // configuration, this is not a state machine
@@ -780,6 +776,8 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetad
             .map(ToString::to_string);
     }
     if options.album_artists {
+        // TODO: manually split if convenient tag is not available
+
         // manual implementation as it currently does not exist upstream
         // see https://github.com/Serial-ATA/lofty-rs/issues/522
         // res.album_artists = Some(tag.get_strings(&ItemKey::AlbumArtists).map(ToString::to_string).collect());

@@ -5,12 +5,13 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
+use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
 use termusiclib::ids::Id;
-use termusiclib::library_db::TrackDB;
-use termusiclib::library_db::{DataBase, SearchCriteria};
+use termusiclib::new_database::Database;
+use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::{PlaylistTracks, RunningStatus};
 use termusiclib::podcast::{Podcast, PodcastFeed, db::Database as DBPod};
@@ -18,7 +19,7 @@ use termusiclib::songtag::SongTag;
 use termusiclib::songtag::lrc::Lyric;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::track::{LyricData, MediaTypesSimple, Track};
-use termusiclib::types::{Msg, YoutubeOptions};
+use termusiclib::types::{Msg, SearchCriteria, YoutubeOptions};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;
@@ -75,7 +76,7 @@ pub struct DatabaseWidgetData {
     /// Criteria Search results `(criteria -> this)`
     pub search_results: Vec<String>,
     /// Results of the critea results search `(criteria -> search_results -> this)`
-    pub search_tracks: Vec<TrackDB>,
+    pub search_tracks: Vec<TrackRead>,
 }
 
 impl DatabaseWidgetData {
@@ -298,7 +299,7 @@ pub struct Model {
 
     pub config_tui: SharedTuiSettings,
     pub config_server: SharedServerSettings,
-    pub db: DataBase,
+    pub db: Database,
 
     pub layout: TermusicLayout,
     pub library: MusicLibraryData,
@@ -372,7 +373,7 @@ impl Model {
 
         info!("Using viuer protocol {viuer_supported:#?}");
 
-        let db = DataBase::new(&config_server.read()).expect("Open Library Database");
+        let db = Database::new_default_path().expect("Open Library Database");
         let db_criteria = SearchCriteria::Artist;
         let terminal = TerminalBridge::new_crossterm().expect("Could not initialize terminal");
 
@@ -415,7 +416,7 @@ impl Model {
             tx_to_main.clone(),
             download_tracker.clone(),
             &path,
-            config_server.read().get_library_scan_depth(),
+            ScanDepth::Limited(2),
             None,
         );
 
@@ -501,7 +502,15 @@ impl Model {
             self.mount_error_popup(e.context("theme save"));
         }
         self.mount_label_help();
-        self.db.sync_database(&self.library.tree_path);
+        if let Err(err) =
+            self.db
+                .scan_path(&self.library.tree_path, &self.config_server.read(), false)
+        {
+            error!(
+                "Error scanning path {:#?}: {err:#?}",
+                self.library.tree_path.display()
+            );
+        }
         self.playlist_sync();
     }
 

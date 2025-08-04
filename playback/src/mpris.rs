@@ -3,8 +3,8 @@ use std::sync::mpsc::{self, Receiver};
 use base64::Engine;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use termusiclib::{
-    library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE},
     track::Track,
+    types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE},
 };
 
 use crate::{
