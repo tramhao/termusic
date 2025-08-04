@@ -345,7 +345,7 @@ fn get_config(args: &cli::Args) -> Result<CombinedSettings> {
         settings: config_server,
         music_dir_overwrite: music_dir,
         disable_discord_status: args.disable_discord,
-        library_scan_depth: max_depth,
+        metadata_scan_depth: max_depth,
     };
 
     let config_tui = TuiConfigVersionedDefaulted::from_config_path()?.into_settings();

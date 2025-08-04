@@ -13,7 +13,7 @@ use service::SongTagService;
 use tokio::sync::mpsc::UnboundedSender;
 use ytd_rs::{Arg, YoutubeDL};
 
-use crate::library_db::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use crate::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
 use crate::utils::get_parent_folder;
 

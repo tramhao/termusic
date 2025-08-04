@@ -93,6 +93,15 @@ pub fn get_app_config_path() -> Result<PathBuf> {
     Ok(path)
 }
 
+/// Get the termusic database path for [`new_database`](crate::new_database).
+pub fn get_app_new_database_path() -> Result<PathBuf> {
+    let mut db_path = get_app_config_path().context("failed to get app configuration path")?;
+    // for the lack of a better name, just adding a "2" compared to the old database
+    db_path.push("library2.db");
+
+    Ok(db_path)
+}
+
 /// Get the podcast directoy resolved and created
 fn get_podcast_save_path(config: &ServerOverlay) -> Result<PathBuf> {
     let full_path = shellexpand::path::tilde(&config.settings.podcast.download_dir);

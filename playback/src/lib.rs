@@ -7,7 +7,7 @@ use parking_lot::RwLock;
 pub use playlist::Playlist;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use termusiclib::library_db::DataBase;
+use termusiclib::new_database::{Database, track_ops};
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
@@ -15,7 +15,7 @@ use termusiclib::player::{
     PlayerProgress, PlayerTimeUnit, RunningStatus, TrackChangedInfo, UpdateEvents,
 };
 use termusiclib::podcast::db::Database as DBPod;
-use termusiclib::track::{MediaTypesSimple, Track};
+use termusiclib::track::{MediaTypes, Track};
 use termusiclib::utils::get_app_config_path;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::error::SendError;
@@ -148,7 +148,7 @@ pub struct GeneralPlayer {
     pub current_track_updated: bool,
     pub mpris: Option<mpris::Mpris>,
     pub discord: Option<discord::Rpc>,
-    pub db: DataBase,
+    pub db: Database,
     pub db_podcast: DBPod,
     pub cmd_tx: PlayerCmdSender,
     pub stream_tx: StreamTX,
@@ -177,7 +177,7 @@ impl GeneralPlayer {
 
         let db_podcast = DBPod::new(&db_path).with_context(|| "error connecting to podcast db.")?;
         let config_read = config.read();
-        let db = DataBase::new(&config_read)?;
+        let db = Database::new_default_path()?;
 
         let mpris = if config.read().settings.player.use_mediacontrols {
             let mut mpris = mpris::Mpris::new(cmd_tx.clone());
@@ -467,6 +467,25 @@ impl GeneralPlayer {
         self.seek(offset).expect("Error in player seek.");
     }
 
+    /// Helper function to de-duplicate setting last position for a given track.
+    fn set_last_position(&self, track: &Track, to: Option<Duration>) -> Result<()> {
+        match track.inner() {
+            MediaTypes::Track(track_data) => {
+                track_ops::set_last_position(&self.db.get_connection(), track_data.path(), to)
+                    .with_context(|| track_data.path().to_string_lossy().to_string())?;
+            }
+            MediaTypes::Radio(_) => (),
+            MediaTypes::Podcast(_podcast_track_data) => {
+                let to = to.unwrap_or_default();
+                self.db_podcast
+                    .set_last_position(track, to)
+                    .context("Podcast Episode")?;
+            }
+        }
+
+        Ok(())
+    }
+
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
         let playlist = self.playlist.read();
@@ -495,18 +514,8 @@ impl GeneralPlayer {
         };
 
         if time_before_save < position.as_secs() {
-            match track.media_type() {
-                MediaTypesSimple::Music => {
-                    if let Err(err) = self.db.set_last_position(track, position) {
-                        error!("Saving last_position for music failed, Error: {err:#?}");
-                    }
-                }
-                MediaTypesSimple::LiveRadio => (),
-                MediaTypesSimple::Podcast => {
-                    if let Err(err) = self.db_podcast.set_last_position(track, position) {
-                        error!("Saving last_position for podcast failed, Error: {err:#?}");
-                    }
-                }
+            if let Err(err) = self.set_last_position(track, Some(position)) {
+                error!("Saving last_position failed. Error: {err:#?}");
             }
         } else {
             info!("Not saving Last position as the position is lower than time_before_save");
@@ -531,15 +540,17 @@ impl GeneralPlayer {
             .remember_position
             .is_enabled_for(track.media_type())
         {
-            match track.media_type() {
-                MediaTypesSimple::Music => {
-                    if let Ok(last_pos) = self.db.get_last_position(&track) {
+            match track.inner() {
+                MediaTypes::Track(track_data) => {
+                    let res =
+                        track_ops::get_last_position(&self.db.get_connection(), track_data.path());
+                    if let Ok(Some(last_pos)) = res {
                         self.seek_to(last_pos);
                         restored = true;
                     }
                 }
-                MediaTypesSimple::LiveRadio => (),
-                MediaTypesSimple::Podcast => {
+                MediaTypes::Radio(_) => (),
+                MediaTypes::Podcast(_podcast_track_data) => {
                     if let Ok(last_pos) = self.db_podcast.get_last_position(&track) {
                         self.seek_to(last_pos);
                         restored = true;
@@ -553,10 +564,10 @@ impl GeneralPlayer {
             );
         }
 
+        // should we really reset here already instead of just waiting until either next track or exit?
         if restored {
-            // TODO: dosnt this apply podcast titles into the tracks database?
-            if let Err(err) = self.db.set_last_position(&track, Duration::from_secs(0)) {
-                error!("Resetting last_position failed, Error: {err:#?}");
+            if let Err(err) = self.set_last_position(&track, None) {
+                error!("Resetting last_position failed. Error: {err:#?}");
             }
         }
     }

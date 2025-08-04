@@ -73,6 +73,7 @@ tonic.workspace = true
 prost.workspace = true
 alphanumeric-sort.workspace = true
 lru.workspace = true
+either.workspace = true
 
 [build-dependencies]
 cc.workspace = true
