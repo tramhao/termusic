@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
+use std::time::Duration;
 
 use anyhow::{Context as _, Result, anyhow, bail};
 use rand::seq::IndexedRandom;
@@ -530,6 +531,7 @@ impl Model {
         }
 
         self.update_layout_for_current_track();
+        self.playback.set_current_track_pos(Duration::ZERO);
         self.player_update_current_track_after();
 
         self.lyric_update_for_podcast_by_current_track();

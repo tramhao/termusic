@@ -561,8 +561,8 @@ impl Model {
         self.command(TuiCmd::GetProgress);
     }
 
+    /// Update all the places that need to be updated after a current track change or running status change.
     pub fn player_update_current_track_after(&mut self) {
-        self.playback.set_current_track_pos(Duration::ZERO);
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }

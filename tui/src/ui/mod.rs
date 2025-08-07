@@ -199,7 +199,9 @@ impl UI {
                     self.model.player_update_current_track_after();
                 }
             }
-            RunningStatus::Paused => {}
+            RunningStatus::Paused => {
+                self.model.player_update_current_track_after();
+            }
         }
     }
 
