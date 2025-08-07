@@ -85,11 +85,8 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<Empty>,
     ) -> Result<Response<GetProgressResponse>, Status> {
-        let mut r = self.player_stats.lock();
-        let reply = r.as_getprogress_response();
-        if r.current_track_updated {
-            r.current_track_updated = false;
-        }
+        let r = self.player_stats.lock();
+        let reply = r.as_getprogress_response(self.playlist.read().status());
 
         Ok(Response::new(reply))
     }
@@ -193,8 +190,9 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::TogglePause)?;
         // wait until the event was processed
         let _ = rx.await;
-        let r = self.player_stats.lock();
-        let reply = PlayState { status: r.status };
+        let reply = PlayState {
+            status: self.playlist.read().status().as_u32(),
+        };
 
         Ok(Response::new(reply))
     }

@@ -64,8 +64,6 @@ message GetProgressResponse {
   uint32 volume = 5;
   int32 speed = 6;
   bool gapless = 7;
-  // TODO: this is not necessary anymore, because of "UpdateTrackChanged"
-  bool current_track_updated = 8;
   string radio_title = 9;
 }
 

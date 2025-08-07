@@ -226,12 +226,6 @@ impl UI {
                         pprogress.position,
                         pprogress.total_duration.unwrap_or_default(),
                     );
-                    if response.current_track_updated {
-                        self.model.handle_current_track_index(
-                            usize::try_from(response.current_track_index).unwrap(),
-                            false,
-                        );
-                    }
 
                     self.model.lyric_update_for_radio(response.radio_title);
 
