@@ -34,7 +34,14 @@ impl MusicPlayerService {
         config: SharedServerSettings,
         playlist: SharedPlaylist,
     ) -> Self {
-        let player_stats = Arc::new(Mutex::new(PlayerStats::new()));
+        let mut player_stats = PlayerStats::new();
+        let config_read = config.read();
+        player_stats.volume = config_read.settings.player.volume;
+        player_stats.gapless = config_read.settings.player.gapless;
+        player_stats.speed = config_read.settings.player.speed;
+        drop(config_read);
+
+        let player_stats = Arc::new(Mutex::new(player_stats));
 
         Self {
             cmd_tx,
