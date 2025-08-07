@@ -127,47 +127,53 @@ impl UI {
             .behavior
             .quit_server_on_exit
         {
-            let mut system = System::new();
-            system.refresh_all();
-            let mut target = None;
-            let mut clients = 0;
-            for proc in system.processes().values() {
-                if let Some(exe) = proc.name().to_str() {
-                    if exe == "termusic-server" {
-                        if &proc.pid() == crate::SERVER_PID.get().unwrap_or(&Pid::from_u32(0))
-                            || target.is_none()
-                        {
-                            target = Some(proc);
-                        }
-                        continue;
-                    }
-                    let mut parent_is_termusic = false;
-                    match proc.parent() {
-                        Some(s) => {
-                            if let Some(parent) = system.processes().get(&s) {
-                                if parent.name() == "termusic" {
-                                    parent_is_termusic = true;
-                                }
-                            }
-                        }
-                        None => parent_is_termusic = false,
-                    }
-                    if exe == "termusic" && !parent_is_termusic {
-                        clients += 1;
-                    }
-                }
-            }
-            if clients <= 1 && target.is_some() {
-                if let Some(s) = target {
-                    #[cfg(not(target_os = "windows"))]
-                    s.kill_with(sysinfo::Signal::Term);
-                    #[cfg(target_os = "windows")]
-                    s.kill();
-                }
-            }
+            Self::quit_server();
         }
 
         Ok(())
+    }
+
+    /// Quit the server, if any is found with the proper name.
+    // TODO: send the server a message to quit instead of a signal.
+    fn quit_server() {
+        let mut system = System::new();
+        system.refresh_all();
+        let mut target = None;
+        let mut clients = 0;
+        for proc in system.processes().values() {
+            if let Some(exe) = proc.name().to_str() {
+                if exe == "termusic-server" {
+                    if &proc.pid() == crate::SERVER_PID.get().unwrap_or(&Pid::from_u32(0))
+                        || target.is_none()
+                    {
+                        target = Some(proc);
+                    }
+                    continue;
+                }
+                let mut parent_is_termusic = false;
+                match proc.parent() {
+                    Some(s) => {
+                        if let Some(parent) = system.processes().get(&s) {
+                            if parent.name() == "termusic" {
+                                parent_is_termusic = true;
+                            }
+                        }
+                    }
+                    None => parent_is_termusic = false,
+                }
+                if exe == "termusic" && !parent_is_termusic {
+                    clients += 1;
+                }
+            }
+        }
+        if clients <= 1 && target.is_some() {
+            if let Some(s) = target {
+                #[cfg(not(target_os = "windows"))]
+                s.kill_with(sysinfo::Signal::Term);
+                #[cfg(target_os = "windows")]
+                s.kill();
+            }
+        }
     }
 
     /// Handle running [`RunningStatus`] having possibly changed.
