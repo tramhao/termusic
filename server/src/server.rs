@@ -518,7 +518,7 @@ fn player_loop(
                     // the following function is "mut", which does not like having the immutable borrow to "playlist"
                     // so we have to unlock first then later re-acquire the handle for later parts
                     drop(playlist);
-                    player.mpris_update_progress(&p_tick.progress);
+                    player.update_progress(&p_tick.progress);
 
                     // only reset errors if position is either above 0 or total duration is available and is above 0
                     if pl_status == RunningStatus::Running

@@ -42,7 +42,7 @@ impl Playback {
         let request = tonic::Request::new(Empty {});
         let response = self.client.get_progress(request).await?;
         let response = response.into_inner();
-        // info!("Got response from server: {:?}", response);
+        info!("Got response from server: {response:?}");
         Ok(response)
     }
 

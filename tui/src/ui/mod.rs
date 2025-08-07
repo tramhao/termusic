@@ -80,9 +80,10 @@ impl UI {
         let mut stream_updates = self.playback.subscribe_to_stream_updates().await?;
 
         self.load_playlist().await?;
+        // initial request for all the progress states / options
+        self.model.request_progress();
 
         // Main loop
-        let mut progress_interval = 0;
         while !self.model.quit {
             self.model.update_outside_msg();
             if self.model.layout != TermusicLayout::Podcast {
@@ -91,14 +92,7 @@ impl UI {
             if let Err(err) = self.handle_stream_events(&mut stream_updates) {
                 self.model.mount_error_popup(err);
             }
-            if progress_interval == 0 {
-                self.model.request_progress();
-            }
             self.run_playback().await?;
-            progress_interval += 1;
-            if progress_interval >= 80 {
-                progress_interval = 0;
-            }
 
             match self.model.app.tick(PollStrategy::UpTo(20)) {
                 Err(err) => {
@@ -340,7 +334,10 @@ impl UI {
                 .map(UpdateEvents::try_from)
                 .context("Conversion from StreamUpdates to UpdateEvents failed!")?;
 
-            debug!("Stream Event: {ev:?}");
+            // dont log progress events, as that spams the log
+            if log::log_enabled!(log::Level::Debug) && !is_progress(&ev) {
+                debug!("Stream Event: {ev:?}");
+            }
 
             // just exit on first error, but still print it first
             let Ok(ev) = ev else {
@@ -386,6 +383,12 @@ impl UI {
                 }
                 UpdateEvents::GaplessChanged { gapless } => {
                     self.model.config_server.write().settings.player.gapless = gapless;
+                }
+                UpdateEvents::Progress(progress) => {
+                    self.model.progress_update(
+                        progress.position,
+                        progress.total_duration.unwrap_or_default(),
+                    );
                 }
                 UpdateEvents::PlaylistChanged(ev) => self.handle_playlist_events(ev)?,
             }
@@ -435,5 +438,18 @@ impl UI {
             .handle_current_track_index(usize::try_from(current_track_index).unwrap(), true);
 
         Ok(())
+    }
+}
+
+/// Determine if a given event is a [`UpdateEvents::Progress`].
+fn is_progress(ev: &Result<UpdateEvents>) -> bool {
+    if let Ok(ev) = ev {
+        std::mem::discriminant(ev)
+            == std::mem::discriminant(&UpdateEvents::Progress(PlayerProgress {
+                position: None,
+                total_duration: None,
+            }))
+    } else {
+        false
     }
 }

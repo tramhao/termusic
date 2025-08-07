@@ -572,6 +572,13 @@ impl GeneralPlayer {
         }
     }
 
+    /// Update all the places that should be updated on a new Progress report.
+    pub fn update_progress(&mut self, progress: &PlayerProgress) {
+        self.mpris_update_progress(progress);
+
+        self.send_stream_ev(UpdateEvents::Progress(*progress));
+    }
+
     /// Send stream events with consistent error handling
     fn send_stream_ev(&self, ev: UpdateEvents) {
         // there is only one error case: no receivers
