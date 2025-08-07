@@ -601,7 +601,7 @@ impl PlayerTrait for GeneralPlayer {
 
         vol
     }
-    /// This function should not be used directly, use GeneralPlayer::pause
+    /// This function should not be used directly, use `GeneralPlayer::pause`
     fn pause(&mut self) {
         self.playlist.write().set_status(RunningStatus::Paused);
         self.get_player_mut().pause();
@@ -616,7 +616,7 @@ impl PlayerTrait for GeneralPlayer {
             playing: RunningStatus::Paused.as_u32(),
         });
     }
-    /// This function should not be used directly, use GeneralPlayer::play
+    /// This function should not be used directly, use `GeneralPlayer::play`
     fn resume(&mut self) {
         self.playlist.write().set_status(RunningStatus::Running);
         self.get_player_mut().resume();
