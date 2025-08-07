@@ -576,7 +576,7 @@ impl GeneralPlayer {
     pub fn update_progress(&mut self, progress: &PlayerProgress) {
         self.mpris_update_progress(progress);
 
-        self.send_stream_ev(UpdateEvents::Progress(*progress));
+        self.send_stream_ev_no_err(UpdateEvents::Progress(*progress));
     }
 
     /// Send stream events with consistent error handling
@@ -585,6 +585,13 @@ impl GeneralPlayer {
         if self.stream_tx.send(ev).is_err() {
             debug!("Stream Event not send: No Receivers");
         }
+    }
+
+    /// Send stream events with no error handling.
+    ///
+    /// Useful for events which would otherwise spam the logs but we dont care about (like progress updates).
+    fn send_stream_ev_no_err(&self, ev: UpdateEvents) {
+        let _ = self.stream_tx.send(ev);
     }
 }
 
