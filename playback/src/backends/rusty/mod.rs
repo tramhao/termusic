@@ -88,7 +88,9 @@ impl RustyBackend {
         let volume_local = volume.clone();
         let speed = config_read.settings.player.speed;
         let gapless = config_read.settings.player.gapless;
+        let output_sample_rate = config_read.settings.backends.rusty.output_sample_rate;
         drop(config_read);
+
         let position = Arc::new(Mutex::new(Duration::default()));
         let total_duration = Arc::new(Mutex::new(None));
         let total_duration_local = total_duration.clone();
@@ -114,6 +116,7 @@ impl RustyBackend {
                     position: position_local,
                     volume_inside: volume_local,
                     speed_inside: speed,
+                    output_sample_rate,
                 }));
             })
             .expect("failed to spawn thread");
@@ -570,6 +573,8 @@ struct PlayerThreadArgs {
 
     volume_inside: Arc<AtomicU16>,
     speed_inside: i32,
+
+    output_sample_rate: u32,
 }
 
 /// Player thread loop
@@ -589,7 +594,13 @@ async fn player_thread(mut args: PlayerThreadArgs) {
     // This needs to be reset on many occasions like Seek or Stream Start.
     let mut send_atf = false;
 
-    let stream = OutputStreamBuilder::open_default_stream().unwrap();
+    let stream = {
+        let builder = OutputStreamBuilder::from_default_device().unwrap();
+        builder
+            .with_sample_rate(args.output_sample_rate)
+            .open_stream_or_fallback()
+            .unwrap()
+    };
     let handle = stream.mixer();
     let sink = Sink::try_new(handle, args.picmd_tx.clone(), args.pcmd_tx.clone());
     sink.set_speed(args.speed_inside as f32 / 10.0);

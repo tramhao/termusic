@@ -44,6 +44,11 @@ pub struct RustyBackendSettings {
     ///
     /// If the given value is less than the default, the default will be used instead.
     pub decoded_buffer_size: ByteSize,
+    /// Set the preferred output sample rate.
+    ///
+    /// Default `48_000`
+    /// Recommeded Values: `44_100`, `48_000`, `96_000` `192_000`.
+    pub output_sample_rate: u32,
 }
 
 impl Default for RustyBackendSettings {
@@ -52,6 +57,7 @@ impl Default for RustyBackendSettings {
             soundtouch: true,
             file_buffer_size: ByteSize::b(FILEBUF_SIZE_DEFAULT),
             decoded_buffer_size: ByteSize::b(DECODEDBUF_SIZE_DEFAULT),
+            output_sample_rate: 48_000,
         }
     }
 }
