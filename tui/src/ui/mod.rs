@@ -92,7 +92,7 @@ impl UI {
                 self.model.mount_error_popup(err);
             }
             if progress_interval == 0 {
-                self.model.run();
+                self.model.request_progress();
             }
             self.run_playback().await?;
             progress_interval += 1;

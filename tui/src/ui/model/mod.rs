@@ -556,10 +556,9 @@ impl Model {
     }
 
     /// Send a command to request the Track Progress and set the titles to the current state.
-    pub fn run(&mut self) {
+    #[inline]
+    pub fn request_progress(&mut self) {
         self.command(TuiCmd::GetProgress);
-        self.progress_update_title();
-        self.lyric_update_title();
     }
 
     pub fn player_update_current_track_after(&mut self) {
