@@ -510,7 +510,7 @@ impl Playlist {
         let index_a = u64::try_from(index_a).unwrap();
         let index_b = u64::try_from(index_b).unwrap();
 
-        self.send_stream_ev(UpdatePlaylistEvents::PlaylistSwapTracks(PlaylistSwapInfo {
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistSwapTracks(PlaylistSwapInfo {
             index_a,
             index_b,
         }));
@@ -547,8 +547,12 @@ impl Playlist {
         self.tracks.get(next_index)
     }
 
+    /// Set the [`RunningStatus`] of the playlist, also sends a stream event.
     pub fn set_status(&mut self, status: RunningStatus) {
         self.status = status;
+        self.send_stream_ev(UpdateEvents::PlayStateChanged {
+            playing: status.as_u32(),
+        });
     }
 
     #[must_use]
@@ -594,7 +598,7 @@ impl Playlist {
 
         self.loop_mode = new_mode;
 
-        self.send_stream_ev(UpdatePlaylistEvents::PlaylistLoopMode(
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistLoopMode(
             PlaylistLoopModeInfo::from(self.loop_mode),
         ));
     }
@@ -652,7 +656,7 @@ impl Playlist {
 
         let url = track.as_podcast().unwrap().url();
 
-        self.send_stream_ev(UpdatePlaylistEvents::PlaylistAddTrack(
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
                 title: track.title().map(ToOwned::to_owned),
@@ -706,7 +710,7 @@ impl Playlist {
 
         let track = Self::track_from_path(track_str)?;
 
-        self.send_stream_ev(UpdatePlaylistEvents::PlaylistAddTrack(
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
                 title: track.title().map(ToOwned::to_owned),
@@ -744,7 +748,7 @@ impl Playlist {
                     }
                 };
 
-                self.send_stream_ev(UpdatePlaylistEvents::PlaylistAddTrack(
+                self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
                     PlaylistAddTrackInfo {
                         at_index: u64::try_from(self.tracks.len()).unwrap(),
                         title: track.title().map(ToOwned::to_owned),
@@ -768,7 +772,7 @@ impl Playlist {
                 PlaylistTrackSource::PodcastUrl(uri) => Self::track_from_podcasturi(uri, db_pod)?,
             };
 
-            self.send_stream_ev(UpdatePlaylistEvents::PlaylistAddTrack(
+            self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
                 PlaylistAddTrackInfo {
                     at_index: u64::try_from(at_index).unwrap(),
                     title: track.title().map(ToOwned::to_owned),
@@ -825,7 +829,7 @@ impl Playlist {
             // verified that at index "at_index" the track is of the type and has the URI that was requested to be removed
             self.handle_remove(at_index);
 
-            self.send_stream_ev(UpdatePlaylistEvents::PlaylistRemoveTrack(
+            self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistRemoveTrack(
                 PlaylistRemoveTrackInfo {
                     at_index: u64::try_from(at_index).unwrap(),
                     trackid: input_track,
@@ -912,7 +916,7 @@ impl Playlist {
 
         self.handle_remove(index);
 
-        self.send_stream_ev(UpdatePlaylistEvents::PlaylistRemoveTrack(
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistRemoveTrack(
             PlaylistRemoveTrackInfo {
                 at_index: u64::try_from(index).unwrap(),
                 trackid: track_source,
@@ -942,7 +946,7 @@ impl Playlist {
         self.current_track_index = 0;
         self.need_proceed_to_next = false;
 
-        self.send_stream_ev(UpdatePlaylistEvents::PlaylistCleared);
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistCleared);
     }
 
     /// Shuffle the playlist
@@ -961,7 +965,7 @@ impl Playlist {
             }
         }
 
-        self.send_stream_ev(UpdatePlaylistEvents::PlaylistShuffled(
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistShuffled(
             PlaylistShuffledInfo {
                 tracks: self.as_grpc_playlist_tracks().unwrap(),
             },
@@ -1059,7 +1063,7 @@ impl Playlist {
                 let deleted_idx = self.tracks.len();
 
                 // NOTE: this function may send many events very quickly (for example on a folder delete), which could overwhelm the broadcast channel on a low capacity value
-                self.send_stream_ev(UpdatePlaylistEvents::PlaylistRemoveTrack(
+                self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistRemoveTrack(
                     PlaylistRemoveTrackInfo {
                         at_index: u64::try_from(deleted_idx).unwrap(),
                         trackid: track_source,
@@ -1123,14 +1127,22 @@ impl Playlist {
         self.next_track_index.is_some()
     }
 
-    /// Send stream events with consistent error handling
-    fn send_stream_ev(&self, ev: UpdatePlaylistEvents) {
+    /// Send Playlist stream events with consistent error handling
+    fn send_stream_ev_pl(&self, ev: UpdatePlaylistEvents) {
         // there is only one error case: no receivers
         if self
             .stream_tx
             .send(UpdateEvents::PlaylistChanged(ev))
             .is_err()
         {
+            debug!("Stream Event not send: No Receivers");
+        }
+    }
+
+    /// Send stream events with consistent error handling
+    fn send_stream_ev(&self, ev: UpdateEvents) {
+        // there is only one error case: no receivers
+        if self.stream_tx.send(ev).is_err() {
             debug!("Stream Event not send: No Receivers");
         }
     }

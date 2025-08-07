@@ -611,10 +611,6 @@ impl PlayerTrait for GeneralPlayer {
         if let Some(ref discord) = self.discord {
             discord.pause();
         }
-
-        self.send_stream_ev(UpdateEvents::PlayStateChanged {
-            playing: RunningStatus::Paused.as_u32(),
-        });
     }
     /// This function should not be used directly, use GeneralPlayer::play
     fn resume(&mut self) {
@@ -627,10 +623,6 @@ impl PlayerTrait for GeneralPlayer {
         if let Some(ref discord) = self.discord {
             discord.resume(time_pos);
         }
-
-        self.send_stream_ev(UpdateEvents::PlayStateChanged {
-            playing: RunningStatus::Running.as_u32(),
-        });
     }
     fn is_paused(&self) -> bool {
         self.get_player().is_paused()
