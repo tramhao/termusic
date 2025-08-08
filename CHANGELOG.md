@@ -9,6 +9,7 @@
 - Feat(tui): make the Config editor dynamically size elements.
 - Feat(tui): make the Config editor (at least rudementally) scrollable.
 - Feat(server): add extra config section for metadata scanning and parsing.
+- Feat(server): on rusty backend, allow configuring output sample rate, now defaulting to 48_000Hz (instead of rodio default 44_100Hz).
 - Feat: re-implement the Track database to allow for more search options. (Note that the old database is NOT automatically deleted)
 - Fix(tui): allow usage of key `Home`/`Pos1` in search lists.
 - Fix(tui): allow usage of key `Home`/`Pos1` and `End` in youtube search list.
