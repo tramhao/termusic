@@ -1,5 +1,5 @@
 #![allow(clippy::module_name_repetitions)]
-use anyhow::{Context, anyhow};
+use anyhow::{Context, anyhow, bail};
 
 // using lower mod to restrict clippy
 #[allow(clippy::pedantic)]
@@ -94,6 +94,26 @@ impl From<PlayerProgress> for protobuf::PlayerTime {
     }
 }
 
+impl TryFrom<protobuf::UpdateProgress> for PlayerProgress {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::UpdateProgress) -> Result<Self, Self::Error> {
+        let Some(val) = value.progress else {
+            bail!("Expected \"UpdateProgress\" to contain \"Some(progress)\"");
+        };
+
+        Ok(Self::from(val))
+    }
+}
+
+impl From<PlayerProgress> for protobuf::UpdateProgress {
+    fn from(value: PlayerProgress) -> Self {
+        Self {
+            progress: Some(value.into()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrackChangedInfo {
     /// Current track index in the playlist
@@ -115,6 +135,7 @@ pub enum UpdateEvents {
     TrackChanged(TrackChangedInfo),
     GaplessChanged { gapless: bool },
     PlaylistChanged(UpdatePlaylistEvents),
+    Progress(PlayerProgress),
 }
 
 type StreamTypes = protobuf::stream_updates::Type;
@@ -155,6 +176,7 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
                 })
             }
             UpdateEvents::PlaylistChanged(ev) => StreamTypes::PlaylistChanged(ev.into()),
+            UpdateEvents::Progress(ev) => StreamTypes::ProgressChanged(ev.into()),
         };
 
         Self { r#type: Some(val) }
@@ -196,6 +218,10 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
             StreamTypes::PlaylistChanged(ev) => Self::PlaylistChanged(
                 ev.try_into()
                     .context("In \"StreamUpdates.types.playlist_changed\"")?,
+            ),
+            StreamTypes::ProgressChanged(ev) => Self::Progress(
+                ev.try_into()
+                    .context("In \"StreamUpdates.types.progress_changed\"")?,
             ),
         };
 

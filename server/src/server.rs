@@ -47,11 +47,9 @@ const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
 struct PlayerStats {
     pub progress: PlayerProgress,
     pub current_track_index: u64,
-    pub status: u32,
     pub volume: u16,
     pub speed: i32,
     pub gapless: bool,
-    pub current_track_updated: bool,
     pub radio_title: String,
 }
 
@@ -63,24 +61,21 @@ impl PlayerStats {
                 total_duration: None,
             },
             current_track_index: 0,
-            status: 1,
             volume: 0,
             speed: 10,
             gapless: true,
-            current_track_updated: false,
             radio_title: String::new(),
         }
     }
 
-    pub fn as_getprogress_response(&self) -> GetProgressResponse {
+    pub fn as_getprogress_response(&self, status: RunningStatus) -> GetProgressResponse {
         GetProgressResponse {
             progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
-            status: self.status,
+            status: status.as_u32(),
             volume: u32::from(self.volume),
             speed: self.speed,
             gapless: self.gapless,
-            current_track_updated: self.current_track_updated,
             radio_title: self.radio_title.clone(),
         }
     }
@@ -499,7 +494,6 @@ fn player_loop(
                 player.mpris_handle_events();
                 let mut p_tick = playerstats.lock();
                 let mut playlist = player.playlist.read();
-                p_tick.status = playlist.status().as_u32();
                 // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore
                 if playlist.status() == RunningStatus::Stopped {
                     if playlist.is_empty() {
@@ -524,7 +518,7 @@ fn player_loop(
                     // the following function is "mut", which does not like having the immutable borrow to "playlist"
                     // so we have to unlock first then later re-acquire the handle for later parts
                     drop(playlist);
-                    player.mpris_update_progress(&p_tick.progress);
+                    player.update_progress(&p_tick.progress);
 
                     // only reset errors if position is either above 0 or total duration is available and is above 0
                     if pl_status == RunningStatus::Running
@@ -539,7 +533,6 @@ fn player_loop(
                 if player.current_track_updated {
                     p_tick.current_track_index =
                         u64::try_from(playlist.get_current_track_index()).unwrap();
-                    p_tick.current_track_updated = player.current_track_updated;
                     player.current_track_updated = false;
                 }
                 if let Some(track) = playlist.current_track() {
@@ -579,8 +572,6 @@ fn player_loop(
             PlayerCmd::TogglePause => {
                 info!("player toggled pause");
                 player.toggle_pause();
-                let mut p_tick = playerstats.lock();
-                p_tick.status = player.playlist.read().status().as_u32();
             }
             PlayerCmd::VolumeDown => {
                 info!("before volumedown: {}", player.volume());

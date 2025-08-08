@@ -64,8 +64,6 @@ message GetProgressResponse {
   uint32 volume = 5;
   int32 speed = 6;
   bool gapless = 7;
-  // TODO: this is not necessary anymore, because of "UpdateTrackChanged"
-  bool current_track_updated = 8;
   string radio_title = 9;
 }
 
@@ -91,7 +89,7 @@ message Duration {
 }
 
 // all updates that can happen from the server side, without the client to have to ask explicitly
-// naming convention for the stream update specific messages is to add the "Update" prefix, even if it already exists
+// naming convention for the stream update specific messages is to add the "Update" prefix, even if a similar non-prefix message already exists
 message StreamUpdates {
   oneof type {
     UpdateMissedEvents missed_events = 1;
@@ -100,8 +98,8 @@ message StreamUpdates {
     UpdatePlayStateChanged play_state_changed = 4;
     UpdateTrackChanged track_changed = 5;
     UpdateGaplessChanged gapless_changed = 6;
-
     UpdatePlaylist playlist_changed = 7;
+    UpdateProgress progress_changed = 8;
   }
 }
 
@@ -155,6 +153,11 @@ message UpdateTrackChanged {
     string title = 3;
   }
   PlayerTime progress = 4;
+}
+
+// There is a progress update to the currently playing track, may not be fired if paused or stopped
+message UpdateProgress {
+  PlayerTime progress = 1;
 }
 
 // Play a specific track in the playlist

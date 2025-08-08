@@ -572,12 +572,26 @@ impl GeneralPlayer {
         }
     }
 
+    /// Update all the places that should be updated on a new Progress report.
+    pub fn update_progress(&mut self, progress: &PlayerProgress) {
+        self.mpris_update_progress(progress);
+
+        self.send_stream_ev_no_err(UpdateEvents::Progress(*progress));
+    }
+
     /// Send stream events with consistent error handling
     fn send_stream_ev(&self, ev: UpdateEvents) {
         // there is only one error case: no receivers
         if self.stream_tx.send(ev).is_err() {
             debug!("Stream Event not send: No Receivers");
         }
+    }
+
+    /// Send stream events with no error handling.
+    ///
+    /// Useful for events which would otherwise spam the logs but we dont care about (like progress updates).
+    fn send_stream_ev_no_err(&self, ev: UpdateEvents) {
+        let _ = self.stream_tx.send(ev);
     }
 }
 
@@ -611,10 +625,6 @@ impl PlayerTrait for GeneralPlayer {
         if let Some(ref discord) = self.discord {
             discord.pause();
         }
-
-        self.send_stream_ev(UpdateEvents::PlayStateChanged {
-            playing: RunningStatus::Paused.as_u32(),
-        });
     }
     /// This function should not be used directly, use GeneralPlayer::play
     fn resume(&mut self) {
@@ -627,10 +637,6 @@ impl PlayerTrait for GeneralPlayer {
         if let Some(ref discord) = self.discord {
             discord.resume(time_pos);
         }
-
-        self.send_stream_ev(UpdateEvents::PlayStateChanged {
-            playing: RunningStatus::Running.as_u32(),
-        });
     }
     fn is_paused(&self) -> bool {
         self.get_player().is_paused()

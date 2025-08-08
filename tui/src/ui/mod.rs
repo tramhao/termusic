@@ -80,9 +80,10 @@ impl UI {
         let mut stream_updates = self.playback.subscribe_to_stream_updates().await?;
 
         self.load_playlist().await?;
+        // initial request for all the progress states / options
+        self.model.request_progress();
 
         // Main loop
-        let mut progress_interval = 0;
         while !self.model.quit {
             self.model.update_outside_msg();
             if self.model.layout != TermusicLayout::Podcast {
@@ -91,14 +92,7 @@ impl UI {
             if let Err(err) = self.handle_stream_events(&mut stream_updates) {
                 self.model.mount_error_popup(err);
             }
-            if progress_interval == 0 {
-                self.model.run();
-            }
             self.run_playback().await?;
-            progress_interval += 1;
-            if progress_interval >= 80 {
-                progress_interval = 0;
-            }
 
             match self.model.app.tick(PollStrategy::UpTo(20)) {
                 Err(err) => {
@@ -133,47 +127,53 @@ impl UI {
             .behavior
             .quit_server_on_exit
         {
-            let mut system = System::new();
-            system.refresh_all();
-            let mut target = None;
-            let mut clients = 0;
-            for proc in system.processes().values() {
-                if let Some(exe) = proc.name().to_str() {
-                    if exe == "termusic-server" {
-                        if &proc.pid() == crate::SERVER_PID.get().unwrap_or(&Pid::from_u32(0))
-                            || target.is_none()
-                        {
-                            target = Some(proc);
-                        }
-                        continue;
-                    }
-                    let mut parent_is_termusic = false;
-                    match proc.parent() {
-                        Some(s) => {
-                            if let Some(parent) = system.processes().get(&s) {
-                                if parent.name() == "termusic" {
-                                    parent_is_termusic = true;
-                                }
-                            }
-                        }
-                        None => parent_is_termusic = false,
-                    }
-                    if exe == "termusic" && !parent_is_termusic {
-                        clients += 1;
-                    }
-                }
-            }
-            if clients <= 1 && target.is_some() {
-                if let Some(s) = target {
-                    #[cfg(not(target_os = "windows"))]
-                    s.kill_with(sysinfo::Signal::Term);
-                    #[cfg(target_os = "windows")]
-                    s.kill();
-                }
-            }
+            Self::quit_server();
         }
 
         Ok(())
+    }
+
+    /// Quit the server, if any is found with the proper name.
+    // TODO: send the server a message to quit instead of a signal.
+    fn quit_server() {
+        let mut system = System::new();
+        system.refresh_all();
+        let mut target = None;
+        let mut clients = 0;
+        for proc in system.processes().values() {
+            if let Some(exe) = proc.name().to_str() {
+                if exe == "termusic-server" {
+                    if &proc.pid() == crate::SERVER_PID.get().unwrap_or(&Pid::from_u32(0))
+                        || target.is_none()
+                    {
+                        target = Some(proc);
+                    }
+                    continue;
+                }
+                let mut parent_is_termusic = false;
+                match proc.parent() {
+                    Some(s) => {
+                        if let Some(parent) = system.processes().get(&s) {
+                            if parent.name() == "termusic" {
+                                parent_is_termusic = true;
+                            }
+                        }
+                    }
+                    None => parent_is_termusic = false,
+                }
+                if exe == "termusic" && !parent_is_termusic {
+                    clients += 1;
+                }
+            }
+        }
+        if clients <= 1 && target.is_some() {
+            if let Some(s) = target {
+                #[cfg(not(target_os = "windows"))]
+                s.kill_with(sysinfo::Signal::Term);
+                #[cfg(target_os = "windows")]
+                s.kill();
+            }
+        }
     }
 
     /// Handle running [`RunningStatus`] having possibly changed.
@@ -199,7 +199,9 @@ impl UI {
                     self.model.player_update_current_track_after();
                 }
             }
-            RunningStatus::Paused => {}
+            RunningStatus::Paused => {
+                self.model.player_update_current_track_after();
+            }
         }
     }
 
@@ -224,12 +226,6 @@ impl UI {
                         pprogress.position,
                         pprogress.total_duration.unwrap_or_default(),
                     );
-                    if response.current_track_updated {
-                        self.model.handle_current_track_index(
-                            usize::try_from(response.current_track_index).unwrap(),
-                            false,
-                        );
-                    }
 
                     self.model.lyric_update_for_radio(response.radio_title);
 
@@ -344,7 +340,10 @@ impl UI {
                 .map(UpdateEvents::try_from)
                 .context("Conversion from StreamUpdates to UpdateEvents failed!")?;
 
-            debug!("Stream Event: {ev:?}");
+            // dont log progress events, as that spams the log
+            if log::log_enabled!(log::Level::Debug) && !is_progress(&ev) {
+                debug!("Stream Event: {ev:?}");
+            }
 
             // just exit on first error, but still print it first
             let Ok(ev) = ev else {
@@ -390,6 +389,12 @@ impl UI {
                 }
                 UpdateEvents::GaplessChanged { gapless } => {
                     self.model.config_server.write().settings.player.gapless = gapless;
+                }
+                UpdateEvents::Progress(progress) => {
+                    self.model.progress_update(
+                        progress.position,
+                        progress.total_duration.unwrap_or_default(),
+                    );
                 }
                 UpdateEvents::PlaylistChanged(ev) => self.handle_playlist_events(ev)?,
             }
@@ -439,5 +444,18 @@ impl UI {
             .handle_current_track_index(usize::try_from(current_track_index).unwrap(), true);
 
         Ok(())
+    }
+}
+
+/// Determine if a given event is a [`UpdateEvents::Progress`].
+fn is_progress(ev: &Result<UpdateEvents>) -> bool {
+    if let Ok(ev) = ev {
+        std::mem::discriminant(ev)
+            == std::mem::discriminant(&UpdateEvents::Progress(PlayerProgress {
+                position: None,
+                total_duration: None,
+            }))
+    } else {
+        false
     }
 }
