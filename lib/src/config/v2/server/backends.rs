@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct BackendSettings {
     pub rusty: RustyBackendSettings,
-    #[serde(skip)] // skip as long as there are no values
     pub mpv: MpvBackendSettings,
     #[serde(skip)] // skip as long as there are no values
     pub gst: GstBackendSettings,
@@ -63,10 +62,23 @@ impl Default for RustyBackendSettings {
 }
 
 /// Settings specific to the `mpv` backend
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct MpvBackendSettings {
-    // None for now
+    /// Select the audio device mpv should be using, analog to mpv's `--audio-device=` option.
+    ///
+    /// See all available options for mpv by running `mpv --audio-device=help`
+    ///
+    /// Default: `auto`
+    pub audio_device: String,
+}
+
+impl Default for MpvBackendSettings {
+    fn default() -> Self {
+        Self {
+            audio_device: "auto".to_string(),
+        }
+    }
 }
 
 /// Settings specific to the `gst` backend
