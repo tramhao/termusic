@@ -60,20 +60,38 @@ impl DlnaServer {
     }
 
     fn handle_left_key(&mut self) -> CmdResult {
+        if let State::One(StateValue::String(node_id)) = self.state() {
+            if let Some(node) = self.component.tree().root().query(&node_id) {
+                if node.is_leaf() {
+                    // When the selected node is a file, move focus to upper directory
+                    self.perform(Cmd::GoTo(Position::Begin));
+                    self.perform(Cmd::Move(Direction::Up));
+                } else {
+                    // When the selected node is a directory
+                    if self.component.tree_state().is_closed(node) {
+                        self.perform(Cmd::GoTo(Position::Begin));
+                        self.perform(Cmd::Move(Direction::Up));
+                        return CmdResult::None;
+                    }
+                    self.perform(Cmd::Custom(TREE_CMD_CLOSE));
+                }
+            }
+        }
         CmdResult::None
     }
+
     fn handle_right_key(&mut self) -> (CmdResult, Option<Msg>) {
-        let current_node = self.component.tree_state().selected().unwrap();
-        let path: &Path = Path::new(current_node);
-        if path.is_dir() {
+        // let current_node = self.component.tree_state().selected().unwrap();
+        // let path: &Path = Path::new(current_node);
+        // if path.is_dir() {
             // TODO: try to load the directory if it is not loaded yet.
             (self.perform(Cmd::Custom(TREE_CMD_OPEN)), None)
-        } else {
+        /*} else {
             (
                 CmdResult::None,
                 Some(Msg::Playlist(PLMsg::Add(path.to_path_buf()))),
             )
-        }
+        }*/
     }
 }
 
@@ -235,6 +253,7 @@ impl Model {
         let mut ms = MediaServerController::new(device.clone());
         if let Ok(result) = ms.browse_directory(device.name.clone()).await {
             node = Self::mediaserver_add_container(result, node);
+            println!("Node is now {}", node.value);
         }
 
         node
@@ -242,8 +261,12 @@ impl Model {
 
     fn mediaserver_add_container(container: MediaContainer, mut root: RecVec<String, String>) -> RecVec<String, String> {
         let mut node = Self::mediaserver_item(container.id, container.name);
+        println!("Adding node {} to {}", node.value, root.value);
+        // root.children.push(node.clone());
         for child in container.childs {
-            node = Self::mediaserver_add_container(child, node);
+            println!("Adding folder {} / {}", node.value, child.name);
+            let child = Self::mediaserver_add_container(child, node.clone());
+            node.children.push(child);
         }
         /*let artists = container.items.iter().map(|artist_item| {
             let artist_name = artist_item.artist.clone().unwrap();
@@ -279,13 +302,17 @@ impl Model {
             let artist = item.artist.unwrap_or("Unknown artist".to_string());
             let element = format!("[{}] {} {} - {}", album, item.track, artist, item.title);
             let song = Self::mediaserver_item(item.url, element);
+
+            println!("Adding song {} / {}", node.value, song.value);
+
             node.children.push(song);
             songs += 1;
             if songs > 1000 {
                 break;
             }
         }
-        // root.children.push(node);
+//        root.children.push(node);
+//        root
         node
     }
 }

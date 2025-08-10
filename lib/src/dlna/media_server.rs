@@ -36,10 +36,10 @@ impl MediaServerController {
         }
         self.already_run = true;
         let mut container = MediaContainer{ id: "0".to_string(), name: device, childs: Vec::new(), items: Vec::new() };
-        self.do_browse_directory("0", container).await
+        self.do_browse_directory("0", container, 0).await
     }
         
-    async fn do_browse_directory(&self, object_id: &str, mut container: MediaContainer) -> Result<MediaContainer, Box<dyn Error>> {
+    async fn do_browse_directory(&self, object_id: &str, mut container: MediaContainer, level: u32) -> Result<MediaContainer, Box<dyn Error>> {
         let service = self.find_content_directory().await?;
         
         let mut args = String::new();
@@ -53,22 +53,28 @@ impl MediaServerController {
         let hash_result = service.action(&url, "Browser", &args).await?;
         let result = &hash_result["Result"];
         
-        self.parse_browse_result(&result, container).await
+        self.parse_browse_result(&result, container, level).await
     }
     
-    async fn parse_browse_result(&self, result_xml: &str, mut container: MediaContainer) -> Result<MediaContainer, Box<dyn Error>> {
-        // let mut item_count = 0;
+    async fn parse_browse_result(&self, result_xml: &str, mut container: MediaContainer, level: u32) -> Result<MediaContainer, Box<dyn Error>> {
+        let mut item_count = 0;
         if let Ok(didl) = xmltree::Element::parse(result_xml.as_bytes()) {
             for child in didl.children.iter() {
+                if  item_count > 100 {
+                    break;
+                }
                 if let xmltree::XMLNode::Element(item_elem) = child {
-                    if item_elem.name == "container" {
+                    if item_elem.name == "container" && level < 3 {
                         if let Some(media_container) = self.parse_media_container(item_elem) {
-                            // println!("Container {}", media_container.name);
-                            if media_container.name == "Music" || media_container.name == "All Music" {
-                                let child_container = Box::pin(self.do_browse_directory(media_container.id.as_str(), media_container.clone())).await?;
-                                //container.childs.push(child_container);
+                            // println!("Container {} / {}", container.name, media_container.name);
+                            if media_container.name == "All Music" { continue; }
+                            if level>0 || media_container.name == "Music" {
+                            // if media_container.name == "Music" || media_container.name == "All Music" {
+                                let child_container = Box::pin(self.do_browse_directory(media_container.id.as_str(), media_container.clone(), level+1)).await?;
+                                container.childs.push(child_container);
+                                item_count += 1;
                                 // return Ok(container)
-                                return Ok(child_container)
+                                // return Ok(child_container)
                             }
                             //Box::pin(self.browse_directory(media_container.id.as_str())).await?;
                         }
@@ -76,7 +82,7 @@ impl MediaServerController {
                     if item_elem.name == "item" {
                         if let Some(media_item) = self.parse_media_item(item_elem) {
                             container.items.push(media_item);
-                            // item_count += 1;
+                            item_count += 1;
                             // println!("{}: {:?} - {} ({:?}) [{:?}] - {}", media_item.id, media_item.artist, media_item.title, media_item.album, media_item.duration, media_item.url);
                         }
                     }
