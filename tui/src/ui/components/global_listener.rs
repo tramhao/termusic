@@ -2,7 +2,8 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::types::{
-    ConfigEditorMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, SavePlaylistMsg, XYWHMsg,
+    ConfigEditorMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg,
+    XYWHMsg,
 };
 use tui_realm_stdlib::Phantom;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
@@ -33,7 +34,9 @@ impl Component<Msg, UserEvent> for GlobalListener {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
             // "escape" should always just close the dialogs or similar, but should never quit so escape can be "spammed" to exit everything
             // Event::Keyboard(keyevent) if keyevent == keys.escape.get() => Some(Msg::QuitPopupShow),
-            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => Some(Msg::QuitPopupShow),
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
+                Some(Msg::QuitPopup(QuitPopupMsg::Show))
+            }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.toggle_pause.get() => {
                 Some(Msg::Player(PlayerMsg::TogglePause))
             }

@@ -26,18 +26,12 @@ pub enum Msg {
     Xywh(XYWHMsg),
     LyricMessage(LyricMsg),
     DeleteConfirm(DeleteConfirmMsg),
+    QuitPopup(QuitPopupMsg),
 
     ErrorPopupClose,
 
     HelpPopupShow,
     HelpPopupClose,
-
-    /// Closes the Quit Popup, if it was shown without quitting.
-    QuitPopupCloseCancel,
-    /// Always will directly quit.
-    QuitPopupCloseOk,
-    /// Either shows the Quit Dialog if enabled, or if dialog is disabled, directly quits
-    QuitPopupShow,
 
     UpdatePhoto,
 
@@ -99,6 +93,16 @@ pub enum XYWHMsg {
 pub enum DeleteConfirmMsg {
     CloseCancel,
     CloseOk,
+    Show,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum QuitPopupMsg {
+    /// Closes the Quit Popup, if it was shown without quitting.
+    CloseCancel,
+    /// Always will directly quit.
+    CloseOk,
+    /// Either shows the Quit Dialog if enabled, or if dialog is disabled, directly quits
     Show,
 }
 

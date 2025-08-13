@@ -6,7 +6,7 @@ use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{
     DBMsg, DLMsg, DeleteConfirmMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg,
-    PlayerMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
+    PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
@@ -35,22 +35,8 @@ impl Update<Msg> for Model {
                 }
                 None
             }
-            Msg::QuitPopupShow => {
-                if self.config_tui.read().settings.behavior.confirm_quit {
-                    self.mount_quit_popup();
-                } else {
-                    self.quit = true;
-                }
-                None
-            }
-            Msg::QuitPopupCloseCancel => {
-                self.app.umount(&Id::QuitPopup).ok();
-                None
-            }
-            Msg::QuitPopupCloseOk => {
-                self.quit = true;
-                None
-            }
+            Msg::QuitPopup(msg) => self.update_quit_popup_msg(&msg),
+
             Msg::Library(msg) => {
                 self.update_library(msg);
                 None
@@ -113,6 +99,27 @@ impl Model {
         {
             self.app.active(&Id::QuitPopup).ok();
         }
+    }
+
+    /// Handle all [`QuitPopupMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_quit_popup_msg(&mut self, msg: &QuitPopupMsg) -> Option<Msg> {
+        match msg {
+            QuitPopupMsg::Show => {
+                if self.config_tui.read().settings.behavior.confirm_quit {
+                    self.mount_quit_popup();
+                } else {
+                    self.quit = true;
+                }
+            }
+            QuitPopupMsg::CloseCancel => {
+                self.app.umount(&Id::QuitPopup).ok();
+            }
+            QuitPopupMsg::CloseOk => {
+                self.quit = true;
+            }
+        }
+
+        None
     }
 
     /// Handle all [`XYWHMsg`] messages. Sub-function for [`update`](Self::update).

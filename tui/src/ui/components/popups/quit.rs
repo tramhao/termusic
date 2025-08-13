@@ -1,4 +1,3 @@
-use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 /**
  * MIT License
@@ -24,6 +23,7 @@ use termusiclib::ids::Id;
  * SOFTWARE.
  */
 use termusiclib::types::Msg;
+use termusiclib::{config::SharedTuiSettings, types::QuitPopupMsg};
 use tuirealm::{Component, Event, MockComponent, props::Alignment};
 
 use crate::ui::model::{Model, UserEvent};
@@ -52,8 +52,11 @@ impl QuitPopup {
 
 impl Component<Msg, UserEvent> for QuitPopup {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component
-            .on(ev, Msg::QuitPopupCloseOk, Msg::QuitPopupCloseCancel)
+        self.component.on(
+            ev,
+            Msg::QuitPopup(QuitPopupMsg::CloseOk),
+            Msg::QuitPopup(QuitPopupMsg::CloseCancel),
+        )
     }
 }
 
