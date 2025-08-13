@@ -270,7 +270,7 @@ impl Model {
             let tx_to_main = self.tx_to_main.clone();
             tokio::task::block_in_place(move || {
                 Handle::current().block_on(song_tag.download(file, move |msg| {
-                    let _ = tx_to_main.send(Msg::Download(msg));
+                    let _ = tx_to_main.send(Msg::TagEditor(TEMsg::TrackDownloadResult(msg)));
                 }))
             })?;
         }

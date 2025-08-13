@@ -1,4 +1,6 @@
+use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
+use termusiclib::songtag::TrackDLMsg;
 
 use crate::ui::Model;
 use crate::ui::msg::{TEMsg, TFMsg};
@@ -45,9 +47,10 @@ impl Model {
                     self.mount_error_popup(e.context("rename song by tag"));
                 }
             }
-            TEMsg::Focus(m) => self.update_tag_editor_focus(m),
+            TEMsg::Focus(msg) => self.update_tag_editor_focus(msg),
 
-            TEMsg::SearchLyricResult(m) => self.te_update_lyric_results(m),
+            TEMsg::SearchLyricResult(msg) => self.te_update_lyric_results(msg),
+            TEMsg::TrackDownloadResult(msg) => self.te_update_download_msg(msg),
         }
     }
 
@@ -92,6 +95,61 @@ impl Model {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TextareaLyric))
                     .ok();
+            }
+        }
+    }
+
+    /// Handle all cases for [`TrackDLMsg`].
+    fn te_update_download_msg(&mut self, msg: TrackDLMsg) {
+        match msg {
+            TrackDLMsg::Start(url, title) => {
+                self.download_tracker.increase_one(&*url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_start(&title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            TrackDLMsg::Success(url) => {
+                self.download_tracker.decrease_one(&url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_complete(),
+                    None,
+                    None,
+                    None,
+                );
+
+                if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
+                    self.umount_tageditor();
+                }
+            }
+            TrackDLMsg::Completed(_url, file) => {
+                if self.download_tracker.visible() {
+                    return;
+                }
+                self.library_reload_with_node_focus(file);
+            }
+            TrackDLMsg::Err(url, title, error_message) => {
+                self.download_tracker.decrease_one(&url);
+                self.mount_error_popup(anyhow!("download failed: {error_message}"));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_response(&title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            TrackDLMsg::ErrEmbedData(_url, title) => {
+                self.mount_error_popup(anyhow!("download ok but tag info is not complete."));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_embed_data(&title),
+                    None,
+                    None,
+                    None,
+                );
             }
         }
     }

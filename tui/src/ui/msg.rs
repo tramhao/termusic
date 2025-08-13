@@ -2,13 +2,14 @@
 
 use std::path::PathBuf;
 
+use image::DynamicImage;
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
 use termusiclib::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
-use termusiclib::songtag::SongtagSearchResult;
-use termusiclib::types::{DLMsg, IdKey};
+use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
+use termusiclib::types::IdKey;
 
-use crate::ui::model::youtube_options::YoutubeOptions;
+use crate::ui::model::youtube_options::{YTDLMsg, YoutubeOptions};
 
 /// Main message type that encapsulates everything else.
 // Note that the style is for each thing to have a sub-type, unless it is top-level like "ForceRedraw".
@@ -16,7 +17,7 @@ use crate::ui::model::youtube_options::YoutubeOptions;
 pub enum Msg {
     ConfigEditor(ConfigEditorMsg),
     DataBase(DBMsg),
-    Download(DLMsg),
+    Notification(NotificationMsg),
     GeneralSearch(GSMsg),
     Layout(MainLayoutMsg),
     Library(LIMsg),
@@ -79,7 +80,7 @@ pub enum SavePlaylistMsg {
     ConfirmCloseOk(String),
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum XYWHMsg {
     /// Toggle the hidden / shown status of the displayed image.
     ToggleHidden,
@@ -89,7 +90,25 @@ pub enum XYWHMsg {
     MoveDown,
     ZoomIn,
     ZoomOut,
+
+    CoverDLResult(CoverDLResult),
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CoverDLResult {
+    // TODO: The Following 2 things have absolutely nothing to-do with Download
+    /// Fetching & loading the image was a success, with the image.
+    FetchPhotoSuccess(ImageWrapper),
+    /// Fetching & loading the image has failed, with error message.
+    /// `(ErrorAsString)`
+    FetchPhotoErr(String),
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct ImageWrapper {
+    pub data: DynamicImage,
+}
+impl Eq for ImageWrapper {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DeleteConfirmMsg {
@@ -449,6 +468,8 @@ pub enum YSMsg {
     ///
     /// `(ErrorAsString)`
     YoutubeSearchFail(String),
+
+    Download(YTDLMsg),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -464,6 +485,7 @@ pub enum TEMsg {
     SelectLyricOk(usize),
 
     SearchLyricResult(SongtagSearchResult),
+    TrackDownloadResult(TrackDLMsg),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -521,6 +543,19 @@ pub enum PCMsg {
 
     SyncResult(PodcastSyncResult),
     DLResult(PodcastDLResult),
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum NotificationMsg {
+    // TODO: The Following 2 things have absolutely nothing to-do with Download
+    /// Show a status message in the TUI.
+    ///
+    /// `((Title, Text))`
+    MessageShow((String, String)),
+    /// Hide a status message in the TUI.
+    ///
+    /// `((Title, Text))`
+    MessageHide((String, String)),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

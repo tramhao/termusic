@@ -1,51 +1,4 @@
-use std::sync::Arc;
-
 use crate::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
-use image::DynamicImage;
-
-pub type DLMsgURL = Arc<str>;
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum DLMsg {
-    /// Indicates a Start of a download.
-    ///
-    /// `(Url, Title)`
-    DownloadRunning(DLMsgURL, String),
-    /// Indicates the Download was a Success, though termusic post-processing is not done yet.
-    ///
-    /// `(Url)`
-    DownloadSuccess(DLMsgURL),
-    /// Indicates the Download thread finished in both Success or Error.
-    ///
-    /// `(Url, Filename)`
-    DownloadCompleted(DLMsgURL, Option<String>),
-    /// Indicates that the Download has Errored and has been aborted.
-    ///
-    /// `(Url, Title, ErrorAsString)`
-    DownloadErrDownload(DLMsgURL, String, String),
-    /// Indicates that the Download was a Success, but termusic post-processing failed.
-    /// Like re-saving tags after editing.
-    ///
-    /// `(Url, Title)`
-    DownloadErrEmbedData(DLMsgURL, String),
-
-    // TODO: The Following 2 things have absolutely nothing to-do with Download
-    /// Show a status message in the TUI.
-    ///
-    /// `((Title, Text))`
-    MessageShow((String, String)),
-    /// Hide a status message in the TUI.
-    ///
-    /// `((Title, Text))`
-    MessageHide((String, String)),
-
-    // TODO: The Following 2 things have absolutely nothing to-do with Download
-    /// Fetching & loading the image was a success, with the image.
-    FetchPhotoSuccess(ImageWrapper),
-    /// Fetching & loading the image has failed, with error message.
-    /// `(ErrorAsString)`
-    FetchPhotoErr(String),
-}
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdKey {
@@ -70,12 +23,6 @@ impl From<IdKey> for IdConfigEditor {
         }
     }
 }
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct ImageWrapper {
-    pub data: DynamicImage,
-}
-impl Eq for ImageWrapper {}
 
 /// Constant strings for Unknown values
 pub mod const_unknown {

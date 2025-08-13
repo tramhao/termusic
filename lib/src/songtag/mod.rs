@@ -12,7 +12,6 @@ use lofty::prelude::{Accessor, TagExt};
 use service::SongTagService;
 use ytd_rs::{Arg, YoutubeDL};
 
-use crate::types::DLMsg;
 use crate::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::utils::get_parent_folder;
 
@@ -112,6 +111,33 @@ pub async fn search(search_str: &str, tx_done: impl Fn(SongtagSearchResult) + Se
     tx_done(SongtagSearchResult::Finish(results));
 }
 
+pub type TrackDLMsgURL = Arc<str>;
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum TrackDLMsg {
+    /// Indicates a Start of a download.
+    ///
+    /// `(Url, Title)`
+    Start(TrackDLMsgURL, String),
+    /// Indicates the Download was a Success, though termusic post-processing is not done yet.
+    ///
+    /// `(Url)`
+    Success(TrackDLMsgURL),
+    /// Indicates the Download thread finished in both Success or Error.
+    ///
+    /// `(Url, Filename)`
+    Completed(TrackDLMsgURL, Option<String>),
+    /// Indicates that the Download has Errored and has been aborted.
+    ///
+    /// `(Url, Title, ErrorAsString)`
+    Err(TrackDLMsgURL, String, String),
+    /// Indicates that the Download was a Success, but termusic post-processing failed.
+    /// Like re-saving tags after editing.
+    ///
+    /// `(Url, Title)`
+    ErrEmbedData(TrackDLMsgURL, String),
+}
+
 impl SongTag {
     #[must_use]
     pub fn artist(&self) -> Option<&str> {
@@ -196,7 +222,11 @@ impl SongTag {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub async fn download(&self, file: &Path, tx: impl Fn(DLMsg) + Send + 'static) -> Result<()> {
+    pub async fn download(
+        &self,
+        file: &Path,
+        tx: impl Fn(TrackDLMsg) + Send + 'static,
+    ) -> Result<()> {
         let p_parent = get_parent_folder(file);
         let artist = self
             .artist
@@ -264,26 +294,22 @@ impl SongTag {
         let ytd = YoutubeDL::new(&PathBuf::from(p_parent), args, &url)?;
 
         thread::spawn(move || -> Result<()> {
-            tx(DLMsg::DownloadRunning(url.clone(), title.clone()));
+            tx(TrackDLMsg::Start(url.clone(), title.clone()));
 
             // start download
             // check what the result is and print out the path to the download or the error
             let _download_result = match ytd.download() {
                 Ok(res) => res,
                 Err(err) => {
-                    tx(DLMsg::DownloadErrDownload(
-                        url.clone(),
-                        title.clone(),
-                        err.to_string(),
-                    ));
+                    tx(TrackDLMsg::Err(url.clone(), title.clone(), err.to_string()));
                     sleep(Duration::from_secs(1));
-                    tx(DLMsg::DownloadCompleted(url.clone(), None));
+                    tx(TrackDLMsg::Completed(url.clone(), None));
 
                     return Ok(());
                 }
             };
 
-            tx(DLMsg::DownloadSuccess(url.clone()));
+            tx(TrackDLMsg::Success(url.clone()));
             let mut tag = Id3v2Tag::default();
 
             tag.set_title(title.clone());
@@ -306,14 +332,14 @@ impl SongTag {
 
             if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
                 sleep(Duration::from_secs(1));
-                tx(DLMsg::DownloadCompleted(
+                tx(TrackDLMsg::Completed(
                     url,
                     Some(p_full.to_string_lossy().to_string()),
                 ));
             } else {
-                tx(DLMsg::DownloadErrEmbedData(url.clone(), title));
+                tx(TrackDLMsg::ErrEmbedData(url.clone(), title));
                 sleep(Duration::from_secs(1));
-                tx(DLMsg::DownloadCompleted(url, None));
+                tx(TrackDLMsg::Completed(url, None));
             }
 
             Ok(())
