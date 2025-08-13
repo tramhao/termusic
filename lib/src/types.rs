@@ -31,13 +31,15 @@ pub enum Msg {
 
     ErrorPopupClose,
 
+    /// Same as [`ForceRedraw`](Msg::ForceRedraw), but also updated the drawn cover.
     UpdatePhoto,
-
     /// Force a redraw because of some change.
     ///
     /// This is necessary as `Components` do not have access to `Model.redraw`.
     ///
     /// For example pushing ARROW DOWN to change the selection in a table.
+    ///
+    /// Note that this message does *not* update the drawn cover.
     ForceRedraw,
 }
 

@@ -114,7 +114,8 @@ impl UI {
 
             self.model.ensure_quit_popup_top_most_focus();
 
-            // Check whether to force redraw
+            // normally a interval-redraw should not be necessary and instead only happen on events,
+            // but there might be some bugs that this works around
             self.exec_interval_redraw();
             self.model.view();
         }
