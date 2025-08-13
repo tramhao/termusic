@@ -17,10 +17,10 @@ use anyhow::Result;
 use bytes::Buf;
 use image::DynamicImage;
 use lofty::picture::Picture;
-use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::track::MediaTypes;
 use tokio::runtime::Handle;
 
+use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::{Model, TxToMain, ViuerSupported};
 use crate::ui::msg::{CoverDLResult, ImageWrapper, Msg, XYWHMsg};
 

@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::ids::Id;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -30,6 +29,7 @@ use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, T
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
+use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, YSMsg};
 

@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::ids::Id;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     Component, Event, MockComponent,
@@ -30,6 +29,7 @@ use tuirealm::{
     props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan},
 };
 
+use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ErrorPopupMsg, Msg};
 

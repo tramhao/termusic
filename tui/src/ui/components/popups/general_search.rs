@@ -2,7 +2,6 @@ use std::path::Path;
 
 use anyhow::{Result, anyhow, bail};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::ids::Id;
 use termusiclib::track::MediaTypes;
 use tui_realm_stdlib::Table;
 use tui_realm_treeview::TREE_INITIAL_NODE;
@@ -13,6 +12,7 @@ use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, Sta
 
 use crate::ui::Model;
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
+use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg};
 

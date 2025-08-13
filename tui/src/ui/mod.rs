@@ -1,4 +1,5 @@
 pub mod components;
+mod ids;
 pub mod model;
 mod msg;
 mod music_player_client;

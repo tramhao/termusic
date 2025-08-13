@@ -2,7 +2,6 @@ use std::fmt::Write as _;
 
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::KeyBinding;
-use termusiclib::ids::Id;
 use tui_realm_stdlib::Table;
 use tuirealm::{
     Component, Event, MockComponent,
@@ -11,6 +10,7 @@ use tuirealm::{
     props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan},
 };
 
+use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{HelpPopupMsg, Msg};
 

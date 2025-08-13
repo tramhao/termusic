@@ -4,11 +4,10 @@ use std::path::PathBuf;
 
 use image::DynamicImage;
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
-use termusiclib::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
-use termusiclib::types::IdKey;
 
+use crate::ui::ids::{IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::youtube_options::{YTDLMsg, YoutubeOptions};
 
 /// Main message type that encapsulates everything else.
@@ -584,7 +583,7 @@ impl SearchCriteria {
 
 #[cfg(test)]
 mod tests {
-    use termusiclib::types::IdKey;
+    use crate::ui::ids::IdKey;
 
     use super::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
 
@@ -602,7 +601,7 @@ mod tests {
         for entry in KFGLOBAL_FOCUS_ORDER {
             assert_eq!(
                 std::mem::discriminant(entry),
-                std::mem::discriminant(&IdKey::Global(termusiclib::ids::IdKeyGlobal::Config))
+                std::mem::discriminant(&IdKey::Global(crate::ui::ids::IdKeyGlobal::Config))
             );
         }
     }
@@ -621,7 +620,7 @@ mod tests {
         for entry in KFOTHER_FOCUS_ORDER {
             assert_eq!(
                 std::mem::discriminant(entry),
-                std::mem::discriminant(&IdKey::Other(termusiclib::ids::IdKeyOther::DatabaseAddAll))
+                std::mem::discriminant(&IdKey::Other(crate::ui::ids::IdKeyOther::DatabaseAddAll))
             );
         }
     }

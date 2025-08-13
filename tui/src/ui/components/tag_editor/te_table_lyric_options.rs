@@ -1,6 +1,5 @@
 use anyhow::{Context, Result, anyhow};
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::songtag::{SongTag, SongtagSearchResult, search};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
@@ -10,6 +9,7 @@ use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::Model;
+use crate::ui::ids::{Id, IdTagEditor};
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
 

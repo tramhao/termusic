@@ -22,12 +22,11 @@
  * SOFTWARE.
  */
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::ids::Id;
 use tuirealm::{Component, Event, MockComponent, props::Alignment};
 
-use crate::ui::model::{Model, UserEvent};
-
 use super::{YNConfirm, YNConfirmStyle};
+use crate::ui::ids::Id;
+use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, QuitPopupMsg};
 
 #[derive(MockComponent)]

@@ -7,7 +7,6 @@ use anyhow::{Context as _, Result, anyhow, bail};
 use rand::seq::IndexedRandom;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::LoopMode;
-use termusiclib::ids::Id;
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, track_ops};
 use termusiclib::player::playlist_helpers::{
@@ -35,6 +34,7 @@ use tuirealm::{
 };
 
 use crate::ui::Model;
+use crate::ui::ids::Id;
 use crate::ui::model::{TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};

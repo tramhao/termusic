@@ -8,7 +8,6 @@ use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
 use shell_words;
-use termusiclib::ids::Id;
 use termusiclib::invidious::{Instance, YoutubeVideo};
 use termusiclib::track::DurationFmtShort;
 use termusiclib::utils::get_parent_folder;
@@ -18,6 +17,7 @@ use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
 
 use super::Model;
+use crate::ui::ids::Id;
 use crate::ui::msg::{Msg, YSMsg};
 
 #[expect(dead_code)]

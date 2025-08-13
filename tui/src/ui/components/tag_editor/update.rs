@@ -1,8 +1,8 @@
 use anyhow::anyhow;
-use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::songtag::TrackDLMsg;
 
 use crate::ui::Model;
+use crate::ui::ids::{Id, IdTagEditor};
 use crate::ui::msg::{TEMsg, TFMsg};
 
 impl Model {

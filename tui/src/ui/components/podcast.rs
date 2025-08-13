@@ -6,7 +6,6 @@ use reqwest::ClientBuilder;
 use sanitize_filename::{Options, sanitize_with_options};
 use serde_json::Value;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::ids::Id;
 use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::List;
@@ -19,6 +18,7 @@ use tuirealm::{
 };
 
 use crate::ui::Model;
+use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg, PCMsg};
 

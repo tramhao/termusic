@@ -5,7 +5,6 @@ use std::time::Duration;
 use either::Either;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
-use termusiclib::ids::Id;
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, artist_ops, track_ops};
 use termusiclib::track::{DurationFmtShort, Track};
@@ -22,6 +21,7 @@ use tuirealm::{
 
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::Model;
+use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{DBMsg, GSMsg, Msg, SearchCriteria};
 

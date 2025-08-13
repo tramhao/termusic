@@ -1,10 +1,10 @@
-use termusiclib::ids::Id;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent,
     props::{Alignment, BorderType, Borders, Color, PropPayload, TextModifiers, TextSpan},
 };
 
+use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::Msg;
 

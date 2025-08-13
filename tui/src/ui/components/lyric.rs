@@ -3,7 +3,6 @@ use std::sync::LazyLock;
 use anyhow::{Result, anyhow};
 use regex::Regex;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::ids::Id;
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaTypes;
@@ -18,6 +17,7 @@ use tuirealm::props::{
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use super::TETrack;
+use crate::ui::ids::Id;
 use crate::ui::model::{ExtraLyricData, UserEvent};
 use crate::ui::msg::{LyricMsg, Msg};
 use crate::ui::{Model, model::TermusicLayout};
