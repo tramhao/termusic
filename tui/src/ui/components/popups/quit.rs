@@ -1,4 +1,3 @@
-use termusiclib::ids::Id;
 /**
  * MIT License
  *
@@ -22,13 +21,14 @@ use termusiclib::ids::Id;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::Msg;
-use termusiclib::{config::SharedTuiSettings, types::QuitPopupMsg};
+use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::Id;
 use tuirealm::{Component, Event, MockComponent, props::Alignment};
 
 use crate::ui::model::{Model, UserEvent};
 
 use super::{YNConfirm, YNConfirmStyle};
+use crate::ui::msg::{Msg, QuitPopupMsg};
 
 #[derive(MockComponent)]
 pub struct QuitPopup {

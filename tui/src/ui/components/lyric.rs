@@ -9,7 +9,6 @@ use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaTypes;
 use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use termusiclib::types::{LyricMsg, Msg};
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -20,6 +19,7 @@ use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use super::TETrack;
 use crate::ui::model::{ExtraLyricData, UserEvent};
+use crate::ui::msg::{LyricMsg, Msg};
 use crate::ui::{Model, model::TermusicLayout};
 
 /// Regex for finding <br/> tags -- also captures any surrounding

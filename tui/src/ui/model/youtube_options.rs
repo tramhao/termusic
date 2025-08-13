@@ -3,16 +3,15 @@ use std::sync::{Arc, LazyLock};
 use std::thread;
 use std::time::Duration;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
 use shell_words;
 use termusiclib::ids::Id;
-use termusiclib::invidious::Instance;
+use termusiclib::invidious::{Instance, YoutubeVideo};
 use termusiclib::track::DurationFmtShort;
-use termusiclib::types::{DLMsg, Msg};
-use termusiclib::types::{YSMsg, YoutubeOptions};
+use termusiclib::types::DLMsg;
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
@@ -20,6 +19,7 @@ use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
 
 use super::Model;
+use crate::ui::msg::{Msg, YSMsg};
 
 #[expect(dead_code)]
 static RE_FILENAME: LazyLock<Regex> =
@@ -27,6 +27,51 @@ static RE_FILENAME: LazyLock<Regex> =
 
 static RE_FILENAME_YTDLP: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap());
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct YoutubeOptions {
+    pub items: Vec<YoutubeVideo>,
+    pub page: u32,
+    pub invidious_instance: Instance,
+}
+
+impl Default for YoutubeOptions {
+    fn default() -> Self {
+        Self {
+            items: Vec::new(),
+            page: 1,
+            invidious_instance: Instance::default(),
+        }
+    }
+}
+
+impl YoutubeOptions {
+    pub fn get_by_index(&self, index: usize) -> Result<&YoutubeVideo> {
+        if let Some(item) = self.items.get(index) {
+            return Ok(item);
+        }
+        Err(anyhow!("index not found"))
+    }
+
+    pub async fn prev_page(&mut self) -> Result<()> {
+        if self.page > 1 {
+            self.page -= 1;
+            self.items = self.invidious_instance.get_search_query(self.page).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn next_page(&mut self) -> Result<()> {
+        self.page += 1;
+        self.items = self.invidious_instance.get_search_query(self.page).await?;
+        Ok(())
+    }
+
+    #[must_use]
+    pub const fn page(&self) -> u32 {
+        self.page
+    }
+}
 
 impl Model {
     pub fn youtube_options_download(&mut self, index: usize) -> Result<()> {

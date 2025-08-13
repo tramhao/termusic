@@ -1,5 +1,5 @@
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{Msg, TEMsg, TFMsg};
+use termusiclib::types::{TEMsg, TFMsg};
 use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -7,6 +7,7 @@ use tuirealm::props::{Alignment, BorderType, Borders};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::model::UserEvent;
+use crate::ui::msg::Msg;
 
 #[derive(MockComponent)]
 pub struct TESelectLyric {

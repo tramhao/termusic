@@ -1,7 +1,6 @@
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
-use termusiclib::types::{Msg, SavePlaylistMsg};
 use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
@@ -12,6 +11,7 @@ use tuirealm::{
 use super::{YNConfirm, YNConfirmStyle};
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{Msg, SavePlaylistMsg};
 
 #[derive(MockComponent)]
 pub struct SavePlaylistPopup {

@@ -24,13 +24,13 @@
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::{Id, IdConfigEditor};
-use termusiclib::types::{ConfigEditorMsg, Msg};
 use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Style, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
 
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
+use crate::ui::msg::{ConfigEditorMsg, Msg};
 
 mod color;
 mod general;

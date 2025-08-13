@@ -6,7 +6,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::ids::Id;
-use termusiclib::types::{DeleteConfirmMsg, GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
+use termusiclib::types::TEMsg;
 use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE, Tree, TreeView};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -14,6 +14,7 @@ use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::model::{DownloadTracker, Model, TxToMain, UserEvent};
+use crate::ui::msg::{DeleteConfirmMsg, GSMsg, LIMsg, Msg, PLMsg, RecVec, YSMsg};
 use crate::ui::tui_cmd::TuiCmd;
 use crate::utils::get_pin_yin;
 

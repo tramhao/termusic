@@ -10,11 +10,10 @@ use lofty::id3::v2::{Frame, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::picture::Picture;
 use lofty::prelude::{Accessor, TagExt};
 use service::SongTagService;
-use tokio::sync::mpsc::UnboundedSender;
 use ytd_rs::{Arg, YoutubeDL};
 
 use crate::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use crate::types::{DLMsg, Msg, SongTagRecordingResult, TEMsg};
+use crate::types::{DLMsg, SongTagRecordingResult, TEMsg};
 use crate::utils::get_parent_folder;
 
 mod kugou;
@@ -68,7 +67,7 @@ impl std::fmt::Display for ServiceProvider {
 }
 
 // Search function of 3 servers. Run in parallel to get results faster.
-pub async fn search(search_str: &str, tx_done: UnboundedSender<Msg>) {
+pub async fn search(search_str: &str, tx_done: impl Fn(TEMsg) + Send + 'static) {
     let mut results: Vec<SongTag> = Vec::new();
 
     let handle_netease = async {
@@ -104,8 +103,8 @@ pub async fn search(search_str: &str, tx_done: UnboundedSender<Msg>) {
         Err(err) => error!("Kogou Error: {err:#}"),
     }
 
-    let _ = tx_done.send(Msg::TagEditor(TEMsg::TESearchLyricResult(
-        SongTagRecordingResult::Finish(results),
+    tx_done(TEMsg::TESearchLyricResult(SongTagRecordingResult::Finish(
+        results,
     )));
 }
 
@@ -193,7 +192,7 @@ impl SongTag {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub async fn download(&self, file: &Path, tx: UnboundedSender<Msg>) -> Result<()> {
+    pub async fn download(&self, file: &Path, tx: impl Fn(DLMsg) + Send + 'static) -> Result<()> {
         let p_parent = get_parent_folder(file);
         let artist = self
             .artist
@@ -261,33 +260,26 @@ impl SongTag {
         let ytd = YoutubeDL::new(&PathBuf::from(p_parent), args, &url)?;
 
         thread::spawn(move || -> Result<()> {
-            tx.send(Msg::Download(DLMsg::DownloadRunning(
-                url.clone(),
-                title.clone(),
-            )))
-            .ok();
+            tx(DLMsg::DownloadRunning(url.clone(), title.clone()));
 
             // start download
             // check what the result is and print out the path to the download or the error
             let _download_result = match ytd.download() {
                 Ok(res) => res,
                 Err(err) => {
-                    tx.send(Msg::Download(DLMsg::DownloadErrDownload(
+                    tx(DLMsg::DownloadErrDownload(
                         url.clone(),
                         title.clone(),
                         err.to_string(),
-                    )))
-                    .ok();
+                    ));
                     sleep(Duration::from_secs(1));
-                    tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
-                        .ok();
+                    tx(DLMsg::DownloadCompleted(url.clone(), None));
 
                     return Ok(());
                 }
             };
 
-            tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
-                .ok();
+            tx(DLMsg::DownloadSuccess(url.clone()));
             let mut tag = Id3v2Tag::default();
 
             tag.set_title(title.clone());
@@ -310,20 +302,14 @@ impl SongTag {
 
             if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
                 sleep(Duration::from_secs(1));
-                tx.send(Msg::Download(DLMsg::DownloadCompleted(
+                tx(DLMsg::DownloadCompleted(
                     url,
                     Some(p_full.to_string_lossy().to_string()),
-                )))
-                .ok();
+                ));
             } else {
-                tx.send(Msg::Download(DLMsg::DownloadErrEmbedData(
-                    url.clone(),
-                    title,
-                )))
-                .ok();
+                tx(DLMsg::DownloadErrEmbedData(url.clone(), title));
                 sleep(Duration::from_secs(1));
-                tx.send(Msg::Download(DLMsg::DownloadCompleted(url, None)))
-                    .ok();
+                tx(DLMsg::DownloadCompleted(url, None));
             }
 
             Ok(())

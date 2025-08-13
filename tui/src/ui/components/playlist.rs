@@ -21,7 +21,6 @@ use termusiclib::player::{
 use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::types::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
-use termusiclib::types::{GSMsg, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 use tui_realm_stdlib::Table;
 use tuirealm::props::Borders;
@@ -37,6 +36,7 @@ use tuirealm::{
 
 use crate::ui::Model;
 use crate::ui::model::{TermusicLayout, UserEvent};
+use crate::ui::msg::{GSMsg, Msg, PLMsg};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 
 #[derive(MockComponent)]

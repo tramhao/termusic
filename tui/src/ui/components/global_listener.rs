@@ -1,15 +1,15 @@
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
-use termusiclib::types::{
-    ConfigEditorMsg, HelpPopupMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, QuitPopupMsg,
-    SavePlaylistMsg, XYWHMsg,
-};
 use tui_realm_stdlib::Phantom;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
 
 use crate::ui::Model;
 use crate::ui::model::UserEvent;
+use crate::ui::msg::{
+    ConfigEditorMsg, HelpPopupMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, QuitPopupMsg,
+    SavePlaylistMsg, XYWHMsg,
+};
 
 #[derive(MockComponent)]
 pub struct GlobalListener {

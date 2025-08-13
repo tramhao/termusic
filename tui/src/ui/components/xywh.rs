@@ -19,10 +19,11 @@ use image::DynamicImage;
 use lofty::picture::Picture;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::track::MediaTypes;
-use termusiclib::types::{DLMsg, ImageWrapper, Msg};
+use termusiclib::types::{DLMsg, ImageWrapper};
 use tokio::runtime::Handle;
 
 use crate::ui::model::{Model, TxToMain, ViuerSupported};
+use crate::ui::msg::Msg;
 
 impl Model {
     pub fn xywh_move_left(&mut self) {

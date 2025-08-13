@@ -1,9 +1,8 @@
 use std::fmt::Write as _;
 
+use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::ids::Id;
-use termusiclib::types::Msg;
-use termusiclib::{config::SharedTuiSettings, types::HelpPopupMsg};
 use tui_realm_stdlib::Table;
 use tuirealm::{
     Component, Event, MockComponent,
@@ -13,6 +12,7 @@ use tuirealm::{
 };
 
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{HelpPopupMsg, Msg};
 
 #[derive(MockComponent)]
 pub struct HelpPopup {

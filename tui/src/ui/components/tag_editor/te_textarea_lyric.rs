@@ -1,5 +1,5 @@
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{Msg, TEMsg, TFMsg};
+use termusiclib::types::{TEMsg, TFMsg};
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -7,6 +7,7 @@ use tuirealm::props::{Alignment, BorderType, Borders, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
 
 use crate::ui::model::UserEvent;
+use crate::ui::msg::Msg;
 
 #[derive(MockComponent)]
 pub struct TETextareaLyric {

@@ -1,5 +1,5 @@
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{Msg, TEMsg, TFMsg};
+use termusiclib::types::{TEMsg, TFMsg};
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, InputType};
@@ -7,6 +7,7 @@ use tuirealm::{Component, Event, MockComponent};
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::model::UserEvent;
+use crate::ui::msg::Msg;
 
 /// Common Field Properties and event handling
 #[derive(MockComponent)]

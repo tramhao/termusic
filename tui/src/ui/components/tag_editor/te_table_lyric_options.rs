@@ -1,10 +1,11 @@
 use crate::ui::Model;
 use crate::ui::model::UserEvent;
+use crate::ui::msg::Msg;
 use anyhow::{Context, Result, anyhow};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::songtag::{SongTag, search};
-use termusiclib::types::{Msg, SongTagRecordingResult, TEMsg, TFMsg};
+use termusiclib::types::{SongTagRecordingResult, TEMsg, TFMsg};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -242,7 +243,10 @@ impl Model {
         let tracker_handle = self.download_tracker.clone();
 
         handle.spawn(async move {
-            search(&search_str, songtag_tx).await;
+            search(&search_str, move |msg| {
+                let _ = songtag_tx.send(Msg::TagEditor(msg));
+            })
+            .await;
             tracker_handle.decrease_one(&search_str);
         });
     }
@@ -267,7 +271,9 @@ impl Model {
             // though i am not fully sure if that is 100% the case, this avoid the panic though
             let tx_to_main = self.tx_to_main.clone();
             tokio::task::block_in_place(move || {
-                Handle::current().block_on(song_tag.download(file, tx_to_main))
+                Handle::current().block_on(song_tag.download(file, move |msg| {
+                    let _ = tx_to_main.send(Msg::Download(msg));
+                }))
             })?;
         }
         Ok(())

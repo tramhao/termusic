@@ -4,15 +4,16 @@ use std::time::Duration;
 use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::track::MediaTypesSimple;
-use termusiclib::types::{
-    DBMsg, DLMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg,
-    MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
-};
+use termusiclib::types::{DLMsg, PCMsg};
 use tokio::runtime::Handle;
 use tokio::time::sleep;
 use tuirealm::Update;
 use tuirealm::props::{AttrValue, Attribute};
 
+use crate::ui::msg::{
+    DBMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg, MainLayoutMsg,
+    Msg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
+};
 use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::{Model, model::TermusicLayout};
 

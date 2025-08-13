@@ -1,5 +1,6 @@
 pub mod components;
 pub mod model;
+mod msg;
 mod music_player_client;
 mod tui_cmd;
 pub mod utils;

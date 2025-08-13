@@ -22,7 +22,7 @@ use termusiclib::config::SharedTuiSettings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::{Msg, TEMsg, TFMsg};
+use termusiclib::types::{TEMsg, TFMsg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -34,6 +34,7 @@ use tuirealm::{
 };
 
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::Msg;
 
 /// ## Counter
 ///

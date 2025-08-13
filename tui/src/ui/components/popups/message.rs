@@ -1,5 +1,4 @@
 use termusiclib::ids::Id;
-use termusiclib::types::Msg;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent,
@@ -7,6 +6,7 @@ use tuirealm::{
 };
 
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::Msg;
 
 #[derive(MockComponent)]
 pub struct MessagePopup {

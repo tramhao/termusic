@@ -22,11 +22,11 @@ use reqwest::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
 use sanitize_filename::{Options, sanitize_with_options};
-use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
+use tokio::sync::mpsc::unbounded_channel;
 
 use crate::config::v2::server::PodcastSettings;
 use crate::taskpool::TaskPool;
-use crate::types::{Msg, PCMsg};
+use crate::types::PCMsg;
 use db::Database;
 use episode::{Episode, EpisodeNoId};
 pub use podcast::{Podcast, PodcastNoId};
@@ -83,22 +83,22 @@ pub fn check_feed(
     feed: PodcastFeed,
     max_retries: usize,
     tp: &TaskPool,
-    tx_to_main: UnboundedSender<Msg>,
+    tx_to_main: impl Fn(PCMsg) + Send + 'static,
 ) {
     tp.execute(async move {
-        let _ = tx_to_main.send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())));
+        tx_to_main(PCMsg::FetchPodcastStart(feed.url.clone()));
         match get_feed_data(&feed.url, max_retries).await {
             Ok(pod) => match feed.id {
                 Some(id) => {
-                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::SyncData((id, pod))));
+                    tx_to_main(PCMsg::SyncData((id, pod)));
                 }
                 None => {
-                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::NewData(pod)));
+                    tx_to_main(PCMsg::NewData(pod));
                 }
             },
             Err(err) => {
                 error!("get_feed_data had a Error: {err:#?}");
-                let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed)));
+                tx_to_main(PCMsg::Error(feed));
             }
         }
     });
@@ -302,11 +302,15 @@ pub async fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &P
     let (tx_to_main, mut rx_to_main) = unbounded_channel();
 
     for pod in &podcast_list {
+        let tx_to_main_c = tx_to_main.clone();
+
         check_feed(
             pod.clone(),
             usize::from(config.max_download_retries),
             &taskpool,
-            tx_to_main.clone(),
+            move |msg| {
+                let _ = tx_to_main_c.send(msg);
+            },
         );
     }
 
@@ -314,7 +318,7 @@ pub async fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &P
     let mut failure = false;
     while let Some(message) = rx_to_main.recv().await {
         match message {
-            Msg::Podcast(PCMsg::NewData(pod)) => {
+            PCMsg::NewData(pod) => {
                 msg_counter += 1;
                 let title = &pod.title;
                 let db_result = db_inst.insert_podcast(&pod);
@@ -329,13 +333,13 @@ pub async fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &P
                 }
             }
 
-            Msg::Podcast(PCMsg::Error(feed)) => {
+            PCMsg::Error(feed) => {
                 msg_counter += 1;
                 failure = true;
                 error!("Error retrieving RSS feed: {}", feed.url);
             }
 
-            Msg::Podcast(PCMsg::SyncData((_id, _pod))) => {
+            PCMsg::SyncData((_id, _pod)) => {
                 msg_counter += 1;
             }
             _ => {}
@@ -448,16 +452,16 @@ pub fn download_list(
     dest: &Path,
     max_retries: usize,
     tp: &TaskPool,
-    tx_to_main: &UnboundedSender<Msg>,
+    tx_to_main: impl Fn(PCMsg) + Send + 'static + Clone,
 ) {
     // parse episode details and push to queue
     for ep in episodes {
         let tx = tx_to_main.clone();
         let dest2 = dest.to_path_buf();
         tp.execute(async move {
-            let _ = tx.send(Msg::Podcast(PCMsg::DLStart(ep.clone())));
+            tx(PCMsg::DLStart(ep.clone()));
             let result = download_file(ep, dest2, max_retries).await;
-            let _ = tx.send(Msg::Podcast(result));
+            tx(result);
         });
     }
 }

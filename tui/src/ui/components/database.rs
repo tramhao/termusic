@@ -10,7 +10,6 @@ use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, artist_ops, track_ops};
 use termusiclib::track::{DurationFmtShort, Track};
 use termusiclib::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
-use termusiclib::types::{DBMsg, GSMsg, Msg, SearchCriteria};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -24,6 +23,7 @@ use tuirealm::{
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::Model;
 use crate::ui::model::UserEvent;
+use crate::ui::msg::{DBMsg, GSMsg, Msg, SearchCriteria};
 
 /// Helper trait to accomedate mutable access to `self` while also allowing access to other `self` properties for [`common_list_movement`].
 trait OnKeyDB {

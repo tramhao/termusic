@@ -1,5 +1,3 @@
-use crate::ui::Model;
-use crate::ui::tui_cmd::TuiCmd;
 use anyhow::Context;
 use termusiclib::config::new_shared_tui_settings;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
@@ -8,10 +6,12 @@ use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
-use termusiclib::types::{
-    ConfigEditorMsg, IdKey, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg,
-};
+use termusiclib::types::IdKey;
 use termusiclib::utils::get_app_config_path;
+
+use crate::ui::Model;
+use crate::ui::msg::{ConfigEditorMsg, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg};
+use crate::ui::tui_cmd::TuiCmd;
 
 /// How many Themes there are without actual files and always exist
 pub const THEMES_WITHOUT_FILES: usize = 2;

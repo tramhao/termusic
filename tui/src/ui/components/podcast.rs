@@ -8,7 +8,7 @@ use serde_json::Value;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
-use termusiclib::types::{GSMsg, Msg, PCMsg};
+use termusiclib::types::PCMsg;
 use tokio::runtime::Handle;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -21,6 +21,7 @@ use tuirealm::{
 
 use crate::ui::Model;
 use crate::ui::model::UserEvent;
+use crate::ui::msg::{GSMsg, Msg};
 
 #[derive(MockComponent)]
 pub struct FeedsList {
@@ -430,6 +431,7 @@ impl Model {
 
     pub fn podcast_add(&mut self, url: String) {
         let feed = PodcastFeed::new(None, url, None);
+        let tx_to_main = self.tx_to_main.clone();
 
         crate::podcast::check_feed(
             feed,
@@ -441,7 +443,9 @@ impl Model {
                     .max_download_retries,
             ),
             &self.taskpool,
-            self.tx_to_main.clone(),
+            move |msg| {
+                let _ = tx_to_main.send(Msg::Podcast(msg));
+            },
         );
     }
     pub fn podcast_sync_feeds_and_episodes(&mut self) {
@@ -647,6 +651,8 @@ impl Model {
             }
         }
         for feed in pod_data {
+            let tx_to_main = self.tx_to_main.clone();
+
             crate::podcast::check_feed(
                 feed,
                 usize::from(
@@ -657,7 +663,9 @@ impl Model {
                         .max_download_retries,
                 ),
                 &self.taskpool,
-                self.tx_to_main.clone(),
+                move |msg| {
+                    let _ = tx_to_main.send(Msg::Podcast(msg));
+                },
             );
         }
         // self.update_tracker_notif();
@@ -742,6 +750,7 @@ impl Model {
             );
             match crate::utils::create_podcast_dir(&self.config_server.read(), dir_name) {
                 Ok(path) => {
+                    let tx_to_main = self.tx_to_main.clone();
                     // for ep in ep_data.iter() {
                     //     self.download_tracker.insert(ep.id);
                     // }
@@ -756,7 +765,9 @@ impl Model {
                                 .max_download_retries,
                         ),
                         &self.taskpool,
-                        &self.tx_to_main,
+                        move |msg| {
+                            let _ = tx_to_main.send(Msg::Podcast(msg));
+                        },
                     );
                 }
                 Err(_) => bail!("Could not create dir: {pod_title}"),

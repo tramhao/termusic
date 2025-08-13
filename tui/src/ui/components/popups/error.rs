@@ -1,4 +1,3 @@
-use termusiclib::ids::Id;
 /**
  * MIT License
  *
@@ -22,8 +21,8 @@ use termusiclib::ids::Id;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::Msg;
-use termusiclib::{config::SharedTuiSettings, types::ErrorPopupMsg};
+use termusiclib::config::SharedTuiSettings;
+use termusiclib::ids::Id;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     Component, Event, MockComponent,
@@ -32,6 +31,7 @@ use tuirealm::{
 };
 
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{ErrorPopupMsg, Msg};
 
 #[derive(MockComponent)]
 pub struct ErrorPopup {

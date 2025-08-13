@@ -1,5 +1,4 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::types::Msg;
 use tui_realm_stdlib::Radio;
 use tuirealm::{
     AttrValue, Attribute, Event, MockComponent, State, StateValue,
@@ -9,6 +8,7 @@ use tuirealm::{
 };
 
 use crate::ui::model::UserEvent;
+use crate::ui::msg::Msg;
 
 /// Struct for the Style of the [`YNConfirm`]
 #[derive(Debug, Clone, PartialEq)]

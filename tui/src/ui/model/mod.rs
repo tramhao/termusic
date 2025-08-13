@@ -19,7 +19,6 @@ use termusiclib::songtag::SongTag;
 use termusiclib::songtag::lrc::Lyric;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::track::{LyricData, MediaTypesSimple, Track};
-use termusiclib::types::{Msg, SearchCriteria, YoutubeOptions};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;
@@ -32,6 +31,8 @@ use super::components::TETrack;
 use super::tui_cmd::TuiCmd;
 use crate::CombinedSettings;
 use crate::ui::Application;
+use crate::ui::model::youtube_options::YoutubeOptions;
+use crate::ui::msg::{Msg, SearchCriteria};
 pub use download_tracker::DownloadTracker;
 pub use user_events::UserEvent;
 
@@ -40,7 +41,7 @@ mod playlist;
 mod update;
 mod user_events;
 mod view;
-mod youtube_options;
+pub mod youtube_options;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TermusicLayout {

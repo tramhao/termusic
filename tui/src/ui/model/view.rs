@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
-use termusiclib::types::{DBMsg, Msg, PCMsg};
+use termusiclib::types::PCMsg;
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tui_realm_treeview::Tree;
@@ -21,6 +21,7 @@ use crate::ui::components::{
     Playlist, Progress, Source,
 };
 use crate::ui::model::{Model, TermusicLayout, UserEvent};
+use crate::ui::msg::{DBMsg, Msg};
 use crate::ui::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute,
 };

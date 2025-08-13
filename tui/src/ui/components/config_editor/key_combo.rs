@@ -27,7 +27,7 @@ use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
 use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
-use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsg, Msg};
+use termusiclib::types::IdKey;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::ratatui::widgets::ListDirection;
@@ -46,6 +46,7 @@ use tuirealm::ratatui::{
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::InputStates;
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
 
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
