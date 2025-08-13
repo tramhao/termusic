@@ -83,14 +83,6 @@ impl Update<Msg> for Model {
                 self.update_youtube_search(m);
                 None
             }
-            Msg::LyricCycle => {
-                self.lyric_cycle();
-                None
-            }
-            Msg::LyricAdjustDelay(offset) => {
-                self.lyric_adjust_delay(offset);
-                None
-            }
             Msg::TagEditor(m) => {
                 self.update_tageditor(m);
                 None
@@ -106,7 +98,7 @@ impl Update<Msg> for Model {
             Msg::SavePlaylist(msg) => self.update_save_playlist(msg),
 
             Msg::Podcast(m) => self.update_podcast(m),
-            Msg::LyricMessage(m) => self.update_lyric_textarea(m),
+            Msg::LyricMessage(m) => self.update_lyric_msg(m),
             Msg::Download(m) => self.update_download_msg(m),
             Msg::Xywh(m) => self.update_xywh_msg(m),
 
@@ -125,6 +117,7 @@ impl Model {
         }
     }
 
+    /// Handle all [`XYWHMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_xywh_msg(&mut self, msg: XYWHMsg) -> Option<Msg> {
         match msg {
             XYWHMsg::MoveLeft => self.xywh_move_left(),
@@ -140,10 +133,19 @@ impl Model {
         None
     }
 
-    fn update_lyric_textarea(&mut self, msg: LyricMsg) -> Option<Msg> {
+    /// Handle all [`LyricMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_lyric_msg(&mut self, msg: LyricMsg) -> Option<Msg> {
         match msg {
-            LyricMsg::LyricTextAreaBlurUp => self.app.active(&Id::Playlist).ok(),
-            LyricMsg::LyricTextAreaBlurDown => match self.layout {
+            LyricMsg::Cycle => {
+                self.lyric_cycle();
+                None
+            }
+            LyricMsg::AdjustDelay(offset) => {
+                self.lyric_adjust_delay(offset);
+                None
+            }
+            LyricMsg::TextAreaBlurUp => self.app.active(&Id::Playlist).ok(),
+            LyricMsg::TextAreaBlurDown => match self.layout {
                 TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
                 TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
                 TermusicLayout::Podcast => self.app.active(&Id::Podcast).ok(),
@@ -152,6 +154,7 @@ impl Model {
         None
     }
 
+    /// Handle all [`PCMsg`] messages. Sub-function for [`update`](Self::update).
     #[allow(clippy::too_many_lines)]
     fn update_podcast(&mut self, msg: PCMsg) -> Option<Msg> {
         match msg {
@@ -401,7 +404,7 @@ impl Model {
         None
     }
 
-    /// Switch the main view / layout
+    /// Switch the main view / layout.
     fn update_layout(&mut self, msg: MainLayoutMsg) -> Option<Msg> {
         match msg {
             MainLayoutMsg::DataBase => {
@@ -493,6 +496,8 @@ impl Model {
 
         None
     }
+
+    /// Handle all [`DBMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_database_list(&mut self, msg: DBMsg) -> Option<Msg> {
         match msg {
             DBMsg::CriteriaBlurDown | DBMsg::SearchTracksBlurUp => {
@@ -555,6 +560,7 @@ impl Model {
         None
     }
 
+    /// Handle all [`LIMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_library(&mut self, msg: LIMsg) {
         match msg {
             LIMsg::TreeBlur => {
@@ -591,6 +597,7 @@ impl Model {
         }
     }
 
+    /// Handle all [`YSMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
             YSMsg::InputPopupShow => {
@@ -644,6 +651,7 @@ impl Model {
         }
     }
 
+    /// Handle all [`GSMsg`] messages. Sub-function for [`update`](Self::update).
     #[allow(clippy::too_many_lines)]
     fn update_general_search(&mut self, msg: &GSMsg) {
         match msg {
@@ -761,6 +769,7 @@ impl Model {
             }
         }
     }
+
     fn update_delete_confirmation(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::DeleteConfirmShow => {
@@ -789,6 +798,8 @@ impl Model {
         }
         None
     }
+
+    /// Handle all [`PLMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_playlist(&mut self, msg: &PLMsg) {
         match msg {
             PLMsg::Add(current_node) => {
@@ -915,7 +926,7 @@ impl Model {
         }
     }
 
-    // change status bar text to indicate the downloading state
+    /// Handle all [`DLMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_download_msg(&mut self, msg: DLMsg) -> Option<Msg> {
         self.redraw = true;
         match msg {

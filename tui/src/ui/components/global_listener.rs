@@ -2,7 +2,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::types::{
-    ConfigEditorMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, SavePlaylistMsg, XYWHMsg,
+    ConfigEditorMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, SavePlaylistMsg, XYWHMsg,
 };
 use tui_realm_stdlib::Phantom;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
@@ -68,15 +68,15 @@ impl Component<Msg, UserEvent> for GlobalListener {
             Event::Keyboard(keyevent)
                 if keyevent == keys.lyric_keys.adjust_offset_forwards.get() =>
             {
-                Some(Msg::LyricAdjustDelay(1000))
+                Some(Msg::LyricMessage(LyricMsg::AdjustDelay(1000)))
             }
             Event::Keyboard(keyevent)
                 if keyevent == keys.lyric_keys.adjust_offset_backwards.get() =>
             {
-                Some(Msg::LyricAdjustDelay(-1000))
+                Some(Msg::LyricMessage(LyricMsg::AdjustDelay(-1000)))
             }
             Event::Keyboard(keyevent) if keyevent == keys.lyric_keys.cycle_frames.get() => {
-                Some(Msg::LyricCycle)
+                Some(Msg::LyricMessage(LyricMsg::Cycle))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_library.get() => {

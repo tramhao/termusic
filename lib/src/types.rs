@@ -24,6 +24,7 @@ pub enum Msg {
     TagEditor(TEMsg),
     YoutubeSearch(YSMsg),
     Xywh(XYWHMsg),
+    LyricMessage(LyricMsg),
 
     DeleteConfirmCloseCancel,
     DeleteConfirmCloseOk,
@@ -33,10 +34,6 @@ pub enum Msg {
 
     HelpPopupShow,
     HelpPopupClose,
-
-    LyricMessage(LyricMsg),
-    LyricCycle,
-    LyricAdjustDelay(i64),
 
     /// Closes the Quit Popup, if it was shown without quitting.
     QuitPopupCloseCancel,
@@ -147,8 +144,11 @@ pub enum DLMsg {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LyricMsg {
-    LyricTextAreaBlurUp,
-    LyricTextAreaBlurDown,
+    Cycle,
+    AdjustDelay(i64),
+
+    TextAreaBlurUp,
+    TextAreaBlurDown,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]

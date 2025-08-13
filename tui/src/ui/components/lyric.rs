@@ -95,11 +95,11 @@ impl Component<Msg, UserEvent> for Lyric {
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurDown)),
+            }) => return Some(Msg::LyricMessage(LyricMsg::TextAreaBlurDown)),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurUp)),
+            }) => return Some(Msg::LyricMessage(LyricMsg::TextAreaBlurUp)),
 
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
