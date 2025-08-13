@@ -11,36 +11,41 @@ use image::DynamicImage;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Msg {
-    // AppClose,
     ConfigEditor(ConfigEditorMsg),
     DataBase(DBMsg),
-    DeleteConfirmCloseCancel,
-    DeleteConfirmCloseOk,
-    DeleteConfirmShow,
     Download(DLMsg),
-    ErrorPopupClose,
     GeneralSearch(GSMsg),
-    HelpPopupShow,
-    HelpPopupClose,
     Layout(MainLayoutMsg),
     Library(LIMsg),
-    LyricMessage(LyricMsg),
-    LyricCycle,
-    LyricAdjustDelay(i64),
     Player(PlayerMsg),
     Playlist(PLMsg),
     Podcast(PCMsg),
+    SavePlaylist(SavePlaylistMsg),
+    TagEditor(TEMsg),
+    YoutubeSearch(YSMsg),
+    Xywh(XYWHMsg),
+
+    DeleteConfirmCloseCancel,
+    DeleteConfirmCloseOk,
+    DeleteConfirmShow,
+
+    ErrorPopupClose,
+
+    HelpPopupShow,
+    HelpPopupClose,
+
+    LyricMessage(LyricMsg),
+    LyricCycle,
+    LyricAdjustDelay(i64),
+
     /// Closes the Quit Popup, if it was shown without quitting.
     QuitPopupCloseCancel,
     /// Always will directly quit.
     QuitPopupCloseOk,
     /// Either shows the Quit Dialog if enabled, or if dialog is disabled, directly quits
     QuitPopupShow,
-    SavePlaylist(SavePlaylistMsg),
-    TagEditor(TEMsg),
+
     UpdatePhoto,
-    YoutubeSearch(YSMsg),
-    Xywh(XYWHMsg),
 
     /// Force a redraw because of some change.
     ///
