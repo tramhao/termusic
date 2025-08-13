@@ -5,8 +5,8 @@ use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{
-    DBMsg, DLMsg, DeleteConfirmMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg,
-    PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
+    DBMsg, DLMsg, DeleteConfirmMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg,
+    PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
@@ -52,17 +52,7 @@ impl Update<Msg> for Model {
 
             Msg::Player(msg) => self.update_player(msg),
 
-            Msg::HelpPopupShow => {
-                self.mount_help_popup();
-                None
-            }
-            Msg::HelpPopupClose => {
-                if self.app.mounted(&Id::HelpPopup) {
-                    self.app.umount(&Id::HelpPopup).ok();
-                }
-                self.update_photo().ok();
-                None
-            }
+            Msg::HelpPopup(msg) => self.update_help_popup_msg(&msg),
             Msg::YoutubeSearch(msg) => {
                 self.update_youtube_search(msg);
                 None
@@ -99,6 +89,23 @@ impl Model {
         {
             self.app.active(&Id::QuitPopup).ok();
         }
+    }
+
+    /// Handle all [`HelpPopupMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_help_popup_msg(&mut self, msg: &HelpPopupMsg) -> Option<Msg> {
+        match msg {
+            HelpPopupMsg::Show => {
+                self.mount_help_popup();
+            }
+            HelpPopupMsg::Close => {
+                if self.app.mounted(&Id::HelpPopup) {
+                    self.app.umount(&Id::HelpPopup).ok();
+                }
+                self.update_photo().ok();
+            }
+        }
+
+        None
     }
 
     /// Handle all [`QuitPopupMsg`] messages. Sub-function for [`update`](Self::update).

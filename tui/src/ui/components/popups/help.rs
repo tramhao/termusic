@@ -1,9 +1,9 @@
 use std::fmt::Write as _;
 
-use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::ids::Id;
 use termusiclib::types::Msg;
+use termusiclib::{config::SharedTuiSettings, types::HelpPopupMsg};
 use tui_realm_stdlib::Table;
 use tuirealm::{
     Component, Event, MockComponent,
@@ -290,10 +290,14 @@ impl Component<Msg, UserEvent> for HelpPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::HelpPopupClose),
+            }) => return Some(Msg::HelpPopup(HelpPopupMsg::Close)),
 
-            Event::Keyboard(key) if key == keys.quit.get() => return Some(Msg::HelpPopupClose),
-            Event::Keyboard(key) if key == keys.escape.get() => return Some(Msg::HelpPopupClose),
+            Event::Keyboard(key) if key == keys.quit.get() => {
+                return Some(Msg::HelpPopup(HelpPopupMsg::Close));
+            }
+            Event::Keyboard(key) if key == keys.escape.get() => {
+                return Some(Msg::HelpPopup(HelpPopupMsg::Close));
+            }
 
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))

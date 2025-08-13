@@ -2,8 +2,8 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::types::{
-    ConfigEditorMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg,
-    XYWHMsg,
+    ConfigEditorMsg, HelpPopupMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, QuitPopupMsg,
+    SavePlaylistMsg, XYWHMsg,
 };
 use tui_realm_stdlib::Phantom;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
@@ -53,7 +53,7 @@ impl Component<Msg, UserEvent> for GlobalListener {
                 Some(Msg::Player(PlayerMsg::VolumeUp))
             }
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.open_help.get() => {
-                Some(Msg::HelpPopupShow)
+                Some(Msg::HelpPopup(HelpPopupMsg::Show))
             }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.seek_forward.get() => {
                 Some(Msg::Player(PlayerMsg::SeekForward))

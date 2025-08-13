@@ -27,11 +27,9 @@ pub enum Msg {
     LyricMessage(LyricMsg),
     DeleteConfirm(DeleteConfirmMsg),
     QuitPopup(QuitPopupMsg),
+    HelpPopup(HelpPopupMsg),
 
     ErrorPopupClose,
-
-    HelpPopupShow,
-    HelpPopupClose,
 
     UpdatePhoto,
 
@@ -104,6 +102,12 @@ pub enum QuitPopupMsg {
     CloseOk,
     /// Either shows the Quit Dialog if enabled, or if dialog is disabled, directly quits
     Show,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HelpPopupMsg {
+    Show,
+    Close,
 }
 
 pub type DLMsgURL = Arc<str>;
