@@ -1,17 +1,17 @@
-use crate::ui::Model;
-use crate::ui::model::UserEvent;
-use crate::ui::msg::Msg;
 use anyhow::{Context, Result, anyhow};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::{Id, IdTagEditor};
-use termusiclib::songtag::{SongTag, search};
-use termusiclib::types::{SongTagRecordingResult, TEMsg, TFMsg};
+use termusiclib::songtag::{SongTag, SongtagSearchResult, search};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
+
+use crate::ui::Model;
+use crate::ui::model::UserEvent;
+use crate::ui::msg::{Msg, TEMsg, TFMsg};
 
 #[derive(MockComponent)]
 pub struct TETableLyricOptions {
@@ -61,7 +61,7 @@ impl Component<Msg, UserEvent> for TETableLyricOptions {
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(
+                return Some(Msg::TagEditor(TEMsg::Focus(
                     TFMsg::TableLyricOptionsBlurDown,
                 )));
             }
@@ -69,20 +69,18 @@ impl Component<Msg, UserEvent> for TETableLyricOptions {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(
-                    TFMsg::TableLyricOptionsBlurUp,
-                )));
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::TableLyricOptionsBlurUp)));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                return Some(Msg::TagEditor(TEMsg::TERename));
+                return Some(Msg::TagEditor(TEMsg::Save));
             }
 
             Event::Keyboard(k) if k == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
+                return Some(Msg::TagEditor(TEMsg::Close));
             }
             Event::Keyboard(k) if k == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
+                return Some(Msg::TagEditor(TEMsg::Close));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
@@ -119,7 +117,7 @@ impl Component<Msg, UserEvent> for TETableLyricOptions {
             }
             Event::Keyboard(k) if k == keys.library_keys.youtube_search.get() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::TagEditor(TEMsg::TEDownload(index)));
+                    return Some(Msg::TagEditor(TEMsg::Download(index)));
                 }
                 CmdResult::None
             }
@@ -127,7 +125,7 @@ impl Component<Msg, UserEvent> for TETableLyricOptions {
                 code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::TagEditor(TEMsg::TEEmbed(index)));
+                    return Some(Msg::TagEditor(TEMsg::Embed(index)));
                 }
                 CmdResult::None
             }
@@ -244,17 +242,17 @@ impl Model {
 
         handle.spawn(async move {
             search(&search_str, move |msg| {
-                let _ = songtag_tx.send(Msg::TagEditor(msg));
+                let _ = songtag_tx.send(Msg::TagEditor(TEMsg::SearchLyricResult(msg)));
             })
             .await;
             tracker_handle.decrease_one(&search_str);
         });
     }
 
-    /// Handle [`SongTagRecordingResult`] events
-    pub fn te_update_lyric_results(&mut self, result: SongTagRecordingResult) {
+    /// Handle [`SongtagSearchResult`] events
+    pub fn te_update_lyric_results(&mut self, result: SongtagSearchResult) {
         match result {
-            SongTagRecordingResult::Finish(list) => {
+            SongtagSearchResult::Finish(list) => {
                 self.te_set_songtag_lyric_options(list);
             }
         }

@@ -12,8 +12,8 @@ use lofty::prelude::{Accessor, TagExt};
 use service::SongTagService;
 use ytd_rs::{Arg, YoutubeDL};
 
+use crate::types::DLMsg;
 use crate::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use crate::types::{DLMsg, SongTagRecordingResult, TEMsg};
 use crate::utils::get_parent_folder;
 
 mod kugou;
@@ -66,8 +66,14 @@ impl std::fmt::Display for ServiceProvider {
     }
 }
 
+/// All events that can happen in [`search`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SongtagSearchResult {
+    Finish(Vec<SongTag>),
+}
+
 // Search function of 3 servers. Run in parallel to get results faster.
-pub async fn search(search_str: &str, tx_done: impl Fn(TEMsg) + Send + 'static) {
+pub async fn search(search_str: &str, tx_done: impl Fn(SongtagSearchResult) + Send + 'static) {
     let mut results: Vec<SongTag> = Vec::new();
 
     let handle_netease = async {
@@ -103,9 +109,7 @@ pub async fn search(search_str: &str, tx_done: impl Fn(TEMsg) + Send + 'static) 
         Err(err) => error!("Kogou Error: {err:#}"),
     }
 
-    tx_done(TEMsg::TESearchLyricResult(SongTagRecordingResult::Finish(
-        results,
-    )));
+    tx_done(SongtagSearchResult::Finish(results));
 }
 
 impl SongTag {

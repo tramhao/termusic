@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use crate::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
-use crate::songtag::SongTag;
 use image::DynamicImage;
 
 pub type DLMsgURL = Arc<str>;
@@ -110,46 +109,6 @@ pub enum PCMsg {
     SearchItunesCloseOk(usize),
     SearchSuccess(Vec<PodcastFeed>),
     SearchError(String),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TEMsg {
-    TagEditorRun(String),
-    TagEditorClose,
-    TECounterDeleteOk,
-    TEDownload(usize),
-    TEEmbed(usize),
-    TEFocus(TFMsg),
-    TERename,
-    TESearch,
-    TESelectLyricOk(usize),
-
-    TESearchLyricResult(SongTagRecordingResult),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TFMsg {
-    CounterDeleteBlurDown,
-    CounterDeleteBlurUp,
-    InputArtistBlurDown,
-    InputArtistBlurUp,
-    InputTitleBlurDown,
-    InputTitleBlurUp,
-    InputAlbumBlurDown,
-    InputAlbumBlurUp,
-    InputGenreBlurDown,
-    InputGenreBlurUp,
-    SelectLyricBlurDown,
-    SelectLyricBlurUp,
-    TableLyricOptionsBlurDown,
-    TableLyricOptionsBlurUp,
-    TextareaLyricBlurDown,
-    TextareaLyricBlurUp,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SongTagRecordingResult {
-    Finish(Vec<SongTag>),
 }
 
 #[derive(Clone, PartialEq, Debug)]

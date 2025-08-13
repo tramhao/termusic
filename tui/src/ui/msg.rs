@@ -2,11 +2,10 @@
 
 use std::path::PathBuf;
 
-use termusiclib::{
-    config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic},
-    ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther},
-    types::{DLMsg, IdKey, PCMsg, TEMsg},
-};
+use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
+use termusiclib::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
+use termusiclib::songtag::SongtagSearchResult;
+use termusiclib::types::{DLMsg, IdKey, PCMsg};
 
 use crate::ui::model::youtube_options::YoutubeOptions;
 
@@ -449,6 +448,41 @@ pub enum YSMsg {
     ///
     /// `(ErrorAsString)`
     YoutubeSearchFail(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TEMsg {
+    Open(String),
+    Close,
+    CounterDeleteOk,
+    Download(usize),
+    Embed(usize),
+    Focus(TFMsg),
+    Save,
+    Search,
+    SelectLyricOk(usize),
+
+    SearchLyricResult(SongtagSearchResult),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TFMsg {
+    CounterDeleteBlurDown,
+    CounterDeleteBlurUp,
+    InputArtistBlurDown,
+    InputArtistBlurUp,
+    InputTitleBlurDown,
+    InputTitleBlurUp,
+    InputAlbumBlurDown,
+    InputAlbumBlurUp,
+    InputGenreBlurDown,
+    InputGenreBlurUp,
+    SelectLyricBlurDown,
+    SelectLyricBlurUp,
+    TableLyricOptionsBlurDown,
+    TableLyricOptionsBlurUp,
+    TextareaLyricBlurDown,
+    TextareaLyricBlurUp,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
