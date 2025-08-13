@@ -6,7 +6,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::ids::Id;
-use termusiclib::types::{GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
+use termusiclib::types::{DeleteConfirmMsg, GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
 use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE, Tree, TreeView};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -192,7 +192,7 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 },
             ) => return Some(Msg::Library(LIMsg::TreeBlur)),
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.delete.get() => {
-                return Some(Msg::DeleteConfirmShow);
+                return Some(Msg::DeleteConfirm(DeleteConfirmMsg::Show));
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
                 return Some(Msg::Library(LIMsg::Yank));

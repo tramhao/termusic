@@ -5,8 +5,8 @@ use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg,
-    SavePlaylistMsg, XYWHMsg, YSMsg,
+    DBMsg, DLMsg, DeleteConfirmMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg,
+    PlayerMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
@@ -24,12 +24,10 @@ impl Update<Msg> for Model {
         self.redraw = true;
         // Match message
         match msg {
-            Msg::ConfigEditor(m) => self.update_config_editor(m),
-            Msg::DataBase(m) => self.update_database_list(m),
+            Msg::ConfigEditor(msg) => self.update_config_editor(msg),
+            Msg::DataBase(msg) => self.update_database_list(msg),
 
-            Msg::DeleteConfirmShow | Msg::DeleteConfirmCloseCancel | Msg::DeleteConfirmCloseOk => {
-                self.update_delete_confirmation(&msg)
-            }
+            Msg::DeleteConfirm(msg) => self.update_delete_confirmation(&msg),
 
             Msg::ErrorPopupClose => {
                 if self.app.mounted(&Id::ErrorPopup) {
@@ -53,16 +51,16 @@ impl Update<Msg> for Model {
                 self.quit = true;
                 None
             }
-            Msg::Library(m) => {
-                self.update_library(m);
+            Msg::Library(msg) => {
+                self.update_library(msg);
                 None
             }
-            Msg::GeneralSearch(m) => {
-                self.update_general_search(&m);
+            Msg::GeneralSearch(msg) => {
+                self.update_general_search(&msg);
                 None
             }
-            Msg::Playlist(m) => {
-                self.update_playlist(&m);
+            Msg::Playlist(msg) => {
+                self.update_playlist(&msg);
                 None
             }
 
@@ -79,12 +77,12 @@ impl Update<Msg> for Model {
                 self.update_photo().ok();
                 None
             }
-            Msg::YoutubeSearch(m) => {
-                self.update_youtube_search(m);
+            Msg::YoutubeSearch(msg) => {
+                self.update_youtube_search(msg);
                 None
             }
-            Msg::TagEditor(m) => {
-                self.update_tageditor(m);
+            Msg::TagEditor(msg) => {
+                self.update_tageditor(msg);
                 None
             }
             Msg::UpdatePhoto => {
@@ -97,10 +95,10 @@ impl Update<Msg> for Model {
 
             Msg::SavePlaylist(msg) => self.update_save_playlist(msg),
 
-            Msg::Podcast(m) => self.update_podcast(m),
-            Msg::LyricMessage(m) => self.update_lyric_msg(m),
-            Msg::Download(m) => self.update_download_msg(m),
-            Msg::Xywh(m) => self.update_xywh_msg(m),
+            Msg::Podcast(msg) => self.update_podcast(msg),
+            Msg::LyricMessage(msg) => self.update_lyric_msg(msg),
+            Msg::Download(msg) => self.update_download_msg(msg),
+            Msg::Xywh(msg) => self.update_xywh_msg(msg),
 
             Msg::ForceRedraw => None,
         }
@@ -770,12 +768,13 @@ impl Model {
         }
     }
 
-    fn update_delete_confirmation(&mut self, msg: &Msg) -> Option<Msg> {
+    /// Handle all [`DeleteConfirmMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_delete_confirmation(&mut self, msg: &DeleteConfirmMsg) -> Option<Msg> {
         match msg {
-            Msg::DeleteConfirmShow => {
+            DeleteConfirmMsg::Show => {
                 self.library_before_delete();
             }
-            Msg::DeleteConfirmCloseCancel => {
+            DeleteConfirmMsg::CloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
                 }
@@ -783,7 +782,7 @@ impl Model {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
             }
-            Msg::DeleteConfirmCloseOk => {
+            DeleteConfirmMsg::CloseOk => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
                 }
@@ -794,7 +793,6 @@ impl Model {
                     self.mount_error_popup(e.context("library delete song"));
                 }
             }
-            _ => {}
         }
         None
     }

@@ -1,6 +1,6 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
-use termusiclib::types::Msg;
+use termusiclib::types::{DeleteConfirmMsg, Msg};
 use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
@@ -38,8 +38,11 @@ impl DeleteConfirmRadioPopup {
 
 impl Component<Msg, UserEvent> for DeleteConfirmRadioPopup {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component
-            .on(ev, Msg::DeleteConfirmCloseOk, Msg::DeleteConfirmCloseCancel)
+        self.component.on(
+            ev,
+            Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk),
+            Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel),
+        )
     }
 }
 
@@ -150,8 +153,8 @@ impl Model {
                     Box::new(DeleteConfirmInputPopup::new(
                         &self.config_tui.read(),
                         title,
-                        Msg::DeleteConfirmCloseOk,
-                        Msg::DeleteConfirmCloseCancel
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk),
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel)
                     )),
                     vec![]
                 )

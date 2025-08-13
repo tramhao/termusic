@@ -25,10 +25,7 @@ pub enum Msg {
     YoutubeSearch(YSMsg),
     Xywh(XYWHMsg),
     LyricMessage(LyricMsg),
-
-    DeleteConfirmCloseCancel,
-    DeleteConfirmCloseOk,
-    DeleteConfirmShow,
+    DeleteConfirm(DeleteConfirmMsg),
 
     ErrorPopupClose,
 
@@ -96,6 +93,13 @@ pub enum XYWHMsg {
     MoveDown,
     ZoomIn,
     ZoomOut,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DeleteConfirmMsg {
+    CloseCancel,
+    CloseOk,
+    Show,
 }
 
 pub type DLMsgURL = Arc<str>;
