@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use crate::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
-use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use image::DynamicImage;
 
 pub type DLMsgURL = Arc<str>;
@@ -70,45 +69,6 @@ impl From<IdKey> for IdConfigEditor {
             IdKey::Other(id_key_other) => IdConfigEditor::KeyOther(id_key_other),
         }
     }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum PCMsg {
-    PodcastBlurDown,
-    PodcastBlurUp,
-    EpisodeBlurDown,
-    EpisodeBlurUp,
-    PodcastAddPopupShow,
-    PodcastAddPopupCloseOk(String),
-    PodcastAddPopupCloseCancel,
-    SyncData((i64, PodcastNoId)),
-    NewData(PodcastNoId),
-    Error(PodcastFeed),
-    PodcastSelected(usize),
-    DescriptionUpdate,
-    EpisodeAdd(usize),
-    EpisodeMarkPlayed(usize),
-    EpisodeMarkAllPlayed,
-    PodcastRefreshOne(usize),
-    PodcastRefreshAll,
-    FetchPodcastStart(String),
-    EpisodeDownload(usize),
-    DLStart(EpData),
-    DLComplete(EpData),
-    DLResponseError(EpData),
-    DLFileCreateError(EpData),
-    DLFileWriteError(EpData),
-    EpisodeDeleteFile(usize),
-    FeedDeleteShow,
-    FeedDeleteCloseOk,
-    FeedDeleteCloseCancel,
-    FeedsDeleteShow,
-    FeedsDeleteCloseOk,
-    FeedsDeleteCloseCancel,
-    SearchItunesCloseCancel,
-    SearchItunesCloseOk(usize),
-    SearchSuccess(Vec<PodcastFeed>),
-    SearchError(String),
 }
 
 #[derive(Clone, PartialEq, Debug)]

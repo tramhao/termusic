@@ -3,8 +3,9 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
+use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
-use termusiclib::types::{DLMsg, PCMsg};
+use termusiclib::types::DLMsg;
 use tokio::runtime::Handle;
 use tokio::time::sleep;
 use tuirealm::Update;
@@ -12,7 +13,7 @@ use tuirealm::props::{AttrValue, Attribute};
 
 use crate::ui::msg::{
     DBMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg, MainLayoutMsg,
-    Msg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
+    Msg, PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
 };
 use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::{Model, model::TermusicLayout};
@@ -203,40 +204,10 @@ impl Model {
                 }
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
-            PCMsg::SyncData((id, pod)) => {
-                self.download_tracker.decrease_one(&pod.url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_sync_success(),
-                    None,
-                    None,
-                    None,
-                );
-                if let Err(e) = self.add_or_sync_data(&pod, Some(id)) {
-                    self.mount_error_popup(e.context("add or sync data"));
-                }
-            }
-            PCMsg::NewData(pod) => {
-                self.download_tracker.decrease_one(&pod.url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_feeds_added(),
-                    None,
-                    None,
-                    None,
-                );
-                if let Err(e) = self.add_or_sync_data(&pod, None) {
-                    self.mount_error_popup(e.context("add or sync data"));
-                }
-            }
-            PCMsg::Error(feed) => {
-                self.download_tracker.decrease_one(&feed.url);
-                self.mount_error_popup(anyhow!("Error happened with feed: {:?}", feed.title));
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_feed_sync_failed(),
-                    None,
-                    None,
-                    None,
-                );
-            }
+
+            PCMsg::SyncResult(msg) => self.podcast_handle_sync_result(msg),
+            PCMsg::DLResult(msg) => self.podcast_handle_dl_result(msg),
+
             PCMsg::PodcastSelected(index) => {
                 self.podcast.podcasts_index = index;
                 if let Err(e) = self.podcast_sync_episodes() {
@@ -269,74 +240,13 @@ impl Model {
                     self.mount_error_popup(e.context("podcast refresh feeds all"));
                 }
             }
-            PCMsg::FetchPodcastStart(url) => {
-                self.download_tracker.increase_one(url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_sync_start(),
-                    None,
-                    None,
-                    None,
-                );
-            }
+
             PCMsg::EpisodeDownload(index) => {
                 if let Err(e) = self.episode_download(Some(index)) {
                     self.mount_error_popup(e.context("podcast episode download"));
                 }
             }
-            PCMsg::DLStart(ep_data) => {
-                self.download_tracker.increase_one(&ep_data.url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_download_start(&ep_data.title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            PCMsg::DLComplete(ep_data) => {
-                if let Err(e) = self.episode_download_complete(ep_data.clone()) {
-                    self.mount_error_popup(e.context("podcast episode download complete"));
-                }
-                self.download_tracker.decrease_one(&ep_data.url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_download_complete(),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            PCMsg::DLResponseError(ep_data) => {
-                self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
-                self.show_message_timeout_label_help(
-                    self.download_tracker
-                        .message_download_error_response(&ep_data.title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            PCMsg::DLFileCreateError(ep_data) => {
-                self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
-                self.show_message_timeout_label_help(
-                    self.download_tracker
-                        .message_download_error_file_create(&ep_data.title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            PCMsg::DLFileWriteError(ep_data) => {
-                self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
-                self.show_message_timeout_label_help(
-                    self.download_tracker
-                        .message_download_error_file_write(&ep_data.title),
-                    None,
-                    None,
-                    None,
-                );
-            }
+
             PCMsg::EpisodeDeleteFile(index) => {
                 if let Err(e) = self.episode_delete_file(index) {
                     self.mount_error_popup(e.context("podcast episode delete"));
@@ -373,6 +283,115 @@ impl Model {
             PCMsg::SearchError(e) => self.mount_error_popup(anyhow!(e)),
         }
         None
+    }
+
+    /// Handle all cases for [`PodcastSyncResult`].
+    fn podcast_handle_sync_result(&mut self, msg: PodcastSyncResult) {
+        match msg {
+            PodcastSyncResult::FetchPodcastStart(url) => {
+                self.download_tracker.increase_one(url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_sync_start(),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastSyncResult::SyncData((id, pod)) => {
+                self.download_tracker.decrease_one(&pod.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_sync_success(),
+                    None,
+                    None,
+                    None,
+                );
+                if let Err(e) = self.add_or_sync_data(&pod, Some(id)) {
+                    self.mount_error_popup(e.context("add or sync data"));
+                }
+            }
+            PodcastSyncResult::NewData(pod) => {
+                self.download_tracker.decrease_one(&pod.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_feeds_added(),
+                    None,
+                    None,
+                    None,
+                );
+                if let Err(e) = self.add_or_sync_data(&pod, None) {
+                    self.mount_error_popup(e.context("add or sync data"));
+                }
+            }
+            PodcastSyncResult::Error(feed) => {
+                self.download_tracker.decrease_one(&feed.url);
+                self.mount_error_popup(anyhow!("Error happened with feed: {:?}", feed.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_feed_sync_failed(),
+                    None,
+                    None,
+                    None,
+                );
+            }
+        }
+    }
+
+    /// Handle all cases for [`PodcastDLResult`].
+    fn podcast_handle_dl_result(&mut self, msg: PodcastDLResult) {
+        match msg {
+            PodcastDLResult::DLStart(ep_data) => {
+                self.download_tracker.increase_one(&ep_data.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_start(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastDLResult::DLComplete(ep_data) => {
+                if let Err(e) = self.episode_download_complete(ep_data.clone()) {
+                    self.mount_error_popup(e.context("podcast episode download complete"));
+                }
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_complete(),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastDLResult::DLResponseError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_response(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastDLResult::DLFileCreateError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_file_create(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastDLResult::DLFileWriteError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_file_write(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+        }
     }
 
     /// Handle Player related messages & events

@@ -4,8 +4,9 @@ use std::path::PathBuf;
 
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
 use termusiclib::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
+use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::SongtagSearchResult;
-use termusiclib::types::{DLMsg, IdKey, PCMsg};
+use termusiclib::types::{DLMsg, IdKey};
 
 use crate::ui::model::youtube_options::YoutubeOptions;
 
@@ -483,6 +484,43 @@ pub enum TFMsg {
     TableLyricOptionsBlurUp,
     TextareaLyricBlurDown,
     TextareaLyricBlurUp,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PCMsg {
+    PodcastBlurDown,
+    PodcastBlurUp,
+
+    EpisodeBlurDown,
+    EpisodeBlurUp,
+
+    PodcastAddPopupShow,
+    PodcastAddPopupCloseOk(String),
+    PodcastAddPopupCloseCancel,
+    PodcastSelected(usize),
+    DescriptionUpdate,
+    EpisodeAdd(usize),
+    EpisodeMarkPlayed(usize),
+    EpisodeMarkAllPlayed,
+    PodcastRefreshOne(usize),
+    PodcastRefreshAll,
+    EpisodeDownload(usize),
+    EpisodeDeleteFile(usize),
+
+    FeedDeleteShow,
+    FeedDeleteCloseOk,
+    FeedDeleteCloseCancel,
+    FeedsDeleteShow,
+    FeedsDeleteCloseOk,
+    FeedsDeleteCloseCancel,
+
+    SearchItunesCloseCancel,
+    SearchItunesCloseOk(usize),
+    SearchSuccess(Vec<PodcastFeed>),
+    SearchError(String),
+
+    SyncResult(PodcastSyncResult),
+    DLResult(PodcastDLResult),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

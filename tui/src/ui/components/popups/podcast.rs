@@ -1,6 +1,5 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::ids::Id;
-use termusiclib::types::PCMsg;
 use tui_realm_stdlib::Table;
 use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
@@ -13,7 +12,7 @@ use super::{YNConfirm, YNConfirmStyle};
 use crate::ui::components::popups::DeleteConfirmInputPopup;
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::model::{Model, UserEvent};
-use crate::ui::msg::Msg;
+use crate::ui::msg::{Msg, PCMsg};
 
 #[derive(MockComponent)]
 pub struct PodcastAddPopup {
