@@ -1,4 +1,3 @@
-use termusiclib::config::SharedTuiSettings;
 use termusiclib::ids::Id;
 /**
  * MIT License
@@ -24,6 +23,7 @@ use termusiclib::ids::Id;
  * SOFTWARE.
  */
 use termusiclib::types::Msg;
+use termusiclib::{config::SharedTuiSettings, types::ErrorPopupMsg};
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     Component, Event, MockComponent,
@@ -71,9 +71,13 @@ impl Component<Msg, UserEvent> for ErrorPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,
                 ..
-            }) => Some(Msg::ErrorPopupClose),
-            Event::Keyboard(key) if key == keys.quit.get() => Some(Msg::ErrorPopupClose),
-            Event::Keyboard(key) if key == keys.escape.get() => Some(Msg::ErrorPopupClose),
+            }) => Some(Msg::ErrorPopup(ErrorPopupMsg::Close)),
+            Event::Keyboard(key) if key == keys.quit.get() => {
+                Some(Msg::ErrorPopup(ErrorPopupMsg::Close))
+            }
+            Event::Keyboard(key) if key == keys.escape.get() => {
+                Some(Msg::ErrorPopup(ErrorPopupMsg::Close))
+            }
             _ => None,
         }
     }

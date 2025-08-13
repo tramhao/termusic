@@ -28,8 +28,7 @@ pub enum Msg {
     DeleteConfirm(DeleteConfirmMsg),
     QuitPopup(QuitPopupMsg),
     HelpPopup(HelpPopupMsg),
-
-    ErrorPopupClose,
+    ErrorPopup(ErrorPopupMsg),
 
     /// Same as [`ForceRedraw`](Msg::ForceRedraw), but also updated the drawn cover.
     UpdatePhoto,
@@ -109,6 +108,11 @@ pub enum QuitPopupMsg {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HelpPopupMsg {
     Show,
+    Close,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ErrorPopupMsg {
     Close,
 }
 

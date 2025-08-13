@@ -5,8 +5,8 @@ use anyhow::anyhow;
 use termusiclib::ids::{Id, IdTagEditor};
 use termusiclib::track::MediaTypesSimple;
 use termusiclib::types::{
-    DBMsg, DLMsg, DeleteConfirmMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg,
-    PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
+    DBMsg, DLMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg,
+    MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg, YSMsg,
 };
 use tokio::runtime::Handle;
 use tokio::time::sleep;
@@ -29,12 +29,7 @@ impl Update<Msg> for Model {
 
             Msg::DeleteConfirm(msg) => self.update_delete_confirmation(&msg),
 
-            Msg::ErrorPopupClose => {
-                if self.app.mounted(&Id::ErrorPopup) {
-                    self.umount_error_popup();
-                }
-                None
-            }
+            Msg::ErrorPopup(msg) => self.update_error_popup_msg(&msg),
             Msg::QuitPopup(msg) => self.update_quit_popup_msg(&msg),
 
             Msg::Library(msg) => {
@@ -89,6 +84,19 @@ impl Model {
         {
             self.app.active(&Id::QuitPopup).ok();
         }
+    }
+
+    /// Handle all [`ErrorPopupMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_error_popup_msg(&mut self, msg: &ErrorPopupMsg) -> Option<Msg> {
+        match msg {
+            ErrorPopupMsg::Close => {
+                if self.app.mounted(&Id::ErrorPopup) {
+                    self.umount_error_popup();
+                }
+            }
+        }
+
+        None
     }
 
     /// Handle all [`HelpPopupMsg`] messages. Sub-function for [`update`](Self::update).
