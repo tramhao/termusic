@@ -12,7 +12,7 @@ use lofty::prelude::{Accessor, TagExt};
 use service::SongTagService;
 use ytd_rs::{Arg, YoutubeDL};
 
-use crate::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
+use crate::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use crate::utils::get_parent_folder;
 
 mod kugou;

@@ -3,12 +3,12 @@ use std::path::Path;
 use std::time::Duration;
 
 use either::Either;
+use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, artist_ops, track_ops};
 use termusiclib::track::{DurationFmtShort, Track};
-use termusiclib::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};

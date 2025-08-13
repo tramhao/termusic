@@ -2,12 +2,12 @@ use std::sync::LazyLock;
 
 use anyhow::{Result, anyhow};
 use regex::Regex;
+use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaTypes;
 use termusiclib::track::MediaTypesSimple;
-use termusiclib::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};

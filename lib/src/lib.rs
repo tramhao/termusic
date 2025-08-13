@@ -6,6 +6,7 @@
 // TODO: work to remove the following lints
 #![allow(clippy::missing_errors_doc)]
 
+pub mod common;
 pub mod config;
 pub mod invidious;
 pub mod new_database;
@@ -15,7 +16,6 @@ pub mod podcast;
 pub mod songtag;
 pub mod taskpool;
 pub mod track;
-pub mod types;
 pub mod ueberzug;
 pub mod utils;
 pub mod xywh;
