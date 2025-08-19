@@ -1,5 +1,4 @@
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -7,6 +6,7 @@ use tuirealm::props::{Alignment, BorderType, Borders, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
 
 use crate::ui::model::UserEvent;
+use crate::ui::msg::{Msg, TEMsg, TFMsg};
 
 #[derive(MockComponent)]
 pub struct TETextareaLyric {
@@ -41,20 +41,20 @@ impl Component<Msg, UserEvent> for TETextareaLyric {
         let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                return Some(Msg::TagEditor(TEMsg::TERename));
+                return Some(Msg::TagEditor(TEMsg::Save));
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurDown)));
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::TextareaLyricBlurDown)));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurUp))),
+            }) => return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::TextareaLyricBlurUp))),
             Event::Keyboard(k) if k == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
+                return Some(Msg::TagEditor(TEMsg::Close));
             }
             Event::Keyboard(k) if k == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
+                return Some(Msg::TagEditor(TEMsg::Close));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..

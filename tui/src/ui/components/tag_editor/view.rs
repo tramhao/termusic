@@ -1,20 +1,21 @@
-use crate::ui::components::tag_editor::te_footer::TEFooter;
-use crate::ui::components::{
-    LabelGeneric, TECounterDelete, TEInputAlbum, TEInputArtist, TEInputGenre, TEInputTitle,
-    TESelectLyric, TETableLyricOptions, TETextareaLyric,
-};
-use crate::ui::model::Model;
-use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
-use anyhow::Result;
 use std::borrow::Cow;
 use std::path::Path;
-use termusiclib::ids::{Id, IdTagEditor};
+
+use anyhow::Result;
 use tuirealm::State;
 use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
 
 use super::TETrack;
+use crate::ui::components::tag_editor::te_footer::TEFooter;
+use crate::ui::components::{
+    LabelGeneric, TECounterDelete, TEInputAlbum, TEInputArtist, TEInputGenre, TEInputTitle,
+    TESelectLyric, TETableLyricOptions, TETextareaLyric,
+};
+use crate::ui::ids::{Id, IdTagEditor};
+use crate::ui::model::Model;
+use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 
 impl Model {
     #[allow(clippy::too_many_lines)]

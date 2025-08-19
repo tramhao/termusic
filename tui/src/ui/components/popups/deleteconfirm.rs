@@ -1,6 +1,4 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::ids::Id;
-use termusiclib::types::Msg;
 use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
@@ -10,7 +8,9 @@ use tuirealm::{
 
 use super::{YNConfirm, YNConfirmStyle};
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
+use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{DeleteConfirmMsg, Msg};
 
 /// Component for a "Are you sure to delete? Y/N" popup
 ///
@@ -38,8 +38,11 @@ impl DeleteConfirmRadioPopup {
 
 impl Component<Msg, UserEvent> for DeleteConfirmRadioPopup {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component
-            .on(ev, Msg::DeleteConfirmCloseOk, Msg::DeleteConfirmCloseCancel)
+        self.component.on(
+            ev,
+            Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk),
+            Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel),
+        )
     }
 }
 
@@ -150,8 +153,8 @@ impl Model {
                     Box::new(DeleteConfirmInputPopup::new(
                         &self.config_tui.read(),
                         title,
-                        Msg::DeleteConfirmCloseOk,
-                        Msg::DeleteConfirmCloseCancel
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk),
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel)
                     )),
                     vec![]
                 )

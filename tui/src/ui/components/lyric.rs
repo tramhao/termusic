@@ -2,14 +2,12 @@ use std::sync::LazyLock;
 
 use anyhow::{Result, anyhow};
 use regex::Regex;
+use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::ids::Id;
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaTypes;
 use termusiclib::track::MediaTypesSimple;
-use termusiclib::types::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
-use termusiclib::types::{LyricMsg, Msg};
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -19,7 +17,9 @@ use tuirealm::props::{
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use super::TETrack;
+use crate::ui::ids::Id;
 use crate::ui::model::{ExtraLyricData, UserEvent};
+use crate::ui::msg::{LyricMsg, Msg};
 use crate::ui::{Model, model::TermusicLayout};
 
 /// Regex for finding <br/> tags -- also captures any surrounding
@@ -95,11 +95,11 @@ impl Component<Msg, UserEvent> for Lyric {
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurDown)),
+            }) => return Some(Msg::LyricMessage(LyricMsg::TextAreaBlurDown)),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurUp)),
+            }) => return Some(Msg::LyricMessage(LyricMsg::TextAreaBlurUp)),
 
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))

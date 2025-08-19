@@ -1,5 +1,7 @@
 pub mod components;
+mod ids;
 pub mod model;
+mod msg;
 mod music_player_client;
 mod tui_cmd;
 pub mod utils;
@@ -114,7 +116,8 @@ impl UI {
 
             self.model.ensure_quit_popup_top_most_focus();
 
-            // Check whether to force redraw
+            // normally a interval-redraw should not be necessary and instead only happen on events,
+            // but there might be some bugs that this works around
             self.exec_interval_redraw();
             self.model.view();
         }

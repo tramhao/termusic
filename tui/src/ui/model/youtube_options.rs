@@ -3,16 +3,13 @@ use std::sync::{Arc, LazyLock};
 use std::thread;
 use std::time::Duration;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
 use shell_words;
-use termusiclib::ids::Id;
-use termusiclib::invidious::Instance;
+use termusiclib::invidious::{Instance, YoutubeVideo};
 use termusiclib::track::DurationFmtShort;
-use termusiclib::types::{DLMsg, Msg};
-use termusiclib::types::{YSMsg, YoutubeOptions};
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
@@ -20,6 +17,8 @@ use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
 
 use super::Model;
+use crate::ui::ids::Id;
+use crate::ui::msg::{Msg, YSMsg};
 
 #[expect(dead_code)]
 static RE_FILENAME: LazyLock<Regex> =
@@ -27,6 +26,51 @@ static RE_FILENAME: LazyLock<Regex> =
 
 static RE_FILENAME_YTDLP: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap());
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct YoutubeOptions {
+    pub items: Vec<YoutubeVideo>,
+    pub page: u32,
+    pub invidious_instance: Instance,
+}
+
+impl Default for YoutubeOptions {
+    fn default() -> Self {
+        Self {
+            items: Vec::new(),
+            page: 1,
+            invidious_instance: Instance::default(),
+        }
+    }
+}
+
+impl YoutubeOptions {
+    pub fn get_by_index(&self, index: usize) -> Result<&YoutubeVideo> {
+        if let Some(item) = self.items.get(index) {
+            return Ok(item);
+        }
+        Err(anyhow!("index not found"))
+    }
+
+    pub async fn prev_page(&mut self) -> Result<()> {
+        if self.page > 1 {
+            self.page -= 1;
+            self.items = self.invidious_instance.get_search_query(self.page).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn next_page(&mut self) -> Result<()> {
+        self.page += 1;
+        self.items = self.invidious_instance.get_search_query(self.page).await?;
+        Ok(())
+    }
+
+    #[must_use]
+    pub const fn page(&self) -> u32 {
+        self.page
+    }
+}
 
 impl Model {
     pub fn youtube_options_download(&mut self, index: usize) -> Result<()> {
@@ -185,10 +229,10 @@ impl Model {
         let url: Arc<str> = Arc::from(url);
 
         thread::spawn(move || -> Result<()> {
-            tx.send(Msg::Download(DLMsg::DownloadRunning(
+            tx.send(Msg::YoutubeSearch(YSMsg::Download(YTDLMsg::Start(
                 url.clone(),
                 "youtube music".to_string(),
-            )))
+            ))))
             .ok();
             // start download
             let download = ytd.download();
@@ -196,16 +240,18 @@ impl Model {
             // check what the result is and print out the path to the download or the error
             match download {
                 Ok(result) => {
-                    tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
-                        .ok();
+                    tx.send(Msg::YoutubeSearch(YSMsg::Download(YTDLMsg::Success(
+                        url.clone(),
+                    ))))
+                    .ok();
                     // here we extract the full file name from download output
                     if let Some(file_fullname) =
                         extract_filepath(result.output(), &path.to_string_lossy())
                     {
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(
+                        tx.send(Msg::YoutubeSearch(YSMsg::Download(YTDLMsg::Completed(
                             url,
                             Some(file_fullname.clone()),
-                        )))
+                        ))))
                         .ok();
 
                         // here we remove downloaded live_chat.json file
@@ -213,25 +259,51 @@ impl Model {
 
                         embed_downloaded_lrc(&path, &file_fullname);
                     } else {
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(url, None)))
-                            .ok();
+                        tx.send(Msg::YoutubeSearch(YSMsg::Download(YTDLMsg::Completed(
+                            url, None,
+                        ))))
+                        .ok();
                     }
                 }
                 Err(e) => {
-                    tx.send(Msg::Download(DLMsg::DownloadErrDownload(
+                    tx.send(Msg::YoutubeSearch(YSMsg::Download(YTDLMsg::Err(
                         url.clone(),
                         "youtube music".to_string(),
                         e.to_string(),
-                    )))
+                    ))))
                     .ok();
-                    tx.send(Msg::Download(DLMsg::DownloadCompleted(url, None)))
-                        .ok();
+                    tx.send(Msg::YoutubeSearch(YSMsg::Download(YTDLMsg::Completed(
+                        url, None,
+                    ))))
+                    .ok();
                 }
             }
             Ok(())
         });
         Ok(())
     }
+}
+
+pub type YTDLMsgURL = Arc<str>;
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum YTDLMsg {
+    /// Indicates a Start of a download.
+    ///
+    /// `(Url, Title)`
+    Start(YTDLMsgURL, String),
+    /// Indicates the Download was a Success, though termusic post-processing is not done yet.
+    ///
+    /// `(Url)`
+    Success(YTDLMsgURL),
+    /// Indicates the Download thread finished in both Success or Error.
+    ///
+    /// `(Url, Filename)`
+    Completed(YTDLMsgURL, Option<String>),
+    /// Indicates that the Download has Errored and has been aborted.
+    ///
+    /// `(Url, Title, ErrorAsString)`
+    Err(YTDLMsgURL, String, String),
 }
 
 // This just parsing the output from youtubedl to get the audio path

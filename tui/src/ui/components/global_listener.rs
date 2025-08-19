@@ -1,14 +1,15 @@
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
-use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
-use termusiclib::types::{
-    ConfigEditorMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, SavePlaylistMsg, XYWHMsg,
-};
 use tui_realm_stdlib::Phantom;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
 
 use crate::ui::Model;
+use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::UserEvent;
+use crate::ui::msg::{
+    ConfigEditorMsg, HelpPopupMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, QuitPopupMsg,
+    SavePlaylistMsg, XYWHMsg,
+};
 
 #[derive(MockComponent)]
 pub struct GlobalListener {
@@ -33,7 +34,9 @@ impl Component<Msg, UserEvent> for GlobalListener {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
             // "escape" should always just close the dialogs or similar, but should never quit so escape can be "spammed" to exit everything
             // Event::Keyboard(keyevent) if keyevent == keys.escape.get() => Some(Msg::QuitPopupShow),
-            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => Some(Msg::QuitPopupShow),
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
+                Some(Msg::QuitPopup(QuitPopupMsg::Show))
+            }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.toggle_pause.get() => {
                 Some(Msg::Player(PlayerMsg::TogglePause))
             }
@@ -50,7 +53,7 @@ impl Component<Msg, UserEvent> for GlobalListener {
                 Some(Msg::Player(PlayerMsg::VolumeUp))
             }
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.open_help.get() => {
-                Some(Msg::HelpPopupShow)
+                Some(Msg::HelpPopup(HelpPopupMsg::Show))
             }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.seek_forward.get() => {
                 Some(Msg::Player(PlayerMsg::SeekForward))
@@ -68,15 +71,15 @@ impl Component<Msg, UserEvent> for GlobalListener {
             Event::Keyboard(keyevent)
                 if keyevent == keys.lyric_keys.adjust_offset_forwards.get() =>
             {
-                Some(Msg::LyricAdjustDelay(1000))
+                Some(Msg::LyricMessage(LyricMsg::AdjustDelay(1000)))
             }
             Event::Keyboard(keyevent)
                 if keyevent == keys.lyric_keys.adjust_offset_backwards.get() =>
             {
-                Some(Msg::LyricAdjustDelay(-1000))
+                Some(Msg::LyricMessage(LyricMsg::AdjustDelay(-1000)))
             }
             Event::Keyboard(keyevent) if keyevent == keys.lyric_keys.cycle_frames.get() => {
-                Some(Msg::LyricCycle)
+                Some(Msg::LyricMessage(LyricMsg::Cycle))
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_library.get() => {

@@ -1,16 +1,16 @@
 use std::time::Duration;
 
 use termusiclib::config::TuiOverlay;
-use termusiclib::ids::Id;
 use termusiclib::track::DurationFmtShort;
 use termusiclib::track::MediaTypesSimple;
-use termusiclib::types::Msg;
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::props::{Alignment, BorderType, Borders, PropPayload, PropValue};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
 
 use crate::ui::Model;
+use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
+use crate::ui::msg::Msg;
 
 #[derive(MockComponent)]
 pub struct Progress {

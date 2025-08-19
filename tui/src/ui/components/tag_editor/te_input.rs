@@ -1,5 +1,4 @@
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, InputType};
@@ -7,6 +6,7 @@ use tuirealm::{Component, Event, MockComponent};
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::model::UserEvent;
+use crate::ui::msg::{Msg, TEMsg, TFMsg};
 
 /// Common Field Properties and event handling
 #[derive(MockComponent)]
@@ -43,7 +43,7 @@ impl EditField {
         match ev {
             // Global Hotkeys
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                Some(Msg::TagEditor(TEMsg::TERename))
+                Some(Msg::TagEditor(TEMsg::Save))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Tab,
@@ -57,7 +57,7 @@ impl EditField {
                 },
             ) => Some(on_key_up),
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
-                Some(Msg::TagEditor(TEMsg::TagEditorClose))
+                Some(Msg::TagEditor(TEMsg::Close))
             }
 
             // Local Hotkeys
@@ -107,7 +107,7 @@ impl EditField {
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => Some(Msg::TagEditor(TEMsg::TESearch)),
+            }) => Some(Msg::TagEditor(TEMsg::Search)),
             _ => None,
         }
     }
@@ -130,8 +130,8 @@ impl Component<Msg, UserEvent> for TEInputArtist {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
-            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurDown)),
-            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurUp)),
+            Msg::TagEditor(TEMsg::Focus(TFMsg::InputArtistBlurDown)),
+            Msg::TagEditor(TEMsg::Focus(TFMsg::InputArtistBlurUp)),
         )
     }
 }
@@ -153,8 +153,8 @@ impl Component<Msg, UserEvent> for TEInputTitle {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
-            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurDown)),
-            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurUp)),
+            Msg::TagEditor(TEMsg::Focus(TFMsg::InputTitleBlurDown)),
+            Msg::TagEditor(TEMsg::Focus(TFMsg::InputTitleBlurUp)),
         )
     }
 }
@@ -176,8 +176,8 @@ impl Component<Msg, UserEvent> for TEInputAlbum {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
-            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurDown)),
-            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurUp)),
+            Msg::TagEditor(TEMsg::Focus(TFMsg::InputAlbumBlurDown)),
+            Msg::TagEditor(TEMsg::Focus(TFMsg::InputAlbumBlurUp)),
         )
     }
 }
@@ -199,8 +199,8 @@ impl Component<Msg, UserEvent> for TEInputGenre {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
-            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurDown)),
-            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurUp)),
+            Msg::TagEditor(TEMsg::Focus(TFMsg::InputGenreBlurDown)),
+            Msg::TagEditor(TEMsg::Focus(TFMsg::InputGenreBlurUp)),
         )
     }
 }

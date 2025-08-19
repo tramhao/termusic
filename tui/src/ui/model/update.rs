@@ -2,17 +2,20 @@ use std::path::Path;
 use std::time::Duration;
 
 use anyhow::anyhow;
-use termusiclib::ids::{Id, IdTagEditor};
+use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
-use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, LIMsg, LyricMsg, MainLayoutMsg, Msg, PCMsg, PLMsg, PlayerMsg,
-    SavePlaylistMsg, XYWHMsg, YSMsg,
-};
 use tokio::runtime::Handle;
 use tokio::time::sleep;
 use tuirealm::Update;
 use tuirealm::props::{AttrValue, Attribute};
 
+use crate::ui::ids::Id;
+use crate::ui::model::youtube_options::YTDLMsg;
+use crate::ui::msg::{
+    CoverDLResult, DBMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg,
+    MainLayoutMsg, Msg, NotificationMsg, PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg,
+    XYWHMsg, YSMsg,
+};
 use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::{Model, model::TermusicLayout};
 
@@ -24,75 +27,36 @@ impl Update<Msg> for Model {
         self.redraw = true;
         // Match message
         match msg {
-            Msg::ConfigEditor(m) => self.update_config_editor(m),
-            Msg::DataBase(m) => self.update_database_list(m),
+            Msg::ConfigEditor(msg) => self.update_config_editor(msg),
+            Msg::DataBase(msg) => self.update_database_list(msg),
 
-            Msg::DeleteConfirmShow | Msg::DeleteConfirmCloseCancel | Msg::DeleteConfirmCloseOk => {
-                self.update_delete_confirmation(&msg)
-            }
+            Msg::DeleteConfirm(msg) => self.update_delete_confirmation(&msg),
 
-            Msg::ErrorPopupClose => {
-                if self.app.mounted(&Id::ErrorPopup) {
-                    self.umount_error_popup();
-                }
+            Msg::ErrorPopup(msg) => self.update_error_popup_msg(&msg),
+            Msg::QuitPopup(msg) => self.update_quit_popup_msg(&msg),
+
+            Msg::Library(msg) => {
+                self.update_library(msg);
                 None
             }
-            Msg::QuitPopupShow => {
-                if self.config_tui.read().settings.behavior.confirm_quit {
-                    self.mount_quit_popup();
-                } else {
-                    self.quit = true;
-                }
+            Msg::GeneralSearch(msg) => {
+                self.update_general_search(&msg);
                 None
             }
-            Msg::QuitPopupCloseCancel => {
-                self.app.umount(&Id::QuitPopup).ok();
-                None
-            }
-            Msg::QuitPopupCloseOk => {
-                self.quit = true;
-                None
-            }
-            Msg::Library(m) => {
-                self.update_library(m);
-                None
-            }
-            Msg::GeneralSearch(m) => {
-                self.update_general_search(&m);
-                None
-            }
-            Msg::Playlist(m) => {
-                self.update_playlist(&m);
+            Msg::Playlist(msg) => {
+                self.update_playlist(&msg);
                 None
             }
 
             Msg::Player(msg) => self.update_player(msg),
 
-            Msg::HelpPopupShow => {
-                self.mount_help_popup();
+            Msg::HelpPopup(msg) => self.update_help_popup_msg(&msg),
+            Msg::YoutubeSearch(msg) => {
+                self.update_youtube_search(msg);
                 None
             }
-            Msg::HelpPopupClose => {
-                if self.app.mounted(&Id::HelpPopup) {
-                    self.app.umount(&Id::HelpPopup).ok();
-                }
-                self.update_photo().ok();
-                None
-            }
-            Msg::YoutubeSearch(m) => {
-                self.update_youtube_search(m);
-                None
-            }
-            Msg::LyricCycle => {
-                self.lyric_cycle();
-                None
-            }
-            Msg::LyricAdjustDelay(offset) => {
-                self.lyric_adjust_delay(offset);
-                None
-            }
-            Msg::TagEditor(m) => {
-                self.update_tageditor(m);
+            Msg::TagEditor(msg) => {
+                self.update_tageditor(msg);
                 None
             }
             Msg::UpdatePhoto => {
@@ -105,10 +69,10 @@ impl Update<Msg> for Model {
 
             Msg::SavePlaylist(msg) => self.update_save_playlist(msg),
 
-            Msg::Podcast(m) => self.update_podcast(m),
-            Msg::LyricMessage(m) => self.update_lyric_textarea(m),
-            Msg::Download(m) => self.update_download_msg(m),
-            Msg::Xywh(m) => self.update_xywh_msg(m),
+            Msg::Podcast(msg) => self.update_podcast(msg),
+            Msg::LyricMessage(msg) => self.update_lyric_msg(msg),
+            Msg::Notification(msg) => self.update_notification_msg(msg),
+            Msg::Xywh(msg) => self.update_xywh_msg(msg),
 
             Msg::ForceRedraw => None,
         }
@@ -125,6 +89,58 @@ impl Model {
         }
     }
 
+    /// Handle all [`ErrorPopupMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_error_popup_msg(&mut self, msg: &ErrorPopupMsg) -> Option<Msg> {
+        match msg {
+            ErrorPopupMsg::Close => {
+                if self.app.mounted(&Id::ErrorPopup) {
+                    self.umount_error_popup();
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Handle all [`HelpPopupMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_help_popup_msg(&mut self, msg: &HelpPopupMsg) -> Option<Msg> {
+        match msg {
+            HelpPopupMsg::Show => {
+                self.mount_help_popup();
+            }
+            HelpPopupMsg::Close => {
+                if self.app.mounted(&Id::HelpPopup) {
+                    self.app.umount(&Id::HelpPopup).ok();
+                }
+                self.update_photo().ok();
+            }
+        }
+
+        None
+    }
+
+    /// Handle all [`QuitPopupMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_quit_popup_msg(&mut self, msg: &QuitPopupMsg) -> Option<Msg> {
+        match msg {
+            QuitPopupMsg::Show => {
+                if self.config_tui.read().settings.behavior.confirm_quit {
+                    self.mount_quit_popup();
+                } else {
+                    self.quit = true;
+                }
+            }
+            QuitPopupMsg::CloseCancel => {
+                self.app.umount(&Id::QuitPopup).ok();
+            }
+            QuitPopupMsg::CloseOk => {
+                self.quit = true;
+            }
+        }
+
+        None
+    }
+
+    /// Handle all [`XYWHMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_xywh_msg(&mut self, msg: XYWHMsg) -> Option<Msg> {
         match msg {
             XYWHMsg::MoveLeft => self.xywh_move_left(),
@@ -136,14 +152,31 @@ impl Model {
             XYWHMsg::ToggleHidden => {
                 self.xywh_toggle_hide();
             }
+            XYWHMsg::CoverDLResult(msg) => match msg {
+                CoverDLResult::FetchPhotoSuccess(image_wrapper) => {
+                    self.show_image(&image_wrapper.data).ok();
+                }
+                CoverDLResult::FetchPhotoErr(err_text) => {
+                    self.show_message_timeout_label_help(err_text, None, None, None);
+                }
+            },
         }
         None
     }
 
-    fn update_lyric_textarea(&mut self, msg: LyricMsg) -> Option<Msg> {
+    /// Handle all [`LyricMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_lyric_msg(&mut self, msg: LyricMsg) -> Option<Msg> {
         match msg {
-            LyricMsg::LyricTextAreaBlurUp => self.app.active(&Id::Playlist).ok(),
-            LyricMsg::LyricTextAreaBlurDown => match self.layout {
+            LyricMsg::Cycle => {
+                self.lyric_cycle();
+                None
+            }
+            LyricMsg::AdjustDelay(offset) => {
+                self.lyric_adjust_delay(offset);
+                None
+            }
+            LyricMsg::TextAreaBlurUp => self.app.active(&Id::Playlist).ok(),
+            LyricMsg::TextAreaBlurDown => match self.layout {
                 TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
                 TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
                 TermusicLayout::Podcast => self.app.active(&Id::Podcast).ok(),
@@ -152,6 +185,21 @@ impl Model {
         None
     }
 
+    /// Handle all [`NotificationMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_notification_msg(&mut self, msg: NotificationMsg) -> Option<Msg> {
+        match msg {
+            NotificationMsg::MessageShow((title, text)) => {
+                self.mount_message(&title, &text);
+            }
+            NotificationMsg::MessageHide((title, text)) => {
+                self.umount_message(&title, &text);
+            }
+        }
+
+        None
+    }
+
+    /// Handle all [`PCMsg`] messages. Sub-function for [`update`](Self::update).
     #[allow(clippy::too_many_lines)]
     fn update_podcast(&mut self, msg: PCMsg) -> Option<Msg> {
         match msg {
@@ -179,40 +227,10 @@ impl Model {
                 }
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
-            PCMsg::SyncData((id, pod)) => {
-                self.download_tracker.decrease_one(&pod.url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_sync_success(),
-                    None,
-                    None,
-                    None,
-                );
-                if let Err(e) = self.add_or_sync_data(&pod, Some(id)) {
-                    self.mount_error_popup(e.context("add or sync data"));
-                }
-            }
-            PCMsg::NewData(pod) => {
-                self.download_tracker.decrease_one(&pod.url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_feeds_added(),
-                    None,
-                    None,
-                    None,
-                );
-                if let Err(e) = self.add_or_sync_data(&pod, None) {
-                    self.mount_error_popup(e.context("add or sync data"));
-                }
-            }
-            PCMsg::Error(feed) => {
-                self.download_tracker.decrease_one(&feed.url);
-                self.mount_error_popup(anyhow!("Error happened with feed: {:?}", feed.title));
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_feed_sync_failed(),
-                    None,
-                    None,
-                    None,
-                );
-            }
+
+            PCMsg::SyncResult(msg) => self.podcast_handle_sync_result(msg),
+            PCMsg::DLResult(msg) => self.podcast_handle_dl_result(msg),
+
             PCMsg::PodcastSelected(index) => {
                 self.podcast.podcasts_index = index;
                 if let Err(e) = self.podcast_sync_episodes() {
@@ -245,74 +263,13 @@ impl Model {
                     self.mount_error_popup(e.context("podcast refresh feeds all"));
                 }
             }
-            PCMsg::FetchPodcastStart(url) => {
-                self.download_tracker.increase_one(url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_sync_start(),
-                    None,
-                    None,
-                    None,
-                );
-            }
+
             PCMsg::EpisodeDownload(index) => {
                 if let Err(e) = self.episode_download(Some(index)) {
                     self.mount_error_popup(e.context("podcast episode download"));
                 }
             }
-            PCMsg::DLStart(ep_data) => {
-                self.download_tracker.increase_one(&ep_data.url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_download_start(&ep_data.title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            PCMsg::DLComplete(ep_data) => {
-                if let Err(e) = self.episode_download_complete(ep_data.clone()) {
-                    self.mount_error_popup(e.context("podcast episode download complete"));
-                }
-                self.download_tracker.decrease_one(&ep_data.url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_download_complete(),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            PCMsg::DLResponseError(ep_data) => {
-                self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
-                self.show_message_timeout_label_help(
-                    self.download_tracker
-                        .message_download_error_response(&ep_data.title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            PCMsg::DLFileCreateError(ep_data) => {
-                self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
-                self.show_message_timeout_label_help(
-                    self.download_tracker
-                        .message_download_error_file_create(&ep_data.title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            PCMsg::DLFileWriteError(ep_data) => {
-                self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
-                self.show_message_timeout_label_help(
-                    self.download_tracker
-                        .message_download_error_file_write(&ep_data.title),
-                    None,
-                    None,
-                    None,
-                );
-            }
+
             PCMsg::EpisodeDeleteFile(index) => {
                 if let Err(e) = self.episode_delete_file(index) {
                     self.mount_error_popup(e.context("podcast episode delete"));
@@ -349,6 +306,115 @@ impl Model {
             PCMsg::SearchError(e) => self.mount_error_popup(anyhow!(e)),
         }
         None
+    }
+
+    /// Handle all cases for [`PodcastSyncResult`].
+    fn podcast_handle_sync_result(&mut self, msg: PodcastSyncResult) {
+        match msg {
+            PodcastSyncResult::FetchPodcastStart(url) => {
+                self.download_tracker.increase_one(url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_sync_start(),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastSyncResult::SyncData((id, pod)) => {
+                self.download_tracker.decrease_one(&pod.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_sync_success(),
+                    None,
+                    None,
+                    None,
+                );
+                if let Err(e) = self.add_or_sync_data(&pod, Some(id)) {
+                    self.mount_error_popup(e.context("add or sync data"));
+                }
+            }
+            PodcastSyncResult::NewData(pod) => {
+                self.download_tracker.decrease_one(&pod.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_feeds_added(),
+                    None,
+                    None,
+                    None,
+                );
+                if let Err(e) = self.add_or_sync_data(&pod, None) {
+                    self.mount_error_popup(e.context("add or sync data"));
+                }
+            }
+            PodcastSyncResult::Error(feed) => {
+                self.download_tracker.decrease_one(&feed.url);
+                self.mount_error_popup(anyhow!("Error happened with feed: {:?}", feed.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_feed_sync_failed(),
+                    None,
+                    None,
+                    None,
+                );
+            }
+        }
+    }
+
+    /// Handle all cases for [`PodcastDLResult`].
+    fn podcast_handle_dl_result(&mut self, msg: PodcastDLResult) {
+        match msg {
+            PodcastDLResult::DLStart(ep_data) => {
+                self.download_tracker.increase_one(&ep_data.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_start(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastDLResult::DLComplete(ep_data) => {
+                if let Err(e) = self.episode_download_complete(ep_data.clone()) {
+                    self.mount_error_popup(e.context("podcast episode download complete"));
+                }
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_complete(),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastDLResult::DLResponseError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_response(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastDLResult::DLFileCreateError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_file_create(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            PodcastDLResult::DLFileWriteError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_file_write(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+        }
     }
 
     /// Handle Player related messages & events
@@ -401,7 +467,7 @@ impl Model {
         None
     }
 
-    /// Switch the main view / layout
+    /// Switch the main view / layout.
     fn update_layout(&mut self, msg: MainLayoutMsg) -> Option<Msg> {
         match msg {
             MainLayoutMsg::DataBase => {
@@ -493,6 +559,8 @@ impl Model {
 
         None
     }
+
+    /// Handle all [`DBMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_database_list(&mut self, msg: DBMsg) -> Option<Msg> {
         match msg {
             DBMsg::CriteriaBlurDown | DBMsg::SearchTracksBlurUp => {
@@ -555,6 +623,7 @@ impl Model {
         None
     }
 
+    /// Handle all [`LIMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_library(&mut self, msg: LIMsg) {
         match msg {
             LIMsg::TreeBlur => {
@@ -591,6 +660,7 @@ impl Model {
         }
     }
 
+    /// Handle all [`YSMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
             YSMsg::InputPopupShow => {
@@ -641,9 +711,52 @@ impl Model {
                 self.redraw = true;
                 self.mount_error_popup(anyhow!("Youtube search fail: {e}"));
             }
+            YSMsg::Download(msg) => self.update_ys_download_msg(msg),
         }
     }
 
+    /// Handle all [`YSMsg`] messages. Sub-function for [`update_youtube_search`](Self::update_youtube_search).
+    fn update_ys_download_msg(&mut self, msg: YTDLMsg) {
+        match msg {
+            YTDLMsg::Start(url, title) => {
+                self.download_tracker.increase_one(&*url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_start(&title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            YTDLMsg::Success(url) => {
+                self.download_tracker.decrease_one(&url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_complete(),
+                    None,
+                    None,
+                    None,
+                );
+            }
+            YTDLMsg::Completed(_url, file) => {
+                if self.download_tracker.visible() {
+                    return;
+                }
+                self.library_reload_with_node_focus(file);
+            }
+            YTDLMsg::Err(url, title, error_message) => {
+                self.download_tracker.decrease_one(&url);
+                self.mount_error_popup(anyhow!("download failed: {error_message}"));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_response(&title),
+                    None,
+                    None,
+                    None,
+                );
+            }
+        }
+    }
+
+    /// Handle all [`GSMsg`] messages. Sub-function for [`update`](Self::update).
     #[allow(clippy::too_many_lines)]
     fn update_general_search(&mut self, msg: &GSMsg) {
         match msg {
@@ -761,12 +874,14 @@ impl Model {
             }
         }
     }
-    fn update_delete_confirmation(&mut self, msg: &Msg) -> Option<Msg> {
+
+    /// Handle all [`DeleteConfirmMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_delete_confirmation(&mut self, msg: &DeleteConfirmMsg) -> Option<Msg> {
         match msg {
-            Msg::DeleteConfirmShow => {
+            DeleteConfirmMsg::Show => {
                 self.library_before_delete();
             }
-            Msg::DeleteConfirmCloseCancel => {
+            DeleteConfirmMsg::CloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
                 }
@@ -774,7 +889,7 @@ impl Model {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
             }
-            Msg::DeleteConfirmCloseOk => {
+            DeleteConfirmMsg::CloseOk => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
                 }
@@ -785,10 +900,11 @@ impl Model {
                     self.mount_error_popup(e.context("library delete song"));
                 }
             }
-            _ => {}
         }
         None
     }
+
+    /// Handle all [`PLMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_playlist(&mut self, msg: &PLMsg) {
         match msg {
             PLMsg::Add(current_node) => {
@@ -875,14 +991,14 @@ impl Model {
         let delay = time_out.unwrap_or(10);
 
         Handle::current().spawn(async move {
-            let _ = tx.send(Msg::Download(DLMsg::MessageShow((
+            let _ = tx.send(Msg::Notification(NotificationMsg::MessageShow((
                 title_string.clone(),
                 text_string.clone(),
             ))));
 
             sleep(Duration::from_secs(delay)).await;
 
-            let _ = tx.send(Msg::Download(DLMsg::MessageHide((
+            let _ = tx.send(Msg::Notification(NotificationMsg::MessageHide((
                 title_string,
                 text_string,
             ))));
@@ -913,75 +1029,6 @@ impl Model {
         if let Ok(msg) = self.rx_to_main.try_recv() {
             self.update(Some(msg));
         }
-    }
-
-    // change status bar text to indicate the downloading state
-    fn update_download_msg(&mut self, msg: DLMsg) -> Option<Msg> {
-        self.redraw = true;
-        match msg {
-            DLMsg::DownloadRunning(url, title) => {
-                self.download_tracker.increase_one(&*url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_download_start(&title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            DLMsg::DownloadSuccess(url) => {
-                self.download_tracker.decrease_one(&url);
-                self.show_message_timeout_label_help(
-                    self.download_tracker.message_download_complete(),
-                    None,
-                    None,
-                    None,
-                );
-
-                if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
-                    self.umount_tageditor();
-                }
-            }
-            DLMsg::DownloadCompleted(_url, file) => {
-                if self.download_tracker.visible() {
-                    return None;
-                }
-                self.library_reload_with_node_focus(file);
-            }
-            DLMsg::DownloadErrDownload(url, title, error_message) => {
-                self.download_tracker.decrease_one(&url);
-                self.mount_error_popup(anyhow!("download failed: {error_message}"));
-                self.show_message_timeout_label_help(
-                    self.download_tracker
-                        .message_download_error_response(&title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            DLMsg::DownloadErrEmbedData(_url, title) => {
-                self.mount_error_popup(anyhow!("download ok but tag info is not complete."));
-                self.show_message_timeout_label_help(
-                    self.download_tracker
-                        .message_download_error_embed_data(&title),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            DLMsg::MessageShow((title, text)) => {
-                self.mount_message(&title, &text);
-            }
-            DLMsg::MessageHide((title, text)) => {
-                self.umount_message(&title, &text);
-            }
-            DLMsg::FetchPhotoSuccess(image_wrapper) => {
-                self.show_image(&image_wrapper.data).ok();
-            }
-            DLMsg::FetchPhotoErr(err_text) => {
-                self.show_message_timeout_label_help(err_text, None, None, None);
-            }
-        }
-        None
     }
 
     /// Handle & update [`SavePlaylistMsg`] related components.

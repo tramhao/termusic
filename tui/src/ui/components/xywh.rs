@@ -17,12 +17,12 @@ use anyhow::Result;
 use bytes::Buf;
 use image::DynamicImage;
 use lofty::picture::Picture;
-use termusiclib::ids::{Id, IdConfigEditor, IdTagEditor};
 use termusiclib::track::MediaTypes;
-use termusiclib::types::{DLMsg, ImageWrapper, Msg};
 use tokio::runtime::Handle;
 
+use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::{Model, TxToMain, ViuerSupported};
+use crate::ui::msg::{CoverDLResult, ImageWrapper, Msg, XYWHMsg};
 
 impl Model {
     pub fn xywh_move_left(&mut self) {
@@ -166,10 +166,12 @@ impl Model {
         match reqwest::get(&url).await {
             Ok(result) => {
                 if result.status() != reqwest::StatusCode::OK {
-                    tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                        "Error non-OK Status code: {}",
-                        result.status()
-                    ))))
+                    tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
+                        CoverDLResult::FetchPhotoErr(format!(
+                            "Error non-OK Status code: {}",
+                            result.status()
+                        )),
+                    )))
                     .ok();
                     return;
                 }
@@ -178,9 +180,11 @@ impl Model {
                     let bytes = match result.bytes().await {
                         Ok(v) => v,
                         Err(err) => {
-                            tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                "Error in reqest::Response::bytes: {err}"
-                            ))))
+                            tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
+                                CoverDLResult::FetchPhotoErr(format!(
+                                    "Error in reqest::Response::bytes: {err}"
+                                )),
+                            )))
                             .ok();
                             return;
                         }
@@ -192,9 +196,11 @@ impl Model {
                 let picture = match Picture::from_reader(&mut reader) {
                     Ok(v) => v,
                     Err(e) => {
-                        tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                            "Error in picture from_reader: {e}"
-                        ))))
+                        tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
+                            CoverDLResult::FetchPhotoErr(format!(
+                                "Error in picture from_reader: {e}"
+                            )),
+                        )))
                         .ok();
                         return;
                     }
@@ -203,20 +209,22 @@ impl Model {
                 match image::load_from_memory(picture.data()) {
                     Ok(image) => {
                         let image_wrapper = ImageWrapper { data: image };
-                        tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(image_wrapper)))
-                            .ok()
+                        tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
+                            CoverDLResult::FetchPhotoSuccess(image_wrapper),
+                        )))
+                        .ok()
                     }
                     Err(e) => tx
-                        .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                            "Error in load_from_memory: {e}"
-                        ))))
+                        .send(Msg::Xywh(XYWHMsg::CoverDLResult(
+                            CoverDLResult::FetchPhotoErr(format!("Error in load_from_memory: {e}")),
+                        )))
                         .ok(),
                 }
             }
             Err(e) => tx
-                .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                    "Error in ureq get: {e}"
-                ))))
+                .send(Msg::Xywh(XYWHMsg::CoverDLResult(
+                    CoverDLResult::FetchPhotoErr(format!("Error in ureq get: {e}")),
+                )))
                 .ok(),
         };
     }

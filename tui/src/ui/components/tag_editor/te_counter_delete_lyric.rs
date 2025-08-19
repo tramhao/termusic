@@ -22,7 +22,6 @@ use termusiclib::config::SharedTuiSettings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -34,6 +33,7 @@ use tuirealm::{
 };
 
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{Msg, TEMsg, TFMsg};
 
 /// ## Counter
 ///
@@ -246,39 +246,39 @@ impl Component<Msg, UserEvent> for TECounterDelete {
         // Get command
         let _cmd = match ev {
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                return Some(Msg::TagEditor(TEMsg::TERename));
+                return Some(Msg::TagEditor(TEMsg::Save));
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)));
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterDeleteBlurDown)));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp))),
+            }) => return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterDeleteBlurUp))),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown))),
+            }) => return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterDeleteBlurDown))),
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)));
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterDeleteBlurUp)));
             }
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
+                return Some(Msg::TagEditor(TEMsg::Close));
             }
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose));
+                return Some(Msg::TagEditor(TEMsg::Close));
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)));
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterDeleteBlurUp)));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
-                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)));
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterDeleteBlurDown)));
             }
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => return Some(Msg::TagEditor(TEMsg::TECounterDeleteOk)),
+            }) => return Some(Msg::TagEditor(TEMsg::CounterDeleteOk)),
             _ => Cmd::None,
         };
         None

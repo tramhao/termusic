@@ -23,8 +23,8 @@
  */
 use std::time::Instant;
 
+use crate::ui::msg::Msg;
 use termusiclib::config::TuiOverlay;
-use termusiclib::types::Msg;
 use tui_realm_stdlib::{Label, Span, Spinner};
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::props::{

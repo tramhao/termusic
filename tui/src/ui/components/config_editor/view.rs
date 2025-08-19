@@ -1,19 +1,3 @@
-use crate::ui::Application;
-use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
-use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
-use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
-use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
-use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
-use crate::ui::utils::draw_area_in_absolute;
-use anyhow::{Result, bail};
-use include_dir::DirEntry;
-use std::num::{NonZeroU8, NonZeroU32};
-use std::path::PathBuf;
-use termusiclib::THEME_DIR;
-use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
-use termusiclib::config::v2::tui::Alignment as XywhAlign;
-use termusiclib::ids::{Id, IdConfigEditor, IdKeyGlobal, IdKeyOther};
-use termusiclib::types::{IdKey, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
 /**
  * MIT License
  *
@@ -37,11 +21,29 @@ use termusiclib::types::{IdKey, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use std::num::{NonZeroU8, NonZeroU32};
+use std::path::PathBuf;
+
+use anyhow::{Result, bail};
+use include_dir::DirEntry;
+use termusiclib::THEME_DIR;
+use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
+use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout, Rect};
 use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
+
+use crate::ui::Application;
+use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
+use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
+use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
+use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
+use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
+use crate::ui::msg::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
+use crate::ui::utils::draw_area_in_absolute;
 
 // NOTE: the macros either have to be in a different file OR be defined *before* they are used, otherwise they are not in scope
 

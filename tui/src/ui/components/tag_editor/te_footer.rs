@@ -1,7 +1,7 @@
-use termusiclib::{config::TuiOverlay, types::Msg};
+use termusiclib::config::TuiOverlay;
 use tuirealm::{Component, Event, MockComponent, props::TextSpan};
 
-use crate::ui::{components::LabelSpan, model::UserEvent};
+use crate::ui::{components::LabelSpan, model::UserEvent, msg::Msg};
 
 #[derive(MockComponent)]
 pub struct TEFooter {

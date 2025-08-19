@@ -24,8 +24,6 @@
 use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
-use termusiclib::ids::{Id, IdConfigEditor};
-use termusiclib::types::{ConfigEditorMsg, Msg};
 use tui_realm_stdlib::Radio;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{
@@ -36,7 +34,9 @@ use tuirealm::{
 
 use crate::CombinedSettings;
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
+use crate::ui::ids::{Id, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{ConfigEditorMsg, Msg};
 
 #[derive(MockComponent)]
 pub struct MusicDir {

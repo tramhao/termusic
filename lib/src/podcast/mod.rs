@@ -22,11 +22,10 @@ use reqwest::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
 use sanitize_filename::{Options, sanitize_with_options};
-use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
+use tokio::sync::mpsc::unbounded_channel;
 
 use crate::config::v2::server::PodcastSettings;
 use crate::taskpool::TaskPool;
-use crate::types::{Msg, PCMsg};
 use db::Database;
 use episode::{Episode, EpisodeNoId};
 pub use podcast::{Podcast, PodcastNoId};
@@ -76,6 +75,15 @@ impl PodcastFeed {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PodcastSyncResult {
+    FetchPodcastStart(String),
+
+    SyncData((i64, PodcastNoId)),
+    NewData(PodcastNoId),
+    Error(PodcastFeed),
+}
+
 /// Spawns a new task to check a feed and retrieve podcast data.
 ///
 /// If `tx_to_main` is closed, no errors will be throws and the task will continue
@@ -83,22 +91,22 @@ pub fn check_feed(
     feed: PodcastFeed,
     max_retries: usize,
     tp: &TaskPool,
-    tx_to_main: UnboundedSender<Msg>,
+    tx_to_main: impl Fn(PodcastSyncResult) + Send + 'static,
 ) {
     tp.execute(async move {
-        let _ = tx_to_main.send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())));
+        tx_to_main(PodcastSyncResult::FetchPodcastStart(feed.url.clone()));
         match get_feed_data(&feed.url, max_retries).await {
             Ok(pod) => match feed.id {
                 Some(id) => {
-                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::SyncData((id, pod))));
+                    tx_to_main(PodcastSyncResult::SyncData((id, pod)));
                 }
                 None => {
-                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::NewData(pod)));
+                    tx_to_main(PodcastSyncResult::NewData(pod));
                 }
             },
             Err(err) => {
                 error!("get_feed_data had a Error: {err:#?}");
-                let _ = tx_to_main.send(Msg::Podcast(PCMsg::Error(feed)));
+                tx_to_main(PodcastSyncResult::Error(feed));
             }
         }
     });
@@ -302,11 +310,15 @@ pub async fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &P
     let (tx_to_main, mut rx_to_main) = unbounded_channel();
 
     for pod in &podcast_list {
+        let tx_to_main_c = tx_to_main.clone();
+
         check_feed(
             pod.clone(),
             usize::from(config.max_download_retries),
             &taskpool,
-            tx_to_main.clone(),
+            move |msg| {
+                let _ = tx_to_main_c.send(msg);
+            },
         );
     }
 
@@ -314,7 +326,8 @@ pub async fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &P
     let mut failure = false;
     while let Some(message) = rx_to_main.recv().await {
         match message {
-            Msg::Podcast(PCMsg::NewData(pod)) => {
+            PodcastSyncResult::FetchPodcastStart(_) => (),
+            PodcastSyncResult::NewData(pod) => {
                 msg_counter += 1;
                 let title = &pod.title;
                 let db_result = db_inst.insert_podcast(&pod);
@@ -329,16 +342,15 @@ pub async fn import_from_opml(db_path: &Path, config: &PodcastSettings, file: &P
                 }
             }
 
-            Msg::Podcast(PCMsg::Error(feed)) => {
+            PodcastSyncResult::Error(feed) => {
                 msg_counter += 1;
                 failure = true;
                 error!("Error retrieving RSS feed: {}", feed.url);
             }
 
-            Msg::Podcast(PCMsg::SyncData((_id, _pod))) => {
+            PodcastSyncResult::SyncData((_id, _pod)) => {
                 msg_counter += 1;
             }
-            _ => {}
         }
 
         if msg_counter >= podcast_list.len() {
@@ -437,6 +449,15 @@ pub struct EpData {
     pub file_path: Option<PathBuf>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PodcastDLResult {
+    DLStart(EpData),
+    DLComplete(EpData),
+    DLResponseError(EpData),
+    DLFileCreateError(EpData),
+    DLFileWriteError(EpData),
+}
+
 /// This is the function the main controller uses to indicate new files to download.
 ///
 /// It uses the taskpool to start jobs for every episode to be downloaded.
@@ -448,16 +469,16 @@ pub fn download_list(
     dest: &Path,
     max_retries: usize,
     tp: &TaskPool,
-    tx_to_main: &UnboundedSender<Msg>,
+    tx_to_main: impl Fn(PodcastDLResult) + Send + 'static + Clone,
 ) {
     // parse episode details and push to queue
     for ep in episodes {
         let tx = tx_to_main.clone();
         let dest2 = dest.to_path_buf();
         tp.execute(async move {
-            let _ = tx.send(Msg::Podcast(PCMsg::DLStart(ep.clone())));
+            tx(PodcastDLResult::DLStart(ep.clone()));
             let result = download_file(ep, dest2, max_retries).await;
-            let _ = tx.send(Msg::Podcast(result));
+            tx(result);
         });
     }
 }
@@ -468,7 +489,7 @@ async fn download_file(
     mut ep_data: EpData,
     destination_path: PathBuf,
     mut max_retries: usize,
-) -> PCMsg {
+) -> PodcastDLResult {
     let agent = ClientBuilder::new()
         .connect_timeout(Duration::from_secs(10))
         .build()
@@ -481,7 +502,7 @@ async fn download_file(
         }
         max_retries -= 1;
         if max_retries == 0 {
-            return PCMsg::DLResponseError(ep_data);
+            return PodcastDLResult::DLResponseError(ep_data);
         }
     };
 
@@ -526,17 +547,17 @@ async fn download_file(
     file_path.push(format!("{file_name}.{ext}"));
 
     let Ok(mut dst) = File::create(&file_path) else {
-        return PCMsg::DLFileCreateError(ep_data);
+        return PodcastDLResult::DLFileCreateError(ep_data);
     };
 
     ep_data.file_path = Some(file_path);
 
     let Ok(bytes) = response.bytes().await else {
-        return PCMsg::DLFileCreateError(ep_data);
+        return PodcastDLResult::DLFileCreateError(ep_data);
     };
 
     match std::io::copy(&mut bytes.reader(), &mut dst) {
-        Ok(_) => PCMsg::DLComplete(ep_data),
-        Err(_) => PCMsg::DLFileWriteError(ep_data),
+        Ok(_) => PodcastDLResult::DLComplete(ep_data),
+        Err(_) => PodcastDLResult::DLFileWriteError(ep_data),
     }
 }

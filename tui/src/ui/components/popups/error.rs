@@ -1,5 +1,3 @@
-use termusiclib::config::SharedTuiSettings;
-use termusiclib::ids::Id;
 /**
  * MIT License
  *
@@ -23,7 +21,7 @@ use termusiclib::ids::Id;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::Msg;
+use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     Component, Event, MockComponent,
@@ -31,7 +29,9 @@ use tuirealm::{
     props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan},
 };
 
+use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{ErrorPopupMsg, Msg};
 
 #[derive(MockComponent)]
 pub struct ErrorPopup {
@@ -71,9 +71,13 @@ impl Component<Msg, UserEvent> for ErrorPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,
                 ..
-            }) => Some(Msg::ErrorPopupClose),
-            Event::Keyboard(key) if key == keys.quit.get() => Some(Msg::ErrorPopupClose),
-            Event::Keyboard(key) if key == keys.escape.get() => Some(Msg::ErrorPopupClose),
+            }) => Some(Msg::ErrorPopup(ErrorPopupMsg::Close)),
+            Event::Keyboard(key) if key == keys.quit.get() => {
+                Some(Msg::ErrorPopup(ErrorPopupMsg::Close))
+            }
+            Event::Keyboard(key) if key == keys.escape.get() => {
+                Some(Msg::ErrorPopup(ErrorPopupMsg::Close))
+            }
             _ => None,
         }
     }

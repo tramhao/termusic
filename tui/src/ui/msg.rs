@@ -1,52 +1,47 @@
+//! This Module contains all TUI-specific message types.
+
 use std::path::PathBuf;
-use std::sync::Arc;
 
-use crate::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
-use crate::ids::{IdConfigEditor, IdKeyGlobal, IdKeyOther};
-use crate::invidious::{Instance, YoutubeVideo};
-use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
-use crate::songtag::SongTag;
-use anyhow::{Result, anyhow};
 use image::DynamicImage;
+use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
+use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
+use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 
+use crate::ui::ids::{IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::model::youtube_options::{YTDLMsg, YoutubeOptions};
+
+/// Main message type that encapsulates everything else.
+// Note that the style is for each thing to have a sub-type, unless it is top-level like "ForceRedraw".
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Msg {
-    // AppClose,
     ConfigEditor(ConfigEditorMsg),
     DataBase(DBMsg),
-    DeleteConfirmCloseCancel,
-    DeleteConfirmCloseOk,
-    DeleteConfirmShow,
-    Download(DLMsg),
-    ErrorPopupClose,
+    Notification(NotificationMsg),
     GeneralSearch(GSMsg),
-    HelpPopupShow,
-    HelpPopupClose,
     Layout(MainLayoutMsg),
     Library(LIMsg),
-    LyricMessage(LyricMsg),
-    LyricCycle,
-    LyricAdjustDelay(i64),
     Player(PlayerMsg),
     Playlist(PLMsg),
     Podcast(PCMsg),
-    /// Closes the Quit Popup, if it was shown without quitting.
-    QuitPopupCloseCancel,
-    /// Always will directly quit.
-    QuitPopupCloseOk,
-    /// Either shows the Quit Dialog if enabled, or if dialog is disabled, directly quits
-    QuitPopupShow,
     SavePlaylist(SavePlaylistMsg),
     TagEditor(TEMsg),
-    UpdatePhoto,
     YoutubeSearch(YSMsg),
     Xywh(XYWHMsg),
+    LyricMessage(LyricMsg),
+    DeleteConfirm(DeleteConfirmMsg),
+    QuitPopup(QuitPopupMsg),
+    HelpPopup(HelpPopupMsg),
+    ErrorPopup(ErrorPopupMsg),
 
+    /// Same as [`ForceRedraw`](Msg::ForceRedraw), but also updated the drawn cover.
+    UpdatePhoto,
     /// Force a redraw because of some change.
     ///
     /// This is necessary as `Components` do not have access to `Model.redraw`.
     ///
     /// For example pushing ARROW DOWN to change the selection in a table.
+    ///
+    /// Note that this message does *not* update the drawn cover.
     ForceRedraw,
 }
 
@@ -84,7 +79,7 @@ pub enum SavePlaylistMsg {
     ConfirmCloseOk(String),
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum XYWHMsg {
     /// Toggle the hidden / shown status of the displayed image.
     ToggleHidden,
@@ -94,44 +89,12 @@ pub enum XYWHMsg {
     MoveDown,
     ZoomIn,
     ZoomOut,
+
+    CoverDLResult(CoverDLResult),
 }
 
-pub type DLMsgURL = Arc<str>;
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum DLMsg {
-    /// Indicates a Start of a download.
-    ///
-    /// `(Url, Title)`
-    DownloadRunning(DLMsgURL, String),
-    /// Indicates the Download was a Success, though termusic post-processing is not done yet.
-    ///
-    /// `(Url)`
-    DownloadSuccess(DLMsgURL),
-    /// Indicates the Download thread finished in both Success or Error.
-    ///
-    /// `(Url, Filename)`
-    DownloadCompleted(DLMsgURL, Option<String>),
-    /// Indicates that the Download has Errored and has been aborted.
-    ///
-    /// `(Url, Title, ErrorAsString)`
-    DownloadErrDownload(DLMsgURL, String, String),
-    /// Indicates that the Download was a Success, but termusic post-processing failed.
-    /// Like re-saving tags after editing.
-    ///
-    /// `(Url, Title)`
-    DownloadErrEmbedData(DLMsgURL, String),
-
-    // TODO: The Following 2 things have absolutely nothing to-do with Download
-    /// Show a status message in the TUI.
-    ///
-    /// `((Title, Text))`
-    MessageShow((String, String)),
-    /// Hide a status message in the TUI.
-    ///
-    /// `((Title, Text))`
-    MessageHide((String, String)),
-
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CoverDLResult {
     // TODO: The Following 2 things have absolutely nothing to-do with Download
     /// Fetching & loading the image was a success, with the image.
     FetchPhotoSuccess(ImageWrapper),
@@ -140,34 +103,71 @@ pub enum DLMsg {
     FetchPhotoErr(String),
 }
 
+#[derive(Clone, PartialEq, Debug)]
+pub struct ImageWrapper {
+    pub data: DynamicImage,
+}
+impl Eq for ImageWrapper {}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DeleteConfirmMsg {
+    CloseCancel,
+    CloseOk,
+    Show,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum QuitPopupMsg {
+    /// Closes the Quit Popup, if it was shown without quitting.
+    CloseCancel,
+    /// Always will directly quit.
+    CloseOk,
+    /// Either shows the Quit Dialog if enabled, or if dialog is disabled, directly quits
+    Show,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HelpPopupMsg {
+    Show,
+    Close,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ErrorPopupMsg {
+    Close,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LyricMsg {
-    LyricTextAreaBlurUp,
-    LyricTextAreaBlurDown,
+    Cycle,
+    AdjustDelay(i64),
+
+    TextAreaBlurUp,
+    TextAreaBlurDown,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
-pub enum IdKey {
-    Global(IdKeyGlobal),
-    Other(IdKeyOther),
+/// Basically a Tree Node, but without having to include `tui-realm-treeview` as another dependency for lib
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecVec<T, V> {
+    pub id: T,
+    pub value: V,
+    pub children: Vec<RecVec<T, V>>,
 }
 
-impl From<&IdKey> for IdConfigEditor {
-    fn from(value: &IdKey) -> Self {
-        match *value {
-            IdKey::Global(id_key_global) => IdConfigEditor::KeyGlobal(id_key_global),
-            IdKey::Other(id_key_other) => IdConfigEditor::KeyOther(id_key_other),
-        }
-    }
-}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum LIMsg {
+    TreeStepInto(String),
+    TreeStepOut,
+    TreeBlur,
+    Yank,
+    Paste,
+    SwitchRoot,
+    AddRoot,
+    RemoveRoot,
 
-impl From<IdKey> for IdConfigEditor {
-    fn from(value: IdKey) -> Self {
-        match value {
-            IdKey::Global(id_key_global) => IdConfigEditor::KeyGlobal(id_key_global),
-            IdKey::Other(id_key_other) => IdConfigEditor::KeyOther(id_key_other),
-        }
-    }
+    /// A requested node is ready from loading.
+    /// `(Tree, FocusNode)`
+    TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -369,30 +369,6 @@ pub enum KFMsg {
     Previous,
 }
 
-/// Basically a Tree Node, but without having to include `tui-realm-treeview` as another dependency for lib
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RecVec<T, V> {
-    pub id: T,
-    pub value: V,
-    pub children: Vec<RecVec<T, V>>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum LIMsg {
-    TreeStepInto(String),
-    TreeStepOut,
-    TreeBlur,
-    Yank,
-    Paste,
-    SwitchRoot,
-    AddRoot,
-    RemoveRoot,
-
-    /// A requested node is ready from loading.
-    /// `(Tree, FocusNode)`
-    TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DBMsg {
     /// Add all Track Results (from view `Tracks`) to the playlist
@@ -416,45 +392,6 @@ pub enum DBMsg {
 
     AddAllResultsConfirmShow,
     AddAllResultsConfirmCancel,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum PCMsg {
-    PodcastBlurDown,
-    PodcastBlurUp,
-    EpisodeBlurDown,
-    EpisodeBlurUp,
-    PodcastAddPopupShow,
-    PodcastAddPopupCloseOk(String),
-    PodcastAddPopupCloseCancel,
-    SyncData((i64, PodcastNoId)),
-    NewData(PodcastNoId),
-    Error(PodcastFeed),
-    PodcastSelected(usize),
-    DescriptionUpdate,
-    EpisodeAdd(usize),
-    EpisodeMarkPlayed(usize),
-    EpisodeMarkAllPlayed,
-    PodcastRefreshOne(usize),
-    PodcastRefreshAll,
-    FetchPodcastStart(String),
-    EpisodeDownload(usize),
-    DLStart(EpData),
-    DLComplete(EpData),
-    DLResponseError(EpData),
-    DLFileCreateError(EpData),
-    DLFileWriteError(EpData),
-    EpisodeDeleteFile(usize),
-    FeedDeleteShow,
-    FeedDeleteCloseOk,
-    FeedDeleteCloseCancel,
-    FeedsDeleteShow,
-    FeedsDeleteCloseOk,
-    FeedsDeleteCloseCancel,
-    SearchItunesCloseCancel,
-    SearchItunesCloseOk(usize),
-    SearchSuccess(Vec<PodcastFeed>),
-    SearchError(String),
 }
 
 /// Playlist Library View messages
@@ -530,20 +467,24 @@ pub enum YSMsg {
     ///
     /// `(ErrorAsString)`
     YoutubeSearchFail(String),
+
+    Download(YTDLMsg),
 }
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TEMsg {
-    TagEditorRun(String),
-    TagEditorClose,
-    TECounterDeleteOk,
-    TEDownload(usize),
-    TEEmbed(usize),
-    TEFocus(TFMsg),
-    TERename,
-    TESearch,
-    TESelectLyricOk(usize),
+    Open(String),
+    Close,
+    CounterDeleteOk,
+    Download(usize),
+    Embed(usize),
+    Focus(TFMsg),
+    Save,
+    Search,
+    SelectLyricOk(usize),
 
-    TESearchLyricResult(SongTagRecordingResult),
+    SearchLyricResult(SongtagSearchResult),
+    TrackDownloadResult(TrackDLMsg),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -566,60 +507,54 @@ pub enum TFMsg {
     TextareaLyricBlurUp,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SongTagRecordingResult {
-    Finish(Vec<SongTag>),
-}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PCMsg {
+    PodcastBlurDown,
+    PodcastBlurUp,
 
-#[derive(Clone, PartialEq, Debug)]
-pub struct ImageWrapper {
-    pub data: DynamicImage,
+    EpisodeBlurDown,
+    EpisodeBlurUp,
+
+    PodcastAddPopupShow,
+    PodcastAddPopupCloseOk(String),
+    PodcastAddPopupCloseCancel,
+    PodcastSelected(usize),
+    DescriptionUpdate,
+    EpisodeAdd(usize),
+    EpisodeMarkPlayed(usize),
+    EpisodeMarkAllPlayed,
+    PodcastRefreshOne(usize),
+    PodcastRefreshAll,
+    EpisodeDownload(usize),
+    EpisodeDeleteFile(usize),
+
+    FeedDeleteShow,
+    FeedDeleteCloseOk,
+    FeedDeleteCloseCancel,
+    FeedsDeleteShow,
+    FeedsDeleteCloseOk,
+    FeedsDeleteCloseCancel,
+
+    SearchItunesCloseCancel,
+    SearchItunesCloseOk(usize),
+    SearchSuccess(Vec<PodcastFeed>),
+    SearchError(String),
+
+    SyncResult(PodcastSyncResult),
+    DLResult(PodcastDLResult),
 }
-impl Eq for ImageWrapper {}
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct YoutubeOptions {
-    pub items: Vec<YoutubeVideo>,
-    pub page: u32,
-    pub invidious_instance: Instance,
-}
-
-impl Default for YoutubeOptions {
-    fn default() -> Self {
-        Self {
-            items: Vec::new(),
-            page: 1,
-            invidious_instance: crate::invidious::Instance::default(),
-        }
-    }
-}
-
-impl YoutubeOptions {
-    pub fn get_by_index(&self, index: usize) -> Result<&YoutubeVideo> {
-        if let Some(item) = self.items.get(index) {
-            return Ok(item);
-        }
-        Err(anyhow!("index not found"))
-    }
-
-    pub async fn prev_page(&mut self) -> Result<()> {
-        if self.page > 1 {
-            self.page -= 1;
-            self.items = self.invidious_instance.get_search_query(self.page).await?;
-        }
-        Ok(())
-    }
-
-    pub async fn next_page(&mut self) -> Result<()> {
-        self.page += 1;
-        self.items = self.invidious_instance.get_search_query(self.page).await?;
-        Ok(())
-    }
-
-    #[must_use]
-    pub const fn page(&self) -> u32 {
-        self.page
-    }
+pub enum NotificationMsg {
+    // TODO: The Following 2 things have absolutely nothing to-do with Download
+    /// Show a status message in the TUI.
+    ///
+    /// `((Title, Text))`
+    MessageShow((String, String)),
+    /// Hide a status message in the TUI.
+    ///
+    /// `((Title, Text))`
+    MessageHide((String, String)),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -635,7 +570,7 @@ pub enum SearchCriteria {
 
 impl SearchCriteria {
     #[must_use]
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             SearchCriteria::Artist => "artist",
             SearchCriteria::Album => "album",
@@ -646,21 +581,11 @@ impl SearchCriteria {
     }
 }
 
-/// Constant strings for Unknown values
-pub mod const_unknown {
-    use crate::const_str;
-
-    const_str! {
-        UNKNOWN_ARTIST "Unknown Artist",
-        UNKNOWN_TITLE "Unknown Title",
-        UNKNOWN_ALBUM "Unknown Album",
-        UNKNOWN_FILE "Unknown File",
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::types::{IdKey, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
+    use crate::ui::ids::IdKey;
+
+    use super::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
 
     // ensure that assumptions about "KFGLOBAL_FOCUS_ORDER[0]" can be made correctly
     #[test]
@@ -676,7 +601,7 @@ mod tests {
         for entry in KFGLOBAL_FOCUS_ORDER {
             assert_eq!(
                 std::mem::discriminant(entry),
-                std::mem::discriminant(&IdKey::Global(crate::ids::IdKeyGlobal::Config))
+                std::mem::discriminant(&IdKey::Global(crate::ui::ids::IdKeyGlobal::Config))
             );
         }
     }
@@ -695,7 +620,7 @@ mod tests {
         for entry in KFOTHER_FOCUS_ORDER {
             assert_eq!(
                 std::mem::discriminant(entry),
-                std::mem::discriminant(&IdKey::Other(crate::ids::IdKeyOther::DatabaseAddAll))
+                std::mem::discriminant(&IdKey::Other(crate::ui::ids::IdKeyOther::DatabaseAddAll))
             );
         }
     }

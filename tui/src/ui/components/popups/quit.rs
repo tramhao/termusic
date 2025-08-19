@@ -1,5 +1,3 @@
-use termusiclib::config::SharedTuiSettings;
-use termusiclib::ids::Id;
 /**
  * MIT License
  *
@@ -23,12 +21,13 @@ use termusiclib::ids::Id;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::types::Msg;
+use termusiclib::config::SharedTuiSettings;
 use tuirealm::{Component, Event, MockComponent, props::Alignment};
 
-use crate::ui::model::{Model, UserEvent};
-
 use super::{YNConfirm, YNConfirmStyle};
+use crate::ui::ids::Id;
+use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{Msg, QuitPopupMsg};
 
 #[derive(MockComponent)]
 pub struct QuitPopup {
@@ -52,8 +51,11 @@ impl QuitPopup {
 
 impl Component<Msg, UserEvent> for QuitPopup {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component
-            .on(ev, Msg::QuitPopupCloseOk, Msg::QuitPopupCloseCancel)
+        self.component.on(
+            ev,
+            Msg::QuitPopup(QuitPopupMsg::CloseOk),
+            Msg::QuitPopup(QuitPopupMsg::CloseCancel),
+        )
     }
 }
 
