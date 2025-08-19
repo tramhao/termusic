@@ -62,9 +62,11 @@ impl MpvBackend {
         mpv.set_property("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
 
-        #[cfg(target_os = "linux")]
-        mpv.set_property("ao", "pulse")
-            .expect("Couldn't set ao=pulse in libmpv");
+        mpv.set_property(
+            "audio-device",
+            config.settings.backends.mpv.audio_device.as_str(),
+        )
+        .expect("Couldnt set \"audio-device\" property");
 
         mpv.set_property("volume", i64::from(volume))
             .expect("Error setting volume");
