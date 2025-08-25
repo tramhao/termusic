@@ -2,6 +2,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use anyhow::anyhow;
+use termusiclib::player::{PlayerProgress, RunningStatus};
 use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
 use tokio::runtime::Handle;
@@ -14,7 +15,7 @@ use crate::ui::model::youtube_options::YTDLMsg;
 use crate::ui::msg::{
     CoverDLResult, DBMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg,
     MainLayoutMsg, Msg, NotificationMsg, PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg,
-    XYWHMsg, YSMsg,
+    ServerReqResponse, XYWHMsg, YSMsg,
 };
 use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::{Model, model::TermusicLayout};
@@ -73,6 +74,7 @@ impl Update<Msg> for Model {
             Msg::LyricMessage(msg) => self.update_lyric_msg(msg),
             Msg::Notification(msg) => self.update_notification_msg(msg),
             Msg::Xywh(msg) => self.update_xywh_msg(msg),
+            Msg::ServerReqResponse(msg) => self.update_server_resp_msg(msg),
 
             Msg::ForceRedraw => None,
         }
@@ -1060,6 +1062,42 @@ impl Model {
                     self.mount_error_popup(e.context("save m3u playlist"));
                 }
                 self.umount_save_playlist_confirm();
+            }
+        }
+
+        None
+    }
+
+    /// Handle all [`ServerReqResponse`].
+    fn update_server_resp_msg(&mut self, msg: ServerReqResponse) -> Option<Msg> {
+        match msg {
+            ServerReqResponse::GetProgress(response) => {
+                let pprogress: PlayerProgress = response.progress.unwrap_or_default().into();
+                self.progress_update(
+                    pprogress.position,
+                    pprogress.total_duration.unwrap_or_default(),
+                );
+
+                self.lyric_update_for_radio(response.radio_title);
+
+                self.handle_status(RunningStatus::from_u32(response.status));
+            }
+            ServerReqResponse::FullPlaylist(playlist_tracks) => {
+                info!("Processing Playlist from server");
+                let current_track_index = playlist_tracks.current_track_index;
+                if let Err(err) = self
+                    .playback
+                    .load_from_grpc(playlist_tracks, &self.podcast.db_podcast)
+                {
+                    self.mount_error_popup(err);
+                }
+
+                self.playlist_sync();
+
+                self.handle_current_track_index(
+                    usize::try_from(current_track_index).unwrap(),
+                    true,
+                );
             }
         }
 

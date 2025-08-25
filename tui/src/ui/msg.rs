@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use image::DynamicImage;
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
+use termusiclib::player::{GetProgressResponse, PlaylistTracks};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 
@@ -43,6 +44,8 @@ pub enum Msg {
     ///
     /// Note that this message does *not* update the drawn cover.
     ForceRedraw,
+
+    ServerReqResponse(ServerReqResponse),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -580,6 +583,14 @@ impl SearchCriteria {
         }
     }
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ServerReqResponse {
+    GetProgress(GetProgressResponse),
+    FullPlaylist(PlaylistTracks),
+}
+
+impl Eq for ServerReqResponse {}
 
 #[cfg(test)]
 mod tests {
