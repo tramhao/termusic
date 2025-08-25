@@ -21,7 +21,6 @@ use crate::utils::get_pin_yin;
 pub struct MusicLibrary {
     component: TreeView<String>,
     config: SharedTuiSettings,
-    pub init: bool,
 }
 
 impl MusicLibrary {
@@ -57,15 +56,15 @@ impl MusicLibrary {
                 .initial_node(initial_node)
         };
 
-        Self {
-            component,
-            config,
-            init: true,
-        }
+        let mut ret = Self { component, config };
+
+        ret.open_root_node();
+
+        ret
     }
 
     /// Also known as going up in the tree
-    fn handle_left_key(&mut self) -> CmdResult {
+    fn handle_left_key(&mut self) -> (CmdResult, Option<Msg>) {
         if let State::One(StateValue::String(node_id)) = self.state() {
             if let Some(node) = self.component.tree().root().query(&node_id) {
                 if node.is_leaf() {
@@ -77,13 +76,15 @@ impl MusicLibrary {
                     if self.component.tree_state().is_closed(node) {
                         self.perform(Cmd::GoTo(Position::Begin));
                         self.perform(Cmd::Move(Direction::Up));
-                        return CmdResult::None;
+                        return (CmdResult::None, Some(Msg::ForceRedraw));
                     }
                     self.perform(Cmd::Custom(TREE_CMD_CLOSE));
                 }
+
+                return (CmdResult::None, Some(Msg::ForceRedraw));
             }
         }
-        CmdResult::None
+        (CmdResult::None, None)
     }
 
     /// Also known as going down the tree / adding file to playlist
@@ -92,7 +93,11 @@ impl MusicLibrary {
         let path: &Path = Path::new(current_node);
         if path.is_dir() {
             // TODO: try to load the directory if it is not loaded yet.
-            (self.perform(Cmd::Custom(TREE_CMD_OPEN)), None)
+            // "ForceRedraw" as "TreeView" will always return "CmdResult::None"
+            (
+                self.perform(Cmd::Custom(TREE_CMD_OPEN)),
+                Some(Msg::ForceRedraw),
+            )
         } else {
             (
                 CmdResult::None,
@@ -100,29 +105,35 @@ impl MusicLibrary {
             )
         }
     }
+
+    /// [`TreeView`] does not start with the root node opened, this function does that.
+    fn open_root_node(&mut self) {
+        let root = self.component.tree().root();
+        if self.component.tree_state().is_closed(root) {
+            self.perform(Cmd::Custom(TREE_CMD_OPEN));
+        }
+    }
 }
 
 impl Component<Msg, UserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        // When init, open root
-        if self.init {
-            let root = self.component.tree().root();
-            if self.component.tree_state().is_closed(root) {
-                self.perform(Cmd::Custom(TREE_CMD_OPEN));
-                self.init = false;
-            }
-        }
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let result = match ev {
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.left.get() => {
-                self.handle_left_key()
+                match self.handle_left_key() {
+                    (_, Some(msg)) => return Some(msg),
+                    (cmdresult, None) => cmdresult,
+                }
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Left,
                 modifiers: KeyModifiers::NONE,
-            }) => self.handle_left_key(),
+            }) => match self.handle_left_key() {
+                (_, Some(msg)) => return Some(msg),
+                (cmdresult, None) => cmdresult,
+            },
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
