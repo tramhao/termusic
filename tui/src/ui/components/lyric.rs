@@ -249,11 +249,21 @@ impl Model {
                 AttrValue::Payload(PropPayload::Vec(final_vec)),
             )
             .ok();
+
+        // mark it as a different line than before podcast, so that it later does not go the "its the same line" logic and early-returns.
+        self.lyric_line = String::new();
     }
 
+    /// Update lyrics. Needs to be run each time:
+    /// - a new playback position is available
+    /// - play state changed to / from "stopped"
+    /// - track change
+    ///
+    /// This function does not handle setting the lyric title. See [`lyric_update_title`](Model::lyric_update_title).
     pub fn lyric_update(&mut self) {
         const NO_LYRICS: &str = "No lyrics available.";
 
+        // this should be a different component
         if self.layout == TermusicLayout::Podcast {
             if let Err(e) = self.lyric_update_for_podcast() {
                 self.mount_error_popup(e.context("lyric update for podcast"));
@@ -265,11 +275,10 @@ impl Model {
             return;
         }
         if let Some(track) = self.playback.current_track() {
+            // radio only needs to be updated on track change, which is handled in a different function
             if MediaTypesSimple::LiveRadio == track.media_type() {
                 return;
             }
-
-            let mut line = String::new();
 
             if self
                 .current_track_lyric
@@ -307,13 +316,21 @@ impl Model {
                 self.lyric_set_lyric(NO_LYRICS);
                 return;
             }
+
+            let mut line = String::new();
+
             if let Some(l) = parsed_lyrics.get_text(self.playback.current_track_pos()) {
                 line = l.to_string();
             }
+
             self.lyric_set_lyric(line);
         }
     }
 
+    /// Update the lyric field to show Radio information.
+    ///
+    /// Needs to be run on:
+    /// - track change from / to radio
     pub fn lyric_update_for_radio<T: AsRef<str>>(&mut self, radio_title: T) {
         if let Some(song) = self.playback.current_track() {
             if MediaTypesSimple::LiveRadio == song.media_type() {
@@ -326,6 +343,7 @@ impl Model {
         }
     }
 
+    /// Set the given text as the current displayed lyric text.
     fn lyric_set_lyric<T: Into<String>>(&mut self, text: T) {
         let text = text.into();
         if self.lyric_line == *text {
@@ -379,9 +397,22 @@ impl Model {
         }
     }
 
+    const LYRIC_PODCAST_TITLE: &str = " Details: ";
+
     /// Update the Lyric Component's title.
+    ///
+    /// Needs to be run on:
+    /// - running status change
+    /// - track change
+    /// - switch from/to podcast layout
     pub fn lyric_update_title(&mut self) {
         let track = self.playback.current_track();
+
+        // this should be a different component
+        if self.layout == TermusicLayout::Podcast {
+            self.lyric_title_set(Self::LYRIC_PODCAST_TITLE.to_string());
+            return;
+        }
 
         if self.playback.is_stopped() || track.is_none() {
             self.lyric_title_set(" No track is playing ".to_string());
@@ -397,7 +428,7 @@ impl Model {
                 format!(" Lyrics of {artist:^.20} - {title:^.20} ")
             }
             MediaTypes::Radio(_radio_track_data) => " Live Radio ".to_string(),
-            MediaTypes::Podcast(_podcast_track_data) => " Details: ".to_string(),
+            MediaTypes::Podcast(_podcast_track_data) => Self::LYRIC_PODCAST_TITLE.to_string(),
         };
         self.lyric_title_set(lyric_title);
     }

@@ -103,6 +103,9 @@ impl Model {
         self.force_redraw();
     }
 
+    /// Handle progress updates.
+    ///
+    /// Updates all places where progress updates need to be populated to.
     // TODO: refactor to have "total_duration" optional
     #[allow(clippy::cast_precision_loss, clippy::cast_possible_wrap)]
     pub fn progress_update(&mut self, time_pos: Option<Duration>, total_duration: Duration) {
@@ -125,6 +128,7 @@ impl Model {
         let new_prog = Self::progress_safeguard(progress);
 
         self.progress_set(new_prog, total_duration);
+        self.lyric_update();
     }
 
     fn progress_safeguard(progress: f64) -> f64 {
