@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::time::Duration;
 
-use anyhow::anyhow;
-use termusiclib::player::{PlayerProgress, RunningStatus};
+use anyhow::{Result, anyhow};
+use termusiclib::player::{PlayerProgress, RunningStatus, UpdateEvents, UpdatePlaylistEvents};
 use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
 use tokio::runtime::Handle;
@@ -75,6 +75,7 @@ impl Update<Msg> for Model {
             Msg::Notification(msg) => self.update_notification_msg(msg),
             Msg::Xywh(msg) => self.update_xywh_msg(msg),
             Msg::ServerReqResponse(msg) => self.update_server_resp_msg(msg),
+            Msg::StreamUpdate(msg) => self.update_update_events_msg(msg),
 
             Msg::ForceRedraw => None,
         }
@@ -1102,5 +1103,89 @@ impl Model {
         }
 
         None
+    }
+
+    /// Handle Stream updates [`UpdateEvents`].
+    ///
+    /// In case of lag, sends a [`TuiCmd::GetProgress`].
+    fn update_update_events_msg(&mut self, msg: UpdateEvents) -> Option<Msg> {
+        match msg {
+            UpdateEvents::MissedEvents { amount } => {
+                warn!("Stream Lagged, missed events: {amount}");
+                // we know that we missed events, force to get full information from GetProgress endpoint
+                self.command(TuiCmd::GetProgress);
+            }
+            UpdateEvents::VolumeChanged { volume } => {
+                self.config_server.write().settings.player.volume = volume;
+            }
+            UpdateEvents::SpeedChanged { speed } => {
+                self.config_server.write().settings.player.speed = speed;
+            }
+            UpdateEvents::PlayStateChanged { playing } => {
+                self.playback.set_status(RunningStatus::from_u32(playing));
+                self.progress_update_title();
+            }
+            UpdateEvents::TrackChanged(track_changed_info) => {
+                if let Some(progress) = track_changed_info.progress {
+                    self.progress_update(
+                        progress.position,
+                        progress.total_duration.unwrap_or_default(),
+                    );
+                }
+
+                if track_changed_info.current_track_updated {
+                    self.handle_current_track_index(
+                        usize::try_from(track_changed_info.current_track_index).unwrap(),
+                        false,
+                    );
+                }
+
+                if let Some(title) = track_changed_info.title {
+                    self.lyric_update_for_radio(title);
+                }
+            }
+            UpdateEvents::GaplessChanged { gapless } => {
+                self.config_server.write().settings.player.gapless = gapless;
+            }
+            UpdateEvents::Progress(progress) => {
+                self.progress_update(
+                    progress.position,
+                    progress.total_duration.unwrap_or_default(),
+                );
+            }
+            UpdateEvents::PlaylistChanged(ev) => {
+                if let Err(err) = self.update_update_events_playlist_msg(ev) {
+                    self.mount_error_popup(err);
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Handle Playlist Update Events [`UpdatePlaylistEvents`].
+    fn update_update_events_playlist_msg(&mut self, msg: UpdatePlaylistEvents) -> Result<()> {
+        match msg {
+            UpdatePlaylistEvents::PlaylistAddTrack(playlist_add_track) => {
+                self.handle_playlist_add(playlist_add_track)?;
+            }
+            UpdatePlaylistEvents::PlaylistRemoveTrack(playlist_remove_track) => {
+                self.handle_playlist_remove(&playlist_remove_track)?;
+            }
+            UpdatePlaylistEvents::PlaylistCleared => {
+                self.handle_playlist_clear();
+            }
+            UpdatePlaylistEvents::PlaylistLoopMode(loop_mode) => {
+                self.handle_playlist_loopmode(&loop_mode)?;
+            }
+            UpdatePlaylistEvents::PlaylistSwapTracks(swapped_tracks) => {
+                self.handle_playlist_swap_tracks(&swapped_tracks)?;
+            }
+            UpdatePlaylistEvents::PlaylistShuffled(shuffled) => {
+                self.handle_playlist_shuffled(shuffled)?;
+            }
+        }
+
+        Ok(())
     }
 }

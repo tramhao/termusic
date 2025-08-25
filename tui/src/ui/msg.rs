@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use image::DynamicImage;
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
-use termusiclib::player::{GetProgressResponse, PlaylistTracks};
+use termusiclib::player::{GetProgressResponse, PlaylistTracks, UpdateEvents};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 
@@ -46,6 +46,7 @@ pub enum Msg {
     ForceRedraw,
 
     ServerReqResponse(ServerReqResponse),
+    StreamUpdate(UpdateEvents),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
