@@ -21,6 +21,7 @@ use crate::ui::components::{
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
+use crate::ui::model::ports::stream_events::PortStreamEvents;
 use crate::ui::model::{Model, TermusicLayout, UserEvent};
 use crate::ui::msg::{DBMsg, Msg, PCMsg};
 use crate::ui::utils::{
@@ -31,7 +32,8 @@ impl Model {
     pub fn init_app(
         tree: &Tree<String>,
         config: &SharedTuiSettings,
-        rx_to_main: UnboundedReceiver<Msg>,
+        tx_to_main: UnboundedReceiver<Msg>,
+        stream_event_port: PortStreamEvents,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
 
@@ -42,7 +44,8 @@ impl Model {
                 .poll_timeout(Duration::from_millis(10))
                 .async_tick(true)
                 .tick_interval(Duration::from_secs(1))
-                .add_async_port(Box::new(PortRxMain::new(rx_to_main)), Duration::ZERO, 10),
+                .add_async_port(Box::new(PortRxMain::new(tx_to_main)), Duration::ZERO, 10)
+                .add_async_port(Box::new(stream_event_port), Duration::ZERO, 1),
         );
 
         Self::mount_main(&mut app, config, tree).unwrap();

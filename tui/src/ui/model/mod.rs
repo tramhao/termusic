@@ -31,6 +31,7 @@ use super::tui_cmd::TuiCmd;
 use crate::CombinedSettings;
 use crate::ui::Application;
 use crate::ui::ids::Id;
+use crate::ui::model::ports::stream_events::{PortStreamEvents, WrappedStreamEvents};
 use crate::ui::model::youtube_options::YoutubeOptions;
 use crate::ui::msg::{Msg, SearchCriteria};
 pub use download_tracker::DownloadTracker;
@@ -357,7 +358,11 @@ fn get_viuer_support() -> ViuerSupported {
 
 impl Model {
     #[allow(clippy::too_many_lines)]
-    pub async fn new(config: CombinedSettings, cmd_to_server_tx: UnboundedSender<TuiCmd>) -> Self {
+    pub async fn new(
+        config: CombinedSettings,
+        cmd_to_server_tx: UnboundedSender<TuiCmd>,
+        stream_updates: WrappedStreamEvents,
+    ) -> Self {
         let CombinedSettings {
             server: config_server,
             tui: config_tui,
@@ -403,7 +408,9 @@ impl Model {
         ));
         let (tx_to_main, rx_to_main) = unbounded_channel();
 
-        let app = Self::init_app(&tree, &config_tui, rx_to_main);
+        let stream_update_port = PortStreamEvents::new(stream_updates);
+
+        let app = Self::init_app(&tree, &config_tui, rx_to_main, stream_update_port);
 
         // This line is required, in order to show the playing message for the first track
         // playlist.set_current_track_index(0);

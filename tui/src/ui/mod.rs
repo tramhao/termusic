@@ -1,20 +1,11 @@
-use std::pin::Pin;
 use std::time::Duration;
 
-use anyhow::Context;
 use anyhow::Result;
-use futures_util::FutureExt;
 use futures_util::StreamExt;
 use sysinfo::Pid;
 use sysinfo::System;
-use termusiclib::player::PlayerProgress;
-use termusiclib::player::RunningStatus;
-use termusiclib::player::StreamUpdates;
-use termusiclib::player::UpdateEvents;
-use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::sync::mpsc::{self};
-use tokio_stream::Stream;
 use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -41,25 +32,22 @@ const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 /// The main TUI struct which handles message passing and the main-loop.
 pub struct UI {
     model: Model,
-    stream_updates: Pin<Box<dyn Stream<Item = Result<StreamUpdates>>>>,
 }
 
 impl UI {
     /// Create a new [`UI`] instance
     pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>) -> Result<Self> {
-        let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
-        let mut model = Model::new(config, cmd_tx).await;
-        model.init_config();
         let mut playback = Playback::new(client);
 
+        let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let stream_updates = playback.subscribe_to_stream_updates().await?;
+
+        let mut model = Model::new(config, cmd_tx, stream_updates.boxed()).await;
+        model.init_config();
 
         ServerRequestActor::start_actor(playback, cmd_rx, model.tx_to_main.clone());
 
-        Ok(Self {
-            model,
-            stream_updates: stream_updates.boxed(),
-        })
+        Ok(Self { model })
     }
 
     /// Force a redraw if [`FORCED_REDRAW_INTERVAL`] has passed.
@@ -96,10 +84,6 @@ impl UI {
 
         // Main loop
         while !self.model.quit {
-            if let Err(err) = self.handle_stream_events() {
-                self.model.mount_error_popup(err);
-            }
-
             match self.model.app.tick(PollStrategy::UpTo(20)) {
                 Err(err) => {
                     self.model
@@ -181,119 +165,5 @@ impl UI {
                 s.kill();
             }
         }
-    }
-
-    /// Handle Stream updates from the provided stream.
-    ///
-    /// In case of lag, sends a [`TuiCmd::GetProgress`] to `self.model`.
-    ///
-    /// - Does not wait until the next event (non-blocking).
-    /// - Processess *all* available events.
-    fn handle_stream_events(&mut self) -> Result<()> {
-        while let Some(ev) = self.stream_updates.next().now_or_never().flatten() {
-            let ev = ev
-                .map(UpdateEvents::try_from)
-                .context("Conversion from StreamUpdates to UpdateEvents failed!")?;
-
-            // dont log progress events, as that spams the log
-            if log::log_enabled!(log::Level::Debug) && !is_progress(&ev) {
-                debug!("Stream Event: {ev:?}");
-            }
-
-            // just exit on first error, but still print it first
-            let Ok(ev) = ev else {
-                break;
-            };
-
-            match ev {
-                UpdateEvents::MissedEvents { amount } => {
-                    warn!("Stream Lagged, missed events: {amount}");
-                    // we know that we missed events, force to get full information from GetProgress endpoint
-                    self.model.command(TuiCmd::GetProgress);
-                }
-                UpdateEvents::VolumeChanged { volume } => {
-                    self.model.config_server.write().settings.player.volume = volume;
-                }
-                UpdateEvents::SpeedChanged { speed } => {
-                    self.model.config_server.write().settings.player.speed = speed;
-                }
-                UpdateEvents::PlayStateChanged { playing } => {
-                    self.model
-                        .playback
-                        .set_status(RunningStatus::from_u32(playing));
-                    self.model.progress_update_title();
-                }
-                UpdateEvents::TrackChanged(track_changed_info) => {
-                    if let Some(progress) = track_changed_info.progress {
-                        self.model.progress_update(
-                            progress.position,
-                            progress.total_duration.unwrap_or_default(),
-                        );
-                    }
-
-                    if track_changed_info.current_track_updated {
-                        self.model.handle_current_track_index(
-                            usize::try_from(track_changed_info.current_track_index).unwrap(),
-                            false,
-                        );
-                    }
-
-                    if let Some(title) = track_changed_info.title {
-                        self.model.lyric_update_for_radio(title);
-                    }
-                }
-                UpdateEvents::GaplessChanged { gapless } => {
-                    self.model.config_server.write().settings.player.gapless = gapless;
-                }
-                UpdateEvents::Progress(progress) => {
-                    self.model.progress_update(
-                        progress.position,
-                        progress.total_duration.unwrap_or_default(),
-                    );
-                }
-                UpdateEvents::PlaylistChanged(ev) => self.handle_playlist_events(ev)?,
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Handle Playlist Update Events, separately from [`Self::handle_stream_events`] to lessen clutter.
-    fn handle_playlist_events(&mut self, ev: UpdatePlaylistEvents) -> Result<()> {
-        match ev {
-            UpdatePlaylistEvents::PlaylistAddTrack(playlist_add_track) => {
-                self.model.handle_playlist_add(playlist_add_track)?;
-            }
-            UpdatePlaylistEvents::PlaylistRemoveTrack(playlist_remove_track) => {
-                self.model.handle_playlist_remove(&playlist_remove_track)?;
-            }
-            UpdatePlaylistEvents::PlaylistCleared => {
-                self.model.handle_playlist_clear();
-            }
-            UpdatePlaylistEvents::PlaylistLoopMode(loop_mode) => {
-                self.model.handle_playlist_loopmode(&loop_mode)?;
-            }
-            UpdatePlaylistEvents::PlaylistSwapTracks(swapped_tracks) => {
-                self.model.handle_playlist_swap_tracks(&swapped_tracks)?;
-            }
-            UpdatePlaylistEvents::PlaylistShuffled(shuffled) => {
-                self.model.handle_playlist_shuffled(shuffled)?;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-/// Determine if a given event is a [`UpdateEvents::Progress`].
-fn is_progress(ev: &Result<UpdateEvents>) -> bool {
-    if let Ok(ev) = ev {
-        std::mem::discriminant(ev)
-            == std::mem::discriminant(&UpdateEvents::Progress(PlayerProgress {
-                position: None,
-                total_duration: None,
-            }))
-    } else {
-        false
     }
 }
