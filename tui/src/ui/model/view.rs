@@ -41,7 +41,7 @@ impl Model {
             EventListenerCfg::default()
                 .with_handle(Handle::current())
                 .async_crossterm_input_listener(Duration::ZERO, 10)
-                .poll_timeout(Duration::from_millis(10))
+                .poll_timeout(Duration::from_secs(10))
                 .async_tick(true)
                 .tick_interval(Duration::from_secs(1))
                 .add_async_port(Box::new(PortRxMain::new(tx_to_main)), Duration::ZERO, 10)

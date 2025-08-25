@@ -84,7 +84,7 @@ impl UI {
 
         // Main loop
         while !self.model.quit {
-            match self.model.app.tick(PollStrategy::UpTo(20)) {
+            match self.model.app.tick(PollStrategy::Once /* UpTo(20) */) {
                 Err(err) => {
                     self.model
                         .mount_error_popup((anyhow::anyhow!(err)).context("tick poll error"));
