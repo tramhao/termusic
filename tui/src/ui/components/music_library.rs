@@ -21,7 +21,6 @@ use crate::utils::get_pin_yin;
 pub struct MusicLibrary {
     component: TreeView<String>,
     config: SharedTuiSettings,
-    pub init: bool,
 }
 
 impl MusicLibrary {
@@ -57,11 +56,11 @@ impl MusicLibrary {
                 .initial_node(initial_node)
         };
 
-        Self {
-            component,
-            config,
-            init: true,
-        }
+        let mut ret = Self { component, config };
+
+        ret.open_root_node();
+
+        ret
     }
 
     /// Also known as going up in the tree
@@ -100,19 +99,19 @@ impl MusicLibrary {
             )
         }
     }
+
+    /// [`TreeView`] does not start with the root node opened, this function does that.
+    fn open_root_node(&mut self) {
+        let root = self.component.tree().root();
+        if self.component.tree_state().is_closed(root) {
+            self.perform(Cmd::Custom(TREE_CMD_OPEN));
+        }
+    }
 }
 
 impl Component<Msg, UserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        // When init, open root
-        if self.init {
-            let root = self.component.tree().root();
-            if self.component.tree_state().is_closed(root) {
-                self.perform(Cmd::Custom(TREE_CMD_OPEN));
-                self.init = false;
-            }
-        }
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let result = match ev {
