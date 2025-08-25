@@ -9,7 +9,7 @@ pub mod utils;
 use anyhow::Context;
 use anyhow::Result;
 use futures_util::FutureExt;
-use model::{Model, TermusicLayout};
+use model::Model;
 use music_player_client::Playback;
 use std::time::Duration;
 use sysinfo::Pid;
@@ -88,9 +88,6 @@ impl UI {
         // Main loop
         while !self.model.quit {
             self.model.update_outside_msg();
-            if self.model.layout != TermusicLayout::Podcast {
-                self.model.lyric_update();
-            }
             if let Err(err) = self.handle_stream_events(&mut stream_updates) {
                 self.model.mount_error_popup(err);
             }

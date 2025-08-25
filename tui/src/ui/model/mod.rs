@@ -569,6 +569,7 @@ impl Model {
         }
         self.progress_update_title();
         self.lyric_update_title();
+        self.lyric_update();
         self.update_playing_song();
     }
 

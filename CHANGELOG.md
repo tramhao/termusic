@@ -14,6 +14,8 @@
 - Feat: re-implement the Track database to allow for more search options. (Note that the old database is NOT automatically deleted)
 - Fix(tui): allow usage of key `Home`/`Pos1` in search lists.
 - Fix(tui): allow usage of key `Home`/`Pos1` and `End` in youtube search list.
+- Fix(tui): when in podcast layout, always show the currently selected episode's description (instead of only when moving to it).
+- Fix(tui): properly reset lyric text once leaving podcast layout.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
 - Fix(server): on rusty backend, behave correctly when a next/previous occurs while a source is pre-fetched.
 - Fix(server): on mpv backend and linux compile, dont force `ao` to be `pulse`.

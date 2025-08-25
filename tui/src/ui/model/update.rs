@@ -500,6 +500,8 @@ impl Model {
 
                 self.layout = TermusicLayout::DataBase;
                 self.playlist_switch_layout();
+                self.lyric_update_title();
+                self.lyric_update();
             }
             MainLayoutMsg::TreeView => {
                 let mut need_to_set_focus = true;
@@ -521,6 +523,8 @@ impl Model {
 
                 self.layout = TermusicLayout::TreeView;
                 self.playlist_switch_layout();
+                self.lyric_update_title();
+                self.lyric_update();
             }
             MainLayoutMsg::Podcast => {
                 let mut need_to_set_focus = true;
@@ -554,6 +558,8 @@ impl Model {
                 self.layout = TermusicLayout::Podcast;
                 self.podcast_sync_feeds_and_episodes();
                 self.playlist_switch_layout();
+                self.lyric_update_title();
+                self.lyric_update();
             }
         }
 
