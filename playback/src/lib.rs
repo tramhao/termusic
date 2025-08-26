@@ -328,6 +328,9 @@ impl GeneralPlayer {
                 self.current_track_updated = true;
                 info!("gapless next track played");
                 self.add_and_play_mpris_discord();
+
+                self.send_track_changed();
+
                 return;
             }
             drop(playlist);
@@ -341,14 +344,19 @@ impl GeneralPlayer {
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
 
-            self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
-                current_track_index: u64::try_from(self.playlist.read().get_current_track_index())
-                    .unwrap(),
-                current_track_updated: self.current_track_updated,
-                title: self.media_info().media_title,
-                progress: self.get_progress(),
-            }));
+            self.send_track_changed();
         }
+    }
+
+    /// Send event [`UpdateEvents::TrackChanged`]. In a function to de-duplicate calls.
+    fn send_track_changed(&mut self) {
+        self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
+            current_track_index: u64::try_from(self.playlist.read().get_current_track_index())
+                .unwrap(),
+            current_track_updated: self.current_track_updated,
+            title: self.media_info().media_title,
+            progress: self.get_progress(),
+        }));
     }
 
     fn add_and_play_mpris_discord(&mut self) {
