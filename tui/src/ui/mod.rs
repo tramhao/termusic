@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use anyhow::Result;
 use futures_util::StreamExt;
 use sysinfo::Pid;
@@ -26,9 +24,6 @@ mod server_req_actor;
 mod tui_cmd;
 pub mod utils;
 
-/// The Interval in which to force a redraw, if no redraw happened in that time.
-const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
-
 /// The main TUI struct which handles message passing and the main-loop.
 pub struct UI {
     model: Model,
@@ -48,13 +43,6 @@ impl UI {
         ServerRequestActor::start_actor(playback, cmd_rx, model.tx_to_main.clone());
 
         Ok(Self { model })
-    }
-
-    /// Force a redraw if [`FORCED_REDRAW_INTERVAL`] has passed.
-    fn exec_interval_redraw(&mut self) {
-        if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
-            self.model.force_redraw();
-        }
     }
 
     /// Handle terminal init & finalize and start the UI Loop.
@@ -104,9 +92,6 @@ impl UI {
 
             self.model.ensure_quit_popup_top_most_focus();
 
-            // normally a interval-redraw should not be necessary and instead only happen on events,
-            // but there might be some bugs that this works around
-            self.exec_interval_redraw();
             self.model.view();
         }
 

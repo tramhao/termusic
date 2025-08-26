@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
@@ -143,10 +143,11 @@ impl Model {
         Ok(())
     }
 
+    /// The entrypoint to start drawing the full TUI, if a redraw is requested.
     pub fn view(&mut self) {
         if self.redraw {
             self.redraw = false;
-            self.last_redraw = Instant::now();
+
             if self
                 .app
                 .mounted(&Id::TagEditor(IdTagEditor::TableLyricOptions))

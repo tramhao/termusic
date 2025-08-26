@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
@@ -291,7 +291,6 @@ pub struct Model {
     pub quit: bool,
     /// Tells whether to redraw interface
     pub redraw: bool,
-    last_redraw: Instant,
     pub app: Application<Id, Msg, UserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge<CrosstermTerminalAdapter>,
@@ -432,7 +431,6 @@ impl Model {
             app,
             quit: false,
             redraw: true,
-            last_redraw: Instant::now(),
             terminal,
             config_server,
             config_tui,
@@ -550,11 +548,6 @@ impl Model {
         let _drop = self.terminal.disable_raw_mode();
         let _drop = self.terminal.leave_alternate_screen();
         crate::TERMINAL_ALTERNATE_MODE.store(false, Ordering::SeqCst);
-    }
-
-    /// Returns elapsed time since last redraw
-    pub fn since_last_redraw(&self) -> Duration {
-        self.last_redraw.elapsed()
     }
 
     /// Force a redraw of the entire model
