@@ -28,7 +28,7 @@ ahash = "^0.8.12"
 anyhow = { version = "1.0.99", features = ["backtrace"] }
 async-ringbuf = "0.3"
 thiserror = "2.0.16"
-async-trait = "0.1.88"
+async-trait = "0.1.89"
 base64 = "0.22"
 bytes = "1.10"
 bytesize = { version = "2.0", features = ["serde"] }
