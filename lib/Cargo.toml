@@ -70,6 +70,7 @@ futures-util.workspace = true
 tokio.workspace = true
 tokio-util = { workspace = true, features = ["rt"] }
 tonic.workspace = true
+tonic-prost.workspace = true
 prost.workspace = true
 alphanumeric-sort.workspace = true
 lru.workspace = true
@@ -77,7 +78,7 @@ either.workspace = true
 
 [build-dependencies]
 cc.workspace = true
-tonic-build.workspace = true
+tonic-prost-build.workspace = true
 
 
 [features]
