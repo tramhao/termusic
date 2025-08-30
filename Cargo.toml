@@ -97,7 +97,8 @@ symphonia = { version = "0.5.1", features = [
     "aiff"
 ] }
 rodio = { version = "0.21", default-features = false, features = ["playback"]}
-sysinfo = { version = "^0.35", default-features = false, features = ["system"] }
+# sysinfo 0.37.0 requires MSRV 1.88
+sysinfo = { version = "^0.36.1", default-features = false, features = ["system"] }
 textwrap = "0.16.2"
 tokio = { version = "1.45", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot"] }
 tokio-util = "0.7.15"
