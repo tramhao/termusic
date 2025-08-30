@@ -82,7 +82,7 @@ serde_json = "1.0.143"
 serde_yaml = "0.9"
 shellexpand = { version = "3.1.1", features = ["path"] }
 shell-words = "1.1.0"
-soundtouch = "0.5.1"
+soundtouch = { version = "0.5.1", features = ["bundled"] }
 souvlaki = { version = "0.8.2", default-features=false, features = ["use_zbus"] }
 stream-download = { version = "0.19.0", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
