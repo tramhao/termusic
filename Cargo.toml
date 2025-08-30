@@ -101,7 +101,7 @@ rodio = { version = "0.21", default-features = false, features = ["playback"]}
 sysinfo = { version = "^0.36.1", default-features = false, features = ["system"] }
 textwrap = "0.16.2"
 tokio = { version = "1.47", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot"] }
-tokio-util = "0.7.15"
+tokio-util = "0.7.16"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 toml = "0.8.22"
 # only update prost and tonic major versions together
