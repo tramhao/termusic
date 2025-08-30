@@ -74,7 +74,7 @@ reqwest = { version = "0.12.23", features = [
 ] }
 rfc822_sanitizer = "0.3"
 rss = { version = "2.0.12", default-features = false }
-rusqlite = { version = "0.36", features = ["bundled"] }
+rusqlite = { version = "0.37", features = ["bundled"] }
 sanitize-filename = "0.6"
 semver = "1.0.26"
 serde = { version = "1.0.219", features = ["derive"] }
