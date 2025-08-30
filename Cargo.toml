@@ -61,7 +61,7 @@ num-bigint = "0.4"
 opml = "1.1"
 parking_lot = "^0.12.4"
 pathdiff = { version = "0.2.3", features = ["camino"] }
-percent-encoding = "2.2"
+percent-encoding = "2.3.2"
 pinyin = "0.10"
 pretty_assertions = "1.4.1"
 quick-xml = "0.37.5"
