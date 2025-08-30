@@ -103,7 +103,7 @@ textwrap = "0.16.2"
 tokio = { version = "1.47", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot"] }
 tokio-util = "0.7.16"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
-toml = "0.8.22"
+toml = "0.9.5"
 # only update prost and tonic major versions together
 prost = "0.13.5"
 tonic = "0.13.1"
