@@ -59,7 +59,7 @@ colored = "3.0"
 md5 = "0.8"
 num-bigint = "0.4"
 opml = "1.1"
-parking_lot = "^0.12"
+parking_lot = "^0.12.4"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.10"
