@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
 use tui_realm_stdlib::Phantom;
@@ -139,98 +141,100 @@ impl Model {
     /// global listener subscriptions
     #[allow(clippy::too_many_lines)]
     pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, UserEvent>> {
+        let no_popup_clause = Arc::new(Self::no_popup_mounted_clause());
+
         vec![
             // Sub::new(
             //     SubEventClause::Keyboard(keys.escape.get()),
-            //     Self::no_popup_mounted_clause(),
+            //     no_popup_clause.clone(),
             // ),
             Sub::new(
                 SubEventClause::Keyboard(keys.quit.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.toggle_pause.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.next_track.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.previous_track.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.speed_up.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.speed_down.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.volume_down.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             // Sub::new(
             //     SubEventClause::Keyboard(keys.player_keys.volume_minus_2.get()),
-            //     Self::no_popup_mounted_clause(),
+            //     no_popup_clause.clone(),
             // ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.volume_up.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             // Sub::new(
             //     SubEventClause::Keyboard(keys.player_keys.volume_plus_2.get()),
-            //     Self::no_popup_mounted_clause(),
+            //     no_popup_clause.clone(),
             // ),
             Sub::new(
                 SubEventClause::Keyboard(keys.select_view_keys.open_help.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.seek_forward.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.seek_backward.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.lyric_keys.adjust_offset_forwards.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.lyric_keys.adjust_offset_backwards.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.lyric_keys.cycle_frames.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.select_view_keys.view_library.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.select_view_keys.view_database.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.toggle_prefetch.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.select_view_keys.open_config.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.player_keys.save_playlist.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause.clone(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.select_view_keys.view_podcasts.get()),
-                Self::no_popup_mounted_clause(),
+                no_popup_clause,
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.move_cover_art_keys.move_left.get()),

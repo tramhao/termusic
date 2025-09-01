@@ -64,7 +64,7 @@ You will need to build with the stable rust toolchain. Minimal Supported Rust Ve
 
 | Backend   | Requirements |
 | :-------: | :----------- |
-| Symphonia(rusty) | On Linux [`libasound2-dev`](https://launchpad.net/ubuntu/noble/+package/libasound2-dev) is required for building.<br/>When using `rusty-soundtouch` additionally `soundtouch` and `clang`(build only) are required. |
+| Symphonia(rusty) | On Linux [`libasound2-dev`](https://launchpad.net/ubuntu/noble/+package/libasound2-dev) is required for building. |
 | GStreamer | [GStreamer](https://gstreamer.freedesktop.org) |
 | MPV       | [MPV](https://mpv.io/) |
 

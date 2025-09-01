@@ -60,7 +60,6 @@ impl MusicPlayerService {
         }
     }
 
-    #[expect(clippy::result_large_err)] // for now we dont care about that here, also see https://github.com/hyperium/tonic/issues/2253
     fn command_cb(&self, cmd: PlayerCmd) -> Result<PlayerCmdCallback, Status> {
         let rx = self.cmd_tx.send_cb(cmd.clone()).map_err(|err| {
             error!("error {cmd:?}: {err}");
