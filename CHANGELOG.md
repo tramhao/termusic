@@ -6,6 +6,7 @@
 - Change: updated to `2024` edition
 - Change(tui): increase connection timeout from 5s to 30s, but print a message on original time.
 - Change(tui): change config editor's theme preview elements to be in a dynamic grid.
+- Change(tui): convert event-loop to be practically fully event-driven. (less cpu cycles wasted)
 - Feat(tui): make the Config editor dynamically size elements.
 - Feat(tui): make the Config editor (at least rudementally) scrollable.
 - Feat(server): add extra config section for metadata scanning and parsing.
