@@ -99,7 +99,6 @@ pub enum XYWHMsg {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CoverDLResult {
-    // TODO: The Following 2 things have absolutely nothing to-do with Download
     /// Fetching & loading the image was a success, with the image.
     FetchPhotoSuccess(ImageWrapper),
     /// Fetching & loading the image has failed, with error message.
@@ -550,7 +549,6 @@ pub enum PCMsg {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum NotificationMsg {
-    // TODO: The Following 2 things have absolutely nothing to-do with Download
     /// Show a status message in the TUI.
     ///
     /// `((Title, Text))`
