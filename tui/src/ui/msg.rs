@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use image::DynamicImage;
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
+use termusiclib::player::{GetProgressResponse, PlaylistTracks, UpdateEvents};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 
@@ -43,6 +44,9 @@ pub enum Msg {
     ///
     /// Note that this message does *not* update the drawn cover.
     ForceRedraw,
+
+    ServerReqResponse(ServerReqResponse),
+    StreamUpdate(UpdateEvents),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -95,7 +99,6 @@ pub enum XYWHMsg {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CoverDLResult {
-    // TODO: The Following 2 things have absolutely nothing to-do with Download
     /// Fetching & loading the image was a success, with the image.
     FetchPhotoSuccess(ImageWrapper),
     /// Fetching & loading the image has failed, with error message.
@@ -546,7 +549,6 @@ pub enum PCMsg {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum NotificationMsg {
-    // TODO: The Following 2 things have absolutely nothing to-do with Download
     /// Show a status message in the TUI.
     ///
     /// `((Title, Text))`
@@ -580,6 +582,14 @@ impl SearchCriteria {
         }
     }
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ServerReqResponse {
+    GetProgress(GetProgressResponse),
+    FullPlaylist(PlaylistTracks),
+}
+
+impl Eq for ServerReqResponse {}
 
 #[cfg(test)]
 mod tests {

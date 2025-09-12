@@ -1,10 +1,11 @@
 use std::path::Path;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
+use tokio::sync::mpsc::UnboundedReceiver;
 use tui_realm_treeview::Tree;
 use tuirealm::EventListenerCfg;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
@@ -19,6 +20,8 @@ use crate::ui::components::{
     Playlist, Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
+use crate::ui::model::ports::rx_main::PortRxMain;
+use crate::ui::model::ports::stream_events::PortStreamEvents;
 use crate::ui::model::{Model, TermusicLayout, UserEvent};
 use crate::ui::msg::{DBMsg, Msg, PCMsg};
 use crate::ui::utils::{
@@ -29,6 +32,8 @@ impl Model {
     pub fn init_app(
         tree: &Tree<String>,
         config: &SharedTuiSettings,
+        tx_to_main: UnboundedReceiver<Msg>,
+        stream_event_port: PortStreamEvents,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
 
@@ -36,9 +41,11 @@ impl Model {
             EventListenerCfg::default()
                 .with_handle(Handle::current())
                 .async_crossterm_input_listener(Duration::ZERO, 10)
-                .poll_timeout(Duration::from_millis(10))
+                .poll_timeout(Duration::from_secs(10))
                 .async_tick(true)
-                .tick_interval(Duration::from_secs(1)),
+                .tick_interval(Duration::from_secs(1))
+                .add_async_port(Box::new(PortRxMain::new(tx_to_main)), Duration::ZERO, 10)
+                .add_async_port(Box::new(stream_event_port), Duration::ZERO, 1),
         );
 
         Self::mount_main(&mut app, config, tree).unwrap();
@@ -136,10 +143,11 @@ impl Model {
         Ok(())
     }
 
+    /// The entrypoint to start drawing the full TUI, if a redraw is requested.
     pub fn view(&mut self) {
         if self.redraw {
             self.redraw = false;
-            self.last_redraw = Instant::now();
+
             if self
                 .app
                 .mounted(&Id::TagEditor(IdTagEditor::TableLyricOptions))

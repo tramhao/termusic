@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
@@ -22,7 +22,7 @@ use termusiclib::track::{LyricData, MediaTypesSimple, Track};
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;
 use termusiclib::xywh;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
+use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
 use tui_realm_treeview::Tree;
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 
@@ -31,6 +31,7 @@ use super::tui_cmd::TuiCmd;
 use crate::CombinedSettings;
 use crate::ui::Application;
 use crate::ui::ids::Id;
+use crate::ui::model::ports::stream_events::{PortStreamEvents, WrappedStreamEvents};
 use crate::ui::model::youtube_options::YoutubeOptions;
 use crate::ui::msg::{Msg, SearchCriteria};
 pub use download_tracker::DownloadTracker;
@@ -38,6 +39,7 @@ pub use user_events::UserEvent;
 
 mod download_tracker;
 mod playlist;
+mod ports;
 mod update;
 mod user_events;
 mod view;
@@ -289,12 +291,10 @@ pub struct Model {
     pub quit: bool,
     /// Tells whether to redraw interface
     pub redraw: bool,
-    last_redraw: Instant,
     pub app: Application<Id, Msg, UserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge<CrosstermTerminalAdapter>,
     pub tx_to_main: TxToMain,
-    pub rx_to_main: UnboundedReceiver<Msg>,
     /// Sender for Player Commands
     pub cmd_to_server_tx: UnboundedSender<TuiCmd>,
 
@@ -357,7 +357,11 @@ fn get_viuer_support() -> ViuerSupported {
 
 impl Model {
     #[allow(clippy::too_many_lines)]
-    pub async fn new(config: CombinedSettings, cmd_to_server_tx: UnboundedSender<TuiCmd>) -> Self {
+    pub async fn new(
+        config: CombinedSettings,
+        cmd_to_server_tx: UnboundedSender<TuiCmd>,
+        stream_updates: WrappedStreamEvents,
+    ) -> Self {
         let CombinedSettings {
             server: config_server,
             tui: config_tui,
@@ -403,7 +407,9 @@ impl Model {
         ));
         let (tx_to_main, rx_to_main) = unbounded_channel();
 
-        let app = Self::init_app(&tree, &config_tui);
+        let stream_update_port = PortStreamEvents::new(stream_updates);
+
+        let app = Self::init_app(&tree, &config_tui, rx_to_main, stream_update_port);
 
         // This line is required, in order to show the playing message for the first track
         // playlist.set_current_track_index(0);
@@ -425,7 +431,6 @@ impl Model {
             app,
             quit: false,
             redraw: true,
-            last_redraw: Instant::now(),
             terminal,
             config_server,
             config_tui,
@@ -468,7 +473,6 @@ impl Model {
             },
             taskpool,
             tx_to_main,
-            rx_to_main,
             download_tracker,
             current_track_lyric: None,
             playback: Playback::new(),
@@ -546,11 +550,6 @@ impl Model {
         crate::TERMINAL_ALTERNATE_MODE.store(false, Ordering::SeqCst);
     }
 
-    /// Returns elapsed time since last redraw
-    pub fn since_last_redraw(&self) -> Duration {
-        self.last_redraw.elapsed()
-    }
-
     /// Force a redraw of the entire model
     pub fn force_redraw(&mut self) {
         self.redraw = true;
@@ -601,5 +600,34 @@ impl Model {
             }
         }
         false
+    }
+
+    /// Handle running [`RunningStatus`] having possibly changed.
+    pub fn handle_status(&mut self, new_status: RunningStatus) {
+        let old_status = self.playback.status();
+        // nothing needs to be done as the status is the same
+        if new_status == old_status {
+            return;
+        }
+
+        self.playback.set_status(new_status);
+
+        match new_status {
+            RunningStatus::Running => {
+                // This is to show the first album photo
+                if old_status == RunningStatus::Stopped {
+                    self.player_update_current_track_after();
+                }
+            }
+            RunningStatus::Stopped => {
+                // This is to clear the photo shown when stopped
+                if self.playback.playlist.is_empty() {
+                    self.player_update_current_track_after();
+                }
+            }
+            RunningStatus::Paused => {
+                self.player_update_current_track_after();
+            }
+        }
     }
 }

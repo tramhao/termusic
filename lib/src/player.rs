@@ -138,6 +138,9 @@ pub enum UpdateEvents {
     Progress(PlayerProgress),
 }
 
+// might not be fully true, but necessary for Msg
+impl Eq for UpdateEvents {}
+
 type StreamTypes = protobuf::stream_updates::Type;
 
 // mainly for server to grpc

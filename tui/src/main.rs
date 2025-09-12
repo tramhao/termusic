@@ -142,7 +142,7 @@ async fn actual_main() -> Result<()> {
     info!("Connected on {addr}");
 
     let mut ui = UI::new(config, client).await?;
-    ui.run().await?;
+    ui.run()?;
 
     info!("Bye");
 
