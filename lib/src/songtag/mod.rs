@@ -1,7 +1,5 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::thread::{self, sleep};
-use std::time::Duration;
 
 use anyhow::{Result, anyhow, bail};
 use lofty::TextEncoding;
@@ -221,13 +219,18 @@ impl SongTag {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
+    /// Try to download the currently selected item in the tag editor list.
+    ///
+    /// Async for fetching lyrics, coverart and url. The actual track download is blocking and in another thread.
     pub async fn download(
         &self,
         file: &Path,
         tx: impl Fn(TrackDLMsg) + Send + 'static,
     ) -> Result<()> {
-        let p_parent = get_parent_folder(file);
+        if self.url().is_some_and(|v| *v == UrlTypes::Protected) {
+            bail!("The item is protected by copyright, please select another one.");
+        }
+
         let artist = self
             .artist
             .clone()
@@ -254,23 +257,11 @@ impl SongTag {
             })
             .ok();
 
-        let filename = format!("{artist}-{title}.%(ext)s");
-
-        let args = vec![
-            Arg::new("--quiet"),
-            Arg::new_with_arg("--output", filename.as_ref()),
-            Arg::new("--extract-audio"),
-            Arg::new_with_arg("--audio-format", "mp3"),
-        ];
-
-        let p_full = p_parent.join(format!("{artist}-{title}.mp3"));
-        match std::fs::remove_file(&p_full) {
+        let p_parent = get_parent_folder(file);
+        let out_path = p_parent.join(format!("{artist}-{title}.mp3"));
+        match std::fs::remove_file(&out_path) {
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => (),
             v => v?,
-        }
-
-        if self.url().is_some_and(|v| *v == UrlTypes::Protected) {
-            bail!("The item is protected by copyright, please, select another one.");
         }
 
         let mut url = if let Some(UrlTypes::FreeDownloadable(url)) = &self.url {
@@ -301,62 +292,78 @@ impl SongTag {
             bail!("failed to fetch url, please, try another item.");
         }
 
+        let filename = format!("{artist}-{title}.%(ext)s");
+
+        let mut tag = Id3v2Tag::default();
+
+        tag.set_title(title.clone());
+        tag.set_artist(artist);
+        tag.set_album(album);
+
+        if let Some(l) = lyric {
+            let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
+                TextEncoding::UTF8,
+                *b"eng",
+                String::from("saved by termusic"),
+                l,
+            ));
+            tag.insert(frame);
+        }
+
+        if let Some(picture) = photo {
+            tag.insert_picture(picture);
+        }
+
+        let args = vec![
+            Arg::new("--quiet"),
+            Arg::new_with_arg("--output", filename.as_ref()),
+            Arg::new("--extract-audio"),
+            Arg::new_with_arg("--audio-format", "mp3"),
+        ];
+
         // avoid full string clones when sending via a channel
         let url = Arc::from(url.into_boxed_str());
 
         let ytd = YoutubeDL::new(&PathBuf::from(p_parent), args, &url)?;
 
-        thread::spawn(move || -> Result<()> {
-            tx(TrackDLMsg::Start(url.clone(), title.clone()));
-
-            // start download
-            // check what the result is and print out the path to the download or the error
-            let _download_result = match ytd.download() {
-                Ok(res) => res,
-                Err(err) => {
-                    tx(TrackDLMsg::Err(url.clone(), title.clone(), err.to_string()));
-                    sleep(Duration::from_secs(1));
-                    tx(TrackDLMsg::Completed(url.clone(), None));
-
-                    return Ok(());
-                }
-            };
-
-            tx(TrackDLMsg::Success(url.clone()));
-            let mut tag = Id3v2Tag::default();
-
-            tag.set_title(title.clone());
-            tag.set_artist(artist);
-            tag.set_album(album);
-
-            if let Some(l) = lyric {
-                let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
-                    TextEncoding::UTF8,
-                    *b"eng",
-                    String::from("saved by termusic"),
-                    l,
-                ));
-                tag.insert(frame);
-            }
-
-            if let Some(picture) = photo {
-                tag.insert_picture(picture);
-            }
-
-            if tag.save_to_path(&p_full, WriteOptions::new()).is_ok() {
-                sleep(Duration::from_secs(1));
-                tx(TrackDLMsg::Completed(
-                    url,
-                    Some(p_full.to_string_lossy().to_string()),
-                ));
-            } else {
-                tx(TrackDLMsg::ErrEmbedData(url.clone(), title));
-                sleep(Duration::from_secs(1));
-                tx(TrackDLMsg::Completed(url, None));
-            }
-
-            Ok(())
+        let jh = tokio::task::spawn_blocking(move || {
+            Self::download_ytd(url, &out_path, title, &tag, &ytd, tx);
         });
+        drop(jh);
+
         Ok(())
+    }
+
+    /// Run the download and emit Err / Success.
+    ///
+    /// This function is blocking until the download finishes.
+    fn download_ytd(
+        url: Arc<str>,
+        out_path: &Path,
+        title: String,
+        tag: &Id3v2Tag,
+        ytd: &YoutubeDL,
+        tx: impl Fn(TrackDLMsg),
+    ) {
+        tx(TrackDLMsg::Start(url.clone(), title.clone()));
+
+        // do the actual download
+        if let Err(err) = ytd.download() {
+            tx(TrackDLMsg::Err(url.clone(), title.clone(), err.to_string()));
+
+            return;
+        }
+
+        tx(TrackDLMsg::Success(url.clone()));
+
+        if tag.save_to_path(out_path, WriteOptions::new()).is_ok() {
+            tx(TrackDLMsg::Completed(
+                url,
+                Some(out_path.to_string_lossy().to_string()),
+            ));
+        } else {
+            tx(TrackDLMsg::ErrEmbedData(url.clone(), title));
+            tx(TrackDLMsg::Completed(url, None));
+        }
     }
 }
