@@ -262,17 +262,35 @@ impl Model {
         let song_tag = self
             .songtag_options
             .get(index)
+            .cloned()
             .with_context(|| format!("no song_tag with index {index} found"))?;
-        if let Some(song) = &self.tageditor_song {
-            let file = song.path();
+        if let Some(current_track) = &self.tageditor_song {
+            let file = current_track.path().to_path_buf();
             // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
             // though i am not fully sure if that is 100% the case, this avoid the panic though
             let tx_to_main = self.tx_to_main.clone();
-            tokio::task::block_in_place(move || {
-                Handle::current().block_on(song_tag.download(file, move |msg| {
-                    let _ = tx_to_main.send(Msg::TagEditor(TEMsg::TrackDownloadResult(msg)));
-                }))
-            })?;
+
+            // this is not entirely accurate, but it only needs to bridge from this point until the download actually happens
+            let dl_tracker = self.download_tracker.clone();
+            let tracker_id = file.to_string_lossy().to_string();
+            dl_tracker.increase_one(tracker_id.clone());
+
+            let jh = tokio::task::spawn(async move {
+                let tx_to_main2 = tx_to_main.clone();
+                let res = song_tag
+                    .download(&file, move |msg| {
+                        let _ = tx_to_main.send(Msg::TagEditor(TEMsg::TrackDownloadResult(msg)));
+                    })
+                    .await;
+                // by then the tracker is either done or SongTag has added the actual URL for the download
+                dl_tracker.decrease_one(&tracker_id);
+                if let Err(err) = res {
+                    let _ = tx_to_main2.send(Msg::TagEditor(TEMsg::TrackDownloadPreError(
+                        err.to_string(),
+                    )));
+                }
+            });
+            drop(jh);
         }
         Ok(())
     }

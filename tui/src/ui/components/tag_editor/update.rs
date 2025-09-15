@@ -51,6 +51,9 @@ impl Model {
 
             TEMsg::SearchLyricResult(msg) => self.te_update_lyric_results(msg),
             TEMsg::TrackDownloadResult(msg) => self.te_update_download_msg(msg),
+            TEMsg::TrackDownloadPreError(err) => {
+                self.mount_error_popup(anyhow!(err));
+            }
         }
     }
 

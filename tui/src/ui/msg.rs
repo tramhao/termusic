@@ -488,6 +488,10 @@ pub enum TEMsg {
 
     SearchLyricResult(SongtagSearchResult),
     TrackDownloadResult(TrackDLMsg),
+    /// Indicates that the preparation for the track download have failed
+    ///
+    /// `(ErrorAsString)`
+    TrackDownloadPreError(String),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
