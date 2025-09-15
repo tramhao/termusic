@@ -384,10 +384,10 @@ impl Track {
                 PlaylistTrackSource::Path(track_data.path.to_string_lossy().to_string())
             }
             MediaTypes::Radio(radio_track_data) => {
-                PlaylistTrackSource::Url(radio_track_data.url.to_string())
+                PlaylistTrackSource::Url(radio_track_data.url.clone())
             }
             MediaTypes::Podcast(podcast_track_data) => {
-                PlaylistTrackSource::PodcastUrl(podcast_track_data.url.to_string())
+                PlaylistTrackSource::PodcastUrl(podcast_track_data.url.clone())
             }
         }
     }
@@ -842,7 +842,7 @@ fn get_lyrics_from_tags(tag: &LoftyTag, lyric_frames: &mut Vec<Id3Lyrics>) {
             lyric_frames.push(Id3Lyrics {
                 lang: lyric.lang().escape_ascii().to_string(),
                 description: lyric.description().to_string(),
-                text: lyrics_text.to_string(),
+                text: lyrics_text.clone(),
             });
         }
     }

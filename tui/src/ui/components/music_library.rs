@@ -32,7 +32,7 @@ impl MusicLibrary {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,
-            _ => tree.root().id().to_string(),
+            _ => tree.root().id().clone(),
         };
         let component = {
             let config = config.read();
@@ -458,17 +458,17 @@ impl Model {
                 let mut focus_node: Option<String> = None;
                 // case 1: the route still exists due to having a sibling beyond the index which now takes the same index
                 if let Some(node) = tree.root().node_by_route(&route) {
-                    focus_node = Some(node.id().to_string());
+                    focus_node = Some(node.id().clone());
                 } else if !route.is_empty() {
                     let _ = route.pop();
                     // case 2: the route does not exist anymore, but there is a parent in the route
                     if let Some(parent) = tree.root().node_by_route(&route) {
                         // case 2.1: the parent has children, select the last of them
                         if let Some(last_child) = parent.children().last() {
-                            focus_node = Some(last_child.id().to_string());
+                            focus_node = Some(last_child.id().clone());
                         } else {
                             // case 2.2: the parent exists, but has no children
-                            focus_node = Some(parent.id().to_string());
+                            focus_node = Some(parent.id().clone());
                         }
                     }
                 }
