@@ -357,7 +357,7 @@ fn get_viuer_support() -> ViuerSupported {
 
 impl Model {
     #[allow(clippy::too_many_lines)]
-    pub async fn new(
+    pub fn new(
         config: CombinedSettings,
         cmd_to_server_tx: UnboundedSender<TuiCmd>,
         stream_updates: WrappedStreamEvents,
@@ -442,11 +442,7 @@ impl Model {
                 tree,
                 yanked_node_id: None,
             },
-            // TODO: Consider making YoutubeOptions async and use async reqwest in YoutubeOptions
-            // and avoid this `spawn_blocking` call.
-            youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)
-                .await
-                .expect("Failed to initialize YoutubeOptions in a blocking task due to a panic"),
+            youtube_options: YoutubeOptions::default(),
             #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
             ueberzug_instance,
             songtag_options: vec![],
