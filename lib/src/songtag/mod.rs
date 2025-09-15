@@ -238,8 +238,21 @@ impl SongTag {
             .unwrap_or_else(|| UNKNOWN_TITLE.to_string());
 
         let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
-        let lyric = self.fetch_lyric().await;
-        let photo = self.fetch_photo().await;
+        let lyric = self
+            .fetch_lyric()
+            .await
+            .map_err(|err| {
+                warn!("Fetching Lyric failed: {err:#?}");
+            })
+            .ok()
+            .flatten();
+        let photo = self
+            .fetch_photo()
+            .await
+            .map_err(|err| {
+                warn!("Fetching Photo failed: {err:#?}");
+            })
+            .ok();
 
         let filename = format!("{artist}-{title}.%(ext)s");
 
@@ -316,7 +329,7 @@ impl SongTag {
             tag.set_artist(artist);
             tag.set_album(album);
 
-            if let Ok(Some(l)) = lyric {
+            if let Some(l) = lyric {
                 let frame = Frame::UnsynchronizedText(UnsynchronizedTextFrame::new(
                     TextEncoding::UTF8,
                     *b"eng",
@@ -326,7 +339,7 @@ impl SongTag {
                 tag.insert(frame);
             }
 
-            if let Ok(picture) = photo {
+            if let Some(picture) = photo {
                 tag.insert_picture(picture);
             }
 
