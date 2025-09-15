@@ -699,12 +699,20 @@ impl Model {
             YSMsg::TablePopupCloseCancel => {
                 self.umount_youtube_search_table_popup();
             }
-            YSMsg::TablePopupNext => {
+            YSMsg::ReqNextPage => {
                 self.youtube_options_next_page();
             }
-            YSMsg::TablePopupPrevious => {
+            YSMsg::ReqPreviousPage => {
                 self.youtube_options_prev_page();
             }
+            YSMsg::PageLoaded(data) => {
+                self.youtube_options.data = data;
+                self.sync_youtube_options();
+            }
+            YSMsg::PageLoadError(err) => {
+                self.mount_error_popup(anyhow!(err));
+            }
+
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(index) {
                     self.library_reload_with_node_focus(None);

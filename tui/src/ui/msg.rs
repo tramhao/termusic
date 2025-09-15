@@ -9,7 +9,7 @@ use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 
 use crate::ui::ids::{IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
-use crate::ui::model::youtube_options::{YTDLMsg, YoutubeOptions};
+use crate::ui::model::youtube_options::{YTDLMsg, YoutubeData, YoutubeOptions};
 
 /// Main message type that encapsulates everything else.
 // Note that the style is for each thing to have a sub-type, unless it is top-level like "ForceRedraw".
@@ -459,8 +459,15 @@ pub enum YSMsg {
     InputPopupShow,
     InputPopupCloseCancel,
     InputPopupCloseOk(String),
-    TablePopupNext,
-    TablePopupPrevious,
+
+    ReqNextPage,
+    ReqPreviousPage,
+    PageLoaded(YoutubeData),
+    /// Indicates that the youtube search page load has failed, with error message.
+    ///
+    /// `(ErrorAsString)`
+    PageLoadError(String),
+
     TablePopupCloseCancel,
     TablePopupCloseOk(usize),
 
