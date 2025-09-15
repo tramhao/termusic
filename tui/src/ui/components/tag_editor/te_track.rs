@@ -22,7 +22,7 @@ use termusiclib::{
 use crate::ui::model::ExtraLyricData;
 
 /// Track data for the Tag-Editor with helper functions
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TETrack {
     path: PathBuf,
 

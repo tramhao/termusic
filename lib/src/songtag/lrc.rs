@@ -21,7 +21,7 @@ use std::time::Duration;
 use crate::utils::display_with;
 
 /// The struct to hold all the metadata and the lyric frames
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Lyric {
     /// Offset in milliseconds
     ///
@@ -32,7 +32,7 @@ pub struct Lyric {
 }
 
 /// A caption for a specific time
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Caption {
     /// Timestamp in milliseconds
     timestamp: i64,
