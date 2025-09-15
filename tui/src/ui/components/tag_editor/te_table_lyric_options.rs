@@ -9,6 +9,7 @@ use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::Model;
+use crate::ui::components::TETrack;
 use crate::ui::ids::{Id, IdTagEditor};
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
@@ -325,6 +326,9 @@ impl Model {
         Ok(())
     }
 
+    /// Embed the data from `index` into the current track.
+    ///
+    /// Will send a message once its done.
     pub fn te_load_lyric_and_photo(&mut self, index: usize) -> Result<()> {
         if self.songtag_options.is_empty() {
             return Ok(());
@@ -333,8 +337,9 @@ impl Model {
             let song_tag = self
                 .songtag_options
                 .get(index)
+                .cloned()
                 .ok_or_else(|| anyhow!("cannot get songtag"))?;
-            let lang_ext = song_tag.lang_ext().unwrap_or("eng");
+            let lang_ext = song_tag.lang_ext().unwrap_or("eng").to_string();
             if let Some(artist) = song_tag.artist() {
                 song.set_artist(artist);
             }
@@ -345,33 +350,46 @@ impl Model {
                 song.set_album(album);
             }
 
-            let tracker_id = song_tag.id();
-            self.download_tracker.increase_one(tracker_id);
+            let tracker_id = song_tag.id().to_string();
+            let tracker = self.download_tracker.clone();
+            let tx_to_main = self.tx_to_main.clone();
+            tracker.increase_one(tracker_id.clone());
 
-            // TODO: consider a way to not do it "block_on"
-            // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
-            // though i am not fully sure if that is 100% the case, this avoid the panic though
-            let (lyric_string, artwork) = tokio::task::block_in_place(move || {
-                Handle::current().block_on(async {
-                    tokio::join!(song_tag.fetch_lyric(), song_tag.fetch_photo())
-                })
+            let jh = tokio::task::spawn(async move {
+                let (lyric_string, artwork) =
+                    tokio::join!(song_tag.fetch_lyric(), song_tag.fetch_photo());
+
+                if let Ok(Some(lyric_string)) = lyric_string {
+                    song.set_lyric(&lyric_string, lang_ext, None::<String>);
+                }
+                if let Ok(artwork) = artwork {
+                    song.set_picture(artwork);
+                }
+
+                let res = song.save_tag();
+
+                tracker.decrease_one(&tracker_id);
+
+                if let Err(err) = res {
+                    let _ = tx_to_main.send(Msg::TagEditor(TEMsg::EmbedErr(
+                        err.context("Tag embedding").to_string(),
+                    )));
+                }
+
+                let _ = tx_to_main.send(Msg::TagEditor(TEMsg::EmbedDone(Box::new(song))));
             });
-
-            self.download_tracker.decrease_one(tracker_id);
-
-            if let Ok(Some(lyric_string)) = lyric_string {
-                song.set_lyric(&lyric_string, lang_ext, None::<String>);
-            }
-            if let Ok(artwork) = artwork {
-                song.set_picture(artwork);
-            }
-
-            song.save_tag()?;
-            // the unwrap should also never happen as all components should be properly mounted
-            self.init_by_song(song).unwrap();
-            self.playlist_update_library_delete();
-            // self.library_sync(song.file());
+            drop(jh);
         }
         Ok(())
+    }
+
+    /// Followup function to [`te_load_lyric_and_photo`](Self::te_load_lyric_and_photo)
+    /// that executes the remaining operations on `Done` message which require access to `Model` again.
+    pub fn te_load_lyric_and_photo_done(&mut self, song: Box<TETrack>) {
+        let song = *song;
+        // the unwrap should also never happen as all components should be properly mounted
+        self.init_by_song(song).unwrap();
+        self.playlist_update_library_delete();
+        // self.library_sync(song.file());
     }
 }

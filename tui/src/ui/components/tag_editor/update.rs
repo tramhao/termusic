@@ -42,6 +42,12 @@ impl Model {
                     self.mount_error_popup(e.context("log lyric and photo"));
                 }
             }
+            TEMsg::EmbedDone(song) => {
+                self.te_load_lyric_and_photo_done(song);
+            }
+            TEMsg::EmbedErr(err) => {
+                self.mount_error_popup(anyhow!(err));
+            }
             TEMsg::Save => {
                 if let Err(e) = self.te_rename_song_by_tag() {
                     self.mount_error_popup(e.context("rename song by tag"));
