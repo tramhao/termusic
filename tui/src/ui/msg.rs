@@ -8,8 +8,9 @@ use termusiclib::player::{GetProgressResponse, PlaylistTracks, UpdateEvents};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 
+use crate::ui::components::TETrack;
 use crate::ui::ids::{IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
-use crate::ui::model::youtube_options::{YTDLMsg, YoutubeOptions};
+use crate::ui::model::youtube_options::{YTDLMsg, YoutubeData, YoutubeOptions};
 
 /// Main message type that encapsulates everything else.
 // Note that the style is for each thing to have a sub-type, unless it is top-level like "ForceRedraw".
@@ -459,8 +460,15 @@ pub enum YSMsg {
     InputPopupShow,
     InputPopupCloseCancel,
     InputPopupCloseOk(String),
-    TablePopupNext,
-    TablePopupPrevious,
+
+    ReqNextPage,
+    ReqPreviousPage,
+    PageLoaded(YoutubeData),
+    /// Indicates that the youtube search page load has failed, with error message.
+    ///
+    /// `(ErrorAsString)`
+    PageLoadError(String),
+
     TablePopupCloseCancel,
     TablePopupCloseOk(usize),
 
@@ -480,7 +488,16 @@ pub enum TEMsg {
     Close,
     CounterDeleteOk,
     Download(usize),
+    /// Request to embed the data from `param1` into the current track.
     Embed(usize),
+    /// Embedding has finished.
+    // Box to not increase the size of this enum when not necessary.
+    EmbedDone(Box<TETrack>),
+    /// Indicates that the embedding has failed.
+    ///
+    /// `(ErrorAsString)`
+    EmbedErr(String),
+
     Focus(TFMsg),
     Save,
     Search,
@@ -488,6 +505,10 @@ pub enum TEMsg {
 
     SearchLyricResult(SongtagSearchResult),
     TrackDownloadResult(TrackDLMsg),
+    /// Indicates that the preparation for the track download have failed
+    ///
+    /// `(ErrorAsString)`
+    TrackDownloadPreError(String),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

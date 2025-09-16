@@ -11,7 +11,6 @@ use shell_words;
 use termusiclib::invidious::{Instance, YoutubeVideo};
 use termusiclib::track::DurationFmtShort;
 use termusiclib::utils::get_parent_folder;
-use tokio::runtime::Handle;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
 use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
@@ -27,48 +26,82 @@ static RE_FILENAME: LazyLock<Regex> =
 static RE_FILENAME_YTDLP: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap());
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct YoutubeOptions {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct YoutubeData {
     pub items: Vec<YoutubeVideo>,
     pub page: u32,
-    pub invidious_instance: Instance,
 }
 
-impl Default for YoutubeOptions {
+impl Default for YoutubeData {
     fn default() -> Self {
         Self {
             items: Vec::new(),
             page: 1,
-            invidious_instance: Instance::default(),
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct YoutubeOptions {
+    pub data: YoutubeData,
+    pub invidious_instance: Instance,
+}
+
 impl YoutubeOptions {
     pub fn get_by_index(&self, index: usize) -> Result<&YoutubeVideo> {
-        if let Some(item) = self.items.get(index) {
+        if let Some(item) = self.data.items.get(index) {
             return Ok(item);
         }
         Err(anyhow!("index not found"))
     }
 
-    pub async fn prev_page(&mut self) -> Result<()> {
-        if self.page > 1 {
-            self.page -= 1;
-            self.items = self.invidious_instance.get_search_query(self.page).await?;
+    /// Fetch the previous page's content if there is a previous page.
+    ///
+    /// The returned Future does not need the lifetime of `self` for the fetch and is safe to [`Send`].
+    pub fn get_prev_page(&self) -> Option<impl Future<Output = Result<YoutubeData>> + use<>> {
+        if self.data.page > 1 {
+            let mut res = YoutubeData {
+                page: self.data.page - 1,
+                ..Default::default()
+            };
+            let instance = self.invidious_instance.clone();
+
+            return Some(async move {
+                res.items = instance.get_search_query(res.page).await?;
+                Ok(res)
+            });
         }
-        Ok(())
+
+        None
     }
 
-    pub async fn next_page(&mut self) -> Result<()> {
-        self.page += 1;
-        self.items = self.invidious_instance.get_search_query(self.page).await?;
-        Ok(())
+    /// Fetch the next page's content.
+    ///
+    /// The returned Future does not need the lifetime of `self` for the fetch and is safe to [`Send`].
+    pub fn get_next_page(&self) -> impl Future<Output = Result<YoutubeData>> + use<> {
+        let mut res = YoutubeData {
+            page: self.data.page + 1,
+            ..Default::default()
+        };
+        let instance = self.invidious_instance.clone();
+
+        async move {
+            res.items = instance.get_search_query(res.page).await?;
+            Ok(res)
+        }
     }
 
     #[must_use]
     pub const fn page(&self) -> u32 {
-        self.page
+        self.data.page
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.data.items.is_empty()
+    }
+
+    pub fn items(&self) -> &[YoutubeVideo] {
+        &self.data.items
     }
 }
 
@@ -91,8 +124,10 @@ impl Model {
             match Instance::new(&keyword).await {
                 Ok((instance, result)) => {
                     let youtube_options = YoutubeOptions {
-                        items: result,
-                        page: 1,
+                        data: YoutubeData {
+                            items: result,
+                            page: 1,
+                        },
                         invidious_instance: instance,
                     };
                     tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchSuccess(
@@ -109,35 +144,47 @@ impl Model {
     }
 
     /// This function requires to be run in a tokio Runtime context
-    pub fn youtube_options_prev_page(&mut self) {
-        // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
-        // though i am not fully sure if that is 100% the case, this avoid the panic though
-        tokio::task::block_in_place(move || {
-            Handle::current().block_on(async {
-                match self.youtube_options.prev_page().await {
-                    Ok(()) => self.sync_youtube_options(),
-                    Err(e) => self.mount_error_popup(e.context("youtube-dl search")),
+    pub fn youtube_options_prev_page(&self) {
+        let tx_to_main = self.tx_to_main.clone();
+
+        let Some(fut) = self.youtube_options.get_prev_page() else {
+            return;
+        };
+
+        tokio::task::spawn(async move {
+            match fut.await {
+                Ok(data) => {
+                    let _ = tx_to_main.send(Msg::YoutubeSearch(YSMsg::PageLoaded(data)));
                 }
-            });
+                Err(err) => {
+                    let _ =
+                        tx_to_main.send(Msg::YoutubeSearch(YSMsg::PageLoadError(err.to_string())));
+                }
+            }
         });
     }
 
     /// This function requires to be run in a tokio Runtime context
     pub fn youtube_options_next_page(&mut self) {
-        // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
-        // though i am not fully sure if that is 100% the case, this avoid the panic though
-        tokio::task::block_in_place(move || {
-            Handle::current().block_on(async {
-                match self.youtube_options.next_page().await {
-                    Ok(()) => self.sync_youtube_options(),
-                    Err(e) => self.mount_error_popup(e.context("youtube-dl search")),
+        let tx_to_main = self.tx_to_main.clone();
+
+        let fut = self.youtube_options.get_next_page();
+
+        tokio::task::spawn(async move {
+            match fut.await {
+                Ok(data) => {
+                    let _ = tx_to_main.send(Msg::YoutubeSearch(YSMsg::PageLoaded(data)));
                 }
-            });
+                Err(err) => {
+                    let _ =
+                        tx_to_main.send(Msg::YoutubeSearch(YSMsg::PageLoadError(err.to_string())));
+                }
+            }
         });
     }
 
     pub fn sync_youtube_options(&mut self) {
-        if self.youtube_options.items.is_empty() {
+        if self.youtube_options.is_empty() {
             let table = TableBuilder::default()
                 .add_col(TextSpan::from("No results."))
                 .add_col(TextSpan::from(
@@ -155,7 +202,7 @@ impl Model {
         }
 
         let mut table: TableBuilder = TableBuilder::default();
-        for (idx, record) in self.youtube_options.items.iter().enumerate() {
+        for (idx, record) in self.youtube_options.items().iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }

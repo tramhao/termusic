@@ -194,11 +194,11 @@ impl Component<Msg, UserEvent> for YSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::YoutubeSearch(YSMsg::TablePopupNext)),
+            }) => return Some(Msg::YoutubeSearch(YSMsg::ReqNextPage)),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::YoutubeSearch(YSMsg::TablePopupPrevious)),
+            }) => return Some(Msg::YoutubeSearch(YSMsg::ReqPreviousPage)),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
