@@ -380,7 +380,7 @@ impl Model {
                     theme_path.push(format!("{theme_filename}.yml"));
                     match ThemeColors::from_yaml_file(&theme_path) {
                         Ok(mut theme) => {
-                            theme.file_name = Some(theme_filename.to_string());
+                            theme.file_name = Some(theme_filename.clone());
 
                             self.preview_theme_apply(theme, index);
                         }

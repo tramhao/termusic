@@ -424,14 +424,14 @@ fn parse_args(input: &str) -> Result<Vec<ArgOrVal>, shell_words::ParseError> {
         .map(|token| {
             if token.starts_with("--") {
                 if token.contains('=') {
-                    ArgOrVal::ArgumentWithVal(token.to_string())
+                    ArgOrVal::ArgumentWithVal(token)
                 } else {
-                    ArgOrVal::Argument(token.to_string())
+                    ArgOrVal::Argument(token)
                 }
             } else if token.starts_with('-') {
-                ArgOrVal::Flag(token.to_string())
+                ArgOrVal::Flag(token)
             } else {
-                ArgOrVal::Positional(token.to_string())
+                ArgOrVal::Positional(token)
             }
         })
         .collect();
