@@ -26,21 +26,20 @@ use std::fmt::Display;
 use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
+use tui_realm_stdlib::utils::calc_utf8_cursor_position;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::ratatui::widgets::ListDirection;
-use tuirealm::{Component, Event, Frame, MockComponent, State, StateValue};
-use unicode_width::UnicodeWidthStr;
-
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderSides, BorderType, Borders, Color, PropPayload,
     PropValue, Props, Style, TextModifiers,
 };
+use tuirealm::ratatui::widgets::ListDirection;
 use tuirealm::ratatui::{
     layout::{Constraint, Layout, Rect},
     text::Span,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
+use tuirealm::{Component, Event, Frame, MockComponent, State, StateValue};
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::InputStates;
 use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
@@ -263,13 +262,12 @@ impl KeyCombo {
             .and_then(AttrValue::as_length)
     }
 
-    /// ### `is_valid`
-    ///
-    /// Checks whether current input is valid
+    /// Checks whether current input is a valid [`KeyBinding`].
     fn is_valid(&self) -> bool {
         let value = self.states_input.get_value();
         KeyBinding::try_from_str(&value).is_ok()
     }
+
     pub fn foreground(mut self, fg: Color) -> Self {
         self.attr(Attribute::Foreground, AttrValue::Color(fg));
         self
@@ -376,9 +374,7 @@ impl KeyCombo {
         }
     }
 
-    /// ### `render_open_tab`
-    ///
-    /// Render component when tab is open
+    /// Draw the Modifier select tab open.
     #[allow(clippy::too_many_lines)]
     fn render_open_tab(&mut self, render: &mut Frame<'_>, area: Rect) {
         // Make choices
@@ -523,9 +519,7 @@ impl KeyCombo {
         Style::default().bg(background).fg(foreground)
     }
 
-    /// ### `render_closed_tab`
-    ///
-    /// Render component when tab is closed
+    /// Draw the Modifier select tab closed.
     fn render_closed_tab(&self, render: &mut Frame<'_>, area: Rect) {
         // Render select
         let inactive_style = self
@@ -569,7 +563,6 @@ impl KeyCombo {
         };
         // Apply invalid style
         if !self.is_valid() {
-            // if focus && !self.is_valid() {
             if let Some(style_invalid) = self
                 .props
                 .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
@@ -588,18 +581,19 @@ impl KeyCombo {
         render.render_widget(p, area);
     }
 
+    /// Draw the Input field for the keybinding.
     fn render_input(&mut self, render: &mut Frame<'_>, area: Rect) {
         // apply the area block offset that "render_X_tab" already draws
         let area = Block::new().borders(BorderSides::all()).inner(area);
         let chunks =
             Layout::horizontal([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)]).split(area);
 
-        let foreground = self
+        let mut foreground = self
             .props
             .get_ref(Attribute::Foreground)
             .and_then(AttrValue::as_color)
             .unwrap_or(Color::Reset);
-        let background = self
+        let mut background = self
             .props
             .get_ref(Attribute::Background)
             .and_then(AttrValue::as_color)
@@ -609,13 +603,6 @@ impl KeyCombo {
             .get_ref(Attribute::TextProps)
             .and_then(AttrValue::as_text_modifiers)
             .unwrap_or(TextModifiers::empty());
-        // let borders = self
-        //     .props
-        //     .get_ref(Attribute::Borders)
-        //     .and_then(AttrValue::as_borders)
-        //     // Note: Borders should be copy-able
-        //     .map_or(Borders::default(), Clone::clone)
-        //     .sides(BorderSides::NONE);
 
         let focus = self
             .props
@@ -626,20 +613,17 @@ impl KeyCombo {
             .props
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style);
-        // the block is drawn by "render_open_tab" or "render_closed_tab"
-        // let mut block = get_block::<&str>(borders, None, focus, inactive_style);
-        // // Apply invalid style
-        // if focus && !self.is_valid() {
-        //     if let Some(style) = self
-        //         .props
-        //         .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
-        //         .and_then(AttrValue::as_style)
-        //     {
-        //         block = block.borders(BorderSides::NONE);
-        //         foreground = style.fg.unwrap_or(Color::Reset);
-        //         background = style.bg.unwrap_or(Color::Reset);
-        //     }
-        // }
+        // Apply invalid style
+        if focus && !self.is_valid() {
+            if let Some(style) = self
+                .props
+                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+                .and_then(AttrValue::as_style)
+            {
+                foreground = style.fg.unwrap_or(Color::Reset);
+                background = style.bg.unwrap_or(Color::Reset);
+            }
+        }
 
         let block_render_area = chunks[1];
         let block_inner_area = block_render_area;
@@ -677,9 +661,7 @@ impl KeyCombo {
             paragraph_style
         };
         // Create widget
-        let p: Paragraph<'_> = Paragraph::new(text_to_display)
-            .style(paragraph_style)
-            /* .block(block) */;
+        let p: Paragraph<'_> = Paragraph::new(text_to_display).style(paragraph_style);
         render.render_widget(p, block_render_area);
         // Set cursor, if focus
         if focus {
@@ -855,15 +837,6 @@ impl MockComponent for KeyCombo {
             _ => CmdResult::None,
         }
     }
-}
-
-/// ### `calc_utf8_cursor_position`
-///
-/// Calculate the UTF8 compliant position for the cursor given the characters preceeding the cursor position.
-/// Use this function to calculate cursor position whenever you want to handle UTF8 texts with cursors
-#[allow(clippy::cast_possible_truncation)]
-pub fn calc_utf8_cursor_position(chars: &[char]) -> u16 {
-    chars.iter().collect::<String>().width() as u16
 }
 
 #[cfg(test)]
