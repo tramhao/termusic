@@ -49,6 +49,7 @@ use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
 pub const INPUT_PLACEHOLDER_STYLE: &str = "placeholder-style";
+pub const CMD_BACKSPACE: &str = "Backspace";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MyModifiers {
@@ -691,8 +692,7 @@ impl MockComponent for KeyCombo {
                     CmdResult::None
                 }
             }
-            Cmd::Cancel => {
-                self.states.cancel_tab();
+            Cmd::Custom(CMD_BACKSPACE) => {
                 let prev_len = self.states_input.input.len();
                 self.states_input.delete();
                 if prev_len == self.states_input.input.len() {
@@ -700,6 +700,10 @@ impl MockComponent for KeyCombo {
                 } else {
                     CmdResult::Changed(self.state())
                 }
+            }
+            Cmd::Cancel => {
+                self.states.cancel_tab();
+                CmdResult::Changed(self.state())
             }
             Cmd::Submit => {
                 // Open or close tab
@@ -1250,7 +1254,7 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Delete, ..
-            }) => self.perform(Cmd::Cancel),
+            }) => self.perform(Cmd::Custom(CMD_BACKSPACE)),
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 ..
