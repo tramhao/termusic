@@ -26,21 +26,20 @@ use std::fmt::Display;
 use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
+use tui_realm_stdlib::utils::calc_utf8_cursor_position;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::ratatui::widgets::ListDirection;
-use tuirealm::{Component, Event, Frame, MockComponent, State, StateValue};
-use unicode_width::UnicodeWidthStr;
-
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderSides, BorderType, Borders, Color, PropPayload,
     PropValue, Props, Style, TextModifiers,
 };
+use tuirealm::ratatui::widgets::ListDirection;
 use tuirealm::ratatui::{
     layout::{Constraint, Layout, Rect},
     text::Span,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
+use tuirealm::{Component, Event, Frame, MockComponent, State, StateValue};
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::InputStates;
 use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
@@ -50,6 +49,7 @@ use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
 pub const INPUT_PLACEHOLDER_STYLE: &str = "placeholder-style";
+pub const CMD_BACKSPACE: &str = "Backspace";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MyModifiers {
@@ -263,13 +263,12 @@ impl KeyCombo {
             .and_then(AttrValue::as_length)
     }
 
-    /// ### `is_valid`
-    ///
-    /// Checks whether current input is valid
+    /// Checks whether current input is a valid [`KeyBinding`].
     fn is_valid(&self) -> bool {
         let value = self.states_input.get_value();
         KeyBinding::try_from_str(&value).is_ok()
     }
+
     pub fn foreground(mut self, fg: Color) -> Self {
         self.attr(Attribute::Foreground, AttrValue::Color(fg));
         self
@@ -376,139 +375,8 @@ impl KeyCombo {
         }
     }
 
-    /// ### `render_open_tab`
-    ///
-    /// Render component when tab is open
-    #[allow(clippy::too_many_lines)]
-    fn render_open_tab(&mut self, render: &mut Frame<'_>, area: Rect) {
-        // Make choices
-        let choices: Vec<ListItem<'_>> = self
-            .states
-            .choices
-            .iter()
-            .map(|x| ListItem::new(Span::from(x)))
-            .collect();
-        let mut foreground = self
-            .props
-            .get_ref(Attribute::Foreground)
-            .and_then(AttrValue::as_color)
-            .unwrap_or(Color::Reset);
-        let mut background = self
-            .props
-            .get_ref(Attribute::Background)
-            .and_then(AttrValue::as_color)
-            .unwrap_or(Color::Reset);
-        let hg: Color = self
-            .props
-            .get_ref(Attribute::HighlightedColor)
-            .and_then(AttrValue::as_color)
-            .unwrap_or(foreground);
-        // Prepare layout
-        let chunks = Layout::vertical([Constraint::Length(2), Constraint::Min(1)]).split(area);
-        // Render like "closed" tab in chunk 0
-        let selected_text = match self.states.choices.get(self.states.selected) {
-            None => "",
-            Some(s) => s.as_str(),
-        };
-        let borders = self
-            .props
-            .get_ref(Attribute::Borders)
-            .and_then(AttrValue::as_borders)
-            // Note: Borders should be copy-able
-            .map_or(Borders::default(), Clone::clone);
-        let block: Block<'_> = Block::default()
-            .borders(BorderSides::LEFT | BorderSides::TOP | BorderSides::RIGHT)
-            .border_style(borders.style())
-            .border_type(borders.modifiers)
-            .style(Style::default().bg(background));
-        let title = self
-            .props
-            .get_ref(Attribute::Title)
-            .and_then(AttrValue::as_title);
-        let mut block = match title {
-            Some((text, alignment)) => block.title(text.as_str()).title_alignment(*alignment),
-            None => block,
-        };
-        let focus = self
-            .props
-            .get_ref(Attribute::Focus)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(false);
-        let inactive_style = self
-            .props
-            .get_ref(Attribute::FocusStyle)
-            .and_then(AttrValue::as_style);
-
-        let mut style = if focus {
-            borders.style()
-        } else {
-            inactive_style.unwrap_or_default()
-        };
-
-        // Apply invalid style
-        if !self.is_valid() {
-            if let Some(style_invalid) = self
-                .props
-                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
-                .and_then(AttrValue::as_style)
-            {
-                block = block.border_style(style_invalid);
-                foreground = style_invalid.fg.unwrap_or(Color::Reset);
-                background = style_invalid.bg.unwrap_or(Color::Reset);
-                style = style_invalid;
-            }
-        }
-        let p: Paragraph<'_> = Paragraph::new(selected_text).style(style).block(block);
-
-        render.render_widget(p, chunks[0]);
-        // Render the list of elements in chunks [1]
-        // Make list
-        let mut block = Block::default()
-            .borders(BorderSides::LEFT | BorderSides::BOTTOM | BorderSides::RIGHT)
-            .border_type(borders.modifiers)
-            .border_style(if focus {
-                borders.style()
-            } else {
-                Style::default()
-            })
-            .style(Style::default().bg(background));
-
-        // Apply invalid style
-        if !self.is_valid() {
-            if let Some(style) = self
-                .props
-                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
-                .and_then(AttrValue::as_style)
-            {
-                block = block.border_style(style);
-                foreground = style.fg.unwrap_or(Color::Reset);
-                background = style.bg.unwrap_or(Color::Reset);
-            }
-        }
-        let mut list = List::new(choices)
-            .block(block)
-            .direction(ListDirection::TopToBottom)
-            .style(Style::default().fg(foreground).bg(background))
-            .highlight_style(
-                Style::default()
-                    .fg(hg)
-                    .add_modifier(TextModifiers::REVERSED),
-            );
-        // Highlighted symbol
-        let hg_str = self
-            .props
-            .get_ref(Attribute::HighlightedStr)
-            .and_then(AttrValue::as_string);
-        if let Some(hg_str) = hg_str {
-            list = list.highlight_symbol(hg_str);
-        }
-        let mut state: ListState = ListState::default();
-        state.select(Some(self.states.selected));
-        render.render_stateful_widget(list, chunks[1], &mut state);
-    }
-
     /// Get the style for the closed normal, focused, non-invalid color
-    fn get_normal_closed_style(&self) -> Style {
+    fn get_normal_style(&self) -> Style {
         let foreground = self
             .props
             .get_ref(Attribute::Foreground)
@@ -523,99 +391,15 @@ impl KeyCombo {
         Style::default().bg(background).fg(foreground)
     }
 
-    /// ### `render_closed_tab`
-    ///
-    /// Render component when tab is closed
-    fn render_closed_tab(&self, render: &mut Frame<'_>, area: Rect) {
-        // Render select
-        let inactive_style = self
-            .props
-            .get_ref(Attribute::FocusStyle)
-            .and_then(AttrValue::as_style);
-        let focus = self
-            .props
-            .get_ref(Attribute::Focus)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(false);
-        let mut style = if focus {
-            self.get_normal_closed_style()
-        } else {
-            inactive_style.unwrap_or_default()
-        };
-        let borders = self
-            .props
-            .get_ref(Attribute::Borders)
-            .and_then(AttrValue::as_borders)
-            // Note: Borders should be copy-able
-            .map_or(Borders::default(), Clone::clone);
-        let borders_style = if focus {
-            borders.style()
-        } else {
-            inactive_style.unwrap_or_default()
-        };
-        let block: Block<'_> = Block::default()
-            .borders(BorderSides::ALL)
-            .border_type(borders.modifiers)
-            .border_style(borders_style)
-            .style(style);
-        let title = self
-            .props
-            .get_ref(Attribute::Title)
-            .and_then(AttrValue::as_title);
+    /// Draw the Input field for the keybinding.
+    fn draw_input(&mut self, frame: &mut Frame<'_>, area: Rect) {
+        let mut style = self.get_normal_style();
 
-        let mut block = match title {
-            Some((text, alignment)) => block.title(text.as_str()).title_alignment(*alignment),
-            None => block,
-        };
-        // Apply invalid style
-        if !self.is_valid() {
-            // if focus && !self.is_valid() {
-            if let Some(style_invalid) = self
-                .props
-                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
-                .and_then(AttrValue::as_style)
-            {
-                block = block.border_style(style_invalid);
-                style = style_invalid;
-            }
-        }
-        let selected_text = match self.states.choices.get(self.states.selected) {
-            None => "",
-            Some(s) => s.as_str(),
-        };
-        let p: Paragraph<'_> = Paragraph::new(selected_text).style(style).block(block);
-
-        render.render_widget(p, area);
-    }
-
-    fn render_input(&mut self, render: &mut Frame<'_>, area: Rect) {
-        // apply the area block offset that "render_X_tab" already draws
-        let area = Block::new().borders(BorderSides::all()).inner(area);
-        let chunks =
-            Layout::horizontal([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)]).split(area);
-
-        let foreground = self
-            .props
-            .get_ref(Attribute::Foreground)
-            .and_then(AttrValue::as_color)
-            .unwrap_or(Color::Reset);
-        let background = self
-            .props
-            .get_ref(Attribute::Background)
-            .and_then(AttrValue::as_color)
-            .unwrap_or(Color::Reset);
         let modifiers = self
             .props
             .get_ref(Attribute::TextProps)
             .and_then(AttrValue::as_text_modifiers)
             .unwrap_or(TextModifiers::empty());
-        // let borders = self
-        //     .props
-        //     .get_ref(Attribute::Borders)
-        //     .and_then(AttrValue::as_borders)
-        //     // Note: Borders should be copy-able
-        //     .map_or(Borders::default(), Clone::clone)
-        //     .sides(BorderSides::NONE);
 
         let focus = self
             .props
@@ -626,23 +410,20 @@ impl KeyCombo {
             .props
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style);
-        // the block is drawn by "render_open_tab" or "render_closed_tab"
-        // let mut block = get_block::<&str>(borders, None, focus, inactive_style);
-        // // Apply invalid style
-        // if focus && !self.is_valid() {
-        //     if let Some(style) = self
-        //         .props
-        //         .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
-        //         .and_then(AttrValue::as_style)
-        //     {
-        //         block = block.borders(BorderSides::NONE);
-        //         foreground = style.fg.unwrap_or(Color::Reset);
-        //         background = style.bg.unwrap_or(Color::Reset);
-        //     }
-        // }
+        // Apply invalid style
+        if focus && !self.is_valid() {
+            if let Some(style_invalid) = self
+                .props
+                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+                .and_then(AttrValue::as_style)
+            {
+                let foreground = style_invalid.fg.unwrap_or(Color::Reset);
+                let background = style_invalid.bg.unwrap_or(Color::Reset);
+                style = style.fg(foreground).bg(background);
+            }
+        }
 
-        let block_render_area = chunks[1];
-        let block_inner_area = block_render_area;
+        let block_inner_area = area;
 
         self.states_input.update_width(block_inner_area.width);
 
@@ -661,10 +442,7 @@ impl KeyCombo {
         };
         // Choose paragraph style based on whether is valid or not and if has focus and if should show placeholder
         let paragraph_style = if focus {
-            Style::default()
-                .fg(foreground)
-                .bg(background)
-                .add_modifier(modifiers)
+            style.add_modifier(modifiers)
         } else {
             inactive_style.unwrap_or_default()
         };
@@ -677,10 +455,8 @@ impl KeyCombo {
             paragraph_style
         };
         // Create widget
-        let p: Paragraph<'_> = Paragraph::new(text_to_display)
-            .style(paragraph_style)
-            /* .block(block) */;
-        render.render_widget(p, block_render_area);
+        let p: Paragraph<'_> = Paragraph::new(text_to_display).style(paragraph_style);
+        frame.render_widget(p, block_inner_area);
         // Set cursor, if focus
         if focus {
             let x: u16 = block_inner_area.x
@@ -694,11 +470,144 @@ impl KeyCombo {
                     u16::try_from(self.states_input.display_offset).unwrap_or(u16::MAX),
                 );
             let x = x.min(block_inner_area.x + block_inner_area.width);
-            render.set_cursor_position(tuirealm::ratatui::prelude::Position {
+            frame.set_cursor_position(tuirealm::ratatui::prelude::Position {
                 x,
                 y: block_inner_area.y,
             });
         }
+    }
+
+    /// Draw all components once, sharing some lookups.
+    fn view_common(&mut self, frame: &mut Frame<'_>, area: Rect) {
+        // get style to use
+        let inactive_style = self
+            .props
+            .get_ref(Attribute::FocusStyle)
+            .and_then(AttrValue::as_style)
+            .unwrap_or(Style::default().fg(Color::Reset));
+        let focus = self
+            .props
+            .get_ref(Attribute::Focus)
+            .and_then(AttrValue::as_flag)
+            .unwrap_or(false);
+        let style_valid = if focus {
+            self.get_normal_style()
+        } else {
+            inactive_style
+        };
+        let mut style = style_valid;
+        let is_valid = self.is_valid();
+
+        // Apply invalid style
+        if !is_valid {
+            if let Some(style_invalid) = self
+                .props
+                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+                .and_then(AttrValue::as_style)
+            {
+                style = style_invalid;
+            }
+        }
+
+        // setup the whole block
+        let borders = self
+            .props
+            .get_ref(Attribute::Borders)
+            .and_then(AttrValue::as_borders)
+            .map_or(Borders::default(), |v| *v);
+
+        let borders_style = if focus && is_valid {
+            borders.style()
+        } else {
+            style
+        };
+        let block: Block<'_> = Block::default()
+            .borders(BorderSides::ALL)
+            .border_type(borders.modifiers)
+            .border_style(borders_style)
+            .style(style);
+        let title = self
+            .props
+            .get_ref(Attribute::Title)
+            .and_then(AttrValue::as_title);
+
+        let block = match title {
+            Some((text, alignment)) => block
+                .title(text.as_str())
+                .title_alignment(*alignment)
+                .title_style(style_valid),
+            None => block,
+        };
+
+        // draw the block
+        let block_inner_area = block.inner(area);
+        frame.render_widget(block, area);
+
+        // get the draw areas
+        let [upper_area, lower_area] = if self.states.is_tab_open() {
+            Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).areas(block_inner_area)
+        } else {
+            Layout::vertical([Constraint::Length(1), Constraint::Fill(0)]).areas(block_inner_area)
+        };
+        let [select_mod_area, input_area] =
+            Layout::horizontal([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)])
+                .areas(upper_area);
+
+        // draw the selected modifier text
+        let selected_text = match self.states.choices.get(self.states.selected) {
+            None => "",
+            Some(s) => s.as_str(),
+        };
+        let selected_mod: Paragraph<'_> = Paragraph::new(selected_text).style(style_valid);
+        frame.render_widget(selected_mod, select_mod_area);
+
+        // draw the input field
+        self.draw_input(frame, input_area);
+        // draw the list, if open
+        if self.states.is_tab_open() {
+            self.view_open_tab(frame, lower_area, style_valid);
+        }
+    }
+
+    /// Draw the select list.
+    fn view_open_tab(&mut self, frame: &mut Frame<'_>, area: Rect, style: Style) {
+        // get all styles
+        let hg: Color = self
+            .props
+            .get_ref(Attribute::HighlightedColor)
+            .and_then(AttrValue::as_color)
+            .unwrap_or(style.fg.unwrap());
+
+        // create the list component and its items
+        let choices: Vec<ListItem<'_>> = self
+            .states
+            .choices
+            .iter()
+            .map(|x| ListItem::new(Span::from(x)))
+            .collect();
+
+        let mut list = List::new(choices)
+            .direction(ListDirection::TopToBottom)
+            .style(style)
+            .highlight_style(
+                Style::default()
+                    .fg(hg)
+                    .add_modifier(TextModifiers::REVERSED),
+            );
+
+        // Set highlight symbol, if any
+        let hg_str = self
+            .props
+            .get_ref(Attribute::HighlightedStr)
+            .and_then(AttrValue::as_string);
+        if let Some(hg_str) = hg_str {
+            list = list.highlight_symbol(hg_str);
+        }
+
+        // draw the list
+        let mut state: ListState = ListState::default();
+        state.select(Some(self.states.selected));
+        frame.render_stateful_widget(list, area, &mut state);
     }
 
     fn rewindable(&self) -> bool {
@@ -717,13 +626,7 @@ impl MockComponent for KeyCombo {
             .and_then(AttrValue::as_flag)
             .unwrap_or(true)
         {
-            if self.states.is_tab_open() {
-                self.render_input(render, area);
-                self.render_open_tab(render, area);
-            } else {
-                self.render_input(render, area);
-                self.render_closed_tab(render, area);
-            }
+            self.view_common(render, area);
         }
     }
 
@@ -789,8 +692,7 @@ impl MockComponent for KeyCombo {
                     CmdResult::None
                 }
             }
-            Cmd::Cancel => {
-                self.states.cancel_tab();
+            Cmd::Custom(CMD_BACKSPACE) => {
                 let prev_len = self.states_input.input.len();
                 self.states_input.delete();
                 if prev_len == self.states_input.input.len() {
@@ -798,6 +700,10 @@ impl MockComponent for KeyCombo {
                 } else {
                     CmdResult::Changed(self.state())
                 }
+            }
+            Cmd::Cancel => {
+                self.states.cancel_tab();
+                CmdResult::Changed(self.state())
             }
             Cmd::Submit => {
                 // Open or close tab
@@ -855,15 +761,6 @@ impl MockComponent for KeyCombo {
             _ => CmdResult::None,
         }
     }
-}
-
-/// ### `calc_utf8_cursor_position`
-///
-/// Calculate the UTF8 compliant position for the cursor given the characters preceeding the cursor position.
-/// Use this function to calculate cursor position whenever you want to handle UTF8 texts with cursors
-#[allow(clippy::cast_possible_truncation)]
-pub fn calc_utf8_cursor_position(chars: &[char]) -> u16 {
-    chars.iter().collect::<String>().width() as u16
 }
 
 #[cfg(test)]
@@ -1357,7 +1254,7 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Delete, ..
-            }) => self.perform(Cmd::Cancel),
+            }) => self.perform(Cmd::Custom(CMD_BACKSPACE)),
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 ..
