@@ -725,26 +725,56 @@ impl Playlist {
         Ok(())
     }
 
+    /// Convert [`PlaylistTrackSource`] to [`Track`] by calling the correct functions.
+    ///
+    /// This mainly exist to de-duplicate this match and resulting error handling.
+    fn source_to_track(track_location: &PlaylistTrackSource, db_pod: &DBPod) -> Result<Track> {
+        let track = match track_location {
+            PlaylistTrackSource::Path(path) => Self::track_from_path(path)?,
+            PlaylistTrackSource::Url(uri) => Self::track_from_uri(uri),
+            PlaylistTrackSource::PodcastUrl(uri) => Self::track_from_podcasturi(uri, db_pod)?,
+        };
+
+        Ok(track)
+    }
+
     /// Add Paths / Urls from the music service
     ///
     /// # Errors
     ///
-    /// see [`Self::add_track`]
+    /// On error on a specific track, the error will be collected and the remaining tracks will be tried to be added.
+    ///
+    /// - if adding a track results in a error (path not found, unsupported file types, not enough permissions, etc)
     ///
     /// # Panics
     ///
     /// If `usize` cannot be converted to `u64`
-    pub fn add_tracks(&mut self, tracks: PlaylistAddTrack, db_pod: &DBPod) -> Result<()> {
+    pub fn add_tracks(
+        &mut self,
+        tracks: PlaylistAddTrack,
+        db_pod: &DBPod,
+    ) -> Result<(), PlaylistAddErrorCollection> {
         self.tracks.reserve(tracks.tracks.len());
         let at_index = usize::try_from(tracks.at_index).unwrap();
+        // collect non-fatal errors to continue adding the rest of the tracks
+        let mut errors: Vec<anyhow::Error> = Vec::new();
+
+        info!(
+            "Trying to add {} tracks to the playlist",
+            tracks.tracks.len()
+        );
+
+        let mut added_tracks = 0;
+
         if at_index >= self.len() {
             // insert tracks at the end
             for track_location in tracks.tracks {
-                let track = match &track_location {
-                    PlaylistTrackSource::Path(path) => Self::track_from_path(path)?,
-                    PlaylistTrackSource::Url(uri) => Self::track_from_uri(uri),
-                    PlaylistTrackSource::PodcastUrl(uri) => {
-                        Self::track_from_podcasturi(uri, db_pod)?
+                let track = match Self::source_to_track(&track_location, db_pod) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        warn!("Error adding track: {err}");
+                        errors.push(err);
+                        continue;
                     }
                 };
 
@@ -759,31 +789,41 @@ impl Playlist {
 
                 self.tracks.push(track);
                 self.is_modified = true;
+                added_tracks += 1;
             }
+        } else {
+            let mut at_index = at_index;
+            // insert tracks at position
+            for track_location in tracks.tracks {
+                let track = match Self::source_to_track(&track_location, db_pod) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        warn!("Error adding track: {err}");
+                        errors.push(err);
+                        continue;
+                    }
+                };
 
-            return Ok(());
+                self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
+                    PlaylistAddTrackInfo {
+                        at_index: u64::try_from(at_index).unwrap(),
+                        title: track.title().map(ToOwned::to_owned),
+                        duration: track.duration().unwrap_or_default(),
+                        trackid: track_location,
+                    },
+                ));
+
+                self.tracks.insert(at_index, track);
+                self.is_modified = true;
+                at_index += 1;
+                added_tracks += 1;
+            }
         }
-        let mut at_index = at_index;
-        // insert tracks at position
-        for track_location in tracks.tracks {
-            let track = match &track_location {
-                PlaylistTrackSource::Path(path) => Self::track_from_path(path)?,
-                PlaylistTrackSource::Url(uri) => Self::track_from_uri(uri),
-                PlaylistTrackSource::PodcastUrl(uri) => Self::track_from_podcasturi(uri, db_pod)?,
-            };
 
-            self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
-                PlaylistAddTrackInfo {
-                    at_index: u64::try_from(at_index).unwrap(),
-                    title: track.title().map(ToOwned::to_owned),
-                    duration: track.duration().unwrap_or_default(),
-                    trackid: track_location,
-                },
-            ));
+        info!("Added {} tracks with {} errors", added_tracks, errors.len());
 
-            self.tracks.insert(at_index, track);
-            self.is_modified = true;
-            at_index += 1;
+        if !errors.is_empty() {
+            return Err(PlaylistAddErrorCollection::from(errors));
         }
 
         Ok(())
@@ -1155,6 +1195,38 @@ fn get_playlist_path() -> Result<PathBuf> {
     path.push(PLAYLIST_SAVE_FILENAME);
 
     Ok(path)
+}
+
+/// Error collections for [`Playlist::add_tracks`].
+#[derive(Debug)]
+pub struct PlaylistAddErrorCollection {
+    pub errors: Vec<anyhow::Error>,
+}
+
+impl Display for PlaylistAddErrorCollection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "There are {} Errors adding tracks to the playlist: [",
+            self.errors.len()
+        )?;
+
+        for err in &self.errors {
+            writeln!(f, "  {err},")?;
+        }
+
+        write!(f, "]")
+    }
+}
+
+impl Error for PlaylistAddErrorCollection {}
+
+impl From<Vec<anyhow::Error>> for PlaylistAddErrorCollection {
+    fn from(value: Vec<anyhow::Error>) -> Self {
+        Self {
+            errors: value.into_iter().map(|err| anyhow::anyhow!(err)).collect(),
+        }
+    }
 }
 
 // NOTE: this is not "thiserror" due to custom "Display" impl (the "Option" handling)
