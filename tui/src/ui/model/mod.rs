@@ -597,33 +597,4 @@ impl Model {
         }
         false
     }
-
-    /// Handle running [`RunningStatus`] having possibly changed.
-    pub fn handle_status(&mut self, new_status: RunningStatus) {
-        let old_status = self.playback.status();
-        // nothing needs to be done as the status is the same
-        if new_status == old_status {
-            return;
-        }
-
-        self.playback.set_status(new_status);
-
-        match new_status {
-            RunningStatus::Running => {
-                // This is to show the first album photo
-                if old_status == RunningStatus::Stopped {
-                    self.player_update_current_track_after();
-                }
-            }
-            RunningStatus::Stopped => {
-                // This is to clear the photo shown when stopped
-                if self.playback.playlist.is_empty() {
-                    self.player_update_current_track_after();
-                }
-            }
-            RunningStatus::Paused => {
-                self.player_update_current_track_after();
-            }
-        }
-    }
 }
