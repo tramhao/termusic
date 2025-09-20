@@ -20,6 +20,7 @@
 - Fix(tui): properly reset lyric text once leaving podcast layout.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
 - Fix(server): on rusty backend, behave correctly when a next/previous occurs while a source is pre-fetched.
+- Fix(server): on rusty backend, handle the case of symphonia having a initial 0-length buffer.
 - Fix(server): on mpv backend and linux compile, dont force `ao` to be `pulse`.
 - Fix: due to the Track database re-implementation, a bug where the database could grow with duplicated paths is fixed.
 

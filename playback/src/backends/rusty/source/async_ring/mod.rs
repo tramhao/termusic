@@ -435,11 +435,22 @@ impl AsyncRingSource {
 
         Some(sample)
     }
+
+    /// Get whether the Seek channel is still open and available.
+    fn is_seek_channel_active(&self) -> bool {
+        self.seek_tx.as_ref().is_some_and(|v| !v.is_closed())
+    }
 }
 
 impl Source for AsyncRingSource {
     #[inline]
     fn current_span_len(&self) -> Option<usize> {
+        // this workaround might not be great, but on "None" rodio *never* retries reading this value
+        // but if we return "0", it assumes the stream is done.
+        if self.current_span_len == 0 && self.is_seek_channel_active() {
+            return Some(1);
+        }
+
         Some(self.current_span_len)
     }
 
@@ -492,7 +503,11 @@ impl Iterator for AsyncRingSource {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_span_len == 0 {
+        // This uses the seek channel as a indicator to see if the decoder is still active.
+        // This initial "0" may happen in symphonia for whatever reason in ogg-vorbis, see https://github.com/tramhao/termusic/issues/566
+        // The seek channel can be used this way, as it only gets closed by the consumer (see the EOS path in the match below)
+        // or if the decoder has exited (via error or something).
+        if self.current_span_len == 0 && !self.is_seek_channel_active() {
             return None;
         }
 
