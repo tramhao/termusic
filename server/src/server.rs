@@ -612,7 +612,7 @@ fn player_loop(
             }
             PlayerCmd::PlaylistAddTrack(info) => {
                 if let Err(err) = player.playlist.write().add_tracks(info, &player.db_podcast) {
-                    error!("Error adding tracks: {err}");
+                    error!("Error adding tracks: {err:?}");
                 }
             }
             PlayerCmd::PlaylistRemoveTrack(info) => {
