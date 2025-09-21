@@ -146,10 +146,10 @@ Then install with:
 make install
 ```
 
-By default, termusic can display album covers in Kitty or iTerm2 (mac, not tested).
+By default, termusic can display album covers in Kitty or iTerm2.
 If you need album covers displayed on other terminals, you can enable the `sixel` protocol or use a ueberzug implementation(x11/xwayland only).
 
-To build with all backends and all cover protocols:
+To build all backends and all cover protocols and install them in your home:
 
 ```bash
 make full
@@ -161,7 +161,13 @@ Finally, you can run it with:
 ~/.local/share/cargo/bin/termusic
 ```
 
-You can copy it anywhere in your `$PATH`. The configuration file for the TUI is located in `~/.config/termusic/tui.toml`, and the configuration file for the server is located in `~/.config/termusic/server.toml` (or on macOS, `~/Library/Application Support/termusic/tui.toml`, `~/Library/Application Support/termusic/server.toml`, respectively). <!---The MacOS, i assume it has the same rules as linux, so its a good idea to check, as i lack and macOS machine.-->
+To build with all backends and all cover protocols without copying binaries elsewhere:
+
+```bash
+make all-backends
+```
+
+You can copy it anywhere in your `$PATH`. The configuration file for the TUI is located in `~/.config/termusic/tui.toml`, and the configuration file for the server is located in `~/.config/termusic/server.toml` (or on macOS, `~/Library/Application Support/termusic/tui.toml`, `~/Library/Application Support/termusic/server.toml`, respectively).
 However, as this is a minimalistic program, you don't need to edit the configuration file and almost everything can be set from the app.
 
 ## TODO
