@@ -1089,7 +1089,10 @@ impl Model {
 
                 self.lyric_update_for_radio(response.radio_title);
 
-                self.handle_status(RunningStatus::from_u32(response.status));
+                self.playback
+                    .set_status(RunningStatus::from_u32(response.status));
+                // "GetProgress" is, as of ~termusic 0.11.0~0.12.0, only called initially or having missed events, so everything should be reloaded.
+                self.player_update_current_track_after();
             }
             ServerReqResponse::FullPlaylist(playlist_tracks) => {
                 info!("Processing Playlist from server");

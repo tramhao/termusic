@@ -18,6 +18,7 @@
 - Fix(tui): faster music library node open/close (right/left).
 - Fix(tui): when in podcast layout, always show the currently selected episode's description (instead of only when moving to it).
 - Fix(tui): properly reset lyric text once leaving podcast layout.
+- Fix(tui): always properly show Progress component's title (Status, Volume, Speed, etc).
 - Fix(server): when adding multipl tracks to the playlist, dont exit on first error and add remaining possible tracks.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
 - Fix(server): on rusty backend, behave correctly when a next/previous occurs while a source is pre-fetched.

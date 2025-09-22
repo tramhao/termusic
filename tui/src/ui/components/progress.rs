@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use termusiclib::config::TuiOverlay;
+use termusiclib::player::RunningStatus;
 use termusiclib::track::DurationFmtShort;
 use termusiclib::track::MediaTypesSimple;
 use tui_realm_stdlib::ProgressBar;
@@ -45,6 +46,36 @@ impl Component<Msg, UserEvent> for Progress {
     }
 }
 
+#[allow(clippy::cast_precision_loss)] // speed is never realisitcally expected to be above i16::MAX
+fn title_format(
+    status: RunningStatus,
+    title: Option<&str>,
+    volume: u16,
+    speed: i32,
+    gapless: bool,
+) -> String {
+    let gapless = if gapless { "True" } else { "False" };
+
+    if let Some(title) = title {
+        format!(
+            " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+            status,
+            title,
+            volume,
+            speed as f32 / 10.0,
+            gapless,
+        )
+    } else {
+        format!(
+            " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+            status,
+            volume,
+            speed as f32 / 10.0,
+            gapless,
+        )
+    }
+}
+
 impl Model {
     pub fn progress_reload(&mut self) {
         assert!(
@@ -59,38 +90,44 @@ impl Model {
         self.progress_update_title();
     }
 
-    #[allow(clippy::cast_precision_loss)]
+    /// Update the [`Progress`] component's title.
+    ///
+    /// This needs to be run if one of the following changes:
+    /// - volume
+    /// - speed
+    /// - gapless
+    /// - running status
+    /// - moving onto / off a podcast track
     pub fn progress_update_title(&mut self) {
         let config_server = self.config_server.read();
-        let gapless = if config_server.settings.player.gapless {
-            "True"
-        } else {
-            "False"
-        };
-        let mut progress_title = String::new();
-        if let Some(track) = self.playback.current_track() {
+        let player = &config_server.settings.player;
+
+        let progress_title = if let Some(track) = self.playback.current_track() {
             match track.media_type() {
-                MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => {
-                    progress_title = format!(
-                        " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.playback.status(),
-                        config_server.settings.player.volume,
-                        config_server.settings.player.speed as f32 / 10.0,
-                        gapless,
-                    );
-                }
-                MediaTypesSimple::Podcast => {
-                    progress_title = format!(
-                        " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.playback.status(),
-                        track.title().unwrap_or("Unknown title"),
-                        config_server.settings.player.volume,
-                        config_server.settings.player.speed as f32 / 10.0,
-                        gapless,
-                    );
-                }
+                MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => title_format(
+                    self.playback.status(),
+                    None,
+                    player.volume,
+                    player.speed,
+                    player.gapless,
+                ),
+                MediaTypesSimple::Podcast => title_format(
+                    self.playback.status(),
+                    Some(track.title().unwrap_or("Unknown title")),
+                    player.volume,
+                    player.speed,
+                    player.gapless,
+                ),
             }
-        }
+        } else {
+            title_format(
+                self.playback.status(),
+                None,
+                player.volume,
+                player.speed,
+                player.gapless,
+            )
+        };
 
         drop(config_server);
         self.app
