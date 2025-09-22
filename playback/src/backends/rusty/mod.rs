@@ -357,6 +357,7 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
 
         tokio::task::spawn_blocking(move || {
             handle.block_on(decode_task(decoder, prod));
+            trace!("Decode task returned");
         });
 
         sink.append(
@@ -392,11 +393,16 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
 
         select! {
             // if there is nothing to write, this future may exit immediately, causing a fast-loop until seek or dropped.
-            written = write_fut, if !exhausted_buffer => {
-                written.ok()?;
-                decoder.advance_offset(decoder.get_buffer().len());
+            written = write_fut => {
+                // only check the result and advance the buffer if the send buffer is not 0-length
+                // as "written" in that case will be "Err".
+                if !exhausted_buffer {
+                    written.ok()?;
+                    decoder.advance_offset(decoder.get_buffer().len());
+                }
             },
             seek = seek_fut => {
+                // "seek" being "None" here means that the seek channel is closed, which in turn means we can abort decoding.
                 let seek = seek?;
                 decode_task_seek_fut(&mut decoder, &mut prod, seek).await?;
             }
