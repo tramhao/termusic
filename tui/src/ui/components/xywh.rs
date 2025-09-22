@@ -121,7 +121,7 @@ impl Model {
                     Ok(v) => v,
                     Err(err) => {
                         error!(
-                            "Getting the track for \"{}\" failed! Error: {}",
+                            "Getting the cover for \"{}\" failed! Error: {}",
                             track_data.path().display(),
                             err
                         );
