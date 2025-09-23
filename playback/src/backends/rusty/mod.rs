@@ -380,6 +380,7 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
 
 /// The task that runs the decoder and writes to the ringbuffer, until a error or the consumer closes.
 async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) -> Option<()> {
+    let mut send_eos = false;
     loop {
         // will always write the full buffer as long as the consumer is connected
         let seek_fut = prod.wait_seek();
@@ -393,7 +394,8 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
 
         select! {
             // if there is nothing to write, this future may exit immediately, causing a fast-loop until seek or dropped.
-            written = write_fut => {
+            // that is why condition is here, to only listen on the "seek" future.
+            written = write_fut, if !send_eos => {
                 // only check the result and advance the buffer if the send buffer is not 0-length
                 // as "written" in that case will be "Err".
                 if !exhausted_buffer {
@@ -402,6 +404,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
                 }
             },
             seek = seek_fut => {
+                send_eos = false;
                 // "seek" being "None" here means that the seek channel is closed, which in turn means we can abort decoding.
                 let seek = seek?;
                 decode_task_seek_fut(&mut decoder, &mut prod, seek).await?;
@@ -412,6 +415,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
         if decoder.decode_once().is_none() {
             trace!("Sending decoder EOS");
             prod.new_eos().await.ok()?;
+            send_eos = true;
         }
         let new_spec = decoder.get_spec();
         if spec_len != new_spec {
