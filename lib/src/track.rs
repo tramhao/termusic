@@ -541,6 +541,11 @@ fn get_picture_for_music_track(track_path: &Path) -> Result<Option<Picture>> {
     Ok(Some(picture))
 }
 
+/// All extension we support to find in a parent folder of a given track to use as a cover image.
+///
+/// The matching is done via lowercase EQ.
+const SUPPORTED_IMG_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png"];
+
 /// Find a picture file and parse it in the parent directory of the given path.
 ///
 /// # Errors
@@ -569,7 +574,10 @@ fn find_folder_picture(track_path: &Path) -> Result<Option<Picture>> {
         };
 
         // only take some picture files we can handle and are common
-        if ext != "jpg" || ext != "png" {
+        if !SUPPORTED_IMG_EXTENSIONS
+            .iter()
+            .any(|v| ext.eq_ignore_ascii_case(v))
+        {
             continue;
         }
 

@@ -25,6 +25,7 @@
 - Fix(server): on rusty backend, handle the case of symphonia having a initial 0-length buffer.
 - Fix(server): on mpv backend and linux compile, dont force `ao` to be `pulse`.
 - Fix: due to the Track database re-implementation, a bug where the database could grow with duplicated paths is fixed.
+- Fix: correctly find images in track's parent directory, if available.
 
 ### [V0.11.0]
 - Released on: July 1, 2025.
