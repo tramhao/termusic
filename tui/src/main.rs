@@ -66,37 +66,8 @@ async fn actual_main() -> Result<()> {
     }
 
     // launch the daemon if it isn't already
-    let mut pid = find_active_server_process().map_or(0, Pid::as_u32);
-
-    if pid == 0 {
-        let termusic_server_prog = get_server_binary_exe()?;
-
-        let mut server_args = vec![];
-
-        // dont clone over "log-to-file", because default is "true" now, and otherwise can be controlled via TMS_LOGTOFILE or TMS_LOGFILE
-        // server_args.push("--log-to-file");
-        // if args.log_options.log_to_file {
-        //     server_args.push("true");
-        // } else {
-        //     server_args.push("false");
-        // }
-
-        if args.log_options.file_color_log {
-            server_args.push("--log-filecolor");
-        }
-
-        if let Some(backend) = args.backend {
-            server_args.push("--backend");
-            server_args.push(backend.as_str());
-        }
-
-        // server can stay around after client exits (if supported by the system)
-        #[allow(clippy::zombie_processes)]
-        let proc = utils::spawn_process(&termusic_server_prog, false, false, &server_args)
-            .unwrap_or_else(|_| panic!("Could not find {} binary", termusic_server_prog.display()));
-
-        pid = proc.id();
-    }
+    let pid =
+        find_active_server_process().map_or_else(|| launch_server(&args), |v| Ok(v.as_u32()))?;
 
     println!("Server process ID: {pid}");
     SERVER_PID
@@ -124,6 +95,43 @@ async fn actual_main() -> Result<()> {
     info!("Bye");
 
     Ok(())
+}
+
+/// Launch the server, passing along some arguments like `--backend`.
+///
+/// Returns the launched PID.
+fn launch_server(args: &cli::Args) -> Result<u32> {
+    let termusic_server_prog = get_server_binary_exe()?;
+
+    let mut server_args = vec![];
+
+    // dont clone over "log-to-file", because default is "true" now, and otherwise can be controlled via TMS_LOGTOFILE or TMS_LOGFILE
+    // server_args.push("--log-to-file");
+    // if args.log_options.log_to_file {
+    //     server_args.push("true");
+    // } else {
+    //     server_args.push("false");
+    // }
+
+    if args.log_options.file_color_log {
+        server_args.push("--log-filecolor");
+    }
+
+    if let Some(backend) = args.backend {
+        server_args.push("--backend");
+        server_args.push(backend.as_str());
+    }
+
+    // server can stay around after client exits (if supported by the system)
+    #[allow(clippy::zombie_processes)]
+    let proc = utils::spawn_process(&termusic_server_prog, false, false, &server_args).context(
+        format!(
+            "Could not start binary \"{}\"",
+            termusic_server_prog.display()
+        ),
+    )?;
+
+    Ok(proc.id())
 }
 
 /// Try to find a active server process, returning its [`Pid`].
