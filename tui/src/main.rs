@@ -8,8 +8,8 @@ use flexi_logger::LogSpecification;
 use parking_lot::Mutex;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
@@ -20,7 +20,11 @@ use termusiclib::config::{
     new_shared_tui_settings,
 };
 use termusiclib::player::music_player_client::MusicPlayerClient;
+use tokio::io::AsyncReadExt;
+use tokio::process::Child;
+use tokio::sync::RwLock;
 use tokio::task::AbortHandle;
+use tokio_util::sync::CancellationToken;
 
 use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::{podcast, utils};
@@ -66,8 +70,18 @@ async fn actual_main() -> Result<()> {
     }
 
     // launch the daemon if it isn't already
-    let pid =
-        find_active_server_process().map_or_else(|| launch_server(&args), |v| Ok(v.as_u32()))?;
+    let (pid, child) = {
+        let active_pid = find_active_server_process();
+
+        if let Some(pid) = active_pid {
+            (pid.as_u32(), None)
+        } else {
+            let child = launch_server(&args)?;
+            (child.id().unwrap(), Some(child))
+        }
+    };
+
+    let server_output = child.map(collect_server_output);
 
     println!("Server process ID: {pid}");
     SERVER_PID
@@ -86,8 +100,30 @@ async fn actual_main() -> Result<()> {
 
     info!("Waiting until connected");
 
-    let (client, addr) = wait_till_connected(&config, pid).await?;
+    let (client, addr) = match wait_till_connected(&config, pid).await {
+        Ok(v) => v,
+        Err(err) => {
+            if let Some(server_output) = server_output {
+                server_output.cancel_token.cancel();
+                let stdout = server_output.stdout.read().await;
+                let stderr = server_output.stderr.read().await;
+
+                let stdout = String::from_utf8_lossy(&stdout).to_string();
+                let stderr = String::from_utf8_lossy(&stderr).to_string();
+
+                return Err(err.context(format!(
+                    "Server output during start:\nSTDOUT:\n{stdout}\n---\nSTDERR:\n{stderr}"
+                )));
+            }
+
+            return Err(err);
+        }
+    };
     info!("Connected on {addr}");
+
+    if let Some(server_output) = server_output {
+        server_output.cancel_token.cancel();
+    }
 
     let mut ui = UI::new(config, client).await?;
     ui.run()?;
@@ -97,10 +133,54 @@ async fn actual_main() -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug)]
+struct ServerOutput {
+    stdout: RwLock<Vec<u8>>,
+    stderr: RwLock<Vec<u8>>,
+    cancel_token: CancellationToken,
+}
+
+/// Spawn a task that collects the server's log output, until cancelled.
+fn collect_server_output(mut child: Child) -> Arc<ServerOutput> {
+    let output = Arc::new(ServerOutput {
+        stdout: RwLock::new(Vec::new()),
+        stderr: RwLock::new(Vec::new()),
+        cancel_token: CancellationToken::new(),
+    });
+    let res = output.clone();
+
+    let mut stdout = child.stdout.take().unwrap();
+    let mut stderr = child.stderr.take().unwrap();
+
+    tokio::spawn(async move {
+        let mut handle_stdout = output.stdout.write().await;
+        let mut handle_stderr = output.stderr.write().await;
+        let cancel_token = output.cancel_token.clone();
+
+        loop {
+            tokio::select! {
+                _ = stdout.read_buf(&mut *handle_stdout) => {
+
+                },
+                _ = stderr.read_buf(&mut *handle_stderr) => {
+
+                }
+                () = cancel_token.cancelled() => {
+                    break;
+                }
+            }
+        }
+
+        debug!("Server log collection task ended");
+    });
+
+    res
+}
+
 /// Launch the server, passing along some arguments like `--backend`.
 ///
-/// Returns the launched PID.
-fn launch_server(args: &cli::Args) -> Result<u32> {
+/// Returns the launched [`Child`].
+fn launch_server(args: &cli::Args) -> Result<Child> {
     let termusic_server_prog = get_server_binary_exe()?;
 
     let mut server_args = vec![];
@@ -124,14 +204,13 @@ fn launch_server(args: &cli::Args) -> Result<u32> {
 
     // server can stay around after client exits (if supported by the system)
     #[allow(clippy::zombie_processes)]
-    let proc = utils::spawn_process(&termusic_server_prog, false, false, &server_args).context(
-        format!(
+    let proc =
+        utils::spawn_process(&termusic_server_prog, false, true, &server_args).context(format!(
             "Could not start binary \"{}\"",
             termusic_server_prog.display()
-        ),
-    )?;
+        ))?;
 
-    Ok(proc.id())
+    Ok(proc)
 }
 
 /// Try to find a active server process, returning its [`Pid`].

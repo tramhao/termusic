@@ -9,6 +9,7 @@
 - Change(tui): convert event-loop to be practically fully event-driven. (less cpu cycles wasted)
 - Feat(tui): make the Config editor dynamically size elements.
 - Feat(tui): make the Config editor (at least rudementally) scrollable.
+- Feat(tui): collect spawned server logs until connected for better error, in case server exits before being connected.
 - Feat(server): add extra config section for metadata scanning and parsing.
 - Feat(server): on rusty backend, allow configuring output sample rate, now defaulting to 48_000Hz (instead of rodio default 44_100Hz).
 - Feat(server): on mpv backend, add option to configure `audio-device` property.
