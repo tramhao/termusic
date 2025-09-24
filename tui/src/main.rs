@@ -112,7 +112,7 @@ async fn actual_main() -> Result<()> {
                 let stderr = String::from_utf8_lossy(&stderr).to_string();
 
                 return Err(err.context(format!(
-                    "Server output during start:\nSTDOUT:\n{stdout}\n---\nSTDERR:\n{stderr}"
+                    "Server output during start:\n---STDOUT---\n{stdout}\n---STDERR---\n{stderr}\n---"
                 )));
             }
 
