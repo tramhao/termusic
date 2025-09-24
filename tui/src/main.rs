@@ -66,8 +66,6 @@ async fn actual_main() -> Result<()> {
     }
 
     // launch the daemon if it isn't already
-    let mut termusic_server_prog = std::path::PathBuf::from("termusic-server");
-
     let mut system = System::new();
     system.refresh_all();
     let mut launch_daemon = true;
@@ -83,17 +81,9 @@ async fn actual_main() -> Result<()> {
         }
     }
 
-    // try to find the server binary adjacent to the currently executing binary path
-    let potential_server_exe = {
-        let mut exe = std::env::current_exe()?;
-        exe.pop();
-        exe.join(&termusic_server_prog)
-    };
-    if potential_server_exe.exists() {
-        termusic_server_prog = potential_server_exe;
-    }
-
     if launch_daemon {
+        let termusic_server_prog = get_server_binary_exe()?;
+
         let mut server_args = vec![];
 
         // dont clone over "log-to-file", because default is "true" now, and otherwise can be controlled via TMS_LOGTOFILE or TMS_LOGFILE
@@ -147,6 +137,24 @@ async fn actual_main() -> Result<()> {
     info!("Bye");
 
     Ok(())
+}
+
+/// Try to find the server binary adjacent to the current executable path.
+/// Otherwise return command to let system PATH figure it out.
+fn get_server_binary_exe() -> Result<PathBuf> {
+    let mut termusic_server_prog = std::path::PathBuf::from("termusic-server");
+
+    // try to find the server binary adjacent to the currently executing binary path
+    let potential_server_exe = {
+        let mut exe = std::env::current_exe()?;
+        exe.pop();
+        exe.join(&termusic_server_prog)
+    };
+    if potential_server_exe.exists() {
+        termusic_server_prog = potential_server_exe;
+    }
+
+    Ok(termusic_server_prog)
 }
 
 /// Timeout to give up connecting.
