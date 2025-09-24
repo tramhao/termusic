@@ -1,17 +1,15 @@
-mod cli;
-mod logger;
-mod ui;
-
-use anyhow::{Context, Result, bail};
-use clap::Parser;
-use flexi_logger::LogSpecification;
-use parking_lot::Mutex;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
+
+use anyhow::{Context, Result, bail};
+use clap::Parser;
+use flexi_logger::LogSpecification;
+use parking_lot::Mutex;
+use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
 use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
@@ -20,15 +18,18 @@ use termusiclib::config::{
     new_shared_tui_settings,
 };
 use termusiclib::player::music_player_client::MusicPlayerClient;
+use termusiclib::{podcast, utils};
 use tokio::io::AsyncReadExt;
 use tokio::process::Child;
 use tokio::sync::RwLock;
 use tokio::task::AbortHandle;
 use tokio_util::sync::CancellationToken;
 
-use sysinfo::{Pid, ProcessStatus, System};
-use termusiclib::{podcast, utils};
 use ui::UI;
+
+mod cli;
+mod logger;
+mod ui;
 
 #[macro_use]
 extern crate log;
