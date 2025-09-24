@@ -66,22 +66,9 @@ async fn actual_main() -> Result<()> {
     }
 
     // launch the daemon if it isn't already
-    let mut system = System::new();
-    system.refresh_all();
-    let mut launch_daemon = true;
-    let mut pid = 0;
-    for (id, proc) in system.processes() {
-        let Some(exe) = proc.exe().map(|v| v.display().to_string()) else {
-            continue;
-        };
-        if exe.contains("termusic-server") {
-            pid = id.as_u32();
-            launch_daemon = false;
-            break;
-        }
-    }
+    let mut pid = find_active_server_process().map_or(0, Pid::as_u32);
 
-    if launch_daemon {
+    if pid == 0 {
         let termusic_server_prog = get_server_binary_exe()?;
 
         let mut server_args = vec![];
@@ -137,6 +124,23 @@ async fn actual_main() -> Result<()> {
     info!("Bye");
 
     Ok(())
+}
+
+/// Try to find a active server process, returning its [`Pid`].
+/// Otherwise if not found, returns [`None`].
+fn find_active_server_process() -> Option<Pid> {
+    let mut system = System::new();
+    system.refresh_all();
+    for (id, proc) in system.processes() {
+        let Some(exe) = proc.exe().map(|v| v.display().to_string()) else {
+            continue;
+        };
+        if exe.contains("termusic-server") {
+            return Some(*id);
+        }
+    }
+
+    None
 }
 
 /// Try to find the server binary adjacent to the current executable path.
