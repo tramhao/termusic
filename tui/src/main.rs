@@ -1,17 +1,15 @@
-mod cli;
-mod logger;
-mod ui;
+use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
+use std::time::{Duration, Instant};
+use std::{error::Error, path::Path};
 
 use anyhow::{Context, Result, bail};
 use clap::Parser;
 use flexi_logger::LogSpecification;
 use parking_lot::Mutex;
-use std::net::SocketAddr;
-use std::path::PathBuf;
-use std::sync::OnceLock;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{Duration, Instant};
-use std::{error::Error, path::Path};
+use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
 use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
@@ -20,11 +18,18 @@ use termusiclib::config::{
     new_shared_tui_settings,
 };
 use termusiclib::player::music_player_client::MusicPlayerClient;
-use tokio::task::AbortHandle;
-
-use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::{podcast, utils};
+use tokio::io::AsyncReadExt;
+use tokio::process::Child;
+use tokio::sync::RwLock;
+use tokio::task::AbortHandle;
+use tokio_util::sync::CancellationToken;
+
 use ui::UI;
+
+mod cli;
+mod logger;
+mod ui;
 
 #[macro_use]
 extern crate log;
@@ -66,60 +71,18 @@ async fn actual_main() -> Result<()> {
     }
 
     // launch the daemon if it isn't already
-    let mut termusic_server_prog = std::path::PathBuf::from("termusic-server");
+    let (pid, child) = {
+        let active_pid = find_active_server_process();
 
-    let mut system = System::new();
-    system.refresh_all();
-    let mut launch_daemon = true;
-    let mut pid = 0;
-    for (id, proc) in system.processes() {
-        let Some(exe) = proc.exe().map(|v| v.display().to_string()) else {
-            continue;
-        };
-        if exe.contains("termusic-server") {
-            pid = id.as_u32();
-            launch_daemon = false;
-            break;
+        if let Some(pid) = active_pid {
+            (pid.as_u32(), None)
+        } else {
+            let child = launch_server(&args)?;
+            (child.id().unwrap(), Some(child))
         }
-    }
-
-    // try to find the server binary adjacent to the currently executing binary path
-    let potential_server_exe = {
-        let mut exe = std::env::current_exe()?;
-        exe.pop();
-        exe.join(&termusic_server_prog)
     };
-    if potential_server_exe.exists() {
-        termusic_server_prog = potential_server_exe;
-    }
 
-    if launch_daemon {
-        let mut server_args = vec![];
-
-        // dont clone over "log-to-file", because default is "true" now, and otherwise can be controlled via TMS_LOGTOFILE or TMS_LOGFILE
-        // server_args.push("--log-to-file");
-        // if args.log_options.log_to_file {
-        //     server_args.push("true");
-        // } else {
-        //     server_args.push("false");
-        // }
-
-        if args.log_options.file_color_log {
-            server_args.push("--log-filecolor");
-        }
-
-        if let Some(backend) = args.backend {
-            server_args.push("--backend");
-            server_args.push(backend.as_str());
-        }
-
-        // server can stay around after client exits (if supported by the system)
-        #[allow(clippy::zombie_processes)]
-        let proc = utils::spawn_process(&termusic_server_prog, false, false, &server_args)
-            .unwrap_or_else(|_| panic!("Could not find {} binary", termusic_server_prog.display()));
-
-        pid = proc.id();
-    }
+    let server_output = child.map(collect_server_output);
 
     println!("Server process ID: {pid}");
     SERVER_PID
@@ -138,8 +101,30 @@ async fn actual_main() -> Result<()> {
 
     info!("Waiting until connected");
 
-    let (client, addr) = wait_till_connected(&config, pid).await?;
+    let (client, addr) = match wait_till_connected(&config, pid).await {
+        Ok(v) => v,
+        Err(err) => {
+            if let Some(server_output) = server_output {
+                server_output.cancel_token.cancel();
+                let stdout = server_output.stdout.read().await;
+                let stderr = server_output.stderr.read().await;
+
+                let stdout = String::from_utf8_lossy(&stdout).to_string();
+                let stderr = String::from_utf8_lossy(&stderr).to_string();
+
+                return Err(err.context(format!(
+                    "Server output during start:\n---STDOUT---\n{stdout}\n---STDERR---\n{stderr}\n---"
+                )));
+            }
+
+            return Err(err);
+        }
+    };
     info!("Connected on {addr}");
+
+    if let Some(server_output) = server_output {
+        server_output.cancel_token.cancel();
+    }
 
     let mut ui = UI::new(config, client).await?;
     ui.run()?;
@@ -147,6 +132,121 @@ async fn actual_main() -> Result<()> {
     info!("Bye");
 
     Ok(())
+}
+
+#[derive(Debug)]
+struct ServerOutput {
+    stdout: RwLock<Vec<u8>>,
+    stderr: RwLock<Vec<u8>>,
+    cancel_token: CancellationToken,
+}
+
+/// Spawn a task that collects the server's log output, until cancelled.
+fn collect_server_output(mut child: Child) -> Arc<ServerOutput> {
+    let output = Arc::new(ServerOutput {
+        stdout: RwLock::new(Vec::new()),
+        stderr: RwLock::new(Vec::new()),
+        cancel_token: CancellationToken::new(),
+    });
+    let res = output.clone();
+
+    let mut stdout = child.stdout.take().unwrap();
+    let mut stderr = child.stderr.take().unwrap();
+
+    tokio::spawn(async move {
+        let mut handle_stdout = output.stdout.write().await;
+        let mut handle_stderr = output.stderr.write().await;
+        let cancel_token = output.cancel_token.clone();
+
+        loop {
+            tokio::select! {
+                _ = stdout.read_buf(&mut *handle_stdout) => {
+
+                },
+                _ = stderr.read_buf(&mut *handle_stderr) => {
+
+                }
+                () = cancel_token.cancelled() => {
+                    break;
+                }
+            }
+        }
+
+        debug!("Server log collection task ended");
+    });
+
+    res
+}
+
+/// Launch the server, passing along some arguments like `--backend`.
+///
+/// Returns the launched [`Child`].
+fn launch_server(args: &cli::Args) -> Result<Child> {
+    let termusic_server_prog = get_server_binary_exe()?;
+
+    let mut server_args = vec![];
+
+    // dont clone over "log-to-file", because default is "true" now, and otherwise can be controlled via TMS_LOGTOFILE or TMS_LOGFILE
+    // server_args.push("--log-to-file");
+    // if args.log_options.log_to_file {
+    //     server_args.push("true");
+    // } else {
+    //     server_args.push("false");
+    // }
+
+    if args.log_options.file_color_log {
+        server_args.push("--log-filecolor");
+    }
+
+    if let Some(backend) = args.backend {
+        server_args.push("--backend");
+        server_args.push(backend.as_str());
+    }
+
+    // server can stay around after client exits (if supported by the system)
+    #[allow(clippy::zombie_processes)]
+    let proc =
+        utils::spawn_process(&termusic_server_prog, false, true, &server_args).context(format!(
+            "Could not start binary \"{}\"",
+            termusic_server_prog.display()
+        ))?;
+
+    Ok(proc)
+}
+
+/// Try to find a active server process, returning its [`Pid`].
+/// Otherwise if not found, returns [`None`].
+fn find_active_server_process() -> Option<Pid> {
+    let mut system = System::new();
+    system.refresh_all();
+    for (id, proc) in system.processes() {
+        let Some(exe) = proc.exe().map(|v| v.display().to_string()) else {
+            continue;
+        };
+        if exe.contains("termusic-server") {
+            return Some(*id);
+        }
+    }
+
+    None
+}
+
+/// Try to find the server binary adjacent to the current executable path.
+/// Otherwise return command to let system PATH figure it out.
+fn get_server_binary_exe() -> Result<PathBuf> {
+    let mut termusic_server_prog = std::path::PathBuf::from("termusic-server");
+
+    // try to find the server binary adjacent to the currently executing binary path
+    let potential_server_exe = {
+        let mut exe = std::env::current_exe()?;
+        exe.pop();
+        exe.join(&termusic_server_prog)
+    };
+    if potential_server_exe.exists() {
+        termusic_server_prog = potential_server_exe;
+    }
+
+    Ok(termusic_server_prog)
 }
 
 /// Timeout to give up connecting.

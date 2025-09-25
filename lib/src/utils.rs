@@ -1,15 +1,13 @@
 use std::borrow::Cow;
+use std::ffi::OsStr;
 use std::iter::FusedIterator;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::{
-    ffi::OsStr,
-    process::{Child, Command},
-};
 
 use anyhow::{Context, Result, anyhow};
 use pinyin::ToPinyin;
 use rand::Rng;
+use tokio::process::{Child, Command};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::config::ServerOverlay;
@@ -211,7 +209,10 @@ pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
         Command::new(prog)
     };
     cmd.stdin(Stdio::null());
-    if !shout_output {
+    if shout_output {
+        cmd.stdout(Stdio::piped());
+        cmd.stderr(Stdio::piped());
+    } else {
         cmd.stdout(Stdio::null());
         cmd.stderr(Stdio::null());
     }

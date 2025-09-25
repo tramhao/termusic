@@ -19,6 +19,7 @@ pub fn setup(args: &Args) -> LoggerHandle {
                 log_format,
                 color_log_format,
             ))
+            .panic_if_error_channel_is_broken(false)
             .log_to_stderr();
 
         if args.log_options.log_to_file {
