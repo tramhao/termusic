@@ -69,12 +69,12 @@ impl std::fmt::Display for Backend {
 /// Subcommands for the binary
 #[derive(Subcommand, Debug)]
 pub enum Action {
-    /// Import Podcast feeds from a opml file.
+    /// Export Podcast feeds to a opml file.
     Export {
         #[arg(value_name = "FILE")]
         file: PathBuf,
     },
-    /// Export Podcast feeds to a opml file.
+    /// Import Podcast feeds from a opml file.
     Import {
         #[arg(value_name = "FILE")]
         file: PathBuf,
