@@ -292,7 +292,7 @@ mod windows {
 
             let handle_result = unsafe {
                 let instance = GetModuleHandleW(None)
-                    .map_err(|e| (format!("Getting module handle failed: {e}")))?;
+                    .map_err(|e| format!("Getting module handle failed: {e}"))?;
 
                 let wnd_class = WNDCLASSEXW {
                     cbSize: mem::size_of::<WNDCLASSEXW>() as u32,
