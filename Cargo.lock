@@ -4227,6 +4227,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-content"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3753ca04f350fa92d00b6146a3555e63c55388c9ef2e11e09bce2ff1c0b509c6"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_core"
 version = "1.0.221"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4977,6 +4986,7 @@ dependencies = [
  "sanitize-filename",
  "semver",
  "serde",
+ "serde-content",
  "serde_json",
  "serde_yaml",
  "shellexpand",
