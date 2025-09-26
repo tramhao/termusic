@@ -50,7 +50,7 @@ impl<'a, 'de> Deserialize<'de> for ServerConfigVersionedDefaulted<'a> {
                 let _ = write!(err_res, "{err:#}");
             }
         }
-        match <Intermediate<'a>>::deserialize(deserializer)
+        match Intermediate::deserialize(deserializer)
             .map(|v| ServerConfigVersionedDefaulted::Unversioned(v.into_settings()))
         {
             Ok(val) => return Ok(val),
@@ -187,18 +187,18 @@ impl ServerConfigVersioned<'_> {
 /// see <https://github.com/rushmorem/serde-content/issues/27>.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
-pub enum Intermediate<'a> {
-    Some(Cow<'a, ApplicationType>),
+pub enum Intermediate {
+    Some(ApplicationType),
 }
 
-impl Intermediate<'_> {
+impl Intermediate {
     /// Convert Into the type used by the application, instead of what is parsed
     ///
     /// Will convert any version into the latest
     #[must_use]
     pub fn into_settings(self) -> ApplicationType {
         match self {
-            Intermediate::Some(v) => v.into_owned(),
+            Intermediate::Some(v) => v,
         }
     }
 }
