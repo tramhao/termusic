@@ -129,6 +129,7 @@ pub enum IdCEGeneral {
     PlayerAddress,
     PlayerProtocol,
     PlayerUDSPath,
+    PlayerBackend,
     PlayerUseDiscord,
     PlayerUseMpris,
 

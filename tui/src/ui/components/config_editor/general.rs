@@ -23,7 +23,7 @@
  */
 use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::config::v2::server::{ComProtocol, default_uds_socket_path};
+use termusiclib::config::v2::server::{Backend, ComProtocol, default_uds_socket_path};
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use tui_realm_stdlib::Radio;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
@@ -1020,6 +1020,52 @@ impl Component<Msg, UserEvent> for PlayerUDSPath {
 }
 
 #[derive(MockComponent)]
+pub struct PlayerBackend {
+    component: Radio,
+    config: SharedTuiSettings,
+}
+
+impl PlayerBackend {
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
+        let value = match config.server.read().settings.player.backend {
+            Backend::Rusty => 0,
+            Backend::Mpv => 1,
+            Backend::Gstreamer => 2,
+        };
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(config_tui.settings.theme.library_border())
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(["Rusty", "MPV", "Gstreamer"])
+            .foreground(config_tui.settings.theme.library_highlight())
+            .rewind(true)
+            .title(" Playback Backend: ", Alignment::Left)
+            .value(value);
+
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl Component<Msg, UserEvent> for PlayerBackend {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        handle_radio_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
 pub struct ExtraYtdlpArgs {
     component: Input,
     config: SharedTuiSettings,
@@ -1068,6 +1114,7 @@ impl Component<Msg, UserEvent> for ExtraYtdlpArgs {
 
 impl Model {
     /// Mount / Remount the Config-Editor's First Page, the General Options
+    #[allow(clippy::too_many_lines)]
     pub(super) fn remount_config_general(&mut self) -> Result<()> {
         // Mount general page
         self.app.remount(
@@ -1179,6 +1226,12 @@ impl Model {
         )?;
 
         self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)),
+            Box::new(PlayerBackend::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
             Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
             Box::new(ExtraYtdlpArgs::new(self.get_combined_settings())),
             Vec::new(),
@@ -1255,6 +1308,10 @@ impl Model {
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
             IdCEGeneral::PlayerUDSPath,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerBackend,
         )))?;
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(

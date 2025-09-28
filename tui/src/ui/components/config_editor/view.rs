@@ -29,7 +29,7 @@ use anyhow::{Result, bail};
 use include_dir::DirEntry;
 use termusiclib::THEME_DIR;
 use termusiclib::config::v2::server::{
-    ComProtocol, PositionYesNo, PositionYesNoLower, RememberLastPosition,
+    Backend, ComProtocol, PositionYesNo, PositionYesNoLower, RememberLastPosition,
 };
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
@@ -182,14 +182,15 @@ impl Model {
                         IdCEGeneral::PlayerAddress => 15,
                         IdCEGeneral::PlayerProtocol => 16,
                         IdCEGeneral::PlayerUDSPath => 17,
-                        IdCEGeneral::ExtraYtdlpArgs => 18,
+                        IdCEGeneral::PlayerBackend => 18,
+                        IdCEGeneral::ExtraYtdlpArgs => 19,
                     })
                 } else {
                     None
                 }
             });
 
-        let cells = UniformDynamicGrid::new(19, 3, 56 + 2)
+        let cells = UniformDynamicGrid::new(20, 3, 56 + 2)
             .draw_row_low_space()
             .distribute_row_space()
             .focus_node(focus_elem)
@@ -222,8 +223,9 @@ impl Model {
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[15],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[16],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)) => cells[17],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)) => cells[18],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[18],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[19],
         }
     }
 
@@ -880,6 +882,19 @@ impl Model {
             }
 
             config_server.settings.com.socket_path = abs_path.into_owned();
+        }
+
+        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerBackend),
+        )) {
+            let backend = match align {
+                0 => Backend::Rusty,
+                1 => Backend::Mpv,
+                2 => Backend::Gstreamer,
+                // numbers are specified in "PlayerBackend"
+                _ => unreachable!(),
+            };
+            config_server.settings.player.backend = backend;
         }
 
         if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self.app.state(
