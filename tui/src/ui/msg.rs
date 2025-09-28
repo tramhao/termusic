@@ -214,6 +214,7 @@ pub const GENERAL_FOCUS_ORDER: &[IdCEGeneral] = &[
     IdCEGeneral::PlayerPort,
     IdCEGeneral::PlayerAddress,
     IdCEGeneral::PlayerProtocol,
+    IdCEGeneral::PlayerUDSPath,
     IdCEGeneral::ExtraYtdlpArgs,
 ];
 

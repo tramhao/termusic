@@ -181,14 +181,15 @@ impl Model {
                         IdCEGeneral::PlayerPort => 14,
                         IdCEGeneral::PlayerAddress => 15,
                         IdCEGeneral::PlayerProtocol => 16,
-                        IdCEGeneral::ExtraYtdlpArgs => 17,
+                        IdCEGeneral::PlayerUDSPath => 17,
+                        IdCEGeneral::ExtraYtdlpArgs => 18,
                     })
                 } else {
                     None
                 }
             });
 
-        let cells = UniformDynamicGrid::new(18, 3, 56 + 2)
+        let cells = UniformDynamicGrid::new(19, 3, 56 + 2)
             .draw_row_low_space()
             .distribute_row_space()
             .focus_node(focus_elem)
@@ -220,8 +221,9 @@ impl Model {
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[14],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[15],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[16],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)) => cells[17],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[17],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[18],
         }
     }
 
@@ -861,6 +863,23 @@ impl Model {
                 _ => unreachable!(),
             };
             config_server.settings.com.protocol = protocol;
+        }
+
+        if let Ok(State::One(StateValue::String(podcast_dir))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerUDSPath),
+        )) {
+            let abs_path = shellexpand::path::tilde(&podcast_dir);
+
+            if !abs_path.has_root()
+                || abs_path.file_name().is_none()
+                || abs_path.extension().is_none_or(|v| v != "socket")
+            {
+                bail!(
+                    "Invalid UDS socket Path.\nPath need to be absolute and end with \".socket\"."
+                );
+            }
+
+            config_server.settings.com.socket_path = abs_path.into_owned();
         }
 
         if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self.app.state(

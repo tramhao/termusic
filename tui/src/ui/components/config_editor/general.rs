@@ -23,7 +23,7 @@
  */
 use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::config::v2::server::ComProtocol;
+use termusiclib::config::v2::server::{ComProtocol, default_uds_socket_path};
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use tui_realm_stdlib::Radio;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
@@ -966,6 +966,60 @@ impl Component<Msg, UserEvent> for PlayerProtocol {
 }
 
 #[derive(MockComponent)]
+pub struct PlayerUDSPath {
+    component: Input,
+    config: SharedTuiSettings,
+}
+
+impl PlayerUDSPath {
+    pub fn new(config: CombinedSettings) -> Self {
+        let component = {
+            let config_tui = config.tui.read();
+            Input::default()
+                .borders(
+                    Borders::default()
+                        .color(config_tui.settings.theme.library_border())
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(config_tui.settings.theme.library_highlight())
+                .input_type(InputType::Text)
+                .invalid_style(Style::default().fg(Color::Red))
+                .placeholder(
+                    default_uds_socket_path().display().to_string(),
+                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                )
+                .title(" Player UDS Socket Path: ", Alignment::Left)
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .com
+                        .socket_path
+                        .to_string_lossy(),
+                )
+        };
+
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl Component<Msg, UserEvent> for PlayerUDSPath {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        handle_input_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
 pub struct ExtraYtdlpArgs {
     component: Input,
     config: SharedTuiSettings,
@@ -1119,6 +1173,12 @@ impl Model {
         )?;
 
         self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)),
+            Box::new(PlayerUDSPath::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
             Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
             Box::new(ExtraYtdlpArgs::new(self.get_combined_settings())),
             Vec::new(),
@@ -1191,6 +1251,10 @@ impl Model {
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
             IdCEGeneral::PlayerProtocol,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerUDSPath,
         )))?;
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(

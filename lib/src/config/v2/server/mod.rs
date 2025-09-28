@@ -459,18 +459,22 @@ pub struct ComSettings {
     pub address: IpAddr,
 }
 
+/// Helper function to get the default UDS socker path.
+#[must_use]
+pub fn default_uds_socket_path() -> PathBuf {
+    // TODO: maybe default to include user id like "termusic-1000.socket"?
+    std::env::temp_dir().join("termusic.socket")
+}
+
 impl Default for ComSettings {
     fn default() -> Self {
-        // TODO: maybe default to include user id like "termusic-1000.socket"?
-        let socket_path = std::env::temp_dir().join("termusic.socket");
-
         Self {
             #[cfg(unix)]
             protocol: ComProtocol::UDS,
             #[cfg(not(unix))]
             protocol: ComProtocol::HTTP,
 
-            socket_path,
+            socket_path: default_uds_socket_path(),
 
             port: 50101,
             address: "::1".parse().unwrap(),
