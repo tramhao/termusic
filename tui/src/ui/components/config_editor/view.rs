@@ -28,7 +28,9 @@ use std::path::PathBuf;
 use anyhow::{Result, bail};
 use include_dir::DirEntry;
 use termusiclib::THEME_DIR;
-use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
+use termusiclib::config::v2::server::{
+    ComProtocol, PositionYesNo, PositionYesNoLower, RememberLastPosition,
+};
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
@@ -178,14 +180,15 @@ impl Model {
                         IdCEGeneral::PlayerUseDiscord => 13,
                         IdCEGeneral::PlayerPort => 14,
                         IdCEGeneral::PlayerAddress => 15,
-                        IdCEGeneral::ExtraYtdlpArgs => 16,
+                        IdCEGeneral::PlayerProtocol => 16,
+                        IdCEGeneral::ExtraYtdlpArgs => 17,
                     })
                 } else {
                     None
                 }
             });
 
-        let cells = UniformDynamicGrid::new(17, 3, 56 + 2)
+        let cells = UniformDynamicGrid::new(18, 3, 56 + 2)
             .draw_row_low_space()
             .distribute_row_space()
             .focus_node(focus_elem)
@@ -216,8 +219,9 @@ impl Model {
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[13],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[14],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[15],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[16],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[16],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[17],
         }
     }
 
@@ -839,6 +843,24 @@ impl Model {
             if let Ok(addr) = player_port.parse::<IpAddr>() {
                 config_server.settings.com.address = addr;
             }
+        }
+
+        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerProtocol),
+        )) {
+            let protocol = match align {
+                0 => ComProtocol::HTTP,
+                1 => {
+                    // the config will support either value on any system, but will fail to actually start on non-unix systems
+                    if cfg!(not(unix)) {
+                        bail!("UDS Protocol is only supported on unix systems");
+                    }
+                    ComProtocol::UDS
+                }
+                // numbers are specified in "PlayerProtocol"
+                _ => unreachable!(),
+            };
+            config_server.settings.com.protocol = protocol;
         }
 
         if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self.app.state(

@@ -213,6 +213,7 @@ pub const GENERAL_FOCUS_ORDER: &[IdCEGeneral] = &[
     IdCEGeneral::PlayerUseDiscord,
     IdCEGeneral::PlayerPort,
     IdCEGeneral::PlayerAddress,
+    IdCEGeneral::PlayerProtocol,
     IdCEGeneral::ExtraYtdlpArgs,
 ];
 

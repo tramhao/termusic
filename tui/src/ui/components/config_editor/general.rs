@@ -23,6 +23,7 @@
  */
 use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::v2::server::ComProtocol;
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use tui_realm_stdlib::Radio;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
@@ -920,6 +921,51 @@ impl Component<Msg, UserEvent> for PlayerAddress {
 }
 
 #[derive(MockComponent)]
+pub struct PlayerProtocol {
+    component: Radio,
+    config: SharedTuiSettings,
+}
+
+impl PlayerProtocol {
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
+        let value = match config.server.read().settings.com.protocol {
+            ComProtocol::HTTP => 0,
+            ComProtocol::UDS => 1,
+        };
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(config_tui.settings.theme.library_border())
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(["HTTP", "UDS"])
+            .foreground(config_tui.settings.theme.library_highlight())
+            .rewind(true)
+            .title(" Communication Protocol: ", Alignment::Left)
+            .value(value);
+
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl Component<Msg, UserEvent> for PlayerProtocol {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        handle_radio_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
 pub struct ExtraYtdlpArgs {
     component: Input,
     config: SharedTuiSettings,
@@ -1067,6 +1113,12 @@ impl Model {
         )?;
 
         self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)),
+            Box::new(PlayerProtocol::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
             Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
             Box::new(ExtraYtdlpArgs::new(self.get_combined_settings())),
             Vec::new(),
@@ -1135,6 +1187,10 @@ impl Model {
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
             IdCEGeneral::PlayerAddress,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerProtocol,
         )))?;
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
