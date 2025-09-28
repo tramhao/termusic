@@ -57,7 +57,6 @@ pub enum IdConfigEditor {
     Footer,
 
     General(IdCEGeneral),
-    CEThemeSelect,
     Theme(IdCETheme),
     KeyGlobal(IdKeyGlobal),
     KeyOther(IdKeyOther),
@@ -65,6 +64,8 @@ pub enum IdConfigEditor {
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdCETheme {
+    ThemeSelectTable,
+
     LibraryBackground,
     LibraryBorder,
     LibraryForeground,

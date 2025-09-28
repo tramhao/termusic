@@ -1350,7 +1350,7 @@ impl Model {
     ) -> Result<()> {
         // Mount color page
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)),
             Box::new(CEThemeSelectTable::new(config.clone())),
             Vec::new(),
         )?;
@@ -1537,8 +1537,9 @@ impl Model {
 
     /// Unmount the Config-Editor's Second Page, the Theme, Color & Symbol Options
     pub(super) fn umount_config_color(&mut self) -> Result<()> {
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ThemeSelectTable,
+        )))?;
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
             IdCETheme::LibraryLabel,

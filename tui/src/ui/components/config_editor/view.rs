@@ -404,6 +404,7 @@ impl Model {
                         | IdCETheme::FallbackBackground
                         | IdCETheme::FallbackBorder
                         | IdCETheme::FallbackHighlight => 5,
+                        IdCETheme::ThemeSelectTable => return None,
                     })
                 } else {
                     None
@@ -480,7 +481,7 @@ impl Model {
         app_view! {
             app, f,
 
-            &Id::ConfigEditor(IdConfigEditor::CEThemeSelect) => left,
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)) => left,
 
             &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)) => chunks_library[0],
             &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryForeground)) => chunks_library[1],
@@ -631,7 +632,9 @@ impl Model {
                 .ok(),
             ConfigEditorLayout::Color => self
                 .app
-                .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
+                .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                    IdCETheme::ThemeSelectTable,
+                )))
                 .ok(),
             ConfigEditorLayout::Key1 => self
                 .app
@@ -914,7 +917,7 @@ impl Model {
         let table = table.build();
         self.app
             .attr(
-                &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+                &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)),
                 Attribute::Content,
                 AttrValue::Table(table),
             )
@@ -940,7 +943,7 @@ impl Model {
         assert!(
             self.app
                 .attr(
-                    &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+                    &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)),
                     Attribute::Value,
                     AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
                 )

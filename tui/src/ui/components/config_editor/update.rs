@@ -221,7 +221,9 @@ impl Model {
             ConfigEditorMsg::LibraryForegroundBlurUp
             | ConfigEditorMsg::FallbackHighlightBlurDown => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::ThemeSelectTable,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::LibraryForegroundBlurDown | ConfigEditorMsg::LibraryBorderBlurUp => {
