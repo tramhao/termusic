@@ -174,142 +174,46 @@ impl Model {
 
     /// Handle focus of the "General" tab
     fn update_general(&mut self, msg: KFMsg) {
-        let focus_elem = self.app.focus().and_then(|v| {
-            if let Id::ConfigEditor(IdConfigEditor::General(id)) = *v {
+        set_next_in_focus_array(self, msg, GENERAL_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::General(id) = id {
                 Some(id)
             } else {
                 None
             }
         });
-
-        // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
-        let Some(focus_elem) = focus_elem else {
-            let _ = self
-                .app
-                .active(&Id::ConfigEditor(GENERAL_FOCUS_ORDER[0].into()));
-            return;
-        };
-
-        let focus = match msg {
-            KFMsg::Next => GENERAL_FOCUS_ORDER
-                .iter()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(&GENERAL_FOCUS_ORDER[0]),
-            KFMsg::Previous => GENERAL_FOCUS_ORDER
-                .iter()
-                .rev()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(GENERAL_FOCUS_ORDER.last().unwrap()),
-        };
-
-        let _ = self.app.active(&Id::ConfigEditor(focus.into()));
     }
 
     /// Handle focus of the "Theme" tab
     fn update_theme(&mut self, msg: KFMsg) {
-        let focus_elem = self.app.focus().and_then(|v| {
-            if let Id::ConfigEditor(IdConfigEditor::Theme(id)) = *v {
+        set_next_in_focus_array(self, msg, THEME_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::Theme(id) = id {
                 Some(id)
             } else {
                 None
             }
         });
-
-        // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
-        let Some(focus_elem) = focus_elem else {
-            let _ = self
-                .app
-                .active(&Id::ConfigEditor(THEME_FOCUS_ORDER[0].into()));
-            return;
-        };
-
-        let focus = match msg {
-            KFMsg::Next => THEME_FOCUS_ORDER
-                .iter()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(&THEME_FOCUS_ORDER[0]),
-            KFMsg::Previous => THEME_FOCUS_ORDER
-                .iter()
-                .rev()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(THEME_FOCUS_ORDER.last().unwrap()),
-        };
-
-        let _ = self.app.active(&Id::ConfigEditor(focus.into()));
     }
 
     /// Handle focus of the "Key Global" tab
     fn update_key_focus_global(&mut self, msg: KFMsg) {
-        let focus_elem = self.app.focus().and_then(|v| {
-            if let Id::ConfigEditor(IdConfigEditor::KeyGlobal(key)) = *v {
+        set_next_in_focus_array(self, msg, KFGLOBAL_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::KeyGlobal(key) = id {
                 Some(IdKey::Global(key))
             } else {
                 None
             }
         });
-
-        // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
-        let Some(focus_elem) = focus_elem else {
-            let _ = self
-                .app
-                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into()));
-            return;
-        };
-
-        let focus = match msg {
-            KFMsg::Next => KFGLOBAL_FOCUS_ORDER
-                .iter()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(&KFGLOBAL_FOCUS_ORDER[0]),
-            KFMsg::Previous => KFGLOBAL_FOCUS_ORDER
-                .iter()
-                .rev()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(KFGLOBAL_FOCUS_ORDER.last().unwrap()),
-        };
-
-        let _ = self.app.active(&Id::ConfigEditor(focus.into()));
     }
 
     /// Handle focus for the "Key Other" tab
     fn update_key_focus_other(&mut self, msg: KFMsg) {
-        let focus_elem = self.app.focus().and_then(|v| {
-            if let Id::ConfigEditor(IdConfigEditor::KeyOther(key)) = *v {
+        set_next_in_focus_array(self, msg, KFOTHER_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::KeyOther(key) = id {
                 Some(IdKey::Other(key))
             } else {
                 None
             }
         });
-
-        // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
-        let Some(focus_elem) = focus_elem else {
-            let _ = self
-                .app
-                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into()));
-            return;
-        };
-
-        let focus = match msg {
-            KFMsg::Next => KFOTHER_FOCUS_ORDER
-                .iter()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(&KFOTHER_FOCUS_ORDER[0]),
-            KFMsg::Previous => KFOTHER_FOCUS_ORDER
-                .iter()
-                .rev()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(KFOTHER_FOCUS_ORDER.last().unwrap()),
-        };
-
-        let _ = self.app.active(&Id::ConfigEditor(focus.into()));
     }
 
     // cannot reduce a match statement
@@ -513,4 +417,49 @@ impl Model {
             _ => {}
         }
     }
+}
+
+/// Fetch and set the next focus element, based on [`KFMsg`] and current focus.
+///
+/// If focus elem is somehow not available or in the array, defaults to `array[0]`.
+/// Does nothing if the array is empty.
+fn set_next_in_focus_array<T, F>(model: &mut Model, msg: KFMsg, array: &[T], transform: F)
+where
+    F: FnOnce(IdConfigEditor) -> Option<T>,
+    T: Copy + PartialEq + Into<IdConfigEditor>,
+{
+    // simple protection as the code below assumes at least 1 element in the array
+    if array.is_empty() {
+        return;
+    }
+
+    let focus_elem = model.app.focus().and_then(|id| {
+        if let Id::ConfigEditor(v) = *id {
+            transform(v)
+        } else {
+            None
+        }
+    });
+
+    // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
+    let Some(focus_elem) = focus_elem else {
+        let _ = model.app.active(&Id::ConfigEditor(array[0].into()));
+        return;
+    };
+
+    let focus = match msg {
+        KFMsg::Next => array
+            .iter()
+            .skip_while(|v| **v != focus_elem)
+            .nth(1)
+            .unwrap_or(&array[0]),
+        KFMsg::Previous => array
+            .iter()
+            .rev()
+            .skip_while(|v| **v != focus_elem)
+            .nth(1)
+            .unwrap_or(array.last().unwrap()),
+    };
+
+    let _ = model.app.active(&Id::ConfigEditor((*focus).into()));
 }
