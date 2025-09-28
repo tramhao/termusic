@@ -41,8 +41,6 @@ impl Model {
             }
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_editor.config_changed = true,
-            ConfigEditorMsg::General(msg) => self.update_general(msg),
-            ConfigEditorMsg::Theme(msg) => self.update_theme(msg),
 
             ConfigEditorMsg::ConfigSaveOk => {
                 self.app
@@ -114,6 +112,10 @@ impl Model {
             }
 
             ConfigEditorMsg::KeyChange(id, binding) => self.update_key(id, binding),
+
+            // Focus handling
+            ConfigEditorMsg::General(msg) => self.update_general(msg),
+            ConfigEditorMsg::Theme(msg) => self.update_theme(msg),
             ConfigEditorMsg::KeyFocusGlobal(msg) => self.update_key_focus_global(msg),
             ConfigEditorMsg::KeyFocusOther(msg) => self.update_key_focus_other(msg),
         }
