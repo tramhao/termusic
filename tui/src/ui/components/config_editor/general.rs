@@ -271,7 +271,7 @@ impl PlaylistDisplaySymbol {
             .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Display symbol in playlist title? ", Alignment::Left)
+            .title(" Use symbols for playlist loop mode? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_r);
@@ -473,7 +473,7 @@ impl PodcastSimulDownload {
                     "between 1 ~ 5 suggested",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Podcast Simultanious Download: ", Alignment::Left)
+                .title(" Podcast Simultaneous Download: ", Alignment::Left)
                 .value(
                     config
                         .server
@@ -582,7 +582,7 @@ impl AlbumPhotoAlign {
             .choices(["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Album Photo Align: ", Alignment::Left)
+            .title(" Coverart Align: ", Alignment::Left)
             .value(align);
 
         drop(config_r);
@@ -721,7 +721,7 @@ impl KillDaemon {
             .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Kill daemon when quit termusic? ", Alignment::Left)
+            .title(" Stop Server on TUI exit? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_r);

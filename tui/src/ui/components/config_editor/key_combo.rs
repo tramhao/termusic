@@ -1479,7 +1479,7 @@ impl ConfigGlobalPlayerTogglePause {
     pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Pause Toggle ",
+                " Toggle Pause/Play ",
                 IdKey::Global(IdKeyGlobal::PlayerTogglePause),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
@@ -1578,7 +1578,7 @@ impl ConfigGlobalVolumeUp {
     pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Volume + ",
+                " Increase Volume ",
                 IdKey::Global(IdKeyGlobal::PlayerVolumeUp),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
@@ -1603,7 +1603,7 @@ impl ConfigGlobalVolumeDown {
     pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Volume - ",
+                " Decrease Volume ",
                 IdKey::Global(IdKeyGlobal::PlayerVolumeDown),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
@@ -1678,7 +1678,7 @@ impl ConfigGlobalPlayerSpeedUp {
     pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Speed Up ",
+                " Increase Playback Speed ",
                 IdKey::Global(IdKeyGlobal::PlayerSpeedUp),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
@@ -1703,7 +1703,7 @@ impl ConfigGlobalPlayerSpeedDown {
     pub fn new(config: SharedTuiSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Speed Down ",
+                " Decrease Playback Speed ",
                 IdKey::Global(IdKeyGlobal::PlayerSpeedDown),
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
