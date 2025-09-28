@@ -36,7 +36,7 @@ use crate::CombinedSettings;
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
-use crate::ui::msg::{ConfigEditorMsg, Msg};
+use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
 
 #[derive(MockComponent)]
 pub struct MusicDir {
@@ -85,8 +85,8 @@ impl Component<Msg, UserEvent> for MusicDir {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -197,8 +197,8 @@ impl Component<Msg, UserEvent> for ExitConfirmation {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -285,8 +285,8 @@ impl Component<Msg, UserEvent> for PlaylistDisplaySymbol {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -336,8 +336,8 @@ impl Component<Msg, UserEvent> for PlaylistRandomTrack {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -390,8 +390,8 @@ impl Component<Msg, UserEvent> for PlaylistRandomAlbum {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -444,8 +444,8 @@ impl Component<Msg, UserEvent> for PodcastDir {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -498,8 +498,8 @@ impl Component<Msg, UserEvent> for PodcastSimulDownload {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -552,8 +552,8 @@ impl Component<Msg, UserEvent> for PodcastMaxRetries {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -596,8 +596,8 @@ impl Component<Msg, UserEvent> for AlbumPhotoAlign {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -650,8 +650,8 @@ impl Component<Msg, UserEvent> for SaveLastPosition {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::SaveLastPositionBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::SaveLastPosotionBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -696,8 +696,8 @@ impl Component<Msg, UserEvent> for ConfigSeekStep {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -735,8 +735,8 @@ impl Component<Msg, UserEvent> for KillDaemon {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -777,8 +777,8 @@ impl Component<Msg, UserEvent> for PlayerUseMpris {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -819,8 +819,8 @@ impl Component<Msg, UserEvent> for PlayerUseDiscord {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -866,8 +866,8 @@ impl Component<Msg, UserEvent> for PlayerPort {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -913,8 +913,8 @@ impl Component<Msg, UserEvent> for ExtraYtdlpArgs {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::ExtraYtdlpArgsBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::ExtraYtdlpArgsBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }

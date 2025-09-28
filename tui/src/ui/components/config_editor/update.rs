@@ -8,8 +8,10 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::utils::get_app_config_path;
 
 use crate::ui::Model;
-use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
-use crate::ui::msg::{ConfigEditorMsg, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg};
+use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::msg::{
+    ConfigEditorMsg, GENERAL_FOCUS_ORDER, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg,
+};
 use crate::ui::tui_cmd::TuiCmd;
 
 /// How many Themes there are without actual files and always exist
@@ -39,131 +41,7 @@ impl Model {
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_editor.config_changed = true,
             // Handle focus of general page
-            ConfigEditorMsg::ExtraYtdlpArgsBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::MusicDir,
-                    )))
-                    .ok();
-            }
-            ConfigEditorMsg::MusicDirBlurDown | ConfigEditorMsg::PlaylistDisplaySymbolBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::ExitConfirmation,
-                    )))
-                    .ok();
-            }
-            ConfigEditorMsg::ExitConfirmationBlurDown
-            | ConfigEditorMsg::PlaylistRandomTrackBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PlaylistDisplaySymbol,
-                    )))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistDisplaySymbolBlurDown
-            | ConfigEditorMsg::PlaylistRandomAlbumBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PlaylistRandomTrack,
-                    )))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistRandomTrackBlurDown | ConfigEditorMsg::PodcastDirBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PlaylistRandomAlbum,
-                    )))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistRandomAlbumBlurDown
-            | ConfigEditorMsg::PodcastSimulDownloadBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PodcastDir,
-                    )))
-                    .ok();
-            }
-            ConfigEditorMsg::PodcastDirBlurDown | ConfigEditorMsg::PodcastMaxRetriesBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PodcastSimulDownload,
-                    )))
-                    .ok();
-            }
-            ConfigEditorMsg::PodcastSimulDownloadBlurDown
-            | ConfigEditorMsg::AlbumPhotoAlignBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PodcastMaxRetries,
-                    )))
-                    .ok();
-            }
-
-            ConfigEditorMsg::PodcastMaxRetriesBlurDown
-            | ConfigEditorMsg::SaveLastPosotionBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::AlbumPhotoAlign,
-                    )))
-                    .ok();
-            }
-
-            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::SeekStepBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::SaveLastPosition,
-                    )))
-                    .ok();
-            }
-
-            ConfigEditorMsg::SaveLastPositionBlurDown | ConfigEditorMsg::KillDaemonBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::SeekStep,
-                    )))
-                    .ok();
-            }
-
-            ConfigEditorMsg::SeekStepBlurDown | ConfigEditorMsg::PlayerUseMprisBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::KillDamon,
-                    )))
-                    .ok();
-            }
-
-            ConfigEditorMsg::KillDaemonBlurDown | ConfigEditorMsg::PlayerUseDiscordBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PlayerUseMpris,
-                    )))
-                    .ok();
-            }
-
-            ConfigEditorMsg::PlayerUseMprisBlurDown | ConfigEditorMsg::PlayerPortBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PlayerUseDiscord,
-                    )))
-                    .ok();
-            }
-
-            ConfigEditorMsg::PlayerUseDiscordBlurDown | ConfigEditorMsg::ExtraYtdlpArgsBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::PlayerPort,
-                    )))
-                    .ok();
-            }
-
-            ConfigEditorMsg::PlayerPortBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::General(
-                        IdCEGeneral::ExtraYtdlpArgs,
-                    )))
-                    .ok();
-            }
+            ConfigEditorMsg::General(msg) => self.update_general(msg),
 
             ConfigEditorMsg::ConfigSaveOk => {
                 self.app
@@ -486,6 +364,41 @@ impl Model {
         config.settings.theme = self.config_editor.theme.clone();
         let config = new_shared_tui_settings(config);
         self.remount_config_color(&config, Some(index)).unwrap();
+    }
+
+    /// Handle focus of the "General" tab
+    fn update_general(&mut self, msg: KFMsg) {
+        let focus_elem = self.app.focus().and_then(|v| {
+            if let Id::ConfigEditor(IdConfigEditor::General(id)) = *v {
+                Some(id)
+            } else {
+                None
+            }
+        });
+
+        // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
+        let Some(focus_elem) = focus_elem else {
+            let _ = self
+                .app
+                .active(&Id::ConfigEditor(GENERAL_FOCUS_ORDER[0].into()));
+            return;
+        };
+
+        let focus = match msg {
+            KFMsg::Next => GENERAL_FOCUS_ORDER
+                .iter()
+                .skip_while(|v| **v != focus_elem)
+                .nth(1)
+                .unwrap_or(&GENERAL_FOCUS_ORDER[0]),
+            KFMsg::Previous => GENERAL_FOCUS_ORDER
+                .iter()
+                .rev()
+                .skip_while(|v| **v != focus_elem)
+                .nth(1)
+                .unwrap_or(GENERAL_FOCUS_ORDER.last().unwrap()),
+        };
+
+        let _ = self.app.active(&Id::ConfigEditor(focus.into()));
     }
 
     /// Handle focus of the "Key Global" tab

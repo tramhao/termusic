@@ -128,6 +128,18 @@ pub enum IdCEGeneral {
     KillDamon,
 }
 
+impl From<IdCEGeneral> for IdConfigEditor {
+    fn from(value: IdCEGeneral) -> Self {
+        IdConfigEditor::General(value)
+    }
+}
+
+impl From<&IdCEGeneral> for IdConfigEditor {
+    fn from(value: &IdCEGeneral) -> Self {
+        IdConfigEditor::General(*value)
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdKeyGlobal {
     LayoutTreeview,

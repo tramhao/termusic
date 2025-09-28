@@ -9,7 +9,7 @@ use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 
 use crate::ui::components::TETrack;
-use crate::ui::ids::{IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::ids::{IdCEGeneral, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::youtube_options::{YTDLMsg, YoutubeData, YoutubeOptions};
 
 /// Main message type that encapsulates everything else.
@@ -176,39 +176,24 @@ pub enum LIMsg {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ConfigEditorMsg {
-    PodcastDirBlurDown,
-    PodcastDirBlurUp,
-    PodcastSimulDownloadBlurDown,
-    PodcastSimulDownloadBlurUp,
-    PodcastMaxRetriesBlurDown,
-    PodcastMaxRetriesBlurUp,
-
-    AlbumPhotoAlignBlurDown,
-    AlbumPhotoAlignBlurUp,
     ChangeLayout,
     CloseCancel,
     CloseOk,
     ColorChanged(IdConfigEditor, ColorTermusic),
     SymbolChanged(IdConfigEditor, String),
+    KeyChange(IdKey, KeyBinding),
     ConfigChanged,
     ConfigSaveOk,
     ConfigSaveCancel,
-    ExitConfirmationBlurDown,
-    ExitConfirmationBlurUp,
-    ExtraYtdlpArgsBlurDown,
-    ExtraYtdlpArgsBlurUp,
+
     Open,
     KeyFocusGlobal(KFMsg),
     KeyFocusOther(KFMsg),
-    MusicDirBlurDown,
-    MusicDirBlurUp,
+    General(KFMsg),
 
-    PlaylistDisplaySymbolBlurDown,
-    PlaylistDisplaySymbolBlurUp,
-    PlaylistRandomTrackBlurDown,
-    PlaylistRandomTrackBlurUp,
-    PlaylistRandomAlbumBlurDown,
-    PlaylistRandomAlbumBlurUp,
+    ThemeSelectBlurDown,
+    ThemeSelectBlurUp,
+    ThemeSelectLoad(usize),
 
     LibraryForegroundBlurDown,
     LibraryForegroundBlurUp,
@@ -246,25 +231,6 @@ pub enum ConfigEditorMsg {
     LyricBorderBlurDown,
     LyricBorderBlurUp,
 
-    ThemeSelectBlurDown,
-    ThemeSelectBlurUp,
-    ThemeSelectLoad(usize),
-
-    KeyChange(IdKey, KeyBinding),
-    SaveLastPositionBlurDown,
-    SaveLastPosotionBlurUp,
-    SeekStepBlurDown,
-    SeekStepBlurUp,
-    KillDaemonBlurDown,
-    KillDaemonBlurUp,
-
-    PlayerUseMprisBlurDown,
-    PlayerUseMprisBlurUp,
-    PlayerUseDiscordBlurDown,
-    PlayerUseDiscordBlurUp,
-    PlayerPortBlurDown,
-    PlayerPortBlurUp,
-
     CurrentlyPlayingTrackSymbolBlurDown,
     CurrentlyPlayingTrackSymbolBlurUp,
 
@@ -284,6 +250,26 @@ pub enum ConfigEditorMsg {
     FallbackHighlightBlurDown,
     FallbackHighlightBlurUp,
 }
+
+/// This array defines the order the IDs listed are displayed and which gains next / previous focus.
+pub const GENERAL_FOCUS_ORDER: &[IdCEGeneral] = &[
+    IdCEGeneral::MusicDir,
+    IdCEGeneral::ExitConfirmation,
+    IdCEGeneral::PlaylistDisplaySymbol,
+    IdCEGeneral::PlaylistRandomTrack,
+    IdCEGeneral::PlaylistRandomAlbum,
+    IdCEGeneral::PodcastDir,
+    IdCEGeneral::PodcastSimulDownload,
+    IdCEGeneral::PodcastMaxRetries,
+    IdCEGeneral::AlbumPhotoAlign,
+    IdCEGeneral::SaveLastPosition,
+    IdCEGeneral::SeekStep,
+    IdCEGeneral::KillDamon,
+    IdCEGeneral::PlayerUseMpris,
+    IdCEGeneral::PlayerUseDiscord,
+    IdCEGeneral::PlayerPort,
+    IdCEGeneral::ExtraYtdlpArgs,
+];
 
 /// This array defines the order the IDs listed are displayed and which gains next / previous focus.
 pub const KFGLOBAL_FOCUS_ORDER: &[IdKey] = &[
