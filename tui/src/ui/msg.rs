@@ -9,7 +9,7 @@ use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 
 use crate::ui::components::TETrack;
-use crate::ui::ids::{IdCEGeneral, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::ids::{IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::youtube_options::{YTDLMsg, YoutubeData, YoutubeOptions};
 
 /// Main message type that encapsulates everything else.
@@ -190,65 +190,9 @@ pub enum ConfigEditorMsg {
     KeyFocusGlobal(KFMsg),
     KeyFocusOther(KFMsg),
     General(KFMsg),
+    Theme(KFMsg),
 
-    ThemeSelectBlurDown,
-    ThemeSelectBlurUp,
     ThemeSelectLoad(usize),
-
-    LibraryForegroundBlurDown,
-    LibraryForegroundBlurUp,
-    LibraryBackgroundBlurDown,
-    LibraryBackgroundBlurUp,
-    LibraryBorderBlurDown,
-    LibraryBorderBlurUp,
-    LibraryHighlightBlurDown,
-    LibraryHighlightBlurUp,
-    LibraryHighlightSymbolBlurDown,
-    LibraryHighlightSymbolBlurUp,
-
-    PlaylistForegroundBlurDown,
-    PlaylistForegroundBlurUp,
-    PlaylistBackgroundBlurDown,
-    PlaylistBackgroundBlurUp,
-    PlaylistBorderBlurDown,
-    PlaylistBorderBlurUp,
-    PlaylistHighlightBlurDown,
-    PlaylistHighlightBlurUp,
-    PlaylistHighlightSymbolBlurDown,
-    PlaylistHighlightSymbolBlurUp,
-
-    ProgressForegroundBlurDown,
-    ProgressForegroundBlurUp,
-    ProgressBackgroundBlurDown,
-    ProgressBackgroundBlurUp,
-    ProgressBorderBlurDown,
-    ProgressBorderBlurUp,
-
-    LyricForegroundBlurDown,
-    LyricForegroundBlurUp,
-    LyricBackgroundBlurDown,
-    LyricBackgroundBlurUp,
-    LyricBorderBlurDown,
-    LyricBorderBlurUp,
-
-    CurrentlyPlayingTrackSymbolBlurDown,
-    CurrentlyPlayingTrackSymbolBlurUp,
-
-    ImportantPopupForegroundBlurDown,
-    ImportantPopupForegroundBlurUp,
-    ImportantPopupBackgroundBlurDown,
-    ImportantPopupBackgroundBlurUp,
-    ImportantPopupBorderBlurDown,
-    ImportantPopupBorderBlurUp,
-
-    FallbackForegroundBlurDown,
-    FallbackForegroundBlurUp,
-    FallbackBackgroundBlurDown,
-    FallbackBackgroundBlurUp,
-    FallbackBorderBlurDown,
-    FallbackBorderBlurUp,
-    FallbackHighlightBlurDown,
-    FallbackHighlightBlurUp,
 }
 
 /// This array defines the order the IDs listed are displayed and which gains next / previous focus.
@@ -269,6 +213,35 @@ pub const GENERAL_FOCUS_ORDER: &[IdCEGeneral] = &[
     IdCEGeneral::PlayerUseDiscord,
     IdCEGeneral::PlayerPort,
     IdCEGeneral::ExtraYtdlpArgs,
+];
+
+/// This array defines the order the IDs listed are displayed and which gains next / previous focus.
+pub const THEME_FOCUS_ORDER: &[IdCETheme] = &[
+    IdCETheme::ThemeSelectTable,
+    IdCETheme::LibraryForeground,
+    IdCETheme::LibraryBackground,
+    IdCETheme::LibraryBorder,
+    IdCETheme::LibraryHighlight,
+    IdCETheme::LibraryHighlightSymbol,
+    IdCETheme::PlaylistForeground,
+    IdCETheme::PlaylistBackground,
+    IdCETheme::PlaylistBorder,
+    IdCETheme::PlaylistHighlight,
+    IdCETheme::PlaylistHighlightSymbol,
+    IdCETheme::CurrentlyPlayingTrackSymbol,
+    IdCETheme::ProgressForeground,
+    IdCETheme::ProgressBackground,
+    IdCETheme::ProgressBorder,
+    IdCETheme::LyricForeground,
+    IdCETheme::LyricBackground,
+    IdCETheme::LyricBorder,
+    IdCETheme::ImportantPopupForeground,
+    IdCETheme::ImportantPopupBackground,
+    IdCETheme::ImportantPopupBorder,
+    IdCETheme::FallbackForeground,
+    IdCETheme::FallbackBackground,
+    IdCETheme::FallbackBorder,
+    IdCETheme::FallbackHighlight,
 ];
 
 /// This array defines the order the IDs listed are displayed and which gains next / previous focus.

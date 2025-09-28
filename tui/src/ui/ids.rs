@@ -104,6 +104,18 @@ pub enum IdCETheme {
     FallbackLabel,
 }
 
+impl From<IdCETheme> for IdConfigEditor {
+    fn from(value: IdCETheme) -> Self {
+        IdConfigEditor::Theme(value)
+    }
+}
+
+impl From<&IdCETheme> for IdConfigEditor {
+    fn from(value: &IdCETheme) -> Self {
+        IdConfigEditor::Theme(*value)
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdCEGeneral {
     MusicDir,

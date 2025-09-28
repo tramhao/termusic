@@ -37,7 +37,7 @@ use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, Sta
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
-use crate::ui::msg::{ConfigEditorMsg, Msg};
+use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
 
 const COLOR_LIST: [ColorTermusic; 19] = [
     ColorTermusic::Reset,
@@ -152,13 +152,13 @@ impl Component<Msg, UserEvent> for CEThemeSelectTable {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeSelectBlurDown));
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeSelectBlurUp));
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
             }
 
             Event::Keyboard(KeyEvent {
@@ -425,8 +425,8 @@ impl ConfigLibraryForeground {
                 IdConfigEditor::Theme(IdCETheme::LibraryForeground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::LibraryForegroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::LibraryForegroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -452,8 +452,8 @@ impl ConfigLibraryBackground {
                 IdConfigEditor::Theme(IdCETheme::LibraryBackground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::LibraryBackgroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::LibraryBackgroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -479,8 +479,8 @@ impl ConfigLibraryBorder {
                 IdConfigEditor::Theme(IdCETheme::LibraryBorder),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::LibraryBorderBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::LibraryBorderBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -506,8 +506,8 @@ impl ConfigLibraryHighlight {
                 IdConfigEditor::Theme(IdCETheme::LibraryHighlight),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -554,8 +554,8 @@ impl ConfigPlaylistForeground {
                 IdConfigEditor::Theme(IdCETheme::PlaylistForeground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistForegroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistForegroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -581,8 +581,8 @@ impl ConfigPlaylistBackground {
                 IdConfigEditor::Theme(IdCETheme::PlaylistBackground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistBackgroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistBackgroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -608,8 +608,8 @@ impl ConfigPlaylistBorder {
                 IdConfigEditor::Theme(IdCETheme::PlaylistBorder),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistBorderBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistBorderBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -635,8 +635,8 @@ impl ConfigPlaylistHighlight {
                 IdConfigEditor::Theme(IdCETheme::PlaylistHighlight),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -683,8 +683,8 @@ impl ConfigProgressForeground {
                 IdConfigEditor::Theme(IdCETheme::ProgressForeground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::ProgressForegroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::ProgressForegroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -710,8 +710,8 @@ impl ConfigProgressBackground {
                 IdConfigEditor::Theme(IdCETheme::ProgressBackground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::ProgressBackgroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::ProgressBackgroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -737,8 +737,8 @@ impl ConfigProgressBorder {
                 IdConfigEditor::Theme(IdCETheme::ProgressBorder),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::ProgressBorderBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::ProgressBorderBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -785,8 +785,8 @@ impl ConfigLyricForeground {
                 IdConfigEditor::Theme(IdCETheme::LyricForeground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::LyricForegroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::LyricForegroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -812,8 +812,8 @@ impl ConfigLyricBackground {
                 IdConfigEditor::Theme(IdCETheme::LyricBackground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::LyricBackgroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::LyricBackgroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -839,8 +839,8 @@ impl ConfigLyricBorder {
                 IdConfigEditor::Theme(IdCETheme::LyricBorder),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::LyricBorderBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::LyricBorderBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -1004,30 +1004,10 @@ impl Component<Msg, UserEvent> for ConfigInputHighlight {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => match self.id {
-                IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => Some(
-                    Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightSymbolBlurDown),
-                ),
-                IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => Some(
-                    Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightSymbolBlurDown),
-                ),
-                IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => Some(
-                    Msg::ConfigEditor(ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurDown),
-                ),
-                _ => None,
-            },
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.id {
-                IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => Some(
-                    Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightSymbolBlurUp),
-                ),
-                IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => Some(
-                    Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightSymbolBlurUp),
-                ),
-                IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => Some(
-                    Msg::ConfigEditor(ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurUp),
-                ),
-                _ => None,
-            },
+            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next))),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)))
+            }
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
@@ -1144,8 +1124,8 @@ impl ConfigImportantPopupForeground {
                 IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupForegroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupForegroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -1171,8 +1151,8 @@ impl ConfigImportantPopupBackground {
                 IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBackgroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBackgroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -1198,8 +1178,8 @@ impl ConfigImportantPopupBorder {
                 IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBorderBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBorderBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -1246,8 +1226,8 @@ impl ConfigFallbackForeground {
                 IdConfigEditor::Theme(IdCETheme::FallbackForeground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::FallbackForegroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::FallbackForegroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -1273,8 +1253,8 @@ impl ConfigFallbackBackground {
                 IdConfigEditor::Theme(IdCETheme::FallbackBackground),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::FallbackBackgroundBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::FallbackBackgroundBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -1300,8 +1280,8 @@ impl ConfigFallbackBorder {
                 IdConfigEditor::Theme(IdCETheme::FallbackBorder),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::FallbackBorderBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::FallbackBorderBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
@@ -1327,8 +1307,8 @@ impl ConfigFallbackHighlight {
                 IdConfigEditor::Theme(IdCETheme::FallbackHighlight),
                 color,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::FallbackHighlightBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::FallbackHighlightBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
+                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
             ),
         }
     }
