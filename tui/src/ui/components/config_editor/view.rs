@@ -40,7 +40,7 @@ use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
-use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::msg::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
 use crate::ui::utils::draw_area_in_absolute;
@@ -159,25 +159,28 @@ impl Model {
                 }
             })
             .and_then(|v| {
-                Some(match v {
-                    IdConfigEditor::MusicDir => 0,
-                    IdConfigEditor::ExitConfirmation => 1,
-                    IdConfigEditor::PlaylistDisplaySymbol => 2,
-                    IdConfigEditor::PlaylistRandomTrack => 3,
-                    IdConfigEditor::PlaylistRandomAlbum => 4,
-                    IdConfigEditor::PodcastDir => 5,
-                    IdConfigEditor::PodcastSimulDownload => 6,
-                    IdConfigEditor::PodcastMaxRetries => 7,
-                    IdConfigEditor::AlbumPhotoAlign => 8,
-                    IdConfigEditor::SaveLastPosition => 9,
-                    IdConfigEditor::SeekStep => 10,
-                    IdConfigEditor::KillDamon => 11,
-                    IdConfigEditor::PlayerUseMpris => 12,
-                    IdConfigEditor::PlayerUseDiscord => 13,
-                    IdConfigEditor::PlayerPort => 14,
-                    IdConfigEditor::ExtraYtdlpArgs => 15,
-                    _ => return None,
-                })
+                if let IdConfigEditor::General(v) = v {
+                    Some(match v {
+                        IdCEGeneral::MusicDir => 0,
+                        IdCEGeneral::ExitConfirmation => 1,
+                        IdCEGeneral::PlaylistDisplaySymbol => 2,
+                        IdCEGeneral::PlaylistRandomTrack => 3,
+                        IdCEGeneral::PlaylistRandomAlbum => 4,
+                        IdCEGeneral::PodcastDir => 5,
+                        IdCEGeneral::PodcastSimulDownload => 6,
+                        IdCEGeneral::PodcastMaxRetries => 7,
+                        IdCEGeneral::AlbumPhotoAlign => 8,
+                        IdCEGeneral::SaveLastPosition => 9,
+                        IdCEGeneral::SeekStep => 10,
+                        IdCEGeneral::KillDamon => 11,
+                        IdCEGeneral::PlayerUseMpris => 12,
+                        IdCEGeneral::PlayerUseDiscord => 13,
+                        IdCEGeneral::PlayerPort => 14,
+                        IdCEGeneral::ExtraYtdlpArgs => 15,
+                    })
+                } else {
+                    None
+                }
             });
 
         let cells = UniformDynamicGrid::new(16, 3, 56 + 2)
@@ -189,29 +192,29 @@ impl Model {
         app_view! {
             app, f,
 
-            &Id::ConfigEditor(IdConfigEditor::MusicDir) => cells[0],
-            &Id::ConfigEditor(IdConfigEditor::ExitConfirmation) => cells[1],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::MusicDir)) => cells[0],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExitConfirmation)) => cells[1],
 
-            &Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol) => cells[2],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack) => cells[3],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum) => cells[4],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)) => cells[2],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)) => cells[3],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)) => cells[4],
 
-            &Id::ConfigEditor(IdConfigEditor::PodcastDir) => cells[5],
-            &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload) => cells[6],
-            &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries) => cells[7],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastDir)) => cells[5],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)) => cells[6],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)) => cells[7],
 
-            &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign) => cells[8],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::AlbumPhotoAlign)) => cells[8],
 
-            &Id::ConfigEditor(IdConfigEditor::SaveLastPosition) => cells[9],
-            &Id::ConfigEditor(IdConfigEditor::SeekStep) => cells[10],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)) => cells[9],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SeekStep)) => cells[10],
 
-            &Id::ConfigEditor(IdConfigEditor::KillDamon) => cells[11],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)) => cells[11],
 
-            &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris) => cells[12],
-            &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord) => cells[13],
-            &Id::ConfigEditor(IdConfigEditor::PlayerPort) => cells[14],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)) => cells[12],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[13],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[14],
 
-            &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs) => cells[15],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[15],
         }
     }
 
@@ -525,7 +528,9 @@ impl Model {
         // Active Config Editor
         assert!(
             self.app
-                .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+                .active(&Id::ConfigEditor(IdConfigEditor::General(
+                    IdCEGeneral::MusicDir
+                )))
                 .is_ok()
         );
 
@@ -593,7 +598,9 @@ impl Model {
         match self.config_editor.layout {
             ConfigEditorLayout::General => self
                 .app
-                .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+                .active(&Id::ConfigEditor(IdConfigEditor::General(
+                    IdCEGeneral::MusicDir,
+                )))
                 .ok(),
             ConfigEditorLayout::Color => self
                 .app
@@ -639,11 +646,9 @@ impl Model {
 
         let mut config_server = self.config_server.write();
 
-        if let Ok(State::One(StateValue::String(music_dir))) =
-            self.app.state(&Id::ConfigEditor(IdConfigEditor::MusicDir))
-        {
-            // config.music_dir = music_dir;
-            // let mut vec = Vec::new();
+        if let Ok(State::One(StateValue::String(music_dir))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::MusicDir),
+        )) {
             let vec = music_dir
                 .split(';')
                 .map(PathBuf::from)
@@ -655,17 +660,15 @@ impl Model {
             config_server.settings.player.music_dirs = vec;
         }
 
-        if let Ok(State::One(StateValue::Usize(exit_confirmation))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
-        {
+        if let Ok(State::One(StateValue::Usize(exit_confirmation))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExitConfirmation)),
+        ) {
             config_tui.settings.behavior.confirm_quit = matches!(exit_confirmation, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(display_symbol))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
-        {
+        if let Ok(State::One(StateValue::Usize(display_symbol))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)),
+        ) {
             config_tui
                 .settings
                 .theme
@@ -674,45 +677,40 @@ impl Model {
                 .use_loop_mode_symbol = matches!(display_symbol, 0);
         }
 
-        if let Ok(State::One(StateValue::String(random_track_quantity_str))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
-        {
+        if let Ok(State::One(StateValue::String(random_track_quantity_str))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)),
+        ) {
             if let Ok(quantity) = random_track_quantity_str.parse::<NonZeroU32>() {
                 config_server.settings.player.random_track_quantity = quantity;
             }
         }
 
-        if let Ok(State::One(StateValue::String(random_album_quantity_str))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
-        {
+        if let Ok(State::One(StateValue::String(random_album_quantity_str))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)),
+        ) {
             if let Ok(quantity) = random_album_quantity_str.parse::<NonZeroU32>() {
                 config_server.settings.player.random_album_min_quantity = quantity;
             }
         }
 
-        if let Ok(State::One(StateValue::String(podcast_dir))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
-        {
+        if let Ok(State::One(StateValue::String(podcast_dir))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PodcastDir),
+        )) {
             let absolute_dir = shellexpand::path::tilde(&podcast_dir);
             if absolute_dir.exists() {
                 config_server.settings.podcast.download_dir = absolute_dir.into_owned();
             }
         }
-        if let Ok(State::One(StateValue::String(podcast_simul_download))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
-        {
+        if let Ok(State::One(StateValue::String(podcast_simul_download))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)),
+        ) {
             if let Ok(quantity) = podcast_simul_download.parse::<NonZeroU8>() {
                 config_server.settings.podcast.concurrent_downloads_max = quantity;
             }
         }
-        if let Ok(State::One(StateValue::String(podcast_max_retries))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
-        {
+        if let Ok(State::One(StateValue::String(podcast_max_retries))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)),
+        ) {
             if let Ok(quantity) = podcast_max_retries.parse::<u8>() {
                 if (1..11).contains(&quantity) {
                     config_server.settings.podcast.max_download_retries = quantity;
@@ -721,10 +719,9 @@ impl Model {
                 }
             }
         }
-        if let Ok(State::One(StateValue::Usize(align))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
-        {
+        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::AlbumPhotoAlign),
+        )) {
             let align = match align {
                 0 => XywhAlign::BottomRight,
                 1 => XywhAlign::BottomLeft,
@@ -734,10 +731,9 @@ impl Model {
             config_tui.settings.coverart.align = align;
         }
 
-        if let Ok(State::One(StateValue::Usize(save_last_position))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
-        {
+        if let Ok(State::One(StateValue::Usize(save_last_position))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)),
+        ) {
             // NOTE: value "0" means to not save the value
             if save_last_position != 0 {
                 let new_val = match save_last_position {
@@ -759,9 +755,9 @@ impl Model {
             // config_server.settings.player.remember_position = save_last_position;
         }
 
-        if let Ok(State::One(StateValue::Usize(seek_step))) =
-            self.app.state(&Id::ConfigEditor(IdConfigEditor::SeekStep))
-        {
+        if let Ok(State::One(StateValue::Usize(seek_step))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::SeekStep),
+        )) {
             // NOTE: seek_step is currently unsupported to be set
             let _ = seek_step;
 
@@ -774,30 +770,27 @@ impl Model {
             // config_server.settings.player.seek_step = seek_step;
         }
 
-        if let Ok(State::One(StateValue::Usize(kill_daemon))) =
-            self.app.state(&Id::ConfigEditor(IdConfigEditor::KillDamon))
-        {
+        if let Ok(State::One(StateValue::Usize(kill_daemon))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::KillDamon),
+        )) {
             config_tui.settings.behavior.quit_server_on_exit = matches!(kill_daemon, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(player_use_mpris))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
-        {
+        if let Ok(State::One(StateValue::Usize(player_use_mpris))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)),
+        ) {
             config_server.settings.player.use_mediacontrols = matches!(player_use_mpris, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(player_use_discord))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
-        {
+        if let Ok(State::One(StateValue::Usize(player_use_discord))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)),
+        ) {
             config_server.settings.player.set_discord_status = matches!(player_use_discord, 0);
         }
 
-        if let Ok(State::One(StateValue::String(player_port))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
-        {
+        if let Ok(State::One(StateValue::String(player_port))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerPort),
+        )) {
             if let Ok(port) = player_port.parse::<u16>() {
                 if (1024..u16::MAX).contains(&port) {
                     config_server.settings.com.port = port;
@@ -807,10 +800,9 @@ impl Model {
             }
         }
 
-        if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))
-        {
+        if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
+        ) {
             config_tui.settings.ytdlp.extra_args = extra_ytdlp_args;
         }
         Ok(())

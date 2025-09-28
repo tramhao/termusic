@@ -8,7 +8,7 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::utils::get_app_config_path;
 
 use crate::ui::Model;
-use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::msg::{ConfigEditorMsg, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg};
 use crate::ui::tui_cmd::TuiCmd;
 
@@ -41,95 +41,127 @@ impl Model {
             // Handle focus of general page
             ConfigEditorMsg::ExtraYtdlpArgsBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::MusicDir,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::MusicDirBlurDown | ConfigEditorMsg::PlaylistDisplaySymbolBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::ExitConfirmation,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::ExitConfirmationBlurDown
             | ConfigEditorMsg::PlaylistRandomTrackBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PlaylistDisplaySymbol,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PlaylistDisplaySymbolBlurDown
             | ConfigEditorMsg::PlaylistRandomAlbumBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PlaylistRandomTrack,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PlaylistRandomTrackBlurDown | ConfigEditorMsg::PodcastDirBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PlaylistRandomAlbum,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PlaylistRandomAlbumBlurDown
             | ConfigEditorMsg::PodcastSimulDownloadBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PodcastDir,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PodcastDirBlurDown | ConfigEditorMsg::PodcastMaxRetriesBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PodcastSimulDownload,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PodcastSimulDownloadBlurDown
             | ConfigEditorMsg::AlbumPhotoAlignBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PodcastMaxRetries,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::PodcastMaxRetriesBlurDown
             | ConfigEditorMsg::SaveLastPosotionBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::AlbumPhotoAlign,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::SeekStepBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::SaveLastPosition,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::SaveLastPositionBlurDown | ConfigEditorMsg::KillDaemonBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::SeekStep))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::SeekStep,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::SeekStepBlurDown | ConfigEditorMsg::PlayerUseMprisBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KillDamon))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::KillDamon,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::KillDaemonBlurDown | ConfigEditorMsg::PlayerUseDiscordBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PlayerUseMpris,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::PlayerUseMprisBlurDown | ConfigEditorMsg::PlayerPortBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PlayerUseDiscord,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::PlayerUseDiscordBlurDown | ConfigEditorMsg::ExtraYtdlpArgsBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::PlayerPort,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::PlayerPortBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))
+                    .active(&Id::ConfigEditor(IdConfigEditor::General(
+                        IdCEGeneral::ExtraYtdlpArgs,
+                    )))
                     .ok();
             }
 

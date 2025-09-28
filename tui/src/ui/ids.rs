@@ -51,16 +51,15 @@ pub enum IdTagEditor {
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdConfigEditor {
-    AlbumPhotoAlign,
-    CEThemeSelect,
     ConfigSavePopup,
-    ExitConfirmation,
-    ExtraYtdlpArgs,
-    Footer,
+
     Header,
+    Footer,
+
+    General(IdCEGeneral),
+    CEThemeSelect,
     KeyGlobal(IdKeyGlobal),
     KeyOther(IdKeyOther),
-    KillDamon,
 
     LibraryBackground,
     LibraryBorder,
@@ -74,34 +73,19 @@ pub enum IdConfigEditor {
     LyricForeground,
     LyricLabel,
 
-    MusicDir,
-    PlayerPort,
-    PlayerUseDiscord,
-    PlayerUseMpris,
-
     PlaylistBackground,
     PlaylistBorder,
-    PlaylistDisplaySymbol,
     PlaylistForeground,
     PlaylistHighlight,
     PlaylistHighlightSymbol,
     PlaylistLabel,
-    PlaylistRandomAlbum,
-    PlaylistRandomTrack,
 
     CurrentlyPlayingTrackSymbol,
-
-    PodcastDir,
-    PodcastMaxRetries,
-    PodcastSimulDownload,
 
     ProgressBackground,
     ProgressBorder,
     ProgressForeground,
     ProgressLabel,
-
-    SaveLastPosition,
-    SeekStep,
 
     ImportantPopupLabel,
     ImportantPopupBackground,
@@ -113,6 +97,30 @@ pub enum IdConfigEditor {
     FallbackForeground,
     FallbackHighlight,
     FallbackLabel,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+pub enum IdCEGeneral {
+    MusicDir,
+    ExitConfirmation,
+    AlbumPhotoAlign,
+    ExtraYtdlpArgs,
+    SaveLastPosition,
+    SeekStep,
+
+    PlayerPort,
+    PlayerUseDiscord,
+    PlayerUseMpris,
+
+    PodcastDir,
+    PodcastMaxRetries,
+    PodcastSimulDownload,
+
+    PlaylistRandomAlbum,
+    PlaylistRandomTrack,
+    PlaylistDisplaySymbol,
+
+    KillDamon,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]

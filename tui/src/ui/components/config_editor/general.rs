@@ -34,7 +34,7 @@ use tuirealm::{
 
 use crate::CombinedSettings;
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
-use crate::ui::ids::{Id, IdConfigEditor};
+use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, Msg};
 
@@ -924,97 +924,97 @@ impl Model {
     pub(super) fn remount_config_general(&mut self) -> Result<()> {
         // Mount general page
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::MusicDir),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::MusicDir)),
             Box::new(MusicDir::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExitConfirmation)),
             Box::new(ExitConfirmation::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)),
             Box::new(PlaylistDisplaySymbol::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)),
             Box::new(PlaylistRandomTrack::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)),
             Box::new(PlaylistRandomAlbum::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PodcastDir),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastDir)),
             Box::new(PodcastDir::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)),
             Box::new(PodcastSimulDownload::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)),
             Box::new(PodcastMaxRetries::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::AlbumPhotoAlign)),
             Box::new(AlbumPhotoAlign::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)),
             Box::new(SaveLastPosition::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::SeekStep),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SeekStep)),
             Box::new(ConfigSeekStep::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::KillDamon),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)),
             Box::new(KillDaemon::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)),
             Box::new(PlayerUseMpris::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)),
             Box::new(PlayerUseDiscord::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlayerPort),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)),
             Box::new(PlayerPort::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
             Box::new(ExtraYtdlpArgs::new(self.get_combined_settings())),
             Vec::new(),
         )?;
@@ -1024,49 +1024,65 @@ impl Model {
 
     /// Unmount the Config-Editor's First Page, the General Options
     pub(super) fn umount_config_general(&mut self) -> Result<()> {
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::MusicDir))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::MusicDir,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::ExitConfirmation,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlaylistDisplaySymbol,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlaylistRandomAlbum,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlaylistRandomTrack,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastDir))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PodcastDir,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PodcastSimulDownload,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PodcastMaxRetries,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::AlbumPhotoAlign,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::SaveLastPosition,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::SeekStep))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::SeekStep,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::KillDamon))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::KillDamon,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerUseMpris,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerUseDiscord,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerPort))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerPort,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::ExtraYtdlpArgs,
+        )))?;
 
         Ok(())
     }
