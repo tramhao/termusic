@@ -761,7 +761,7 @@ impl PlayerUseMpris {
             .choices(["Yes", "No"])
             .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Support Mpris? ", Alignment::Left)
+            .title(" Support Media Controls? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_tui);
