@@ -1,3 +1,4 @@
+use std::net::IpAddr;
 /**
  * MIT License
  *
@@ -176,14 +177,15 @@ impl Model {
                         IdCEGeneral::PlayerUseMpris => 12,
                         IdCEGeneral::PlayerUseDiscord => 13,
                         IdCEGeneral::PlayerPort => 14,
-                        IdCEGeneral::ExtraYtdlpArgs => 15,
+                        IdCEGeneral::PlayerAddress => 15,
+                        IdCEGeneral::ExtraYtdlpArgs => 16,
                     })
                 } else {
                     None
                 }
             });
 
-        let cells = UniformDynamicGrid::new(16, 3, 56 + 2)
+        let cells = UniformDynamicGrid::new(17, 3, 56 + 2)
             .draw_row_low_space()
             .distribute_row_space()
             .focus_node(focus_elem)
@@ -213,8 +215,9 @@ impl Model {
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)) => cells[12],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[13],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[14],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[15],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[15],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[16],
         }
     }
 
@@ -827,6 +830,14 @@ impl Model {
                 } else {
                     bail!(" It's not recommended to use ports below 1024 for the player. ");
                 }
+            }
+        }
+
+        if let Ok(State::One(StateValue::String(player_port))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerAddress),
+        )) {
+            if let Ok(addr) = player_port.parse::<IpAddr>() {
+                config_server.settings.com.address = addr;
             }
         }
 

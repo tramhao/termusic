@@ -126,6 +126,7 @@ pub enum IdCEGeneral {
     SeekStep,
 
     PlayerPort,
+    PlayerAddress,
     PlayerUseDiscord,
     PlayerUseMpris,
 

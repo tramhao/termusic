@@ -873,6 +873,53 @@ impl Component<Msg, UserEvent> for PlayerPort {
 }
 
 #[derive(MockComponent)]
+pub struct PlayerAddress {
+    component: Input,
+    config: SharedTuiSettings,
+}
+
+impl PlayerAddress {
+    pub fn new(config: CombinedSettings) -> Self {
+        // TODO: this should likely also cover the MaybeCom settings from the TUI
+        let component = {
+            let config_tui = config.tui.read();
+            Input::default()
+                .borders(
+                    Borders::default()
+                        .color(config_tui.settings.theme.library_border())
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(config_tui.settings.theme.library_highlight())
+                .input_type(InputType::Text) // we likely could make a custom matcher
+                .invalid_style(Style::default().fg(Color::Red))
+                .placeholder(
+                    "::1 or 127.0.0.1 recommended",
+                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                )
+                .title(" Player Address: ", Alignment::Left)
+                .value(config.server.read().settings.com.address.to_string())
+        };
+
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl Component<Msg, UserEvent> for PlayerAddress {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        handle_input_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
 pub struct ExtraYtdlpArgs {
     component: Input,
     config: SharedTuiSettings,
@@ -1014,6 +1061,12 @@ impl Model {
         )?;
 
         self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)),
+            Box::new(PlayerAddress::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
             Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
             Box::new(ExtraYtdlpArgs::new(self.get_combined_settings())),
             Vec::new(),
@@ -1078,6 +1131,10 @@ impl Model {
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
             IdCEGeneral::PlayerPort,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerAddress,
         )))?;
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
