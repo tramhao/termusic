@@ -35,7 +35,7 @@ use tuirealm::ratatui::style::Modifier;
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
-use crate::ui::ids::{Id, IdConfigEditor};
+use crate::ui::ids::{Id, IdCETheme, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, Msg};
 
@@ -227,31 +227,59 @@ impl CEColorSelect {
 
     const fn init_color_select(id: IdConfigEditor, theme: &ThemeWrap) -> usize {
         match id {
-            IdConfigEditor::LibraryForeground => theme.style.library.foreground_color.as_usize(),
-            IdConfigEditor::LibraryBackground => theme.style.library.background_color.as_usize(),
-            IdConfigEditor::LibraryBorder => theme.style.library.border_color.as_usize(),
-            IdConfigEditor::LibraryHighlight => theme.style.library.highlight_color.as_usize(),
+            IdConfigEditor::Theme(IdCETheme::LibraryForeground) => {
+                theme.style.library.foreground_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::LibraryBackground) => {
+                theme.style.library.background_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::LibraryBorder) => {
+                theme.style.library.border_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::LibraryHighlight) => {
+                theme.style.library.highlight_color.as_usize()
+            }
 
-            IdConfigEditor::PlaylistForeground => theme.style.playlist.foreground_color.as_usize(),
-            IdConfigEditor::PlaylistBackground => theme.style.playlist.background_color.as_usize(),
-            IdConfigEditor::PlaylistBorder => theme.style.playlist.border_color.as_usize(),
-            IdConfigEditor::PlaylistHighlight => theme.style.playlist.highlight_color.as_usize(),
+            IdConfigEditor::Theme(IdCETheme::PlaylistForeground) => {
+                theme.style.playlist.foreground_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::PlaylistBackground) => {
+                theme.style.playlist.background_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::PlaylistBorder) => {
+                theme.style.playlist.border_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::PlaylistHighlight) => {
+                theme.style.playlist.highlight_color.as_usize()
+            }
 
-            IdConfigEditor::ProgressForeground => theme.style.progress.foreground_color.as_usize(),
-            IdConfigEditor::ProgressBackground => theme.style.progress.background_color.as_usize(),
-            IdConfigEditor::ProgressBorder => theme.style.progress.border_color.as_usize(),
+            IdConfigEditor::Theme(IdCETheme::ProgressForeground) => {
+                theme.style.progress.foreground_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::ProgressBackground) => {
+                theme.style.progress.background_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::ProgressBorder) => {
+                theme.style.progress.border_color.as_usize()
+            }
 
-            IdConfigEditor::LyricForeground => theme.style.lyric.foreground_color.as_usize(),
-            IdConfigEditor::LyricBackground => theme.style.lyric.background_color.as_usize(),
-            IdConfigEditor::LyricBorder => theme.style.lyric.border_color.as_usize(),
+            IdConfigEditor::Theme(IdCETheme::LyricForeground) => {
+                theme.style.lyric.foreground_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::LyricBackground) => {
+                theme.style.lyric.background_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::LyricBorder) => {
+                theme.style.lyric.border_color.as_usize()
+            }
 
-            IdConfigEditor::ImportantPopupForeground => {
+            IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground) => {
                 theme.style.important_popup.foreground_color.as_usize()
             }
-            IdConfigEditor::ImportantPopupBackground => {
+            IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground) => {
                 theme.style.important_popup.background_color.as_usize()
             }
-            IdConfigEditor::ImportantPopupBorder => {
+            IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder) => {
                 theme.style.important_popup.border_color.as_usize()
             }
 
@@ -394,7 +422,7 @@ impl ConfigLibraryForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::LibraryForeground,
+                IdConfigEditor::Theme(IdCETheme::LibraryForeground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryForegroundBlurDown),
@@ -421,7 +449,7 @@ impl ConfigLibraryBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::LibraryBackground,
+                IdConfigEditor::Theme(IdCETheme::LibraryBackground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryBackgroundBlurDown),
@@ -448,7 +476,7 @@ impl ConfigLibraryBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::LibraryBorder,
+                IdConfigEditor::Theme(IdCETheme::LibraryBorder),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryBorderBlurDown),
@@ -475,7 +503,7 @@ impl ConfigLibraryHighlight {
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
-                IdConfigEditor::LibraryHighlight,
+                IdConfigEditor::Theme(IdCETheme::LibraryHighlight),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightBlurDown),
@@ -523,7 +551,7 @@ impl ConfigPlaylistForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::PlaylistForeground,
+                IdConfigEditor::Theme(IdCETheme::PlaylistForeground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistForegroundBlurDown),
@@ -550,7 +578,7 @@ impl ConfigPlaylistBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::PlaylistBackground,
+                IdConfigEditor::Theme(IdCETheme::PlaylistBackground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistBackgroundBlurDown),
@@ -577,7 +605,7 @@ impl ConfigPlaylistBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::PlaylistBorder,
+                IdConfigEditor::Theme(IdCETheme::PlaylistBorder),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistBorderBlurDown),
@@ -604,7 +632,7 @@ impl ConfigPlaylistHighlight {
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
-                IdConfigEditor::PlaylistHighlight,
+                IdConfigEditor::Theme(IdCETheme::PlaylistHighlight),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightBlurDown),
@@ -652,7 +680,7 @@ impl ConfigProgressForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::ProgressForeground,
+                IdConfigEditor::Theme(IdCETheme::ProgressForeground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressForegroundBlurDown),
@@ -679,7 +707,7 @@ impl ConfigProgressBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::ProgressBackground,
+                IdConfigEditor::Theme(IdCETheme::ProgressBackground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressBackgroundBlurDown),
@@ -706,7 +734,7 @@ impl ConfigProgressBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::ProgressBorder,
+                IdConfigEditor::Theme(IdCETheme::ProgressBorder),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressBorderBlurDown),
@@ -754,7 +782,7 @@ impl ConfigLyricForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::LyricForeground,
+                IdConfigEditor::Theme(IdCETheme::LyricForeground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LyricForegroundBlurDown),
@@ -781,7 +809,7 @@ impl ConfigLyricBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::LyricBackground,
+                IdConfigEditor::Theme(IdCETheme::LyricBackground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LyricBackgroundBlurDown),
@@ -808,7 +836,7 @@ impl ConfigLyricBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::LyricBorder,
+                IdConfigEditor::Theme(IdCETheme::LyricBorder),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LyricBorderBlurDown),
@@ -836,13 +864,13 @@ impl ConfigInputHighlight {
         let config_r = config.read();
         // TODO: this should likely not be here, because it is a runtime error if it is unhandled
         let highlight_str = match id {
-            IdConfigEditor::LibraryHighlightSymbol => {
+            IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => {
                 &config_r.settings.theme.style.library.highlight_symbol
             }
-            IdConfigEditor::PlaylistHighlightSymbol => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => {
                 &config_r.settings.theme.style.playlist.highlight_symbol
             }
-            IdConfigEditor::CurrentlyPlayingTrackSymbol => {
+            IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => {
                 &config_r.settings.theme.style.playlist.current_track_symbol
             }
             _ => todo!("Unhandled IdConfigEditor Variant: {:#?}", id),
@@ -977,27 +1005,27 @@ impl Component<Msg, UserEvent> for ConfigInputHighlight {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => match self.id {
-                IdConfigEditor::LibraryHighlightSymbol => Some(Msg::ConfigEditor(
-                    ConfigEditorMsg::LibraryHighlightSymbolBlurDown,
-                )),
-                IdConfigEditor::PlaylistHighlightSymbol => Some(Msg::ConfigEditor(
-                    ConfigEditorMsg::PlaylistHighlightSymbolBlurDown,
-                )),
-                IdConfigEditor::CurrentlyPlayingTrackSymbol => Some(Msg::ConfigEditor(
-                    ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurDown,
-                )),
+                IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => Some(
+                    Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightSymbolBlurDown),
+                ),
+                IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => Some(
+                    Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightSymbolBlurDown),
+                ),
+                IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => Some(
+                    Msg::ConfigEditor(ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurDown),
+                ),
                 _ => None,
             },
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.id {
-                IdConfigEditor::LibraryHighlightSymbol => Some(Msg::ConfigEditor(
-                    ConfigEditorMsg::LibraryHighlightSymbolBlurUp,
-                )),
-                IdConfigEditor::PlaylistHighlightSymbol => Some(Msg::ConfigEditor(
-                    ConfigEditorMsg::PlaylistHighlightSymbolBlurUp,
-                )),
-                IdConfigEditor::CurrentlyPlayingTrackSymbol => Some(Msg::ConfigEditor(
-                    ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurUp,
-                )),
+                IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => Some(
+                    Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightSymbolBlurUp),
+                ),
+                IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => Some(
+                    Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightSymbolBlurUp),
+                ),
+                IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => Some(
+                    Msg::ConfigEditor(ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurUp),
+                ),
                 _ => None,
             },
 
@@ -1022,7 +1050,7 @@ impl ConfigLibraryHighlightSymbol {
         Self {
             component: ConfigInputHighlight::new(
                 " Highlight Symbol ",
-                IdConfigEditor::LibraryHighlightSymbol,
+                IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol),
                 config,
             ),
         }
@@ -1045,7 +1073,7 @@ impl ConfigPlaylistHighlightSymbol {
         Self {
             component: ConfigInputHighlight::new(
                 " Highlight Symbol ",
-                IdConfigEditor::PlaylistHighlightSymbol,
+                IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol),
                 config,
             ),
         }
@@ -1068,7 +1096,7 @@ impl ConfigCurrentlyPlayingTrackSymbol {
         Self {
             component: ConfigInputHighlight::new(
                 " Current Track Symbol ",
-                IdConfigEditor::CurrentlyPlayingTrackSymbol,
+                IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol),
                 config,
             ),
         }
@@ -1113,7 +1141,7 @@ impl ConfigImportantPopupForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::ImportantPopupForeground,
+                IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupForegroundBlurDown),
@@ -1140,7 +1168,7 @@ impl ConfigImportantPopupBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::ImportantPopupBackground,
+                IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBackgroundBlurDown),
@@ -1167,7 +1195,7 @@ impl ConfigImportantPopupBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::ImportantPopupBorder,
+                IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ImportantPopupBorderBlurDown),
@@ -1215,7 +1243,7 @@ impl ConfigFallbackForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::FallbackForeground,
+                IdConfigEditor::Theme(IdCETheme::FallbackForeground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::FallbackForegroundBlurDown),
@@ -1242,7 +1270,7 @@ impl ConfigFallbackBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::FallbackBackground,
+                IdConfigEditor::Theme(IdCETheme::FallbackBackground),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::FallbackBackgroundBlurDown),
@@ -1269,7 +1297,7 @@ impl ConfigFallbackBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::FallbackBorder,
+                IdConfigEditor::Theme(IdCETheme::FallbackBorder),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::FallbackBorderBlurDown),
@@ -1296,7 +1324,7 @@ impl ConfigFallbackHighlight {
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
-                IdConfigEditor::FallbackHighlight,
+                IdConfigEditor::Theme(IdCETheme::FallbackHighlight),
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::FallbackHighlightBlurDown),
@@ -1328,149 +1356,149 @@ impl Model {
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LibraryLabel),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)),
             Box::<ConfigLibraryTitle>::default(),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LibraryForeground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryForeground)),
             Box::new(ConfigLibraryForeground::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LibraryBackground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryBackground)),
             Box::new(ConfigLibraryBackground::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LibraryBorder),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryBorder)),
             Box::new(ConfigLibraryBorder::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlight)),
             Box::new(ConfigLibraryHighlight::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistLabel)),
             Box::<ConfigPlaylistTitle>::default(),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistForeground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistForeground)),
             Box::new(ConfigPlaylistForeground::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistBackground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistBackground)),
             Box::new(ConfigPlaylistBackground::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistBorder),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistBorder)),
             Box::new(ConfigPlaylistBorder::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistHighlight),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlight)),
             Box::new(ConfigPlaylistHighlight::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ProgressLabel),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressLabel)),
             Box::<ConfigProgressTitle>::default(),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ProgressForeground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressForeground)),
             Box::new(ConfigProgressForeground::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ProgressBackground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressBackground)),
             Box::new(ConfigProgressBackground::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ProgressBorder),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressBorder)),
             Box::new(ConfigProgressBorder::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LyricLabel),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricLabel)),
             Box::<ConfigLyricTitle>::default(),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LyricForeground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricForeground)),
             Box::new(ConfigLyricForeground::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LyricBackground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricBackground)),
             Box::new(ConfigLyricBackground::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LyricBorder),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricBorder)),
             Box::new(ConfigLyricBorder::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupLabel)),
             Box::<ConfigImportantPopupTitle>::default(),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground)),
             Box::new(ConfigImportantPopupForeground::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground)),
             Box::new(ConfigImportantPopupBackground::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder)),
             Box::new(ConfigImportantPopupBorder::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::FallbackLabel),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackLabel)),
             Box::<ConfigFallbackTitle>::default(),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::FallbackForeground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackForeground)),
             Box::new(ConfigFallbackForeground::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::FallbackBackground),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackBackground)),
             Box::new(ConfigFallbackBackground::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::FallbackBorder),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackBorder)),
             Box::new(ConfigFallbackBorder::new(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::FallbackHighlight),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackHighlight)),
             Box::new(ConfigFallbackHighlight::new(config.clone())),
             Vec::new(),
         )?;
@@ -1485,19 +1513,21 @@ impl Model {
     /// Mount / Remount the Config-Editor's Second Page, Symbols
     fn remount_config_color_symbols(&mut self, config: &SharedTuiSettings) -> Result<()> {
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol)),
             Box::new(ConfigLibraryHighlightSymbol::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
+            Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol)),
             Box::new(ConfigPlaylistHighlightSymbol::new(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
+            Id::ConfigEditor(IdConfigEditor::Theme(
+                IdCETheme::CurrentlyPlayingTrackSymbol,
+            )),
             Box::new(ConfigCurrentlyPlayingTrackSymbol::new(config.clone())),
             Vec::new(),
         )?;
@@ -1510,69 +1540,96 @@ impl Model {
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryLabel))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LibraryLabel,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LibraryForeground,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LibraryBackground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LibraryBorder,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LibraryHighlight,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistLabel))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::PlaylistLabel,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistForeground))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::PlaylistForeground,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistBackground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistBorder))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlight))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ProgressLabel))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::PlaylistBackground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::PlaylistBorder,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::PlaylistHighlight,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ProgressLabel,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ProgressBackground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ProgressForeground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ProgressBackground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ProgressBorder,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LyricLabel))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LyricForeground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LyricBackground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LyricBorder))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LyricLabel,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LyricForeground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LyricBackground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LyricBorder,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ImportantPopupLabel,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ImportantPopupForeground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ImportantPopupBackground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::ImportantPopupBorder,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackLabel))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::FallbackLabel,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::FallbackForeground,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::FallbackBackground,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::FallbackBorder,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::FallbackHighlight,
+        )))?;
 
         self.umount_config_color_symbols()?;
 
@@ -1581,13 +1638,15 @@ impl Model {
 
     /// Unmount the Config-Editor's Second Page, Symbols
     pub fn umount_config_color_symbols(&mut self) -> Result<()> {
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol))?;
-        self.app.umount(&Id::ConfigEditor(
-            IdConfigEditor::CurrentlyPlayingTrackSymbol,
-        ))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::LibraryHighlightSymbol,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::PlaylistHighlightSymbol,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::Theme(
+            IdCETheme::CurrentlyPlayingTrackSymbol,
+        )))?;
 
         Ok(())
     }

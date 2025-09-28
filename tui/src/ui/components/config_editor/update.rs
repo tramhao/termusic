@@ -8,7 +8,7 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::utils::get_app_config_path;
 
 use crate::ui::Model;
-use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::msg::{ConfigEditorMsg, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg};
 use crate::ui::tui_cmd::TuiCmd;
 
@@ -213,7 +213,9 @@ impl Model {
             // Focus of color page
             ConfigEditorMsg::ThemeSelectBlurDown | ConfigEditorMsg::LibraryBackgroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::LibraryForeground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::LibraryForegroundBlurUp
@@ -224,138 +226,182 @@ impl Model {
             }
             ConfigEditorMsg::LibraryForegroundBlurDown | ConfigEditorMsg::LibraryBorderBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::LibraryBackground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::LibraryBackgroundBlurDown
             | ConfigEditorMsg::LibraryHighlightBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::LibraryBorder,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::LibraryBorderBlurDown
             | ConfigEditorMsg::LibraryHighlightSymbolBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::LibraryHighlight,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::LibraryHighlightBlurDown
             | ConfigEditorMsg::PlaylistForegroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::LibraryHighlightSymbol,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::LibraryHighlightSymbolBlurDown
             | ConfigEditorMsg::PlaylistBackgroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistForeground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::PlaylistForeground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PlaylistForegroundBlurDown | ConfigEditorMsg::PlaylistBorderBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistBackground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::PlaylistBackground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PlaylistBackgroundBlurDown
             | ConfigEditorMsg::PlaylistHighlightBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistBorder))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::PlaylistBorder,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PlaylistBorderBlurDown
             | ConfigEditorMsg::PlaylistHighlightSymbolBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlight))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::PlaylistHighlight,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PlaylistHighlightBlurDown
             | ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::PlaylistHighlightSymbol,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::PlaylistHighlightSymbolBlurDown
             | ConfigEditorMsg::ProgressForegroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(
-                        IdConfigEditor::CurrentlyPlayingTrackSymbol,
-                    ))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::CurrentlyPlayingTrackSymbol,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurDown
             | ConfigEditorMsg::ProgressBackgroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::ProgressForeground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::ProgressForegroundBlurDown | ConfigEditorMsg::ProgressBorderBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ProgressBackground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::ProgressBackground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::ProgressBackgroundBlurDown
             | ConfigEditorMsg::LyricForegroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::ProgressBorder,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::ProgressBorderBlurDown | ConfigEditorMsg::LyricBackgroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LyricForeground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::LyricForeground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::LyricForegroundBlurDown | ConfigEditorMsg::LyricBorderBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LyricBackground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::LyricBackground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::LyricBackgroundBlurDown
             | ConfigEditorMsg::ImportantPopupForegroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::LyricBorder,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::LyricBorderBlurDown
             | ConfigEditorMsg::ImportantPopupBackgroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::ImportantPopupForeground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::ImportantPopupForegroundBlurDown
             | ConfigEditorMsg::ImportantPopupBorderBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::ImportantPopupBackground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::ImportantPopupBackgroundBlurDown
             | ConfigEditorMsg::FallbackForegroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::ImportantPopupBorder,
+                    )))
                     .ok();
             }
 
             ConfigEditorMsg::ImportantPopupBorderBlurDown
             | ConfigEditorMsg::FallbackBackgroundBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::FallbackForeground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::FallbackForegroundBlurDown | ConfigEditorMsg::FallbackBorderBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::FallbackBackground,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::FallbackBackgroundBlurDown
             | ConfigEditorMsg::FallbackHighlightBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::FallbackBorder,
+                    )))
                     .ok();
             }
             ConfigEditorMsg::FallbackBorderBlurDown | ConfigEditorMsg::ThemeSelectBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))
+                    .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                        IdCETheme::FallbackHighlight,
+                    )))
                     .ok();
             }
 
@@ -370,13 +416,13 @@ impl Model {
                 self.config_editor.config_changed = true;
 
                 match id {
-                    IdConfigEditor::LibraryHighlightSymbol => {
+                    IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => {
                         self.config_editor.theme.style.library.highlight_symbol = symbol;
                     }
-                    IdConfigEditor::PlaylistHighlightSymbol => {
+                    IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => {
                         self.config_editor.theme.style.playlist.highlight_symbol = symbol;
                     }
-                    IdConfigEditor::CurrentlyPlayingTrackSymbol => {
+                    IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => {
                         self.config_editor.theme.style.playlist.current_track_symbol = symbol;
                     }
                     _ => {}
@@ -665,46 +711,46 @@ impl Model {
         let style = &mut self.config_editor.theme.style;
 
         match id {
-            IdConfigEditor::LibraryForeground => {
+            IdConfigEditor::Theme(IdCETheme::LibraryForeground) => {
                 style.library.foreground_color = color_config;
             }
-            IdConfigEditor::LibraryBackground => {
+            IdConfigEditor::Theme(IdCETheme::LibraryBackground) => {
                 style.library.background_color = color_config;
             }
-            IdConfigEditor::LibraryBorder => {
+            IdConfigEditor::Theme(IdCETheme::LibraryBorder) => {
                 style.library.border_color = color_config;
             }
-            IdConfigEditor::LibraryHighlight => {
+            IdConfigEditor::Theme(IdCETheme::LibraryHighlight) => {
                 style.library.highlight_color = color_config;
             }
-            IdConfigEditor::PlaylistForeground => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistForeground) => {
                 style.playlist.foreground_color = color_config;
             }
-            IdConfigEditor::PlaylistBackground => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistBackground) => {
                 style.playlist.background_color = color_config;
             }
-            IdConfigEditor::PlaylistBorder => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistBorder) => {
                 style.playlist.border_color = color_config;
             }
-            IdConfigEditor::PlaylistHighlight => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistHighlight) => {
                 style.playlist.highlight_color = color_config;
             }
-            IdConfigEditor::ProgressForeground => {
+            IdConfigEditor::Theme(IdCETheme::ProgressForeground) => {
                 style.progress.foreground_color = color_config;
             }
-            IdConfigEditor::ProgressBackground => {
+            IdConfigEditor::Theme(IdCETheme::ProgressBackground) => {
                 style.progress.background_color = color_config;
             }
-            IdConfigEditor::ProgressBorder => {
+            IdConfigEditor::Theme(IdCETheme::ProgressBorder) => {
                 style.progress.border_color = color_config;
             }
-            IdConfigEditor::LyricForeground => {
+            IdConfigEditor::Theme(IdCETheme::LyricForeground) => {
                 style.lyric.foreground_color = color_config;
             }
-            IdConfigEditor::LyricBackground => {
+            IdConfigEditor::Theme(IdCETheme::LyricBackground) => {
                 style.lyric.background_color = color_config;
             }
-            IdConfigEditor::LyricBorder => {
+            IdConfigEditor::Theme(IdCETheme::LyricBorder) => {
                 style.lyric.border_color = color_config;
             }
 

@@ -40,7 +40,7 @@ use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
-use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::msg::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
 use crate::ui::utils::draw_area_in_absolute;
@@ -252,35 +252,59 @@ impl Model {
             };
         }
 
-        let library_foreground_len: u16 = is_expanded!(IdConfigEditor::LibraryForeground, 8, 3);
-        let library_background_len: u16 = is_expanded!(IdConfigEditor::LibraryBackground, 8, 3);
-        let library_border_len: u16 = is_expanded!(IdConfigEditor::LibraryBorder, 8, 3);
-        let library_highlight_len: u16 = is_expanded!(IdConfigEditor::LibraryHighlight, 8, 3);
+        let library_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LibraryForeground), 8, 3);
+        let library_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LibraryBackground), 8, 3);
+        let library_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LibraryBorder), 8, 3);
+        let library_highlight_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LibraryHighlight), 8, 3);
 
-        let playlist_foreground_len: u16 = is_expanded!(IdConfigEditor::PlaylistForeground, 8, 3);
-        let playlist_background_len: u16 = is_expanded!(IdConfigEditor::PlaylistBackground, 8, 3);
-        let playlist_border_len: u16 = is_expanded!(IdConfigEditor::PlaylistBorder, 8, 3);
-        let playlist_highlight_len: u16 = is_expanded!(IdConfigEditor::PlaylistHighlight, 8, 3);
+        let playlist_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::PlaylistForeground), 8, 3);
+        let playlist_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::PlaylistBackground), 8, 3);
+        let playlist_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::PlaylistBorder), 8, 3);
+        let playlist_highlight_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::PlaylistHighlight), 8, 3);
 
-        let progress_foreground_len: u16 = is_expanded!(IdConfigEditor::ProgressForeground, 8, 3);
-        let progress_background_len: u16 = is_expanded!(IdConfigEditor::ProgressBackground, 8, 3);
-        let progress_border_len: u16 = is_expanded!(IdConfigEditor::ProgressBorder, 8, 3);
+        let progress_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::ProgressForeground), 8, 3);
+        let progress_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::ProgressBackground), 8, 3);
+        let progress_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::ProgressBorder), 8, 3);
 
-        let lyric_foreground_len: u16 = is_expanded!(IdConfigEditor::LyricForeground, 8, 3);
-        let lyric_background_len: u16 = is_expanded!(IdConfigEditor::LyricBackground, 8, 3);
-        let lyric_border_len: u16 = is_expanded!(IdConfigEditor::LyricBorder, 8, 3);
+        let lyric_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LyricForeground), 8, 3);
+        let lyric_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LyricBackground), 8, 3);
+        let lyric_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LyricBorder), 8, 3);
 
-        let important_popup_foreground_len: u16 =
-            is_expanded!(IdConfigEditor::ImportantPopupForeground, 8, 3);
-        let important_popup_background_len: u16 =
-            is_expanded!(IdConfigEditor::ImportantPopupBackground, 8, 3);
+        let important_popup_foreground_len: u16 = is_expanded!(
+            IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground),
+            8,
+            3
+        );
+        let important_popup_background_len: u16 = is_expanded!(
+            IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground),
+            8,
+            3
+        );
         let important_popup_border_len: u16 =
-            is_expanded!(IdConfigEditor::ImportantPopupBorder, 8, 3);
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder), 8, 3);
 
-        let fallback_foreground_len: u16 = is_expanded!(IdConfigEditor::FallbackForeground, 8, 3);
-        let fallback_background_len: u16 = is_expanded!(IdConfigEditor::FallbackBackground, 8, 3);
-        let fallback_border_len: u16 = is_expanded!(IdConfigEditor::FallbackBorder, 8, 3);
-        let fallback_highlight_len: u16 = is_expanded!(IdConfigEditor::FallbackHighlight, 8, 3);
+        let fallback_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::FallbackForeground), 8, 3);
+        let fallback_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::FallbackBackground), 8, 3);
+        let fallback_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::FallbackBorder), 8, 3);
+        let fallback_highlight_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::FallbackHighlight), 8, 3);
 
         let [left, right] = Layout::horizontal([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)])
             .areas(chunk_main);
@@ -348,39 +372,42 @@ impl Model {
                 }
             })
             .and_then(|v| {
-                Some(match v {
-                    IdConfigEditor::LibraryLabel
-                    | IdConfigEditor::LibraryForeground
-                    | IdConfigEditor::LibraryBackground
-                    | IdConfigEditor::LibraryBorder
-                    | IdConfigEditor::LibraryHighlight
-                    | IdConfigEditor::LibraryHighlightSymbol => 0,
-                    IdConfigEditor::PlaylistLabel
-                    | IdConfigEditor::PlaylistForeground
-                    | IdConfigEditor::PlaylistBackground
-                    | IdConfigEditor::PlaylistBorder
-                    | IdConfigEditor::PlaylistHighlight
-                    | IdConfigEditor::PlaylistHighlightSymbol
-                    | IdConfigEditor::CurrentlyPlayingTrackSymbol => 1,
-                    IdConfigEditor::ProgressLabel
-                    | IdConfigEditor::ProgressForeground
-                    | IdConfigEditor::ProgressBackground
-                    | IdConfigEditor::ProgressBorder => 2,
-                    IdConfigEditor::LyricLabel
-                    | IdConfigEditor::LyricForeground
-                    | IdConfigEditor::LyricBackground
-                    | IdConfigEditor::LyricBorder => 3,
-                    IdConfigEditor::ImportantPopupLabel
-                    | IdConfigEditor::ImportantPopupForeground
-                    | IdConfigEditor::ImportantPopupBackground
-                    | IdConfigEditor::ImportantPopupBorder => 4,
-                    IdConfigEditor::FallbackLabel
-                    | IdConfigEditor::FallbackForeground
-                    | IdConfigEditor::FallbackBackground
-                    | IdConfigEditor::FallbackBorder
-                    | IdConfigEditor::FallbackHighlight => 5,
-                    _ => return None,
-                })
+                if let IdConfigEditor::Theme(v) = v {
+                    Some(match v {
+                        IdCETheme::LibraryLabel
+                        | IdCETheme::LibraryForeground
+                        | IdCETheme::LibraryBackground
+                        | IdCETheme::LibraryBorder
+                        | IdCETheme::LibraryHighlight
+                        | IdCETheme::LibraryHighlightSymbol => 0,
+                        IdCETheme::PlaylistLabel
+                        | IdCETheme::PlaylistForeground
+                        | IdCETheme::PlaylistBackground
+                        | IdCETheme::PlaylistBorder
+                        | IdCETheme::PlaylistHighlight
+                        | IdCETheme::PlaylistHighlightSymbol
+                        | IdCETheme::CurrentlyPlayingTrackSymbol => 1,
+                        IdCETheme::ProgressLabel
+                        | IdCETheme::ProgressForeground
+                        | IdCETheme::ProgressBackground
+                        | IdCETheme::ProgressBorder => 2,
+                        IdCETheme::LyricLabel
+                        | IdCETheme::LyricForeground
+                        | IdCETheme::LyricBackground
+                        | IdCETheme::LyricBorder => 3,
+                        IdCETheme::ImportantPopupLabel
+                        | IdCETheme::ImportantPopupForeground
+                        | IdCETheme::ImportantPopupBackground
+                        | IdCETheme::ImportantPopupBorder => 4,
+                        IdCETheme::FallbackLabel
+                        | IdCETheme::FallbackForeground
+                        | IdCETheme::FallbackBackground
+                        | IdCETheme::FallbackBorder
+                        | IdCETheme::FallbackHighlight => 5,
+                    })
+                } else {
+                    None
+                }
             });
 
         let cells = DynamicHeightGrid::new(elem_height, 16 + 2)
@@ -455,43 +482,43 @@ impl Model {
 
             &Id::ConfigEditor(IdConfigEditor::CEThemeSelect) => left,
 
-            &Id::ConfigEditor(IdConfigEditor::LibraryLabel) => chunks_library[0],
-            &Id::ConfigEditor(IdConfigEditor::LibraryForeground) => chunks_library[1],
-            &Id::ConfigEditor(IdConfigEditor::LibraryBackground) => chunks_library[2],
-            &Id::ConfigEditor(IdConfigEditor::LibraryBorder) => chunks_library[3],
-            &Id::ConfigEditor(IdConfigEditor::LibraryHighlight) => chunks_library[4],
-            &Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol) => chunks_library[5],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)) => chunks_library[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryForeground)) => chunks_library[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryBackground)) => chunks_library[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryBorder)) => chunks_library[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlight)) => chunks_library[4],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol)) => chunks_library[5],
 
-            &Id::ConfigEditor(IdConfigEditor::PlaylistLabel) => chunks_playlist[0],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistForeground) => chunks_playlist[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistLabel)) => chunks_playlist[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistForeground)) => chunks_playlist[1],
 
-            &Id::ConfigEditor(IdConfigEditor::PlaylistBackground) => chunks_playlist[2],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistBorder) => chunks_playlist[3],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlight) => chunks_playlist[4],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol) => chunks_playlist[5],
-            &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol) => chunks_playlist[6],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistBackground)) => chunks_playlist[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistBorder)) => chunks_playlist[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlight)) => chunks_playlist[4],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol)) => chunks_playlist[5],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol)) => chunks_playlist[6],
 
-            &Id::ConfigEditor(IdConfigEditor::ProgressLabel) => chunks_progress[0],
-            &Id::ConfigEditor(IdConfigEditor::ProgressForeground) => chunks_progress[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressLabel)) => chunks_progress[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressForeground)) => chunks_progress[1],
 
-            &Id::ConfigEditor(IdConfigEditor::ProgressBackground) => chunks_progress[2],
-            &Id::ConfigEditor(IdConfigEditor::ProgressBorder) => chunks_progress[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressBackground)) => chunks_progress[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressBorder)) => chunks_progress[3],
 
-            &Id::ConfigEditor(IdConfigEditor::LyricLabel) => chunks_lyric[0],
-            &Id::ConfigEditor(IdConfigEditor::LyricForeground) => chunks_lyric[1],
-            &Id::ConfigEditor(IdConfigEditor::LyricBackground) => chunks_lyric[2],
-            &Id::ConfigEditor(IdConfigEditor::LyricBorder) => chunks_lyric[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricLabel)) => chunks_lyric[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricForeground)) => chunks_lyric[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricBackground)) => chunks_lyric[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricBorder)) => chunks_lyric[3],
 
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel) => chunks_important_popup[0],
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground) => chunks_important_popup[1],
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground) => chunks_important_popup[2],
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder) => chunks_important_popup[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupLabel)) => chunks_important_popup[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground)) => chunks_important_popup[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground)) => chunks_important_popup[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder)) => chunks_important_popup[3],
 
-            &Id::ConfigEditor(IdConfigEditor::FallbackLabel) => chunks_fallback[0],
-            &Id::ConfigEditor(IdConfigEditor::FallbackForeground) => chunks_fallback[1],
-            &Id::ConfigEditor(IdConfigEditor::FallbackBackground) => chunks_fallback[2],
-            &Id::ConfigEditor(IdConfigEditor::FallbackBorder) => chunks_fallback[3],
-            &Id::ConfigEditor(IdConfigEditor::FallbackHighlight) => chunks_fallback[4],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackLabel)) => chunks_fallback[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackForeground)) => chunks_fallback[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackBackground)) => chunks_fallback[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackBorder)) => chunks_fallback[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackHighlight)) => chunks_fallback[4],
         }
     }
 
