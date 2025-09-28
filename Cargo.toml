@@ -77,8 +77,7 @@ rss = { version = "2.0.12", default-features = false }
 rusqlite = { version = "0.37", features = ["bundled"] }
 sanitize-filename = "0.6"
 semver = "1.0.26"
-# locked as the next version removes access to "__private"
-serde = { version = "=1.0.221", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.143"
 serde_yaml = "0.9"
 serde-content = "0.1.2"
