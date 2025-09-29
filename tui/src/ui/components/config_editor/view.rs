@@ -1,3 +1,4 @@
+use std::net::IpAddr;
 /**
  * MIT License
  *
@@ -27,7 +28,9 @@ use std::path::PathBuf;
 use anyhow::{Result, bail};
 use include_dir::DirEntry;
 use termusiclib::THEME_DIR;
-use termusiclib::config::v2::server::{PositionYesNo, PositionYesNoLower, RememberLastPosition};
+use termusiclib::config::v2::server::{
+    Backend, ComProtocol, PositionYesNo, PositionYesNoLower, RememberLastPosition,
+};
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
@@ -40,7 +43,7 @@ use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
 use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
-use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::msg::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
 use crate::ui::utils::draw_area_in_absolute;
@@ -159,28 +162,35 @@ impl Model {
                 }
             })
             .and_then(|v| {
-                Some(match v {
-                    IdConfigEditor::MusicDir => 0,
-                    IdConfigEditor::ExitConfirmation => 1,
-                    IdConfigEditor::PlaylistDisplaySymbol => 2,
-                    IdConfigEditor::PlaylistRandomTrack => 3,
-                    IdConfigEditor::PlaylistRandomAlbum => 4,
-                    IdConfigEditor::PodcastDir => 5,
-                    IdConfigEditor::PodcastSimulDownload => 6,
-                    IdConfigEditor::PodcastMaxRetries => 7,
-                    IdConfigEditor::AlbumPhotoAlign => 8,
-                    IdConfigEditor::SaveLastPosition => 9,
-                    IdConfigEditor::SeekStep => 10,
-                    IdConfigEditor::KillDamon => 11,
-                    IdConfigEditor::PlayerUseMpris => 12,
-                    IdConfigEditor::PlayerUseDiscord => 13,
-                    IdConfigEditor::PlayerPort => 14,
-                    IdConfigEditor::ExtraYtdlpArgs => 15,
-                    _ => return None,
-                })
+                if let IdConfigEditor::General(v) = v {
+                    Some(match v {
+                        IdCEGeneral::MusicDir => 0,
+                        IdCEGeneral::ExitConfirmation => 1,
+                        IdCEGeneral::PlaylistDisplaySymbol => 2,
+                        IdCEGeneral::PlaylistRandomTrack => 3,
+                        IdCEGeneral::PlaylistRandomAlbum => 4,
+                        IdCEGeneral::PodcastDir => 5,
+                        IdCEGeneral::PodcastSimulDownload => 6,
+                        IdCEGeneral::PodcastMaxRetries => 7,
+                        IdCEGeneral::AlbumPhotoAlign => 8,
+                        IdCEGeneral::SaveLastPosition => 9,
+                        IdCEGeneral::SeekStep => 10,
+                        IdCEGeneral::KillDamon => 11,
+                        IdCEGeneral::PlayerUseMpris => 12,
+                        IdCEGeneral::PlayerUseDiscord => 13,
+                        IdCEGeneral::PlayerPort => 14,
+                        IdCEGeneral::PlayerAddress => 15,
+                        IdCEGeneral::PlayerProtocol => 16,
+                        IdCEGeneral::PlayerUDSPath => 17,
+                        IdCEGeneral::PlayerBackend => 18,
+                        IdCEGeneral::ExtraYtdlpArgs => 19,
+                    })
+                } else {
+                    None
+                }
             });
 
-        let cells = UniformDynamicGrid::new(16, 3, 56 + 2)
+        let cells = UniformDynamicGrid::new(20, 3, 56 + 2)
             .draw_row_low_space()
             .distribute_row_space()
             .focus_node(focus_elem)
@@ -189,29 +199,33 @@ impl Model {
         app_view! {
             app, f,
 
-            &Id::ConfigEditor(IdConfigEditor::MusicDir) => cells[0],
-            &Id::ConfigEditor(IdConfigEditor::ExitConfirmation) => cells[1],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::MusicDir)) => cells[0],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExitConfirmation)) => cells[1],
 
-            &Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol) => cells[2],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack) => cells[3],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum) => cells[4],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)) => cells[2],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)) => cells[3],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)) => cells[4],
 
-            &Id::ConfigEditor(IdConfigEditor::PodcastDir) => cells[5],
-            &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload) => cells[6],
-            &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries) => cells[7],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastDir)) => cells[5],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)) => cells[6],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)) => cells[7],
 
-            &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign) => cells[8],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::AlbumPhotoAlign)) => cells[8],
 
-            &Id::ConfigEditor(IdConfigEditor::SaveLastPosition) => cells[9],
-            &Id::ConfigEditor(IdConfigEditor::SeekStep) => cells[10],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)) => cells[9],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SeekStep)) => cells[10],
 
-            &Id::ConfigEditor(IdConfigEditor::KillDamon) => cells[11],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)) => cells[11],
 
-            &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris) => cells[12],
-            &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord) => cells[13],
-            &Id::ConfigEditor(IdConfigEditor::PlayerPort) => cells[14],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)) => cells[12],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[13],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[14],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[15],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[16],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)) => cells[17],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)) => cells[18],
 
-            &Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs) => cells[15],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[19],
         }
     }
 
@@ -249,35 +263,59 @@ impl Model {
             };
         }
 
-        let library_foreground_len: u16 = is_expanded!(IdConfigEditor::LibraryForeground, 8, 3);
-        let library_background_len: u16 = is_expanded!(IdConfigEditor::LibraryBackground, 8, 3);
-        let library_border_len: u16 = is_expanded!(IdConfigEditor::LibraryBorder, 8, 3);
-        let library_highlight_len: u16 = is_expanded!(IdConfigEditor::LibraryHighlight, 8, 3);
+        let library_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LibraryForeground), 8, 3);
+        let library_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LibraryBackground), 8, 3);
+        let library_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LibraryBorder), 8, 3);
+        let library_highlight_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LibraryHighlight), 8, 3);
 
-        let playlist_foreground_len: u16 = is_expanded!(IdConfigEditor::PlaylistForeground, 8, 3);
-        let playlist_background_len: u16 = is_expanded!(IdConfigEditor::PlaylistBackground, 8, 3);
-        let playlist_border_len: u16 = is_expanded!(IdConfigEditor::PlaylistBorder, 8, 3);
-        let playlist_highlight_len: u16 = is_expanded!(IdConfigEditor::PlaylistHighlight, 8, 3);
+        let playlist_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::PlaylistForeground), 8, 3);
+        let playlist_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::PlaylistBackground), 8, 3);
+        let playlist_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::PlaylistBorder), 8, 3);
+        let playlist_highlight_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::PlaylistHighlight), 8, 3);
 
-        let progress_foreground_len: u16 = is_expanded!(IdConfigEditor::ProgressForeground, 8, 3);
-        let progress_background_len: u16 = is_expanded!(IdConfigEditor::ProgressBackground, 8, 3);
-        let progress_border_len: u16 = is_expanded!(IdConfigEditor::ProgressBorder, 8, 3);
+        let progress_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::ProgressForeground), 8, 3);
+        let progress_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::ProgressBackground), 8, 3);
+        let progress_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::ProgressBorder), 8, 3);
 
-        let lyric_foreground_len: u16 = is_expanded!(IdConfigEditor::LyricForeground, 8, 3);
-        let lyric_background_len: u16 = is_expanded!(IdConfigEditor::LyricBackground, 8, 3);
-        let lyric_border_len: u16 = is_expanded!(IdConfigEditor::LyricBorder, 8, 3);
+        let lyric_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LyricForeground), 8, 3);
+        let lyric_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LyricBackground), 8, 3);
+        let lyric_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::LyricBorder), 8, 3);
 
-        let important_popup_foreground_len: u16 =
-            is_expanded!(IdConfigEditor::ImportantPopupForeground, 8, 3);
-        let important_popup_background_len: u16 =
-            is_expanded!(IdConfigEditor::ImportantPopupBackground, 8, 3);
+        let important_popup_foreground_len: u16 = is_expanded!(
+            IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground),
+            8,
+            3
+        );
+        let important_popup_background_len: u16 = is_expanded!(
+            IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground),
+            8,
+            3
+        );
         let important_popup_border_len: u16 =
-            is_expanded!(IdConfigEditor::ImportantPopupBorder, 8, 3);
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder), 8, 3);
 
-        let fallback_foreground_len: u16 = is_expanded!(IdConfigEditor::FallbackForeground, 8, 3);
-        let fallback_background_len: u16 = is_expanded!(IdConfigEditor::FallbackBackground, 8, 3);
-        let fallback_border_len: u16 = is_expanded!(IdConfigEditor::FallbackBorder, 8, 3);
-        let fallback_highlight_len: u16 = is_expanded!(IdConfigEditor::FallbackHighlight, 8, 3);
+        let fallback_foreground_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::FallbackForeground), 8, 3);
+        let fallback_background_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::FallbackBackground), 8, 3);
+        let fallback_border_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::FallbackBorder), 8, 3);
+        let fallback_highlight_len: u16 =
+            is_expanded!(IdConfigEditor::Theme(IdCETheme::FallbackHighlight), 8, 3);
 
         let [left, right] = Layout::horizontal([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)])
             .areas(chunk_main);
@@ -345,39 +383,43 @@ impl Model {
                 }
             })
             .and_then(|v| {
-                Some(match v {
-                    IdConfigEditor::LibraryLabel
-                    | IdConfigEditor::LibraryForeground
-                    | IdConfigEditor::LibraryBackground
-                    | IdConfigEditor::LibraryBorder
-                    | IdConfigEditor::LibraryHighlight
-                    | IdConfigEditor::LibraryHighlightSymbol => 0,
-                    IdConfigEditor::PlaylistLabel
-                    | IdConfigEditor::PlaylistForeground
-                    | IdConfigEditor::PlaylistBackground
-                    | IdConfigEditor::PlaylistBorder
-                    | IdConfigEditor::PlaylistHighlight
-                    | IdConfigEditor::PlaylistHighlightSymbol
-                    | IdConfigEditor::CurrentlyPlayingTrackSymbol => 1,
-                    IdConfigEditor::ProgressLabel
-                    | IdConfigEditor::ProgressForeground
-                    | IdConfigEditor::ProgressBackground
-                    | IdConfigEditor::ProgressBorder => 2,
-                    IdConfigEditor::LyricLabel
-                    | IdConfigEditor::LyricForeground
-                    | IdConfigEditor::LyricBackground
-                    | IdConfigEditor::LyricBorder => 3,
-                    IdConfigEditor::ImportantPopupLabel
-                    | IdConfigEditor::ImportantPopupForeground
-                    | IdConfigEditor::ImportantPopupBackground
-                    | IdConfigEditor::ImportantPopupBorder => 4,
-                    IdConfigEditor::FallbackLabel
-                    | IdConfigEditor::FallbackForeground
-                    | IdConfigEditor::FallbackBackground
-                    | IdConfigEditor::FallbackBorder
-                    | IdConfigEditor::FallbackHighlight => 5,
-                    _ => return None,
-                })
+                if let IdConfigEditor::Theme(v) = v {
+                    Some(match v {
+                        IdCETheme::LibraryLabel
+                        | IdCETheme::LibraryForeground
+                        | IdCETheme::LibraryBackground
+                        | IdCETheme::LibraryBorder
+                        | IdCETheme::LibraryHighlight
+                        | IdCETheme::LibraryHighlightSymbol => 0,
+                        IdCETheme::PlaylistLabel
+                        | IdCETheme::PlaylistForeground
+                        | IdCETheme::PlaylistBackground
+                        | IdCETheme::PlaylistBorder
+                        | IdCETheme::PlaylistHighlight
+                        | IdCETheme::PlaylistHighlightSymbol
+                        | IdCETheme::CurrentlyPlayingTrackSymbol => 1,
+                        IdCETheme::ProgressLabel
+                        | IdCETheme::ProgressForeground
+                        | IdCETheme::ProgressBackground
+                        | IdCETheme::ProgressBorder => 2,
+                        IdCETheme::LyricLabel
+                        | IdCETheme::LyricForeground
+                        | IdCETheme::LyricBackground
+                        | IdCETheme::LyricBorder => 3,
+                        IdCETheme::ImportantPopupLabel
+                        | IdCETheme::ImportantPopupForeground
+                        | IdCETheme::ImportantPopupBackground
+                        | IdCETheme::ImportantPopupBorder => 4,
+                        IdCETheme::FallbackLabel
+                        | IdCETheme::FallbackForeground
+                        | IdCETheme::FallbackBackground
+                        | IdCETheme::FallbackBorder
+                        | IdCETheme::FallbackHighlight => 5,
+                        IdCETheme::ThemeSelectTable => return None,
+                    })
+                } else {
+                    None
+                }
             });
 
         let cells = DynamicHeightGrid::new(elem_height, 16 + 2)
@@ -450,45 +492,45 @@ impl Model {
         app_view! {
             app, f,
 
-            &Id::ConfigEditor(IdConfigEditor::CEThemeSelect) => left,
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)) => left,
 
-            &Id::ConfigEditor(IdConfigEditor::LibraryLabel) => chunks_library[0],
-            &Id::ConfigEditor(IdConfigEditor::LibraryForeground) => chunks_library[1],
-            &Id::ConfigEditor(IdConfigEditor::LibraryBackground) => chunks_library[2],
-            &Id::ConfigEditor(IdConfigEditor::LibraryBorder) => chunks_library[3],
-            &Id::ConfigEditor(IdConfigEditor::LibraryHighlight) => chunks_library[4],
-            &Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol) => chunks_library[5],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)) => chunks_library[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryForeground)) => chunks_library[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryBackground)) => chunks_library[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryBorder)) => chunks_library[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlight)) => chunks_library[4],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol)) => chunks_library[5],
 
-            &Id::ConfigEditor(IdConfigEditor::PlaylistLabel) => chunks_playlist[0],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistForeground) => chunks_playlist[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistLabel)) => chunks_playlist[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistForeground)) => chunks_playlist[1],
 
-            &Id::ConfigEditor(IdConfigEditor::PlaylistBackground) => chunks_playlist[2],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistBorder) => chunks_playlist[3],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlight) => chunks_playlist[4],
-            &Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol) => chunks_playlist[5],
-            &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol) => chunks_playlist[6],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistBackground)) => chunks_playlist[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistBorder)) => chunks_playlist[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlight)) => chunks_playlist[4],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol)) => chunks_playlist[5],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol)) => chunks_playlist[6],
 
-            &Id::ConfigEditor(IdConfigEditor::ProgressLabel) => chunks_progress[0],
-            &Id::ConfigEditor(IdConfigEditor::ProgressForeground) => chunks_progress[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressLabel)) => chunks_progress[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressForeground)) => chunks_progress[1],
 
-            &Id::ConfigEditor(IdConfigEditor::ProgressBackground) => chunks_progress[2],
-            &Id::ConfigEditor(IdConfigEditor::ProgressBorder) => chunks_progress[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressBackground)) => chunks_progress[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressBorder)) => chunks_progress[3],
 
-            &Id::ConfigEditor(IdConfigEditor::LyricLabel) => chunks_lyric[0],
-            &Id::ConfigEditor(IdConfigEditor::LyricForeground) => chunks_lyric[1],
-            &Id::ConfigEditor(IdConfigEditor::LyricBackground) => chunks_lyric[2],
-            &Id::ConfigEditor(IdConfigEditor::LyricBorder) => chunks_lyric[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricLabel)) => chunks_lyric[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricForeground)) => chunks_lyric[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricBackground)) => chunks_lyric[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricBorder)) => chunks_lyric[3],
 
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupLabel) => chunks_important_popup[0],
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground) => chunks_important_popup[1],
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground) => chunks_important_popup[2],
-            &Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder) => chunks_important_popup[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupLabel)) => chunks_important_popup[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground)) => chunks_important_popup[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground)) => chunks_important_popup[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder)) => chunks_important_popup[3],
 
-            &Id::ConfigEditor(IdConfigEditor::FallbackLabel) => chunks_fallback[0],
-            &Id::ConfigEditor(IdConfigEditor::FallbackForeground) => chunks_fallback[1],
-            &Id::ConfigEditor(IdConfigEditor::FallbackBackground) => chunks_fallback[2],
-            &Id::ConfigEditor(IdConfigEditor::FallbackBorder) => chunks_fallback[3],
-            &Id::ConfigEditor(IdConfigEditor::FallbackHighlight) => chunks_fallback[4],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackLabel)) => chunks_fallback[0],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackForeground)) => chunks_fallback[1],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackBackground)) => chunks_fallback[2],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackBorder)) => chunks_fallback[3],
+            &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackHighlight)) => chunks_fallback[4],
         }
     }
 
@@ -525,7 +567,9 @@ impl Model {
         // Active Config Editor
         assert!(
             self.app
-                .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+                .active(&Id::ConfigEditor(IdConfigEditor::General(
+                    IdCEGeneral::MusicDir
+                )))
                 .is_ok()
         );
 
@@ -593,11 +637,15 @@ impl Model {
         match self.config_editor.layout {
             ConfigEditorLayout::General => self
                 .app
-                .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+                .active(&Id::ConfigEditor(IdConfigEditor::General(
+                    IdCEGeneral::MusicDir,
+                )))
                 .ok(),
             ConfigEditorLayout::Color => self
                 .app
-                .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
+                .active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                    IdCETheme::ThemeSelectTable,
+                )))
                 .ok(),
             ConfigEditorLayout::Key1 => self
                 .app
@@ -639,11 +687,9 @@ impl Model {
 
         let mut config_server = self.config_server.write();
 
-        if let Ok(State::One(StateValue::String(music_dir))) =
-            self.app.state(&Id::ConfigEditor(IdConfigEditor::MusicDir))
-        {
-            // config.music_dir = music_dir;
-            // let mut vec = Vec::new();
+        if let Ok(State::One(StateValue::String(music_dir))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::MusicDir),
+        )) {
             let vec = music_dir
                 .split(';')
                 .map(PathBuf::from)
@@ -655,17 +701,15 @@ impl Model {
             config_server.settings.player.music_dirs = vec;
         }
 
-        if let Ok(State::One(StateValue::Usize(exit_confirmation))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
-        {
+        if let Ok(State::One(StateValue::Usize(exit_confirmation))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExitConfirmation)),
+        ) {
             config_tui.settings.behavior.confirm_quit = matches!(exit_confirmation, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(display_symbol))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
-        {
+        if let Ok(State::One(StateValue::Usize(display_symbol))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)),
+        ) {
             config_tui
                 .settings
                 .theme
@@ -674,45 +718,40 @@ impl Model {
                 .use_loop_mode_symbol = matches!(display_symbol, 0);
         }
 
-        if let Ok(State::One(StateValue::String(random_track_quantity_str))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
-        {
+        if let Ok(State::One(StateValue::String(random_track_quantity_str))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)),
+        ) {
             if let Ok(quantity) = random_track_quantity_str.parse::<NonZeroU32>() {
                 config_server.settings.player.random_track_quantity = quantity;
             }
         }
 
-        if let Ok(State::One(StateValue::String(random_album_quantity_str))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
-        {
+        if let Ok(State::One(StateValue::String(random_album_quantity_str))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)),
+        ) {
             if let Ok(quantity) = random_album_quantity_str.parse::<NonZeroU32>() {
                 config_server.settings.player.random_album_min_quantity = quantity;
             }
         }
 
-        if let Ok(State::One(StateValue::String(podcast_dir))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
-        {
+        if let Ok(State::One(StateValue::String(podcast_dir))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PodcastDir),
+        )) {
             let absolute_dir = shellexpand::path::tilde(&podcast_dir);
             if absolute_dir.exists() {
                 config_server.settings.podcast.download_dir = absolute_dir.into_owned();
             }
         }
-        if let Ok(State::One(StateValue::String(podcast_simul_download))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
-        {
+        if let Ok(State::One(StateValue::String(podcast_simul_download))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)),
+        ) {
             if let Ok(quantity) = podcast_simul_download.parse::<NonZeroU8>() {
                 config_server.settings.podcast.concurrent_downloads_max = quantity;
             }
         }
-        if let Ok(State::One(StateValue::String(podcast_max_retries))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
-        {
+        if let Ok(State::One(StateValue::String(podcast_max_retries))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)),
+        ) {
             if let Ok(quantity) = podcast_max_retries.parse::<u8>() {
                 if (1..11).contains(&quantity) {
                     config_server.settings.podcast.max_download_retries = quantity;
@@ -721,10 +760,9 @@ impl Model {
                 }
             }
         }
-        if let Ok(State::One(StateValue::Usize(align))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
-        {
+        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::AlbumPhotoAlign),
+        )) {
             let align = match align {
                 0 => XywhAlign::BottomRight,
                 1 => XywhAlign::BottomLeft,
@@ -734,10 +772,9 @@ impl Model {
             config_tui.settings.coverart.align = align;
         }
 
-        if let Ok(State::One(StateValue::Usize(save_last_position))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
-        {
+        if let Ok(State::One(StateValue::Usize(save_last_position))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)),
+        ) {
             // NOTE: value "0" means to not save the value
             if save_last_position != 0 {
                 let new_val = match save_last_position {
@@ -759,9 +796,9 @@ impl Model {
             // config_server.settings.player.remember_position = save_last_position;
         }
 
-        if let Ok(State::One(StateValue::Usize(seek_step))) =
-            self.app.state(&Id::ConfigEditor(IdConfigEditor::SeekStep))
-        {
+        if let Ok(State::One(StateValue::Usize(seek_step))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::SeekStep),
+        )) {
             // NOTE: seek_step is currently unsupported to be set
             let _ = seek_step;
 
@@ -774,30 +811,27 @@ impl Model {
             // config_server.settings.player.seek_step = seek_step;
         }
 
-        if let Ok(State::One(StateValue::Usize(kill_daemon))) =
-            self.app.state(&Id::ConfigEditor(IdConfigEditor::KillDamon))
-        {
+        if let Ok(State::One(StateValue::Usize(kill_daemon))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::KillDamon),
+        )) {
             config_tui.settings.behavior.quit_server_on_exit = matches!(kill_daemon, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(player_use_mpris))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
-        {
+        if let Ok(State::One(StateValue::Usize(player_use_mpris))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)),
+        ) {
             config_server.settings.player.use_mediacontrols = matches!(player_use_mpris, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(player_use_discord))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
-        {
+        if let Ok(State::One(StateValue::Usize(player_use_discord))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)),
+        ) {
             config_server.settings.player.set_discord_status = matches!(player_use_discord, 0);
         }
 
-        if let Ok(State::One(StateValue::String(player_port))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
-        {
+        if let Ok(State::One(StateValue::String(player_port))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerPort),
+        )) {
             if let Ok(port) = player_port.parse::<u16>() {
                 if (1024..u16::MAX).contains(&port) {
                     config_server.settings.com.port = port;
@@ -807,10 +841,65 @@ impl Model {
             }
         }
 
-        if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))
-        {
+        if let Ok(State::One(StateValue::String(player_port))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerAddress),
+        )) {
+            if let Ok(addr) = player_port.parse::<IpAddr>() {
+                config_server.settings.com.address = addr;
+            }
+        }
+
+        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerProtocol),
+        )) {
+            let protocol = match align {
+                0 => ComProtocol::HTTP,
+                1 => {
+                    // the config will support either value on any system, but will fail to actually start on non-unix systems
+                    if cfg!(not(unix)) {
+                        bail!("UDS Protocol is only supported on unix systems");
+                    }
+                    ComProtocol::UDS
+                }
+                // numbers are specified in "PlayerProtocol"
+                _ => unreachable!(),
+            };
+            config_server.settings.com.protocol = protocol;
+        }
+
+        if let Ok(State::One(StateValue::String(podcast_dir))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerUDSPath),
+        )) {
+            let abs_path = shellexpand::path::tilde(&podcast_dir);
+
+            if !abs_path.has_root()
+                || abs_path.file_name().is_none()
+                || abs_path.extension().is_none_or(|v| v != "socket")
+            {
+                bail!(
+                    "Invalid UDS socket Path.\nPath need to be absolute and end with \".socket\"."
+                );
+            }
+
+            config_server.settings.com.socket_path = abs_path.into_owned();
+        }
+
+        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::General(IdCEGeneral::PlayerBackend),
+        )) {
+            let backend = match align {
+                0 => Backend::Rusty,
+                1 => Backend::Mpv,
+                2 => Backend::Gstreamer,
+                // numbers are specified in "PlayerBackend"
+                _ => unreachable!(),
+            };
+            config_server.settings.player.backend = backend;
+        }
+
+        if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
+        ) {
             config_tui.settings.ytdlp.extra_args = extra_ytdlp_args;
         }
         Ok(())
@@ -895,7 +984,7 @@ impl Model {
         let table = table.build();
         self.app
             .attr(
-                &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+                &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)),
                 Attribute::Content,
                 AttrValue::Table(table),
             )
@@ -921,7 +1010,7 @@ impl Model {
         assert!(
             self.app
                 .attr(
-                    &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+                    &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)),
                     Attribute::Value,
                     AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
                 )

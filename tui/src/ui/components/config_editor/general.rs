@@ -23,6 +23,7 @@
  */
 use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::v2::server::{Backend, ComProtocol, default_uds_socket_path};
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use tui_realm_stdlib::Radio;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
@@ -34,9 +35,9 @@ use tuirealm::{
 
 use crate::CombinedSettings;
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
-use crate::ui::ids::{Id, IdConfigEditor};
+use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
-use crate::ui::msg::{ConfigEditorMsg, Msg};
+use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
 
 #[derive(MockComponent)]
 pub struct MusicDir {
@@ -85,8 +86,8 @@ impl Component<Msg, UserEvent> for MusicDir {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -197,8 +198,8 @@ impl Component<Msg, UserEvent> for ExitConfirmation {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -271,7 +272,7 @@ impl PlaylistDisplaySymbol {
             .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Display symbol in playlist title? ", Alignment::Left)
+            .title(" Use symbols for playlist loop mode? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_r);
@@ -285,8 +286,8 @@ impl Component<Msg, UserEvent> for PlaylistDisplaySymbol {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -336,8 +337,8 @@ impl Component<Msg, UserEvent> for PlaylistRandomTrack {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -390,8 +391,8 @@ impl Component<Msg, UserEvent> for PlaylistRandomAlbum {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -444,8 +445,8 @@ impl Component<Msg, UserEvent> for PodcastDir {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -473,7 +474,7 @@ impl PodcastSimulDownload {
                     "between 1 ~ 5 suggested",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Podcast Simultanious Download: ", Alignment::Left)
+                .title(" Podcast Simultaneous Download: ", Alignment::Left)
                 .value(
                     config
                         .server
@@ -498,8 +499,8 @@ impl Component<Msg, UserEvent> for PodcastSimulDownload {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -552,8 +553,8 @@ impl Component<Msg, UserEvent> for PodcastMaxRetries {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -582,7 +583,7 @@ impl AlbumPhotoAlign {
             .choices(["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Album Photo Align: ", Alignment::Left)
+            .title(" Coverart Align: ", Alignment::Left)
             .value(align);
 
         drop(config_r);
@@ -596,8 +597,8 @@ impl Component<Msg, UserEvent> for AlbumPhotoAlign {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -650,8 +651,8 @@ impl Component<Msg, UserEvent> for SaveLastPosition {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::SaveLastPositionBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::SaveLastPosotionBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -696,8 +697,8 @@ impl Component<Msg, UserEvent> for ConfigSeekStep {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -721,7 +722,7 @@ impl KillDaemon {
             .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Kill daemon when quit termusic? ", Alignment::Left)
+            .title(" Stop Server on TUI exit? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_r);
@@ -735,8 +736,8 @@ impl Component<Msg, UserEvent> for KillDaemon {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -760,7 +761,7 @@ impl PlayerUseMpris {
             .choices(["Yes", "No"])
             .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Support Mpris? ", Alignment::Left)
+            .title(" Support Media Controls? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_tui);
@@ -777,8 +778,8 @@ impl Component<Msg, UserEvent> for PlayerUseMpris {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -819,8 +820,8 @@ impl Component<Msg, UserEvent> for PlayerUseDiscord {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -866,8 +867,200 @@ impl Component<Msg, UserEvent> for PlayerPort {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct PlayerAddress {
+    component: Input,
+    config: SharedTuiSettings,
+}
+
+impl PlayerAddress {
+    pub fn new(config: CombinedSettings) -> Self {
+        // TODO: this should likely also cover the MaybeCom settings from the TUI
+        let component = {
+            let config_tui = config.tui.read();
+            Input::default()
+                .borders(
+                    Borders::default()
+                        .color(config_tui.settings.theme.library_border())
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(config_tui.settings.theme.library_highlight())
+                .input_type(InputType::Text) // we likely could make a custom matcher
+                .invalid_style(Style::default().fg(Color::Red))
+                .placeholder(
+                    "::1 or 127.0.0.1 recommended",
+                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                )
+                .title(" Player Address: ", Alignment::Left)
+                .value(config.server.read().settings.com.address.to_string())
+        };
+
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl Component<Msg, UserEvent> for PlayerAddress {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        handle_input_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct PlayerProtocol {
+    component: Radio,
+    config: SharedTuiSettings,
+}
+
+impl PlayerProtocol {
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
+        let value = match config.server.read().settings.com.protocol {
+            ComProtocol::HTTP => 0,
+            ComProtocol::UDS => 1,
+        };
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(config_tui.settings.theme.library_border())
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(["HTTP", "UDS"])
+            .foreground(config_tui.settings.theme.library_highlight())
+            .rewind(true)
+            .title(" Communication Protocol: ", Alignment::Left)
+            .value(value);
+
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl Component<Msg, UserEvent> for PlayerProtocol {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        handle_radio_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct PlayerUDSPath {
+    component: Input,
+    config: SharedTuiSettings,
+}
+
+impl PlayerUDSPath {
+    pub fn new(config: CombinedSettings) -> Self {
+        let component = {
+            let config_tui = config.tui.read();
+            Input::default()
+                .borders(
+                    Borders::default()
+                        .color(config_tui.settings.theme.library_border())
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(config_tui.settings.theme.library_highlight())
+                .input_type(InputType::Text)
+                .invalid_style(Style::default().fg(Color::Red))
+                .placeholder(
+                    default_uds_socket_path().display().to_string(),
+                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                )
+                .title(" Player UDS Socket Path: ", Alignment::Left)
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .com
+                        .socket_path
+                        .to_string_lossy(),
+                )
+        };
+
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl Component<Msg, UserEvent> for PlayerUDSPath {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        handle_input_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct PlayerBackend {
+    component: Radio,
+    config: SharedTuiSettings,
+}
+
+impl PlayerBackend {
+    pub fn new(config: CombinedSettings) -> Self {
+        let config_tui = config.tui.read();
+        let value = match config.server.read().settings.player.backend {
+            Backend::Rusty => 0,
+            Backend::Mpv => 1,
+            Backend::Gstreamer => 2,
+        };
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(config_tui.settings.theme.library_border())
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(["Rusty", "MPV", "Gstreamer"])
+            .foreground(config_tui.settings.theme.library_highlight())
+            .rewind(true)
+            .title(" Playback Backend: ", Alignment::Left)
+            .value(value);
+
+        drop(config_tui);
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl Component<Msg, UserEvent> for PlayerBackend {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        handle_radio_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
@@ -913,108 +1106,133 @@ impl Component<Msg, UserEvent> for ExtraYtdlpArgs {
             &mut self.component,
             ev,
             &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::ExtraYtdlpArgsBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::ExtraYtdlpArgsBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
         )
     }
 }
 
 impl Model {
     /// Mount / Remount the Config-Editor's First Page, the General Options
+    #[allow(clippy::too_many_lines)]
     pub(super) fn remount_config_general(&mut self) -> Result<()> {
         // Mount general page
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::MusicDir),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::MusicDir)),
             Box::new(MusicDir::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExitConfirmation)),
             Box::new(ExitConfirmation::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)),
             Box::new(PlaylistDisplaySymbol::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)),
             Box::new(PlaylistRandomTrack::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)),
             Box::new(PlaylistRandomAlbum::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PodcastDir),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastDir)),
             Box::new(PodcastDir::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)),
             Box::new(PodcastSimulDownload::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)),
             Box::new(PodcastMaxRetries::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::AlbumPhotoAlign)),
             Box::new(AlbumPhotoAlign::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)),
             Box::new(SaveLastPosition::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::SeekStep),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SeekStep)),
             Box::new(ConfigSeekStep::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::KillDamon),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)),
             Box::new(KillDaemon::new(self.config_tui.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)),
             Box::new(PlayerUseMpris::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)),
             Box::new(PlayerUseDiscord::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::PlayerPort),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)),
             Box::new(PlayerPort::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
         self.app.remount(
-            Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs),
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)),
+            Box::new(PlayerAddress::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)),
+            Box::new(PlayerProtocol::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)),
+            Box::new(PlayerUDSPath::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)),
+            Box::new(PlayerBackend::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
             Box::new(ExtraYtdlpArgs::new(self.get_combined_settings())),
             Vec::new(),
         )?;
@@ -1024,49 +1242,81 @@ impl Model {
 
     /// Unmount the Config-Editor's First Page, the General Options
     pub(super) fn umount_config_general(&mut self) -> Result<()> {
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::MusicDir))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::MusicDir,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::ExitConfirmation,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlaylistDisplaySymbol,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlaylistRandomAlbum,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlaylistRandomTrack,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastDir))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))?;
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PodcastDir,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PodcastSimulDownload,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PodcastMaxRetries,
+        )))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::AlbumPhotoAlign,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::SaveLastPosition,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::SeekStep))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::SeekStep,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::KillDamon))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::KillDamon,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerUseMpris,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerUseDiscord,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerPort))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerPort,
+        )))?;
 
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))?;
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerAddress,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerProtocol,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerUDSPath,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PlayerBackend,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::ExtraYtdlpArgs,
+        )))?;
 
         Ok(())
     }

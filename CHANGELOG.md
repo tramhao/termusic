@@ -10,6 +10,7 @@
 - Feat(tui): make the Config editor dynamically size elements.
 - Feat(tui): make the Config editor (at least rudementally) scrollable.
 - Feat(tui): collect spawned server logs until connected for better error, in case server exits before being connected.
+- Feat(tui): add config editor fields for `com.address`, `com.protocol`, `com.socket_path`, `player.backend`
 - Feat(server): add extra config section for metadata scanning and parsing.
 - Feat(server): on rusty backend, allow configuring output sample rate, now defaulting to 48_000Hz (instead of rodio default 44_100Hz).
 - Feat(server): on mpv backend, add option to configure `audio-device` property.
@@ -20,7 +21,8 @@
 - Fix(tui): when in podcast layout, always show the currently selected episode's description (instead of only when moving to it).
 - Fix(tui): properly reset lyric text once leaving podcast layout.
 - Fix(tui): always properly show Progress component's title (Status, Volume, Speed, etc).
-- Fix(server): when adding multipl tracks to the playlist, dont exit on first error and add remaining possible tracks.
+- Fix(tui): reword some config editor field titles.
+- Fix(server): when adding multiple tracks to the playlist, dont exit on first error and add remaining possible tracks.
 - Fix(server): on linux+mpris, set volume on start instead of only on change.
 - Fix(server): on rusty backend, behave correctly when a next/previous occurs while a source is pre-fetched.
 - Fix(server): on rusty backend, handle the case of symphonia having a initial 0-length buffer.

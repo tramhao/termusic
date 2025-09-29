@@ -8,8 +8,11 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::utils::get_app_config_path;
 
 use crate::ui::Model;
-use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
-use crate::ui::msg::{ConfigEditorMsg, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg};
+use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::msg::{
+    ConfigEditorMsg, GENERAL_FOCUS_ORDER, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg,
+    THEME_FOCUS_ORDER,
+};
 use crate::ui::tui_cmd::TuiCmd;
 
 /// How many Themes there are without actual files and always exist
@@ -38,100 +41,6 @@ impl Model {
             }
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_editor.config_changed = true,
-            // Handle focus of general page
-            ConfigEditorMsg::ExtraYtdlpArgsBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
-                    .ok();
-            }
-            ConfigEditorMsg::MusicDirBlurDown | ConfigEditorMsg::PlaylistDisplaySymbolBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
-                    .ok();
-            }
-            ConfigEditorMsg::ExitConfirmationBlurDown
-            | ConfigEditorMsg::PlaylistRandomTrackBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistDisplaySymbolBlurDown
-            | ConfigEditorMsg::PlaylistRandomAlbumBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistRandomTrackBlurDown | ConfigEditorMsg::PodcastDirBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistRandomAlbumBlurDown
-            | ConfigEditorMsg::PodcastSimulDownloadBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
-                    .ok();
-            }
-            ConfigEditorMsg::PodcastDirBlurDown | ConfigEditorMsg::PodcastMaxRetriesBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
-                    .ok();
-            }
-            ConfigEditorMsg::PodcastSimulDownloadBlurDown
-            | ConfigEditorMsg::AlbumPhotoAlignBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
-                    .ok();
-            }
-
-            ConfigEditorMsg::PodcastMaxRetriesBlurDown
-            | ConfigEditorMsg::SaveLastPosotionBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
-                    .ok();
-            }
-
-            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::SeekStepBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
-                    .ok();
-            }
-
-            ConfigEditorMsg::SaveLastPositionBlurDown | ConfigEditorMsg::KillDaemonBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::SeekStep))
-                    .ok();
-            }
-
-            ConfigEditorMsg::SeekStepBlurDown | ConfigEditorMsg::PlayerUseMprisBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::KillDamon))
-                    .ok();
-            }
-
-            ConfigEditorMsg::KillDaemonBlurDown | ConfigEditorMsg::PlayerUseDiscordBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
-                    .ok();
-            }
-
-            ConfigEditorMsg::PlayerUseMprisBlurDown | ConfigEditorMsg::PlayerPortBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
-                    .ok();
-            }
-
-            ConfigEditorMsg::PlayerUseDiscordBlurDown | ConfigEditorMsg::ExtraYtdlpArgsBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
-                    .ok();
-            }
-
-            ConfigEditorMsg::PlayerPortBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ExtraYtdlpArgs))
-                    .ok();
-            }
 
             ConfigEditorMsg::ConfigSaveOk => {
                 self.app
@@ -178,155 +87,6 @@ impl Model {
                 self.umount_config_editor();
             }
 
-            // Focus of color page
-            ConfigEditorMsg::ThemeSelectBlurDown | ConfigEditorMsg::LibraryBackgroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryForegroundBlurUp
-            | ConfigEditorMsg::FallbackHighlightBlurDown => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryForegroundBlurDown | ConfigEditorMsg::LibraryBorderBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryBackgroundBlurDown
-            | ConfigEditorMsg::LibraryHighlightBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryBorderBlurDown
-            | ConfigEditorMsg::LibraryHighlightSymbolBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryHighlightBlurDown
-            | ConfigEditorMsg::PlaylistForegroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryHighlightSymbolBlurDown
-            | ConfigEditorMsg::PlaylistBackgroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistForeground))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistForegroundBlurDown | ConfigEditorMsg::PlaylistBorderBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistBackground))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistBackgroundBlurDown
-            | ConfigEditorMsg::PlaylistHighlightBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistBorder))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistBorderBlurDown
-            | ConfigEditorMsg::PlaylistHighlightSymbolBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlight))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistHighlightBlurDown
-            | ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistHighlightSymbolBlurDown
-            | ConfigEditorMsg::ProgressForegroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(
-                        IdConfigEditor::CurrentlyPlayingTrackSymbol,
-                    ))
-                    .ok();
-            }
-            ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurDown
-            | ConfigEditorMsg::ProgressBackgroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))
-                    .ok();
-            }
-            ConfigEditorMsg::ProgressForegroundBlurDown | ConfigEditorMsg::ProgressBorderBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ProgressBackground))
-                    .ok();
-            }
-            ConfigEditorMsg::ProgressBackgroundBlurDown
-            | ConfigEditorMsg::LyricForegroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))
-                    .ok();
-            }
-
-            ConfigEditorMsg::ProgressBorderBlurDown | ConfigEditorMsg::LyricBackgroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LyricForeground))
-                    .ok();
-            }
-            ConfigEditorMsg::LyricForegroundBlurDown | ConfigEditorMsg::LyricBorderBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LyricBackground))
-                    .ok();
-            }
-            ConfigEditorMsg::LyricBackgroundBlurDown
-            | ConfigEditorMsg::ImportantPopupForegroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
-                    .ok();
-            }
-
-            ConfigEditorMsg::LyricBorderBlurDown
-            | ConfigEditorMsg::ImportantPopupBackgroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupForeground))
-                    .ok();
-            }
-            ConfigEditorMsg::ImportantPopupForegroundBlurDown
-            | ConfigEditorMsg::ImportantPopupBorderBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBackground))
-                    .ok();
-            }
-            ConfigEditorMsg::ImportantPopupBackgroundBlurDown
-            | ConfigEditorMsg::FallbackForegroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ImportantPopupBorder))
-                    .ok();
-            }
-
-            ConfigEditorMsg::ImportantPopupBorderBlurDown
-            | ConfigEditorMsg::FallbackBackgroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackForeground))
-                    .ok();
-            }
-            ConfigEditorMsg::FallbackForegroundBlurDown | ConfigEditorMsg::FallbackBorderBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackBackground))
-                    .ok();
-            }
-            ConfigEditorMsg::FallbackBackgroundBlurDown
-            | ConfigEditorMsg::FallbackHighlightBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackBorder))
-                    .ok();
-            }
-            ConfigEditorMsg::FallbackBorderBlurDown | ConfigEditorMsg::ThemeSelectBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::FallbackHighlight))
-                    .ok();
-            }
-
             ConfigEditorMsg::ThemeSelectLoad(index) => {
                 self.preview_theme(index);
             }
@@ -338,13 +98,13 @@ impl Model {
                 self.config_editor.config_changed = true;
 
                 match id {
-                    IdConfigEditor::LibraryHighlightSymbol => {
+                    IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => {
                         self.config_editor.theme.style.library.highlight_symbol = symbol;
                     }
-                    IdConfigEditor::PlaylistHighlightSymbol => {
+                    IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => {
                         self.config_editor.theme.style.playlist.highlight_symbol = symbol;
                     }
-                    IdConfigEditor::CurrentlyPlayingTrackSymbol => {
+                    IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => {
                         self.config_editor.theme.style.playlist.current_track_symbol = symbol;
                     }
                     _ => {}
@@ -352,6 +112,10 @@ impl Model {
             }
 
             ConfigEditorMsg::KeyChange(id, binding) => self.update_key(id, binding),
+
+            // Focus handling
+            ConfigEditorMsg::General(msg) => self.update_general(msg),
+            ConfigEditorMsg::Theme(msg) => self.update_theme(msg),
             ConfigEditorMsg::KeyFocusGlobal(msg) => self.update_key_focus_global(msg),
             ConfigEditorMsg::KeyFocusOther(msg) => self.update_key_focus_other(msg),
         }
@@ -408,74 +172,48 @@ impl Model {
         self.remount_config_color(&config, Some(index)).unwrap();
     }
 
+    /// Handle focus of the "General" tab
+    fn update_general(&mut self, msg: KFMsg) {
+        set_next_in_focus_array(self, msg, GENERAL_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::General(id) = id {
+                Some(id)
+            } else {
+                None
+            }
+        });
+    }
+
+    /// Handle focus of the "Theme" tab
+    fn update_theme(&mut self, msg: KFMsg) {
+        set_next_in_focus_array(self, msg, THEME_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::Theme(id) = id {
+                Some(id)
+            } else {
+                None
+            }
+        });
+    }
+
     /// Handle focus of the "Key Global" tab
     fn update_key_focus_global(&mut self, msg: KFMsg) {
-        let focus_elem = self.app.focus().and_then(|v| {
-            if let Id::ConfigEditor(IdConfigEditor::KeyGlobal(key)) = *v {
+        set_next_in_focus_array(self, msg, KFGLOBAL_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::KeyGlobal(key) = id {
                 Some(IdKey::Global(key))
             } else {
                 None
             }
         });
-
-        // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
-        let Some(focus_elem) = focus_elem else {
-            let _ = self
-                .app
-                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into()));
-            return;
-        };
-
-        let focus = match msg {
-            KFMsg::Next => KFGLOBAL_FOCUS_ORDER
-                .iter()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(&KFGLOBAL_FOCUS_ORDER[0]),
-            KFMsg::Previous => KFGLOBAL_FOCUS_ORDER
-                .iter()
-                .rev()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(KFGLOBAL_FOCUS_ORDER.last().unwrap()),
-        };
-
-        let _ = self.app.active(&Id::ConfigEditor(focus.into()));
     }
 
     /// Handle focus for the "Key Other" tab
     fn update_key_focus_other(&mut self, msg: KFMsg) {
-        let focus_elem = self.app.focus().and_then(|v| {
-            if let Id::ConfigEditor(IdConfigEditor::KeyOther(key)) = *v {
+        set_next_in_focus_array(self, msg, KFOTHER_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::KeyOther(key) = id {
                 Some(IdKey::Other(key))
             } else {
                 None
             }
         });
-
-        // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
-        let Some(focus_elem) = focus_elem else {
-            let _ = self
-                .app
-                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into()));
-            return;
-        };
-
-        let focus = match msg {
-            KFMsg::Next => KFOTHER_FOCUS_ORDER
-                .iter()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(&KFOTHER_FOCUS_ORDER[0]),
-            KFMsg::Previous => KFOTHER_FOCUS_ORDER
-                .iter()
-                .rev()
-                .skip_while(|v| **v != focus_elem)
-                .nth(1)
-                .unwrap_or(KFOTHER_FOCUS_ORDER.last().unwrap()),
-        };
-
-        let _ = self.app.active(&Id::ConfigEditor(focus.into()));
     }
 
     // cannot reduce a match statement
@@ -633,50 +371,95 @@ impl Model {
         let style = &mut self.config_editor.theme.style;
 
         match id {
-            IdConfigEditor::LibraryForeground => {
+            IdConfigEditor::Theme(IdCETheme::LibraryForeground) => {
                 style.library.foreground_color = color_config;
             }
-            IdConfigEditor::LibraryBackground => {
+            IdConfigEditor::Theme(IdCETheme::LibraryBackground) => {
                 style.library.background_color = color_config;
             }
-            IdConfigEditor::LibraryBorder => {
+            IdConfigEditor::Theme(IdCETheme::LibraryBorder) => {
                 style.library.border_color = color_config;
             }
-            IdConfigEditor::LibraryHighlight => {
+            IdConfigEditor::Theme(IdCETheme::LibraryHighlight) => {
                 style.library.highlight_color = color_config;
             }
-            IdConfigEditor::PlaylistForeground => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistForeground) => {
                 style.playlist.foreground_color = color_config;
             }
-            IdConfigEditor::PlaylistBackground => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistBackground) => {
                 style.playlist.background_color = color_config;
             }
-            IdConfigEditor::PlaylistBorder => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistBorder) => {
                 style.playlist.border_color = color_config;
             }
-            IdConfigEditor::PlaylistHighlight => {
+            IdConfigEditor::Theme(IdCETheme::PlaylistHighlight) => {
                 style.playlist.highlight_color = color_config;
             }
-            IdConfigEditor::ProgressForeground => {
+            IdConfigEditor::Theme(IdCETheme::ProgressForeground) => {
                 style.progress.foreground_color = color_config;
             }
-            IdConfigEditor::ProgressBackground => {
+            IdConfigEditor::Theme(IdCETheme::ProgressBackground) => {
                 style.progress.background_color = color_config;
             }
-            IdConfigEditor::ProgressBorder => {
+            IdConfigEditor::Theme(IdCETheme::ProgressBorder) => {
                 style.progress.border_color = color_config;
             }
-            IdConfigEditor::LyricForeground => {
+            IdConfigEditor::Theme(IdCETheme::LyricForeground) => {
                 style.lyric.foreground_color = color_config;
             }
-            IdConfigEditor::LyricBackground => {
+            IdConfigEditor::Theme(IdCETheme::LyricBackground) => {
                 style.lyric.background_color = color_config;
             }
-            IdConfigEditor::LyricBorder => {
+            IdConfigEditor::Theme(IdCETheme::LyricBorder) => {
                 style.lyric.border_color = color_config;
             }
 
             _ => {}
         }
     }
+}
+
+/// Fetch and set the next focus element, based on [`KFMsg`] and current focus.
+///
+/// If focus elem is somehow not available or in the array, defaults to `array[0]`.
+/// Does nothing if the array is empty.
+fn set_next_in_focus_array<T, F>(model: &mut Model, msg: KFMsg, array: &[T], transform: F)
+where
+    F: FnOnce(IdConfigEditor) -> Option<T>,
+    T: Copy + PartialEq + Into<IdConfigEditor>,
+{
+    // simple protection as the code below assumes at least 1 element in the array
+    if array.is_empty() {
+        return;
+    }
+
+    let focus_elem = model.app.focus().and_then(|id| {
+        if let Id::ConfigEditor(v) = *id {
+            transform(v)
+        } else {
+            None
+        }
+    });
+
+    // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
+    let Some(focus_elem) = focus_elem else {
+        let _ = model.app.active(&Id::ConfigEditor(array[0].into()));
+        return;
+    };
+
+    let focus = match msg {
+        KFMsg::Next => array
+            .iter()
+            .skip_while(|v| **v != focus_elem)
+            .nth(1)
+            .unwrap_or(&array[0]),
+        KFMsg::Previous => array
+            .iter()
+            .rev()
+            .skip_while(|v| **v != focus_elem)
+            .nth(1)
+            .unwrap_or(array.last().unwrap()),
+    };
+
+    let _ = model.app.active(&Id::ConfigEditor((*focus).into()));
 }

@@ -51,16 +51,20 @@ pub enum IdTagEditor {
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdConfigEditor {
-    AlbumPhotoAlign,
-    CEThemeSelect,
     ConfigSavePopup,
-    ExitConfirmation,
-    ExtraYtdlpArgs,
-    Footer,
+
     Header,
+    Footer,
+
+    General(IdCEGeneral),
+    Theme(IdCETheme),
     KeyGlobal(IdKeyGlobal),
     KeyOther(IdKeyOther),
-    KillDamon,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+pub enum IdCETheme {
+    ThemeSelectTable,
 
     LibraryBackground,
     LibraryBorder,
@@ -74,34 +78,19 @@ pub enum IdConfigEditor {
     LyricForeground,
     LyricLabel,
 
-    MusicDir,
-    PlayerPort,
-    PlayerUseDiscord,
-    PlayerUseMpris,
-
     PlaylistBackground,
     PlaylistBorder,
-    PlaylistDisplaySymbol,
     PlaylistForeground,
     PlaylistHighlight,
     PlaylistHighlightSymbol,
     PlaylistLabel,
-    PlaylistRandomAlbum,
-    PlaylistRandomTrack,
 
     CurrentlyPlayingTrackSymbol,
-
-    PodcastDir,
-    PodcastMaxRetries,
-    PodcastSimulDownload,
 
     ProgressBackground,
     ProgressBorder,
     ProgressForeground,
     ProgressLabel,
-
-    SaveLastPosition,
-    SeekStep,
 
     ImportantPopupLabel,
     ImportantPopupBackground,
@@ -113,6 +102,58 @@ pub enum IdConfigEditor {
     FallbackForeground,
     FallbackHighlight,
     FallbackLabel,
+}
+
+impl From<IdCETheme> for IdConfigEditor {
+    fn from(value: IdCETheme) -> Self {
+        IdConfigEditor::Theme(value)
+    }
+}
+
+impl From<&IdCETheme> for IdConfigEditor {
+    fn from(value: &IdCETheme) -> Self {
+        IdConfigEditor::Theme(*value)
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+pub enum IdCEGeneral {
+    MusicDir,
+    ExitConfirmation,
+    AlbumPhotoAlign,
+    ExtraYtdlpArgs,
+    SaveLastPosition,
+    SeekStep,
+
+    PlayerPort,
+    PlayerAddress,
+    PlayerProtocol,
+    PlayerUDSPath,
+    PlayerBackend,
+    PlayerUseDiscord,
+    PlayerUseMpris,
+
+    PodcastDir,
+    PodcastMaxRetries,
+    PodcastSimulDownload,
+
+    PlaylistRandomAlbum,
+    PlaylistRandomTrack,
+    PlaylistDisplaySymbol,
+
+    KillDamon,
+}
+
+impl From<IdCEGeneral> for IdConfigEditor {
+    fn from(value: IdCEGeneral) -> Self {
+        IdConfigEditor::General(value)
+    }
+}
+
+impl From<&IdCEGeneral> for IdConfigEditor {
+    fn from(value: &IdCEGeneral) -> Self {
+        IdConfigEditor::General(*value)
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
