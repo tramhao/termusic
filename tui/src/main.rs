@@ -81,8 +81,9 @@ async fn actual_main() -> Result<()> {
             (child.id().unwrap(), Some(child))
         }
     };
+    drop(child);
 
-    let server_output = child.map(collect_server_output);
+    // let server_output = child.map(collect_server_output);
 
     println!("Server process ID: {pid}");
     SERVER_PID
@@ -104,27 +105,27 @@ async fn actual_main() -> Result<()> {
     let (client, addr) = match wait_till_connected(&config, pid).await {
         Ok(v) => v,
         Err(err) => {
-            if let Some(server_output) = server_output {
-                server_output.cancel_token.cancel();
-                let stdout = server_output.stdout.read().await;
-                let stderr = server_output.stderr.read().await;
+            // if let Some(server_output) = server_output {
+            //     server_output.cancel_token.cancel();
+            //     let stdout = server_output.stdout.read().await;
+            //     let stderr = server_output.stderr.read().await;
 
-                let stdout = String::from_utf8_lossy(&stdout).to_string();
-                let stderr = String::from_utf8_lossy(&stderr).to_string();
+            //     let stdout = String::from_utf8_lossy(&stdout).to_string();
+            //     let stderr = String::from_utf8_lossy(&stderr).to_string();
 
-                return Err(err.context(format!(
-                    "Server output during start:\n---STDOUT---\n{stdout}\n---STDERR---\n{stderr}\n---"
-                )));
-            }
+            //     return Err(err.context(format!(
+            //         "Server output during start:\n---STDOUT---\n{stdout}\n---STDERR---\n{stderr}\n---"
+            //     )));
+            // }
 
             return Err(err);
         }
     };
     info!("Connected on {addr}");
 
-    if let Some(server_output) = server_output {
-        server_output.cancel_token.cancel();
-    }
+    // if let Some(server_output) = server_output {
+    //     server_output.cancel_token.cancel();
+    // }
 
     let mut ui = UI::new(config, client).await?;
     ui.run()?;
@@ -134,6 +135,7 @@ async fn actual_main() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 struct ServerOutput {
     stdout: RwLock<Vec<u8>>,
@@ -142,6 +144,7 @@ struct ServerOutput {
 }
 
 /// Spawn a task that collects the server's log output, until cancelled.
+#[expect(dead_code)] // Disabled because flexi_logger seems to have a issue of completely disabling logging once stdio closes.
 fn collect_server_output(mut child: Child) -> Arc<ServerOutput> {
     let output = Arc::new(ServerOutput {
         stdout: RwLock::new(Vec::new()),
@@ -205,11 +208,12 @@ fn launch_server(args: &cli::Args) -> Result<Child> {
 
     // server can stay around after client exits (if supported by the system)
     #[allow(clippy::zombie_processes)]
-    let proc =
-        utils::spawn_process(&termusic_server_prog, false, true, &server_args).context(format!(
+    let proc = utils::spawn_process(&termusic_server_prog, false, false, &server_args).context(
+        format!(
             "Could not start binary \"{}\"",
             termusic_server_prog.display()
-        ))?;
+        ),
+    )?;
 
     Ok(proc)
 }
