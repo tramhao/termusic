@@ -233,6 +233,13 @@ fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
         cmd.stderr(Stdio::null());
     }
 
+    #[cfg(windows)]
+    {
+        // Set the flag for windows to have the child process stay around after the parent exits
+        use windows::Win32::System::Threading::DETACHED_PROCESS;
+        cmd.creation_flags(DETACHED_PROCESS.0);
+    }
+
     cmd.args(args);
     cmd.spawn()
 }

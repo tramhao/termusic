@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+
+- Change(tui): on windows, properly spawn the server as a detached process.
+
 ### [V0.12.0]
 - Released on: October 10, 2025.
 - Change: updated MSRV to 1.85.
