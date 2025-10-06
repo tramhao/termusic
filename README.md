@@ -34,22 +34,30 @@ Below are the audio formats supported by the various backends.
 
 In the case that metadata is not supported, an attempt will still be made to play the file.
 
-| Format (`feature`) | Symphonia (`rusty`)     | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
-| ------------------ | ----------------------- | ----------- | ----------------- | -------- |
-| ADTS               | Yes                     | Yes         | Yes               | No       |
-| AIFF               | Yes                     | Yes         | Yes               | Yes      |
-| FLAC               | Yes                     | Yes         | Yes               | Yes      |
-| M4a                | Yes                     | Yes         | Yes               | Yes      |
-| MP3                | Yes                     | Yes         | Yes               | Yes      |
-| Opus               | No*1                    | Yes         | Yes               | Yes      |
-| Ogg Vorbis         | Yes                     | Yes         | Yes               | Yes      |
-| Wav                | Yes                     | Yes         | Yes               | Yes      |
-| WebM               | Yes(opus not supported) | Yes         | Yes               | No       |
-| MKV                | Yes(depends on codec)   | Yes         | Yes               | No       |
+| Container  | Rusty |  MPV  | Gstreamer | Metadata |
+| :--------: | :---: | :---: | :-------: | :------: |
+| MP4 / M4A  |  Yes  |  Yes  |    Yes    |   Yes    |
+|    MP3     |  Yes  |  Yes  |    Yes    |   Yes    |
+|    OGG     |  Yes  |  Yes  |    Yes    |   Yes    |
+|    FLAC    |  Yes  |  Yes  |    Yes    |   Yes    |
+|    ADTS    |  Yes  |  Yes  |    Yes    |   Yes    |
+| WAV / AIFF |  Yes  |  Yes  |    Yes    |   Yes    |
+|    CAF     |  Yes  |  Yes  |    Yes    |    No    |
+| MKV / WebM |  Yes  |  Yes  |    Yes    |    No    |
+
+|      Codec      | Rusty |  MPV  | Gstreamer |
+| :-------------: | :---: | :---: | :-------: |
+|     AAC-LC      |  Yes  |  Yes  |    Yes    |
+|     HE-AAC      |  No   |  Yes  |    Yes    |
+| MP3 / MP2 / MP1 |  Yes  |  Yes  |    Yes    |
+|      FLAC       |  Yes  |  Yes  |    Yes    |
+|       WAV       |  Yes  |  Yes  |    Yes    |
+|     VORBIS      |  Yes  |  Yes  |    Yes    |
+|      OPUS       | No*1  |  Yes  |    Yes    |
+|      ADPCM      |  Yes  |  Yes  |    Yes    |
+|       PCM       |  Yes  |  Yes  |    Yes    |
 
 *1: `Opus` codec is supported in rusty backend if feature `rusty-libopus` is enabled.
-
-Default backend: `rusty`
 
 ## Installation
 
@@ -76,6 +84,8 @@ The minimal Rust version required to build this project is `1.85.0`.
 |     `ueberzugpp`      |    `ueberzugpp`     |          |                 |  `cover-ueberzug`   |               Ueberzug protocol support               |
 
 #### Backends
+
+Default backend: `rusty`
 
 |     Backend      | Requirements                                                                                                      |
 | :--------------: | :---------------------------------------------------------------------------------------------------------------- |
