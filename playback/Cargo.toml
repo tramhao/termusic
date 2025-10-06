@@ -38,6 +38,7 @@ soundtouch = { workspace = true, optional = true }
 souvlaki.workspace = true
 stream-download.workspace = true
 symphonia.workspace = true
+symphonia-adapter-libopus = { workspace = true, optional = true }
 rodio.workspace = true
 tokio.workspace = true
 # soundtouch= { git = 'https://github.com/Drewol/soundtouch-rs.git' }
@@ -60,6 +61,7 @@ gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sirno"]
 rusty-soundtouch = ["dep:soundtouch"]
 rusty-simd = ["symphonia/opt-simd"]
+rusty-libopus = ["dep:symphonia-adapter-libopus"]
 all-backends = ["gst", "mpv"]
 
 

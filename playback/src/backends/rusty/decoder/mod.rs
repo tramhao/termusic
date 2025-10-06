@@ -79,6 +79,8 @@ impl MediaTitleTxWrap {
 static CODEC_REGISTRY: LazyLock<CodecRegistry> = LazyLock::new(|| {
     let mut registry = CodecRegistry::new();
     register_enabled_codecs(&mut registry);
+    #[cfg(feature = "rusty-libopus")]
+    registry.register_all::<symphonia_adapter_libopus::OpusDecoder>();
     registry
 });
 

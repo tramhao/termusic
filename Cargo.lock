@@ -798,6 +798,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
+name = "cmake"
+version = "0.1.54"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7caa3f9de89ddbe2c607f4101924c5abec803763ae9534e4f4d7d8f84aa81f0"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "cocoa"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3197,6 +3206,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "opusic-sys"
+version = "0.5.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cedad37fbb9d84c9f70a9cfa150798e7ae09466e353f911ea74ff108abeb50b1"
+dependencies = [
+ "cmake",
+ "libc",
+]
+
+[[package]]
 name = "orange-trees"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4593,6 +4612,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "symphonia-adapter-libopus"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5a630acf003f3d39d93eaaa3b8d09c872170ea202ff39bef2248c96682de1a4"
+dependencies = [
+ "opusic-sys",
+ "symphonia-core",
+]
+
+[[package]]
 name = "symphonia-bundle-flac"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5022,6 +5051,7 @@ dependencies = [
  "souvlaki",
  "stream-download",
  "symphonia",
+ "symphonia-adapter-libopus",
  "termusic-lib",
  "tokio",
  "windows 0.58.0",

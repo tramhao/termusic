@@ -13,6 +13,7 @@
 - Feat(tui): add config editor fields for `com.address`, `com.protocol`, `com.socket_path`, `player.backend`
 - Feat(server): add extra config section for metadata scanning and parsing.
 - Feat(server): on rusty backend, allow configuring output sample rate, now defaulting to 48_000Hz (instead of rodio default 44_100Hz).
+- Feat(server): on rusty backend, allow usage of `libopus` for `opus` files, if feature `rusty-libopus` is enabled. (requires `libopus` dependency)
 - Feat(server): on mpv backend, add option to configure `audio-device` property.
 - Feat: re-implement the Track database to allow for more search options. (Note that the old database is NOT automatically deleted)
 - Fix(tui): allow usage of key `Home`/`Pos1` in search lists.

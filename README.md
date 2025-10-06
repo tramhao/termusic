@@ -41,11 +41,13 @@ In the case that metadata is not supported, an attempt will still be made to pla
 | FLAC               | Yes                     | Yes         | Yes               | Yes      |
 | M4a                | Yes                     | Yes         | Yes               | Yes      |
 | MP3                | Yes                     | Yes         | Yes               | Yes      |
-| Opus               | No                      | Yes         | Yes               | Yes      |
+| Opus               | No*1                    | Yes         | Yes               | Yes      |
 | Ogg Vorbis         | Yes                     | Yes         | Yes               | Yes      |
 | Wav                | Yes                     | Yes         | Yes               | Yes      |
 | WebM               | Yes(opus not supported) | Yes         | Yes               | No       |
 | MKV                | Yes(depends on codec)   | Yes         | Yes               | No       |
+
+*1: `Opus` codec is supported in rusty backend if feature `rusty-libopus` is enabled.
 
 Default backend: `rusty`
 
@@ -54,6 +56,7 @@ Default backend: `rusty`
 ### Requirements
 
 #### MSRV
+
 You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.85.0.
 
 #### git
@@ -62,11 +65,20 @@ You will need to build with the stable rust toolchain. Minimal Supported Rust Ve
 
 #### Backends
 
-| Backend   | Requirements |
-| :-------: | :----------- |
+|     Backend      | Requirements                                                                                                      |
+| :--------------: | :---------------------------------------------------------------------------------------------------------------- |
 | Symphonia(rusty) | On Linux [`libasound2-dev`](https://launchpad.net/ubuntu/noble/+package/libasound2-dev) is required for building. |
-| GStreamer | [GStreamer](https://gstreamer.freedesktop.org) |
-| MPV       | [MPV](https://mpv.io/) |
+|    GStreamer     | [GStreamer](https://gstreamer.freedesktop.org)                                                                    |
+|       MPV        | [MPV](https://mpv.io/)                                                                                            |
+
+There are extra features for some backends:
+Note that they are not enabled by default and potentially increase non-rust dependencies.
+
+|      Feature       | Backend |                            Description                            | Extra Dependencies |
+| :----------------: | :-----: | :---------------------------------------------------------------: | :----------------: |
+|    `rusty-simd`    | `rusty` |                     Enable SIMD instructions                      |                    |
+| `rusty-soundtouch` | `rusty` | Enable `soundtouch` compilation and use as default speed-modifier |                    |
+|  `rusty-libopus`   | `rusty` |         Enable `libopus` support to support `opus` files          |     `libopus`      |
 
 #### Protobuf
 
