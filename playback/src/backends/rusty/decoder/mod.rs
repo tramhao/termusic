@@ -99,16 +99,7 @@ impl Symphonia {
         media_title: bool,
     ) -> Result<(Self, Option<MediaTitleRx>), SymphoniaDecoderError> {
         match Self::init(mss, gapless, media_title) {
-            Err(e) => match e {
-                Error::IoError(e) => Err(SymphoniaDecoderError::IoError(e.to_string())),
-                Error::DecodeError(e) => Err(SymphoniaDecoderError::DecodeError(e)),
-                Error::SeekError(_) => {
-                    unreachable!("Seek errors should not occur during initialization")
-                }
-                Error::Unsupported(_) => Err(SymphoniaDecoderError::UnrecognizedFormat),
-                Error::LimitError(e) => Err(SymphoniaDecoderError::LimitError(e)),
-                Error::ResetRequired => Err(SymphoniaDecoderError::ResetRequired),
-            },
+            Err(err) => Err(err.into()),
             Ok(Some((decoder, rx))) => Ok((decoder, rx)),
             Ok(None) => Err(SymphoniaDecoderError::NoStreams),
         }
@@ -400,7 +391,23 @@ impl fmt::Display for SymphoniaDecoderError {
         write!(f, "{text}")
     }
 }
+
 impl std::error::Error for SymphoniaDecoderError {}
+
+impl From<symphonia::core::errors::Error> for SymphoniaDecoderError {
+    fn from(value: symphonia::core::errors::Error) -> Self {
+        match value {
+            Error::IoError(e) => Self::IoError(e.to_string()),
+            Error::DecodeError(e) => Self::DecodeError(e),
+            Error::SeekError(_) => {
+                unreachable!("Seek errors should not occur during initialization")
+            }
+            Error::Unsupported(_) => Self::UnrecognizedFormat,
+            Error::LimitError(e) => Self::LimitError(e),
+            Error::ResetRequired => Self::ResetRequired,
+        }
+    }
+}
 
 /// Resulting values from the decode loop
 #[derive(Debug)]
