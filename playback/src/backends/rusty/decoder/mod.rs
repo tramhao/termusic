@@ -265,6 +265,7 @@ impl Symphonia {
     }
 
     /// Increase the offset from which to read the buffer from.
+    #[inline]
     pub fn advance_offset(&mut self, by: usize) {
         self.current_frame_offset += by;
     }
@@ -358,7 +359,7 @@ impl Iterator for Symphonia {
         self.decode_once()?;
 
         let sample = *self.buffer.samples().get(self.current_frame_offset)?;
-        self.current_frame_offset += 1;
+        self.advance_offset(1);
 
         Some(sample)
     }
