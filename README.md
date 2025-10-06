@@ -99,6 +99,50 @@ To only enable specific protocols for cover support, see [tui/Cargo.toml#feature
 
 Feature `cover-ueberzug` will require some ueberzug implementation to be present at runtime.
 
+### Files
+
+#### Configuration
+
+Configuration files can be found in:
+
+| System  |                   Path                    |
+| :-----: | :---------------------------------------: |
+|  Linux  |           `~/.config/termusic/`           |
+|   Mac   | `~/Library/Application Support/termusic/` |
+| Windows |           `%APPDATA%\termusic\`           |
+
+Files & Folders:
+
+|     Paths      |                   Description                    |
+| :------------: | :----------------------------------------------: |
+| `server.toml`  |             For server configuration             |
+|   `tui.toml`   |              For TUI configuration               |
+|   `themes/`    | Extra Themes to be selected in the Config Editor |
+| `playlist.log` | The Playlist storing the current playlist/queue  |
+| `library2.db`  |            The Indexed Music library             |
+|   `data.db`    |               The Podcast Database               |
+
+#### Logs
+
+By default logs can be found in:
+
+| System  |    Path    |
+| :-----: | :--------: |
+|  Linux  |  `/tmp/`   |
+|   Mac   | `/tmp/`(?) |
+| Windows |  `%TMP%\`  |
+
+Files:
+
+|         Files         |   Description   |
+| :-------------------: | :-------------: |
+| `termusic-server.log` | The server logs |
+|  `termusic-tui.log`   |  The TUI logs   |
+
+The default log level is `WARNING` (can be changed via [`RUST_LOG`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging)).
+
+Note that log files are only created on the first log line to be saved.
+
 ### Official Install Sources
 
 #### Cargo
