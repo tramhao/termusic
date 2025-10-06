@@ -99,44 +99,7 @@ To only enable specific protocols for cover support, see [tui/Cargo.toml#feature
 
 Feature `cover-ueberzug` will require some ueberzug implementation to be present at runtime.
 
-### Pre-Compiled Packages
-
-Do note that these will be compiled with the **symphonia** backend.
-
-#### Arch Linux
-
-Arch Linux users can install `termusic` from the [official repositories](https://archlinux.org/packages/extra/x86_64/termusic) using [pacman](https://wiki.archlinux.org/title/pacman).
-
-```bash
-pacman -S termusic
-```
-
-#### NetBSD
-
-NetBSD users can install `termusic` from the official repositories.
-
-```bash
-pkgin install termusic
-```
-
-#### Nix/NixOS
-
-Either in the user's environment:
-
-```bash
-nix-env --install termusic
-```
-
-Or declaratively in `/etc/nixos/configuration.nix`:
-
-```nix
-{
-    environment.systemPackagess = with pkgs; [
-      ...
-      termusic
-    ];
-}
-```
+### Official Install Sources
 
 #### Cargo
 
@@ -179,8 +142,54 @@ To build with all backends and all cover protocols without copying binaries else
 make all-backends
 ```
 
-You can copy the binary anywhere in your `$PATH`. The configuration file for the TUI is located in `~/.config/termusic/tui.toml`, and the configuration file for the server is located in `~/.config/termusic/server.toml` (or on macOS, `~/Library/Application Support/termusic/tui.toml`, `~/Library/Application Support/termusic/server.toml`, respectively).
-However, as this is a minimalistic program, you don't need to edit the configuration file and almost everything can be set from the app.
+### Unofficial Install Sources
+
+The following are ways to install termusic, but may differ in configuration and support.
+
+They are not maintained by the termusic project itself.
+
+#### Arch Linux
+
+Arch Linux users can install `termusic` from the [official repositories](https://archlinux.org/packages/extra/x86_64/termusic) using [pacman](https://wiki.archlinux.org/title/pacman).
+
+```bash
+pacman -S termusic
+```
+
+#### Arch Linux GIT (AUR)
+
+Arch Linux users can install [`termusic-git` from the AUR](https://aur.archlinux.org/packages/termusic-git) using [pamac](https://aur.archlinux.org/packages/pamac-cli).
+
+```bash
+pamac install termusic-git
+```
+
+#### NetBSD
+
+NetBSD users can install `termusic` from the official repositories.
+
+```bash
+pkgin install termusic
+```
+
+#### Nix/NixOS
+
+Either in the user's environment:
+
+```bash
+nix-env --install termusic
+```
+
+Or declaratively in `/etc/nixos/configuration.nix`:
+
+```nix
+{
+    environment.systemPackagess = with pkgs; [
+      ...
+      termusic
+    ];
+}
+```
 
 ## TODO
 
