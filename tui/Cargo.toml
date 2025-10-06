@@ -64,6 +64,8 @@ pathdiff.workspace = true
 either.workspace = true
 lru.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+windows.workspace = true
 
 [features]
 # enable all cover features by default that do not require system interfaces / extra dependencies

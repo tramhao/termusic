@@ -4931,6 +4931,7 @@ dependencies = [
  "viuer",
  "walkdir",
  "wildmatch",
+ "windows 0.61.1",
  "ytd-rs",
 ]
 
