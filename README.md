@@ -57,11 +57,23 @@ Default backend: `rusty`
 
 #### MSRV
 
-You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.85.0.
+The minimal Rust version required to build this project is `1.85.0`.
 
-#### git
+#### Dependencies
 
-`git` will be required to build the package.
+| Package name (ubuntu) | Package name (arch) | Required | Build-time-only |       Feature       |                      Description                      |
+| :-------------------: | :-----------------: | :------: | :-------------: | :-----------------: | :---------------------------------------------------: |
+|         `git`         |        `git`        |    X     |        X        |                     |                    version control                    |
+|        `clang`        |       `clang`       |    X     |        X        |                     |       General Build tools (and sqlite compile)        |
+|  `protobuf-compiler`  |     `protobuf`      |    X     |        X        |                     | communication protocol between server and client(tui) |
+|    `libdbus-1-dev`    |       `dbus`        |    X     |     unknown     |                     |                  MPRIS media control                  |
+|   `libasound2-dev`    |        None         |    X     |     unknown     |                     |                     ALSA headers                      |
+|       `yt-dlp`        |      `yt-dlp`       |          |                 |                     |                 Download some tracks                  |
+|         `mpv`         |        `mpv`        |          |                 |        `mpv`        |                      MPV Backend                      |
+|      `gstreamer`      |     `gstreamer`     |          |                 |        `gst`        |                   Gstreamer Backend                   |
+|       `libopus`       |      `libopus`      |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          |
+|      `libsixel`       |     `libsixel`      |    X     |                 | `cover-viuer-sixel` |                Sixel protocol support                 |
+|     `ueberzugpp`      |    `ueberzugpp`     |          |                 |  `cover-ueberzug`   |               Ueberzug protocol support               |
 
 #### Backends
 
@@ -79,18 +91,6 @@ Note that they are not enabled by default and potentially increase non-rust depe
 |    `rusty-simd`    | `rusty` |                     Enable SIMD instructions                      |                    |
 | `rusty-soundtouch` | `rusty` | Enable `soundtouch` compilation and use as default speed-modifier |                    |
 |  `rusty-libopus`   | `rusty` |         Enable `libopus` support to support `opus` files          |     `libopus`      |
-
-#### Protobuf
-
-This is required to build and run termusic. For ubuntu: `protobuf-compiler`, For arch: `protobuf`.
-
-#### Dbus
-
-DBus is required for MPRIS control. For ubuntu: `libdbus-1-dev`, For arch: `dbus`.
-
-#### Yt-dlp support
-
-You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download from various providers.
 
 #### Album cover support
 
