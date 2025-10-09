@@ -96,6 +96,7 @@ symphonia = { version = "0.5.1", features = [
     "wav",
     "aiff"
 ] }
+symphonia-adapter-libopus = "0.1.2"
 rodio = { version = "0.21", default-features = false, features = ["playback"]}
 # sysinfo 0.37.0 requires MSRV 1.88
 sysinfo = { version = "^0.36.1", default-features = false, features = ["system"] }

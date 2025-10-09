@@ -1,9 +1,9 @@
-use std::{fmt, io::ErrorKind, num::NonZeroU64, time::Duration};
+use std::{fmt, io::ErrorKind, num::NonZeroU64, sync::LazyLock, time::Duration};
 
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
-        codecs::{self, CODEC_TYPE_NULL, CodecParameters},
+        codecs::{self, CODEC_TYPE_NULL, CodecParameters, CodecRegistry},
         errors::Error,
         formats::{FormatOptions, FormatReader, SeekMode, SeekTo, Track},
         io::MediaSourceStream,
@@ -11,7 +11,7 @@ use symphonia::{
         probe::{Hint, ProbeResult, ProbedMetadata},
         units::TimeBase,
     },
-    default::get_probe,
+    default::{get_probe, register_enabled_codecs},
 };
 use tokio::sync::mpsc;
 
@@ -75,6 +75,15 @@ impl MediaTitleTxWrap {
     }
 }
 
+/// Custom registry for termusic, which might use extensions
+static CODEC_REGISTRY: LazyLock<CodecRegistry> = LazyLock::new(|| {
+    let mut registry = CodecRegistry::new();
+    register_enabled_codecs(&mut registry);
+    #[cfg(feature = "rusty-libopus")]
+    registry.register_all::<symphonia_adapter_libopus::OpusDecoder>();
+    registry
+});
+
 pub struct Symphonia {
     decoder: Box<dyn codecs::Decoder>,
     current_frame_offset: usize,
@@ -134,7 +143,7 @@ impl Symphonia {
             track.id, track.codec_params.codec
         );
 
-        let mut decoder = symphonia::default::get_codecs().make(
+        let mut decoder = CODEC_REGISTRY.make(
             &track.codec_params,
             &codecs::DecoderOptions { verify: true },
         )?;

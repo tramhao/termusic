@@ -34,51 +34,73 @@ Below are the audio formats supported by the various backends.
 
 In the case that metadata is not supported, an attempt will still be made to play the file.
 
-| Format (`feature`) | Symphonia (`rusty`)     | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
-| ------------------ | ----------------------- | ----------- | ----------------- | -------- |
-| ADTS               | Yes                     | Yes         | Yes               | No       |
-| AIFF               | Yes                     | Yes         | Yes               | Yes      |
-| FLAC               | Yes                     | Yes         | Yes               | Yes      |
-| M4a                | Yes                     | Yes         | Yes               | Yes      |
-| MP3                | Yes                     | Yes         | Yes               | Yes      |
-| Opus               | No                      | Yes         | Yes               | Yes      |
-| Ogg Vorbis         | Yes                     | Yes         | Yes               | Yes      |
-| Wav                | Yes                     | Yes         | Yes               | Yes      |
-| WebM               | Yes(opus not supported) | Yes         | Yes               | No       |
-| MKV                | Yes(depends on codec)   | Yes         | Yes               | No       |
+| Container  | Rusty |  MPV  | Gstreamer | Metadata |
+| :--------: | :---: | :---: | :-------: | :------: |
+| MP4 / M4A  |  Yes  |  Yes  |    Yes    |   Yes    |
+|    MP3     |  Yes  |  Yes  |    Yes    |   Yes    |
+|    OGG     |  Yes  |  Yes  |    Yes    |   Yes    |
+|    FLAC    |  Yes  |  Yes  |    Yes    |   Yes    |
+|    ADTS    |  Yes  |  Yes  |    Yes    |   Yes    |
+| WAV / AIFF |  Yes  |  Yes  |    Yes    |   Yes    |
+|    CAF     |  Yes  |  Yes  |    Yes    |    No    |
+| MKV / WebM |  Yes  |  Yes  |    Yes    |    No    |
 
-Default backend: `rusty`
+|      Codec      | Rusty |  MPV  | Gstreamer |
+| :-------------: | :---: | :---: | :-------: |
+|     AAC-LC      |  Yes  |  Yes  |    Yes    |
+|     HE-AAC      |  No   |  Yes  |    Yes    |
+| MP3 / MP2 / MP1 |  Yes  |  Yes  |    Yes    |
+|      FLAC       |  Yes  |  Yes  |    Yes    |
+|       WAV       |  Yes  |  Yes  |    Yes    |
+|     VORBIS      |  Yes  |  Yes  |    Yes    |
+|      OPUS       | No*1  |  Yes  |    Yes    |
+|      ADPCM      |  Yes  |  Yes  |    Yes    |
+|       PCM       |  Yes  |  Yes  |    Yes    |
+
+*1: `Opus` codec is supported in rusty backend if feature `rusty-libopus` is enabled.
 
 ## Installation
 
 ### Requirements
 
 #### MSRV
-You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.85.0.
 
-#### git
+The minimal Rust version required to build this project is `1.85.0`.
 
-`git` will be required to build the package.
+#### Dependencies
+
+| Package name (ubuntu) | Package name (arch) | Required | Build-time-only |       Feature       |                      Description                      |
+| :-------------------: | :-----------------: | :------: | :-------------: | :-----------------: | :---------------------------------------------------: |
+|         `git`         |        `git`        |    X     |        X        |                     |                    version control                    |
+|        `clang`        |       `clang`       |    X     |        X        |                     |       General Build tools (and sqlite compile)        |
+|  `protobuf-compiler`  |     `protobuf`      |    X     |        X        |                     | communication protocol between server and client(tui) |
+|    `libdbus-1-dev`    |       `dbus`        |    X     |     unknown     |                     |                  MPRIS media control                  |
+|   `libasound2-dev`    |        None         |    X     |     unknown     |                     |                     ALSA headers                      |
+|       `yt-dlp`        |      `yt-dlp`       |          |                 |                     |                 Download some tracks                  |
+|         `mpv`         |        `mpv`        |          |                 |        `mpv`        |                      MPV Backend                      |
+|      `gstreamer`      |     `gstreamer`     |          |                 |        `gst`        |                   Gstreamer Backend                   |
+|       `libopus`       |      `libopus`      |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          |
+|      `libsixel`       |     `libsixel`      |    X     |                 | `cover-viuer-sixel` |                Sixel protocol support                 |
+|     `ueberzugpp`      |    `ueberzugpp`     |          |                 |  `cover-ueberzug`   |               Ueberzug protocol support               |
 
 #### Backends
 
-| Backend   | Requirements |
-| :-------: | :----------- |
+Default backend: `rusty`
+
+|     Backend      | Requirements                                                                                                      |
+| :--------------: | :---------------------------------------------------------------------------------------------------------------- |
 | Symphonia(rusty) | On Linux [`libasound2-dev`](https://launchpad.net/ubuntu/noble/+package/libasound2-dev) is required for building. |
-| GStreamer | [GStreamer](https://gstreamer.freedesktop.org) |
-| MPV       | [MPV](https://mpv.io/) |
+|    GStreamer     | [GStreamer](https://gstreamer.freedesktop.org)                                                                    |
+|       MPV        | [MPV](https://mpv.io/)                                                                                            |
 
-#### Protobuf
+There are extra features for some backends:
+Note that they are not enabled by default and potentially increase non-rust dependencies.
 
-This is required to build and run termusic. For ubuntu: `protobuf-compiler`, For arch: `protobuf`.
-
-#### Dbus
-
-DBus is required for MPRIS control. For ubuntu: `libdbus-1-dev`, For arch: `dbus`.
-
-#### Yt-dlp support
-
-You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download from various providers.
+|      Feature       | Backend |                            Description                            | Extra Dependencies |
+| :----------------: | :-----: | :---------------------------------------------------------------: | :----------------: |
+|    `rusty-simd`    | `rusty` |                     Enable SIMD instructions                      |                    |
+| `rusty-soundtouch` | `rusty` | Enable `soundtouch` compilation and use as default speed-modifier |                    |
+|  `rusty-libopus`   | `rusty` |         Enable `libopus` support to support `opus` files          |     `libopus`      |
 
 #### Album cover support
 
@@ -87,44 +109,51 @@ To only enable specific protocols for cover support, see [tui/Cargo.toml#feature
 
 Feature `cover-ueberzug` will require some ueberzug implementation to be present at runtime.
 
-### Pre-Compiled Packages
+### Files
 
-Do note that these will be compiled with the **symphonia** backend.
+#### Configuration
 
-#### Arch Linux
+Configuration files can be found in:
 
-Arch Linux users can install `termusic` from the [official repositories](https://archlinux.org/packages/extra/x86_64/termusic) using [pacman](https://wiki.archlinux.org/title/pacman).
+| System  |                   Path                    |
+| :-----: | :---------------------------------------: |
+|  Linux  |           `~/.config/termusic/`           |
+|   Mac   | `~/Library/Application Support/termusic/` |
+| Windows |           `%APPDATA%\termusic\`           |
 
-```bash
-pacman -S termusic
-```
+Files & Folders:
 
-#### NetBSD
+|     Paths      |                   Description                    |
+| :------------: | :----------------------------------------------: |
+| `server.toml`  |             For server configuration             |
+|   `tui.toml`   |              For TUI configuration               |
+|   `themes/`    | Extra Themes to be selected in the Config Editor |
+| `playlist.log` | The Playlist storing the current playlist/queue  |
+| `library2.db`  |            The Indexed Music library             |
+|   `data.db`    |               The Podcast Database               |
 
-NetBSD users can install `termusic` from the official repositories.
+#### Logs
 
-```bash
-pkgin install termusic
-```
+By default logs can be found in:
 
-#### Nix/NixOS
+| System  |    Path    |
+| :-----: | :--------: |
+|  Linux  |  `/tmp/`   |
+|   Mac   | `/tmp/`(?) |
+| Windows |  `%TMP%\`  |
 
-Either in the user's environment:
+Files:
 
-```bash
-nix-env --install termusic
-```
+|         Files         |   Description   |
+| :-------------------: | :-------------: |
+| `termusic-server.log` | The server logs |
+|  `termusic-tui.log`   |  The TUI logs   |
 
-Or declaratively in `/etc/nixos/configuration.nix`:
+The default log level is `WARNING` (can be changed via [`RUST_LOG`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging)).
 
-```nix
-{
-    environment.systemPackagess = with pkgs; [
-      ...
-      termusic
-    ];
-}
-```
+Note that log files are only created on the first log line to be saved.
+
+### Official Install Sources
 
 #### Cargo
 
@@ -167,8 +196,54 @@ To build with all backends and all cover protocols without copying binaries else
 make all-backends
 ```
 
-You can copy the binary anywhere in your `$PATH`. The configuration file for the TUI is located in `~/.config/termusic/tui.toml`, and the configuration file for the server is located in `~/.config/termusic/server.toml` (or on macOS, `~/Library/Application Support/termusic/tui.toml`, `~/Library/Application Support/termusic/server.toml`, respectively).
-However, as this is a minimalistic program, you don't need to edit the configuration file and almost everything can be set from the app.
+### Unofficial Install Sources
+
+The following are ways to install termusic, but may differ in configuration and support.
+
+They are not maintained by the termusic project itself.
+
+#### Arch Linux
+
+Arch Linux users can install `termusic` from the [official repositories](https://archlinux.org/packages/extra/x86_64/termusic) using [pacman](https://wiki.archlinux.org/title/pacman).
+
+```bash
+pacman -S termusic
+```
+
+#### Arch Linux GIT (AUR)
+
+Arch Linux users can install [`termusic-git` from the AUR](https://aur.archlinux.org/packages/termusic-git) using [pamac](https://aur.archlinux.org/packages/pamac-cli).
+
+```bash
+pamac install termusic-git
+```
+
+#### NetBSD
+
+NetBSD users can install `termusic` from the official repositories.
+
+```bash
+pkgin install termusic
+```
+
+#### Nix/NixOS
+
+Either in the user's environment:
+
+```bash
+nix-env --install termusic
+```
+
+Or declaratively in `/etc/nixos/configuration.nix`:
+
+```nix
+{
+    environment.systemPackagess = with pkgs; [
+      ...
+      termusic
+    ];
+}
+```
 
 ## TODO
 
