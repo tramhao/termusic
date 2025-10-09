@@ -1,4 +1,4 @@
-use std::{fmt, num::NonZeroU64, time::Duration};
+use std::{fmt, io::ErrorKind, num::NonZeroU64, time::Duration};
 
 use symphonia::{
     core::{
@@ -93,32 +93,20 @@ impl Symphonia {
     /// Create a new symphonia decoder.
     ///
     /// The returned `Option<MediaTitleRx>` is always `Some` if parameter `media_title` is `true`.
+    #[inline]
     pub fn new(
         mss: MediaSourceStream,
         gapless: bool,
         media_title: bool,
     ) -> Result<(Self, Option<MediaTitleRx>), SymphoniaDecoderError> {
-        match Self::init(mss, gapless, media_title) {
-            Err(e) => match e {
-                Error::IoError(e) => Err(SymphoniaDecoderError::IoError(e.to_string())),
-                Error::DecodeError(e) => Err(SymphoniaDecoderError::DecodeError(e)),
-                Error::SeekError(_) => {
-                    unreachable!("Seek errors should not occur during initialization")
-                }
-                Error::Unsupported(_) => Err(SymphoniaDecoderError::UnrecognizedFormat),
-                Error::LimitError(e) => Err(SymphoniaDecoderError::LimitError(e)),
-                Error::ResetRequired => Err(SymphoniaDecoderError::ResetRequired),
-            },
-            Ok(Some((decoder, rx))) => Ok((decoder, rx)),
-            Ok(None) => Err(SymphoniaDecoderError::NoStreams),
-        }
+        Self::init(mss, gapless, media_title)
     }
 
     fn init(
         mss: MediaSourceStream,
         gapless: bool,
         media_title: bool,
-    ) -> symphonia::core::errors::Result<Option<(Self, Option<MediaTitleRx>)>> {
+    ) -> Result<(Self, Option<MediaTitleRx>), SymphoniaDecoderError> {
         let mut probed = get_probe().format(
             &Hint::default(),
             mss,
@@ -138,11 +126,8 @@ impl Symphonia {
             .format
             .default_track()
             .and_then(|v| if is_codec_null(v) { None } else { Some(v) })
-            .or_else(|| probed.format.tracks().iter().find(|v| !is_codec_null(v)));
-
-        let Some(track) = track else {
-            return Ok(None);
-        };
+            .or_else(|| probed.format.tracks().iter().find(|v| !is_codec_null(v)))
+            .ok_or(SymphoniaDecoderError::NoStreams)?;
 
         info!(
             "Found supported container with trackid {} and codectype {}",
@@ -176,11 +161,13 @@ impl Symphonia {
             &mut media_title_tx,
             &mut probed.metadata,
             &mut None,
-        )?;
+        )?
+        .ok_or(SymphoniaDecoderError::UnexpectedEOFInit)?;
+
         // safe to unwrap because "decode_loop" ensures it will be set
         let buffer = buffer.unwrap();
 
-        Ok(Some((
+        Ok((
             Self {
                 decoder,
                 current_frame_offset: 0,
@@ -195,7 +182,7 @@ impl Symphonia {
                 media_title_tx,
             },
             media_title_rx,
-        )))
+        ))
     }
 
     fn get_duration(params: &CodecParameters) -> Option<Duration> {
@@ -233,6 +220,10 @@ impl Symphonia {
     }
 
     /// Run a potential decode, if the buffer is exhausted.
+    ///
+    /// No-op if buffer is not exhausted.
+    ///
+    /// `None` means End-of-File (EOF/EOS).
     pub fn decode_once(&mut self) -> Option<()> {
         if self.exhausted_buffer() {
             let DecodeLoopResult { spec } = decode_loop(
@@ -245,15 +236,12 @@ impl Symphonia {
                 &mut self.probed.metadata,
                 &mut self.seek_required_ts,
             )
-            .ok()?;
+            .inspect_err(|err| warn!("Error while decoding: {err:#?}"))
+            .ok()??;
 
             self.spec = spec;
 
             self.current_frame_offset = 0;
-        }
-
-        if self.buffer.samples().is_empty() {
-            return None;
         }
 
         Some(())
@@ -265,6 +253,7 @@ impl Symphonia {
     }
 
     /// Increase the offset from which to read the buffer from.
+    #[inline]
     pub fn advance_offset(&mut self, by: usize) {
         self.current_frame_offset += by;
     }
@@ -358,7 +347,7 @@ impl Iterator for Symphonia {
         self.decode_once()?;
 
         let sample = *self.buffer.samples().get(self.current_frame_offset)?;
-        self.current_frame_offset += 1;
+        self.advance_offset(1);
 
         Some(sample)
     }
@@ -385,6 +374,9 @@ pub enum SymphoniaDecoderError {
 
     /// No streams were found by the decoder
     NoStreams,
+
+    /// The track unexpectedly ended before giving the first audio data.
+    UnexpectedEOFInit,
 }
 
 impl fmt::Display for SymphoniaDecoderError {
@@ -395,11 +387,28 @@ impl fmt::Display for SymphoniaDecoderError {
             Self::DecodeError(msg) | Self::LimitError(msg) => msg,
             Self::ResetRequired => "Reset required",
             Self::NoStreams => "No streams",
+            Self::UnexpectedEOFInit => "Unexpected EOF before first audio data",
         };
         write!(f, "{text}")
     }
 }
+
 impl std::error::Error for SymphoniaDecoderError {}
+
+impl From<symphonia::core::errors::Error> for SymphoniaDecoderError {
+    fn from(value: symphonia::core::errors::Error) -> Self {
+        match value {
+            Error::IoError(e) => Self::IoError(e.to_string()),
+            Error::DecodeError(e) => Self::DecodeError(e),
+            Error::SeekError(_) => {
+                unreachable!("Seek errors should not occur during initialization")
+            }
+            Error::Unsupported(_) => Self::UnrecognizedFormat,
+            Error::LimitError(e) => Self::LimitError(e),
+            Error::ResetRequired => Self::ResetRequired,
+        }
+    }
+}
 
 /// Resulting values from the decode loop
 #[derive(Debug)]
@@ -428,6 +437,8 @@ impl std::fmt::Debug for BufferInputType<'_> {
 /// Decode until finding a valid packet and get the samples from it
 ///
 /// If [`BufferInputType::New`] is used, it is guaranteed to be [`Some`] if function result is [`Ok`].
+///
+/// If `Ok(None)` is returned, it means End-of-File (EOF/EOS).
 fn decode_loop(
     format: &mut dyn FormatReader,
     decoder: &mut dyn codecs::Decoder,
@@ -437,9 +448,31 @@ fn decode_loop(
     media_title_tx: &mut MediaTitleTxWrap,
     probed: &mut ProbedMetadata,
     seek_required_ts: &mut Option<NonZeroU64>,
-) -> Result<DecodeLoopResult, symphonia::core::errors::Error> {
+) -> Result<Option<DecodeLoopResult>, symphonia::core::errors::Error> {
     let (audio_buf, elapsed) = loop {
-        let packet = format.next_packet()?;
+        // Note: this matching looks quite messy, but will be cleaned-up with symphonia 0.6
+        let Some(packet) = format.next_packet().map(Some).or_else(|err| {
+            match err {
+                // Before Symphonia 0.6, expected EOF / EOS is badly implemented
+                // the matching to the string is required, as there are other types of actually unexpected EOF's
+                Error::IoError(err)
+                    if err.kind() == ErrorKind::UnexpectedEof
+                        && err.to_string() == "end of stream" =>
+                {
+                    Ok(None)
+                }
+                _ => Err(err),
+            }
+        })?
+        else {
+            // indicated no more packets to decode, also End-Of-Stream
+            match buffer {
+                BufferInputType::New(Some(sample_buffer))
+                | BufferInputType::Existing(sample_buffer) => sample_buffer.clear(),
+                BufferInputType::New(None) => (),
+            }
+            return Ok(None);
+        };
 
         // Skip all packets that are not the selected track
         if packet.track_id() != track_id {
@@ -458,8 +491,18 @@ fn decode_loop(
 
         match decoder.decode(&packet) {
             Ok(audio_buf) => {
+                // if we got 0 frames, we got 0 samples, so this packet likely did not contain audio data
+                // lets try the next packet.
+                // re https://github.com/pdeljanov/Symphonia/issues/403
+                // prevents 0-length sample buffers before EOF.
+                if audio_buf.frames() == 0 {
+                    trace!("Decoded Audio, but got 0 frames of samples; continuing");
+                    continue;
+                }
+
                 let ts = packet.ts();
                 let elapsed = time_base.map(|tb| Duration::from(tb.calc_time(ts)));
+
                 break (audio_buf, elapsed);
             }
             Err(Error::DecodeError(err)) => {
@@ -493,7 +536,7 @@ fn decode_loop(
         }
     }
 
-    Ok(DecodeLoopResult { spec })
+    Ok(Some(DecodeLoopResult { spec }))
 }
 
 /// Do container metadata / track start metadata
