@@ -1,5 +1,7 @@
+use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
@@ -20,7 +22,7 @@ use termusiclib::config::{
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::{podcast, utils};
 use tokio::io::AsyncReadExt;
-use tokio::process::Child;
+use tokio::process::{Child, Command};
 use tokio::sync::RwLock;
 use tokio::task::AbortHandle;
 use tokio_util::sync::CancellationToken;
@@ -81,8 +83,9 @@ async fn actual_main() -> Result<()> {
             (child.id().unwrap(), Some(child))
         }
     };
+    drop(child);
 
-    let server_output = child.map(collect_server_output);
+    // let server_output = child.map(collect_server_output);
 
     println!("Server process ID: {pid}");
     SERVER_PID
@@ -104,27 +107,27 @@ async fn actual_main() -> Result<()> {
     let (client, addr) = match wait_till_connected(&config, pid).await {
         Ok(v) => v,
         Err(err) => {
-            if let Some(server_output) = server_output {
-                server_output.cancel_token.cancel();
-                let stdout = server_output.stdout.read().await;
-                let stderr = server_output.stderr.read().await;
+            // if let Some(server_output) = server_output {
+            //     server_output.cancel_token.cancel();
+            //     let stdout = server_output.stdout.read().await;
+            //     let stderr = server_output.stderr.read().await;
 
-                let stdout = String::from_utf8_lossy(&stdout).to_string();
-                let stderr = String::from_utf8_lossy(&stderr).to_string();
+            //     let stdout = String::from_utf8_lossy(&stdout).to_string();
+            //     let stderr = String::from_utf8_lossy(&stderr).to_string();
 
-                return Err(err.context(format!(
-                    "Server output during start:\n---STDOUT---\n{stdout}\n---STDERR---\n{stderr}\n---"
-                )));
-            }
+            //     return Err(err.context(format!(
+            //         "Server output during start:\n---STDOUT---\n{stdout}\n---STDERR---\n{stderr}\n---"
+            //     )));
+            // }
 
             return Err(err);
         }
     };
     info!("Connected on {addr}");
 
-    if let Some(server_output) = server_output {
-        server_output.cancel_token.cancel();
-    }
+    // if let Some(server_output) = server_output {
+    //     server_output.cancel_token.cancel();
+    // }
 
     let mut ui = UI::new(config, client).await?;
     ui.run()?;
@@ -134,6 +137,7 @@ async fn actual_main() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 struct ServerOutput {
     stdout: RwLock<Vec<u8>>,
@@ -142,6 +146,7 @@ struct ServerOutput {
 }
 
 /// Spawn a task that collects the server's log output, until cancelled.
+#[expect(dead_code)] // Disabled because flexi_logger seems to have a issue of completely disabling logging once stdio closes.
 fn collect_server_output(mut child: Child) -> Arc<ServerOutput> {
     let output = Arc::new(ServerOutput {
         stdout: RwLock::new(Vec::new()),
@@ -205,13 +210,40 @@ fn launch_server(args: &cli::Args) -> Result<Child> {
 
     // server can stay around after client exits (if supported by the system)
     #[allow(clippy::zombie_processes)]
-    let proc =
-        utils::spawn_process(&termusic_server_prog, false, true, &server_args).context(format!(
-            "Could not start binary \"{}\"",
-            termusic_server_prog.display()
-        ))?;
+    let proc = spawn_process(&termusic_server_prog, false, &server_args).context(format!(
+        "Could not start binary \"{}\"",
+        termusic_server_prog.display()
+    ))?;
 
     Ok(proc)
+}
+
+/// Spawn a detached process
+/// # Panics
+/// panics when spawn server failed
+fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
+    prog: &Path,
+    piped: bool,
+    args: A,
+) -> std::io::Result<Child> {
+    let mut cmd = Command::new(prog);
+    cmd.stdin(Stdio::null());
+    if piped {
+        cmd.stdout(Stdio::piped());
+        cmd.stderr(Stdio::piped());
+    } else {
+        cmd.stdout(Stdio::null());
+        cmd.stderr(Stdio::null());
+    }
+
+    #[cfg(windows)]
+    {
+        use windows::Win32::System::Threading::DETACHED_PROCESS;
+        cmd.creation_flags(DETACHED_PROCESS.0);
+    }
+
+    cmd.args(args);
+    cmd.spawn()
 }
 
 /// Try to find a active server process, returning its [`Pid`].
