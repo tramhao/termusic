@@ -635,6 +635,9 @@ fn player_loop(
             PlayerCmd::PlaylistRemoveDeletedTracks => {
                 player.playlist.write().remove_deleted_items();
             }
+            PlayerCmd::MetadataChanged => {
+                trace!("TODO");
+            }
         }
 
         cb.call();

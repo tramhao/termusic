@@ -103,8 +103,12 @@ pub enum PlayerErrorType {
 #[derive(Clone, Debug)]
 pub enum PlayerCmd {
     // Mainly called from the backends
+    /// The Backend indicates the current track is about to end.
     AboutToFinish,
+    /// The Backend indicates that the current track has ended.
     Eos,
+    /// The Backend indicates new metadata is available.
+    MetadataChanged,
     /// A Error happened in the backend (for example `NotFound`) that makes it unrecoverable to continue to play the current track.
     /// This will basically be treated as a [`Eos`](PlayerCmd::Eos), with some extra handling.
     ///

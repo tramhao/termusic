@@ -35,7 +35,8 @@ use tokio::sync::oneshot;
 
 use crate::backends::rusty::decoder::SymphoniaDecoderError;
 use crate::{
-    MediaInfo, PlayerCmd, PlayerCmdCallbackSender, PlayerProgress, PlayerTrait, Speed, Volume,
+    MediaInfo, PlayerCmd, PlayerCmdCallbackSender, PlayerCmdSender, PlayerProgress, PlayerTrait,
+    Speed, Volume,
 };
 use decoder::buffered_source::BufferedSource;
 use decoder::read_seek_source::ReadSeekSource;
@@ -572,10 +573,17 @@ fn append_to_sink_queue_no_duration(
 }
 
 /// Common handling of a `media_title` for a [`append_to_sink`] function
-fn common_media_title_cb(media_title: Arc<Mutex<String>>) -> impl Fn(MediaTitleType) {
-    move |cmd| match cmd {
-        MediaTitleType::Reset => media_title.lock().clear(),
-        MediaTitleType::Value(v) => *media_title.lock() = v,
+fn common_media_title_cb(
+    media_title: Arc<Mutex<String>>,
+    pcmd_tx: &PlayerCmdSender,
+) -> impl Fn(MediaTitleType) + use<> {
+    let pcmd_tx = pcmd_tx.clone();
+    move |cmd| {
+        match cmd {
+            MediaTitleType::Reset => media_title.lock().clear(),
+            MediaTitleType::Value(v) => *media_title.lock() = v,
+        }
+        let _ = pcmd_tx.send(PlayerCmd::MetadataChanged);
     }
 }
 
@@ -643,6 +651,7 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                     &mut next_duration_opt,
                     &args.media_title,
                     // &radio_downloaded,
+                    &args.pcmd_tx,
                 )
                 .await
                 {
@@ -779,6 +788,7 @@ async fn queue_next(
     total_duration: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
     media_title: &Arc<Mutex<String>>,
+    pcmd_tx: &PlayerCmdSender,
 ) -> Result<()> {
     // clear out the sources when we dont "enqueue" as we want to directly play it
     if !options.enqueue && !sink.is_empty() {
@@ -806,7 +816,7 @@ async fn queue_next(
                         async_decode: true,
                     },
                     next_duration_opt,
-                    common_media_title_cb(media_title.clone()),
+                    common_media_title_cb(media_title.clone(), pcmd_tx),
                 )?;
             } else {
                 append_to_sink(
@@ -820,7 +830,7 @@ async fn queue_next(
                         async_decode: true,
                     },
                     total_duration,
-                    common_media_title_cb(media_title.clone()),
+                    common_media_title_cb(media_title.clone(), pcmd_tx),
                 )?;
             }
 
@@ -863,6 +873,7 @@ async fn queue_next(
 
             let media_title_clone = media_title.clone();
 
+            let pcmd_tx = pcmd_tx.clone();
             let cb = move |title: &str| {
                 let new_title = if title.is_empty() {
                     "<no title>".to_string()
@@ -871,6 +882,7 @@ async fn queue_next(
                 };
 
                 *media_title_clone.lock() = new_title;
+                let _ = pcmd_tx.send(PlayerCmd::MetadataChanged);
             };
 
             // set initial title to what the header says
@@ -934,7 +946,7 @@ async fn queue_next(
                             async_decode: true,
                         },
                         next_duration_opt,
-                        common_media_title_cb(media_title.clone()),
+                        common_media_title_cb(media_title.clone(), pcmd_tx),
                     )?;
                 } else {
                     append_to_sink(
@@ -948,7 +960,7 @@ async fn queue_next(
                             async_decode: true,
                         },
                         total_duration,
-                        common_media_title_cb(media_title.clone()),
+                        common_media_title_cb(media_title.clone(), pcmd_tx),
                     )?;
                 }
                 return Ok(());
@@ -980,7 +992,7 @@ async fn queue_next(
                         async_decode: false,
                     },
                     next_duration_opt,
-                    common_media_title_cb(media_title.clone()),
+                    common_media_title_cb(media_title.clone(), pcmd_tx),
                 )?;
             } else {
                 append_to_sink(
@@ -994,7 +1006,7 @@ async fn queue_next(
                         async_decode: false,
                     },
                     total_duration,
-                    common_media_title_cb(media_title.clone()),
+                    common_media_title_cb(media_title.clone(), pcmd_tx),
                 )?;
             }
             Ok(())
