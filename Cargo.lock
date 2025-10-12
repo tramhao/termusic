@@ -3207,9 +3207,9 @@ dependencies = [
 
 [[package]]
 name = "opusic-sys"
-version = "0.5.7"
+version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cedad37fbb9d84c9f70a9cfa150798e7ae09466e353f911ea74ff108abeb50b1"
+checksum = "8f43c183739dc81651487e7c9f3e4330fe4a3fd26c0fa961c788ce5fb21fa75b"
 dependencies = [
  "cmake",
  "libc",
@@ -4613,9 +4613,9 @@ dependencies = [
 
 [[package]]
 name = "symphonia-adapter-libopus"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5a630acf003f3d39d93eaaa3b8d09c872170ea202ff39bef2248c96682de1a4"
+checksum = "8cfcdb75eaa95a602bbad6d09d923296e109606b71d4d3ffbd58ed67dfe283d7"
 dependencies = [
  "opusic-sys",
  "symphonia-core",
