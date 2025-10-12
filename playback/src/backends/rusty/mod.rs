@@ -68,6 +68,7 @@ enum PlayerInternalCmd {
     Volume(u16),
     Eos,
 }
+
 pub struct RustyBackend {
     volume: Arc<AtomicU16>,
     speed: i32,

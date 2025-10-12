@@ -357,6 +357,11 @@ impl GeneralPlayer {
         }
     }
 
+    /// Handle [`PlayerCmd::MetadataChanged`] for all things the [`GeneralPlayer`] controls.
+    pub fn metadata_changed(&mut self) {
+        self.send_track_changed();
+    }
+
     /// Send event [`UpdateEvents::TrackChanged`]. In a function to de-duplicate calls.
     fn send_track_changed(&mut self) {
         self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
