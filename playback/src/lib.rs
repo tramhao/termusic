@@ -102,9 +102,20 @@ pub enum PlayerErrorType {
 
 #[derive(Clone, Debug)]
 pub enum PlayerCmd {
+    // Mainly called from the backends
     AboutToFinish,
-    CycleLoop,
     Eos,
+    /// A Error happened in the backend (for example `NotFound`) that makes it unrecoverable to continue to play the current track.
+    /// This will basically be treated as a [`Eos`](PlayerCmd::Eos), with some extra handling.
+    ///
+    /// This should **not** be used if the whole backend is unrecoverable.
+    Error(PlayerErrorType),
+
+    // Internal only
+    Tick,
+
+    // Mainly called from outside sources (client, mpris)
+    CycleLoop,
     GetProgress,
     SkipPrevious,
     Pause,
@@ -117,16 +128,10 @@ pub enum PlayerCmd {
     SkipNext,
     SpeedDown,
     SpeedUp,
-    Tick,
     ToggleGapless,
     TogglePause,
     VolumeDown,
     VolumeUp,
-    /// A Error happened in the backend (for example `NotFound`) that makes it unrecoverable to continue to play the current track.
-    /// This will basically be treated as a [`Eos`](PlayerCmd::Eos), with some extra handling.
-    ///
-    /// This should **not** be used if the whole backend is unrecoverable.
-    Error(PlayerErrorType),
 
     PlaylistPlaySpecific(PlaylistPlaySpecific),
     PlaylistAddTrack(PlaylistAddTrack),
