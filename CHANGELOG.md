@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+
+- Fix(server): on rusty backend, update symphonia to fix various issues.
+
 ### [V0.12.0]
 - Released on: October 10, 2025.
 - Change: updated MSRV to 1.85.
