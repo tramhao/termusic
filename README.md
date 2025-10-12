@@ -82,7 +82,6 @@ The minimal Rust version required to build this project is `1.85.0`.
 |       `libopus`       |      `libopus`      |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          |
 |      `libsixel`       |     `libsixel`      |    X     |                 | `cover-viuer-sixel` |                Sixel protocol support                 |
 |     `ueberzugpp`      |    `ueberzugpp`     |          |                 |  `cover-ueberzug`   |               Ueberzug protocol support               |
-|        `cmake`        |       `cmake`       |    X     |        X        |   `rusty-libopus`   |              Build system for `libopus`               |
 
 #### Backends
 
