@@ -11,7 +11,6 @@ use crate::cli::Args;
 /// This function is mainly to keep the code structured and sorted
 #[inline]
 pub fn setup(args: &Args) -> LoggerHandle {
-    // TODO: look into https://github.com/emabee/flexi_logger/issues/142 again
     let handle = {
         let mut logger = Logger::try_with_env_or_str("info")
             .expect("Expected flexi_logger to be able to parse env or string")
