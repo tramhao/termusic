@@ -331,9 +331,10 @@ impl Model {
             if MediaTypesSimple::LiveRadio == song.media_type() {
                 let radio_title = radio_title.as_ref();
                 if radio_title.is_empty() {
-                    return;
+                    self.lyric_set_lyric("Radio");
+                } else {
+                    self.lyric_set_lyric(format!("Currently Playing: {radio_title}"));
                 }
-                self.lyric_set_lyric(format!("Currently Playing: {radio_title}"));
             }
         }
     }

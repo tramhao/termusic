@@ -1165,6 +1165,10 @@ impl Model {
 
                 if let Some(title) = track_changed_info.title {
                     self.lyric_update_for_radio(title);
+                } else {
+                    // fallback in case no title is immediately available on radio start.
+                    // matching that the current track is actually radio, is in the function itself.
+                    self.lyric_update_for_radio("");
                 }
             }
             UpdateEvents::GaplessChanged { gapless } => {
