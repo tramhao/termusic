@@ -2,6 +2,7 @@
 
 ### next
 
+- Change: change default log level to `info` (from `warn`).
 - Change(tui): on windows, properly spawn the server as a detached process.
 - Fix(server): on rusty backend, update symphonia to fix various issues.
 - Fix(server): on rusty backend, update `rusty-libopus` to dynamic link without custom environment variable.

@@ -13,7 +13,7 @@ use crate::cli::Args;
 pub fn setup(args: &Args) -> LoggerHandle {
     // TODO: look into https://github.com/emabee/flexi_logger/issues/142 again
     let handle = {
-        let mut logger = Logger::try_with_env_or_str("warn")
+        let mut logger = Logger::try_with_env_or_str("info")
             .expect("Expected flexi_logger to be able to parse env or string")
             .adaptive_format_for_stderr(flexi_logger::AdaptiveFormat::Custom(
                 log_format,
