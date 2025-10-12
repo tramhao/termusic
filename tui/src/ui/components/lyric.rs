@@ -134,7 +134,7 @@ impl Model {
                 .is_ok()
         );
         self.lyric_update_title();
-        self.lyric_set_lyric(self.lyric_line.clone());
+        self.lyric_update();
     }
 
     pub fn lyric_update_for_podcast_by_current_track(&mut self) {
@@ -242,16 +242,11 @@ impl Model {
         final_vec.push(PropValue::TextSpan(TextSpan::from("Description:").bold()));
         final_vec.extend(lines_textspan);
 
-        self.app
-            .attr(
-                &Id::Lyric,
-                Attribute::Text,
-                AttrValue::Payload(PropPayload::Vec(final_vec)),
-            )
-            .ok();
-
-        // mark it as a different line than before podcast, so that it later does not go the "its the same line" logic and early-returns.
-        self.lyric_line = String::new();
+        let _ = self.app.attr(
+            &Id::Lyric,
+            Attribute::Text,
+            AttrValue::Payload(PropPayload::Vec(final_vec)),
+        );
     }
 
     /// Update lyrics. Needs to be run each time:
@@ -346,9 +341,6 @@ impl Model {
     /// Set the given text as the current displayed lyric text.
     fn lyric_set_lyric<T: Into<String>>(&mut self, text: T) {
         let text = text.into();
-        if self.lyric_line == *text {
-            return;
-        }
         self.app
             .attr(
                 &Id::Lyric,
@@ -358,7 +350,6 @@ impl Model {
                 ))])),
             )
             .ok();
-        self.lyric_line = text;
     }
 
     pub fn lyric_cycle(&mut self) {
