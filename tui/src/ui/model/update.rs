@@ -1128,9 +1128,11 @@ impl Model {
             }
             UpdateEvents::VolumeChanged { volume } => {
                 self.config_server.write().settings.player.volume = volume;
+                self.progress_update_title();
             }
             UpdateEvents::SpeedChanged { speed } => {
                 self.config_server.write().settings.player.speed = speed;
+                self.progress_update_title();
             }
             UpdateEvents::PlayStateChanged { playing } => {
                 self.playback.set_status(RunningStatus::from_u32(playing));
@@ -1157,6 +1159,7 @@ impl Model {
             }
             UpdateEvents::GaplessChanged { gapless } => {
                 self.config_server.write().settings.player.gapless = gapless;
+                self.progress_update_title();
             }
             UpdateEvents::Progress(progress) => {
                 self.progress_update(

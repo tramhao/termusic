@@ -3,6 +3,7 @@
 ### next
 
 - Change(tui): on windows, properly spawn the server as a detached process.
+- Fix(tui): update status bar (status, volume, speed, gapless) on [volume, speed, gapless] changes, not just status changes.
 - Fix(server): on rusty backend, update symphonia to fix various issues.
 - Fix(server): on rusty backend, update `rusty-libopus` to dynamic link without custom environment variable.
 
