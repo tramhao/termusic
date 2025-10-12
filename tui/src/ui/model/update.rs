@@ -75,7 +75,7 @@ impl Update<Msg> for Model {
             Msg::Notification(msg) => self.update_notification_msg(msg),
             Msg::Xywh(msg) => self.update_xywh_msg(msg),
             Msg::ServerReqResponse(msg) => self.update_server_resp_msg(msg),
-            Msg::StreamUpdate(msg) => self.update_update_events_msg(msg),
+            Msg::StreamUpdate(msg) => self.update_events_msg(msg),
 
             Msg::ForceRedraw => None,
         }
@@ -1119,7 +1119,7 @@ impl Model {
     /// Handle Stream updates [`UpdateEvents`].
     ///
     /// In case of lag, sends a [`TuiCmd::GetProgress`].
-    fn update_update_events_msg(&mut self, msg: UpdateEvents) -> Option<Msg> {
+    fn update_events_msg(&mut self, msg: UpdateEvents) -> Option<Msg> {
         match msg {
             UpdateEvents::MissedEvents { amount } => {
                 warn!("Stream Lagged, missed events: {amount}");
