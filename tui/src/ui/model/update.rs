@@ -1136,6 +1136,16 @@ impl Model {
             }
             UpdateEvents::PlayStateChanged { playing } => {
                 self.playback.set_status(RunningStatus::from_u32(playing));
+
+                // there is no special event for "no more tracks" or "track EOF", so we have to
+                // handle "no more tracks / stopped" in this
+                if self.playback.is_stopped() {
+                    self.playback.clear_current_track();
+                    self.lyric_update_title();
+                    self.lyric_update();
+                    self.progress_update(Some(Duration::ZERO), Duration::ZERO);
+                }
+
                 self.progress_update_title();
             }
             UpdateEvents::TrackChanged(track_changed_info) => {
