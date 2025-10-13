@@ -3,6 +3,7 @@
 ### next
 
 - Change(tui): on windows, properly spawn the server as a detached process.
+- Feat(tui): allow disabling individual cover-art protocols, even if compiled-in.
 - Fix(tui): update status bar (status, volume, speed, gapless) on [volume, speed, gapless] changes, not just status changes.
 - Fix(tui): properly set lyric content on reload (like exiting the config editor).
 - Fix(tui): populate "Stopped" state to everything instead of showing stale data.

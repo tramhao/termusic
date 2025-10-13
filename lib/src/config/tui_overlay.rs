@@ -1,3 +1,5 @@
+use crate::config::v2::tui::CoverArtProtocol;
+
 /// The TUI Settings to use, with possible overwrite (like from CLI)
 #[derive(Debug, Clone, PartialEq, Default)]
 #[allow(clippy::module_name_repetitions)]
@@ -35,5 +37,12 @@ impl TuiOverlay {
     #[must_use]
     pub fn cover_features_enabled(&self) -> bool {
         self.cover_features
+    }
+
+    /// Check if a given [`CoverArtProtocol`] is enabled.
+    #[inline]
+    #[must_use]
+    pub fn cover_protocol_enabled(&self, protocol: CoverArtProtocol) -> bool {
+        self.settings.coverart.protocols.includes_protocol(protocol)
     }
 }

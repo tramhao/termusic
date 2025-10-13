@@ -6,9 +6,11 @@ use std::time::Duration;
 use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
 use termusiclib::config::v2::server::ScanDepth;
+#[allow(unused_imports)]
+use termusiclib::config::v2::tui::CoverArtProtocol;
 use termusiclib::config::v2::tui::keys::Keys;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
-use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings};
+use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings, TuiOverlay};
 use termusiclib::new_database::Database;
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
@@ -337,17 +339,19 @@ pub enum ViuerSupported {
     NotSupported,
 }
 
-fn get_viuer_support() -> ViuerSupported {
+fn get_viuer_support(config: &TuiOverlay) -> ViuerSupported {
     #[cfg(feature = "cover-viuer-kitty")]
-    if viuer::KittySupport::None != viuer::get_kitty_support() {
+    if config.cover_protocol_enabled(CoverArtProtocol::Kitty)
+        && viuer::KittySupport::None != viuer::get_kitty_support()
+    {
         return ViuerSupported::Kitty;
     }
     #[cfg(feature = "cover-viuer-iterm")]
-    if viuer::is_iterm_supported() {
+    if config.cover_protocol_enabled(CoverArtProtocol::Iterm2) && viuer::is_iterm_supported() {
         return ViuerSupported::ITerm;
     }
     #[cfg(feature = "cover-viuer-sixel")]
-    if viuer::is_sixel_supported() {
+    if config.cover_protocol_enabled(CoverArtProtocol::Sixel) && viuer::is_sixel_supported() {
         return ViuerSupported::Sixel;
     }
 
@@ -369,26 +373,32 @@ impl Model {
         // TODO: refactor music library tree to be Paths instead?
         let tree = Self::loading_tree();
 
-        let viuer_supported = if config_tui.read().cover_features_enabled() {
-            get_viuer_support()
+        let config_tui_read = config_tui.read();
+
+        let viuer_supported = if config_tui_read.cover_features_enabled() {
+            get_viuer_support(&config_tui_read)
         } else {
             ViuerSupported::NotSupported
         };
 
         info!("Using viuer protocol {viuer_supported:#?}");
 
-        let db = Database::new_default_path().expect("Open Library Database");
-        let db_criteria = SearchCriteria::Artist;
-        let terminal = TerminalBridge::new_crossterm().expect("Could not initialize terminal");
-
         #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
-        let ueberzug_instance = if config_tui.read().cover_features_enabled()
+        let ueberzug_instance = if config_tui_read.cover_features_enabled()
+            && config_tui_read.cover_protocol_enabled(CoverArtProtocol::Ueberzug)
             && viuer_supported == ViuerSupported::NotSupported
         {
             Some(UeInstance::default())
         } else {
             None
         };
+
+        drop(config_tui_read);
+
+        let db = Database::new_default_path().expect("Open Library Database");
+        let db_criteria = SearchCriteria::Artist;
+        let terminal = TerminalBridge::new_crossterm().expect("Could not initialize terminal");
+
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 
         let db_podcast = DBPod::new(&db_path).expect("error connecting to podcast db.");
