@@ -31,9 +31,12 @@ use termusiclib::config::SharedServerSettings;
 use termusiclib::track::{MediaTypes, Track};
 use tokio::runtime::Handle;
 use tokio::select;
+use tokio::sync::oneshot;
 
 use crate::backends::rusty::decoder::SymphoniaDecoderError;
-use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
+use crate::{
+    MediaInfo, PlayerCmd, PlayerCmdCallbackSender, PlayerProgress, PlayerTrait, Speed, Volume,
+};
 use decoder::buffered_source::BufferedSource;
 use decoder::read_seek_source::ReadSeekSource;
 use decoder::{MediaTitleRx, MediaTitleType, Symphonia};
@@ -49,10 +52,10 @@ pub(crate) mod source;
 pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 enum PlayerInternalCmd {
     /// Enqueue a new track to be played, and if `enqueue: false` directly skip to it.
-    Play(Box<Track>, QueueNextOptions),
+    Play(Box<Track>, QueueNextOptions, PlayerCmdCallbackSender),
     Progress(Duration),
     Resume,
     SeekAbsolute(Duration),
@@ -137,8 +140,8 @@ impl RustyBackend {
 
     #[allow(clippy::needless_pass_by_value)]
     fn command(&self, cmd: PlayerInternalCmd) {
-        if let Err(e) = self.command_tx.send(cmd.clone()) {
-            error!("error in {cmd:?}: {e}");
+        if let Err(e) = self.command_tx.send(cmd) {
+            error!("error in {:?}: {e}", e.0);
         }
     }
 }
@@ -146,40 +149,47 @@ impl RustyBackend {
 #[async_trait]
 impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, track: &Track) {
-        let config_read = self.config.read_recursive();
-        let soundtouch = config_read.settings.backends.rusty.soundtouch;
-        let file_buf_size = usize::try_from(
-            config_read
-                .settings
-                .backends
-                .rusty
-                .file_buffer_size
-                .as_u64(),
-        )
-        .unwrap_or(usize::MAX);
-        let ringbuf_size = usize::try_from(
-            config_read
-                .settings
-                .backends
-                .rusty
-                .decoded_buffer_size
-                .as_u64(),
-        )
-        .unwrap_or(usize::MAX);
+        // this has to be a extra scope as rust does not see "drop(config_read)" as a drop and complains with:
+        // "await occurs here (rx.await), with `config_read` maybe used later"
+        let query_options = {
+            let config_read = self.config.read_recursive();
+            let soundtouch = config_read.settings.backends.rusty.soundtouch;
+            let file_buf_size = usize::try_from(
+                config_read
+                    .settings
+                    .backends
+                    .rusty
+                    .file_buffer_size
+                    .as_u64(),
+            )
+            .unwrap_or(usize::MAX);
+            let ringbuf_size = usize::try_from(
+                config_read
+                    .settings
+                    .backends
+                    .rusty
+                    .decoded_buffer_size
+                    .as_u64(),
+            )
+            .unwrap_or(usize::MAX);
 
-        drop(config_read);
-
-        self.command(PlayerInternalCmd::Play(
-            Box::new(track.clone()),
             QueueNextOptions {
                 gapless_decode: self.gapless,
                 soundtouch,
                 file_buf_size,
                 ringbuf_size,
                 enqueue: false,
-            },
+            }
+        };
+
+        let (tx, rx) = oneshot::channel::<()>();
+        self.command(PlayerInternalCmd::Play(
+            Box::new(track.clone()),
+            query_options,
+            PlayerCmdCallbackSender(Some(tx)),
         ));
         self.resume();
+        let _ = rx.await;
     }
 
     fn volume(&self) -> Volume {
@@ -284,6 +294,7 @@ impl PlayerTrait for RustyBackend {
                 ringbuf_size,
                 enqueue: true,
             },
+            PlayerCmdCallbackSender(None),
         ));
     }
 
@@ -622,7 +633,7 @@ async fn player_thread(mut args: PlayerThreadArgs) {
         };
 
         match cmd {
-            PlayerInternalCmd::Play(track, options) => {
+            PlayerInternalCmd::Play(track, options, cb) => {
                 if let Err(err) = queue_next(
                     &track,
                     &sink,
@@ -647,6 +658,8 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                             .send(PlayerCmd::Error(crate::PlayerErrorType::Current));
                     }
                 }
+                // maybe this should be called by the source / decoder to be fully correct
+                cb.call();
             }
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();

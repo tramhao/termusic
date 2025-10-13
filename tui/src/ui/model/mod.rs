@@ -309,7 +309,6 @@ pub struct Model {
     pub config_editor: ConfigEditorData,
 
     pub tageditor_song: Option<TETrack>,
-    pub lyric_line: String,
     pub current_track_lyric: Option<ExtraLyricData>,
     pub playback: Playback,
 
@@ -435,7 +434,6 @@ impl Model {
             config_server,
             config_tui,
             tageditor_song: None,
-            lyric_line: String::new(),
 
             library: MusicLibraryData {
                 tree_path: path,

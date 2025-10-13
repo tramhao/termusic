@@ -624,6 +624,14 @@ impl Display for DurationFmtShort {
     }
 }
 
+impl DurationFmtShort {
+    /// Get the value to display if no numbers are available.
+    #[must_use]
+    pub const fn fmt_empty() -> &'static str {
+        "--:--"
+    }
+}
+
 /// See [`TrackMetadata`] for explanation of values.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[allow(clippy::struct_excessive_bools)] // configuration, this is not a state machine

@@ -75,7 +75,7 @@ impl Update<Msg> for Model {
             Msg::Notification(msg) => self.update_notification_msg(msg),
             Msg::Xywh(msg) => self.update_xywh_msg(msg),
             Msg::ServerReqResponse(msg) => self.update_server_resp_msg(msg),
-            Msg::StreamUpdate(msg) => self.update_update_events_msg(msg),
+            Msg::StreamUpdate(msg) => self.update_events_msg(msg),
 
             Msg::ForceRedraw => None,
         }
@@ -1119,7 +1119,7 @@ impl Model {
     /// Handle Stream updates [`UpdateEvents`].
     ///
     /// In case of lag, sends a [`TuiCmd::GetProgress`].
-    fn update_update_events_msg(&mut self, msg: UpdateEvents) -> Option<Msg> {
+    fn update_events_msg(&mut self, msg: UpdateEvents) -> Option<Msg> {
         match msg {
             UpdateEvents::MissedEvents { amount } => {
                 warn!("Stream Lagged, missed events: {amount}");
@@ -1128,12 +1128,24 @@ impl Model {
             }
             UpdateEvents::VolumeChanged { volume } => {
                 self.config_server.write().settings.player.volume = volume;
+                self.progress_update_title();
             }
             UpdateEvents::SpeedChanged { speed } => {
                 self.config_server.write().settings.player.speed = speed;
+                self.progress_update_title();
             }
             UpdateEvents::PlayStateChanged { playing } => {
                 self.playback.set_status(RunningStatus::from_u32(playing));
+
+                // there is no special event for "no more tracks" or "track EOF", so we have to
+                // handle "no more tracks / stopped" in this
+                if self.playback.is_stopped() {
+                    self.playback.clear_current_track();
+                    self.lyric_update_title();
+                    self.lyric_update();
+                    self.progress_update(Some(Duration::ZERO), Duration::ZERO);
+                }
+
                 self.progress_update_title();
             }
             UpdateEvents::TrackChanged(track_changed_info) => {
@@ -1153,10 +1165,15 @@ impl Model {
 
                 if let Some(title) = track_changed_info.title {
                     self.lyric_update_for_radio(title);
+                } else {
+                    // fallback in case no title is immediately available on radio start.
+                    // matching that the current track is actually radio, is in the function itself.
+                    self.lyric_update_for_radio("");
                 }
             }
             UpdateEvents::GaplessChanged { gapless } => {
                 self.config_server.write().settings.player.gapless = gapless;
+                self.progress_update_title();
             }
             UpdateEvents::Progress(progress) => {
                 self.progress_update(

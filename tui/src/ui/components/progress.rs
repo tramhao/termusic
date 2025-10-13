@@ -143,24 +143,19 @@ impl Model {
     /// Handle progress updates.
     ///
     /// Updates all places where progress updates need to be populated to.
-    // TODO: refactor to have "total_duration" optional
-    #[allow(clippy::cast_precision_loss, clippy::cast_possible_wrap)]
+    #[allow(clippy::cast_precision_loss)]
     pub fn progress_update(&mut self, time_pos: Option<Duration>, total_duration: Duration) {
-        // for unsupported file format, don't update progress
-        if total_duration.is_zero() {
-            return;
-        }
-        if time_pos.is_none() {
-            return;
-        }
-
-        let time_pos = time_pos.unwrap();
+        let time_pos = time_pos.unwrap_or_default();
 
         self.playback.set_current_track_pos(time_pos);
 
-        let progress = (time_pos.as_secs() * 100)
-            .checked_div(total_duration.as_secs())
-            .unwrap() as f64;
+        let progress = if time_pos.as_secs() > 0 && total_duration.as_secs() > 0 {
+            (time_pos.as_secs() * 100)
+                .checked_div(total_duration.as_secs())
+                .unwrap() as f64
+        } else {
+            0.0
+        };
 
         let new_prog = Self::progress_safeguard(progress);
 
@@ -168,11 +163,13 @@ impl Model {
         self.lyric_update();
     }
 
+    /// Convert the input to a scale of `0.0` to `1.0` (clamped).
     fn progress_safeguard(progress: f64) -> f64 {
         let new_prog = progress / 100.0;
         new_prog.clamp(0.0, 1.0)
     }
 
+    /// Set the progress bar text.
     fn progress_set(&mut self, progress: f64, total_duration: Duration) {
         self.app
             .attr(
@@ -182,17 +179,20 @@ impl Model {
             )
             .ok();
 
-        self.app
-            .attr(
-                &Id::Progress,
-                Attribute::Text,
-                AttrValue::String(format!(
-                    "{}    -    {}",
-                    DurationFmtShort(self.playback.current_track_pos()),
-                    DurationFmtShort(total_duration),
-                )),
+        let text = if self.playback.is_stopped() {
+            DurationFmtShort::fmt_empty().to_string()
+        } else if total_duration.is_zero() {
+            format!("{}", DurationFmtShort(self.playback.current_track_pos()),)
+        } else {
+            format!(
+                "{}    -    {}",
+                DurationFmtShort(self.playback.current_track_pos()),
+                DurationFmtShort(total_duration),
             )
-            .ok();
-        // self.force_redraw();
+        };
+
+        let _ = self
+            .app
+            .attr(&Id::Progress, Attribute::Text, AttrValue::String(text));
     }
 }
