@@ -1,5 +1,7 @@
+use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
@@ -20,7 +22,7 @@ use termusiclib::config::{
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::{podcast, utils};
 use tokio::io::AsyncReadExt;
-use tokio::process::Child;
+use tokio::process::{Child, Command};
 use tokio::sync::RwLock;
 use tokio::task::AbortHandle;
 use tokio_util::sync::CancellationToken;
@@ -205,13 +207,41 @@ fn launch_server(args: &cli::Args) -> Result<Child> {
 
     // server can stay around after client exits (if supported by the system)
     #[allow(clippy::zombie_processes)]
-    let proc =
-        utils::spawn_process(&termusic_server_prog, false, true, &server_args).context(format!(
-            "Could not start binary \"{}\"",
-            termusic_server_prog.display()
-        ))?;
+    let proc = spawn_process(&termusic_server_prog, false, &server_args).context(format!(
+        "Could not start binary \"{}\"",
+        termusic_server_prog.display()
+    ))?;
 
     Ok(proc)
+}
+
+/// Spawn a detached process
+/// # Panics
+/// panics when spawn server failed
+fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
+    prog: &Path,
+    piped: bool,
+    args: A,
+) -> std::io::Result<Child> {
+    let mut cmd = Command::new(prog);
+    cmd.stdin(Stdio::null());
+    if piped {
+        cmd.stdout(Stdio::piped());
+        cmd.stderr(Stdio::piped());
+    } else {
+        cmd.stdout(Stdio::null());
+        cmd.stderr(Stdio::null());
+    }
+
+    #[cfg(windows)]
+    {
+        // Set the flag for windows to have the child process stay around after the parent exits
+        use windows::Win32::System::Threading::DETACHED_PROCESS;
+        cmd.creation_flags(DETACHED_PROCESS.0);
+    }
+
+    cmd.args(args);
+    cmd.spawn()
 }
 
 /// Try to find a active server process, returning its [`Pid`].
