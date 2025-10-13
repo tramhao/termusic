@@ -1,10 +1,10 @@
 ## ChangeLog
 
 ### next
+
+- Change(tui): on windows, properly spawn the server as a detached process.
 - Fix(server): on rusty backend, update symphonia to fix various issues.
 - Fix(server): on rusty backend, update `rusty-libopus` to dynamic link without custom environment variable.
-- Change(tui): on windows, properly spawn the server as a detached process.
-
 
 ### [V0.12.0]
 - Released on: October 10, 2025.
