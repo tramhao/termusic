@@ -152,8 +152,10 @@ fn collect_server_output(mut child: Child) -> Arc<ServerOutput> {
     });
     let res = output.clone();
 
-    let mut stdout = child.stdout.take().unwrap();
-    let mut stderr = child.stderr.take().unwrap();
+    let (Some(mut stdout), Some(mut stderr)) = (child.stdout.take(), child.stderr.take()) else {
+        warn!("Somehow spawned server stdout or stderr are not available!");
+        return output;
+    };
 
     tokio::spawn(async move {
         let mut handle_stdout = output.stdout.write().await;
