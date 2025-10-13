@@ -209,7 +209,7 @@ fn launch_server(args: &cli::Args) -> Result<Child> {
 
     // server can stay around after client exits (if supported by the system)
     #[allow(clippy::zombie_processes)]
-    let proc = spawn_process(&termusic_server_prog, false, &server_args).context(format!(
+    let proc = spawn_process(&termusic_server_prog, true, &server_args).context(format!(
         "Could not start binary \"{}\"",
         termusic_server_prog.display()
     ))?;
