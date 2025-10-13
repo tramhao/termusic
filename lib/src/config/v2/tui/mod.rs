@@ -18,7 +18,7 @@ pub struct TuiSettings {
     #[serde(skip)]
     pub com_resolved: Option<ComSettings>,
     pub behavior: BehaviorSettings,
-    pub coverart: CoverArtPosition,
+    pub coverart: CoverArt,
     #[serde(flatten)]
     pub theme: theme::ThemeWrap,
     pub keys: keys::Keys,
@@ -92,7 +92,7 @@ pub enum MaybeComSettings {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 #[derive(Default)]
-pub struct CoverArtPosition {
+pub struct CoverArt {
     /// Alignment of the Cover-Art in the tui
     // TODO: clarify whether it is about the whole terminal size or just a specific component
     pub align: Alignment,
@@ -123,9 +123,7 @@ pub struct Ytdlp {
 }
 
 mod v1_interop {
-    use super::{
-        Alignment, BehaviorSettings, CoverArtPosition, MaybeComSettings, TuiSettings, Ytdlp,
-    };
+    use super::{Alignment, BehaviorSettings, CoverArt, MaybeComSettings, TuiSettings, Ytdlp};
     use crate::config::v1;
 
     impl From<v1::Alignment> for Alignment {
@@ -140,7 +138,7 @@ mod v1_interop {
     }
 
     #[allow(clippy::cast_possible_truncation)] // clamped casts
-    impl From<v1::Xywh> for CoverArtPosition {
+    impl From<v1::Xywh> for CoverArt {
         fn from(value: v1::Xywh) -> Self {
             Self {
                 align: value.align.into(),
@@ -189,7 +187,7 @@ mod v1_interop {
 
             assert_eq!(
                 converted.coverart,
-                CoverArtPosition {
+                CoverArt {
                     align: Alignment::BottomRight,
                     size_scale: 20,
                     hidden: false

@@ -1,4 +1,4 @@
-use crate::config::v2::tui::{Alignment, CoverArtPosition};
+use crate::config::v2::tui::{Alignment, CoverArt};
 use anyhow::{Result, bail};
 use image::DynamicImage;
 
@@ -43,8 +43,8 @@ pub struct Xywh {
     pub align: AlignmentWrap,
 }
 
-impl From<&CoverArtPosition> for Xywh {
-    fn from(value: &CoverArtPosition) -> Self {
+impl From<&CoverArt> for Xywh {
+    fn from(value: &CoverArt) -> Self {
         // TODO: actually apply scale
         Self {
             align: AlignmentWrap(value.align),
