@@ -118,6 +118,7 @@ unicode-width = "^0.2.0"
 urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.4"
+windows = { default-features = false, version = "0.61", features = ["Win32_System_Threading"] }
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.31"
 alphanumeric-sort = "1.5"

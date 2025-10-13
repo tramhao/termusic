@@ -64,6 +64,10 @@ pathdiff.workspace = true
 either.workspace = true
 lru.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+# required for setting "DETACHED_PROCESS" for spawning the server
+# without using magic or custom numbers
+windows.workspace = true
 
 [features]
 # enable all cover features by default that do not require system interfaces / extra dependencies
