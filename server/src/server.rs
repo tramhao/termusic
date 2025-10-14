@@ -17,7 +17,7 @@ use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
-use termusiclib::track::MediaTypesSimple;
+use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
@@ -536,32 +536,7 @@ fn player_loop(
                     player.current_track_updated = false;
                 }
                 if let Some(track) = playlist.current_track() {
-                    // if only one backend is enabled, rust will complain that it is the only thing that happens
-                    #[allow(irrefutable_let_patterns)]
-                    if MediaTypesSimple::LiveRadio == track.media_type() {
-                        // TODO: consider changing "radio_title" and "media_title" to be consistent
-                        p_tick.radio_title = player.media_info().media_title.unwrap_or_default();
-
-                        if let Backend::Rusty(ref mut backend) = player.backend {
-                            p_tick.progress.total_duration = Some(Duration::from_secs(
-                                ((*backend.radio_downloaded.lock() as f32 * 44100.0
-                                    / 1000000.0
-                                    / 1024.0)
-                                    * (backend.speed() as f32 / 10.0))
-                                    as u64,
-                            ));
-                        }
-
-                        #[cfg(feature = "gst")]
-                        if let Backend::GStreamer(_) = player.backend {
-                            // p_tick.duration = player.backend.get_buffer_duration();
-                            // error!("buffer duration: {}", p_tick.duration);
-                            p_tick.progress.total_duration = Some(
-                                p_tick.progress.position.unwrap_or_default()
-                                    + Duration::from_secs(20),
-                            );
-                        }
-                    }
+                    update_metadata_changed(&mut p_tick, &player, track);
                 }
             }
             PlayerCmd::ToggleGapless => {
@@ -635,12 +610,46 @@ fn player_loop(
             PlayerCmd::PlaylistRemoveDeletedTracks => {
                 player.playlist.write().remove_deleted_items();
             }
+            PlayerCmd::MetadataChanged => {
+                trace!("Metadata changed");
+                if let Some(track) = player.playlist.read().current_track() {
+                    let mut p_tick = playerstats.lock();
+                    update_metadata_changed(&mut p_tick, &player, track);
+                }
+                player.metadata_changed();
+            }
         }
 
         cb.call();
     }
 
     Ok(())
+}
+
+/// Update [`PlayerStats`] on metadata change or on tick.
+///
+/// Deduplicated
+#[allow(irrefutable_let_patterns)] // if only one backend is enabled, rust will complain that it is the only thing that happens
+fn update_metadata_changed(p_tick: &mut PlayerStats, player: &GeneralPlayer, track: &Track) {
+    if MediaTypesSimple::LiveRadio == track.media_type() {
+        // TODO: consider changing "radio_title" and "media_title" to be consistent
+        p_tick.radio_title = player.media_info().media_title.unwrap_or_default();
+
+        if let Backend::Rusty(backend) = &player.backend {
+            p_tick.progress.total_duration = Some(Duration::from_secs(
+                ((*backend.radio_downloaded.lock() as f32 * 44100.0 / 1000000.0 / 1024.0)
+                    * (backend.speed() as f32 / 10.0)) as u64,
+            ));
+        }
+
+        #[cfg(feature = "gst")]
+        if let Backend::GStreamer(_) = player.backend {
+            // p_tick.duration = player.backend.get_buffer_duration();
+            // error!("buffer duration: {}", p_tick.duration);
+            p_tick.progress.total_duration =
+                Some(p_tick.progress.position.unwrap_or_default() + Duration::from_secs(20));
+        }
+    }
 }
 
 /// Common [`PlayerCmd::Eos`] handler.

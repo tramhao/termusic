@@ -232,6 +232,7 @@ impl MpvBackend {
                 "media-title" => {
                     if let PropertyData::Str(title) = change {
                         *args.media_title.lock() = title.to_string();
+                        let _ = args.cmd_tx.send(PlayerCmd::MetadataChanged);
                     }
                 }
                 &_ => {

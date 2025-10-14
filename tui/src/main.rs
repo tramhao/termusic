@@ -152,8 +152,10 @@ fn collect_server_output(mut child: Child) -> Arc<ServerOutput> {
     });
     let res = output.clone();
 
-    let mut stdout = child.stdout.take().unwrap();
-    let mut stderr = child.stderr.take().unwrap();
+    let (Some(mut stdout), Some(mut stderr)) = (child.stdout.take(), child.stderr.take()) else {
+        warn!("Somehow spawned server stdout or stderr are not available!");
+        return output;
+    };
 
     tokio::spawn(async move {
         let mut handle_stdout = output.stdout.write().await;
@@ -207,7 +209,7 @@ fn launch_server(args: &cli::Args) -> Result<Child> {
 
     // server can stay around after client exits (if supported by the system)
     #[allow(clippy::zombie_processes)]
-    let proc = spawn_process(&termusic_server_prog, false, &server_args).context(format!(
+    let proc = spawn_process(&termusic_server_prog, true, &server_args).context(format!(
         "Could not start binary \"{}\"",
         termusic_server_prog.display()
     ))?;

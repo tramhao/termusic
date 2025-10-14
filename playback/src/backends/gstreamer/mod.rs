@@ -161,6 +161,7 @@ enum PlayerInternalCmd {
     AboutToFinish,
     SkipNext,
     ReloadSpeed,
+    MetadataChanged,
 }
 
 pub struct GStreamerBackend {
@@ -340,6 +341,7 @@ impl GStreamerBackend {
 
                 // clear stored title on end
                 media_title.lock().clear();
+                // let _ = main_tx.blocking_send(PlayerInternalCmd::MetadataChanged);
             }
             gst::MessageView::StreamStart(_e) => {
                 if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
@@ -354,6 +356,7 @@ impl GStreamerBackend {
 
                 // clear stored title on stream start (should work without conflicting in ::Tag)
                 media_title.lock().clear();
+                // let _ = main_tx.blocking_send(PlayerInternalCmd::MetadataChanged);
 
                 // HACK: gstreamer does not handle seek events before some undocumented time, see other note in main_rx handler
                 let _ = main_tx.blocking_send(PlayerInternalCmd::ReloadSpeed);
@@ -403,6 +406,7 @@ impl GStreamerBackend {
                 if let Some(title) = tag.tags().get::<gst::tags::Title>() {
                     info!("Title: {}", title.get());
                     *media_title.lock() = title.get().into();
+                    let _ = main_tx.blocking_send(PlayerInternalCmd::MetadataChanged);
                 }
                 // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
                 //     info!("Artist: {}", artist.get());
@@ -485,6 +489,9 @@ impl GStreamerBackend {
                     // HACK: currently gstreamer does not have any internal events to be send, and there is no global "re-apply speed property", this also means that if using max speed, it will not actually use full-speed
                     let _ = cmd_tx.send(PlayerCmd::SpeedUp);
                     let _ = cmd_tx.send(PlayerCmd::SpeedDown);
+                }
+                PlayerInternalCmd::MetadataChanged => {
+                    let _ = cmd_tx.send(PlayerCmd::MetadataChanged);
                 }
             }
         }
