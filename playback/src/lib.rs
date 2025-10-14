@@ -102,9 +102,24 @@ pub enum PlayerErrorType {
 
 #[derive(Clone, Debug)]
 pub enum PlayerCmd {
+    // Mainly called from the backends
+    /// The Backend indicates the current track is about to end.
     AboutToFinish,
-    CycleLoop,
+    /// The Backend indicates that the current track has ended.
     Eos,
+    /// The Backend indicates new metadata is available.
+    MetadataChanged,
+    /// A Error happened in the backend (for example `NotFound`) that makes it unrecoverable to continue to play the current track.
+    /// This will basically be treated as a [`Eos`](PlayerCmd::Eos), with some extra handling.
+    ///
+    /// This should **not** be used if the whole backend is unrecoverable.
+    Error(PlayerErrorType),
+
+    // Internal only
+    Tick,
+
+    // Mainly called from outside sources (client, mpris)
+    CycleLoop,
     GetProgress,
     SkipPrevious,
     Pause,
@@ -117,16 +132,10 @@ pub enum PlayerCmd {
     SkipNext,
     SpeedDown,
     SpeedUp,
-    Tick,
     ToggleGapless,
     TogglePause,
     VolumeDown,
     VolumeUp,
-    /// A Error happened in the backend (for example `NotFound`) that makes it unrecoverable to continue to play the current track.
-    /// This will basically be treated as a [`Eos`](PlayerCmd::Eos), with some extra handling.
-    ///
-    /// This should **not** be used if the whole backend is unrecoverable.
-    Error(PlayerErrorType),
 
     PlaylistPlaySpecific(PlaylistPlaySpecific),
     PlaylistAddTrack(PlaylistAddTrack),
@@ -346,6 +355,11 @@ impl GeneralPlayer {
 
             self.send_track_changed();
         }
+    }
+
+    /// Handle [`PlayerCmd::MetadataChanged`] for all things the [`GeneralPlayer`] controls.
+    pub fn metadata_changed(&mut self) {
+        self.send_track_changed();
     }
 
     /// Send event [`UpdateEvents::TrackChanged`]. In a function to de-duplicate calls.

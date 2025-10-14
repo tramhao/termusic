@@ -3,6 +3,7 @@
 ### next
 
 - Change(tui): on windows, properly spawn the server as a detached process.
+- Fix: populate media title changes (like radio stream titles) to the TUI again.
 - Fix(tui): update status bar (status, volume, speed, gapless) on [volume, speed, gapless] changes, not just status changes.
 - Fix(tui): properly set lyric content on reload (like exiting the config editor).
 - Fix(tui): populate "Stopped" state to everything instead of showing stale data.
