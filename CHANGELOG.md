@@ -4,6 +4,7 @@
 
 - Change: change default log level to `info` (from `warn`).
 - Change(tui): on windows, properly spawn the server as a detached process.
+- Feat(tui): allow disabling individual cover-art protocols, even if compiled-in.
 - Fix: populate media title changes (like radio stream titles) to the TUI again.
 - Fix(tui): update status bar (status, volume, speed, gapless) on [volume, speed, gapless] changes, not just status changes.
 - Fix(tui): properly set lyric content on reload (like exiting the config editor).

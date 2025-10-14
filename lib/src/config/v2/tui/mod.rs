@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{collections::HashSet, path::Path};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -18,7 +18,7 @@ pub struct TuiSettings {
     #[serde(skip)]
     pub com_resolved: Option<ComSettings>,
     pub behavior: BehaviorSettings,
-    pub coverart: CoverArtPosition,
+    pub coverart: CoverArt,
     #[serde(flatten)]
     pub theme: theme::ThemeWrap,
     pub keys: keys::Keys,
@@ -92,7 +92,7 @@ pub enum MaybeComSettings {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 #[derive(Default)]
-pub struct CoverArtPosition {
+pub struct CoverArt {
     /// Alignment of the Cover-Art in the tui
     // TODO: clarify whether it is about the whole terminal size or just a specific component
     pub align: Alignment,
@@ -100,6 +100,53 @@ pub struct CoverArtPosition {
     pub size_scale: i8,
     /// Whether to show or hide the coverart if it is compiled in
     pub hidden: bool,
+
+    /// Enabled coverart display protocols. Protocols not compiled-in will not have a effect.
+    ///
+    /// Remove items from this list to disable the protocol
+    pub protocols: CoverArtProtocolsSet,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(transparent)]
+pub struct CoverArtProtocolsSet(HashSet<CoverArtProtocol>);
+
+impl Default for CoverArtProtocolsSet {
+    fn default() -> Self {
+        Self(HashSet::from(*PROTOCOLS_DEFAULT))
+    }
+}
+
+impl CoverArtProtocolsSet {
+    /// Check if a given [`CoverArtProtocol`] is enabled.
+    #[inline]
+    #[must_use]
+    pub fn includes_protocol(&self, protocol: CoverArtProtocol) -> bool {
+        self.0.contains(&protocol)
+    }
+}
+
+/// All protocols are enabled by default.
+pub const PROTOCOLS_DEFAULT: &[CoverArtProtocol; 4] = &[
+    CoverArtProtocol::Kitty,
+    CoverArtProtocol::Iterm2,
+    CoverArtProtocol::Sixel,
+    CoverArtProtocol::Ueberzug,
+];
+
+/// All available Cover-Art protocols in the TUI.
+///
+/// Only has a effect if said protocol is compiled-in.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Hash)]
+pub enum CoverArtProtocol {
+    #[serde(rename = "sixel")]
+    Sixel,
+    #[serde(rename = "iterm2", alias = "iterm")]
+    Iterm2,
+    #[serde(rename = "kitty")]
+    Kitty,
+    #[serde(rename = "ueberzug")]
+    Ueberzug,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Default, PartialEq, Eq)]
@@ -123,10 +170,8 @@ pub struct Ytdlp {
 }
 
 mod v1_interop {
-    use super::{
-        Alignment, BehaviorSettings, CoverArtPosition, MaybeComSettings, TuiSettings, Ytdlp,
-    };
-    use crate::config::v1;
+    use super::{Alignment, BehaviorSettings, CoverArt, MaybeComSettings, TuiSettings, Ytdlp};
+    use crate::config::{v1, v2::tui::CoverArtProtocolsSet};
 
     impl From<v1::Alignment> for Alignment {
         fn from(value: v1::Alignment) -> Self {
@@ -140,13 +185,14 @@ mod v1_interop {
     }
 
     #[allow(clippy::cast_possible_truncation)] // clamped casts
-    impl From<v1::Xywh> for CoverArtPosition {
+    impl From<v1::Xywh> for CoverArt {
         fn from(value: v1::Xywh) -> Self {
             Self {
                 align: value.align.into(),
                 // the value is named "width", but more use like a scale on both axis
                 size_scale: value.width_between_1_100.clamp(0, i8::MAX as u32) as i8,
                 hidden: Self::default().hidden,
+                protocols: CoverArtProtocolsSet::default(),
             }
         }
     }
@@ -189,10 +235,11 @@ mod v1_interop {
 
             assert_eq!(
                 converted.coverart,
-                CoverArtPosition {
+                CoverArt {
                     align: Alignment::BottomRight,
                     size_scale: 20,
-                    hidden: false
+                    hidden: false,
+                    protocols: CoverArtProtocolsSet::default()
                 }
             );
 
