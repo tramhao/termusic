@@ -16,7 +16,6 @@ pub mod podcast;
 pub mod songtag;
 pub mod taskpool;
 pub mod track;
-pub mod ueberzug;
 pub mod utils;
 pub mod xywh;
 
