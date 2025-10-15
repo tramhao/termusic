@@ -20,8 +20,6 @@ use termusiclib::songtag::SongTag;
 use termusiclib::songtag::lrc::Lyric;
 use termusiclib::taskpool::TaskPool;
 use termusiclib::track::{LyricData, MediaTypesSimple, Track};
-#[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
-use termusiclib::ueberzug::UeInstance;
 use termusiclib::utils::get_app_config_path;
 use termusiclib::xywh;
 use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
@@ -36,6 +34,8 @@ use crate::ui::ids::Id;
 use crate::ui::model::ports::stream_events::{PortStreamEvents, WrappedStreamEvents};
 use crate::ui::model::youtube_options::YoutubeOptions;
 use crate::ui::msg::{Msg, SearchCriteria};
+#[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
+use crate::ui::ueberzug::UeInstance;
 pub use download_tracker::DownloadTracker;
 pub use user_events::UserEvent;
 

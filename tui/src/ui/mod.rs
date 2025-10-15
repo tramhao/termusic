@@ -22,6 +22,8 @@ mod msg;
 mod music_player_client;
 mod server_req_actor;
 mod tui_cmd;
+#[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
+mod ueberzug;
 pub mod utils;
 
 /// The main TUI struct which handles message passing and the main-loop.

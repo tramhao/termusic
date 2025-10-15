@@ -1,12 +1,13 @@
-use crate::xywh::Xywh;
-use anyhow::Context;
-use anyhow::{Result, bail};
 use std::ffi::OsStr;
 use std::io::Read as _;
 use std::io::Write;
 use std::process::Child;
 use std::process::Command;
 use std::process::Stdio;
+
+use anyhow::Context;
+use anyhow::{Result, bail};
+use termusiclib::xywh::Xywh;
 
 #[derive(Debug)]
 pub enum UeInstanceState {
@@ -154,11 +155,27 @@ impl UeInstance {
                 Ok(self.ueberzug.unwrap_child_mut())
             }
             Err(err) => {
+                // ueberzug is not installed or available via the command above
                 if err.kind() == std::io::ErrorKind::NotFound {
                     self.ueberzug = UeInstanceState::Error;
                 }
                 bail!(err)
             }
+        }
+    }
+
+    /// Map a potential [`std::io::Error`] (kind [`NotFound`](std::io::ErrorKind::NotFound)) to `Ok(None)` to ignore the error.
+    #[inline]
+    fn map_notfound_ok<T>(err: anyhow::Error) -> Result<Option<T>> {
+        if err
+            .downcast_ref::<std::io::Error>()
+            .is_some_and(|v| v.kind() == std::io::ErrorKind::NotFound)
+        {
+            warn!("ueberzug is not installed; not displaying error");
+
+            Ok(None)
+        } else {
+            Err(err)
         }
     }
 
@@ -171,7 +188,13 @@ impl UeInstance {
         S: AsRef<OsStr>,
     {
         let child = match self.ueberzug {
-            UeInstanceState::New => self.spawn_cmd(args)?,
+            UeInstanceState::New => match self
+                .spawn_cmd(args)
+                .map_or_else(Self::map_notfound_ok, |v| Ok(Some(v)))?
+            {
+                Some(child) => child,
+                None => return Ok(None),
+            },
             UeInstanceState::Child(ref mut v) => v,
             UeInstanceState::Error => {
                 trace!("Not re-trying ueberzug, because it has a permanent error!");
