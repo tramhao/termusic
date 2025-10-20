@@ -11,6 +11,7 @@
 - Fix(tui): populate "Stopped" state to everything instead of showing stale data.
 - Fix(tui): change how progress time is displayed to now be `--:--` if unavailable / stopped, and dont show total duration if unavailable.
 - Fix(tui): dont show error popup if `cover-ueberzug` is compiled-in but `ueberzug` command is not available.
+- Fix(tui): change the progressbar to use less-than-full blocks for smoother display.
 - Fix(server): on rusty backend, update symphonia to fix various issues.
 - Fix(server): on rusty backend, update `rusty-libopus` to dynamic link without custom environment variable.
 

@@ -4,11 +4,11 @@ use termusiclib::config::TuiOverlay;
 use termusiclib::player::RunningStatus;
 use termusiclib::track::DurationFmtShort;
 use termusiclib::track::MediaTypesSimple;
-use tui_realm_stdlib::ProgressBar;
 use tuirealm::props::{Alignment, BorderType, Borders, PropPayload, PropValue};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
 
 use crate::ui::Model;
+use crate::ui::components::vendored::tui_realm_stdlib_progressbar::ProgressBar;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::Msg;
