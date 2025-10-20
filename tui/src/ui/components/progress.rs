@@ -1,3 +1,4 @@
+use std::ops::Div;
 use std::time::Duration;
 
 use termusiclib::config::TuiOverlay;
@@ -149,24 +150,16 @@ impl Model {
 
         self.playback.set_current_track_pos(time_pos);
 
-        let progress = if time_pos.as_secs() > 0 && total_duration.as_secs() > 0 {
-            (time_pos.as_secs() * 100)
-                .checked_div(total_duration.as_secs())
-                .unwrap() as f64
+        let progress = if time_pos.as_millis() > 0 && total_duration.as_millis() > 0 {
+            (time_pos.as_millis() as f64).div(total_duration.as_millis() as f64)
         } else {
             0.0
         };
 
-        let new_prog = Self::progress_safeguard(progress);
+        let progress = progress.clamp(0.0, 1.0);
 
-        self.progress_set(new_prog, total_duration);
+        self.progress_set(progress, total_duration);
         self.lyric_update();
-    }
-
-    /// Convert the input to a scale of `0.0` to `1.0` (clamped).
-    fn progress_safeguard(progress: f64) -> f64 {
-        let new_prog = progress / 100.0;
-        new_prog.clamp(0.0, 1.0)
     }
 
     /// Set the progress bar text.
