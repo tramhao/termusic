@@ -396,6 +396,8 @@ impl Model {
         self.library.tree_path = root_path;
         self.library.tree = Tree::new(root_node);
 
+        let old_focus = self.app.focus().copied();
+
         // remount preserves focus
         let _ = self.app.remount(
             Id::Library,
@@ -406,6 +408,14 @@ impl Model {
             )),
             Vec::new(),
         );
+
+        // TODO: this should be removed once https://github.com/veeso/tui-realm/issues/118 is fixed
+        // workaround a bug in tui-realm's remount that unsets focus, even though it should still be there
+        if let Some(Id::Library) = old_focus {
+            let _ = self
+                .app
+                .attr(&Id::Library, Attribute::Focus, AttrValue::Flag(true));
+        }
 
         // focus the specified node
         if let Some(id) = focus_node {
