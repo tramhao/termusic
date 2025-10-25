@@ -249,6 +249,7 @@ impl Model {
         }
         let config_tui = self.config_tui.read();
         let mut args = vec![
+            Arg::new("--no-playlist"),
             Arg::new("--extract-audio"),
             // Arg::new_with_arg("--audio-format", "vorbis"),
             Arg::new_with_arg("--audio-format", "mp3"),
