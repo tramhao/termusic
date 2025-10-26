@@ -14,6 +14,7 @@
 - Fix(tui): change the progressbar to use less-than-full blocks for smoother display.
 - Fix(server): on rusty backend, update symphonia to fix various issues.
 - Fix(server): on rusty backend, update `rusty-libopus` to dynamic link without custom environment variable.
+- Fix(server): dont panic if backend in config is unavailable when overridden by cli argument.
 
 ### [V0.12.0]
 - Released on: October 10, 2025.
