@@ -109,14 +109,20 @@ async fn actual_main() -> Result<()> {
 
     // do this before anything else so that we exit early on invalid/unavailable backends
     let backend = {
-        let config_backend = config.settings.player.backend.try_into()?;
+        let config_backend = config.settings.player.backend.try_into();
 
         if let Some(backend) = args.backend {
             trace!("Backend from CLI");
+
+            // dont panic if the config backend is unavailable, but also warn somehow
+            if let Err(err) = config_backend {
+                warn!("Error parsing backend from config: {err}");
+            }
+
             backend.into()
         } else {
             trace!("Backend from Config");
-            config_backend
+            config_backend?
         }
     };
 
