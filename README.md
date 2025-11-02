@@ -77,7 +77,7 @@ Note that using non-default features might increase the MSRV.
 |        `clang`        |       `clang`       |    X     |        X        |                     |       General Build tools (and sqlite compile)        |          |
 |  `protobuf-compiler`  |     `protobuf`      |    X     |        X        |                     | communication protocol between server and client(tui) |          |
 |    `libdbus-1-dev`    |       `dbus`        |    X     |     unknown     |                     |                  MPRIS media control                  |          |
-|   `libasound2-dev`    |        None         |    X     |     unknown     |                     |                     ALSA headers                      |          |
+|   `libasound2-dev`    |        `alsa-lib`         |    X     |     unknown     |                     |                     ALSA headers                      |          |
 |       `yt-dlp`        |      `yt-dlp`       |          |                 |                     |                 Download some tracks                  |          |
 |         `mpv`         |        `mpv`        |          |                 |        `mpv`        |                      MPV Backend                      |          |
 |      `gstreamer`      |     `gstreamer`     |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
