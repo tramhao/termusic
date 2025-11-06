@@ -74,9 +74,8 @@ winrelease:
 	cargo build --release --all
 
 winpost:
-	powershell -noprofile -command "Write-Host $(install_to)"
-	cp -f target/release/$(prog) "$(install_to)"
-	cp -f target/release/$(server) "$(install_to)"
+	powershell -command "Copy-Item -force -Path 'target\release\$(prog)' -Destination '$(install_to)'"
+	powershell -command "Copy-Item -force -Path 'target\release\$(server)' -Destination '$(install_to)'"
 
 wininstall: winrelease winpost
 
