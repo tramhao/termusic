@@ -110,7 +110,7 @@ prost = "0.14.1"
 tonic = "0.14.1"
 tonic-prost = "0.14.1"
 tonic-prost-build = "0.14.1"
-tuirealm = { version = "~3.1.0", features = ["async-ports"] }
+tuirealm = { version = "~3.2.0", features = ["async-ports"] }
 tui-realm-stdlib = "~3.0"
 tui-realm-treeview = "~3.0"
 unicode-segmentation = "1.12"
