@@ -5553,9 +5553,9 @@ dependencies = [
 
 [[package]]
 name = "tuirealm"
-version = "3.1.0"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7af0e5ae72e143be385952fe1bb76cc1fd5c517ba4f3a44f5f66e71e2e9d93e9"
+checksum = "698bf34f6e1b191b1bfab793b869bd39196eeb07d7e5d0a01a24df07499a59b0"
 dependencies = [
  "async-trait",
  "bitflags 2.9.1",

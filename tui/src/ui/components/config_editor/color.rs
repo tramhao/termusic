@@ -1328,8 +1328,6 @@ impl Model {
         config: &SharedTuiSettings,
         theme_idx: Option<usize>,
     ) -> Result<()> {
-        let old_focus = self.app.focus().copied();
-
         // Mount color page
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)),
@@ -1488,12 +1486,6 @@ impl Model {
         self.remount_config_color_symbols(config)?;
 
         self.theme_select_sync(theme_idx);
-
-        // TODO: this should be removed once https://github.com/veeso/tui-realm/issues/118 is fixed
-        // workaround a bug in tui-realm's remount that unsets focus, even though it should still be there
-        if let Some(id) = old_focus {
-            let _ = self.app.attr(&id, Attribute::Focus, AttrValue::Flag(true));
-        }
 
         Ok(())
     }
