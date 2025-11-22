@@ -58,6 +58,8 @@ pub fn setup(args: &Args) -> LoggerHandle {
         original_hook(panic);
     }));
 
+    info!("Termusic(tui) version {}", env!("TERMUSIC_VERSION"));
+
     handle
 }
 

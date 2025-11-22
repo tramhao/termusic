@@ -48,8 +48,12 @@ pub struct CombinedSettings {
 }
 
 fn main() -> Result<()> {
+    let res = actual_main();
+
+    trace!("Tokio Exited");
+
     // print error to the log and then throw it
-    if let Err(err) = actual_main() {
+    if let Err(err) = res {
         error!("Error: {err:?}");
         return Err(err);
     }

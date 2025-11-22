@@ -3,6 +3,7 @@
 ### next
 
 - Change: change default log level to `info` (from `warn`).
+- Change: log the termusic version used.
 - Change(tui): on windows, properly spawn the server as a detached process.
 - Feat(tui): allow disabling individual cover-art protocols, even if compiled-in.
 - Fix: populate media title changes (like radio stream titles) to the TUI again.

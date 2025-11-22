@@ -59,6 +59,8 @@ pub fn setup(args: &Args) -> LoggerHandle {
         original_hook(panic);
     }));
 
+    info!("Termusic-server version {}", env!("TERMUSIC_VERSION"));
+
     handle
 }
 
