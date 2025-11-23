@@ -1,4 +1,4 @@
-use std::fs::{DirEntry, remove_dir_all, remove_file, rename};
+use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
@@ -332,24 +332,12 @@ impl Model {
     }
 
     pub fn library_dir_children(p: &Path) -> Vec<String> {
-        let mut children: Vec<String> = vec![];
-        if p.is_dir() {
-            if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<(String, DirEntry)> = paths
-                    .filter_map(std::result::Result::ok)
-                    .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v))
-                    .collect();
-
-                paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
-
-                for (_, p) in paths {
-                    if !p.path().is_dir() {
-                        children.push(String::from(p.path().to_string_lossy()));
-                    }
-                }
-            }
-        }
-        children
+        // use the same function as the tree order gets generated in, so that we add in a expected order
+        let vec = Self::library_dir_tree(p, ScanDepth::Limited(1));
+        vec.children
+            .into_iter()
+            .map(|v| v.id.to_string_lossy().to_string())
+            .collect()
     }
 
     /// Reload the library with the given `node` as a focus, also starts a new database sync worker for the current path.
