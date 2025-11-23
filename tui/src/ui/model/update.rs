@@ -653,13 +653,13 @@ impl Model {
                 }
             }
             LIMsg::SwitchRoot => self.library_switch_root(),
-            LIMsg::AddRoot => {
-                if let Err(e) = self.library_add_root() {
+            LIMsg::AddRoot(path) => {
+                if let Err(e) = self.library_add_root(path) {
                     self.mount_error_popup(e.context("library add root"));
                 }
             }
-            LIMsg::RemoveRoot => {
-                if let Err(e) = self.library_remove_root() {
+            LIMsg::RemoveRoot(path) => {
+                if let Err(e) = self.library_remove_root(path) {
                     self.mount_error_popup(e.context("library remove root"));
                 }
             }

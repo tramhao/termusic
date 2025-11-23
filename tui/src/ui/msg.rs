@@ -167,8 +167,8 @@ pub enum LIMsg {
     Yank,
     Paste,
     SwitchRoot,
-    AddRoot,
-    RemoveRoot,
+    AddRoot(PathBuf),
+    RemoveRoot(PathBuf),
 
     /// A requested node is ready from loading.
     /// `(Tree, FocusNode)`

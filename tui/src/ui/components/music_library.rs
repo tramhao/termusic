@@ -205,10 +205,14 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.add_root.get() => {
-                return Some(Msg::Library(LIMsg::AddRoot));
+                let root_node = self.component.tree().root().id();
+                let path = PathBuf::from(root_node);
+                return Some(Msg::Library(LIMsg::AddRoot(path)));
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.remove_root.get() => {
-                return Some(Msg::Library(LIMsg::RemoveRoot));
+                let root_node = self.component.tree().root().id();
+                let path = PathBuf::from(root_node);
+                return Some(Msg::Library(LIMsg::RemoveRoot(path)));
             }
 
             // load more tree
@@ -594,23 +598,18 @@ impl Model {
         }
     }
 
-    /// Add the current tree's root node's path as a new library root for quick switching & metadata(database) scraping.
-    pub fn library_add_root(&mut self) -> Result<()> {
-        let current_path = &self.library.tree_path;
-
+    /// Add the given path as a new library root for quick switching & metadata(database) scraping.
+    pub fn library_add_root<P: Into<PathBuf>>(&mut self, path: P) -> Result<()> {
+        let path = path.into();
         let mut config_server = self.config_server.write();
 
         for dir in &config_server.settings.player.music_dirs {
             let absolute_dir = shellexpand::path::tilde(dir);
-            if &absolute_dir == current_path {
-                bail!("Add root failed, same root already exists");
+            if absolute_dir == path {
+                bail!("Same root already exists");
             }
         }
-        config_server
-            .settings
-            .player
-            .music_dirs
-            .push(current_path.clone());
+        config_server.settings.player.music_dirs.push(path);
         let res = ServerConfigVersionedDefaulted::save_config_path(&config_server.settings);
         drop(config_server);
 
@@ -619,15 +618,15 @@ impl Model {
         Ok(())
     }
 
-    /// Remove the current tree's root node's path as a library root.
-    pub fn library_remove_root(&mut self) -> Result<()> {
-        let current_path = &self.library.tree_path;
+    /// Remove the given path as a library root.
+    pub fn library_remove_root<P: Into<PathBuf>>(&mut self, path: P) -> Result<()> {
+        let path = path.into();
         let mut config_server = self.config_server.write();
 
         let mut vec = Vec::new();
         for dir in &config_server.settings.player.music_dirs {
             let absolute_dir = shellexpand::path::tilde(dir);
-            if &absolute_dir == current_path {
+            if absolute_dir == path {
                 continue;
             }
             vec.push(dir.clone());
