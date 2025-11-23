@@ -261,7 +261,11 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             ) => return Some(Msg::Library(LIMsg::TreeBlur)),
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.open_tag_editor.get() => {
                 let current_node = self.component.tree_state().selected().unwrap();
-                return Some(Msg::TagEditor(TEMsg::Open(current_node.to_string())));
+                let path = Path::new(current_node);
+                if !path.is_dir() {
+                    return Some(Msg::TagEditor(TEMsg::Open(path.to_path_buf())));
+                }
+                CmdResult::None
             }
 
             _ => CmdResult::None,

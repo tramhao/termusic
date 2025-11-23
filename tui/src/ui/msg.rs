@@ -447,7 +447,7 @@ pub enum YSMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TEMsg {
-    Open(String),
+    Open(PathBuf),
     Close,
     CounterDeleteOk,
     Download(usize),
