@@ -239,6 +239,14 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 }
                 CmdResult::None
             }
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_track.get() => {
+                let current_node = self.component.tree_state().selected().unwrap();
+                let path: &Path = Path::new(current_node);
+                if !path.is_dir() {
+                    return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
+                }
+                CmdResult::None
+            }
 
             // other
             Event::Keyboard(
