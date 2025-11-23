@@ -284,6 +284,68 @@ impl Component<Msg, UserEvent> for MusicLibrary {
     }
 }
 
+/// Execute a library scan on a different thread.
+///
+/// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
+pub fn library_scan<P: Into<PathBuf>>(
+    tx: TxToMain,
+    download_tracker: DownloadTracker,
+    path: P,
+    depth: ScanDepth,
+    focus_node: Option<String>,
+) {
+    let path = path.into();
+    std::thread::Builder::new()
+        .name("library tree scan".to_string())
+        .spawn(move || {
+            download_tracker.increase_one(path.to_string_lossy());
+            let root_node = library_dir_tree(&path, depth);
+
+            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
+            download_tracker.decrease_one(&path.to_string_lossy());
+        })
+        .expect("Failed to spawn thread");
+}
+
+/// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
+///
+/// Note: consider using [`library_scan`] instead of this directly for running in a different thread.
+pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
+    let name: String = match path.file_name() {
+        None => "/".to_string(),
+        Some(n) => n.to_string_lossy().into_owned(),
+    };
+    let mut node = RecVec {
+        id: path.to_path_buf(),
+        value: name,
+        children: Vec::new(),
+    };
+
+    let depth = match depth {
+        ScanDepth::Limited(v) => v,
+        // put some kind of limit on it, thought the stack will likely overflow before this
+        ScanDepth::Unlimited => u32::MAX,
+    };
+
+    if depth > 0 && path.is_dir() {
+        if let Ok(paths) = std::fs::read_dir(path) {
+            let mut paths: Vec<(String, PathBuf)> = paths
+                .filter_map(std::result::Result::ok)
+                .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
+                .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v.path()))
+                .collect();
+
+            paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
+
+            for p in paths {
+                node.children
+                    .push(library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
+            }
+        }
+    }
+    node
+}
+
 impl Model {
     /// Get the parent directory path of the current tree's root.
     #[inline]
@@ -294,7 +356,7 @@ impl Model {
     /// Execute [`Self::library_scan`] from a `&self` instance.
     #[inline]
     pub fn library_scan_dir<P: Into<PathBuf>>(&self, path: P, focus_node: Option<String>) {
-        Self::library_scan(
+        library_scan(
             self.tx_to_main.clone(),
             self.download_tracker.clone(),
             path,
@@ -306,68 +368,6 @@ impl Model {
     /// Get a new tree with the root node showing "Loading...".
     pub fn loading_tree() -> Tree<String> {
         Tree::new(Node::new("/dev/null".to_string(), "Loading...".to_string()))
-    }
-
-    /// Execute a library scan on a different thread.
-    ///
-    /// Executes [`Self::library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
-    pub fn library_scan<P: Into<PathBuf>>(
-        tx: TxToMain,
-        download_tracker: DownloadTracker,
-        path: P,
-        depth: ScanDepth,
-        focus_node: Option<String>,
-    ) {
-        let path = path.into();
-        std::thread::Builder::new()
-            .name("library tree scan".to_string())
-            .spawn(move || {
-                download_tracker.increase_one(path.to_string_lossy());
-                let root_node = Self::library_dir_tree(&path, depth);
-
-                let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
-                download_tracker.decrease_one(&path.to_string_lossy());
-            })
-            .expect("Failed to spawn thread");
-    }
-
-    /// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
-    ///
-    /// Note: consider using [`Self::library_scan`] instead of this directly for running in a different thread.
-    pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
-        let name: String = match path.file_name() {
-            None => "/".to_string(),
-            Some(n) => n.to_string_lossy().into_owned(),
-        };
-        let mut node = RecVec {
-            id: path.to_path_buf(),
-            value: name,
-            children: Vec::new(),
-        };
-
-        let depth = match depth {
-            ScanDepth::Limited(v) => v,
-            // put some kind of limit on it, thought the stack will likely overflow before this
-            ScanDepth::Unlimited => u32::MAX,
-        };
-
-        if depth > 0 && path.is_dir() {
-            if let Ok(paths) = std::fs::read_dir(path) {
-                let mut paths: Vec<(String, PathBuf)> = paths
-                    .filter_map(std::result::Result::ok)
-                    .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
-                    .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v.path()))
-                    .collect();
-
-                paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
-
-                for p in paths {
-                    node.children
-                        .push(Self::library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
-                }
-            }
-        }
-        node
     }
 
     /// Reload the library with the given `node` as a focus, also starts a new database sync worker for the current path.

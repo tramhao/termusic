@@ -34,6 +34,7 @@ use tuirealm::{
 };
 
 use crate::ui::Model;
+use crate::ui::components::music_library::library_dir_tree;
 use crate::ui::ids::Id;
 use crate::ui::model::{TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg};
@@ -326,7 +327,7 @@ impl Model {
 
     fn playlist_get_dir_entries(path: &Path) -> Vec<String> {
         // use the same function as the tree order gets generated in, so that we add in a expected order
-        let vec = Self::library_dir_tree(path, ScanDepth::Limited(1));
+        let vec = library_dir_tree(path, ScanDepth::Limited(1));
         vec.children
             .into_iter()
             .map(|v| v.id.to_string_lossy().to_string())
