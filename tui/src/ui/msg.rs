@@ -161,8 +161,26 @@ pub struct RecVec<T, V> {
     pub children: Vec<RecVec<T, V>>,
 }
 
+/// Data for [`LIMsg::Reload`].
+///
+/// Contains: `change_root_path, focus_node`.
+///
+/// Leaving `change_root_path` as `None` will reload the current root, without changing paths.
+#[derive(Clone, Debug, Eq, Default)]
+pub struct LIReloadData(pub Option<PathBuf>, pub Option<String>);
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LIReloadData {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
+    /// Run a full reload of the current tree. This will clear the tree until new data is available.
+    Reload(LIReloadData),
+
     TreeBlur,
     PlaylistRunDelete,
     PasteError(String),

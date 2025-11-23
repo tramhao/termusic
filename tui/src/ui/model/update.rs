@@ -654,6 +654,9 @@ impl Model {
             LIMsg::TreeNodeReady(vec, focus_node) => {
                 self.library_apply_as_tree(vec, focus_node);
             }
+
+            // handled by the component
+            LIMsg::Reload(_data) => (),
         }
     }
 

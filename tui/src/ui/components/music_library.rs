@@ -9,11 +9,16 @@ use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE,
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+use tuirealm::{
+    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue, Sub, SubClause,
+    SubEventClause,
+};
 
 use crate::ui::ids::Id;
 use crate::ui::model::{DownloadTracker, Model, TxToMain, UserEvent};
-use crate::ui::msg::{DeleteConfirmMsg, GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
+use crate::ui::msg::{
+    DeleteConfirmMsg, GSMsg, LIMsg, LIReloadData, Msg, PLMsg, RecVec, TEMsg, YSMsg,
+};
 use crate::ui::tui_cmd::TuiCmd;
 use crate::utils::get_pin_yin;
 
@@ -238,6 +243,25 @@ impl MusicLibrary {
 impl Component<Msg, UserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
+            // handle subscriptions
+            if let LIMsg::Reload(data) = ev {
+                let path = data
+                    .0
+                    .unwrap_or_else(|| PathBuf::from(self.component.tree().root().id()));
+                let focus_node = data
+                    .1
+                    .unwrap_or_else(|| self.component.tree_state().selected().unwrap().to_string());
+
+                *self.component.tree_mut() = Model::loading_tree();
+
+                self.trigger_load_with_focus(path, Some(focus_node));
+
+                return Some(Msg::ForceRedraw);
+            }
+            return None;
+        }
+
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let result = match ev {
@@ -503,6 +527,33 @@ fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
 }
 
 impl Model {
+    /// Mount the Music library
+    pub fn mount_library(&mut self) -> Result<()> {
+        self.app.mount(
+            Id::Library,
+            Box::new(MusicLibrary::new(
+                &Self::loading_tree(),
+                None,
+                self.config_tui.clone(),
+                self.tx_to_main.clone(),
+                self.download_tracker.clone(),
+            )),
+            Self::library_subs(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Get all subscriptions for the [`MusicLibrary`] Component.
+    fn library_subs() -> Vec<Sub<Id, UserEvent>> {
+        vec![Sub::new(
+            SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::Reload(
+                LIReloadData::default(),
+            )))),
+            SubClause::Always,
+        )]
+    }
+
     /// Execute [`Self::library_scan`] from a `&self` instance.
     #[inline]
     pub fn library_scan_dir<P: Into<PathBuf>>(&self, path: P, focus_node: Option<String>) {
@@ -533,7 +584,9 @@ impl Model {
             );
         }
         self.database_reload();
-        self.library_scan_dir(&self.library.tree_path, node);
+        let _ = self
+            .tx_to_main
+            .send(Msg::Library(LIMsg::Reload(LIReloadData(None, node))));
     }
 
     /// Apply the given [`RecVec`] as a tree
