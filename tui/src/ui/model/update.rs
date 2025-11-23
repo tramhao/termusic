@@ -652,7 +652,7 @@ impl Model {
                     self.mount_error_popup(e.context("library paste"));
                 }
             }
-            LIMsg::SwitchRoot => self.library_switch_root(),
+            LIMsg::SwitchRoot(old_path) => self.library_switch_root(&old_path),
             LIMsg::AddRoot(path) => {
                 if let Err(e) = self.library_add_root(path) {
                     self.mount_error_popup(e.context("library add root"));

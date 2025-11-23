@@ -169,8 +169,12 @@ pub enum LIMsg {
     TreeBlur,
     Yank,
     Paste,
-    SwitchRoot,
+    /// Switch the music root.
+    ///
+    /// Contains the *old* root
+    SwitchRoot(PathBuf),
     AddRoot(PathBuf),
+    /// Remove the given path as a music root.
     RemoveRoot(PathBuf),
 
     /// A requested node is ready from loading.

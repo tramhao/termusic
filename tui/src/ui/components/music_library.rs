@@ -245,7 +245,9 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
             // music root modification
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.cycle_root.get() => {
-                return Some(Msg::Library(LIMsg::SwitchRoot));
+                let root_node = self.component.tree().root().id();
+                let path = PathBuf::from(root_node);
+                return Some(Msg::Library(LIMsg::SwitchRoot(path)));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.add_root.get() => {
@@ -589,7 +591,7 @@ impl Model {
     }
 
     /// Switch the current tree root to the next one in the stored list, if available.
-    pub fn library_switch_root(&mut self) {
+    pub fn library_switch_root(&mut self, old_path: &Path) {
         let mut vec = Vec::new();
         let config_server = self.config_server.read();
         for dir in &config_server.settings.player.music_dirs {
@@ -606,9 +608,8 @@ impl Model {
         drop(config_server);
 
         let mut index = 0;
-        let current_path = &self.library.tree_path;
         for (idx, dir) in vec.iter().enumerate() {
-            if current_path == dir {
+            if old_path == dir {
                 index = idx + 1;
                 break;
             }
@@ -663,7 +664,7 @@ impl Model {
         let res = ServerConfigVersionedDefaulted::save_config_path(&config_server.settings);
         drop(config_server);
 
-        self.library_switch_root();
+        self.library_switch_root(&path);
 
         res.context("Error while saving config")?;
 
