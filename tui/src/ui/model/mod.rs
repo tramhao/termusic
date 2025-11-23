@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
-use termusiclib::config::v2::server::ScanDepth;
 #[allow(unused_imports)]
 use termusiclib::config::v2::tui::CoverArtProtocol;
 use termusiclib::config::v2::tui::keys::Keys;
@@ -428,14 +427,6 @@ impl Model {
 
         let download_tracker = DownloadTracker::default();
 
-        Self::library_scan(
-            tx_to_main.clone(),
-            download_tracker.clone(),
-            &path,
-            ScanDepth::Limited(2),
-            None,
-        );
-
         let mut model = Self {
             app,
             quit: false,
@@ -483,6 +474,8 @@ impl Model {
             cmd_to_server_tx,
             xywh,
         };
+
+        model.library_scan_dir(&model.library.tree_path, None);
 
         model
             .mount_main()
