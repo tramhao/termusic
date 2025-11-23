@@ -126,6 +126,8 @@ impl Model {
             Vec::new(),
         )?;
 
+        self.mount_label_help();
+
         // Set the Library component as the initally focused one
         self.app.active(&Id::Library)?;
 

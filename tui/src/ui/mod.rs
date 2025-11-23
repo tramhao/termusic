@@ -40,7 +40,7 @@ impl UI {
         let stream_updates = playback.subscribe_to_stream_updates().await?;
 
         let mut model = Model::new(config, cmd_tx, stream_updates.boxed());
-        model.init_config();
+        model.init();
 
         ServerRequestActor::start_actor(playback, cmd_rx, model.tx_to_main.clone());
 

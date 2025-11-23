@@ -505,11 +505,14 @@ impl Model {
         PathBuf::from(full_path)
     }
 
-    pub fn init_config(&mut self) {
+    /// Run startup tasks:
+    /// - Extract Themes
+    /// - Start Database scan
+    /// - Generate playlist component data
+    pub fn init(&mut self) {
         if let Err(e) = Self::theme_extract_all() {
             self.mount_error_popup(e.context("theme save"));
         }
-        self.mount_label_help();
         if let Err(err) =
             self.db
                 .scan_path(&self.library.tree_path, &self.config_server.read(), false)
