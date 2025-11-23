@@ -233,7 +233,7 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             // load into playlist
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_dir.get() => {
                 let current_node = self.component.tree_state().selected().unwrap();
-                let path: &Path = Path::new(current_node);
+                let path = Path::new(current_node);
                 if path.is_dir() {
                     return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
                 }
@@ -241,7 +241,7 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_track.get() => {
                 let current_node = self.component.tree_state().selected().unwrap();
-                let path: &Path = Path::new(current_node);
+                let path = Path::new(current_node);
                 if !path.is_dir() {
                     return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
                 }
@@ -446,8 +446,8 @@ impl Model {
 
     pub fn library_before_delete(&mut self) {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            let p: &Path = Path::new(node_id.as_str());
-            if p.is_file() {
+            let path = Path::new(node_id.as_str());
+            if path.is_file() {
                 self.mount_confirm_radio();
             } else {
                 self.mount_confirm_input("You're about to delete the whole directory.");
@@ -459,12 +459,12 @@ impl Model {
     pub fn library_delete_node(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
-                let p: &Path = Path::new(node_id.as_str());
-                if p.is_file() {
-                    remove_file(p)?;
+                let path = Path::new(node_id.as_str());
+                if path.is_file() {
+                    remove_file(path)?;
                 } else {
-                    p.canonicalize()?;
-                    remove_dir_all(p)?;
+                    path.canonicalize()?;
+                    remove_dir_all(path)?;
                 }
 
                 let mut tree = self.library.tree.clone();
@@ -508,16 +508,16 @@ impl Model {
                 .yanked_node_id
                 .as_ref()
                 .context("no id yanked")?;
-            let p: &Path = Path::new(new_id.as_str());
-            let pold: &Path = Path::new(old_id.as_str());
-            let p_parent = p.parent().context("no parent folder found")?;
-            let pold_filename = pold.file_name().context("no file name found")?;
-            let new_node_id = if p.is_dir() {
-                p.join(pold_filename)
+            let new_path = Path::new(new_id.as_str());
+            let old_path = Path::new(old_id.as_str());
+            let new_parent = new_path.parent().context("no parent folder found")?;
+            let pold_filename = old_path.file_name().context("no file name found")?;
+            let new_node_id = if new_path.is_dir() {
+                new_path.join(pold_filename)
             } else {
-                p_parent.join(pold_filename)
+                new_parent.join(pold_filename)
             };
-            rename(pold, new_node_id.as_path())?;
+            rename(old_path, new_node_id.as_path())?;
             self.library_reload_with_node_focus(Some(new_node_id.to_string_lossy().to_string()));
         }
         self.library.yanked_node_id = None;
@@ -528,8 +528,8 @@ impl Model {
     pub fn library_update_search(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
         let root = self.library.tree.root();
-        let p: &Path = Path::new(root.id());
-        let all_items = walkdir::WalkDir::new(p).follow_links(true);
+        let path = Path::new(root.id());
+        let all_items = walkdir::WalkDir::new(path).follow_links(true);
         let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
         let search = wildmatch::WildMatch::new(&search);
