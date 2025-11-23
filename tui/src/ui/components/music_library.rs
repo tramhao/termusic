@@ -281,6 +281,7 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 }
 
 impl Model {
+    /// Get the parent directory path of the current tree's root.
     #[inline]
     pub fn library_upper_dir(&self) -> Option<&Path> {
         self.library.tree_path.parent()
@@ -298,6 +299,7 @@ impl Model {
         );
     }
 
+    /// Get a new tree with the root node showing "Loading...".
     pub fn loading_tree() -> Tree<String> {
         Tree::new(Node::new("/dev/null".to_string(), "Loading...".to_string()))
     }
@@ -436,12 +438,13 @@ impl Model {
 
     /// Handle stepping out of the current root node on the tree
     pub fn library_stepout(&mut self) {
-        if let Some(p) = self.library_upper_dir() {
+        if let Some(path) = self.library_upper_dir() {
             let focus_node = Some(self.library.tree_path.to_string_lossy().to_string());
-            self.library_scan_dir(p, focus_node);
+            self.library_scan_dir(path, focus_node);
         }
     }
 
+    /// Show a deletion confirmation for the currently selected node.
     pub fn library_show_delete_confirm(&mut self) {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             let path = Path::new(node_id.as_str());
@@ -493,12 +496,14 @@ impl Model {
         Ok(())
     }
 
+    /// Store the currently selected node as yanked (for pasting with [`Self::library_paste`]).
     pub fn library_yank(&mut self) {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             self.library.yanked_node_id = Some(node_id);
         }
     }
 
+    /// Paste the previously yanked node in the currently selected node if it is a directory, otherwise in its parent.
     pub fn library_paste(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(new_id))) = self.app.state(&Id::Library) {
             let old_id = self
@@ -523,6 +528,7 @@ impl Model {
         Ok(())
     }
 
+    /// Generate the result table for search `input`, recursively from the tree's root node's path.
     pub fn library_update_search(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
         let root = self.library.tree.root();
@@ -548,6 +554,7 @@ impl Model {
         self.general_search_update_show(table);
     }
 
+    /// Switch the current tree root to the next one in the stored list, if available.
     pub fn library_switch_root(&mut self) {
         let mut vec = Vec::new();
         let config_server = self.config_server.read();
@@ -582,6 +589,7 @@ impl Model {
         }
     }
 
+    /// Add the current tree's root node's path as a new library root for quick switching & metadata(database) scraping.
     pub fn library_add_root(&mut self) -> Result<()> {
         let current_path = &self.library.tree_path;
 
@@ -606,6 +614,7 @@ impl Model {
         Ok(())
     }
 
+    /// Remove the current tree's root node's path as a library root.
     pub fn library_remove_root(&mut self) -> Result<()> {
         let current_path = &self.library.tree_path;
         let mut config_server = self.config_server.write();
