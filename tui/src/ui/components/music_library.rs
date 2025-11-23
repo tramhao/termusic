@@ -271,7 +271,9 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
             // search
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary));
+                let root_node = self.component.tree().root().id();
+                let path = PathBuf::from(root_node);
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary(path)));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.youtube_search.get() => {
@@ -563,10 +565,8 @@ impl Model {
     }
 
     /// Generate the result table for search `input`, recursively from the tree's root node's path.
-    pub fn library_update_search(&mut self, input: &str) {
+    pub fn library_update_search(&mut self, input: &str, path: &Path) {
         let mut table: TableBuilder = TableBuilder::default();
-        let root = self.library.tree.root();
-        let path = Path::new(root.id());
         let all_items = walkdir::WalkDir::new(path).follow_links(true);
         let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());

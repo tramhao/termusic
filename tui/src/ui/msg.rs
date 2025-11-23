@@ -400,14 +400,16 @@ pub enum PLMsg {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GSMsg {
     PopupShowDatabase,
-    PopupShowLibrary,
+    /// Show search for the Library, search in the provided path.
+    PopupShowLibrary(PathBuf),
     PopupShowPlaylist,
     PopupShowEpisode,
     PopupShowPodcast,
     PopupCloseCancel,
     InputBlur,
     PopupUpdateDatabase(String),
-    PopupUpdateLibrary(String),
+    /// Update the search results with the given pattern in the given path.
+    PopupUpdateLibrary(String, PathBuf),
     PopupUpdatePlaylist(String),
     PopupUpdateEpisode(String),
     PopupUpdatePodcast(String),

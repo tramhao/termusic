@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Result, bail};
@@ -377,7 +377,7 @@ impl Model {
         self.app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(source, &self.config_tui.read())),
+                Box::new(GSInputPopup::new(source.clone(), &self.config_tui.read())),
                 Vec::new(),
             )
             .unwrap();
@@ -396,8 +396,8 @@ impl Model {
     }
 
     #[inline]
-    pub fn mount_search_library(&mut self) {
-        self.mount_search(Source::Library);
+    pub fn mount_search_library(&mut self, path: PathBuf) {
+        self.mount_search(Source::Library(path));
     }
 
     #[inline]

@@ -780,9 +780,9 @@ impl Model {
                 self.mount_search_database();
                 self.database_update_search("*");
             }
-            GSMsg::PopupShowLibrary => {
-                self.mount_search_library();
-                self.library_update_search("*");
+            GSMsg::PopupShowLibrary(path) => {
+                self.mount_search_library(path.clone());
+                self.library_update_search("*", path);
             }
             GSMsg::PopupShowPlaylist => {
                 self.mount_search_playlist();
@@ -797,7 +797,7 @@ impl Model {
                 self.mount_search_podcast();
                 self.podcast_update_search_podcast("*");
             }
-            GSMsg::PopupUpdateLibrary(input) => self.library_update_search(input),
+            GSMsg::PopupUpdateLibrary(input, path) => self.library_update_search(input, path),
 
             GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(input),
 
