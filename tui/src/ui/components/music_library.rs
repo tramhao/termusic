@@ -281,11 +281,9 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 }
 
 impl Model {
-    pub fn library_upper_dir(&self) -> Option<PathBuf> {
-        self.library
-            .tree_path
-            .parent()
-            .map(std::path::Path::to_path_buf)
+    #[inline]
+    pub fn library_upper_dir(&self) -> Option<&Path> {
+        self.library.tree_path.parent()
     }
 
     /// Execute [`Self::library_scan`] from a `&self` instance.
