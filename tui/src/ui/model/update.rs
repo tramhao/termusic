@@ -896,7 +896,7 @@ impl Model {
     fn update_delete_confirmation(&mut self, msg: &DeleteConfirmMsg) -> Option<Msg> {
         match msg {
             DeleteConfirmMsg::Show => {
-                self.library_before_delete();
+                self.library_show_delete_confirm();
             }
             DeleteConfirmMsg::CloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {

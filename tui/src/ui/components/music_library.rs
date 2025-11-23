@@ -444,7 +444,7 @@ impl Model {
         }
     }
 
-    pub fn library_before_delete(&mut self) {
+    pub fn library_show_delete_confirm(&mut self) {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             let path = Path::new(node_id.as_str());
             if path.is_file() {
