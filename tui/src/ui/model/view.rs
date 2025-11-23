@@ -53,6 +53,8 @@ impl Model {
                 &Self::loading_tree(),
                 None,
                 self.config_tui.clone(),
+                self.tx_to_main.clone(),
+                self.download_tracker.clone(),
             )),
             Vec::new(),
         )?;

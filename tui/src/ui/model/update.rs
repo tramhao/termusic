@@ -638,9 +638,6 @@ impl Model {
             LIMsg::TreeBlur => {
                 assert!(self.app.active(&Id::Playlist).is_ok());
             }
-            LIMsg::TreeStepInto(path) => {
-                self.library_stepinto(path);
-            }
             LIMsg::TreeStepOut => {
                 self.library_stepout();
             }

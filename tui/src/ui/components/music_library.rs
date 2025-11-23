@@ -21,6 +21,8 @@ use crate::utils::get_pin_yin;
 pub struct MusicLibrary {
     component: TreeView<String>,
     config: SharedTuiSettings,
+    tx_to_main: TxToMain,
+    download_tracker: DownloadTracker,
 }
 
 impl MusicLibrary {
@@ -28,6 +30,8 @@ impl MusicLibrary {
         tree: &Tree<String>,
         initial_node: Option<String>,
         config: SharedTuiSettings,
+        tx_to_main: TxToMain,
+        download_tracker: DownloadTracker,
     ) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
@@ -56,7 +60,12 @@ impl MusicLibrary {
                 .initial_node(initial_node)
         };
 
-        let mut ret = Self { component, config };
+        let mut ret = Self {
+            component,
+            config,
+            tx_to_main,
+            download_tracker,
+        };
 
         ret.open_root_node();
 
@@ -112,6 +121,17 @@ impl MusicLibrary {
         if self.component.tree_state().is_closed(root) {
             self.perform(Cmd::Custom(TREE_CMD_OPEN));
         }
+    }
+
+    /// Load more data at the given path.
+    fn trigger_load_stepinto<P: Into<PathBuf>>(&self, path: P) {
+        library_scan(
+            self.tx_to_main.clone(),
+            self.download_tracker.clone(),
+            path,
+            ScanDepth::Limited(2),
+            None,
+        );
     }
 
     /// Handle sending a request to delete the currently selected node.
@@ -326,7 +346,8 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
                 let path = Path::new(&node);
                 if path.is_dir() {
-                    return Some(Msg::Library(LIMsg::TreeStepInto(path.to_path_buf())));
+                    self.trigger_load_stepinto(path);
+                    // there is no special indicator or message; the download_tracker should force a draw once active
                 }
                 None
             }
@@ -473,6 +494,8 @@ impl Model {
                 &tree,
                 old_current_node,
                 self.config_tui.clone(),
+                self.tx_to_main.clone(),
+                self.download_tracker.clone(),
             )),
             Vec::new(),
         );
@@ -485,12 +508,6 @@ impl Model {
                 AttrValue::String(id),
             );
         }
-    }
-
-    /// Handle stepping into a node on the tree
-    #[inline]
-    pub fn library_stepinto<P: Into<PathBuf>>(&mut self, path: P) {
-        self.library_scan_dir(path.into(), None);
     }
 
     /// Handle stepping out of the current root node on the tree

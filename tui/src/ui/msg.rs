@@ -163,8 +163,6 @@ pub struct RecVec<T, V> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
-    /// Load more at path
-    TreeStepInto(PathBuf),
     TreeStepOut,
     TreeBlur,
     Yank,
