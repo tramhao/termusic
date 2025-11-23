@@ -418,7 +418,7 @@ impl Model {
 
         let stream_update_port = PortStreamEvents::new(stream_updates);
 
-        let app = Self::init_app(&tree, &config_tui, rx_to_main, stream_update_port);
+        let app = Self::init_app(&config_tui, rx_to_main, stream_update_port);
 
         // This line is required, in order to show the playing message for the first track
         // playlist.set_current_track_index(0);
@@ -436,7 +436,7 @@ impl Model {
             None,
         );
 
-        Self {
+        let mut model = Self {
             app,
             quit: false,
             redraw: true,
@@ -482,7 +482,13 @@ impl Model {
             playback: Playback::new(),
             cmd_to_server_tx,
             xywh,
-        }
+        };
+
+        model
+            .mount_main()
+            .expect("Expected all main component to mount correctly");
+
+        model
     }
 
     #[inline]
