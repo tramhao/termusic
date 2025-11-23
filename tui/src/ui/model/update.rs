@@ -715,7 +715,6 @@ impl Model {
 
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(index) {
-                    self.library_reload_with_node_focus(None);
                     self.mount_error_popup(e.context("youtube-dl options download"));
                 }
             }
