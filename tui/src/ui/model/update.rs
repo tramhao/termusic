@@ -638,9 +638,6 @@ impl Model {
             LIMsg::TreeBlur => {
                 assert!(self.app.active(&Id::Playlist).is_ok());
             }
-            LIMsg::TreeStepOut => {
-                self.library_stepout();
-            }
             LIMsg::Yank => {
                 self.library_yank();
             }

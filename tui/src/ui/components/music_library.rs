@@ -123,7 +123,9 @@ impl MusicLibrary {
         }
     }
 
-    /// Load more data at the given path.
+    /// Trigger a load with a message to change the tree root to the given path.
+    ///
+    /// This will make the given path(which will be the root node) the focused node.
     fn trigger_load_stepinto<P: Into<PathBuf>>(&self, path: P) {
         library_scan(
             self.tx_to_main.clone(),
@@ -131,6 +133,21 @@ impl MusicLibrary {
             path,
             ScanDepth::Limited(2),
             None,
+        );
+    }
+
+    /// Trigger a load with a message to change the tree root to the given path.
+    ///
+    /// This will make the current tree root be the new focused node.
+    fn trigger_load_with_focus<P: Into<PathBuf>>(&self, path: P) {
+        let path = path.into();
+        let focus_node = Some(self.component.tree().root().id().clone());
+        library_scan(
+            self.tx_to_main.clone(),
+            self.download_tracker.clone(),
+            path,
+            ScanDepth::Limited(2),
+            focus_node,
         );
     }
 
@@ -285,7 +302,17 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::Library(LIMsg::TreeStepOut)),
+            }) => {
+                let current_root = Path::new(self.component.tree().root().id());
+                let parent = current_root.parent().unwrap_or(current_root);
+
+                // only trigger a load if we are not at the root of the filesystem already
+                if current_root != parent {
+                    self.trigger_load_with_focus(parent);
+                }
+                // there is no special indicator or message; the download_tracker should force a draw once active
+                CmdResult::None
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
@@ -431,12 +458,6 @@ fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
 }
 
 impl Model {
-    /// Get the parent directory path of the current tree's root.
-    #[inline]
-    pub fn library_upper_dir(&self) -> Option<&Path> {
-        self.library.tree_path.parent()
-    }
-
     /// Execute [`Self::library_scan`] from a `&self` instance.
     #[inline]
     pub fn library_scan_dir<P: Into<PathBuf>>(&self, path: P, focus_node: Option<String>) {
@@ -507,14 +528,6 @@ impl Model {
                 Attribute::Custom(TREE_INITIAL_NODE),
                 AttrValue::String(id),
             );
-        }
-    }
-
-    /// Handle stepping out of the current root node on the tree
-    pub fn library_stepout(&mut self) {
-        if let Some(path) = self.library_upper_dir() {
-            let focus_node = Some(self.library.tree_path.to_string_lossy().to_string());
-            self.library_scan_dir(path, focus_node);
         }
     }
 
