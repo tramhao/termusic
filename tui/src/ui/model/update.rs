@@ -638,14 +638,8 @@ impl Model {
             LIMsg::TreeBlur => {
                 assert!(self.app.active(&Id::Playlist).is_ok());
             }
-            LIMsg::Yank => {
-                self.library_yank();
-            }
-            LIMsg::Paste => {
-                if let Err(e) = self.library_paste() {
-                    self.mount_error_popup(e.context("library paste"));
-                }
-            }
+            LIMsg::PasteError(err) => self.mount_error_popup(anyhow!(err)),
+            LIMsg::PlaylistRunDelete => self.playlist_update_library_delete(),
             LIMsg::SwitchRoot(old_path) => self.library_switch_root(&old_path),
             LIMsg::AddRoot(path) => {
                 if let Err(e) = self.library_add_root(path) {

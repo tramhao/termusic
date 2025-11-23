@@ -164,8 +164,8 @@ pub struct RecVec<T, V> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
     TreeBlur,
-    Yank,
-    Paste,
+    PlaylistRunDelete,
+    PasteError(String),
     /// Switch the music root.
     ///
     /// Contains the *old* root

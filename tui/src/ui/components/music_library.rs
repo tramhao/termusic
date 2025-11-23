@@ -23,6 +23,9 @@ pub struct MusicLibrary {
     config: SharedTuiSettings,
     tx_to_main: TxToMain,
     download_tracker: DownloadTracker,
+
+    /// The path of the last yanked node.
+    yanked_path: Option<PathBuf>,
 }
 
 impl MusicLibrary {
@@ -65,6 +68,7 @@ impl MusicLibrary {
             config,
             tx_to_main,
             download_tracker,
+            yanked_path: None,
         };
 
         ret.open_root_node();
@@ -139,9 +143,8 @@ impl MusicLibrary {
     /// Trigger a load with a message to change the tree root to the given path.
     ///
     /// This will make the current tree root be the new focused node.
-    fn trigger_load_with_focus<P: Into<PathBuf>>(&self, path: P) {
-        let path = path.into();
-        let focus_node = Some(self.component.tree().root().id().clone());
+    fn trigger_load_with_focus<P: Into<PathBuf>>(&self, scan_path: P, focus_node: Option<String>) {
+        let path = scan_path.into();
         library_scan(
             self.tx_to_main.clone(),
             self.download_tracker.clone(),
@@ -149,6 +152,42 @@ impl MusicLibrary {
             ScanDepth::Limited(2),
             focus_node,
         );
+    }
+
+    /// Store the currently selected node as yanked (for pasting with [`Self::paste`]).
+    fn yank(&mut self) {
+        if let State::One(StateValue::String(node_id)) = self.state() {
+            self.yanked_path = Some(PathBuf::from(node_id));
+        }
+    }
+
+    /// Paste the previously yanked node in the currently selected node if it is a directory, otherwise in its parent.
+    fn paste(&mut self) -> Result<Option<LIMsg>> {
+        if let State::One(StateValue::String(new_id)) = self.state() {
+            let Some(old_path) = self.yanked_path.take() else {
+                return Ok(None);
+            };
+            let current_node_path = Path::new(&new_id);
+
+            let pold_filename = old_path.file_name().context("no file name found")?;
+            let current_parent = current_node_path
+                .parent()
+                .context("No Parent for currently selected node")?;
+
+            let new_path = if current_node_path.is_dir() {
+                current_node_path.join(pold_filename)
+            } else {
+                current_parent.join(pold_filename)
+            };
+
+            rename(old_path, &new_path)?;
+
+            self.trigger_load_with_focus(
+                current_parent,
+                Some(new_path.to_string_lossy().to_string()),
+            );
+        }
+        Ok(Some(LIMsg::PlaylistRunDelete))
     }
 
     /// Handle sending a request to delete the currently selected node.
@@ -274,10 +313,15 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 return Some(self.handle_delete());
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
-                return Some(Msg::Library(LIMsg::Yank));
+                self.yank();
+                CmdResult::None
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.paste.get() => {
-                return Some(Msg::Library(LIMsg::Paste));
+                match self.paste() {
+                    Ok(None) => CmdResult::None,
+                    Ok(Some(msg)) => return Some(Msg::Library(msg)),
+                    Err(err) => return Some(Msg::Library(LIMsg::PasteError(err.to_string()))),
+                }
             }
 
             // music root modification
@@ -308,7 +352,8 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
                 // only trigger a load if we are not at the root of the filesystem already
                 if current_root != parent {
-                    self.trigger_load_with_focus(parent);
+                    let focus_node = Some(self.component.tree().root().id().clone());
+                    self.trigger_load_with_focus(parent, focus_node);
                 }
                 // there is no special indicator or message; the download_tracker should force a draw once active
                 CmdResult::None
@@ -560,38 +605,6 @@ impl Model {
         self.library_scan_dir(parent, focus_node);
 
         // this line remove the deleted songs from playlist
-        self.playlist_update_library_delete();
-        Ok(())
-    }
-
-    /// Store the currently selected node as yanked (for pasting with [`Self::library_paste`]).
-    pub fn library_yank(&mut self) {
-        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            self.library.yanked_node_id = Some(node_id);
-        }
-    }
-
-    /// Paste the previously yanked node in the currently selected node if it is a directory, otherwise in its parent.
-    pub fn library_paste(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::String(new_id))) = self.app.state(&Id::Library) {
-            let old_id = self
-                .library
-                .yanked_node_id
-                .as_ref()
-                .context("no id yanked")?;
-            let new_path = Path::new(new_id.as_str());
-            let old_path = Path::new(old_id.as_str());
-            let new_parent = new_path.parent().context("no parent folder found")?;
-            let pold_filename = old_path.file_name().context("no file name found")?;
-            let new_node_id = if new_path.is_dir() {
-                new_path.join(pold_filename)
-            } else {
-                new_parent.join(pold_filename)
-            };
-            rename(old_path, new_node_id.as_path())?;
-            self.library_reload_with_node_focus(Some(new_node_id.to_string_lossy().to_string()));
-        }
-        self.library.yanked_node_id = None;
         self.playlist_update_library_delete();
         Ok(())
     }
