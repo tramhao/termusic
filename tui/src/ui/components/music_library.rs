@@ -623,7 +623,7 @@ impl Model {
         let path = path.into();
         let mut config_server = self.config_server.write();
 
-        let mut vec = Vec::new();
+        let mut vec = Vec::with_capacity(config_server.settings.player.music_dirs.len());
         for dir in &config_server.settings.player.music_dirs {
             let absolute_dir = shellexpand::path::tilde(dir);
             if absolute_dir == path {
