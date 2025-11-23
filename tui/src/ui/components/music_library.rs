@@ -272,7 +272,11 @@ impl Component<Msg, UserEvent> for MusicLibrary {
         };
         match result {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
-                Some(Msg::Library(LIMsg::TreeStepInto(node)))
+                let path = Path::new(&node);
+                if path.is_dir() {
+                    return Some(Msg::Library(LIMsg::TreeStepInto(path.to_path_buf())));
+                }
+                None
             }
             CmdResult::None => None,
             _ => Some(Msg::ForceRedraw),
@@ -432,8 +436,9 @@ impl Model {
     }
 
     /// Handle stepping into a node on the tree
-    pub fn library_stepinto(&mut self, node_id: &str) {
-        self.library_scan_dir(PathBuf::from(node_id), None);
+    #[inline]
+    pub fn library_stepinto<P: Into<PathBuf>>(&mut self, path: P) {
+        self.library_scan_dir(path.into(), None);
     }
 
     /// Handle stepping out of the current root node on the tree
