@@ -294,8 +294,8 @@ impl Model {
 
     /// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
     ///
-    /// Note: consider using [`Self::library_scan`] instead of this directly.
-    fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
+    /// Note: consider using [`Self::library_scan`] instead of this directly for running in a different thread.
+    pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
         let name: String = match path.file_name() {
             None => "/".to_string(),
             Some(n) => n.to_string_lossy().into_owned(),
@@ -329,15 +329,6 @@ impl Model {
             }
         }
         node
-    }
-
-    pub fn library_dir_children(p: &Path) -> Vec<String> {
-        // use the same function as the tree order gets generated in, so that we add in a expected order
-        let vec = Self::library_dir_tree(p, ScanDepth::Limited(1));
-        vec.children
-            .into_iter()
-            .map(|v| v.id.to_string_lossy().to_string())
-            .collect()
     }
 
     /// Reload the library with the given `node` as a focus, also starts a new database sync worker for the current path.

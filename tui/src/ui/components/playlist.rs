@@ -7,7 +7,7 @@ use anyhow::{Context as _, Result, anyhow, bail};
 use rand::seq::IndexedRandom;
 use termusiclib::common::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::config::v2::server::LoopMode;
+use termusiclib::config::v2::server::{LoopMode, ScanDepth};
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, track_ops};
 use termusiclib::player::playlist_helpers::{
@@ -324,6 +324,15 @@ impl Model {
         Ok(())
     }
 
+    fn playlist_get_dir_entries(path: &Path) -> Vec<String> {
+        // use the same function as the tree order gets generated in, so that we add in a expected order
+        let vec = Self::library_dir_tree(path, ScanDepth::Limited(1));
+        vec.children
+            .into_iter()
+            .map(|v| v.id.to_string_lossy().to_string())
+            .collect()
+    }
+
     /// Add the `current_node`, regardless if it is a Track, dir, playlist, etc.
     ///
     /// See [`Model::playlist_add_episode`] for podcast episode adding
@@ -332,7 +341,7 @@ impl Model {
             return Ok(());
         }
         if path.is_dir() {
-            let new_items_vec = Self::library_dir_children(path);
+            let new_items_vec = Self::playlist_get_dir_entries(path);
 
             let sources = new_items_vec
                 .into_iter()
