@@ -588,7 +588,6 @@ impl Model {
 
     /// Unmount the Config Editor and trigger reload of necessary data.
     pub fn umount_config_editor(&mut self) {
-        self.library_scan_dir(&self.library.tree_path, None);
         self.playlist_reload();
         self.database_reload();
         self.progress_reload();
