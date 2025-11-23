@@ -179,14 +179,14 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_bottom.get() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::Home,
-            //     modifiers: KeyModifiers::NONE,
-            // }) => self.perform(Cmd::GoTo(Position::Begin)),
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::End,
-            //     modifiers: KeyModifiers::NONE,
-            // }) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
 
             // file modifying
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.delete.get() => {
