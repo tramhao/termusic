@@ -118,9 +118,9 @@ pub enum DeleteConfirmMsg {
     /// The Delete Confirmation has closed with a negative/no/cancel/abort.
     CloseCancel,
     /// The Delete Confirmation has closed with a positive/yes/ok.
-    CloseOk(PathBuf),
+    CloseOk(PathBuf, Option<String>),
     /// Show a delete confirmation for the given path.
-    Show(PathBuf),
+    Show(PathBuf, Option<String>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

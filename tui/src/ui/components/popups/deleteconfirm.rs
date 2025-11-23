@@ -135,14 +135,14 @@ impl Component<Msg, UserEvent> for DeleteConfirmInputPopup {
 impl Model {
     /// Mount a [`DeleteConfirmRadioPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
     /// as [`Id::DeleteConfirmRadioPopup`].
-    pub fn mount_confirm_radio(&mut self, path: PathBuf) {
+    pub fn mount_confirm_radio(&mut self, path: PathBuf, focus_node: Option<String>) {
         assert!(
             self.app
                 .remount(
                     Id::DeleteConfirmRadioPopup,
                     Box::new(DeleteConfirmRadioPopup::new(
                         self.config_tui.clone(),
-                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path)),
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path, focus_node)),
                         Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel)
                     )),
                     vec![]
@@ -154,7 +154,7 @@ impl Model {
 
     /// Mount a [`DeleteConfirmInputPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
     /// as [`Id::DeleteConfirmInputPopup`].
-    pub fn mount_confirm_input(&mut self, path: PathBuf, title: &str) {
+    pub fn mount_confirm_input(&mut self, path: PathBuf, focus_node: Option<String>, title: &str) {
         assert!(
             self.app
                 .remount(
@@ -162,7 +162,7 @@ impl Model {
                     Box::new(DeleteConfirmInputPopup::new(
                         &self.config_tui.read(),
                         title,
-                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path)),
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path, focus_node)),
                         Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel)
                     )),
                     vec![]

@@ -894,8 +894,8 @@ impl Model {
     /// Handle all [`DeleteConfirmMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_delete_confirmation(&mut self, msg: DeleteConfirmMsg) -> Option<Msg> {
         match msg {
-            DeleteConfirmMsg::Show(path) => {
-                self.library_show_delete_confirm(path);
+            DeleteConfirmMsg::Show(path, focus_node) => {
+                self.library_show_delete_confirm(path, focus_node);
             }
             DeleteConfirmMsg::CloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
@@ -905,14 +905,14 @@ impl Model {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
             }
-            DeleteConfirmMsg::CloseOk(path) => {
+            DeleteConfirmMsg::CloseOk(path, focus_node) => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
                 }
                 if self.app.mounted(&Id::DeleteConfirmInputPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
-                if let Err(e) = self.library_delete_node(&path) {
+                if let Err(e) = self.library_delete_node(&path, focus_node) {
                     self.mount_error_popup(e.context("library delete song"));
                 }
             }
