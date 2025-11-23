@@ -513,16 +513,23 @@ impl Model {
         if let Err(e) = Self::theme_extract_all() {
             self.mount_error_popup(e.context("theme save"));
         }
-        if let Err(err) =
-            self.db
-                .scan_path(&self.library.tree_path, &self.config_server.read(), false)
-        {
-            error!(
-                "Error scanning path {:#?}: {err:#?}",
-                self.library.tree_path.display()
-            );
-        }
+        self.scan_all_music_roots();
         self.playlist_sync();
+    }
+
+    /// Trigger a database scan for all music roots.
+    fn scan_all_music_roots(&self) {
+        let config_server = self.config_server.read();
+        for dir in &config_server.settings.player.music_dirs {
+            let absolute_dir = shellexpand::path::tilde(dir);
+
+            if let Err(err) = self.db.scan_path(&absolute_dir, &config_server, false) {
+                error!(
+                    "Error scanning path {:#?}: {err:#?}",
+                    absolute_dir.display()
+                );
+            }
+        }
     }
 
     /// Initialize terminal
