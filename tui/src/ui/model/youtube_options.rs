@@ -3,7 +3,7 @@ use std::sync::{Arc, LazyLock};
 use std::thread;
 use std::time::Duration;
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Context, Result, anyhow};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
@@ -110,9 +110,7 @@ impl Model {
         // download from search result here
         if let Ok(item) = self.youtube_options.get_by_index(index) {
             let url = format!("https://www.youtube.com/watch?v={}", item.video_id);
-            if let Err(e) = self.youtube_dl(url.as_ref()) {
-                bail!("Download error: {e}");
-            }
+            self.youtube_dl(url.as_ref()).context("YTDL Download")?;
         }
         Ok(())
     }
