@@ -594,7 +594,6 @@ impl Model {
         if let Some(dir) = vec.get(index) {
             let pathbuf = PathBuf::from(dir);
             self.library_scan_dir(pathbuf, None);
-            self.library_reload_with_node_focus(None);
         }
     }
 
