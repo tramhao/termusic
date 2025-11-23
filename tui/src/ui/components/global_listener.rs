@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
 use tui_realm_stdlib::Phantom;
@@ -142,218 +143,230 @@ impl Component<Msg, UserEvent> for GlobalListener {
 }
 
 impl Model {
-    /// global listener subscriptions
-    #[allow(clippy::too_many_lines)]
-    pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, UserEvent>> {
-        let no_popup_clause = Arc::new(Self::no_popup_mounted_clause());
-
-        vec![
-            // Sub::new(
-            //     SubEventClause::Keyboard(keys.escape.get()),
-            //     no_popup_clause.clone(),
-            // ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.quit.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.toggle_pause.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.next_track.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.previous_track.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.speed_up.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.speed_down.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.volume_down.get()),
-                no_popup_clause.clone(),
-            ),
-            // Sub::new(
-            //     SubEventClause::Keyboard(keys.player_keys.volume_minus_2.get()),
-            //     no_popup_clause.clone(),
-            // ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.volume_up.get()),
-                no_popup_clause.clone(),
-            ),
-            // Sub::new(
-            //     SubEventClause::Keyboard(keys.player_keys.volume_plus_2.get()),
-            //     no_popup_clause.clone(),
-            // ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.select_view_keys.open_help.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.seek_forward.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.seek_backward.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.lyric_keys.adjust_offset_forwards.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.lyric_keys.adjust_offset_backwards.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.lyric_keys.cycle_frames.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.select_view_keys.view_library.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.select_view_keys.view_database.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.toggle_prefetch.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.select_view_keys.open_config.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.player_keys.save_playlist.get()),
-                no_popup_clause.clone(),
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.select_view_keys.view_podcasts.get()),
-                no_popup_clause,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.move_cover_art_keys.move_left.get()),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.move_cover_art_keys.move_right.get()),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.move_cover_art_keys.move_up.get()),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.move_cover_art_keys.move_down.get()),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.move_cover_art_keys.increase_size.get()),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.move_cover_art_keys.decrease_size.get()),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.move_cover_art_keys.toggle_hide.get()),
-                SubClause::Always,
-            ),
-            Sub::new(SubEventClause::WindowResize, SubClause::Always),
-            Sub::new(
-                // note that it does not matter what actual message is inside this "Forward" as "Discriminat" only compares "UserEvent" enum discriminants, not values
-                SubEventClause::Discriminant(UserEvent::Forward(Msg::ForceRedraw)),
-                SubClause::Always,
-            ),
-        ]
-    }
-
-    /// Generate the Clause for any popups to not be mounted.
-    fn no_popup_mounted_clause() -> SubClause<Id> {
-        let mut collection = Vec::new();
-
-        Self::podcast_popups(&mut collection);
-        Self::general_popups(&mut collection);
-
-        // dont leave much unused space, as this vec will basically stay for the entire duration of the app
-        collection.shrink_to_fit();
-
-        SubClause::Not(Box::new(SubClause::OrMany(collection)))
-    }
-
-    /// Podcast related popups.
-    ///
-    /// The values added to `storage` are meant to be used in a [`SubClause::OrMany`].
+    // Mount global hotkey listener.
     #[inline]
-    fn podcast_popups(storage: &mut Vec<SubClause<Id>>) {
-        storage.extend([
-            SubClause::IsMounted(Id::FeedDeleteConfirmRadioPopup),
-            SubClause::IsMounted(Id::FeedDeleteConfirmInputPopup),
-            SubClause::IsMounted(Id::PodcastSearchTablePopup),
-            SubClause::IsMounted(Id::PodcastAddPopup),
-        ]);
-    }
+    pub fn remount_global_listener(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::GlobalListener,
+            Box::new(GlobalListener::new(self.config_tui.clone())),
+            global_listener_subscriptions(&self.config_tui.read().settings.keys),
+        )?;
 
-    /// Popups that dont relate to any other place specifically.
-    ///
-    /// The values added to `storage` are meant to be used in a [`SubClause::OrMany`].
-    #[inline]
-    fn general_popups(storage: &mut Vec<SubClause<Id>>) {
-        storage.extend(Self::everywhere_popups());
-        storage.extend(Self::delete_confirm_popups());
-        storage.extend(Self::youtube_search_popups());
-
-        storage.extend([
-            SubClause::IsMounted(Id::GeneralSearchInput),
-            SubClause::IsMounted(Id::TagEditor(IdTagEditor::LabelHint)),
-            SubClause::IsMounted(Id::ConfigEditor(IdConfigEditor::Footer)),
-            SubClause::IsMounted(Id::SavePlaylistPopup),
-            SubClause::IsMounted(Id::SavePlaylistConfirm),
-            SubClause::IsMounted(Id::DatabaseAddConfirmPopup),
-        ]);
+        Ok(())
     }
+}
 
-    /// Youtube search popups, see [youtube search](super::popups::youtube_search).
-    ///
-    /// The values returned are meant to be used in a [`SubClause::OrMany`].
-    #[inline]
-    fn youtube_search_popups() -> [SubClause<Id>; 3] {
-        [
-            SubClause::IsMounted(Id::YoutubeSearchInputPopup),
-            SubClause::IsMounted(Id::YoutubeSearchTablePopup),
-            SubClause::IsMounted(Id::YoutubeSearchTablePopup),
-        ]
-    }
+/// global listener subscriptions
+#[allow(clippy::too_many_lines)]
+fn global_listener_subscriptions(keys: &Keys) -> Vec<Sub<Id, UserEvent>> {
+    let no_popup_clause = Arc::new(no_popup_mounted_clause());
 
-    /// Delete confirmation popups, anything from the `deleteconfirm` module.
-    ///
-    /// The values returned are meant to be used in a [`SubClause::OrMany`].
-    #[inline]
-    fn delete_confirm_popups() -> [SubClause<Id>; 2] {
-        [
-            SubClause::IsMounted(Id::DeleteConfirmInputPopup),
-            SubClause::IsMounted(Id::DeleteConfirmRadioPopup),
-        ]
-    }
+    vec![
+        // Sub::new(
+        //     SubEventClause::Keyboard(keys.escape.get()),
+        //     no_popup_clause.clone(),
+        // ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.quit.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.toggle_pause.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.next_track.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.previous_track.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.speed_up.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.speed_down.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.volume_down.get()),
+            no_popup_clause.clone(),
+        ),
+        // Sub::new(
+        //     SubEventClause::Keyboard(keys.player_keys.volume_minus_2.get()),
+        //     no_popup_clause.clone(),
+        // ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.volume_up.get()),
+            no_popup_clause.clone(),
+        ),
+        // Sub::new(
+        //     SubEventClause::Keyboard(keys.player_keys.volume_plus_2.get()),
+        //     no_popup_clause.clone(),
+        // ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.select_view_keys.open_help.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.seek_forward.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.seek_backward.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.lyric_keys.adjust_offset_forwards.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.lyric_keys.adjust_offset_backwards.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.lyric_keys.cycle_frames.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.select_view_keys.view_library.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.select_view_keys.view_database.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.toggle_prefetch.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.select_view_keys.open_config.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.player_keys.save_playlist.get()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.select_view_keys.view_podcasts.get()),
+            no_popup_clause,
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.move_cover_art_keys.move_left.get()),
+            SubClause::Always,
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.move_cover_art_keys.move_right.get()),
+            SubClause::Always,
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.move_cover_art_keys.move_up.get()),
+            SubClause::Always,
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.move_cover_art_keys.move_down.get()),
+            SubClause::Always,
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.move_cover_art_keys.increase_size.get()),
+            SubClause::Always,
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.move_cover_art_keys.decrease_size.get()),
+            SubClause::Always,
+        ),
+        Sub::new(
+            SubEventClause::Keyboard(keys.move_cover_art_keys.toggle_hide.get()),
+            SubClause::Always,
+        ),
+        Sub::new(SubEventClause::WindowResize, SubClause::Always),
+        Sub::new(
+            // note that it does not matter what actual message is inside this "Forward" as "Discriminat" only compares "UserEvent" enum discriminants, not values
+            SubEventClause::Discriminant(UserEvent::Forward(Msg::ForceRedraw)),
+            SubClause::Always,
+        ),
+    ]
+}
 
-    /// Popups that could happen everywhere.
-    ///
-    /// The values returned are meant to be used in a [`SubClause::OrMany`].
-    #[inline]
-    fn everywhere_popups() -> [SubClause<Id>; 3] {
-        [
-            SubClause::IsMounted(Id::HelpPopup),
-            SubClause::IsMounted(Id::ErrorPopup),
-            SubClause::IsMounted(Id::QuitPopup),
-        ]
-    }
+/// Generate the Clause for any popups to not be mounted.
+fn no_popup_mounted_clause() -> SubClause<Id> {
+    let mut collection = Vec::new();
+
+    podcast_popups(&mut collection);
+    general_popups(&mut collection);
+
+    // dont leave much unused space, as this vec will basically stay for the entire duration of the app
+    collection.shrink_to_fit();
+
+    SubClause::Not(Box::new(SubClause::OrMany(collection)))
+}
+
+/// Podcast related popups.
+///
+/// The values added to `storage` are meant to be used in a [`SubClause::OrMany`].
+#[inline]
+fn podcast_popups(storage: &mut Vec<SubClause<Id>>) {
+    storage.extend([
+        SubClause::IsMounted(Id::FeedDeleteConfirmRadioPopup),
+        SubClause::IsMounted(Id::FeedDeleteConfirmInputPopup),
+        SubClause::IsMounted(Id::PodcastSearchTablePopup),
+        SubClause::IsMounted(Id::PodcastAddPopup),
+    ]);
+}
+
+/// Popups that dont relate to any other place specifically.
+///
+/// The values added to `storage` are meant to be used in a [`SubClause::OrMany`].
+#[inline]
+fn general_popups(storage: &mut Vec<SubClause<Id>>) {
+    storage.extend(everywhere_popups());
+    storage.extend(delete_confirm_popups());
+    storage.extend(youtube_search_popups());
+
+    storage.extend([
+        SubClause::IsMounted(Id::GeneralSearchInput),
+        SubClause::IsMounted(Id::TagEditor(IdTagEditor::LabelHint)),
+        SubClause::IsMounted(Id::ConfigEditor(IdConfigEditor::Footer)),
+        SubClause::IsMounted(Id::SavePlaylistPopup),
+        SubClause::IsMounted(Id::SavePlaylistConfirm),
+        SubClause::IsMounted(Id::DatabaseAddConfirmPopup),
+    ]);
+}
+
+/// Youtube search popups, see [youtube search](super::popups::youtube_search).
+///
+/// The values returned are meant to be used in a [`SubClause::OrMany`].
+#[inline]
+fn youtube_search_popups() -> [SubClause<Id>; 3] {
+    [
+        SubClause::IsMounted(Id::YoutubeSearchInputPopup),
+        SubClause::IsMounted(Id::YoutubeSearchTablePopup),
+        SubClause::IsMounted(Id::YoutubeSearchTablePopup),
+    ]
+}
+
+/// Delete confirmation popups, anything from the `deleteconfirm` module.
+///
+/// The values returned are meant to be used in a [`SubClause::OrMany`].
+#[inline]
+fn delete_confirm_popups() -> [SubClause<Id>; 2] {
+    [
+        SubClause::IsMounted(Id::DeleteConfirmInputPopup),
+        SubClause::IsMounted(Id::DeleteConfirmRadioPopup),
+    ]
+}
+
+/// Popups that could happen everywhere.
+///
+/// The values returned are meant to be used in a [`SubClause::OrMany`].
+#[inline]
+fn everywhere_popups() -> [SubClause<Id>; 3] {
+    [
+        SubClause::IsMounted(Id::HelpPopup),
+        SubClause::IsMounted(Id::ErrorPopup),
+        SubClause::IsMounted(Id::QuitPopup),
+    ]
 }

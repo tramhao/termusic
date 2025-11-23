@@ -42,7 +42,7 @@ use crate::ui::Application;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
-use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
+use crate::ui::components::{CEHeader, ConfigSavePopup};
 use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::msg::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
@@ -598,15 +598,7 @@ impl Model {
 
         self.umount_config_keys().unwrap();
 
-        assert!(
-            self.app
-                .remount(
-                    Id::GlobalListener,
-                    Box::new(GlobalListener::new(self.config_tui.clone())),
-                    Self::subscribe(&self.config_tui.read().settings.keys),
-                )
-                .is_ok()
-        );
+        self.remount_global_listener().unwrap();
 
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));

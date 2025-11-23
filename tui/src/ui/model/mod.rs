@@ -418,7 +418,7 @@ impl Model {
 
         let stream_update_port = PortStreamEvents::new(stream_updates);
 
-        let app = Self::init_app(&config_tui, rx_to_main, stream_update_port);
+        let app = Self::init_app(rx_to_main, stream_update_port);
 
         // This line is required, in order to show the playing message for the first track
         // playlist.set_current_track_index(0);

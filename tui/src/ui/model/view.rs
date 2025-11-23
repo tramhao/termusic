@@ -2,7 +2,6 @@ use std::path::Path;
 use std::time::Duration;
 
 use anyhow::{Result, bail};
-use termusiclib::config::SharedTuiSettings;
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedReceiver;
@@ -15,8 +14,8 @@ use tuirealm::{Frame, State, StateValue};
 use crate::ui::Application;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
-    FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
-    Playlist, Progress, Source,
+    FeedsList, Footer, GSInputPopup, GSTablePopup, LabelSpan, Lyric, MusicLibrary, Playlist,
+    Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
@@ -29,13 +28,11 @@ use crate::ui::utils::{
 
 impl Model {
     pub fn init_app(
-        config: &SharedTuiSettings,
         tx_to_main: UnboundedReceiver<Msg>,
         stream_event_port: PortStreamEvents,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
-
-        let mut app: Application<Id, Msg, UserEvent> = Application::init(
+        Application::init(
             EventListenerCfg::default()
                 .with_handle(Handle::current())
                 .async_crossterm_input_listener(Duration::ZERO, 10)
@@ -44,23 +41,13 @@ impl Model {
                 .tick_interval(Duration::from_secs(1))
                 .add_async_port(Box::new(PortRxMain::new(tx_to_main)), Duration::ZERO, 10)
                 .add_async_port(Box::new(stream_event_port), Duration::ZERO, 1),
-        );
-
-        // Mount global hotkey listener
-        assert!(
-            app.mount(
-                Id::GlobalListener,
-                Box::new(GlobalListener::new(config.clone())),
-                Self::subscribe(&config.read().settings.keys),
-            )
-            .is_ok()
-        );
-
-        app
+        )
     }
 
     /// Mount the Main components for the TUI.
     pub fn mount_main(&mut self) -> Result<()> {
+        self.remount_global_listener()?;
+
         self.app.mount(
             Id::Library,
             Box::new(MusicLibrary::new(
