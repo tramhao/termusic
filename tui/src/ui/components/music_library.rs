@@ -464,13 +464,13 @@ impl Model {
         };
 
         self.library.tree_path = root_path;
-        self.library.tree = Tree::new(root_node);
+        let tree = Tree::new(root_node);
 
         // remount preserves focus
         let _ = self.app.remount(
             Id::Library,
             Box::new(MusicLibrary::new(
-                &self.library.tree,
+                &tree,
                 old_current_node,
                 self.config_tui.clone(),
             )),

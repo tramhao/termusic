@@ -50,7 +50,7 @@ impl Model {
         self.app.mount(
             Id::Library,
             Box::new(MusicLibrary::new(
-                &self.library.tree,
+                &Self::loading_tree(),
                 None,
                 self.config_tui.clone(),
             )),
