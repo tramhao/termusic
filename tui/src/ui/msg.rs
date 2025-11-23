@@ -115,9 +115,12 @@ impl Eq for ImageWrapper {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DeleteConfirmMsg {
+    /// The Delete Confirmation has closed with a negative/no/cancel/abort.
     CloseCancel,
-    CloseOk,
-    Show,
+    /// The Delete Confirmation has closed with a positive/yes/ok.
+    CloseOk(PathBuf),
+    /// Show a delete confirmation for the given path.
+    Show(PathBuf),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -190,7 +190,9 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
             // file modifying
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.delete.get() => {
-                return Some(Msg::DeleteConfirm(DeleteConfirmMsg::Show));
+                let current_node = self.component.tree_state().selected().unwrap();
+                let path = PathBuf::from(current_node);
+                return Some(Msg::DeleteConfirm(DeleteConfirmMsg::Show(path)));
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
                 return Some(Msg::Library(LIMsg::Yank));
@@ -454,54 +456,50 @@ impl Model {
     }
 
     /// Show a deletion confirmation for the currently selected node.
-    pub fn library_show_delete_confirm(&mut self) {
-        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            let path = Path::new(node_id.as_str());
-            if path.is_file() {
-                self.mount_confirm_radio();
-            } else {
-                self.mount_confirm_input("You're about to delete the whole directory.");
-            }
+    pub fn library_show_delete_confirm(&mut self, path: PathBuf) {
+        if path.is_file() {
+            self.mount_confirm_radio(path);
+        } else {
+            self.mount_confirm_input(path, "You're about to delete the whole directory.");
         }
     }
 
     /// Delete the currently selected node from the filesystem and reload the tree and remove the deleted paths from the playlist.
-    pub fn library_delete_node(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
-                let path = Path::new(node_id.as_str());
-                if path.is_file() {
-                    remove_file(path)?;
-                } else {
-                    path.canonicalize()?;
-                    remove_dir_all(path)?;
-                }
+    pub fn library_delete_node(&mut self, path: &Path) -> Result<()> {
+        let node_id = path.to_string_lossy().to_string();
 
-                let mut tree = self.library.tree.clone();
-                tree.root_mut().remove_child(&node_id);
-                let mut focus_node: Option<String> = None;
-                // case 1: the route still exists due to having a sibling beyond the index which now takes the same index
-                if let Some(node) = tree.root().node_by_route(&route) {
-                    focus_node = Some(node.id().clone());
-                } else if !route.is_empty() {
-                    let _ = route.pop();
-                    // case 2: the route does not exist anymore, but there is a parent in the route
-                    if let Some(parent) = tree.root().node_by_route(&route) {
-                        // case 2.1: the parent has children, select the last of them
-                        if let Some(last_child) = parent.children().last() {
-                            focus_node = Some(last_child.id().clone());
-                        } else {
-                            // case 2.2: the parent exists, but has no children
-                            focus_node = Some(parent.id().clone());
-                        }
+        if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
+            if path.is_file() {
+                remove_file(path)?;
+            } else {
+                path.canonicalize()?;
+                remove_dir_all(path)?;
+            }
+
+            let mut tree = self.library.tree.clone();
+            tree.root_mut().remove_child(&node_id);
+            let mut focus_node: Option<String> = None;
+            // case 1: the route still exists due to having a sibling beyond the index which now takes the same index
+            if let Some(node) = tree.root().node_by_route(&route) {
+                focus_node = Some(node.id().clone());
+            } else if !route.is_empty() {
+                let _ = route.pop();
+                // case 2: the route does not exist anymore, but there is a parent in the route
+                if let Some(parent) = tree.root().node_by_route(&route) {
+                    // case 2.1: the parent has children, select the last of them
+                    if let Some(last_child) = parent.children().last() {
+                        focus_node = Some(last_child.id().clone());
+                    } else {
+                        // case 2.2: the parent exists, but has no children
+                        focus_node = Some(parent.id().clone());
                     }
                 }
-
-                self.library_scan_dir(&self.library.tree_path, focus_node);
             }
-            // this line remove the deleted songs from playlist
-            self.playlist_update_library_delete();
+
+            self.library_scan_dir(&self.library.tree_path, focus_node);
         }
+        // this line remove the deleted songs from playlist
+        self.playlist_update_library_delete();
         Ok(())
     }
 

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
@@ -18,10 +20,12 @@ use crate::ui::msg::{DeleteConfirmMsg, Msg};
 #[derive(MockComponent)]
 pub struct DeleteConfirmRadioPopup {
     component: YNConfirm,
+    on_confirm: Msg,
+    on_cancel: Msg,
 }
 
 impl DeleteConfirmRadioPopup {
-    pub fn new(config: SharedTuiSettings) -> Self {
+    pub fn new(config: SharedTuiSettings, on_confirm: Msg, on_cancel: Msg) -> Self {
         let component =
             YNConfirm::new_with_cb(config, " Are sure you want to delete? ", |config| {
                 YNConfirmStyle {
@@ -32,17 +36,18 @@ impl DeleteConfirmRadioPopup {
                 }
             });
 
-        Self { component }
+        Self {
+            component,
+            on_confirm,
+            on_cancel,
+        }
     }
 }
 
 impl Component<Msg, UserEvent> for DeleteConfirmRadioPopup {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(
-            ev,
-            Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk),
-            Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel),
-        )
+        self.component
+            .on(ev, self.on_confirm.clone(), self.on_cancel.clone())
     }
 }
 
@@ -130,12 +135,16 @@ impl Component<Msg, UserEvent> for DeleteConfirmInputPopup {
 impl Model {
     /// Mount a [`DeleteConfirmRadioPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
     /// as [`Id::DeleteConfirmRadioPopup`].
-    pub fn mount_confirm_radio(&mut self) {
+    pub fn mount_confirm_radio(&mut self, path: PathBuf) {
         assert!(
             self.app
                 .remount(
                     Id::DeleteConfirmRadioPopup,
-                    Box::new(DeleteConfirmRadioPopup::new(self.config_tui.clone())),
+                    Box::new(DeleteConfirmRadioPopup::new(
+                        self.config_tui.clone(),
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path)),
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel)
+                    )),
                     vec![]
                 )
                 .is_ok()
@@ -145,7 +154,7 @@ impl Model {
 
     /// Mount a [`DeleteConfirmInputPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
     /// as [`Id::DeleteConfirmInputPopup`].
-    pub fn mount_confirm_input(&mut self, title: &str) {
+    pub fn mount_confirm_input(&mut self, path: PathBuf, title: &str) {
         assert!(
             self.app
                 .remount(
@@ -153,7 +162,7 @@ impl Model {
                     Box::new(DeleteConfirmInputPopup::new(
                         &self.config_tui.read(),
                         title,
-                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk),
+                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path)),
                         Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel)
                     )),
                     vec![]
