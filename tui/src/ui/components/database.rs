@@ -736,20 +736,24 @@ impl Model {
         self.app.active(&Id::DBListSearchResult).ok();
     }
 
+    /// Scan all Music Roots for all playlists.
     fn database_get_playlist(&self) -> Vec<String> {
         let mut vec = Vec::new();
 
-        let root = self.library.tree.root();
-        let p: &Path = Path::new(root.id());
-        let all_items = walkdir::WalkDir::new(p).follow_links(true);
-        for record in all_items
-            .into_iter()
-            .filter_map(std::result::Result::ok)
-            .filter(|p| is_playlist(p.path()))
-        {
-            let full_path_name = record.path().to_string_lossy().to_string();
-            vec.push(full_path_name);
+        for dir in &self.config_server.read().settings.player.music_dirs {
+            let absolute_dir = shellexpand::path::tilde(dir);
+
+            let all_items = walkdir::WalkDir::new(absolute_dir).follow_links(true);
+            for record in all_items
+                .into_iter()
+                .filter_map(std::result::Result::ok)
+                .filter(|p| is_playlist(p.path()))
+            {
+                let full_path_name = record.path().to_string_lossy().to_string();
+                vec.push(full_path_name);
+            }
         }
+
         vec
     }
 

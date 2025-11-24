@@ -185,18 +185,17 @@ impl Model {
         Ok(())
     }
 
-    /// Mount the tageditor with the selected node id as the path.
-    pub fn mount_tageditor(&mut self, node_id: &str) {
-        let node_path: &Path = Path::new(node_id);
-        if node_path.is_dir() {
-            self.mount_error_popup(anyhow::anyhow!("{node_path:?} directory doesn't have tag!"));
+    /// Mount the tageditor with the given path.
+    pub fn mount_tageditor(&mut self, path: &Path) {
+        if path.is_dir() {
+            self.mount_error_popup(anyhow::anyhow!("{path:?} directory doesn't have tag!"));
             return;
         }
 
-        let te_track = match TETrack::read_metadata_from_file(node_path) {
+        let te_track = match TETrack::read_metadata_from_file(path) {
             Ok(v) => v,
             Err(err) => {
-                self.mount_error_popup(err.context(node_path.display().to_string()));
+                self.mount_error_popup(err.context(path.display().to_string()));
                 return;
             }
         };

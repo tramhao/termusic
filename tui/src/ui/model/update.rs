@@ -639,7 +639,7 @@ impl Model {
                 assert!(self.app.active(&Id::Playlist).is_ok());
             }
             LIMsg::TreeStepInto(path) => {
-                self.library_stepinto(&path);
+                self.library_stepinto(path);
             }
             LIMsg::TreeStepOut => {
                 self.library_stepout();
@@ -653,13 +653,13 @@ impl Model {
                 }
             }
             LIMsg::SwitchRoot => self.library_switch_root(),
-            LIMsg::AddRoot => {
-                if let Err(e) = self.library_add_root() {
+            LIMsg::AddRoot(path) => {
+                if let Err(e) = self.library_add_root(path) {
                     self.mount_error_popup(e.context("library add root"));
                 }
             }
-            LIMsg::RemoveRoot => {
-                if let Err(e) = self.library_remove_root() {
+            LIMsg::RemoveRoot(path) => {
+                if let Err(e) = self.library_remove_root(path) {
                     self.mount_error_popup(e.context("library remove root"));
                 }
             }
@@ -715,7 +715,6 @@ impl Model {
 
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(index) {
-                    self.library_reload_with_node_focus(None);
                     self.mount_error_popup(e.context("youtube-dl options download"));
                 }
             }
@@ -896,7 +895,7 @@ impl Model {
     fn update_delete_confirmation(&mut self, msg: &DeleteConfirmMsg) -> Option<Msg> {
         match msg {
             DeleteConfirmMsg::Show => {
-                self.library_before_delete();
+                self.library_show_delete_confirm();
             }
             DeleteConfirmMsg::CloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {

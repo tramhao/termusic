@@ -26,7 +26,6 @@ mod xywh;
 pub use config_editor::*;
 pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
 pub use footer::Footer;
-pub use global_listener::GlobalListener;
 pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;

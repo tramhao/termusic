@@ -1,4 +1,4 @@
-use std::fs::{DirEntry, remove_dir_all, remove_file, rename};
+use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
@@ -121,11 +121,24 @@ impl Component<Msg, UserEvent> for MusicLibrary {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let result = match ev {
+            // selection
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.left.get() => {
                 match self.handle_left_key() {
                     (_, Some(msg)) => return Some(msg),
                     (cmdresult, None) => cmdresult,
                 }
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
+                match self.handle_right_key() {
+                    (_, Some(msg)) => return Some(msg),
+                    (cmdresult, None) => cmdresult,
+                }
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
+                self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Left,
@@ -141,18 +154,6 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 (_, Some(msg)) => return Some(msg),
                 (cmdresult, None) => cmdresult,
             },
-            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
-                match self.handle_right_key() {
-                    (_, Some(msg)) => return Some(msg),
-                    (cmdresult, None) => cmdresult,
-                }
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
-                self.perform(Cmd::Move(Direction::Down))
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
-                self.perform(Cmd::Move(Direction::Up))
-            }
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
                 modifiers: KeyModifiers::NONE,
@@ -162,14 +163,7 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
 
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_dir.get() => {
-                let current_node = self.component.tree_state().selected().unwrap();
-                let path: &Path = Path::new(current_node);
-                if path.is_dir() {
-                    return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
-                }
-                CmdResult::None
-            }
+            // quick selection movement
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 modifiers: KeyModifiers::NONE,
@@ -178,6 +172,7 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
+
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
@@ -185,13 +180,79 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
-                code: Key::Enter,
+                code: Key::Home,
                 modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Submit),
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
+
+            // file modifying
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.delete.get() => {
+                return Some(Msg::DeleteConfirm(DeleteConfirmMsg::Show));
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
+                return Some(Msg::Library(LIMsg::Yank));
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.paste.get() => {
+                return Some(Msg::Library(LIMsg::Paste));
+            }
+
+            // music root modification
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.cycle_root.get() => {
+                return Some(Msg::Library(LIMsg::SwitchRoot));
+            }
+
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.add_root.get() => {
+                let root_node = self.component.tree().root().id();
+                let path = PathBuf::from(root_node);
+                return Some(Msg::Library(LIMsg::AddRoot(path)));
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.remove_root.get() => {
+                let root_node = self.component.tree().root().id();
+                let path = PathBuf::from(root_node);
+                return Some(Msg::Library(LIMsg::RemoveRoot(path)));
+            }
+
+            // load more tree
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::Library(LIMsg::TreeStepOut)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Submit),
+
+            // search
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary));
+            }
+
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.youtube_search.get() => {
+                return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow));
+            }
+
+            // load into playlist
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_dir.get() => {
+                let current_node = self.component.tree_state().selected().unwrap();
+                let path = Path::new(current_node);
+                if path.is_dir() {
+                    return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
+                }
+                CmdResult::None
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_track.get() => {
+                let current_node = self.component.tree_state().selected().unwrap();
+                let path = Path::new(current_node);
+                if !path.is_dir() {
+                    return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
+                }
+                CmdResult::None
+            }
+
+            // other
             Event::Keyboard(
                 KeyEvent {
                     code: Key::Tab,
@@ -202,42 +263,24 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                     modifiers: KeyModifiers::SHIFT,
                 },
             ) => return Some(Msg::Library(LIMsg::TreeBlur)),
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.delete.get() => {
-                return Some(Msg::DeleteConfirm(DeleteConfirmMsg::Show));
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
-                return Some(Msg::Library(LIMsg::Yank));
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.paste.get() => {
-                return Some(Msg::Library(LIMsg::Paste));
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.cycle_root.get() => {
-                return Some(Msg::Library(LIMsg::SwitchRoot));
-            }
-
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.add_root.get() => {
-                return Some(Msg::Library(LIMsg::AddRoot));
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.remove_root.get() => {
-                return Some(Msg::Library(LIMsg::RemoveRoot));
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary));
-            }
-
-            Event::Keyboard(keyevent) if keyevent == keys.library_keys.youtube_search.get() => {
-                return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow));
-            }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.open_tag_editor.get() => {
                 let current_node = self.component.tree_state().selected().unwrap();
-                return Some(Msg::TagEditor(TEMsg::Open(current_node.to_string())));
+                let path = Path::new(current_node);
+                if !path.is_dir() {
+                    return Some(Msg::TagEditor(TEMsg::Open(path.to_path_buf())));
+                }
+                CmdResult::None
             }
 
             _ => CmdResult::None,
         };
         match result {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
-                Some(Msg::Library(LIMsg::TreeStepInto(node)))
+                let path = Path::new(&node);
+                if path.is_dir() {
+                    return Some(Msg::Library(LIMsg::TreeStepInto(path.to_path_buf())));
+                }
+                None
             }
             CmdResult::None => None,
             _ => Some(Msg::ForceRedraw),
@@ -245,18 +288,79 @@ impl Component<Msg, UserEvent> for MusicLibrary {
     }
 }
 
+/// Execute a library scan on a different thread.
+///
+/// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
+pub fn library_scan<P: Into<PathBuf>>(
+    tx: TxToMain,
+    download_tracker: DownloadTracker,
+    path: P,
+    depth: ScanDepth,
+    focus_node: Option<String>,
+) {
+    let path = path.into();
+    std::thread::Builder::new()
+        .name("library tree scan".to_string())
+        .spawn(move || {
+            download_tracker.increase_one(path.to_string_lossy());
+            let root_node = library_dir_tree(&path, depth);
+
+            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
+            download_tracker.decrease_one(&path.to_string_lossy());
+        })
+        .expect("Failed to spawn thread");
+}
+
+/// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
+///
+/// Note: consider using [`library_scan`] instead of this directly for running in a different thread.
+pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
+    let name: String = match path.file_name() {
+        None => "/".to_string(),
+        Some(n) => n.to_string_lossy().into_owned(),
+    };
+    let mut node = RecVec {
+        id: path.to_path_buf(),
+        value: name,
+        children: Vec::new(),
+    };
+
+    let depth = match depth {
+        ScanDepth::Limited(v) => v,
+        // put some kind of limit on it, thought the stack will likely overflow before this
+        ScanDepth::Unlimited => u32::MAX,
+    };
+
+    if depth > 0 && path.is_dir() {
+        if let Ok(paths) = std::fs::read_dir(path) {
+            let mut paths: Vec<(String, PathBuf)> = paths
+                .filter_map(std::result::Result::ok)
+                .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
+                .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v.path()))
+                .collect();
+
+            paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
+
+            for p in paths {
+                node.children
+                    .push(library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
+            }
+        }
+    }
+    node
+}
+
 impl Model {
-    pub fn library_upper_dir(&self) -> Option<PathBuf> {
-        self.library
-            .tree_path
-            .parent()
-            .map(std::path::Path::to_path_buf)
+    /// Get the parent directory path of the current tree's root.
+    #[inline]
+    pub fn library_upper_dir(&self) -> Option<&Path> {
+        self.library.tree_path.parent()
     }
 
     /// Execute [`Self::library_scan`] from a `&self` instance.
     #[inline]
     pub fn library_scan_dir<P: Into<PathBuf>>(&self, path: P, focus_node: Option<String>) {
-        Self::library_scan(
+        library_scan(
             self.tx_to_main.clone(),
             self.download_tracker.clone(),
             path,
@@ -265,91 +369,9 @@ impl Model {
         );
     }
 
+    /// Get a new tree with the root node showing "Loading...".
     pub fn loading_tree() -> Tree<String> {
         Tree::new(Node::new("/dev/null".to_string(), "Loading...".to_string()))
-    }
-
-    /// Execute a library scan on a different thread.
-    ///
-    /// Executes [`Self::library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
-    pub fn library_scan<P: Into<PathBuf>>(
-        tx: TxToMain,
-        download_tracker: DownloadTracker,
-        path: P,
-        depth: ScanDepth,
-        focus_node: Option<String>,
-    ) {
-        let path = path.into();
-        std::thread::Builder::new()
-            .name("library tree scan".to_string())
-            .spawn(move || {
-                download_tracker.increase_one(path.to_string_lossy());
-                let root_node = Self::library_dir_tree(&path, depth);
-
-                let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
-                download_tracker.decrease_one(&path.to_string_lossy());
-            })
-            .expect("Failed to spawn thread");
-    }
-
-    /// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
-    ///
-    /// Note: consider using [`Self::library_scan`] instead of this directly.
-    fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
-        let name: String = match path.file_name() {
-            None => "/".to_string(),
-            Some(n) => n.to_string_lossy().into_owned(),
-        };
-        let mut node = RecVec {
-            id: path.to_path_buf(),
-            value: name,
-            children: Vec::new(),
-        };
-
-        let depth = match depth {
-            ScanDepth::Limited(v) => v,
-            // put some kind of limit on it, thought the stack will likely overflow before this
-            ScanDepth::Unlimited => u32::MAX,
-        };
-
-        if depth > 0 && path.is_dir() {
-            if let Ok(paths) = std::fs::read_dir(path) {
-                let mut paths: Vec<(String, PathBuf)> = paths
-                    .filter_map(std::result::Result::ok)
-                    .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
-                    .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v.path()))
-                    .collect();
-
-                paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
-
-                for p in paths {
-                    node.children
-                        .push(Self::library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
-                }
-            }
-        }
-        node
-    }
-
-    pub fn library_dir_children(p: &Path) -> Vec<String> {
-        let mut children: Vec<String> = vec![];
-        if p.is_dir() {
-            if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<(String, DirEntry)> = paths
-                    .filter_map(std::result::Result::ok)
-                    .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v))
-                    .collect();
-
-                paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
-
-                for (_, p) in paths {
-                    if !p.path().is_dir() {
-                        children.push(String::from(p.path().to_string_lossy()));
-                    }
-                }
-            }
-        }
-        children
     }
 
     /// Reload the library with the given `node` as a focus, also starts a new database sync worker for the current path.
@@ -418,22 +440,24 @@ impl Model {
     }
 
     /// Handle stepping into a node on the tree
-    pub fn library_stepinto(&mut self, node_id: &str) {
-        self.library_scan_dir(PathBuf::from(node_id), None);
+    #[inline]
+    pub fn library_stepinto<P: Into<PathBuf>>(&mut self, path: P) {
+        self.library_scan_dir(path.into(), None);
     }
 
     /// Handle stepping out of the current root node on the tree
     pub fn library_stepout(&mut self) {
-        if let Some(p) = self.library_upper_dir() {
+        if let Some(path) = self.library_upper_dir() {
             let focus_node = Some(self.library.tree_path.to_string_lossy().to_string());
-            self.library_scan_dir(p, focus_node);
+            self.library_scan_dir(path, focus_node);
         }
     }
 
-    pub fn library_before_delete(&mut self) {
+    /// Show a deletion confirmation for the currently selected node.
+    pub fn library_show_delete_confirm(&mut self) {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            let p: &Path = Path::new(node_id.as_str());
-            if p.is_file() {
+            let path = Path::new(node_id.as_str());
+            if path.is_file() {
                 self.mount_confirm_radio();
             } else {
                 self.mount_confirm_input("You're about to delete the whole directory.");
@@ -445,12 +469,12 @@ impl Model {
     pub fn library_delete_node(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
-                let p: &Path = Path::new(node_id.as_str());
-                if p.is_file() {
-                    remove_file(p)?;
+                let path = Path::new(node_id.as_str());
+                if path.is_file() {
+                    remove_file(path)?;
                 } else {
-                    p.canonicalize()?;
-                    remove_dir_all(p)?;
+                    path.canonicalize()?;
+                    remove_dir_all(path)?;
                 }
 
                 let mut tree = self.library.tree.clone();
@@ -481,12 +505,14 @@ impl Model {
         Ok(())
     }
 
+    /// Store the currently selected node as yanked (for pasting with [`Self::library_paste`]).
     pub fn library_yank(&mut self) {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             self.library.yanked_node_id = Some(node_id);
         }
     }
 
+    /// Paste the previously yanked node in the currently selected node if it is a directory, otherwise in its parent.
     pub fn library_paste(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(new_id))) = self.app.state(&Id::Library) {
             let old_id = self
@@ -494,16 +520,16 @@ impl Model {
                 .yanked_node_id
                 .as_ref()
                 .context("no id yanked")?;
-            let p: &Path = Path::new(new_id.as_str());
-            let pold: &Path = Path::new(old_id.as_str());
-            let p_parent = p.parent().context("no parent folder found")?;
-            let pold_filename = pold.file_name().context("no file name found")?;
-            let new_node_id = if p.is_dir() {
-                p.join(pold_filename)
+            let new_path = Path::new(new_id.as_str());
+            let old_path = Path::new(old_id.as_str());
+            let new_parent = new_path.parent().context("no parent folder found")?;
+            let pold_filename = old_path.file_name().context("no file name found")?;
+            let new_node_id = if new_path.is_dir() {
+                new_path.join(pold_filename)
             } else {
-                p_parent.join(pold_filename)
+                new_parent.join(pold_filename)
             };
-            rename(pold, new_node_id.as_path())?;
+            rename(old_path, new_node_id.as_path())?;
             self.library_reload_with_node_focus(Some(new_node_id.to_string_lossy().to_string()));
         }
         self.library.yanked_node_id = None;
@@ -511,11 +537,12 @@ impl Model {
         Ok(())
     }
 
+    /// Generate the result table for search `input`, recursively from the tree's root node's path.
     pub fn library_update_search(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
         let root = self.library.tree.root();
-        let p: &Path = Path::new(root.id());
-        let all_items = walkdir::WalkDir::new(p).follow_links(true);
+        let path = Path::new(root.id());
+        let all_items = walkdir::WalkDir::new(path).follow_links(true);
         let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
         let search = wildmatch::WildMatch::new(&search);
@@ -536,6 +563,7 @@ impl Model {
         self.general_search_update_show(table);
     }
 
+    /// Switch the current tree root to the next one in the stored list, if available.
     pub fn library_switch_root(&mut self) {
         let mut vec = Vec::new();
         let config_server = self.config_server.read();
@@ -566,26 +594,21 @@ impl Model {
         if let Some(dir) = vec.get(index) {
             let pathbuf = PathBuf::from(dir);
             self.library_scan_dir(pathbuf, None);
-            self.library_reload_with_node_focus(None);
         }
     }
 
-    pub fn library_add_root(&mut self) -> Result<()> {
-        let current_path = &self.library.tree_path;
-
+    /// Add the given path as a new library root for quick switching & metadata(database) scraping.
+    pub fn library_add_root<P: Into<PathBuf>>(&mut self, path: P) -> Result<()> {
+        let path = path.into();
         let mut config_server = self.config_server.write();
 
         for dir in &config_server.settings.player.music_dirs {
             let absolute_dir = shellexpand::path::tilde(dir);
-            if &absolute_dir == current_path {
-                bail!("Add root failed, same root already exists");
+            if absolute_dir == path {
+                bail!("Same root already exists");
             }
         }
-        config_server
-            .settings
-            .player
-            .music_dirs
-            .push(current_path.clone());
+        config_server.settings.player.music_dirs.push(path);
         let res = ServerConfigVersionedDefaulted::save_config_path(&config_server.settings);
         drop(config_server);
 
@@ -594,14 +617,15 @@ impl Model {
         Ok(())
     }
 
-    pub fn library_remove_root(&mut self) -> Result<()> {
-        let current_path = &self.library.tree_path;
+    /// Remove the given path as a library root.
+    pub fn library_remove_root<P: Into<PathBuf>>(&mut self, path: P) -> Result<()> {
+        let path = path.into();
         let mut config_server = self.config_server.write();
 
-        let mut vec = Vec::new();
+        let mut vec = Vec::with_capacity(config_server.settings.player.music_dirs.len());
         for dir in &config_server.settings.player.music_dirs {
             let absolute_dir = shellexpand::path::tilde(dir);
-            if &absolute_dir == current_path {
+            if absolute_dir == path {
                 continue;
             }
             vec.push(dir.clone());

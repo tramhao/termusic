@@ -8,8 +8,8 @@ use crate::ui::msg::{TEMsg, TFMsg};
 impl Model {
     pub fn update_tageditor(&mut self, msg: TEMsg) {
         match msg {
-            TEMsg::Open(node_id) => {
-                self.mount_tageditor(&node_id);
+            TEMsg::Open(path) => {
+                self.mount_tageditor(&path);
             }
             TEMsg::Close => {
                 if let Some(s) = self.tageditor_song.clone() {

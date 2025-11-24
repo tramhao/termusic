@@ -160,14 +160,15 @@ pub struct RecVec<T, V> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
-    TreeStepInto(String),
+    /// Load more at path
+    TreeStepInto(PathBuf),
     TreeStepOut,
     TreeBlur,
     Yank,
     Paste,
     SwitchRoot,
-    AddRoot,
-    RemoveRoot,
+    AddRoot(PathBuf),
+    RemoveRoot(PathBuf),
 
     /// A requested node is ready from loading.
     /// `(Tree, FocusNode)`
@@ -447,7 +448,7 @@ pub enum YSMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TEMsg {
-    Open(String),
+    Open(PathBuf),
     Close,
     CounterDeleteOk,
     Download(usize),

@@ -2,11 +2,9 @@ use std::path::Path;
 use std::time::Duration;
 
 use anyhow::{Result, bail};
-use termusiclib::config::SharedTuiSettings;
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedReceiver;
-use tui_realm_treeview::Tree;
 use tuirealm::EventListenerCfg;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
@@ -16,8 +14,8 @@ use tuirealm::{Frame, State, StateValue};
 use crate::ui::Application;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
-    FeedsList, Footer, GSInputPopup, GSTablePopup, GlobalListener, LabelSpan, Lyric, MusicLibrary,
-    Playlist, Progress, Source,
+    FeedsList, Footer, GSInputPopup, GSTablePopup, LabelSpan, Lyric, MusicLibrary, Playlist,
+    Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
@@ -30,14 +28,11 @@ use crate::ui::utils::{
 
 impl Model {
     pub fn init_app(
-        tree: &Tree<String>,
-        config: &SharedTuiSettings,
         tx_to_main: UnboundedReceiver<Msg>,
         stream_event_port: PortStreamEvents,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
-
-        let mut app: Application<Id, Msg, UserEvent> = Application::init(
+        Application::init(
             EventListenerCfg::default()
                 .with_handle(Handle::current())
                 .async_crossterm_input_listener(Duration::ZERO, 10)
@@ -46,99 +41,95 @@ impl Model {
                 .tick_interval(Duration::from_secs(1))
                 .add_async_port(Box::new(PortRxMain::new(tx_to_main)), Duration::ZERO, 10)
                 .add_async_port(Box::new(stream_event_port), Duration::ZERO, 1),
-        );
-
-        Self::mount_main(&mut app, config, tree).unwrap();
-
-        // Mount global hotkey listener
-        assert!(
-            app.mount(
-                Id::GlobalListener,
-                Box::new(GlobalListener::new(config.clone())),
-                Self::subscribe(&config.read().settings.keys),
-            )
-            .is_ok()
-        );
-        // Active library
-        assert!(app.active(&Id::Library).is_ok());
-        app
+        )
     }
 
-    /// Mount the Main components for the TUI
-    fn mount_main(
-        app: &mut Application<Id, Msg, UserEvent>,
-        config: &SharedTuiSettings,
-        tree: &Tree<String>,
-    ) -> Result<()> {
-        app.mount(
+    /// Mount the Main components for the TUI.
+    pub fn mount_main(&mut self) -> Result<()> {
+        self.remount_global_listener()?;
+
+        self.app.mount(
             Id::Library,
-            Box::new(MusicLibrary::new(tree, None, config.clone())),
+            Box::new(MusicLibrary::new(
+                &self.library.tree,
+                None,
+                self.config_tui.clone(),
+            )),
             Vec::new(),
         )?;
-        app.mount(
+        self.app.mount(
             Id::DBListCriteria,
             Box::new(DBListCriteria::new(
-                config.clone(),
+                self.config_tui.clone(),
                 Msg::DataBase(DBMsg::CriteriaBlurDown),
                 Msg::DataBase(DBMsg::CriteriaBlurUp),
             )),
             Vec::new(),
         )?;
 
-        app.mount(
+        self.app.mount(
             Id::DBListSearchResult,
             Box::new(DBListSearchResult::new(
-                config.clone(),
+                self.config_tui.clone(),
                 Msg::DataBase(DBMsg::SearchResultBlurDown),
                 Msg::DataBase(DBMsg::SearchResultBlurUp),
             )),
             Vec::new(),
         )?;
-        app.mount(
+        self.app.mount(
             Id::DBListSearchTracks,
             Box::new(DBListSearchTracks::new(
-                config.clone(),
+                self.config_tui.clone(),
                 Msg::DataBase(DBMsg::SearchTracksBlurDown),
                 Msg::DataBase(DBMsg::SearchTracksBlurUp),
             )),
             Vec::new(),
         )?;
-        app.mount(
+        self.app.mount(
             Id::Playlist,
-            Box::new(Playlist::new(config.clone())),
+            Box::new(Playlist::new(self.config_tui.clone())),
             Vec::new(),
         )?;
-        app.mount(
+        self.app.mount(
             Id::Progress,
-            Box::new(Progress::new(&config.read())),
+            Box::new(Progress::new(&self.config_tui.read())),
             Vec::new(),
         )?;
-        app.mount(Id::Lyric, Box::new(Lyric::new(config.clone())), Vec::new())?;
+        self.app.mount(
+            Id::Lyric,
+            Box::new(Lyric::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
 
-        app.mount(
+        self.app.mount(
             Id::Podcast,
             Box::new(FeedsList::new(
-                config.clone(),
+                self.config_tui.clone(),
                 Msg::Podcast(PCMsg::PodcastBlurDown),
                 Msg::Podcast(PCMsg::PodcastBlurUp),
             )),
             Vec::new(),
         )?;
 
-        app.mount(
+        self.app.mount(
             Id::Episode,
             Box::new(EpisodeList::new(
-                config.clone(),
+                self.config_tui.clone(),
                 Msg::Podcast(PCMsg::EpisodeBlurDown),
                 Msg::Podcast(PCMsg::EpisodeBlurUp),
             )),
             Vec::new(),
         )?;
-        app.mount(
+        self.app.mount(
             Id::DownloadSpinner,
-            Box::new(DownloadSpinner::new(&config.read())),
+            Box::new(DownloadSpinner::new(&self.config_tui.read())),
             Vec::new(),
         )?;
+
+        self.mount_label_help();
+
+        // Set the Library component as the initally focused one
+        self.app.active(&Id::Library)?;
 
         Ok(())
     }

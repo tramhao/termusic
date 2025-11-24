@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
-use termusiclib::config::v2::server::ScanDepth;
 #[allow(unused_imports)]
 use termusiclib::config::v2::tui::CoverArtProtocol;
 use termusiclib::config::v2::tui::keys::Keys;
@@ -418,7 +417,7 @@ impl Model {
 
         let stream_update_port = PortStreamEvents::new(stream_updates);
 
-        let app = Self::init_app(&tree, &config_tui, rx_to_main, stream_update_port);
+        let app = Self::init_app(rx_to_main, stream_update_port);
 
         // This line is required, in order to show the playing message for the first track
         // playlist.set_current_track_index(0);
@@ -428,15 +427,7 @@ impl Model {
 
         let download_tracker = DownloadTracker::default();
 
-        Self::library_scan(
-            tx_to_main.clone(),
-            download_tracker.clone(),
-            &path,
-            ScanDepth::Limited(2),
-            None,
-        );
-
-        Self {
+        let mut model = Self {
             app,
             quit: false,
             redraw: true,
@@ -482,7 +473,15 @@ impl Model {
             playback: Playback::new(),
             cmd_to_server_tx,
             xywh,
-        }
+        };
+
+        model.library_scan_dir(&model.library.tree_path, None);
+
+        model
+            .mount_main()
+            .expect("Expected all main component to mount correctly");
+
+        model
     }
 
     #[inline]
@@ -506,21 +505,31 @@ impl Model {
         PathBuf::from(full_path)
     }
 
-    pub fn init_config(&mut self) {
+    /// Run startup tasks:
+    /// - Extract Themes
+    /// - Start Database scan
+    /// - Generate playlist component data
+    pub fn init(&mut self) {
         if let Err(e) = Self::theme_extract_all() {
             self.mount_error_popup(e.context("theme save"));
         }
-        self.mount_label_help();
-        if let Err(err) =
-            self.db
-                .scan_path(&self.library.tree_path, &self.config_server.read(), false)
-        {
-            error!(
-                "Error scanning path {:#?}: {err:#?}",
-                self.library.tree_path.display()
-            );
-        }
+        self.scan_all_music_roots();
         self.playlist_sync();
+    }
+
+    /// Trigger a database scan for all music roots.
+    fn scan_all_music_roots(&self) {
+        let config_server = self.config_server.read();
+        for dir in &config_server.settings.player.music_dirs {
+            let absolute_dir = shellexpand::path::tilde(dir);
+
+            if let Err(err) = self.db.scan_path(&absolute_dir, &config_server, false) {
+                error!(
+                    "Error scanning path {:#?}: {err:#?}",
+                    absolute_dir.display()
+                );
+            }
+        }
     }
 
     /// Initialize terminal

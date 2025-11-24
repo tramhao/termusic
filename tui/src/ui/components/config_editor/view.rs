@@ -42,7 +42,7 @@ use crate::ui::Application;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
-use crate::ui::components::{CEHeader, ConfigSavePopup, GlobalListener};
+use crate::ui::components::{CEHeader, ConfigSavePopup};
 use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
 use crate::ui::msg::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
@@ -552,26 +552,12 @@ impl Model {
         KeyDisplay::new(KFOTHER_FOCUS_ORDER, 25 + 2).view(app, chunk_main, f);
     }
 
+    /// Mount the Config Editor.
     pub fn mount_config_editor(&mut self) {
         self.config_editor.layout = ConfigEditorLayout::General;
 
-        self.remount_config_header_footer().unwrap();
-
-        self.remount_config_general().unwrap();
-
-        self.remount_config_color(&self.config_tui.clone(), None)
-            .unwrap();
-
-        self.remount_config_keys().unwrap();
-
-        // Active Config Editor
-        assert!(
-            self.app
-                .active(&Id::ConfigEditor(IdConfigEditor::General(
-                    IdCEGeneral::MusicDir
-                )))
-                .is_ok()
-        );
+        self.mount_config_editor_components()
+            .expect("Expected Config Editor Components to mount correctly");
 
         if let Err(e) = self.theme_select_load_themes() {
             self.mount_error_popup(e.context("load themes"));
@@ -582,35 +568,54 @@ impl Model {
         }
     }
 
+    /// Mount all the Config Editor Components.
+    fn mount_config_editor_components(&mut self) -> Result<()> {
+        self.remount_config_header_footer()?;
+
+        self.remount_config_general()?;
+
+        self.remount_config_color(&self.config_tui.clone(), None)?;
+
+        self.remount_config_keys()?;
+
+        // Set default focus component for the config editor
+        self.app.active(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::MusicDir,
+        )))?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config Editor and trigger reload of necessary data.
     pub fn umount_config_editor(&mut self) {
-        self.library_scan_dir(&self.library.tree_path, None);
         self.playlist_reload();
         self.database_reload();
         self.progress_reload();
         self.mount_label_help();
         self.lyric_reload();
 
-        self.umount_config_header_footer().unwrap();
+        self.umount_config_editor_components()
+            .expect("Expected Config Editor Components to unmount correctly");
 
-        self.umount_config_general().unwrap();
-
-        self.umount_config_color().unwrap();
-
-        self.umount_config_keys().unwrap();
-
-        assert!(
-            self.app
-                .remount(
-                    Id::GlobalListener,
-                    Box::new(GlobalListener::new(self.config_tui.clone())),
-                    Self::subscribe(&self.config_tui.read().settings.keys),
-                )
-                .is_ok()
-        );
+        self.remount_global_listener()
+            .expect("Expected Global Hotkey Listener to remount correctly");
 
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
+    }
+
+    /// Unmount all the config editor components.
+    fn umount_config_editor_components(&mut self) -> Result<()> {
+        self.umount_config_header_footer()?;
+
+        self.umount_config_general()?;
+
+        self.umount_config_color()?;
+
+        self.umount_config_keys()?;
+
+        Ok(())
     }
 
     pub fn action_change_layout(&mut self) {
