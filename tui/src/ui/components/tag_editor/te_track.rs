@@ -75,6 +75,11 @@ impl TETrack {
         &self.path
     }
 
+    /// Convert the current track to just the path it is for.
+    pub fn into_path(self) -> PathBuf {
+        self.path
+    }
+
     #[must_use]
     pub fn artist(&self) -> Option<&str> {
         self.artist.as_deref()
