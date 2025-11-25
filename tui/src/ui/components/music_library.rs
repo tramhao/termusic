@@ -911,7 +911,6 @@ impl Model {
         msg: RecVec<PathBuf, String>,
         focus_node: Option<String>,
     ) {
-        let root_path = msg.id.clone();
         let root_node = recvec_to_node(msg);
 
         let old_current_node = match self.app.state(&Id::Library).ok().unwrap() {
@@ -919,7 +918,6 @@ impl Model {
             _ => None,
         };
 
-        self.library.tree_path = root_path;
         let tree = Tree::new(root_node);
 
         // remount preserves focus
