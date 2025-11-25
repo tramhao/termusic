@@ -192,8 +192,10 @@ impl PartialEq for LIReloadPathData {
 /// Data for [`LIMsg::TreeNodeReadySub`].
 ///
 /// The path given is the one that is reloaded and also focused.
+///
+/// Contains: `vec_data, focus_node`
 #[derive(Clone, Debug, Eq)]
-pub struct LINodeReadySub(pub RecVec<PathBuf, String>);
+pub struct LINodeReadySub(pub RecVec<PathBuf, String>, pub PathBuf);
 
 /// `PartialEq` is only used for subscriptions.
 impl PartialEq for LINodeReadySub {

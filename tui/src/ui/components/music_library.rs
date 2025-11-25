@@ -169,10 +169,12 @@ impl MusicLibrary {
     ///
     /// This will send a [`LIMsg::TreeNodeReadySub`] and does not change the root, unless the
     /// given path *is* the root.
-    fn trigger_subload_with_focus(&self, path: PathBuf, depth: ScanDepth) {
+    fn trigger_subload_with_focus(&self, path: PathBuf, depth: ScanDepth, focus_node: PathBuf) {
         let tx = self.tx_to_main.clone();
         library_scan_cb(self.download_tracker.clone(), path, depth, move |vec| {
-            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub(vec))));
+            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub(
+                vec, focus_node,
+            ))));
         });
     }
 
@@ -316,6 +318,13 @@ impl MusicLibrary {
                 break;
             }
 
+            // The parent directory node will always contain the wanted path partially
+            // skip everything else.
+            // Otherwise it might decend into "root/to_delete/another" instead of wanted "root/dir/another".
+            if !path_str.starts_with(node.id()) {
+                continue;
+            }
+
             for (idx, comp) in Self::split_components_root(root_node.id(), node.id()).enumerate() {
                 let Some(gotten) = components_between_root_and_path.get(idx) else {
                     break;
@@ -341,6 +350,7 @@ impl MusicLibrary {
         self.trigger_subload_with_focus(
             PathBuf::from(nearest_node.id()),
             ScanDepth::Limited(depth),
+            path,
         );
     }
 
@@ -388,21 +398,113 @@ impl MusicLibrary {
                 parent_node.add_child(child);
             }
 
-            // Opening / selecting can only be done via commands for some reason,
-            // because this is the case, we only handle the case while the selected node is still the same
-            // to open it, if possible.
-            if self
-                .component
-                .tree_state()
-                .selected()
-                .is_some_and(|v| v == path_str)
-            {
-                self.component.perform(Cmd::Custom(TREE_CMD_OPEN));
+            // try to set a initially selected node
+            if self.component.tree_state().selected().is_none() {
+                self.component.perform(Cmd::GoTo(Position::Begin));
             }
-            // TODO: change focus
+
+            let focus_node = data.1;
+            let focus_node_str = focus_node.to_string_lossy().to_string();
+            self.move_focus_on_current_tree(&focus_node_str);
         }
 
         Some(Msg::ForceRedraw)
+    }
+
+    /// Move focus in the current tree to the `wanted_path`.
+    ///
+    /// This function is necessary as [`TreeView`] only provides immutable access to the state,
+    /// so we have to move by [`Cmd`]s, one-by-one.
+    fn move_focus_on_current_tree(&mut self, wanted_path: &String) {
+        // unwrap is safe due to use literally just having added it
+        let Some(route_to_node) = self.component.tree().root().route_by_node(wanted_path) else {
+            // wanted path is not part of the tree
+            return;
+        };
+
+        // this is just a fallback as i dont fully trust the loop below
+        let mut max_iters: usize = u16::MAX.into();
+
+        loop {
+            if max_iters == 0 {
+                debug!("overflow");
+                break;
+            }
+
+            max_iters = max_iters.saturating_sub(1);
+
+            let Some(selected) = self.component.tree_state().selected() else {
+                // we cant really do anything, if it does not even respond to "Begin"
+                break;
+            };
+
+            // check if we are done
+            if selected == wanted_path {
+                // always open the node, if it can be opened
+                self.component.perform(Cmd::Custom(TREE_CMD_OPEN));
+                break;
+            }
+
+            // route_by_node requires "&String", does not accept "&str"
+            let as_string = selected.to_string();
+            let root_node = self.component.tree().root();
+
+            let Some(selected_route) = root_node.route_by_node(&as_string) else {
+                // logic error in treeview, dont handle that
+                debug!("logic break");
+                break;
+            };
+
+            // handle being too deep
+            if selected_route.len() > route_to_node.len() {
+                self.component.perform(Cmd::Move(Direction::Up));
+                continue;
+            }
+
+            // fetch which direction we need to move in
+            let mut remaining_route = route_to_node.as_slice();
+            let mut selected_route_remaining = selected_route.as_slice();
+            for sibling_idx in &selected_route {
+                let Some(route_idx) = remaining_route.first() else {
+                    break;
+                };
+
+                if route_idx == sibling_idx {
+                    remaining_route = &remaining_route[1..];
+                    selected_route_remaining = &selected_route_remaining[1..];
+                }
+            }
+
+            // move in that direction
+            if let (Some(wanted_idx), Some(current_idx)) =
+                (remaining_route.first(), selected_route_remaining.first())
+            {
+                if wanted_idx > current_idx {
+                    self.component.perform(Cmd::Move(Direction::Down));
+                    // if the node we got down to is the one we want, open it
+                    if *wanted_idx == current_idx + 1 {
+                        self.component.perform(Cmd::Custom(TREE_CMD_OPEN));
+                    }
+                } else if wanted_idx <= current_idx {
+                    // If we are below the wanted index, move up.
+                    // Also if we are *on* the wanted index, but somehow it didnt catch it above to be the same node
+                    // then that means we are on different parents than wanted. Move up
+                    self.component.perform(Cmd::Move(Direction::Up));
+                    // if the node we got up to is the one we want, open it
+                    if *wanted_idx == current_idx.saturating_sub(1) {
+                        self.component.perform(Cmd::Custom(TREE_CMD_OPEN));
+                    }
+                }
+                continue;
+            }
+
+            // we are on the wanted parent already, so just move down
+            if let Some(_wanted_idx) = remaining_route.first() {
+                self.component.perform(Cmd::Move(Direction::Down));
+            }
+
+            // repeat
+        }
     }
 
     /// Handle all custom messages.
@@ -749,7 +851,7 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
-                    LINodeReadySub(bogus_recvec),
+                    LINodeReadySub(bogus_recvec, PathBuf::new()),
                 )))),
                 SubClause::Always,
             ),
