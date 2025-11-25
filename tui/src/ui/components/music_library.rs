@@ -398,6 +398,17 @@ pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String
     node
 }
 
+/// Convert a [`RecVec`] to a [`Node`].
+fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
+    let mut node = Node::new(vec.id.to_string_lossy().to_string(), vec.value);
+
+    for val in vec.children {
+        node.add_child(recvec_to_node(val));
+    }
+
+    node
+}
+
 impl Model {
     /// Get the parent directory path of the current tree's root.
     #[inline]
@@ -438,17 +449,6 @@ impl Model {
         self.library_scan_dir(&self.library.tree_path, node);
     }
 
-    /// Convert a [`RecVec`] to a [`Node`].
-    fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
-        let mut node = Node::new(vec.id.to_string_lossy().to_string(), vec.value);
-
-        for val in vec.children {
-            node.add_child(Self::recvec_to_node(val));
-        }
-
-        node
-    }
-
     /// Apply the given [`RecVec`] as a tree
     pub fn library_apply_as_tree(
         &mut self,
@@ -456,7 +456,7 @@ impl Model {
         focus_node: Option<String>,
     ) {
         let root_path = msg.id.clone();
-        let root_node = Self::recvec_to_node(msg);
+        let root_node = recvec_to_node(msg);
 
         let old_current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
