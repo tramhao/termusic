@@ -630,14 +630,13 @@ impl Model {
     /// Build & Apply the `Results` Database component table data.
     pub fn database_sync_results(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
-        let mut index = 0;
         for (idx, record) in self.dw.search_results.iter().enumerate() {
             let mut display_name = String::new();
             match self.dw.criteria {
                 SearchCriteria::Playlist => {
                     let path = Path::new(record);
-                    let path_string = path.to_string_lossy().to_string();
-                    let mut vec = path_string.split('/');
+                    let path_str = path.to_string_lossy();
+                    let mut vec = path_str.split('/');
                     if let Some(v1) = vec.next_back() {
                         if let Some(v2) = vec.next_back() {
                             display_name = format!("{v2}/{v1}");
@@ -646,7 +645,7 @@ impl Model {
                 }
                 SearchCriteria::Directory => {
                     let path = Path::new(record);
-                    let path_string = path.to_string_lossy().to_string();
+                    let path_string = path.to_string_lossy();
                     let mut vec = path_string.split('/');
                     if let Some(v1) = vec.next_back() {
                         if let Some(v2) = vec.next_back() {
@@ -662,9 +661,8 @@ impl Model {
                 if idx > 0 {
                     table.add_row();
                 }
-                index += 1;
                 table
-                    .add_col(TextSpan::from(format!("{index}")))
+                    .add_col(TextSpan::from(format!("{}", idx + 1)))
                     .add_col(TextSpan::from(" "))
                     .add_col(TextSpan::from(display_name));
             }
