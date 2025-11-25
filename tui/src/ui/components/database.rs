@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::path::Path;
 use std::time::Duration;
 
+use anyhow::Result;
 use either::Either;
 use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
 use termusiclib::config::SharedTuiSettings;
@@ -591,7 +592,8 @@ impl Matchable for &track_ops::TrackRead {
 }
 
 impl Model {
-    pub fn database_sync_tracks(&mut self) {
+    /// Build & Apply the `Tracks` Database component table data.
+    pub fn database_sync_tracks_results(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.dw.search_tracks.iter().enumerate() {
@@ -624,6 +626,8 @@ impl Model {
 
         // self.playlist_update_title();
     }
+
+    /// Build & Apply the `Results` Database component table data.
     pub fn database_sync_results(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
         let mut index = 0;
@@ -894,7 +898,7 @@ impl Model {
 
         self.dw.search_tracks = result;
 
-        self.database_sync_tracks();
+        self.database_sync_tracks_results();
         self.app.active(&Id::DBListSearchTracks).ok();
     }
 
@@ -917,50 +921,46 @@ impl Model {
         }
     }
 
-    pub fn database_reload(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::DBListCriteria,
-                    Box::new(DBListCriteria::new(
-                        self.config_tui.clone(),
-                        Msg::DataBase(DBMsg::CriteriaBlurDown),
-                        Msg::DataBase(DBMsg::CriteriaBlurUp)
-                    )),
-                    Vec::new()
-                )
-                .is_ok()
-        );
+    /// Mount/Remount the Database search result components.
+    pub fn remount_database_search(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::DBListCriteria,
+            Box::new(DBListCriteria::new(
+                self.config_tui.clone(),
+                Msg::DataBase(DBMsg::CriteriaBlurDown),
+                Msg::DataBase(DBMsg::CriteriaBlurUp),
+            )),
+            Vec::new(),
+        )?;
 
-        assert!(
-            self.app
-                .remount(
-                    Id::DBListSearchResult,
-                    Box::new(DBListSearchResult::new(
-                        self.config_tui.clone(),
-                        Msg::DataBase(DBMsg::SearchResultBlurDown),
-                        Msg::DataBase(DBMsg::SearchResultBlurUp)
-                    )),
-                    Vec::new()
-                )
-                .is_ok()
-        );
-        assert!(
-            self.app
-                .remount(
-                    Id::DBListSearchTracks,
-                    Box::new(DBListSearchTracks::new(
-                        self.config_tui.clone(),
-                        Msg::DataBase(DBMsg::SearchTracksBlurDown),
-                        Msg::DataBase(DBMsg::SearchTracksBlurUp)
-                    )),
-                    Vec::new()
-                )
-                .is_ok()
-        );
+        self.app.remount(
+            Id::DBListSearchResult,
+            Box::new(DBListSearchResult::new(
+                self.config_tui.clone(),
+                Msg::DataBase(DBMsg::SearchResultBlurDown),
+                Msg::DataBase(DBMsg::SearchResultBlurUp),
+            )),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::DBListSearchTracks,
+            Box::new(DBListSearchTracks::new(
+                self.config_tui.clone(),
+                Msg::DataBase(DBMsg::SearchTracksBlurDown),
+                Msg::DataBase(DBMsg::SearchTracksBlurUp),
+            )),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
+    /// Reload database component data.
+    pub fn database_reload(&mut self) {
+        self.remount_database_search().unwrap();
 
         self.dw.reset_search_results();
-        self.database_sync_tracks();
+        self.database_sync_tracks_results();
         self.database_sync_results();
     }
 

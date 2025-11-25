@@ -24,7 +24,7 @@ mod xywh;
 
 // -- export
 pub use config_editor::*;
-pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
+pub use database::DBListCriteria;
 pub use footer::Footer;
 pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
