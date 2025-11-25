@@ -1,5 +1,4 @@
 use std::{
-    borrow::Cow,
     path::{Path, PathBuf},
     str::FromStr,
     time::Duration,
@@ -311,11 +310,6 @@ impl TETrack {
         if let Some(genre) = self.genre.clone() {
             tag.set_genre(genre);
         }
-    }
-
-    /// Get the path id as a string
-    pub fn path_as_id_str(&self) -> Cow<'_, str> {
-        self.path.to_string_lossy()
     }
 
     /// Read metadata from a file with all the metadata that can be handled.

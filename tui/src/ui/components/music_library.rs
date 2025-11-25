@@ -17,7 +17,8 @@ use tuirealm::{
 use crate::ui::ids::Id;
 use crate::ui::model::{DownloadTracker, Model, TxToMain, UserEvent};
 use crate::ui::msg::{
-    DeleteConfirmMsg, GSMsg, LIMsg, LIReloadData, Msg, PLMsg, RecVec, TEMsg, YSMsg,
+    DeleteConfirmMsg, GSMsg, LIMsg, LINodeReadySub, LIReloadData, LIReloadPathData, Msg, PLMsg,
+    RecVec, TEMsg, YSMsg,
 };
 use crate::ui::tui_cmd::TuiCmd;
 use crate::utils::get_pin_yin;
@@ -135,6 +136,8 @@ impl MusicLibrary {
     /// Trigger a load with a message to change the tree root to the given path.
     ///
     /// This will make the given path(which will be the root node) the focused node.
+    ///
+    /// This will send a [`LIMsg::TreeNodeReady`] and change the root to `path`.
     fn trigger_load_stepinto<P: Into<PathBuf>>(&self, path: P) {
         library_scan(
             self.download_tracker.clone(),
@@ -148,8 +151,11 @@ impl MusicLibrary {
     /// Trigger a load with a message to change the tree root to the given path.
     ///
     /// This will make the current tree root be the new focused node.
+    ///
+    /// This will send a [`LIMsg::TreeNodeReady`] and change the root to `path`.
     fn trigger_load_with_focus<P: Into<PathBuf>>(&self, scan_path: P, focus_node: Option<String>) {
         let path = scan_path.into();
+        // TODO: investigate callers if "trigger_subload_with_focus" should be used instead
         library_scan(
             self.download_tracker.clone(),
             path,
@@ -157,6 +163,17 @@ impl MusicLibrary {
             self.tx_to_main.clone(),
             focus_node,
         );
+    }
+
+    /// Trigger a load for the given path, with the given depth.
+    ///
+    /// This will send a [`LIMsg::TreeNodeReadySub`] and does not change the root, unless the
+    /// given path *is* the root.
+    fn trigger_subload_with_focus(&self, path: PathBuf, depth: ScanDepth) {
+        let tx = self.tx_to_main.clone();
+        library_scan_cb(self.download_tracker.clone(), path, depth, move |vec| {
+            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub(vec))));
+        });
     }
 
     /// Store the currently selected node as yanked (for pasting with [`Self::paste`]).
@@ -257,11 +274,147 @@ impl MusicLibrary {
         Msg::ForceRedraw
     }
 
+    /// Truncate `node`'s path to `root_node`'s path, then split `node`'s path by the separator, iterate over the non-empty components.
+    ///
+    /// This assumes `node` contains `root_node`!
+    fn split_components_root<'a>(root_node: &str, node: &'a str) -> impl Iterator<Item = &'a str> {
+        node[root_node.len()..]
+            .split(std::path::MAIN_SEPARATOR)
+            .filter(|v| !v.is_empty())
+    }
+
+    /// Handle reloading of the given path, potentially without changing root, but also change focus.
+    ///
+    /// If necessary, load all paths in-between.
+    fn handle_reload_at(&mut self, data: LIReloadPathData) {
+        let path = data.0;
+        let path_str = path.to_string_lossy();
+        let root_node = self.component.tree().root();
+
+        if !path_str.starts_with(root_node.id()) {
+            debug!("Given path is outside of tree root, not loading!");
+            return;
+        }
+
+        // because of the if above, we know the node is at least within the tree
+        // so it is safe to use the root as the initial starting node.
+
+        // this contains one of 3:
+        // - the node itself
+        // - the root node
+        // - the nearest directory node
+        let mut nearest_node = root_node;
+        let mut nearest_match = 0;
+
+        let components_between_root_and_path: Vec<&str> =
+            Self::split_components_root(root_node.id(), &path_str).collect();
+
+        for node in RecursiveNodeIter::new(root_node) {
+            // exact match found, no need to further iterate
+            if node.id().as_str() == path_str {
+                nearest_node = node;
+                break;
+            }
+
+            for (idx, comp) in Self::split_components_root(root_node.id(), node.id()).enumerate() {
+                let Some(gotten) = components_between_root_and_path.get(idx) else {
+                    break;
+                };
+
+                if *gotten == comp && idx > nearest_match {
+                    nearest_match = idx;
+                    nearest_node = node;
+                }
+            }
+        }
+
+        trace!(
+            "found nearest match: {:#?}",
+            (&path_str, nearest_match, nearest_node.id())
+        );
+
+        let depth = components_between_root_and_path
+            .len()
+            .saturating_sub(nearest_match);
+        let depth = u32::try_from(depth).unwrap_or_default();
+
+        self.trigger_subload_with_focus(
+            PathBuf::from(nearest_node.id()),
+            ScanDepth::Limited(depth),
+        );
+    }
+
+    /// Apply the given data at the path the data is, potentially without changing root.
+    ///
+    /// This will replace the root if the given data is starting at the root path.
+    fn handle_ready_sub(&mut self, data: LINodeReadySub) -> Option<Msg> {
+        let vec = data.0;
+        let path_str = vec.id.to_string_lossy().to_string();
+
+        let tree_mut = self.component.tree_mut().root_mut();
+
+        if tree_mut.id() == &path_str {
+            // the given data *is* the root, so we have to replace the whole tree
+            *tree_mut = recvec_to_node(vec);
+        } else {
+            let Some(parent_node) = self.component.tree_mut().root_mut().parent_mut(&path_str)
+            else {
+                warn!(
+                    "Ready node ({}) not found in tree ({})!",
+                    vec.id.display(),
+                    self.component.tree().root().id()
+                );
+                return None;
+            };
+
+            let mut new_node = Some(recvec_to_node(vec));
+
+            let children: Vec<Node<String>> = parent_node
+                .iter()
+                .map(|node| {
+                    if node.id() == &path_str {
+                        // we can gurantee the node only exists once in the tree
+                        // if it somehow is not the case, a panic is good
+                        new_node.take().unwrap()
+                    } else {
+                        node.clone()
+                    }
+                })
+                .collect();
+
+            // there is no function in "orange-trees" to replace a node, only a node's value (but nots its children)
+            parent_node.clear();
+            for child in children {
+                parent_node.add_child(child);
+            }
+
+            // Opening / selecting can only be done via commands for some reason,
+            // because this is the case, we only handle the case while the selected node is still the same
+            // to open it, if possible.
+            if self
+                .component
+                .tree_state()
+                .selected()
+                .is_some_and(|v| v == path_str)
+            {
+                self.component.perform(Cmd::Custom(TREE_CMD_OPEN));
+            }
+            // TODO: change focus
+        }
+
+        Some(Msg::ForceRedraw)
+    }
+
     /// Handle all custom messages.
     fn handle_user_events(&mut self, ev: LIMsg) -> Option<Msg> {
         // handle subscriptions
         match ev {
             LIMsg::Reload(data) => Some(self.handle_full_reload(data)),
+            LIMsg::ReloadPath(data) => {
+                self.handle_reload_at(data);
+                None
+            }
+            LIMsg::TreeNodeReadySub(data) => self.handle_ready_sub(data),
             _ => None,
         }
     }
@@ -575,12 +728,32 @@ impl Model {
 
     /// Get all subscriptions for the [`MusicLibrary`] Component.
     fn library_subs() -> Vec<Sub<Id, UserEvent>> {
-        vec![Sub::new(
-            SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::Reload(
-                LIReloadData::default(),
-            )))),
-            SubClause::Always,
-        )]
+        let bogus_recvec = RecVec {
+            id: PathBuf::new(),
+            value: String::new(),
+            children: Vec::new(),
+        };
+        vec![
+            Sub::new(
+                SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::Reload(
+                    LIReloadData::default(),
+                )))),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::ReloadPath(
+                    // bogus data
+                    LIReloadPathData::default(),
+                )))),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
+                    LINodeReadySub(bogus_recvec),
+                )))),
+                SubClause::Always,
+            ),
+        ]
     }
 
     /// Execute [`library_scan`] from a `&self` instance.
@@ -602,22 +775,32 @@ impl Model {
         Tree::new(Node::new("/dev/null".to_string(), "Loading...".to_string()))
     }
 
-    /// Reload the library with the given `node` as a focus, also starts a new database sync worker for the current path.
-    pub fn library_reload_with_node_focus(&mut self, node: Option<String>) {
-        if let Err(err) = self.db.scan_path(
-            self.library.tree_path.as_path(),
-            &self.config_server.read_recursive(),
-            false,
-        ) {
-            error!(
-                "Error scanning path {:#?}: {err:#?}",
-                self.library.tree_path.display()
-            );
+    /// Reload the given path in the library and focus that node.
+    ///
+    /// Also re-indexes the path for the database if it is part of a music root.
+    ///
+    /// The input path is expected to be absolute.
+    #[expect(clippy::unnecessary_debug_formatting)]
+    pub fn library_reload_and_focus<P: Into<PathBuf>>(&mut self, path: P) {
+        let path = path.into();
+        if !path.is_absolute() {
+            debug!("library reload, given path is not absolute! {path:#?}");
         }
-        self.database_reload();
+
+        let config_read = self.config_server.read_recursive();
+        for dir in &self.config_server.read().settings.player.music_dirs {
+            let absolute_dir = shellexpand::path::tilde(dir);
+
+            if path.starts_with(absolute_dir) {
+                if let Err(err) = self.db.scan_path(&path, &config_read, false) {
+                    error!("Error scanning path {:#?}: {err:#?}", path.display());
+                }
+            }
+        }
+
         let _ = self
             .tx_to_main
-            .send(Msg::Library(LIMsg::Reload(LIReloadData(None, node))));
+            .send(Msg::Library(LIMsg::ReloadPath(LIReloadPathData(path))));
     }
 
     /// Apply the given [`RecVec`] as a tree
@@ -796,5 +979,35 @@ impl Model {
         res.context("Error while saving config")?;
 
         Ok(())
+    }
+}
+
+/// This exists as `orange-trees` does not have a recursive iter.
+///
+/// This is a depth-first iterator.
+struct RecursiveNodeIter<'a> {
+    stack: Vec<&'a Node<String>>,
+}
+
+impl<'a> RecursiveNodeIter<'a> {
+    /// Create a new iterator with the children from the given node.
+    ///
+    /// Does *not* iterate over the node itself
+    fn new(start_node: &'a Node<String>) -> Self {
+        Self {
+            stack: start_node.iter().collect(),
+        }
+    }
+}
+
+impl<'a> Iterator for RecursiveNodeIter<'a> {
+    type Item = &'a Node<String>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.stack.pop()?;
+
+        self.stack.extend(next.iter());
+
+        Some(next)
     }
 }

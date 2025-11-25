@@ -176,10 +176,40 @@ impl PartialEq for LIReloadData {
     }
 }
 
+/// Data for [`LIMsg::ReloadPath`].
+///
+/// The path given is the one that is reloaded and also focused.
+#[derive(Clone, Debug, Eq, Default)]
+pub struct LIReloadPathData(pub PathBuf);
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LIReloadPathData {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+/// Data for [`LIMsg::TreeNodeReadySub`].
+///
+/// The path given is the one that is reloaded and also focused.
+#[derive(Clone, Debug, Eq)]
+pub struct LINodeReadySub(pub RecVec<PathBuf, String>);
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LINodeReadySub {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
     /// Run a full reload of the current tree. This will clear the tree until new data is available.
     Reload(LIReloadData),
+    /// Reload the given path and focus that node (also open everything necessary).
+    ///
+    /// This does not change the tree root.
+    ReloadPath(LIReloadPathData),
 
     TreeBlur,
     PlaylistRunDelete,
@@ -198,6 +228,10 @@ pub enum LIMsg {
     ///
     /// `(Tree, FocusNode)`
     TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
+    /// A requested node is ready to be reloaded within the current tree.
+    ///
+    /// Does not replace the tree root.
+    TreeNodeReadySub(LINodeReadySub),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

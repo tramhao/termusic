@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::{Result, anyhow};
@@ -657,6 +657,8 @@ impl Model {
 
             // handled by the component
             LIMsg::Reload(_data) => (),
+            LIMsg::ReloadPath(_data) => (),
+            LIMsg::TreeNodeReadySub(_vec) => (),
         }
     }
 
@@ -744,10 +746,9 @@ impl Model {
                 );
             }
             YTDLMsg::Completed(_url, file) => {
-                if self.download_tracker.visible() {
-                    return;
+                if let Some(path_str) = file {
+                    self.library_reload_and_focus(PathBuf::from(path_str));
                 }
-                self.library_reload_with_node_focus(file);
             }
             YTDLMsg::Err(url, title, error_message) => {
                 self.download_tracker.decrease_one(&url);
@@ -1057,7 +1058,7 @@ impl Model {
                 self.umount_save_playlist_confirm();
             }
             SavePlaylistMsg::ConfirmCloseOk(filename) => {
-                if let Err(e) = self.playlist_save_m3u(Path::new(&filename)) {
+                if let Err(e) = self.playlist_save_m3u(PathBuf::from(filename)) {
                     self.mount_error_popup(e.context("save m3u playlist"));
                 }
                 self.umount_save_playlist_confirm();
