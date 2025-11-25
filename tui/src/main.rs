@@ -48,9 +48,16 @@ pub struct CombinedSettings {
 }
 
 fn main() -> Result<()> {
-    let res = actual_main();
+    // not using the macro due to <https://github.com/tokio-rs/console/discussions/651> shutdown issue on windows
+    let runtime =
+        tokio::runtime::Runtime::new().expect("Expected the Tokio Runtime to start correctly");
+    let res = runtime.block_on(actual_main());
 
-    trace!("Tokio Exited");
+    trace!("Shutting down the runtime with a timeout");
+    let before = Instant::now();
+    runtime.shutdown_timeout(Duration::from_secs(5));
+
+    trace!("Tokio Exited after {:#?}", before.elapsed());
 
     // print error to the log and then throw it
     if let Err(err) = res {
@@ -64,7 +71,7 @@ fn main() -> Result<()> {
 pub static SERVER_PID: OnceLock<Pid> = OnceLock::new();
 
 /// Handles CLI args, potentially starts termusic-server, then runs UI loop
-#[tokio::main]
+// #[tokio::main]
 async fn actual_main() -> Result<()> {
     let args = cli::Args::parse();
     let mut logger_handle = logger::setup(&args);
