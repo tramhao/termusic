@@ -238,28 +238,40 @@ impl MusicLibrary {
 
         Msg::DeleteConfirm(DeleteConfirmMsg::Show(path, focus_node_after))
     }
+
+    /// Handle a full reload / potential change of the current tree root.
+    ///
+    /// Also changes focus, if requested.
+    fn handle_full_reload(&mut self, data: LIReloadData) -> Msg {
+        let path = data
+            .0
+            .unwrap_or_else(|| PathBuf::from(self.component.tree().root().id()));
+        let focus_node = data
+            .1
+            .unwrap_or_else(|| self.component.tree_state().selected().unwrap().to_string());
+
+        *self.component.tree_mut() = Model::loading_tree();
+
+        self.trigger_load_with_focus(path, Some(focus_node));
+
+        Msg::ForceRedraw
+    }
+
+    /// Handle all custom messages.
+    fn handle_user_events(&mut self, ev: LIMsg) -> Option<Msg> {
+        // handle subscriptions
+        match ev {
+            LIMsg::Reload(data) => Some(self.handle_full_reload(data)),
+            _ => None,
+        }
+    }
 }
 
 impl Component<Msg, UserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
-            // handle subscriptions
-            if let LIMsg::Reload(data) = ev {
-                let path = data
-                    .0
-                    .unwrap_or_else(|| PathBuf::from(self.component.tree().root().id()));
-                let focus_node = data
-                    .1
-                    .unwrap_or_else(|| self.component.tree_state().selected().unwrap().to_string());
-
-                *self.component.tree_mut() = Model::loading_tree();
-
-                self.trigger_load_with_focus(path, Some(focus_node));
-
-                return Some(Msg::ForceRedraw);
-            }
-            return None;
+            return self.handle_user_events(ev);
         }
 
         let config = self.config.clone();
