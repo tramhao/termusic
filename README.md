@@ -81,6 +81,7 @@ Note that using non-default features might increase the MSRV.
 |    `libdbus-1-dev`    |       `dbus`        |    X     |     unknown     |                     |                  MPRIS media control                  |          |
 |   `libasound2-dev`    |     `alsa-lib`      |    X     |     unknown     |                     |                     ALSA headers                      |          |
 |       `yt-dlp`        |      `yt-dlp`       |          |                 |                     |                 Download some tracks                  |          |
+|       `ffmpeg`        |      `ffmpeg`       |          |                 |                     |             Post-Processing for `yt-dlp`              |          |
 |         `mpv`         |        `mpv`        |          |                 |        `mpv`        |                      MPV Backend                      |          |
 |      `gstreamer`      |     `gstreamer`     |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
 |       `libopus`       |      `libopus`      |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
@@ -97,7 +98,7 @@ All the packages here can be installed via various sources, for ease of install 
 | `Microsoft.VisualStudio.BuildTools` |                                           |    X     |        X        |                     |           General Windows (C++) build tools           |          |
 |          `Google.Protobuf`          |                                           |    X     |        X        |                     | communication protocol between server and client(tui) |          |
 |              `yt-dlp`               |                                           |          |                 |                     |                 Download some tracks                  |          |
-|              `ffmpeg`               |                                           |    X     |                 |                     |                 Encode downloaded tracks              |
+|              `ffmpeg`               |                                           |          |                 |                     |             Post-Processing for `yt-dlp`              |          |
 |               unknown               |                                           |          |                 |        `mpv`        |                      MPV Backend                      |          |
 |               unknown               |                                           |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
 |             unavailable             | [libopus official site][libopus-download] |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
