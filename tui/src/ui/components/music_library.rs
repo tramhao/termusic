@@ -137,10 +137,10 @@ impl MusicLibrary {
     /// This will make the given path(which will be the root node) the focused node.
     fn trigger_load_stepinto<P: Into<PathBuf>>(&self, path: P) {
         library_scan(
-            self.tx_to_main.clone(),
             self.download_tracker.clone(),
             path,
             ScanDepth::Limited(2),
+            self.tx_to_main.clone(),
             None,
         );
     }
@@ -151,10 +151,10 @@ impl MusicLibrary {
     fn trigger_load_with_focus<P: Into<PathBuf>>(&self, scan_path: P, focus_node: Option<String>) {
         let path = scan_path.into();
         library_scan(
-            self.tx_to_main.clone(),
             self.download_tracker.clone(),
             path,
             ScanDepth::Limited(2),
+            self.tx_to_main.clone(),
             focus_node,
         );
     }
@@ -455,25 +455,42 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
 /// Execute a library scan on a different thread.
 ///
-/// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
-pub fn library_scan<P: Into<PathBuf>>(
-    tx: TxToMain,
+/// Executes [`library_dir_tree`] on a different thread and calls `cb` on finish.
+pub fn library_scan_cb<P: Into<PathBuf>, F>(
     download_tracker: DownloadTracker,
     path: P,
     depth: ScanDepth,
-    focus_node: Option<String>,
-) {
+    cb: F,
+) where
+    F: FnOnce(RecVec<PathBuf, String>) + Send + 'static,
+{
     let path = path.into();
     std::thread::Builder::new()
         .name("library tree scan".to_string())
         .spawn(move || {
             download_tracker.increase_one(path.to_string_lossy());
-            let root_node = library_dir_tree(&path, depth);
+            let vec = library_dir_tree(&path, depth);
 
-            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
+            cb(vec);
+            // let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
             download_tracker.decrease_one(&path.to_string_lossy());
         })
         .expect("Failed to spawn thread");
+}
+
+/// Execute a library scan on a different thread.
+///
+/// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
+fn library_scan<P: Into<PathBuf>>(
+    download_tracker: DownloadTracker,
+    path: P,
+    depth: ScanDepth,
+    tx: TxToMain,
+    focus_node: Option<String>,
+) {
+    library_scan_cb(download_tracker, path, depth, move |vec| {
+        let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(vec, focus_node)));
+    });
 }
 
 /// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
@@ -554,14 +571,16 @@ impl Model {
         )]
     }
 
-    /// Execute [`Self::library_scan`] from a `&self` instance.
+    /// Execute [`library_scan`] from a `&self` instance.
+    ///
+    /// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
     #[inline]
     pub fn library_scan_dir<P: Into<PathBuf>>(&self, path: P, focus_node: Option<String>) {
         library_scan(
-            self.tx_to_main.clone(),
             self.download_tracker.clone(),
             path,
             ScanDepth::Limited(2),
+            self.tx_to_main.clone(),
             focus_node,
         );
     }

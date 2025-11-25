@@ -193,6 +193,9 @@ pub enum LIMsg {
     RemoveRoot(PathBuf),
 
     /// A requested node is ready from loading.
+    ///
+    /// Replaces the tree root.
+    ///
     /// `(Tree, FocusNode)`
     TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
 }
