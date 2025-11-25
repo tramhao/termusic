@@ -114,13 +114,22 @@ impl UI {
     /// Quit the server, if any is found with the proper name.
     // TODO: send the server a message to quit instead of a signal.
     fn quit_server() {
+        #[cfg(windows)]
+        const SERVER_EXE: &str = "termusic-server.exe";
+        #[cfg(not(windows))]
+        const SERVER_EXE: &str = "termusic-server";
+        #[cfg(windows)]
+        const TUI_EXE: &str = "termusic.exe";
+        #[cfg(not(windows))]
+        const TUI_EXE: &str = "termusic";
+
         let mut system = System::new();
         system.refresh_all();
         let mut target = None;
         let mut clients = 0;
         for proc in system.processes().values() {
             if let Some(exe) = proc.name().to_str() {
-                if exe == "termusic-server" {
+                if exe == SERVER_EXE {
                     if &proc.pid() == crate::SERVER_PID.get().unwrap_or(&Pid::from_u32(0))
                         || target.is_none()
                     {
@@ -132,14 +141,14 @@ impl UI {
                 match proc.parent() {
                     Some(s) => {
                         if let Some(parent) = system.processes().get(&s) {
-                            if parent.name() == "termusic" {
+                            if parent.name() == TUI_EXE {
                                 parent_is_termusic = true;
                             }
                         }
                     }
                     None => parent_is_termusic = false,
                 }
-                if exe == "termusic" && !parent_is_termusic {
+                if exe == TUI_EXE && !parent_is_termusic {
                     clients += 1;
                 }
             }

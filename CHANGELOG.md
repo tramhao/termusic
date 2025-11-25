@@ -15,6 +15,7 @@
 - Fix(tui): change the progressbar to use less-than-full blocks for smoother display.
 - Fix(tui): change Database `Playlist` search to work on all music roots, instead of current library root.
 - Fix(tui): change tokio runtime shutdown to have a timeout. This fixes infinitely stuck process on windows.
+- Fix(tui): correctly kill the server on windows systems if config option `behavior.quit_server_on_exit` is enabled.
 - Fix(server): on rusty backend, update symphonia to fix various issues.
 - Fix(server): on rusty backend, update `rusty-libopus` to dynamic link without custom environment variable.
 - Fix(server): dont panic if backend in config is unavailable when overridden by cli argument.

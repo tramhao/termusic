@@ -71,19 +71,41 @@ Note that using non-default features might increase the MSRV.
 
 #### Dependencies
 
+##### Linux
+
 | Package name (ubuntu) | Package name (arch) | Required | Build-time-only |       Feature       |                      Description                      |   MSRV   |
 | :-------------------: | :-----------------: | :------: | :-------------: | :-----------------: | :---------------------------------------------------: | :------: |
 |         `git`         |        `git`        |    X     |        X        |                     |                    version control                    |          |
 |        `clang`        |       `clang`       |    X     |        X        |                     |       General Build tools (and sqlite compile)        |          |
 |  `protobuf-compiler`  |     `protobuf`      |    X     |        X        |                     | communication protocol between server and client(tui) |          |
 |    `libdbus-1-dev`    |       `dbus`        |    X     |     unknown     |                     |                  MPRIS media control                  |          |
-|   `libasound2-dev`    |        `alsa-lib`         |    X     |     unknown     |                     |                     ALSA headers                      |          |
+|   `libasound2-dev`    |     `alsa-lib`      |    X     |     unknown     |                     |                     ALSA headers                      |          |
 |       `yt-dlp`        |      `yt-dlp`       |          |                 |                     |                 Download some tracks                  |          |
 |         `mpv`         |        `mpv`        |          |                 |        `mpv`        |                      MPV Backend                      |          |
 |      `gstreamer`      |     `gstreamer`     |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
 |       `libopus`       |      `libopus`      |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
 |      `libsixel`       |     `libsixel`      |    X     |                 | `cover-viuer-sixel` |                Sixel protocol support                 |          |
 |     `ueberzugpp`      |    `ueberzugpp`     |          |                 |  `cover-ueberzug`   |               Ueberzug protocol support               |          |
+
+#### Windows
+
+All the packages here can be installed via various sources, for ease of install the `winget` package name is listed.
+
+|        Package name (winget)        |            Alternative Source             | Required | Build-time-only |       Feature       |                      Description                      |   MSRV   |
+| :---------------------------------: | :---------------------------------------: | :------: | :-------------: | :-----------------: | :---------------------------------------------------: | :------: |
+|              `Git.Git`              |                                           |    X     |        X        |                     |                    version control                    |          |
+| `Microsoft.VisualStudio.BuildTools` |                                           |    X     |        X        |                     |           General Windows (C++) build tools           |          |
+|          `Google.Protobuf`          |                                           |    X     |        X        |                     | communication protocol between server and client(tui) |          |
+|              `yt-dlp`               |                                           |          |                 |                     |                 Download some tracks                  |          |
+|               unknown               |                                           |          |                 |        `mpv`        |                      MPV Backend                      |          |
+|               unknown               |                                           |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
+|             unavailable             | [libopus official site][libopus-download] |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
+|             unavailable             |    [libsixel source][libsixel-source]     |    X     |                 | `cover-viuer-sixel` |                Sixel protocol support                 |          |
+
+- See [MSVC Prerequisites: only the required components](https://rust-lang.github.io/rustup/installation/windows-msvc.html#installing-only-the-required-components-optional) for a minimal install
+
+[libopus-download]: <https://opus-codec.org/downloads/> "Needs to be manually compiled for windows"
+[libsixel-source]: <https://github.com/saitoha/libsixel> "Needs to be manually compiled for windows"
 
 #### Backends
 
