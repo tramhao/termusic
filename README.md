@@ -97,6 +97,7 @@ All the packages here can be installed via various sources, for ease of install 
 | `Microsoft.VisualStudio.BuildTools` |                                           |    X     |        X        |                     |           General Windows (C++) build tools           |          |
 |          `Google.Protobuf`          |                                           |    X     |        X        |                     | communication protocol between server and client(tui) |          |
 |              `yt-dlp`               |                                           |          |                 |                     |                 Download some tracks                  |          |
+|              `ffmpeg`               |                                           |    X     |                 |                     |                 Encode downloaded tracks              |
 |               unknown               |                                           |          |                 |        `mpv`        |                      MPV Backend                      |          |
 |               unknown               |                                           |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
 |             unavailable             | [libopus official site][libopus-download] |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
