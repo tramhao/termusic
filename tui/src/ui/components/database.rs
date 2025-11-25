@@ -636,21 +636,17 @@ impl Model {
                 SearchCriteria::Playlist => {
                     let path = Path::new(record);
                     let path_str = path.to_string_lossy();
-                    let mut vec = path_str.split('/');
-                    if let Some(v1) = vec.next_back() {
-                        if let Some(v2) = vec.next_back() {
-                            display_name = format!("{v2}/{v1}");
-                        }
+                    let mut vec = path_str.split('/').rev();
+                    if let (Some(v1), Some(v2)) = (vec.next(), vec.next()) {
+                        display_name = format!("{v2}/{v1}");
                     }
                 }
                 SearchCriteria::Directory => {
                     let path = Path::new(record);
                     let path_string = path.to_string_lossy();
-                    let mut vec = path_string.split('/');
-                    if let Some(v1) = vec.next_back() {
-                        if let Some(v2) = vec.next_back() {
-                            display_name = format!("{v2}/{v1}/");
-                        }
+                    let mut vec = path_string.split('/').rev();
+                    if let (Some(v1), Some(v2)) = (vec.next(), vec.next()) {
+                        display_name = format!("{v2}/{v1}/");
                     }
                 }
                 _ => {
