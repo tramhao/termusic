@@ -651,14 +651,12 @@ impl Model {
                     self.mount_error_popup(e.context("library remove root"));
                 }
             }
-            LIMsg::TreeNodeReady(vec, focus_node) => {
-                self.library_apply_as_tree(vec, focus_node);
-            }
 
             // handled by the component
             LIMsg::Reload(_data) => (),
             LIMsg::ReloadPath(_data) => (),
-            LIMsg::TreeNodeReadySub(_vec) => (),
+            LIMsg::TreeNodeReady(_data) => (),
+            LIMsg::TreeNodeReadySub(_data) => (),
         }
     }
 

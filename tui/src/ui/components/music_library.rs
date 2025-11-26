@@ -5,20 +5,19 @@ use anyhow::{Context, Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE, Tree, TreeView};
+use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, Tree, TreeView};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue, Sub, SubClause,
-    SubEventClause,
+    Component, Event, MockComponent, State, StateValue, Sub, SubClause, SubEventClause,
 };
 
 use crate::ui::ids::Id;
 use crate::ui::model::{DownloadTracker, Model, TxToMain, UserEvent};
 use crate::ui::msg::{
-    DeleteConfirmMsg, GSMsg, LIMsg, LINodeReadySub, LIReloadData, LIReloadPathData, Msg, PLMsg,
-    RecVec, TEMsg, YSMsg,
+    DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData, LIReloadPathData,
+    Msg, PLMsg, RecVec, TEMsg, YSMsg,
 };
 use crate::ui::tui_cmd::TuiCmd;
 use crate::utils::get_pin_yin;
@@ -354,6 +353,31 @@ impl MusicLibrary {
         );
     }
 
+    /// Apply the given data as the root of the tree, resetting the state of the tree.
+    ///
+    /// This will always replace the root of the tree.
+    fn handle_ready(&mut self, data: LINodeReady) -> Msg {
+        let vec = data.0;
+        let initial_node = data.1;
+
+        let initial_node =
+            initial_node.or(self.component.tree_state().selected().map(String::from));
+
+        let tree = Tree::new(recvec_to_node(vec));
+
+        // There is no "clear" method for state in Treeview currently, so we have to
+        // entirely replace the Treeview component. The simplest way is to just replace via a new instance.
+        *self = Self::new(
+            &tree,
+            initial_node,
+            self.config.clone(),
+            self.tx_to_main.clone(),
+            self.download_tracker.clone(),
+        );
+
+        Msg::ForceRedraw
+    }
+
     /// Apply the given data at the path the data is, potentially without changing root.
     ///
     /// This will replace the root if the given data is starting at the root path.
@@ -516,6 +540,7 @@ impl MusicLibrary {
                 self.handle_reload_at(data);
                 None
             }
+            LIMsg::TreeNodeReady(data) => Some(self.handle_ready(data)),
             LIMsg::TreeNodeReadySub(data) => self.handle_ready_sub(data),
             _ => None,
         }
@@ -756,7 +781,9 @@ fn library_scan<P: Into<PathBuf>>(
     focus_node: Option<String>,
 ) {
     library_scan_cb(download_tracker, path, depth, move |vec| {
-        let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(vec, focus_node)));
+        let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(LINodeReady(
+            vec, focus_node,
+        ))));
     });
 }
 
@@ -850,6 +877,12 @@ impl Model {
                 SubClause::Always,
             ),
             Sub::new(
+                SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReady(
+                    LINodeReady(bogus_recvec.clone(), None),
+                )))),
+                SubClause::Always,
+            ),
+            Sub::new(
                 SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
                     LINodeReadySub(bogus_recvec, PathBuf::new()),
                 )))),
@@ -903,44 +936,6 @@ impl Model {
         let _ = self
             .tx_to_main
             .send(Msg::Library(LIMsg::ReloadPath(LIReloadPathData(path))));
-    }
-
-    /// Apply the given [`RecVec`] as a tree
-    pub fn library_apply_as_tree(
-        &mut self,
-        msg: RecVec<PathBuf, String>,
-        focus_node: Option<String>,
-    ) {
-        let root_node = recvec_to_node(msg);
-
-        let old_current_node = match self.app.state(&Id::Library).ok().unwrap() {
-            State::One(StateValue::String(id)) => Some(id),
-            _ => None,
-        };
-
-        let tree = Tree::new(root_node);
-
-        // remount preserves focus
-        let _ = self.app.remount(
-            Id::Library,
-            Box::new(MusicLibrary::new(
-                &tree,
-                old_current_node,
-                self.config_tui.clone(),
-                self.tx_to_main.clone(),
-                self.download_tracker.clone(),
-            )),
-            Vec::new(),
-        );
-
-        // focus the specified node
-        if let Some(id) = focus_node {
-            let _ = self.app.attr(
-                &Id::Library,
-                Attribute::Custom(TREE_INITIAL_NODE),
-                AttrValue::String(id),
-            );
-        }
     }
 
     /// Show a deletion confirmation for the currently selected node.

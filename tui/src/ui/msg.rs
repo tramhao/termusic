@@ -189,6 +189,21 @@ impl PartialEq for LIReloadPathData {
     }
 }
 
+/// Data for [`LIMsg::TreeNodeReady`].
+///
+/// The path given is the one that is reloaded and also optionally focused.
+///
+/// Contains: `vec_data, focus_node`
+#[derive(Clone, Debug, Eq)]
+pub struct LINodeReady(pub RecVec<PathBuf, String>, pub Option<String>);
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LINodeReady {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
 /// Data for [`LIMsg::TreeNodeReadySub`].
 ///
 /// The path given is the one that is reloaded and also focused.
@@ -227,9 +242,7 @@ pub enum LIMsg {
     /// A requested node is ready from loading.
     ///
     /// Replaces the tree root.
-    ///
-    /// `(Tree, FocusNode)`
-    TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
+    TreeNodeReady(LINodeReady),
     /// A requested node is ready to be reloaded within the current tree.
     ///
     /// Does not replace the tree root.
