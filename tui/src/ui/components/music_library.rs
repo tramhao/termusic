@@ -510,7 +510,9 @@ impl MusicLibrary {
 
         loop {
             if max_iters == 0 {
-                debug!("overflow");
+                error!(
+                    "Focus change logic has consumed too many steps. This is a BUG, please report it with the steps that were taken!"
+                );
                 break;
             }
 
