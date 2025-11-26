@@ -201,6 +201,21 @@ pub struct LINodeReady {
     pub focus_node: Option<String>,
 }
 
+/// Data returned from this should not be passed around.
+impl Default for LINodeReady {
+    fn default() -> Self {
+        let bogus_recvec = RecVec {
+            id: PathBuf::new(),
+            value: String::new(),
+            children: Vec::new(),
+        };
+        Self {
+            vec: bogus_recvec,
+            focus_node: None,
+        }
+    }
+}
+
 /// `PartialEq` is only used for subscriptions.
 impl PartialEq for LINodeReady {
     fn eq(&self, _other: &Self) -> bool {
@@ -217,6 +232,21 @@ impl PartialEq for LINodeReady {
 pub struct LINodeReadySub {
     pub vec: RecVec<PathBuf, String>,
     pub focus_node: PathBuf,
+}
+
+/// Data returned from this should not be passed around.
+impl Default for LINodeReadySub {
+    fn default() -> Self {
+        let bogus_recvec = RecVec {
+            id: PathBuf::new(),
+            value: String::new(),
+            children: Vec::new(),
+        };
+        Self {
+            vec: bogus_recvec,
+            focus_node: PathBuf::new(),
+        }
+    }
 }
 
 /// `PartialEq` is only used for subscriptions.

@@ -859,11 +859,6 @@ impl Model {
 
     /// Get all subscriptions for the [`MusicLibrary`] Component.
     fn library_subs() -> Vec<Sub<Id, UserEvent>> {
-        let bogus_recvec = RecVec {
-            id: PathBuf::new(),
-            value: String::new(),
-            children: Vec::new(),
-        };
         vec![
             Sub::new(
                 SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::Reload(
@@ -873,26 +868,19 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::ReloadPath(
-                    // bogus data
                     LIReloadPathData::default(),
                 )))),
                 SubClause::Always,
             ),
             Sub::new(
                 SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReady(
-                    LINodeReady {
-                        vec: bogus_recvec.clone(),
-                        focus_node: None,
-                    },
+                    LINodeReady::default(),
                 )))),
                 SubClause::Always,
             ),
             Sub::new(
                 SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
-                    LINodeReadySub {
-                        vec: bogus_recvec,
-                        focus_node: PathBuf::new(),
-                    },
+                    LINodeReadySub::default(),
                 )))),
                 SubClause::Always,
             ),
