@@ -183,6 +183,7 @@ impl PartialEq for LIReloadData {
 #[derive(Clone, Debug, Eq, Default)]
 pub struct LIReloadPathData {
     pub path: PathBuf,
+    pub change_focus: bool,
 }
 
 /// `PartialEq` is only used for subscriptions.
@@ -226,12 +227,10 @@ impl PartialEq for LINodeReady {
 /// Data for [`LIMsg::TreeNodeReadySub`].
 ///
 /// The path given is the one that is reloaded and also focused.
-///
-/// Contains: `vec_data, focus_node`
 #[derive(Clone, Debug, Eq)]
 pub struct LINodeReadySub {
     pub vec: RecVec<PathBuf, String>,
-    pub focus_node: PathBuf,
+    pub focus_node: Option<PathBuf>,
 }
 
 /// Data returned from this should not be passed around.
@@ -244,7 +243,7 @@ impl Default for LINodeReadySub {
         };
         Self {
             vec: bogus_recvec,
-            focus_node: PathBuf::new(),
+            focus_node: None,
         }
     }
 }

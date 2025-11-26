@@ -154,7 +154,6 @@ impl MusicLibrary {
     /// This will send a [`LIMsg::TreeNodeReady`] and change the root to `path`.
     fn trigger_load_with_focus<P: Into<PathBuf>>(&self, scan_path: P, focus_node: Option<String>) {
         let path = scan_path.into();
-        // TODO: investigate callers if "trigger_subload_with_focus" should be used instead
         library_scan(
             self.download_tracker.clone(),
             path,
@@ -168,7 +167,12 @@ impl MusicLibrary {
     ///
     /// This will send a [`LIMsg::TreeNodeReadySub`] and does not change the root, unless the
     /// given path *is* the root.
-    fn trigger_subload_with_focus(&self, path: PathBuf, depth: ScanDepth, focus_node: PathBuf) {
+    fn trigger_subload_with_focus(
+        &self,
+        path: PathBuf,
+        depth: ScanDepth,
+        focus_node: Option<PathBuf>,
+    ) {
         let tx = self.tx_to_main.clone();
         library_scan_cb(self.download_tracker.clone(), path, depth, move |vec| {
             let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub {
@@ -191,25 +195,54 @@ impl MusicLibrary {
             let Some(old_path) = self.yanked_path.take() else {
                 return Ok(None);
             };
-            let current_node_path = Path::new(&new_id);
+            let selected_node_path = Path::new(&new_id);
 
             let pold_filename = old_path.file_name().context("no file name found")?;
-            let current_parent = current_node_path
+            let old_parent = old_path.parent().context("old path had no parent")?;
+            let selected_parent = selected_node_path
                 .parent()
                 .context("No Parent for currently selected node")?;
 
-            let new_path = if current_node_path.is_dir() {
-                current_node_path.join(pold_filename)
+            let new_path = if selected_node_path.is_dir() {
+                selected_node_path.join(pold_filename)
             } else {
-                current_parent.join(pold_filename)
+                selected_parent.join(pold_filename)
             };
 
-            rename(old_path, &new_path)?;
+            rename(&old_path, &new_path)?;
 
-            self.trigger_load_with_focus(
-                current_parent,
-                Some(new_path.to_string_lossy().to_string()),
-            );
+            if new_path.starts_with(old_parent) {
+                // new path is contained within old path's parent directory
+                self.handle_reload_at(LIReloadPathData {
+                    path: new_path,
+                    change_focus: true,
+                });
+                self.handle_reload_at(LIReloadPathData {
+                    path: old_path,
+                    change_focus: false,
+                });
+            } else if old_parent.starts_with(selected_parent) {
+                // new path is contained within old path's parent directory
+                // We cannot use the sub-load functions here as they replace the given path's node
+                // and does not clear open/closed status, which treeview cannot handle and panics on going up.
+                // See <https://github.com/veeso/tui-realm-treeview/issues/15>
+                // self.handle_reload_at(LIReloadPathData { path: new_path.to_path_buf(), change_focus: true });
+                // self.handle_reload_at(LIReloadPathData { path: old_path, change_focus: false });
+                self.trigger_load_with_focus(
+                    selected_parent,
+                    Some(new_path.to_string_lossy().to_string()),
+                );
+            } else {
+                // new path is not contained within old path's parent directory, so need to load both
+                self.handle_reload_at(LIReloadPathData {
+                    path: new_path,
+                    change_focus: true,
+                });
+                self.handle_reload_at(LIReloadPathData {
+                    path: old_parent.to_path_buf(),
+                    change_focus: false,
+                });
+            }
         }
         Ok(Some(LIMsg::PlaylistRunDelete))
     }
@@ -347,10 +380,12 @@ impl MusicLibrary {
             .saturating_sub(nearest_match);
         let depth = u32::try_from(depth).unwrap_or_default();
 
+        let focus_node = if data.change_focus { Some(path) } else { None };
+
         self.trigger_subload_with_focus(
             PathBuf::from(nearest_node.id()),
             ScanDepth::Limited(depth),
-            path,
+            focus_node,
         );
     }
 
@@ -390,7 +425,7 @@ impl MusicLibrary {
 
         if tree_mut.id() == &path_str {
             // the given data *is* the root, so we have to replace the whole tree
-            *tree_mut = recvec_to_node(vec);
+            self.component.set_tree(Tree::new(recvec_to_node(vec)));
         } else {
             let Some(parent_node) = self.component.tree_mut().root_mut().parent_mut(&path_str)
             else {
@@ -428,9 +463,17 @@ impl MusicLibrary {
                 self.component.perform(Cmd::GoTo(Position::Begin));
             }
 
-            let focus_node = data.focus_node;
-            let focus_node_str = focus_node.to_string_lossy().to_string();
-            self.move_focus_on_current_tree(&focus_node_str);
+            if let Some(focus_node) = data.focus_node {
+                let focus_node_str = focus_node.to_string_lossy().to_string();
+                self.move_focus_on_current_tree(&focus_node_str);
+            }
+
+            // Treeview does not allow calling "tree_changed" without supplying a new tree
+            // but gives us a direct mutable reference to the tree, so we can just
+            // swap in a bogus temporary one, and call "set_tree" with the old one.
+            let mut tree = Model::loading_tree();
+            std::mem::swap(self.component.tree_mut(), &mut tree);
+            self.component.set_tree(tree);
         }
 
         Some(Msg::ForceRedraw)
@@ -931,7 +974,10 @@ impl Model {
 
         let _ = self
             .tx_to_main
-            .send(Msg::Library(LIMsg::ReloadPath(LIReloadPathData { path })));
+            .send(Msg::Library(LIMsg::ReloadPath(LIReloadPathData {
+                path,
+                change_focus: true,
+            })));
     }
 
     /// Show a deletion confirmation for the currently selected node.
