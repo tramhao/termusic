@@ -163,11 +163,12 @@ pub struct RecVec<T, V> {
 
 /// Data for [`LIMsg::Reload`].
 ///
-/// Contains: `change_root_path, focus_node`.
-///
 /// Leaving `change_root_path` as `None` will reload the current root, without changing paths.
 #[derive(Clone, Debug, Eq, Default)]
-pub struct LIReloadData(pub Option<PathBuf>, pub Option<String>);
+pub struct LIReloadData {
+    pub change_root_path: Option<PathBuf>,
+    pub focus_node: Option<String>,
+}
 
 /// `PartialEq` is only used for subscriptions.
 impl PartialEq for LIReloadData {
@@ -180,7 +181,9 @@ impl PartialEq for LIReloadData {
 ///
 /// The path given is the one that is reloaded and also focused.
 #[derive(Clone, Debug, Eq, Default)]
-pub struct LIReloadPathData(pub PathBuf);
+pub struct LIReloadPathData {
+    pub path: PathBuf,
+}
 
 /// `PartialEq` is only used for subscriptions.
 impl PartialEq for LIReloadPathData {
@@ -192,10 +195,11 @@ impl PartialEq for LIReloadPathData {
 /// Data for [`LIMsg::TreeNodeReady`].
 ///
 /// The path given is the one that is reloaded and also optionally focused.
-///
-/// Contains: `vec_data, focus_node`
 #[derive(Clone, Debug, Eq)]
-pub struct LINodeReady(pub RecVec<PathBuf, String>, pub Option<String>);
+pub struct LINodeReady {
+    pub vec: RecVec<PathBuf, String>,
+    pub focus_node: Option<String>,
+}
 
 /// `PartialEq` is only used for subscriptions.
 impl PartialEq for LINodeReady {
@@ -210,7 +214,10 @@ impl PartialEq for LINodeReady {
 ///
 /// Contains: `vec_data, focus_node`
 #[derive(Clone, Debug, Eq)]
-pub struct LINodeReadySub(pub RecVec<PathBuf, String>, pub PathBuf);
+pub struct LINodeReadySub {
+    pub vec: RecVec<PathBuf, String>,
+    pub focus_node: PathBuf,
+}
 
 /// `PartialEq` is only used for subscriptions.
 impl PartialEq for LINodeReadySub {

@@ -171,9 +171,10 @@ impl MusicLibrary {
     fn trigger_subload_with_focus(&self, path: PathBuf, depth: ScanDepth, focus_node: PathBuf) {
         let tx = self.tx_to_main.clone();
         library_scan_cb(self.download_tracker.clone(), path, depth, move |vec| {
-            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub(
-                vec, focus_node,
-            ))));
+            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub {
+                vec,
+                focus_node,
+            })));
         });
     }
 
@@ -262,10 +263,10 @@ impl MusicLibrary {
     /// Also changes focus, if requested.
     fn handle_full_reload(&mut self, data: LIReloadData) -> Msg {
         let path = data
-            .0
+            .change_root_path
             .unwrap_or_else(|| PathBuf::from(self.component.tree().root().id()));
         let focus_node = data
-            .1
+            .focus_node
             .unwrap_or_else(|| self.component.tree_state().selected().unwrap().to_string());
 
         *self.component.tree_mut() = Model::loading_tree();
@@ -288,7 +289,7 @@ impl MusicLibrary {
     ///
     /// If necessary, load all paths in-between.
     fn handle_reload_at(&mut self, data: LIReloadPathData) {
-        let path = data.0;
+        let path = data.path;
         let path_str = path.to_string_lossy();
         let root_node = self.component.tree().root();
 
@@ -357,11 +358,11 @@ impl MusicLibrary {
     ///
     /// This will always replace the root of the tree.
     fn handle_ready(&mut self, data: LINodeReady) -> Msg {
-        let vec = data.0;
-        let initial_node = data.1;
+        let vec = data.vec;
+        let initial_node = data.focus_node;
 
         let initial_node =
-            initial_node.or(self.component.tree_state().selected().map(String::from));
+            initial_node.or_else(|| self.component.tree_state().selected().map(String::from));
 
         let tree = Tree::new(recvec_to_node(vec));
 
@@ -382,7 +383,7 @@ impl MusicLibrary {
     ///
     /// This will replace the root if the given data is starting at the root path.
     fn handle_ready_sub(&mut self, data: LINodeReadySub) -> Option<Msg> {
-        let vec = data.0;
+        let vec = data.vec;
         let path_str = vec.id.to_string_lossy().to_string();
 
         let tree_mut = self.component.tree_mut().root_mut();
@@ -427,7 +428,7 @@ impl MusicLibrary {
                 self.component.perform(Cmd::GoTo(Position::Begin));
             }
 
-            let focus_node = data.1;
+            let focus_node = data.focus_node;
             let focus_node_str = focus_node.to_string_lossy().to_string();
             self.move_focus_on_current_tree(&focus_node_str);
         }
@@ -781,9 +782,10 @@ fn library_scan<P: Into<PathBuf>>(
     focus_node: Option<String>,
 ) {
     library_scan_cb(download_tracker, path, depth, move |vec| {
-        let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(LINodeReady(
-            vec, focus_node,
-        ))));
+        let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(LINodeReady {
+            vec,
+            focus_node,
+        })));
     });
 }
 
@@ -878,13 +880,19 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReady(
-                    LINodeReady(bogus_recvec.clone(), None),
+                    LINodeReady {
+                        vec: bogus_recvec.clone(),
+                        focus_node: None,
+                    },
                 )))),
                 SubClause::Always,
             ),
             Sub::new(
                 SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
-                    LINodeReadySub(bogus_recvec, PathBuf::new()),
+                    LINodeReadySub {
+                        vec: bogus_recvec,
+                        focus_node: PathBuf::new(),
+                    },
                 )))),
                 SubClause::Always,
             ),
@@ -935,7 +943,7 @@ impl Model {
 
         let _ = self
             .tx_to_main
-            .send(Msg::Library(LIMsg::ReloadPath(LIReloadPathData(path))));
+            .send(Msg::Library(LIMsg::ReloadPath(LIReloadPathData { path })));
     }
 
     /// Show a deletion confirmation for the currently selected node.
