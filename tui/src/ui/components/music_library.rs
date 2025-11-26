@@ -110,12 +110,27 @@ impl MusicLibrary {
         let current_node = self.component.tree_state().selected().unwrap();
         let path: &Path = Path::new(current_node);
         if path.is_dir() {
-            // TODO: try to load the directory if it is not loaded yet.
-            // "ForceRedraw" as "TreeView" will always return "CmdResult::None"
-            (
-                self.perform(Cmd::Custom(TREE_CMD_OPEN)),
-                Some(Msg::ForceRedraw),
-            )
+            // string required due to orange-trees weirdness
+            let current_node = current_node.to_string();
+            if self
+                .component
+                .tree()
+                .root()
+                .query(&current_node)
+                .is_some_and(Node::is_leaf)
+            {
+                self.handle_reload_at(LIReloadPathData {
+                    path: path.to_path_buf(),
+                    change_focus: true,
+                });
+                (CmdResult::None, None)
+            } else {
+                // "ForceRedraw" as "TreeView" will always return "CmdResult::None"
+                (
+                    self.perform(Cmd::Custom(TREE_CMD_OPEN)),
+                    Some(Msg::ForceRedraw),
+                )
+            }
         } else {
             (
                 CmdResult::None,
