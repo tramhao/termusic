@@ -1,3 +1,4 @@
+use std::cell::OnceCell;
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 
@@ -5,7 +6,7 @@ use anyhow::{Context, Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, Tree, TreeView};
+use tui_realm_treeview::{Node, NodeValue, TREE_CMD_CLOSE, TREE_CMD_OPEN, Tree, TreeView};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
@@ -22,9 +23,74 @@ use crate::ui::msg::{
 use crate::ui::tui_cmd::TuiCmd;
 use crate::utils::get_pin_yin;
 
+/// Data stored in a node in the [`MusicLibrary`]'s tree.
+#[derive(Debug, Clone)]
+pub struct MusicLibData {
+    /// The actual path of the node.
+    path: PathBuf,
+    // // TODO: refactor bools to be bitflags to save on storage?
+    // /// Store whether that path is a dir to show indicators & use for prefetching
+    // is_dir: bool,
+    // /// Indicator that loading information about this (file EACCESS) or directory loading has failed.
+    // is_error: bool,
+    /// The `path.file_name()`'s string representation.
+    ///
+    /// Lazily evaluated from `path`, only when it becomes necessary.
+    // TODO: evaluate if it would be more performant to only cache if `path.file_name().to_str_lossy()` returns `Cow::Owned`.
+    as_str: OnceCell<String>,
+}
+
+impl MusicLibData {
+    /// Create new data.
+    ///
+    /// Expects the given path to be absolute and to not end in `..`.
+    pub fn new(path: PathBuf /* , is_dir: bool */) -> Self {
+        assert!(path.is_absolute());
+        let cell = OnceCell::new();
+        // Due to our expectation of the path not ending in `..`, we can assume
+        // that there is always a file_name, EXCEPT on linux on the root ("/").
+        // We *could* call `canonicalize` here again, but it is more likely the caller already has done that.
+        if path.file_name().is_none() {
+            let _ = cell.set("/".to_string());
+        }
+        Self {
+            path,
+            // is_dir,
+            // is_error: false,
+            as_str: cell,
+        }
+    }
+}
+
+/// Bogus data, dont actually use.
+/// Treeview somehow requires it
+impl Default for MusicLibData {
+    fn default() -> Self {
+        Self {
+            path: PathBuf::new(),
+            as_str: OnceCell::new(),
+            /* is_dir: false, */
+        }
+    }
+}
+
+impl NodeValue for MusicLibData {
+    fn render_parts_iter(
+        &self,
+    ) -> impl Iterator<Item = (&str, Option<tuirealm::ratatui::prelude::Style>)> {
+        let res = self.as_str.get_or_init(|| {
+            // Unwrap should never panic here as we already check the case of there not being a file_name on instance creation.
+            // The *only* possible way to currently get this panic is when using the default instance (which shouldnt be used).
+            let file_name = self.path.file_name().unwrap();
+            file_name.to_string_lossy().to_string()
+        });
+        std::iter::once((res.as_str(), None))
+    }
+}
+
 #[derive(MockComponent)]
 pub struct MusicLibrary {
-    component: TreeView<String>,
+    component: TreeView<MusicLibData>,
     config: SharedTuiSettings,
     tx_to_main: TxToMain,
     download_tracker: DownloadTracker,
@@ -35,7 +101,7 @@ pub struct MusicLibrary {
 
 impl MusicLibrary {
     pub fn new(
-        tree: &Tree<String>,
+        tree: &Tree<MusicLibData>,
         initial_node: Option<String>,
         config: SharedTuiSettings,
         tx_to_main: TxToMain,
@@ -460,7 +526,7 @@ impl MusicLibrary {
 
             let mut new_node = Some(recvec_to_node(vec));
 
-            let children: Vec<Node<String>> = parent_node
+            let children: Vec<Node<MusicLibData>> = parent_node
                 .iter()
                 .map(|node| {
                     if node.id() == &path_str {
@@ -896,8 +962,11 @@ pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec {
 }
 
 /// Convert a [`RecVec`] to a [`Node`].
-fn recvec_to_node(vec: RecVec) -> Node<String> {
-    let mut node = Node::new(vec.id.to_string_lossy().to_string(), vec.value);
+fn recvec_to_node(vec: RecVec) -> Node<MusicLibData> {
+    let mut node = Node::new(
+        vec.id.to_string_lossy().to_string(),
+        MusicLibData::new(vec.id /* , false */),
+    );
 
     for val in vec.children {
         node.add_child(recvec_to_node(val));
@@ -969,8 +1038,16 @@ impl Model {
     }
 
     /// Get a new tree with the root node showing "Loading...".
-    pub fn loading_tree() -> Tree<String> {
-        Tree::new(Node::new("/dev/null".to_string(), "Loading...".to_string()))
+    pub fn loading_tree() -> Tree<MusicLibData> {
+        let cell = OnceCell::new();
+        let _ = cell.set(String::from("Loading..."));
+        Tree::new(Node::new(
+            "/dev/null".to_string(),
+            MusicLibData {
+                path: PathBuf::from("/dev/null"),
+                as_str: cell,
+            },
+        ))
     }
 
     /// Reload the given path in the library and focus that node.
@@ -1147,14 +1224,14 @@ impl Model {
 ///
 /// This is a depth-first iterator.
 struct RecursiveNodeIter<'a> {
-    stack: Vec<&'a Node<String>>,
+    stack: Vec<&'a Node<MusicLibData>>,
 }
 
 impl<'a> RecursiveNodeIter<'a> {
     /// Create a new iterator with the children from the given node.
     ///
     /// Does *not* iterate over the node itself
-    fn new(start_node: &'a Node<String>) -> Self {
+    fn new(start_node: &'a Node<MusicLibData>) -> Self {
         Self {
             stack: start_node.iter().collect(),
         }
@@ -1162,7 +1239,7 @@ impl<'a> RecursiveNodeIter<'a> {
 }
 
 impl<'a> Iterator for RecursiveNodeIter<'a> {
-    type Item = &'a Node<String>;
+    type Item = &'a Node<MusicLibData>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.stack.pop()?;
