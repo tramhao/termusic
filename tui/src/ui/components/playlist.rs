@@ -330,7 +330,7 @@ impl Model {
         let vec = library_dir_tree(path, ScanDepth::Limited(1));
         vec.children
             .into_iter()
-            .map(|v| v.id.to_string_lossy().to_string())
+            .map(|v| v.path.to_string_lossy().to_string())
             .collect()
     }
 
