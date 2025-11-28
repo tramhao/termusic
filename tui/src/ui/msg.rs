@@ -153,12 +153,14 @@ pub enum LyricMsg {
     TextAreaBlurDown,
 }
 
-/// Basically a Tree Node, but without having to include `tui-realm-treeview` as another dependency for lib
+/// Recursive structure which may contain more of itself.
+///
+/// Basically a `tui-realm-treeview` Tree Node, without the extra things.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RecVec<T, V> {
-    pub id: T,
-    pub value: V,
-    pub children: Vec<RecVec<T, V>>,
+pub struct RecVec {
+    pub id: PathBuf,
+    pub value: String,
+    pub children: Vec<RecVec>,
 }
 
 /// Data for [`LIMsg::Reload`].
@@ -198,7 +200,7 @@ impl PartialEq for LIReloadPathData {
 /// The path given is the one that is reloaded and also optionally focused.
 #[derive(Clone, Debug, Eq)]
 pub struct LINodeReady {
-    pub vec: RecVec<PathBuf, String>,
+    pub vec: RecVec,
     pub focus_node: Option<String>,
 }
 
@@ -229,7 +231,7 @@ impl PartialEq for LINodeReady {
 /// The path given is the one that is reloaded and also focused.
 #[derive(Clone, Debug, Eq)]
 pub struct LINodeReadySub {
-    pub vec: RecVec<PathBuf, String>,
+    pub vec: RecVec,
     pub focus_node: Option<PathBuf>,
 }
 

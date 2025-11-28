@@ -815,7 +815,7 @@ pub fn library_scan_cb<P: Into<PathBuf>, F>(
     depth: ScanDepth,
     cb: F,
 ) where
-    F: FnOnce(RecVec<PathBuf, String>) + Send + 'static,
+    F: FnOnce(RecVec) + Send + 'static,
 {
     let path = path.into();
     std::thread::Builder::new()
@@ -852,7 +852,7 @@ fn library_scan<P: Into<PathBuf>>(
 /// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
 ///
 /// Note: consider using [`library_scan`] instead of this directly for running in a different thread.
-pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
+pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec {
     let name: String = match path.file_name() {
         None => "/".to_string(),
         Some(n) => n.to_string_lossy().into_owned(),
@@ -889,7 +889,7 @@ pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String
 }
 
 /// Convert a [`RecVec`] to a [`Node`].
-fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
+fn recvec_to_node(vec: RecVec) -> Node<String> {
     let mut node = Node::new(vec.id.to_string_lossy().to_string(), vec.value);
 
     for val in vec.children {
