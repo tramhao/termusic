@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Result, anyhow, bail};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
@@ -96,23 +96,26 @@ impl Component<Msg, UserEvent> for GSInputPopup {
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Changed(State::One(StateValue::String(input_string))) => match self.source {
-                Source::Library => {
-                    Some(Msg::GeneralSearch(GSMsg::PopupUpdateLibrary(input_string)))
+            CmdResult::Changed(State::One(StateValue::String(input_string))) => {
+                match &self.source {
+                    Source::Library(path) => Some(Msg::GeneralSearch(GSMsg::PopupUpdateLibrary(
+                        input_string,
+                        path.clone(),
+                    ))),
+                    Source::Playlist => {
+                        Some(Msg::GeneralSearch(GSMsg::PopupUpdatePlaylist(input_string)))
+                    }
+                    Source::Database => {
+                        Some(Msg::GeneralSearch(GSMsg::PopupUpdateDatabase(input_string)))
+                    }
+                    Source::Episode => {
+                        Some(Msg::GeneralSearch(GSMsg::PopupUpdateEpisode(input_string)))
+                    }
+                    Source::Podcast => {
+                        Some(Msg::GeneralSearch(GSMsg::PopupUpdatePodcast(input_string)))
+                    }
                 }
-                Source::Playlist => {
-                    Some(Msg::GeneralSearch(GSMsg::PopupUpdatePlaylist(input_string)))
-                }
-                Source::Database => {
-                    Some(Msg::GeneralSearch(GSMsg::PopupUpdateDatabase(input_string)))
-                }
-                Source::Episode => {
-                    Some(Msg::GeneralSearch(GSMsg::PopupUpdateEpisode(input_string)))
-                }
-                Source::Podcast => {
-                    Some(Msg::GeneralSearch(GSMsg::PopupUpdatePodcast(input_string)))
-                }
-            },
+            }
             CmdResult::Submit(_) => Some(Msg::GeneralSearch(GSMsg::InputBlur)),
 
             CmdResult::None => None,
@@ -128,9 +131,9 @@ pub struct GSTablePopup {
     config: SharedTuiSettings,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Source {
-    Library,
+    Library(PathBuf),
     Playlist,
     Database,
     Episode,
@@ -160,7 +163,7 @@ impl GSTablePopup {
 
         let title_podcast = " Results: (Enter: locate) ";
         let component = match source {
-            Source::Library => Table::default()
+            Source::Library(_) => Table::default()
                 .borders(
                     Borders::default()
                         .color(config_r.settings.theme.fallback_border())
@@ -343,7 +346,7 @@ impl Component<Msg, UserEvent> for GSTablePopup {
 
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
                 match self.source {
-                    Source::Library => {
+                    Source::Library(_) => {
                         return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist));
                     }
                     Source::Playlist => {
@@ -361,7 +364,7 @@ impl Component<Msg, UserEvent> for GSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => match self.source {
-                Source::Library => {
+                Source::Library(_) => {
                     return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkLibraryLocate));
                 }
                 Source::Playlist => {

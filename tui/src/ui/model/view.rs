@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Result, bail};
@@ -13,15 +13,14 @@ use tuirealm::{Frame, State, StateValue};
 
 use crate::ui::Application;
 use crate::ui::components::{
-    DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
-    FeedsList, Footer, GSInputPopup, GSTablePopup, LabelSpan, Lyric, MusicLibrary, Playlist,
-    Progress, Source,
+    DBListCriteria, DownloadSpinner, EpisodeList, FeedsList, Footer, GSInputPopup, GSTablePopup,
+    LabelSpan, Lyric, MusicLibrary, Playlist, Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
 use crate::ui::model::ports::stream_events::PortStreamEvents;
 use crate::ui::model::{Model, TermusicLayout, UserEvent};
-use crate::ui::msg::{DBMsg, Msg, PCMsg};
+use crate::ui::msg::{Msg, PCMsg};
 use crate::ui::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute,
 };
@@ -51,40 +50,15 @@ impl Model {
         self.app.mount(
             Id::Library,
             Box::new(MusicLibrary::new(
-                &self.library.tree,
+                &Self::loading_tree(),
                 None,
                 self.config_tui.clone(),
             )),
             Vec::new(),
         )?;
-        self.app.mount(
-            Id::DBListCriteria,
-            Box::new(DBListCriteria::new(
-                self.config_tui.clone(),
-                Msg::DataBase(DBMsg::CriteriaBlurDown),
-                Msg::DataBase(DBMsg::CriteriaBlurUp),
-            )),
-            Vec::new(),
-        )?;
 
-        self.app.mount(
-            Id::DBListSearchResult,
-            Box::new(DBListSearchResult::new(
-                self.config_tui.clone(),
-                Msg::DataBase(DBMsg::SearchResultBlurDown),
-                Msg::DataBase(DBMsg::SearchResultBlurUp),
-            )),
-            Vec::new(),
-        )?;
-        self.app.mount(
-            Id::DBListSearchTracks,
-            Box::new(DBListSearchTracks::new(
-                self.config_tui.clone(),
-                Msg::DataBase(DBMsg::SearchTracksBlurDown),
-                Msg::DataBase(DBMsg::SearchTracksBlurUp),
-            )),
-            Vec::new(),
-        )?;
+        self.remount_database_search()?;
+
         self.app.mount(
             Id::Playlist,
             Box::new(Playlist::new(self.config_tui.clone())),
@@ -377,7 +351,7 @@ impl Model {
         self.app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(source, &self.config_tui.read())),
+                Box::new(GSInputPopup::new(source.clone(), &self.config_tui.read())),
                 Vec::new(),
             )
             .unwrap();
@@ -396,8 +370,8 @@ impl Model {
     }
 
     #[inline]
-    pub fn mount_search_library(&mut self) {
-        self.mount_search(Source::Library);
+    pub fn mount_search_library(&mut self, path: PathBuf) {
+        self.mount_search(Source::Library(path));
     }
 
     #[inline]

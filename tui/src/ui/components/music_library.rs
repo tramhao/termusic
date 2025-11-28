@@ -113,6 +113,50 @@ impl MusicLibrary {
             self.perform(Cmd::Custom(TREE_CMD_OPEN));
         }
     }
+
+    /// Handle sending a request to delete the currently selected node.
+    fn handle_delete(&mut self) -> Msg {
+        let current_node = self.component.tree_state().selected().unwrap();
+        let path = PathBuf::from(current_node);
+
+        let focus_node_after = {
+            let current_node = current_node.to_string();
+            let mut route = self
+                .component
+                .tree()
+                .root()
+                .route_by_node(&current_node)
+                .unwrap();
+
+            let tree = self.component.tree();
+            // increase index as we dont modify the tree, to use that node if available
+            if let Some(v) = route.last_mut() {
+                *v += 1;
+            }
+
+            let mut focus_node = None;
+            // case 1: the route exists due to having a sibling beyond the index
+            if let Some(node) = tree.root().node_by_route(&route) {
+                focus_node = Some(node.id());
+            } else if !route.is_empty() {
+                let _ = route.pop();
+                // case 2: the route does not exist anymore, but there is a parent in the route
+                if let Some(parent) = tree.root().node_by_route(&route) {
+                    // case 2.1: the parent has children, select the last of them
+                    if let Some(last_child) = parent.children().last() {
+                        focus_node = Some(last_child.id());
+                    } else {
+                        // case 2.2: the parent exists, but has no children
+                        focus_node = Some(parent.id());
+                    }
+                }
+            }
+
+            focus_node.cloned()
+        };
+
+        Msg::DeleteConfirm(DeleteConfirmMsg::Show(path, focus_node_after))
+    }
 }
 
 impl Component<Msg, UserEvent> for MusicLibrary {
@@ -190,7 +234,7 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
             // file modifying
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.delete.get() => {
-                return Some(Msg::DeleteConfirm(DeleteConfirmMsg::Show));
+                return Some(self.handle_delete());
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
                 return Some(Msg::Library(LIMsg::Yank));
@@ -201,7 +245,9 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
             // music root modification
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.cycle_root.get() => {
-                return Some(Msg::Library(LIMsg::SwitchRoot));
+                let root_node = self.component.tree().root().id();
+                let path = PathBuf::from(root_node);
+                return Some(Msg::Library(LIMsg::SwitchRoot(path)));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.add_root.get() => {
@@ -227,7 +273,9 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
             // search
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary));
+                let root_node = self.component.tree().root().id();
+                let path = PathBuf::from(root_node);
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowLibrary(path)));
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.youtube_search.get() => {
@@ -350,6 +398,17 @@ pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String
     node
 }
 
+/// Convert a [`RecVec`] to a [`Node`].
+fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
+    let mut node = Node::new(vec.id.to_string_lossy().to_string(), vec.value);
+
+    for val in vec.children {
+        node.add_child(recvec_to_node(val));
+    }
+
+    node
+}
+
 impl Model {
     /// Get the parent directory path of the current tree's root.
     #[inline]
@@ -390,17 +449,6 @@ impl Model {
         self.library_scan_dir(&self.library.tree_path, node);
     }
 
-    /// Convert a [`RecVec`] to a [`Node`].
-    fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
-        let mut node = Node::new(vec.id.to_string_lossy().to_string(), vec.value);
-
-        for val in vec.children {
-            node.add_child(Self::recvec_to_node(val));
-        }
-
-        node
-    }
-
     /// Apply the given [`RecVec`] as a tree
     pub fn library_apply_as_tree(
         &mut self,
@@ -408,7 +456,7 @@ impl Model {
         focus_node: Option<String>,
     ) {
         let root_path = msg.id.clone();
-        let root_node = Self::recvec_to_node(msg);
+        let root_node = recvec_to_node(msg);
 
         let old_current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
@@ -416,13 +464,13 @@ impl Model {
         };
 
         self.library.tree_path = root_path;
-        self.library.tree = Tree::new(root_node);
+        let tree = Tree::new(root_node);
 
         // remount preserves focus
         let _ = self.app.remount(
             Id::Library,
             Box::new(MusicLibrary::new(
-                &self.library.tree,
+                &tree,
                 old_current_node,
                 self.config_tui.clone(),
             )),
@@ -454,54 +502,35 @@ impl Model {
     }
 
     /// Show a deletion confirmation for the currently selected node.
-    pub fn library_show_delete_confirm(&mut self) {
-        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            let path = Path::new(node_id.as_str());
-            if path.is_file() {
-                self.mount_confirm_radio();
-            } else {
-                self.mount_confirm_input("You're about to delete the whole directory.");
-            }
+    pub fn library_show_delete_confirm(&mut self, path: PathBuf, focus_node: Option<String>) {
+        if path.is_file() {
+            self.mount_confirm_radio(path, focus_node);
+        } else {
+            self.mount_confirm_input(
+                path,
+                focus_node,
+                "You're about to delete the whole directory.",
+            );
         }
     }
 
     /// Delete the currently selected node from the filesystem and reload the tree and remove the deleted paths from the playlist.
-    pub fn library_delete_node(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            if let Some(mut route) = self.library.tree.root().route_by_node(&node_id) {
-                let path = Path::new(node_id.as_str());
-                if path.is_file() {
-                    remove_file(path)?;
-                } else {
-                    path.canonicalize()?;
-                    remove_dir_all(path)?;
-                }
-
-                let mut tree = self.library.tree.clone();
-                tree.root_mut().remove_child(&node_id);
-                let mut focus_node: Option<String> = None;
-                // case 1: the route still exists due to having a sibling beyond the index which now takes the same index
-                if let Some(node) = tree.root().node_by_route(&route) {
-                    focus_node = Some(node.id().clone());
-                } else if !route.is_empty() {
-                    let _ = route.pop();
-                    // case 2: the route does not exist anymore, but there is a parent in the route
-                    if let Some(parent) = tree.root().node_by_route(&route) {
-                        // case 2.1: the parent has children, select the last of them
-                        if let Some(last_child) = parent.children().last() {
-                            focus_node = Some(last_child.id().clone());
-                        } else {
-                            // case 2.2: the parent exists, but has no children
-                            focus_node = Some(parent.id().clone());
-                        }
-                    }
-                }
-
-                self.library_scan_dir(&self.library.tree_path, focus_node);
-            }
-            // this line remove the deleted songs from playlist
-            self.playlist_update_library_delete();
+    pub fn library_delete_node(&mut self, path: &Path, focus_node: Option<String>) -> Result<()> {
+        if path.is_file() {
+            remove_file(path)?;
+        } else {
+            path.canonicalize()?;
+            remove_dir_all(path)?;
         }
+
+        // always scan the parent, as otherwise, if the deleted "path" is the root
+        // we end up never actually loading something correct and still have the stale tree
+        let parent = path.parent().expect("Path to have a parent");
+
+        self.library_scan_dir(parent, focus_node);
+
+        // this line remove the deleted songs from playlist
+        self.playlist_update_library_delete();
         Ok(())
     }
 
@@ -538,10 +567,8 @@ impl Model {
     }
 
     /// Generate the result table for search `input`, recursively from the tree's root node's path.
-    pub fn library_update_search(&mut self, input: &str) {
+    pub fn library_update_search(&mut self, input: &str, path: &Path) {
         let mut table: TableBuilder = TableBuilder::default();
-        let root = self.library.tree.root();
-        let path = Path::new(root.id());
         let all_items = walkdir::WalkDir::new(path).follow_links(true);
         let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
@@ -564,7 +591,7 @@ impl Model {
     }
 
     /// Switch the current tree root to the next one in the stored list, if available.
-    pub fn library_switch_root(&mut self) {
+    pub fn library_switch_root(&mut self, old_path: &Path) {
         let mut vec = Vec::new();
         let config_server = self.config_server.read();
         for dir in &config_server.settings.player.music_dirs {
@@ -581,9 +608,8 @@ impl Model {
         drop(config_server);
 
         let mut index = 0;
-        let current_path = &self.library.tree_path;
         for (idx, dir) in vec.iter().enumerate() {
-            if current_path == dir {
+            if old_path == dir {
                 index = idx + 1;
                 break;
             }
@@ -638,7 +664,7 @@ impl Model {
         let res = ServerConfigVersionedDefaulted::save_config_path(&config_server.settings);
         drop(config_server);
 
-        self.library_switch_root();
+        self.library_switch_root(&path);
 
         res.context("Error while saving config")?;
 

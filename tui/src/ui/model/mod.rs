@@ -22,7 +22,6 @@ use termusiclib::track::{LyricData, MediaTypesSimple, Track};
 use termusiclib::utils::get_app_config_path;
 use termusiclib::xywh;
 use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
-use tui_realm_treeview::Tree;
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 
 use super::components::TETrack;
@@ -66,8 +65,6 @@ pub enum ConfigEditorLayout {
 pub struct MusicLibraryData {
     /// Current Path that the library-tree is in
     pub tree_path: PathBuf,
-    /// Tree of the Music Library widget
-    pub tree: Tree<String>,
     /// The Node that a yank & paste was started on
     pub yanked_node_id: Option<String>,
 }
@@ -369,8 +366,6 @@ impl Model {
             tui: config_tui,
         } = config;
         let path = Self::get_full_path_from_config(&config_server.read());
-        // TODO: refactor music library tree to be Paths instead?
-        let tree = Self::loading_tree();
 
         let config_tui_read = config_tui.read();
 
@@ -438,7 +433,6 @@ impl Model {
 
             library: MusicLibraryData {
                 tree_path: path,
-                tree,
                 yanked_node_id: None,
             },
             youtube_options: YoutubeOptions::default(),

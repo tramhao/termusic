@@ -115,9 +115,12 @@ impl Eq for ImageWrapper {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DeleteConfirmMsg {
+    /// The Delete Confirmation has closed with a negative/no/cancel/abort.
     CloseCancel,
-    CloseOk,
-    Show,
+    /// The Delete Confirmation has closed with a positive/yes/ok.
+    CloseOk(PathBuf, Option<String>),
+    /// Show a delete confirmation for the given path.
+    Show(PathBuf, Option<String>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -166,8 +169,12 @@ pub enum LIMsg {
     TreeBlur,
     Yank,
     Paste,
-    SwitchRoot,
+    /// Switch the music root.
+    ///
+    /// Contains the *old* root
+    SwitchRoot(PathBuf),
     AddRoot(PathBuf),
+    /// Remove the given path as a music root.
     RemoveRoot(PathBuf),
 
     /// A requested node is ready from loading.
@@ -397,14 +404,16 @@ pub enum PLMsg {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GSMsg {
     PopupShowDatabase,
-    PopupShowLibrary,
+    /// Show search for the Library, search in the provided path.
+    PopupShowLibrary(PathBuf),
     PopupShowPlaylist,
     PopupShowEpisode,
     PopupShowPodcast,
     PopupCloseCancel,
     InputBlur,
     PopupUpdateDatabase(String),
-    PopupUpdateLibrary(String),
+    /// Update the search results with the given pattern in the given path.
+    PopupUpdateLibrary(String, PathBuf),
     PopupUpdatePlaylist(String),
     PopupUpdateEpisode(String),
     PopupUpdatePodcast(String),

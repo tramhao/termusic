@@ -31,7 +31,7 @@ impl Update<Msg> for Model {
             Msg::ConfigEditor(msg) => self.update_config_editor(msg),
             Msg::DataBase(msg) => self.update_database_list(msg),
 
-            Msg::DeleteConfirm(msg) => self.update_delete_confirmation(&msg),
+            Msg::DeleteConfirm(msg) => self.update_delete_confirmation(msg),
 
             Msg::ErrorPopup(msg) => self.update_error_popup_msg(&msg),
             Msg::QuitPopup(msg) => self.update_quit_popup_msg(&msg),
@@ -652,7 +652,7 @@ impl Model {
                     self.mount_error_popup(e.context("library paste"));
                 }
             }
-            LIMsg::SwitchRoot => self.library_switch_root(),
+            LIMsg::SwitchRoot(old_path) => self.library_switch_root(&old_path),
             LIMsg::AddRoot(path) => {
                 if let Err(e) = self.library_add_root(path) {
                     self.mount_error_popup(e.context("library add root"));
@@ -780,9 +780,9 @@ impl Model {
                 self.mount_search_database();
                 self.database_update_search("*");
             }
-            GSMsg::PopupShowLibrary => {
-                self.mount_search_library();
-                self.library_update_search("*");
+            GSMsg::PopupShowLibrary(path) => {
+                self.mount_search_library(path.clone());
+                self.library_update_search("*", path);
             }
             GSMsg::PopupShowPlaylist => {
                 self.mount_search_playlist();
@@ -797,7 +797,7 @@ impl Model {
                 self.mount_search_podcast();
                 self.podcast_update_search_podcast("*");
             }
-            GSMsg::PopupUpdateLibrary(input) => self.library_update_search(input),
+            GSMsg::PopupUpdateLibrary(input, path) => self.library_update_search(input, path),
 
             GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(input),
 
@@ -892,10 +892,10 @@ impl Model {
     }
 
     /// Handle all [`DeleteConfirmMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_delete_confirmation(&mut self, msg: &DeleteConfirmMsg) -> Option<Msg> {
+    fn update_delete_confirmation(&mut self, msg: DeleteConfirmMsg) -> Option<Msg> {
         match msg {
-            DeleteConfirmMsg::Show => {
-                self.library_show_delete_confirm();
+            DeleteConfirmMsg::Show(path, focus_node) => {
+                self.library_show_delete_confirm(path, focus_node);
             }
             DeleteConfirmMsg::CloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
@@ -905,14 +905,14 @@ impl Model {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
             }
-            DeleteConfirmMsg::CloseOk => {
+            DeleteConfirmMsg::CloseOk(path, focus_node) => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
                 }
                 if self.app.mounted(&Id::DeleteConfirmInputPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
-                if let Err(e) = self.library_delete_node() {
+                if let Err(e) = self.library_delete_node(&path, focus_node) {
                     self.mount_error_popup(e.context("library delete song"));
                 }
             }
