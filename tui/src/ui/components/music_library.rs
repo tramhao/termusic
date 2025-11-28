@@ -28,9 +28,9 @@ use crate::utils::get_pin_yin;
 pub struct MusicLibData {
     /// The actual path of the node.
     path: PathBuf,
-    // // TODO: refactor bools to be bitflags to save on storage?
-    // /// Store whether that path is a dir to show indicators & use for prefetching
-    // is_dir: bool,
+    // TODO: refactor bools to be bitflags to save on storage?
+    /// Store whether that path is a dir to show indicators & use for prefetching
+    is_dir: bool,
     // /// Indicator that loading information about this (file EACCESS) or directory loading has failed.
     // is_error: bool,
     /// The `path.file_name()`'s string representation.
@@ -44,7 +44,7 @@ impl MusicLibData {
     /// Create new data.
     ///
     /// Expects the given path to be absolute and to not end in `..`.
-    pub fn new(path: PathBuf /* , is_dir: bool */) -> Self {
+    pub fn new(path: PathBuf, is_dir: bool) -> Self {
         assert!(path.is_absolute());
         let cell = OnceCell::new();
         // Due to our expectation of the path not ending in `..`, we can assume
@@ -55,7 +55,7 @@ impl MusicLibData {
         }
         Self {
             path,
-            // is_dir,
+            is_dir,
             // is_error: false,
             as_str: cell,
         }
@@ -68,8 +68,8 @@ impl Default for MusicLibData {
     fn default() -> Self {
         Self {
             path: PathBuf::new(),
+            is_dir: false,
             as_str: OnceCell::new(),
-            /* is_dir: false, */
         }
     }
 }
@@ -506,7 +506,7 @@ impl MusicLibrary {
     /// This will replace the root if the given data is starting at the root path.
     fn handle_ready_sub(&mut self, data: LINodeReadySub) -> Option<Msg> {
         let vec = data.vec;
-        let path_str = vec.id.to_string_lossy().to_string();
+        let path_str = vec.path.to_string_lossy().to_string();
 
         let tree_mut = self.component.tree_mut().root_mut();
 
@@ -518,7 +518,7 @@ impl MusicLibrary {
             else {
                 warn!(
                     "Ready node ({}) not found in tree ({})!",
-                    vec.id.display(),
+                    vec.path.display(),
                     self.component.tree().root().id()
                 );
                 return None;
@@ -924,14 +924,19 @@ fn library_scan<P: Into<PathBuf>>(
 /// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
 ///
 /// Note: consider using [`library_scan`] instead of this directly for running in a different thread.
+#[inline]
 pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec {
-    let name: String = match path.file_name() {
-        None => "/".to_string(),
-        Some(n) => n.to_string_lossy().into_owned(),
-    };
+    library_dir_tree_inner(path, depth, None)
+}
+
+/// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
+///
+/// Note: consider using [`library_scan`] instead of this directly for running in a different thread.
+fn library_dir_tree_inner(path: &Path, depth: ScanDepth, is_dir: Option<bool>) -> RecVec {
+    let is_dir = is_dir.unwrap_or_else(|| path.is_dir());
     let mut node = RecVec {
-        id: path.to_path_buf(),
-        value: name,
+        path: path.to_path_buf(),
+        is_dir,
         children: Vec::new(),
     };
 
@@ -945,17 +950,25 @@ pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec {
         && path.is_dir()
         && let Ok(paths) = std::fs::read_dir(path)
     {
-        let mut paths: Vec<(String, PathBuf)> = paths
+        let mut paths: Vec<(String, (PathBuf, bool))> = paths
             .filter_map(std::result::Result::ok)
             .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
-            .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v.path()))
+            .map(|v| {
+                let sort_str = get_pin_yin(&v.file_name().to_string_lossy());
+                let is_dir = v.file_type().is_ok_and(|v| v.is_dir());
+                let path = v.path();
+                (sort_str, (path, is_dir))
+            })
             .collect();
 
         paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
 
-        for p in paths {
-            node.children
-                .push(library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
+        for (_sort_str, (path, is_dir)) in paths {
+            node.children.push(library_dir_tree_inner(
+                &path,
+                ScanDepth::Limited(depth - 1),
+                Some(is_dir),
+            ));
         }
     }
     node
@@ -964,8 +977,8 @@ pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec {
 /// Convert a [`RecVec`] to a [`Node`].
 fn recvec_to_node(vec: RecVec) -> Node<MusicLibData> {
     let mut node = Node::new(
-        vec.id.to_string_lossy().to_string(),
-        MusicLibData::new(vec.id /* , false */),
+        vec.path.to_string_lossy().to_string(),
+        MusicLibData::new(vec.path, vec.is_dir),
     );
 
     for val in vec.children {
@@ -1045,6 +1058,7 @@ impl Model {
             "/dev/null".to_string(),
             MusicLibData {
                 path: PathBuf::from("/dev/null"),
+                is_dir: false,
                 as_str: cell,
             },
         ))

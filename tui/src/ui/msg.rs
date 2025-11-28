@@ -158,8 +158,8 @@ pub enum LyricMsg {
 /// Basically a `tui-realm-treeview` Tree Node, without the extra things.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecVec {
-    pub id: PathBuf,
-    pub value: String,
+    pub path: PathBuf,
+    pub is_dir: bool,
     pub children: Vec<RecVec>,
 }
 
@@ -208,8 +208,8 @@ pub struct LINodeReady {
 impl Default for LINodeReady {
     fn default() -> Self {
         let bogus_recvec = RecVec {
-            id: PathBuf::new(),
-            value: String::new(),
+            path: PathBuf::new(),
+            is_dir: false,
             children: Vec::new(),
         };
         Self {
@@ -239,8 +239,8 @@ pub struct LINodeReadySub {
 impl Default for LINodeReadySub {
     fn default() -> Self {
         let bogus_recvec = RecVec {
-            id: PathBuf::new(),
-            value: String::new(),
+            path: PathBuf::new(),
+            is_dir: false,
             children: Vec::new(),
         };
         Self {
