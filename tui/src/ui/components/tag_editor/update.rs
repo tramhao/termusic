@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::anyhow;
 use termusiclib::songtag::TrackDLMsg;
 
@@ -13,8 +15,7 @@ impl Model {
             }
             TEMsg::Close => {
                 if let Some(s) = self.tageditor_song.clone() {
-                    // TODO: this should be re-done and take actual track ids themself, or at least verified to use the same functions to result in the same id
-                    self.library_reload_with_node_focus(Some(s.path_as_id_str().to_string()));
+                    self.library_reload_and_focus(s.into_path());
                 }
                 self.umount_tageditor();
             }
@@ -134,10 +135,9 @@ impl Model {
                 }
             }
             TrackDLMsg::Completed(_url, file) => {
-                if self.download_tracker.visible() {
-                    return;
+                if let Some(path_str) = file {
+                    self.library_reload_and_focus(PathBuf::from(path_str));
                 }
-                self.library_reload_with_node_focus(file);
             }
             TrackDLMsg::Err(url, title, error_message) => {
                 self.download_tracker.decrease_one(&url);

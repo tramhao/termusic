@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::ffi::OsString;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Context as _, Result, anyhow, bail};
@@ -37,7 +37,7 @@ use crate::ui::Model;
 use crate::ui::components::music_library::library_dir_tree;
 use crate::ui::ids::Id;
 use crate::ui::model::{TermusicLayout, UserEvent};
-use crate::ui::msg::{GSMsg, Msg, PLMsg};
+use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 
 #[derive(MockComponent)]
@@ -898,15 +898,20 @@ impl Model {
             return Ok(());
         }
 
-        self.playlist_save_m3u(&path_m3u)
+        self.playlist_save_m3u(path_m3u)
     }
 
     /// Save the current playlist as m3u in the given full path
-    pub fn playlist_save_m3u(&mut self, filename: &Path) -> Result<()> {
+    pub fn playlist_save_m3u(&mut self, filename: PathBuf) -> Result<()> {
         // TODO: move this to server?
-        self.playback.playlist.save_m3u(filename)?;
+        self.playback.playlist.save_m3u(&filename)?;
 
-        self.library_reload_with_node_focus(Some(filename.to_string_lossy().to_string()));
+        self.library_reload_and_focus(filename);
+
+        // only reload database results, if the criteria is for playlists
+        if self.dw.criteria == SearchCriteria::Playlist {
+            self.database_update_search_results();
+        }
 
         Ok(())
     }

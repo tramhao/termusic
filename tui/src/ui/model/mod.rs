@@ -60,15 +60,6 @@ pub enum ConfigEditorLayout {
     Key2,
 }
 
-/// All data specific to the Music Library Widget / View
-#[derive(Debug)]
-pub struct MusicLibraryData {
-    /// Current Path that the library-tree is in
-    pub tree_path: PathBuf,
-    /// The Node that a yank & paste was started on
-    pub yanked_node_id: Option<String>,
-}
-
 /// All data specific to the Database Widget / View
 #[derive(Debug)]
 pub struct DatabaseWidgetData {
@@ -301,7 +292,6 @@ pub struct Model {
     pub db: Database,
 
     pub layout: TermusicLayout,
-    pub library: MusicLibraryData,
     pub dw: DatabaseWidgetData,
     pub podcast: PodcastWidgetData,
     pub config_editor: ConfigEditorData,
@@ -431,10 +421,6 @@ impl Model {
             config_tui,
             tageditor_song: None,
 
-            library: MusicLibraryData {
-                tree_path: path,
-                yanked_node_id: None,
-            },
             youtube_options: YoutubeOptions::default(),
             #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
             ueberzug_instance,
@@ -469,7 +455,7 @@ impl Model {
             xywh,
         };
 
-        model.library_scan_dir(&model.library.tree_path, None);
+        model.library_scan_dir(path, None);
 
         model
             .mount_main()

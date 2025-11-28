@@ -5,15 +5,20 @@ use anyhow::{Context, Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::ScanDepth;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE, Tree, TreeView};
+use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, Tree, TreeView};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+use tuirealm::{
+    Attribute, Component, Event, MockComponent, State, StateValue, Sub, SubClause, SubEventClause,
+};
 
 use crate::ui::ids::Id;
 use crate::ui::model::{DownloadTracker, Model, TxToMain, UserEvent};
-use crate::ui::msg::{DeleteConfirmMsg, GSMsg, LIMsg, Msg, PLMsg, RecVec, TEMsg, YSMsg};
+use crate::ui::msg::{
+    DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData, LIReloadPathData,
+    Msg, PLMsg, RecVec, TEMsg, YSMsg,
+};
 use crate::ui::tui_cmd::TuiCmd;
 use crate::utils::get_pin_yin;
 
@@ -21,6 +26,11 @@ use crate::utils::get_pin_yin;
 pub struct MusicLibrary {
     component: TreeView<String>,
     config: SharedTuiSettings,
+    tx_to_main: TxToMain,
+    download_tracker: DownloadTracker,
+
+    /// The path of the last yanked node.
+    yanked_path: Option<PathBuf>,
 }
 
 impl MusicLibrary {
@@ -28,6 +38,8 @@ impl MusicLibrary {
         tree: &Tree<String>,
         initial_node: Option<String>,
         config: SharedTuiSettings,
+        tx_to_main: TxToMain,
+        download_tracker: DownloadTracker,
     ) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
@@ -56,7 +68,13 @@ impl MusicLibrary {
                 .initial_node(initial_node)
         };
 
-        let mut ret = Self { component, config };
+        let mut ret = Self {
+            component,
+            config,
+            tx_to_main,
+            download_tracker,
+            yanked_path: None,
+        };
 
         ret.open_root_node();
 
@@ -92,12 +110,27 @@ impl MusicLibrary {
         let current_node = self.component.tree_state().selected().unwrap();
         let path: &Path = Path::new(current_node);
         if path.is_dir() {
-            // TODO: try to load the directory if it is not loaded yet.
-            // "ForceRedraw" as "TreeView" will always return "CmdResult::None"
-            (
-                self.perform(Cmd::Custom(TREE_CMD_OPEN)),
-                Some(Msg::ForceRedraw),
-            )
+            // string required due to orange-trees weirdness
+            let current_node = current_node.to_string();
+            if self
+                .component
+                .tree()
+                .root()
+                .query(&current_node)
+                .is_some_and(Node::is_leaf)
+            {
+                self.handle_reload_at(LIReloadPathData {
+                    path: path.to_path_buf(),
+                    change_focus: true,
+                });
+                (CmdResult::None, None)
+            } else {
+                // "ForceRedraw" as "TreeView" will always return "CmdResult::None"
+                (
+                    self.perform(Cmd::Custom(TREE_CMD_OPEN)),
+                    Some(Msg::ForceRedraw),
+                )
+            }
         } else {
             (
                 CmdResult::None,
@@ -112,6 +145,121 @@ impl MusicLibrary {
         if self.component.tree_state().is_closed(root) {
             self.perform(Cmd::Custom(TREE_CMD_OPEN));
         }
+    }
+
+    /// Trigger a load with a message to change the tree root to the given path.
+    ///
+    /// This will make the given path(which will be the root node) the focused node.
+    ///
+    /// This will send a [`LIMsg::TreeNodeReady`] and change the root to `path`.
+    fn trigger_load_stepinto<P: Into<PathBuf>>(&self, path: P) {
+        library_scan(
+            self.download_tracker.clone(),
+            path,
+            ScanDepth::Limited(2),
+            self.tx_to_main.clone(),
+            None,
+        );
+    }
+
+    /// Trigger a load with a message to change the tree root to the given path.
+    ///
+    /// This will make the current tree root be the new focused node.
+    ///
+    /// This will send a [`LIMsg::TreeNodeReady`] and change the root to `path`.
+    fn trigger_load_with_focus<P: Into<PathBuf>>(&self, scan_path: P, focus_node: Option<String>) {
+        let path = scan_path.into();
+        library_scan(
+            self.download_tracker.clone(),
+            path,
+            ScanDepth::Limited(2),
+            self.tx_to_main.clone(),
+            focus_node,
+        );
+    }
+
+    /// Trigger a load for the given path, with the given depth.
+    ///
+    /// This will send a [`LIMsg::TreeNodeReadySub`] and does not change the root, unless the
+    /// given path *is* the root.
+    fn trigger_subload_with_focus(
+        &self,
+        path: PathBuf,
+        depth: ScanDepth,
+        focus_node: Option<PathBuf>,
+    ) {
+        let tx = self.tx_to_main.clone();
+        library_scan_cb(self.download_tracker.clone(), path, depth, move |vec| {
+            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub {
+                vec,
+                focus_node,
+            })));
+        });
+    }
+
+    /// Store the currently selected node as yanked (for pasting with [`Self::paste`]).
+    fn yank(&mut self) {
+        if let State::One(StateValue::String(node_id)) = self.state() {
+            self.yanked_path = Some(PathBuf::from(node_id));
+        }
+    }
+
+    /// Paste the previously yanked node in the currently selected node if it is a directory, otherwise in its parent.
+    fn paste(&mut self) -> Result<Option<LIMsg>> {
+        if let State::One(StateValue::String(new_id)) = self.state() {
+            let Some(old_path) = self.yanked_path.take() else {
+                return Ok(None);
+            };
+            let selected_node_path = Path::new(&new_id);
+
+            let pold_filename = old_path.file_name().context("no file name found")?;
+            let old_parent = old_path.parent().context("old path had no parent")?;
+            let selected_parent = selected_node_path
+                .parent()
+                .context("No Parent for currently selected node")?;
+
+            let new_path = if selected_node_path.is_dir() {
+                selected_node_path.join(pold_filename)
+            } else {
+                selected_parent.join(pold_filename)
+            };
+
+            rename(&old_path, &new_path)?;
+
+            if new_path.starts_with(old_parent) {
+                // new path is contained within old path's parent directory
+                self.handle_reload_at(LIReloadPathData {
+                    path: new_path,
+                    change_focus: true,
+                });
+                self.handle_reload_at(LIReloadPathData {
+                    path: old_path,
+                    change_focus: false,
+                });
+            } else if old_parent.starts_with(selected_parent) {
+                // new path is contained within old path's parent directory
+                // We cannot use the sub-load functions here as they replace the given path's node
+                // and does not clear open/closed status, which treeview cannot handle and panics on going up.
+                // See <https://github.com/veeso/tui-realm-treeview/issues/15>
+                // self.handle_reload_at(LIReloadPathData { path: new_path.to_path_buf(), change_focus: true });
+                // self.handle_reload_at(LIReloadPathData { path: old_path, change_focus: false });
+                self.trigger_load_with_focus(
+                    selected_parent,
+                    Some(new_path.to_string_lossy().to_string()),
+                );
+            } else {
+                // new path is not contained within old path's parent directory, so need to load both
+                self.handle_reload_at(LIReloadPathData {
+                    path: new_path,
+                    change_focus: true,
+                });
+                self.handle_reload_at(LIReloadPathData {
+                    path: old_parent.to_path_buf(),
+                    change_focus: false,
+                });
+            }
+        }
+        Ok(Some(LIMsg::PlaylistRunDelete))
     }
 
     /// Handle sending a request to delete the currently selected node.
@@ -157,11 +305,322 @@ impl MusicLibrary {
 
         Msg::DeleteConfirm(DeleteConfirmMsg::Show(path, focus_node_after))
     }
+
+    /// Handle a full reload / potential change of the current tree root.
+    ///
+    /// Also changes focus, if requested.
+    fn handle_full_reload(&mut self, data: LIReloadData) -> Msg {
+        let path = data
+            .change_root_path
+            .unwrap_or_else(|| PathBuf::from(self.component.tree().root().id()));
+        let focus_node = data
+            .focus_node
+            .unwrap_or_else(|| self.component.tree_state().selected().unwrap().to_string());
+
+        *self.component.tree_mut() = Model::loading_tree();
+
+        self.trigger_load_with_focus(path, Some(focus_node));
+
+        Msg::ForceRedraw
+    }
+
+    /// Truncate `node`'s path to `root_node`'s path, then split `node`'s path by the separator, iterate over the non-empty components.
+    ///
+    /// This assumes `node` contains `root_node`!
+    fn split_components_root<'a>(root_node: &str, node: &'a str) -> impl Iterator<Item = &'a str> {
+        node[root_node.len()..]
+            .split(std::path::MAIN_SEPARATOR)
+            .filter(|v| !v.is_empty())
+    }
+
+    /// Handle reloading of the given path, potentially without changing root, but also change focus.
+    ///
+    /// If necessary, load all paths in-between.
+    fn handle_reload_at(&mut self, data: LIReloadPathData) {
+        let path = data.path;
+        let path_str = path.to_string_lossy();
+        let root_node = self.component.tree().root();
+
+        if !path_str.starts_with(root_node.id()) {
+            debug!("Given path is outside of tree root, not loading!");
+            return;
+        }
+
+        // because of the if above, we know the node is at least within the tree
+        // so it is safe to use the root as the initial starting node.
+
+        // this contains one of 3:
+        // - the node itself
+        // - the root node
+        // - the nearest directory node
+        let mut nearest_node = root_node;
+        let mut nearest_match = 0;
+
+        let components_between_root_and_path: Vec<&str> =
+            Self::split_components_root(root_node.id(), &path_str).collect();
+
+        for node in RecursiveNodeIter::new(root_node) {
+            // exact match found, no need to further iterate
+            if node.id().as_str() == path_str {
+                nearest_node = node;
+                break;
+            }
+
+            // The parent directory node will always contain the wanted path partially
+            // skip everything else.
+            // Otherwise it might decend into "root/to_delete/another" instead of wanted "root/dir/another".
+            if !path_str.starts_with(node.id()) {
+                continue;
+            }
+
+            for (idx, comp) in Self::split_components_root(root_node.id(), node.id()).enumerate() {
+                let Some(gotten) = components_between_root_and_path.get(idx) else {
+                    break;
+                };
+
+                if *gotten == comp && idx > nearest_match {
+                    nearest_match = idx;
+                    nearest_node = node;
+                }
+            }
+        }
+
+        trace!(
+            "found nearest match: {:#?}",
+            (&path_str, nearest_match, nearest_node.id())
+        );
+
+        let depth = components_between_root_and_path
+            .len()
+            .saturating_sub(nearest_match);
+        let depth = u32::try_from(depth).unwrap_or_default();
+
+        let focus_node = if data.change_focus { Some(path) } else { None };
+
+        self.trigger_subload_with_focus(
+            PathBuf::from(nearest_node.id()),
+            ScanDepth::Limited(depth),
+            focus_node,
+        );
+    }
+
+    /// Apply the given data as the root of the tree, resetting the state of the tree.
+    ///
+    /// This will always replace the root of the tree.
+    fn handle_ready(&mut self, data: LINodeReady) -> Msg {
+        let vec = data.vec;
+        let initial_node = data.focus_node;
+
+        let initial_node =
+            initial_node.or_else(|| self.component.tree_state().selected().map(String::from));
+
+        let tree = Tree::new(recvec_to_node(vec));
+
+        let focus = self.component.query(Attribute::Focus);
+
+        // There is no "clear" method for state in Treeview currently, so we have to
+        // entirely replace the Treeview component. The simplest way is to just replace via a new instance.
+        *self = Self::new(
+            &tree,
+            initial_node,
+            self.config.clone(),
+            self.tx_to_main.clone(),
+            self.download_tracker.clone(),
+        );
+
+        if let Some(focus) = focus {
+            self.attr(Attribute::Focus, focus);
+        }
+
+        Msg::ForceRedraw
+    }
+
+    /// Apply the given data at the path the data is, potentially without changing root.
+    ///
+    /// This will replace the root if the given data is starting at the root path.
+    fn handle_ready_sub(&mut self, data: LINodeReadySub) -> Option<Msg> {
+        let vec = data.vec;
+        let path_str = vec.id.to_string_lossy().to_string();
+
+        let tree_mut = self.component.tree_mut().root_mut();
+
+        if tree_mut.id() == &path_str {
+            // the given data *is* the root, so we have to replace the whole tree
+            self.component.set_tree(Tree::new(recvec_to_node(vec)));
+        } else {
+            let Some(parent_node) = self.component.tree_mut().root_mut().parent_mut(&path_str)
+            else {
+                warn!(
+                    "Ready node ({}) not found in tree ({})!",
+                    vec.id.display(),
+                    self.component.tree().root().id()
+                );
+                return None;
+            };
+
+            let mut new_node = Some(recvec_to_node(vec));
+
+            let children: Vec<Node<String>> = parent_node
+                .iter()
+                .map(|node| {
+                    if node.id() == &path_str {
+                        // we can gurantee the node only exists once in the tree
+                        // if it somehow is not the case, a panic is good
+                        new_node.take().unwrap()
+                    } else {
+                        node.clone()
+                    }
+                })
+                .collect();
+
+            // there is no function in "orange-trees" to replace a node, only a node's value (but nots its children)
+            parent_node.clear();
+            for child in children {
+                parent_node.add_child(child);
+            }
+
+            // try to set a initially selected node
+            if self.component.tree_state().selected().is_none() {
+                self.component.perform(Cmd::GoTo(Position::Begin));
+            }
+
+            if let Some(focus_node) = data.focus_node {
+                let focus_node_str = focus_node.to_string_lossy().to_string();
+                self.move_focus_on_current_tree(&focus_node_str);
+            }
+
+            // Treeview does not allow calling "tree_changed" without supplying a new tree
+            // but gives us a direct mutable reference to the tree, so we can just
+            // swap in a bogus temporary one, and call "set_tree" with the old one.
+            let mut tree = Model::loading_tree();
+            std::mem::swap(self.component.tree_mut(), &mut tree);
+            self.component.set_tree(tree);
+        }
+
+        Some(Msg::ForceRedraw)
+    }
+
+    /// Move focus in the current tree to the `wanted_path`.
+    ///
+    /// This function is necessary as [`TreeView`] only provides immutable access to the state,
+    /// so we have to move by [`Cmd`]s, one-by-one.
+    fn move_focus_on_current_tree(&mut self, wanted_path: &String) {
+        // unwrap is safe due to use literally just having added it
+        let Some(route_to_node) = self.component.tree().root().route_by_node(wanted_path) else {
+            // wanted path is not part of the tree
+            return;
+        };
+
+        // this is just a fallback as i dont fully trust the loop below
+        let mut max_iters: usize = u16::MAX.into();
+
+        loop {
+            if max_iters == 0 {
+                error!(
+                    "Focus change logic has consumed too many steps. This is a BUG, please report it with the steps that were taken!"
+                );
+                break;
+            }
+
+            max_iters = max_iters.saturating_sub(1);
+
+            let Some(selected) = self.component.tree_state().selected() else {
+                // we cant really do anything, if it does not even respond to "Begin"
+                break;
+            };
+
+            // check if we are done
+            if selected == wanted_path {
+                // always open the node, if it can be opened
+                self.component.perform(Cmd::Custom(TREE_CMD_OPEN));
+                break;
+            }
+
+            // route_by_node requires "&String", does not accept "&str"
+            let as_string = selected.to_string();
+            let root_node = self.component.tree().root();
+
+            let Some(selected_route) = root_node.route_by_node(&as_string) else {
+                // logic error in treeview, dont handle that
+                debug!("logic break");
+                break;
+            };
+
+            // handle being too deep
+            if selected_route.len() > route_to_node.len() {
+                self.component.perform(Cmd::Move(Direction::Up));
+                continue;
+            }
+
+            // fetch which direction we need to move in
+            let mut remaining_route = route_to_node.as_slice();
+            let mut selected_route_remaining = selected_route.as_slice();
+            for sibling_idx in &selected_route {
+                let Some(route_idx) = remaining_route.first() else {
+                    break;
+                };
+
+                if route_idx == sibling_idx {
+                    remaining_route = &remaining_route[1..];
+                    selected_route_remaining = &selected_route_remaining[1..];
+                }
+            }
+
+            // move in that direction
+            if let (Some(wanted_idx), Some(current_idx)) =
+                (remaining_route.first(), selected_route_remaining.first())
+            {
+                if wanted_idx > current_idx {
+                    self.component.perform(Cmd::Move(Direction::Down));
+                    // if the node we got down to is the one we want, open it
+                    if *wanted_idx == current_idx + 1 {
+                        self.component.perform(Cmd::Custom(TREE_CMD_OPEN));
+                    }
+                } else if wanted_idx <= current_idx {
+                    // If we are below the wanted index, move up.
+                    // Also if we are *on* the wanted index, but somehow it didnt catch it above to be the same node
+                    // then that means we are on different parents than wanted. Move up
+                    self.component.perform(Cmd::Move(Direction::Up));
+                    // if the node we got up to is the one we want, open it
+                    if *wanted_idx == current_idx.saturating_sub(1) {
+                        self.component.perform(Cmd::Custom(TREE_CMD_OPEN));
+                    }
+                }
+                continue;
+            }
+
+            // we are on the wanted parent already, so just move down
+            if let Some(_wanted_idx) = remaining_route.first() {
+                self.component.perform(Cmd::Move(Direction::Down));
+            }
+
+            // repeat
+        }
+    }
+
+    /// Handle all custom messages.
+    fn handle_user_events(&mut self, ev: LIMsg) -> Option<Msg> {
+        // handle subscriptions
+        match ev {
+            LIMsg::Reload(data) => Some(self.handle_full_reload(data)),
+            LIMsg::ReloadPath(data) => {
+                self.handle_reload_at(data);
+                None
+            }
+            LIMsg::TreeNodeReady(data) => Some(self.handle_ready(data)),
+            LIMsg::TreeNodeReadySub(data) => self.handle_ready_sub(data),
+            _ => None,
+        }
+    }
 }
 
 impl Component<Msg, UserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
+            return self.handle_user_events(ev);
+        }
+
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let result = match ev {
@@ -237,10 +696,15 @@ impl Component<Msg, UserEvent> for MusicLibrary {
                 return Some(self.handle_delete());
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
-                return Some(Msg::Library(LIMsg::Yank));
+                self.yank();
+                CmdResult::None
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.paste.get() => {
-                return Some(Msg::Library(LIMsg::Paste));
+                match self.paste() {
+                    Ok(None) => CmdResult::None,
+                    Ok(Some(msg)) => return Some(Msg::Library(msg)),
+                    Err(err) => return Some(Msg::Library(LIMsg::PasteError(err.to_string()))),
+                }
             }
 
             // music root modification
@@ -265,7 +729,18 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::Library(LIMsg::TreeStepOut)),
+            }) => {
+                let current_root = Path::new(self.component.tree().root().id());
+                let parent = current_root.parent().unwrap_or(current_root);
+
+                // only trigger a load if we are not at the root of the filesystem already
+                if current_root != parent {
+                    let focus_node = Some(self.component.tree().root().id().clone());
+                    self.trigger_load_with_focus(parent, focus_node);
+                }
+                // there is no special indicator or message; the download_tracker should force a draw once active
+                CmdResult::None
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
@@ -326,7 +801,8 @@ impl Component<Msg, UserEvent> for MusicLibrary {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
                 let path = Path::new(&node);
                 if path.is_dir() {
-                    return Some(Msg::Library(LIMsg::TreeStepInto(path.to_path_buf())));
+                    self.trigger_load_stepinto(path);
+                    // there is no special indicator or message; the download_tracker should force a draw once active
                 }
                 None
             }
@@ -338,31 +814,51 @@ impl Component<Msg, UserEvent> for MusicLibrary {
 
 /// Execute a library scan on a different thread.
 ///
-/// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
-pub fn library_scan<P: Into<PathBuf>>(
-    tx: TxToMain,
+/// Executes [`library_dir_tree`] on a different thread and calls `cb` on finish.
+pub fn library_scan_cb<P: Into<PathBuf>, F>(
     download_tracker: DownloadTracker,
     path: P,
     depth: ScanDepth,
-    focus_node: Option<String>,
-) {
+    cb: F,
+) where
+    F: FnOnce(RecVec) + Send + 'static,
+{
     let path = path.into();
     std::thread::Builder::new()
         .name("library tree scan".to_string())
         .spawn(move || {
             download_tracker.increase_one(path.to_string_lossy());
-            let root_node = library_dir_tree(&path, depth);
+            let vec = library_dir_tree(&path, depth);
 
-            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
+            cb(vec);
+            // let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(root_node, focus_node)));
             download_tracker.decrease_one(&path.to_string_lossy());
         })
         .expect("Failed to spawn thread");
 }
 
+/// Execute a library scan on a different thread.
+///
+/// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
+fn library_scan<P: Into<PathBuf>>(
+    download_tracker: DownloadTracker,
+    path: P,
+    depth: ScanDepth,
+    tx: TxToMain,
+    focus_node: Option<String>,
+) {
+    library_scan_cb(download_tracker, path, depth, move |vec| {
+        let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(LINodeReady {
+            vec,
+            focus_node,
+        })));
+    });
+}
+
 /// Scan the given `path` for up to `depth`, and return a [`Node`] tree.
 ///
 /// Note: consider using [`library_scan`] instead of this directly for running in a different thread.
-pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String> {
+pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec {
     let name: String = match path.file_name() {
         None => "/".to_string(),
         Some(n) => n.to_string_lossy().into_owned(),
@@ -399,7 +895,7 @@ pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec<PathBuf, String
 }
 
 /// Convert a [`RecVec`] to a [`Node`].
-fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
+fn recvec_to_node(vec: RecVec) -> Node<String> {
     let mut node = Node::new(vec.id.to_string_lossy().to_string(), vec.value);
 
     for val in vec.children {
@@ -410,20 +906,63 @@ fn recvec_to_node(vec: RecVec<PathBuf, String>) -> Node<String> {
 }
 
 impl Model {
-    /// Get the parent directory path of the current tree's root.
-    #[inline]
-    pub fn library_upper_dir(&self) -> Option<&Path> {
-        self.library.tree_path.parent()
+    /// Mount the Music library
+    pub fn mount_library(&mut self) -> Result<()> {
+        self.app.mount(
+            Id::Library,
+            Box::new(MusicLibrary::new(
+                &Self::loading_tree(),
+                None,
+                self.config_tui.clone(),
+                self.tx_to_main.clone(),
+                self.download_tracker.clone(),
+            )),
+            Self::library_subs(),
+        )?;
+
+        Ok(())
     }
 
-    /// Execute [`Self::library_scan`] from a `&self` instance.
+    /// Get all subscriptions for the [`MusicLibrary`] Component.
+    fn library_subs() -> Vec<Sub<Id, UserEvent>> {
+        vec![
+            Sub::new(
+                SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::Reload(
+                    LIReloadData::default(),
+                )))),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::ReloadPath(
+                    LIReloadPathData::default(),
+                )))),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReady(
+                    LINodeReady::default(),
+                )))),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
+                    LINodeReadySub::default(),
+                )))),
+                SubClause::Always,
+            ),
+        ]
+    }
+
+    /// Execute [`library_scan`] from a `&self` instance.
+    ///
+    /// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish
     #[inline]
     pub fn library_scan_dir<P: Into<PathBuf>>(&self, path: P, focus_node: Option<String>) {
         library_scan(
-            self.tx_to_main.clone(),
             self.download_tracker.clone(),
             path,
             ScanDepth::Limited(2),
+            self.tx_to_main.clone(),
             focus_node,
         );
     }
@@ -433,72 +972,35 @@ impl Model {
         Tree::new(Node::new("/dev/null".to_string(), "Loading...".to_string()))
     }
 
-    /// Reload the library with the given `node` as a focus, also starts a new database sync worker for the current path.
-    pub fn library_reload_with_node_focus(&mut self, node: Option<String>) {
-        if let Err(err) = self.db.scan_path(
-            self.library.tree_path.as_path(),
-            &self.config_server.read_recursive(),
-            false,
-        ) {
-            error!(
-                "Error scanning path {:#?}: {err:#?}",
-                self.library.tree_path.display()
-            );
+    /// Reload the given path in the library and focus that node.
+    ///
+    /// Also re-indexes the path for the database if it is part of a music root.
+    ///
+    /// The input path is expected to be absolute.
+    #[expect(clippy::unnecessary_debug_formatting)]
+    pub fn library_reload_and_focus<P: Into<PathBuf>>(&mut self, path: P) {
+        let path = path.into();
+        if !path.is_absolute() {
+            debug!("library reload, given path is not absolute! {path:#?}");
         }
-        self.database_reload();
-        self.library_scan_dir(&self.library.tree_path, node);
-    }
 
-    /// Apply the given [`RecVec`] as a tree
-    pub fn library_apply_as_tree(
-        &mut self,
-        msg: RecVec<PathBuf, String>,
-        focus_node: Option<String>,
-    ) {
-        let root_path = msg.id.clone();
-        let root_node = recvec_to_node(msg);
+        let config_read = self.config_server.read_recursive();
+        for dir in &self.config_server.read().settings.player.music_dirs {
+            let absolute_dir = shellexpand::path::tilde(dir);
 
-        let old_current_node = match self.app.state(&Id::Library).ok().unwrap() {
-            State::One(StateValue::String(id)) => Some(id),
-            _ => None,
-        };
-
-        self.library.tree_path = root_path;
-        let tree = Tree::new(root_node);
-
-        // remount preserves focus
-        let _ = self.app.remount(
-            Id::Library,
-            Box::new(MusicLibrary::new(
-                &tree,
-                old_current_node,
-                self.config_tui.clone(),
-            )),
-            Vec::new(),
-        );
-
-        // focus the specified node
-        if let Some(id) = focus_node {
-            let _ = self.app.attr(
-                &Id::Library,
-                Attribute::Custom(TREE_INITIAL_NODE),
-                AttrValue::String(id),
-            );
+            if path.starts_with(absolute_dir) {
+                if let Err(err) = self.db.scan_path(&path, &config_read, false) {
+                    error!("Error scanning path {:#?}: {err:#?}", path.display());
+                }
+            }
         }
-    }
 
-    /// Handle stepping into a node on the tree
-    #[inline]
-    pub fn library_stepinto<P: Into<PathBuf>>(&mut self, path: P) {
-        self.library_scan_dir(path.into(), None);
-    }
-
-    /// Handle stepping out of the current root node on the tree
-    pub fn library_stepout(&mut self) {
-        if let Some(path) = self.library_upper_dir() {
-            let focus_node = Some(self.library.tree_path.to_string_lossy().to_string());
-            self.library_scan_dir(path, focus_node);
-        }
+        let _ = self
+            .tx_to_main
+            .send(Msg::Library(LIMsg::ReloadPath(LIReloadPathData {
+                path,
+                change_focus: true,
+            })));
     }
 
     /// Show a deletion confirmation for the currently selected node.
@@ -530,38 +1032,6 @@ impl Model {
         self.library_scan_dir(parent, focus_node);
 
         // this line remove the deleted songs from playlist
-        self.playlist_update_library_delete();
-        Ok(())
-    }
-
-    /// Store the currently selected node as yanked (for pasting with [`Self::library_paste`]).
-    pub fn library_yank(&mut self) {
-        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            self.library.yanked_node_id = Some(node_id);
-        }
-    }
-
-    /// Paste the previously yanked node in the currently selected node if it is a directory, otherwise in its parent.
-    pub fn library_paste(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::String(new_id))) = self.app.state(&Id::Library) {
-            let old_id = self
-                .library
-                .yanked_node_id
-                .as_ref()
-                .context("no id yanked")?;
-            let new_path = Path::new(new_id.as_str());
-            let old_path = Path::new(old_id.as_str());
-            let new_parent = new_path.parent().context("no parent folder found")?;
-            let pold_filename = old_path.file_name().context("no file name found")?;
-            let new_node_id = if new_path.is_dir() {
-                new_path.join(pold_filename)
-            } else {
-                new_parent.join(pold_filename)
-            };
-            rename(old_path, new_node_id.as_path())?;
-            self.library_reload_with_node_focus(Some(new_node_id.to_string_lossy().to_string()));
-        }
-        self.library.yanked_node_id = None;
         self.playlist_update_library_delete();
         Ok(())
     }
@@ -669,5 +1139,35 @@ impl Model {
         res.context("Error while saving config")?;
 
         Ok(())
+    }
+}
+
+/// This exists as `orange-trees` does not have a recursive iter.
+///
+/// This is a depth-first iterator.
+struct RecursiveNodeIter<'a> {
+    stack: Vec<&'a Node<String>>,
+}
+
+impl<'a> RecursiveNodeIter<'a> {
+    /// Create a new iterator with the children from the given node.
+    ///
+    /// Does *not* iterate over the node itself
+    fn new(start_node: &'a Node<String>) -> Self {
+        Self {
+            stack: start_node.iter().collect(),
+        }
+    }
+}
+
+impl<'a> Iterator for RecursiveNodeIter<'a> {
+    type Item = &'a Node<String>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.stack.pop()?;
+
+        self.stack.extend(next.iter());
+
+        Some(next)
     }
 }
