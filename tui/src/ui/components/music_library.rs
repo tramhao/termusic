@@ -10,7 +10,7 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::{
-    Component, Event, MockComponent, State, StateValue, Sub, SubClause, SubEventClause,
+    Attribute, Component, Event, MockComponent, State, StateValue, Sub, SubClause, SubEventClause,
 };
 
 use crate::ui::ids::Id;
@@ -416,6 +416,8 @@ impl MusicLibrary {
 
         let tree = Tree::new(recvec_to_node(vec));
 
+        let focus = self.component.query(Attribute::Focus);
+
         // There is no "clear" method for state in Treeview currently, so we have to
         // entirely replace the Treeview component. The simplest way is to just replace via a new instance.
         *self = Self::new(
@@ -425,6 +427,10 @@ impl MusicLibrary {
             self.tx_to_main.clone(),
             self.download_tracker.clone(),
         );
+
+        if let Some(focus) = focus {
+            self.attr(Attribute::Focus, focus);
+        }
 
         Msg::ForceRedraw
     }
