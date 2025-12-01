@@ -167,11 +167,11 @@ impl Database {
 
             // primary matching mechanism: check guid to see if it
             // already exists in database
-            if !new_ep.guid.is_empty() {
-                if let Some(old_ep) = old_ep_map.get(&new_ep.guid) {
-                    existing_id = Some(old_ep.id);
-                    update = Self::check_for_updates(old_ep, new_ep);
-                }
+            if !new_ep.guid.is_empty()
+                && let Some(old_ep) = old_ep_map.get(&new_ep.guid)
+            {
+                existing_id = Some(old_ep.id);
+                update = Self::check_for_updates(old_ep, new_ep);
             }
 
             // fallback matching: for each existing episode, check the
@@ -184,10 +184,10 @@ impl Database {
                     matching += i32::from(new_ep.title == old_ep.title);
                     matching += i32::from(new_ep.url == old_ep.url);
 
-                    if let Some(pd) = new_pd {
-                        if let Some(old_pd) = old_ep.pubdate {
-                            matching += i32::from(pd == old_pd.timestamp());
-                        }
+                    if let Some(pd) = new_pd
+                        && let Some(old_pd) = old_ep.pubdate
+                    {
+                        matching += i32::from(pd == old_pd.timestamp());
                     }
 
                     if matching >= 2 {
@@ -223,10 +223,10 @@ impl Database {
     fn check_for_updates(old_ep: &Episode, new_ep: &EpisodeNoId) -> bool {
         let new_pd = new_ep.pubdate.map(|dt| dt.timestamp());
         let mut pd_match = false;
-        if let Some(pd) = new_pd {
-            if let Some(old_pd) = old_ep.pubdate {
-                pd_match = pd == old_pd.timestamp();
-            }
+        if let Some(pd) = new_pd
+            && let Some(old_pd) = old_ep.pubdate
+        {
+            pd_match = pd == old_pd.timestamp();
         }
         if !(new_ep.title == old_ep.title
             && new_ep.url == old_ep.url

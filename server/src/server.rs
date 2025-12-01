@@ -738,10 +738,10 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
     let mut path = dir.to_path_buf();
 
     if path.exists() {
-        if !path.has_root() {
-            if let Ok(p_base) = std::env::current_dir() {
-                path = p_base.join(path);
-            }
+        if !path.has_root()
+            && let Ok(p_base) = std::env::current_dir()
+        {
+            path = p_base.join(path);
         }
 
         if let Ok(p_canonical) = path.canonicalize() {

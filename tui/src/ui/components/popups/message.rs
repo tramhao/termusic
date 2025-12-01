@@ -57,12 +57,11 @@ impl Model {
     pub fn umount_message(&mut self, _title: &str, text: &str) {
         if let Ok(Some(AttrValue::Payload(PropPayload::Vec(spans)))) =
             self.app.query(&Id::MessagePopup, Attribute::Text)
+            && let Some(display_text) = spans.into_iter().next()
         {
-            if let Some(display_text) = spans.into_iter().next() {
-                let d = display_text.unwrap_text_span().content;
-                if text.eq(&d) {
-                    self.app.umount(&Id::MessagePopup).ok();
-                }
+            let d = display_text.unwrap_text_span().content;
+            if text.eq(&d) {
+                self.app.umount(&Id::MessagePopup).ok();
             }
         }
     }

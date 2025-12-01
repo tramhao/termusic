@@ -471,10 +471,10 @@ impl GStreamerBackend {
                 }
                 PlayerInternalCmd::AboutToFinish => {
                     info!("about to finish received by gstreamer internal");
-                    if !send_atf_watcher.swap(true, Ordering::Relaxed) {
-                        if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
-                            error!("error in sending AboutToFinish: {e}");
-                        }
+                    if !send_atf_watcher.swap(true, Ordering::Relaxed)
+                        && let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish)
+                    {
+                        error!("error in sending AboutToFinish: {e}");
                     }
                 }
                 PlayerInternalCmd::SkipNext => {
@@ -547,27 +547,27 @@ impl PlayerTrait for GStreamerBackend {
     #[allow(clippy::cast_sign_loss)]
     #[allow(clippy::cast_possible_wrap)]
     fn seek(&mut self, secs: i64) -> Result<()> {
-        if let Some(time_pos) = self.playbin.get_position() {
-            if let Some(duration) = self.playbin.get_duration() {
-                let time_pos = time_pos.seconds() as i64;
-                let duration = duration.seconds() as i64;
+        if let Some(time_pos) = self.playbin.get_position()
+            && let Some(duration) = self.playbin.get_duration()
+        {
+            let time_pos = time_pos.seconds() as i64;
+            let duration = duration.seconds() as i64;
 
-                let mut seek_pos = time_pos + secs;
-                if seek_pos < 0 {
-                    seek_pos = 0;
-                }
-                if seek_pos > duration - 6 {
-                    seek_pos = duration - 6;
-                }
-
-                let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
-                self.playbin.seek_simple(
-                    gst::SeekFlags::FLUSH | gst::SeekFlags::KEY_UNIT,
-                    seek_pos_clock,
-                )?;
-                // add this sleep to get progress feedback
-                std::thread::sleep(Duration::from_millis(50));
+            let mut seek_pos = time_pos + secs;
+            if seek_pos < 0 {
+                seek_pos = 0;
             }
+            if seek_pos > duration - 6 {
+                seek_pos = duration - 6;
+            }
+
+            let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
+            self.playbin.seek_simple(
+                gst::SeekFlags::FLUSH | gst::SeekFlags::KEY_UNIT,
+                seek_pos_clock,
+            )?;
+            // add this sleep to get progress feedback
+            std::thread::sleep(Duration::from_millis(50));
         }
         Ok(())
     }

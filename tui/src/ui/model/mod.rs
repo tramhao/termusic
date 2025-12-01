@@ -587,10 +587,10 @@ impl Model {
     }
 
     pub fn is_radio(&self) -> bool {
-        if let Some(track) = self.playback.current_track() {
-            if track.media_type() == MediaTypesSimple::LiveRadio {
-                return true;
-            }
+        if let Some(track) = self.playback.current_track()
+            && track.media_type() == MediaTypesSimple::LiveRadio
+        {
+            return true;
         }
         false
     }

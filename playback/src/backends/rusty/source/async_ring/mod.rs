@@ -565,7 +565,7 @@ impl<const N: usize> StaticBuf<N> {
     fn new() -> Self {
         const {
             assert!(N > 0);
-            assert!(N % 2 == 0);
+            assert!(N.is_multiple_of(2));
         }
         Self {
             buf: [0; N],

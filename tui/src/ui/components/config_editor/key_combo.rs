@@ -411,16 +411,16 @@ impl KeyCombo {
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style);
         // Apply invalid style
-        if focus && !self.is_valid() {
-            if let Some(style_invalid) = self
+        if focus
+            && !self.is_valid()
+            && let Some(style_invalid) = self
                 .props
                 .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
                 .and_then(AttrValue::as_style)
-            {
-                let foreground = style_invalid.fg.unwrap_or(Color::Reset);
-                let background = style_invalid.bg.unwrap_or(Color::Reset);
-                style = style.fg(foreground).bg(background);
-            }
+        {
+            let foreground = style_invalid.fg.unwrap_or(Color::Reset);
+            let background = style_invalid.bg.unwrap_or(Color::Reset);
+            style = style.fg(foreground).bg(background);
         }
 
         let block_inner_area = area;
@@ -499,14 +499,13 @@ impl KeyCombo {
         let is_valid = self.is_valid();
 
         // Apply invalid style
-        if !is_valid {
-            if let Some(style_invalid) = self
+        if !is_valid
+            && let Some(style_invalid) = self
                 .props
                 .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
                 .and_then(AttrValue::as_style)
-            {
-                style = style_invalid;
-            }
+        {
+            style = style_invalid;
         }
 
         // setup the whole block
@@ -1270,12 +1269,12 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
                 ..
             }) => {
                 let cmd_res = self.perform(Cmd::Type(ch));
-                if let State::One(_) = self.state() {
-                    if let Ok(binding) = self.key_event() {
-                        return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                            self.id, binding,
-                        )));
-                    }
+                if let State::One(_) = self.state()
+                    && let Ok(binding) = self.key_event()
+                {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                        self.id, binding,
+                    )));
                 }
                 cmd_res
             }

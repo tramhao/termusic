@@ -1421,10 +1421,10 @@ impl KeyBinding {
         };
 
         // transform the key to be upper-case if "Shift" is enabled, as that is what tuirealm will provide (and we cannot modify that)
-        if modifiers.intersects(tuievents::KeyModifiers::SHIFT) {
-            if let tuievents::Key::Char(v) = code {
-                code = tuievents::Key::Char(v.to_ascii_uppercase());
-            }
+        if modifiers.intersects(tuievents::KeyModifiers::SHIFT)
+            && let tuievents::Key::Char(v) = code
+        {
+            code = tuievents::Key::Char(v.to_ascii_uppercase());
         }
 
         Ok(Self {
@@ -1620,15 +1620,14 @@ impl TryFrom<&str> for KeyWrap {
         }
 
         // yes, this also matches F255
-        if value.len() <= 4 {
-            if let Some(val) = value.strip_prefix('f') {
-                if let Ok(parsed) = val.parse::<u8>() {
-                    // no number validation as tuirealm seems to not care
-                    return Ok(Self(tuievents::Key::Function(parsed)));
-                }
-                // if parsing fails, just try the other keys, or report "UnknownKey"
-            }
+        if value.len() <= 4
+            && let Some(val) = value.strip_prefix('f')
+            && let Ok(parsed) = val.parse::<u8>()
+        {
+            // no number validation as tuirealm seems to not care
+            return Ok(Self(tuievents::Key::Function(parsed)));
         }
+        // if parsing fails, just try the other keys, or report "UnknownKey"
 
         let ret = match value {
             const_keys::BACKSPACE => Self(TKey::Backspace),
