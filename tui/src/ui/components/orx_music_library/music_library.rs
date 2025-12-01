@@ -189,7 +189,7 @@ impl OrxMusicLibraryComponent {
         tx_to_main: TxToMain,
         download_tracker: DownloadTracker,
     ) -> Self {
-        let mut this = Self::new_loading(config, tx_to_main.clone(), download_tracker.clone());
+        let mut this = Self::new_loading(config, tx_to_main, download_tracker);
 
         this.component = this.component.tree(tree);
 
@@ -397,9 +397,7 @@ impl OrxMusicLibraryComponent {
 
     /// Handle sending a request to delete the currently selected node.
     fn handle_delete(&mut self) -> Option<Msg> {
-        let Some(current_node) = self.component.get_current_selected_node() else {
-            return None;
-        };
+        let current_node = self.component.get_current_selected_node()?;
         let path = current_node.data().path.clone();
 
         let focus_node_after = {
@@ -785,15 +783,15 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
             }) => {
-                let Some(current_root) = self.get_root_path() else {
-                    return None;
-                };
-                let parent = current_root.parent().unwrap_or(current_root);
+                if let Some(current_root) = self.get_root_path() {
+                    let parent = current_root.parent().unwrap_or(current_root);
 
-                // only trigger a load if we are not at the root of the filesystem already
-                if current_root != parent {
-                    self.trigger_load_with_focus(parent, Some(current_root.to_path_buf()));
+                    // only trigger a load if we are not at the root of the filesystem already
+                    if current_root != parent {
+                        self.trigger_load_with_focus(parent, Some(current_root.to_path_buf()));
+                    }
                 }
+
                 // there is no special indicator or message; the download_tracker should force a draw once active
                 CmdResult::None
             }
