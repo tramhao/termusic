@@ -24,7 +24,7 @@ use tuirealm_orx_tree::{
     NodeRef,
     component::TreeView,
     traversal::{Dfs, OverData, OverNode, Traverser},
-    types::{NodeValue, Tree},
+    types::{MotionDirection, NodeIdx, NodeValue, Tree},
     widget::{CHILD_INDICATOR_LENGTH, RenderIndicator, calc_area_for_value},
 };
 
@@ -589,6 +589,18 @@ impl NewMusicLibraryComponent {
         );
     }
 
+    /// Get the [`NodeIdx`] of a given [`Path`], searches from current tree root.
+    fn get_idx_of_path(&self, path: &Path) -> Option<NodeIdx<MusicLibData>> {
+        let root_node = self.component.get_tree().get_root()?;
+
+        let mut traverser = Dfs::<OverNode>::new();
+        // inital tree walker
+        let mut walker = root_node.walk_with(&mut traverser);
+
+        // TODO: ask orx why "traverser" needs to live as long as "tree"
+        walker.find(|v| v.data().path == path).map(|v| v.idx())
+    }
+
     /// Apply the given data as the root of the tree, resetting the state of the tree.
     ///
     /// This will always replace the root of the tree.
@@ -607,7 +619,12 @@ impl NewMusicLibraryComponent {
         // SAFETY: everything is already invalidated and cleared.
         *unsafe { self.component.get_tree_mut() } = tree;
 
-        // TODO: set focus node once it becomes available
+        if let Some(initial_node) = initial_node {
+            let idx = self.get_idx_of_path(&initial_node);
+            if let Some(idx) = idx {
+                self.component.select(MotionDirection::Upwards, idx);
+            }
+        }
 
         Msg::ForceRedraw
     }
@@ -664,9 +681,10 @@ impl NewMusicLibraryComponent {
             }
 
             if let Some(focus_node) = data.focus_node {
-                // let focus_node_str = focus_node.to_string_lossy().to_string();
-                // self.move_focus_on_current_tree(&focus_node_str);
-                // TODO: select focus node
+                let idx = self.get_idx_of_path(&focus_node);
+                if let Some(idx) = idx {
+                    self.component.select(MotionDirection::Upwards, idx);
+                }
             }
 
             // TODO: call tree changed?
@@ -693,7 +711,6 @@ impl NewMusicLibraryComponent {
 
 impl Component<Msg, UserEvent> for NewMusicLibraryComponent {
     #[allow(clippy::too_many_lines)]
-    #[allow(unsafe_code)]
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
             return self.handle_user_events(ev);
