@@ -39,7 +39,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        rust: [stable, "1.85"]
+        rust: [stable, "1.88"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
