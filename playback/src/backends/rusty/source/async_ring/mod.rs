@@ -55,7 +55,7 @@ impl AsyncRingSourceProvider {
     }
 
     /// Check if the consumer ([`AsyncRingSource`]) is still connected and writes are possible
-    #[allow(dead_code)] // cant use expect as this function is used in tests
+    #[allow(dead_code)] // can't use expect as this function is used in tests
     #[must_use]
     pub fn is_closed(&self) -> bool {
         self.inner.is_closed()
@@ -75,7 +75,7 @@ impl AsyncRingSourceProvider {
         current_span_len: usize,
     ) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
-        // SAFETY: we allocaed the exact necessary size, this can never fail
+        // SAFETY: we allocated the exact necessary size, this can never fail
         // #[expect(
         //     clippy::missing_panics_doc,
         //     reason = "static buffer with exact size required created above"
@@ -97,7 +97,7 @@ impl AsyncRingSourceProvider {
     #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
     async fn new_data(&mut self, length: usize) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(MessageDataFirst::MESSAGE_SIZE)];
-        // SAFETY: we allocaed the exact necessary size, this can never fail
+        // SAFETY: we allocated the exact necessary size, this can never fail
         // #[expect(
         //     clippy::missing_panics_doc,
         //     reason = "static buffer with exact size required created above"
@@ -173,7 +173,7 @@ impl AsyncRingSourceProvider {
     #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
     pub async fn new_eos(&mut self) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(0)];
-        // SAFETY: we allocaed the exact necessary size, this can never fail
+        // SAFETY: we allocated the exact necessary size, this can never fail
         // #[expect(
         //     clippy::missing_panics_doc,
         //     reason = "static buffer with exact size required created above"
@@ -207,7 +207,7 @@ impl AsyncRingSourceProvider {
     }
 }
 
-/// Struct to wait on a channel, without the compiler complaining that `self` cant be borrowed mutably multiple times.
+/// Struct to wait on a channel, without the compiler complaining that `self` can't be borrowed mutably multiple times.
 #[derive(Debug)]
 pub struct WaitSeek(Arc<RwLock<mpsc::Receiver<SeekData>>>);
 
@@ -378,7 +378,7 @@ impl AsyncRingSource {
 
         // Avoid calling into async-runtime and async code if the ringbuffer knowingly already contains enough bytes
         // as reading can be done sync, non-blocking for buffer copies.
-        // Also SAFETY: "occupied_len" says it "could be more or less" but we are in the consumer here, so we known it wont *decrease*
+        // Also SAFETY: "occupied_len" says it "could be more or less" but we are in the consumer here, so we known it won't *decrease*
         // between here and actually reading it.
         if self.inner.occupied_len() < wait_for_bytes {
             // Avoid having to call async stuff for as long as possible, as that can heavily increase CPU load in a hot path.
@@ -871,7 +871,7 @@ mod tests {
 
             prod.write_data(&[]).await.unwrap_err();
 
-            // just to prevent a inifinitely running test due to a deadlock
+            // just to prevent an infinitely running test due to a deadlock
             let res = tokio::time::timeout(Duration::from_secs(3), handle)
                 .await
                 .is_ok();
@@ -941,7 +941,7 @@ mod tests {
                 order_c.lock().push("prod");
             });
 
-            // just to prevent a inifinitely running test due to a deadlock
+            // just to prevent an infinitely running test due to a deadlock
             let res = tokio::time::timeout(Duration::from_secs(3), cons_handle)
                 .await
                 .is_ok();
@@ -949,7 +949,7 @@ mod tests {
 
             assert!(!obsv.read_is_held());
 
-            // just to prevent a inifinitely running test due to a deadlock
+            // just to prevent an infinitely running test due to a deadlock
             let res = tokio::time::timeout(Duration::from_secs(3), prod_handle)
                 .await
                 .is_ok();
@@ -1007,7 +1007,7 @@ mod tests {
             // dont check read as that *could* have consumed and exited already
             // assert_eq!(obsv.read_is_held(), true);
 
-            // just to prevent a inifinitely running test due to a deadlock
+            // just to prevent an infinitely running test due to a deadlock
             let res = tokio::time::timeout(Duration::from_secs(3), handle)
                 .await
                 .is_ok();
@@ -1060,7 +1060,7 @@ mod tests {
             // dont check read as that *could* have consumed and exited already
             // assert_eq!(obsv.read_is_held(), true);
 
-            // just to prevent a inifinitely running test due to a deadlock
+            // just to prevent an infinitely running test due to a deadlock
             let res = tokio::time::timeout(Duration::from_secs(3), handle)
                 .await
                 .is_ok();

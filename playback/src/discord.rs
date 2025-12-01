@@ -97,7 +97,7 @@ impl Rpc {
                         v
                     } else {
                         warn!(
-                            "SystemTime to i64 failed, discord interface cant handle this number"
+                            "SystemTime to i64 failed, discord interface can't handle this number"
                         );
                         0
                     };
@@ -145,7 +145,7 @@ impl Rpc {
                         v
                     } else {
                         warn!(
-                            "SystemTime to i64 failed, discord interface cant handle this number"
+                            "SystemTime to i64 failed, discord interface can't handle this number"
                         );
                         0
                     };

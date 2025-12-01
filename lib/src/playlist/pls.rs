@@ -108,7 +108,7 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
             };
 
             let Ok(num) = remainder.parse::<u16>() else {
-                warn!("Couldnt parse NumberOfEntries number! line: {line:#?}");
+                warn!("Couldn't parse NumberOfEntries number! line: {line:#?}");
                 continue;
             };
 
@@ -161,7 +161,7 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
 fn parse_id<'a>(val: &'a str, line: &str) -> Option<(u16, &'a str)> {
     if let Some((id, remainder)) = val.split_once('=') {
         let Ok(num) = id.parse::<u16>() else {
-            error!("Couldnt parse PLS entry id for line {line:#?}");
+            error!("Couldn't parse PLS entry id for line {line:#?}");
             return None;
         };
 

@@ -9,7 +9,7 @@ pub struct M3UItem {
     pub url: PlaylistValue,
 }
 
-/// M3U(8) is a de-facto standart (meaning there is no formal standard), where each line that does not start with `#` is a entry, separated by newlines
+/// M3U(8) is a de-facto standard (meaning there is no formal standard), where each line that does not start with `#` is a entry, separated by newlines
 ///
 /// <https://en.wikipedia.org/wiki/M3U#File_format>
 pub fn decode(content: &str) -> Vec<M3UItem> {

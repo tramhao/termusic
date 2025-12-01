@@ -60,7 +60,7 @@ pub struct Playlist {
 impl Playlist {
     /// Create a new playlist instance with 0 tracks
     pub fn new(config: &SharedServerSettings, stream_tx: StreamTX) -> Self {
-        // TODO: shouldnt "loop_mode" be combined with the config ones?
+        // TODO: shouldn't "loop_mode" be combined with the config ones?
         let loop_mode = config.read().settings.player.loop_mode;
         let current_track = None;
 
@@ -325,7 +325,7 @@ impl Playlist {
     pub fn next(&mut self) {
         self.played_index.push(self.current_track_index);
         // Note: the next index is *not* taken here, as ".proceed/next" is called first,
-        // then "has_next_track" is later used to check if enqueing has used.
+        // then "has_next_track" is later used to check if enqueuing has used.
         if let Some(index) = self.next_track_index {
             self.current_track_index = index;
             return;
@@ -852,7 +852,7 @@ impl Playlist {
 
         if at_index + tracks.tracks.len().saturating_sub(1) >= self.tracks.len() {
             bail!(
-                "at_index + tracks to remove is higher than the length of the playlist! playlist lenght is \"{}\"",
+                "at_index + tracks to remove is higher than the length of the playlist! playlist length is \"{}\"",
                 self.tracks.len()
             );
         }

@@ -12,7 +12,7 @@ pub use server_overlay::ServerOverlay;
 pub use tui_overlay::TuiOverlay;
 
 /// The Server-Settings Object, but shared across many places
-// Note that this (at least currently) unused in lib itself, but used in many of the other dependant crates (playback, server, tui)
+// Note that this (at least currently) unused in lib itself, but used in many of the other dependent crates (playback, server, tui)
 pub type SharedServerSettings = Arc<RwLock<ServerOverlay>>;
 
 /// The Server-Settings Object, but shared across many places
