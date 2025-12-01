@@ -5,7 +5,6 @@ mod footer;
 mod global_listener;
 mod labels;
 mod lyric;
-mod music_library;
 mod orx_music_library;
 mod playlist;
 mod podcast;
