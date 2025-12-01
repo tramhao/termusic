@@ -132,7 +132,7 @@ impl NodeValue for MusicLibData {
 const LOADING_TREE_TEXT: &str = "Loading...";
 
 #[derive(Debug, MockComponent)]
-pub struct NewMusicLibraryComponent {
+pub struct OrxMusicLibraryComponent {
     component: TreeView<MusicLibData>,
     config: SharedTuiSettings,
 
@@ -142,7 +142,7 @@ pub struct NewMusicLibraryComponent {
     yanked_path: Option<PathBuf>,
 }
 
-impl NewMusicLibraryComponent {
+impl OrxMusicLibraryComponent {
     fn get_inner_comp(config: &TuiOverlay) -> TreeView<MusicLibData> {
         TreeView::<MusicLibData>::default()
             .background(config.settings.theme.library_background())
@@ -709,7 +709,7 @@ impl NewMusicLibraryComponent {
     }
 }
 
-impl Component<Msg, UserEvent> for NewMusicLibraryComponent {
+impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
