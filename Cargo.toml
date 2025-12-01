@@ -128,7 +128,7 @@ alphanumeric-sort = "1.5"
 # for less dependencies, keep in sync with the version ratatui uses
 lru = "0.12.5"
 either = "1.15"
-# transistive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
+# transitive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
 cc = "1.2"
 
 [profile.release]

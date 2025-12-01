@@ -377,7 +377,7 @@ impl TryFrom<protobuf::UpdatePlaylist> for UpdatePlaylistEvents {
     }
 }
 
-/// Easily unwrap a given grpc option and covert it to a result, with a location on None
+/// Easily unwrap a given grpc option and convert it to a result, with a location on None
 fn unwrap_msg<T>(opt: Option<T>, place: &str) -> Result<T, anyhow::Error> {
     match opt {
         Some(val) => Ok(val),

@@ -595,7 +595,7 @@ struct PlayerThreadArgs {
     pcmd_tx: crate::PlayerCmdSender,
     /// Internal Player commands that need to be processed by the player task
     picmd_tx: Sender<PlayerInternalCmd>,
-    /// Reciever for the Internal Player Command
+    /// Receiver for the Internal Player Command
     picmd_rx: Receiver<PlayerInternalCmd>,
     media_title: Arc<Mutex<String>>,
     // radio_downloaded: Arc<Mutex<u64>>,

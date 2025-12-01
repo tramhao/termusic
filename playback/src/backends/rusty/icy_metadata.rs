@@ -48,7 +48,7 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
 
             return Ok(read_bytes);
         }
-        // beyond here we handle metdata as the next byte
+        // beyond here we handle metadata as the next byte
 
         // buffer for the icy metadata length byte
         let mut length = [0; 1];

@@ -174,7 +174,7 @@ where
 
         // this could only mean the inner source has ended
         if self.in_buffer.len() < self.min_samples {
-            // soundtouch may not output anything if there are not at least "min_samples", unless "flush" is called, which filles with empty samples
+            // soundtouch may not output anything if there are not at least "min_samples", unless "flush" is called, which fills with empty samples
             self.soundtouch.flush();
         }
 

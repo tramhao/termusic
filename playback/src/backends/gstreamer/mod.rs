@@ -85,7 +85,7 @@ impl PlaybinWrap {
         }
     }
 
-    /// Get a abitrary property.
+    /// Get an arbitrary property.
     #[inline]
     fn get_prop<V: for<'b> FromValue<'b> + 'static>(&self, key: &str) -> V {
         self.0.property(key)

@@ -368,7 +368,7 @@ pub enum SymphoniaDecoderError {
     /// The format of the data has not been recognized.
     UnrecognizedFormat,
 
-    /// An IO error occured while reading, writing, or seeking the stream.
+    /// An IO error occurred while reading, writing, or seeking the stream.
     IoError(String),
 
     /// The stream contained malformed data and could not be decoded or demuxed.
@@ -429,7 +429,7 @@ struct DecodeLoopResult {
 enum BufferInputType<'a> {
     /// Allocate a new [`SampleBuffer`] in the specified location (without unsafe)
     New(&'a mut Option<SampleBuffer<SampleType>>),
-    /// Try to re-use the provided [`SampleBuffer`]
+    /// Try to reuse the provided [`SampleBuffer`]
     Existing(&'a mut SampleBuffer<SampleType>),
 }
 

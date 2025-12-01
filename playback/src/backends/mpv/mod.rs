@@ -66,7 +66,7 @@ impl MpvBackend {
             "audio-device",
             config.settings.backends.mpv.audio_device.as_str(),
         )
-        .expect("Couldnt set \"audio-device\" property");
+        .expect("Couldn't set \"audio-device\" property");
 
         mpv.set_property("volume", i64::from(volume))
             .expect("Error setting volume");

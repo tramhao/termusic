@@ -98,7 +98,7 @@ pub fn get_app_new_database_path() -> Result<PathBuf> {
     Ok(db_path)
 }
 
-/// Get the podcast directoy resolved and created
+/// Get the podcast directory resolved and created
 fn get_podcast_save_path(config: &ServerOverlay) -> Result<PathBuf> {
     let full_path = shellexpand::path::tilde(&config.settings.podcast.download_dir);
     if !full_path.exists() {
@@ -209,7 +209,7 @@ pub fn absolute_path(path: &Path) -> std::io::Result<Cow<'_, Path>> {
 
 /// Absolutize a given path with the given base.
 ///
-/// `base` is expected to be absoulte!
+/// `base` is expected to be absolute!
 ///
 /// This function, unlike [`std::fs::canonicalize`] does *not* hit the filesystem and so does not require the input path to exist yet.
 ///

@@ -79,7 +79,7 @@
 - Fix(tui): escape key will now no longer also act as a quit key.
 - Fix(tui): changed the music library tree loading to be async.
 - Fix(tui): in the music library tree, when stepping out now the correct node if focused instead of the root node.
-- Fix(tui): limit Database `DataBase`(criteria) widget to size of elements it contains, now it wont grow beyond that and leave unused space.
+- Fix(tui): limit Database `DataBase`(criteria) widget to size of elements it contains, now it won't grow beyond that and leave unused space.
 - Fix(server): with `rusty-soundtouch` on `rusty` backend, dont take initial samples until necessary.
 - Fix(server): on rusty backend, always decode and use `f32` samples. (instead of `i16`)
 - Fix(server): on rusty backend, update `soundtouch` version to fix build issues on latest arch & gcc 15.
@@ -109,7 +109,7 @@
 - Fix: report errors reading metadata to the log
 - Fix: correctly write LRC milliseconds.
 - Fix: change Lyric::adjust_offset to not work invertedly for below 10 seconds anymore.
-- Fix: fix accidental invertion of `is_absolute` for path playlist values causing items to not have the correct path.
+- Fix: fix accidental inversion of `is_absolute` for path playlist values causing items to not have the correct path.
 - Fix: create and save config if it does not exist, without needing a successful connect first.
 - Fix: in `rusty` backend, correctly track the time before speed change.
 - Fix(tui): base "no lyrics available" message on the same value as actual parsed lyrics.
@@ -179,7 +179,7 @@
 - Feat: support `mkv` & `webm` in backend `rusty` (no metadata, support depends on codec).
 - Feat: in backend `rusty`, buffer files in 4Mb chunks.
 - Feat: better version via `--version`.
-- Feat: allow specifiying which interface (ip) to run on.
+- Feat: allow specifying which interface (ip) to run on.
 - Feat(server): allow compiling multiple backends via features and select at binary start (via `--backend` or `TMS_BACKEND`).
 - Feat(server): for backend `mpv`, switch to use `libmpv-sirno` and use mpv API 2.0.
 - Feat(server): for backend `mpv` and `gstreamer`, speed change without changing pitch is great for podcasts.
