@@ -32,8 +32,8 @@ use crate::ui::{
     components::orx_music_library::scanner::library_scan,
     model::{DownloadTracker, TxToMain, UserEvent},
     msg::{
-        GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData, LIReloadPathData, Msg, PLMsg,
-        TEMsg, YSMsg,
+        DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
+        LIReloadPathData, Msg, PLMsg, TEMsg, YSMsg,
     },
 };
 
@@ -374,8 +374,41 @@ impl NewMusicLibraryComponent {
     }
 
     /// Handle sending a request to delete the currently selected node.
-    fn handle_delete(&mut self) -> Msg {
-        todo!();
+    fn handle_delete(&mut self) -> Option<Msg> {
+        let Some(current_node) = self.component.get_current_selected_node() else {
+            return None;
+        };
+        let path = current_node.data().path.clone();
+
+        let focus_node_after = {
+            let num_siblings = current_node.num_siblings();
+            // number returned includes the current node
+            if num_siblings == 1 {
+                current_node
+                    .parent()
+                    .map(|parent| parent.data().path.clone())
+            } else {
+                // use the next closest sibling after delete of current node
+                let next_child = current_node
+                    .sibling_idx()
+                    .min(num_siblings.saturating_sub(1));
+                // if we have more than one siblings, it is guranteed to have a parent
+                Some(
+                    current_node
+                        .parent()
+                        .unwrap()
+                        .child(next_child)
+                        .data()
+                        .path
+                        .clone(),
+                )
+            }
+        };
+
+        Some(Msg::DeleteConfirm(DeleteConfirmMsg::Show(
+            path,
+            focus_node_after.map(|v| v.to_string_lossy().to_string()),
+        )))
     }
 
     /// Handle a full reload / potential change of the current tree root.
@@ -502,7 +535,7 @@ impl Component<Msg, UserEvent> for NewMusicLibraryComponent {
 
             // file modifying
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.delete.get() => {
-                return Some(self.handle_delete());
+                return self.handle_delete();
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
                 self.yank();
