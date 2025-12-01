@@ -388,28 +388,18 @@ impl NewMusicLibraryComponent {
             return (CmdResult::None, None);
         };
 
-        if selected_node.data().is_dir {
-            // When the selected node is a directory
-
-            // TODO: check is_open
-            if
-            /* is open */
-            true {
-                // Directory is selected, but still open, close it
-                // "Direction::Left" closes the current node
-                self.component.perform(Cmd::Move(Direction::Left));
-                return (CmdResult::None, Some(Msg::ForceRedraw));
-            }
-
-            // TODO: merge with upper path
-            // When the selected node is a closed directory, move focus to upper directory
-            // self.perform(Cmd::Custom(tuirealm_orx_tree::component::cmd::SELECT_PARENT));
-        } else {
+        if !selected_node.data().is_dir
+            || !self.component.get_state().is_opened(&selected_node.idx())
+        {
             // When the selected node is a file or a closed directory, move focus to upper directory
-            // self.perform(Cmd::Custom(tuirealm_orx_tree::component::cmd::SELECT_PARENT));
-            // self.perform(Cmd::GoTo(Position::Begin));
-            // self.perform(Cmd::Move(Direction::Up));
-            // TODO: custom command to move to select parent
+            self.perform(Cmd::Custom(
+                tuirealm_orx_tree::component::cmd::SELECT_PARENT,
+            ));
+        } else {
+            // Directory is selected, but still open, close it
+            // "Direction::Left" closes the current node
+            self.component.perform(Cmd::Move(Direction::Left));
+            return (CmdResult::None, Some(Msg::ForceRedraw));
         }
 
         (CmdResult::None, Some(Msg::ForceRedraw))
@@ -490,7 +480,6 @@ impl NewMusicLibraryComponent {
     /// Handle a full reload / potential change of the current tree root.
     ///
     /// Also changes focus, if requested.
-    #[expect(unsafe_code)]
     fn handle_full_reload(&mut self, data: LIReloadData) -> Option<Msg> {
         let Some(path) = data
             .change_root_path
@@ -504,11 +493,7 @@ impl NewMusicLibraryComponent {
             .map(PathBuf::from)
             .or_else(|| self.get_selected_path().map(Path::to_path_buf));
 
-        // TODO: call clear once available
-        // SAFETY: everything is invalidated, intentionally. Though this currently leaves some practically leaked data in tree state.
-        unsafe {
-            self.component.get_tree_mut().clear();
-        };
+        self.component.clear_tree();
 
         self.trigger_load_with_focus(path, focus_node);
 
@@ -618,11 +603,7 @@ impl NewMusicLibraryComponent {
 
         let (_, tree) = recvec_to_tree(vec);
 
-        // TODO: call clear once available
-        // SAFETY: everything is invalidated, intentionally. Though this currently leaves some practically leaked data in tree state.
-        unsafe {
-            self.component.get_tree_mut().clear();
-        }
+        self.component.clear_tree();
         // SAFETY: everything is already invalidated and cleared.
         *unsafe { self.component.get_tree_mut() } = tree;
 
@@ -647,12 +628,7 @@ impl NewMusicLibraryComponent {
 
         if root_path == vec.path {
             // the given data *is* the root, so we have to replace the whole tree
-            // self.component.set_tree(Tree::new(recvec_to_node(vec)));
-            // TODO: call clear once available
-            // SAFETY: everything is invalidated, intentionally. Though this currently leaves some practically leaked data in tree state.
-            unsafe {
-                self.component.get_tree_mut().clear();
-            }
+            self.component.clear_tree();
             // SAFETY: everything is already invalidated and cleared.
             *unsafe { self.component.get_tree_mut() } = recvec_to_tree(vec).1;
         } else {
