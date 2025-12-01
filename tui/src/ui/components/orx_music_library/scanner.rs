@@ -121,8 +121,8 @@ pub fn recvec_to_tree(vec: RecVec) -> (NodeIdx<MusicLibData>, Tree<MusicLibData>
 /// If `parent_node` is `None` the new node will be pushed as the root.
 pub fn recvec_to_node_rec(
     vec: RecVec,
-    parent_node: Option<&tuirealm_orx_tree::types::NodeIdx<MusicLibData>>,
-    tree: &mut tuirealm_orx_tree::types::Tree<MusicLibData>,
+    parent_node: Option<NodeIdx<MusicLibData>>,
+    tree: &mut Tree<MusicLibData>,
 ) -> NodeIdx<MusicLibData> {
     let is_dir = vec.path.is_dir();
     let nodeidx = if let Some(idx) = parent_node {
@@ -134,7 +134,7 @@ pub fn recvec_to_node_rec(
     };
 
     for val in vec.children {
-        recvec_to_node_rec(val, Some(&nodeidx), tree);
+        recvec_to_node_rec(val, Some(nodeidx), tree);
     }
 
     nodeidx
