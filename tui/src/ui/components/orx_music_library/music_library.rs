@@ -339,10 +339,8 @@ impl OrxMusicLibraryComponent {
     }
 
     /// Also known as going up in the tree
-    fn handle_left_key(&mut self) -> (CmdResult, Option<Msg>) {
-        let Some(selected_node) = self.component.get_current_selected_node() else {
-            return (CmdResult::None, None);
-        };
+    fn handle_left_key(&mut self) -> Option<Msg> {
+        let selected_node = self.component.get_current_selected_node()?;
 
         if !selected_node.data().is_dir
             || !self.component.get_state().is_opened(&selected_node.idx())
@@ -355,17 +353,14 @@ impl OrxMusicLibraryComponent {
             // Directory is selected, but still open, close it
             // "Direction::Left" closes the current node
             self.component.perform(Cmd::Move(Direction::Left));
-            return (CmdResult::None, Some(Msg::ForceRedraw));
         }
 
-        (CmdResult::None, Some(Msg::ForceRedraw))
+        Some(Msg::ForceRedraw)
     }
 
     /// Also known as going down the tree / adding file to playlist
-    fn handle_right_key(&mut self) -> (CmdResult, Option<Msg>) {
-        let Some(selected_node) = self.component.get_current_selected_node() else {
-            return (CmdResult::None, None);
-        };
+    fn handle_right_key(&mut self) -> Option<Msg> {
+        let selected_node = self.component.get_current_selected_node()?;
 
         if selected_node.data().is_dir {
             if selected_node.num_children() > 0 {
@@ -374,24 +369,21 @@ impl OrxMusicLibraryComponent {
                 // "Direction::Right" opens the current node
                 self.perform(Cmd::Move(Direction::Right));
 
-                (CmdResult::None, Some(Msg::ForceRedraw))
+                Some(Msg::ForceRedraw)
             } else if !selected_node.data().is_loading {
                 // Current node does not have any children and is not loading, trigger a load for it
                 self.handle_reload_at(LIReloadPathData {
                     path: selected_node.data().path.clone(),
                     change_focus: true,
                 });
-                (CmdResult::None, Some(Msg::ForceRedraw))
+                Some(Msg::ForceRedraw)
             } else {
                 // Current node does not have any children is is loading, dont do anything
-                (CmdResult::None, None)
+                None
             }
         } else {
             // Node is a file, try to add it to the playlist
-            (
-                CmdResult::None,
-                Some(Msg::Playlist(PLMsg::Add(selected_node.data().path.clone()))),
-            )
+            Some(Msg::Playlist(PLMsg::Add(selected_node.data().path.clone())))
         }
     }
 
@@ -694,14 +686,14 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             // selection
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.left.get() => {
                 match self.handle_left_key() {
-                    (_, Some(msg)) => return Some(msg),
-                    (cmdresult, None) => cmdresult,
+                    Some(msg) => return Some(msg),
+                    None => CmdResult::None,
                 }
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
                 match self.handle_right_key() {
-                    (_, Some(msg)) => return Some(msg),
-                    (cmdresult, None) => cmdresult,
+                    Some(msg) => return Some(msg),
+                    None => CmdResult::None,
                 }
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
@@ -714,15 +706,15 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 code: Key::Left,
                 modifiers: KeyModifiers::NONE,
             }) => match self.handle_left_key() {
-                (_, Some(msg)) => return Some(msg),
-                (cmdresult, None) => cmdresult,
+                Some(msg) => return Some(msg),
+                None => CmdResult::None,
             },
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
             }) => match self.handle_right_key() {
-                (_, Some(msg)) => return Some(msg),
-                (cmdresult, None) => cmdresult,
+                Some(msg) => return Some(msg),
+                None => CmdResult::None,
             },
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
