@@ -8,7 +8,7 @@ use tuirealm_orx_tree::types::{NodeIdx, Tree};
 use crate::ui::{
     components::orx_music_library::music_library::MusicLibData,
     model::{DownloadTracker, TxToMain},
-    msg::RecVec,
+    msg::{LIMsg, LINodeReady, Msg, RecVec},
 };
 
 /// Execute a library scan on a different thread.
@@ -43,14 +43,13 @@ pub fn library_scan<P: Into<PathBuf>>(
     path: P,
     depth: ScanDepth,
     tx: TxToMain,
-    focus_node: Option<NodeIdx<MusicLibData>>,
+    focus_node: Option<String>,
 ) {
     library_scan_cb(download_tracker, path, depth, move |vec| {
-        todo!();
-        // let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(LINodeReady {
-        //     vec,
-        //     focus_node,
-        // })));
+        let _ = tx.send(Msg::Library(LIMsg::TreeNodeReady(LINodeReady {
+            vec,
+            focus_node,
+        })));
     });
 }
 

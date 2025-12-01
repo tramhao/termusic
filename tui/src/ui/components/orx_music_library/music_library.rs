@@ -29,7 +29,7 @@ use tuirealm_orx_tree::{
 };
 
 use crate::ui::{
-    components::orx_music_library::scanner::{library_scan, recvec_to_tree},
+    components::orx_music_library::scanner::recvec_to_tree,
     model::{DownloadTracker, TxToMain, UserEvent},
     msg::{
         DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
@@ -203,35 +203,35 @@ impl NewMusicLibraryComponent {
     ) -> Self {
         let mut this = Self::new_loading(config);
 
-        this.component = this.component.tree(tree).on_open(move |event, idx, tree| {
-            debug!("on_open {:#?}", (event, idx /* , tree */));
+        this.component = this.component.tree(tree); /* .on_open(move |event, idx, tree| {
+        debug!("on_open {:#?}", (event, idx /* , tree */));
 
-            if tree.get_root().is_some_and(|v| v.idx() == idx) {
-                return;
-            }
+        if tree.get_root().is_some_and(|v| v.idx() == idx) {
+        return;
+        }
 
-            let node = tree.get_node_mut(&idx).unwrap();
-            let mut traverser = Dfs::<OverNode>::new();
-            // inital tree walker
-            let walker = node.walk_with(&mut traverser);
-            // filter only for leafs
-            let walker = walker.skip(1);
-            // filter only directories & not loading
-            let walker = walker.filter(|v| v.data().is_dir && !(*v.data().is_loading.borrow()));
-            for node in walker {
-                let idx = node.idx();
-                let data = node.data();
-                debug!("on_open found: {:#?}", data.path.file_name().unwrap());
-                *data.is_loading.borrow_mut() = true;
-                library_scan(
-                    tracker.clone(),
-                    &data.path,
-                    ScanDepth::Limited(2),
-                    tx.clone(),
-                    Some(idx),
-                );
-            }
-        });
+        let node = tree.get_node_mut(&idx).unwrap();
+        let mut traverser = Dfs::<OverNode>::new();
+        // inital tree walker
+        let walker = node.walk_with(&mut traverser);
+        // filter only for leafs
+        let walker = walker.skip(1);
+        // filter only directories & not loading
+        let walker = walker.filter(|v| v.data().is_dir && !(*v.data().is_loading.borrow()));
+        for node in walker {
+        let idx = node.idx();
+        let data = node.data();
+        debug!("on_open found: {:#?}", data.path.file_name().unwrap());
+         *data.is_loading.borrow_mut() = true;
+        library_scan(
+        tracker.clone(),
+        &data.path,
+        ScanDepth::Limited(2),
+        tx.clone(),
+        Some(idx),
+        );
+        }
+        }); */
 
         debug!("what {this:#?}");
 
