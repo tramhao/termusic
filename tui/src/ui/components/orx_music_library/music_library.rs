@@ -1,7 +1,7 @@
 //! The actual Music Library Component Implementation
 
 use std::{
-    cell::{OnceCell, RefCell},
+    cell::OnceCell,
     fs::rename,
     num::NonZeroUsize,
     path::{Path, PathBuf},
@@ -46,7 +46,7 @@ pub struct MusicLibData {
     /// Store whether that path is a dir to show indicators & use for prefetching
     is_dir: bool,
     /// Indicator if the we already send a request to fetch this directory
-    is_loading: RefCell<bool>,
+    is_loading: bool,
     /// Indicator that loading information about this (file EACCESS) or directory loading has failed.
     is_error: bool,
     /// The `path.file_name`'s string representation.
@@ -71,7 +71,7 @@ impl MusicLibData {
         Self {
             path,
             is_dir,
-            is_loading: RefCell::new(false),
+            is_loading: false,
             is_error: false,
             as_str: OnceCell::default(),
         }
@@ -117,7 +117,7 @@ impl NodeValue for MusicLibData {
             let leaf_indent = CHILD_INDICATOR_LENGTH;
             let indent_area = calc_area_for_value(&mut offset, &mut area, usize::from(leaf_indent));
             Clear.render(indent_area, buf);
-        } else if !(*self.is_loading.borrow()) {
+        } else if !self.is_loading {
             // directory that is not loading
             RenderIndicator::default().render(&mut offset, &mut area, buf, is_opened());
         } else {
@@ -375,7 +375,7 @@ impl OrxMusicLibraryComponent {
                 self.perform(Cmd::Move(Direction::Right));
 
                 (CmdResult::None, Some(Msg::ForceRedraw))
-            } else if !*selected_node.data().is_loading.borrow() {
+            } else if !selected_node.data().is_loading {
                 // Current node does not have any children and is not loading, trigger a load for it
                 self.handle_reload_at(LIReloadPathData {
                     path: selected_node.data().path.clone(),
@@ -544,13 +544,11 @@ impl OrxMusicLibraryComponent {
 
         // unwrap is safe as we literally just gotten the idx from the tree
         // set current node to loading, to indicate such to the user
-        *self
-            .component
+        self.component
             .get_node_mut(&nearest_idx)
             .unwrap()
             .data_mut()
-            .is_loading
-            .borrow_mut() = true;
+            .is_loading = true;
 
         self.trigger_subload_with_focus(nearest_path, ScanDepth::Limited(depth), focus_node);
     }
