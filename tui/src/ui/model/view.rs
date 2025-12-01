@@ -14,7 +14,7 @@ use tuirealm::{Frame, State, StateValue};
 use crate::ui::Application;
 use crate::ui::components::{
     DBListCriteria, DownloadSpinner, EpisodeList, FeedsList, Footer, GSInputPopup, GSTablePopup,
-    LabelSpan, Lyric, MusicLibrary, Playlist, Progress, Source,
+    LabelSpan, Lyric, Playlist, Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
@@ -47,16 +47,7 @@ impl Model {
     pub fn mount_main(&mut self) -> Result<()> {
         self.remount_global_listener()?;
 
-        self.app.mount(
-            Id::Library,
-            Box::new(MusicLibrary::new(
-                &Self::loading_tree(),
-                None,
-                self.config_tui.clone(),
-            )),
-            Vec::new(),
-        )?;
-
+        self.mount_library()?;
         self.remount_database_search()?;
 
         self.app.mount(

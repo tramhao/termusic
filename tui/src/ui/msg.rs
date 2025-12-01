@@ -153,22 +153,122 @@ pub enum LyricMsg {
     TextAreaBlurDown,
 }
 
-/// Basically a Tree Node, but without having to include `tui-realm-treeview` as another dependency for lib
+/// Recursive structure which may contain more of itself.
+///
+/// Basically a `tui-realm-treeview` Tree Node, without the extra things.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RecVec<T, V> {
-    pub id: T,
-    pub value: V,
-    pub children: Vec<RecVec<T, V>>,
+pub struct RecVec {
+    pub id: PathBuf,
+    pub value: String,
+    pub children: Vec<RecVec>,
+}
+
+/// Data for [`LIMsg::Reload`].
+///
+/// Leaving `change_root_path` as `None` will reload the current root, without changing paths.
+#[derive(Clone, Debug, Eq, Default)]
+pub struct LIReloadData {
+    pub change_root_path: Option<PathBuf>,
+    pub focus_node: Option<String>,
+}
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LIReloadData {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+/// Data for [`LIMsg::ReloadPath`].
+///
+/// The path given is the one that is reloaded and also focused.
+#[derive(Clone, Debug, Eq, Default)]
+pub struct LIReloadPathData {
+    pub path: PathBuf,
+    pub change_focus: bool,
+}
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LIReloadPathData {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+/// Data for [`LIMsg::TreeNodeReady`].
+///
+/// The path given is the one that is reloaded and also optionally focused.
+#[derive(Clone, Debug, Eq)]
+pub struct LINodeReady {
+    pub vec: RecVec,
+    pub focus_node: Option<String>,
+}
+
+/// Data returned from this should not be passed around.
+impl Default for LINodeReady {
+    fn default() -> Self {
+        let bogus_recvec = RecVec {
+            id: PathBuf::new(),
+            value: String::new(),
+            children: Vec::new(),
+        };
+        Self {
+            vec: bogus_recvec,
+            focus_node: None,
+        }
+    }
+}
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LINodeReady {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+/// Data for [`LIMsg::TreeNodeReadySub`].
+///
+/// The path given is the one that is reloaded and also focused.
+#[derive(Clone, Debug, Eq)]
+pub struct LINodeReadySub {
+    pub vec: RecVec,
+    pub focus_node: Option<PathBuf>,
+}
+
+/// Data returned from this should not be passed around.
+impl Default for LINodeReadySub {
+    fn default() -> Self {
+        let bogus_recvec = RecVec {
+            id: PathBuf::new(),
+            value: String::new(),
+            children: Vec::new(),
+        };
+        Self {
+            vec: bogus_recvec,
+            focus_node: None,
+        }
+    }
+}
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LINodeReadySub {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
-    /// Load more at path
-    TreeStepInto(PathBuf),
-    TreeStepOut,
+    /// Run a full reload of the current tree. This will clear the tree until new data is available.
+    Reload(LIReloadData),
+    /// Reload the given path and focus that node (also open everything necessary).
+    ///
+    /// This does not change the tree root.
+    ReloadPath(LIReloadPathData),
+
     TreeBlur,
-    Yank,
-    Paste,
+    PlaylistRunDelete,
+    PasteError(String),
     /// Switch the music root.
     ///
     /// Contains the *old* root
@@ -178,8 +278,13 @@ pub enum LIMsg {
     RemoveRoot(PathBuf),
 
     /// A requested node is ready from loading.
-    /// `(Tree, FocusNode)`
-    TreeNodeReady(RecVec<PathBuf, String>, Option<String>),
+    ///
+    /// Replaces the tree root.
+    TreeNodeReady(LINodeReady),
+    /// A requested node is ready to be reloaded within the current tree.
+    ///
+    /// Does not replace the tree root.
+    TreeNodeReadySub(LINodeReadySub),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
