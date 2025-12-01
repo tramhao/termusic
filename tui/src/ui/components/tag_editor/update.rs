@@ -15,7 +15,7 @@ impl Model {
             }
             TEMsg::Close => {
                 if let Some(s) = self.tageditor_song.clone() {
-                    self.library_reload_and_focus(s.into_path());
+                    self.new_library_reload_and_focus(s.into_path());
                 }
                 self.umount_tageditor();
             }
@@ -146,7 +146,7 @@ impl Model {
             }
             TrackDLMsg::Completed(_url, file) => {
                 if let Some(path_str) = file {
-                    self.library_reload_and_focus(PathBuf::from(path_str));
+                    self.new_library_reload_and_focus(PathBuf::from(path_str));
                 }
             }
             TrackDLMsg::Err(url, title, error_message) => {

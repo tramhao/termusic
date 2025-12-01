@@ -906,7 +906,7 @@ impl Model {
         // TODO: move this to server?
         self.playback.playlist.save_m3u(&filename)?;
 
-        self.library_reload_and_focus(filename);
+        self.new_library_reload_and_focus(filename);
 
         // only reload database results, if the criteria is for playlists
         if self.dw.criteria == SearchCriteria::Playlist {
