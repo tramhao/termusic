@@ -406,6 +406,7 @@ impl OrxMusicLibraryComponent {
             let num_siblings = current_node.num_siblings();
             // number returned includes the current node
             if num_siblings == 1 {
+                // if this returns "None", the to-be deleted path is the root
                 current_node
                     .parent()
                     .map(|parent| parent.data().path.clone())
