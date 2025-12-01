@@ -70,7 +70,7 @@ impl Model {
 
     /// Execute [`library_scan`] from a `&self` instance.
     ///
-    /// Executes [`library_dir_tree`] on a different thread and send a [`LIMsg::TreeNodeReady`] on finish.
+    /// Executes [`library_dir_tree`](super::scanner::library_dir_tree) on a different thread and send a [`LIMsg::TreeNodeReady`] on finish.
     #[inline]
     pub fn new_library_scan_dir<P: Into<PathBuf>>(&self, path: P, focus_node: Option<String>) {
         library_scan(

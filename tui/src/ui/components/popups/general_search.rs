@@ -4,7 +4,6 @@ use anyhow::{Result, anyhow, bail};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::track::MediaTypes;
 use tui_realm_stdlib::Table;
-use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan};
@@ -405,15 +404,7 @@ impl Model {
             && let Some(text_span) = line.get(1)
         {
             let node = text_span.content.clone();
-            assert!(
-                self.app
-                    .attr(
-                        &Id::Library,
-                        Attribute::Custom(TREE_INITIAL_NODE),
-                        AttrValue::String(node),
-                    )
-                    .is_ok()
-            );
+            self.new_library_scan_dir(PathBuf::from(&node), Some(node));
         }
     }
 
