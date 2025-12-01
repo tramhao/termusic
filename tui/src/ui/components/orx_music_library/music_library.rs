@@ -2,11 +2,12 @@
 
 use std::{
     cell::{OnceCell, RefCell},
+    fs::rename,
     num::NonZeroUsize,
     path::{Path, PathBuf},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay, v2::server::ScanDepth};
 use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
@@ -134,6 +135,9 @@ const LOADING_TREE_TEXT: &str = "Loading...";
 pub struct NewMusicLibraryComponent {
     component: TreeView<MusicLibData>,
     config: SharedTuiSettings,
+
+    /// The path of the last yanked node.
+    yanked_path: Option<PathBuf>,
 }
 
 impl NewMusicLibraryComponent {
@@ -183,7 +187,11 @@ impl NewMusicLibraryComponent {
             Self::get_inner_comp(&config)
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config,
+            yanked_path: None,
+        }
     }
 
     /// Create a new instance, with a tree already set.
@@ -265,12 +273,79 @@ impl NewMusicLibraryComponent {
 
     /// Store the currently selected node as yanked (for pasting with [`Self::paste`]).
     fn yank(&mut self) {
-        todo!();
+        if let Some(path) = self.get_selected_path() {
+            self.yanked_path = Some(path.to_path_buf());
+        }
     }
 
     /// Paste the previously yanked node in the currently selected node if it is a directory, otherwise in its parent.
     fn paste(&mut self) -> Result<Option<LIMsg>> {
-        todo!();
+        // This should happen before "yanked_path.take" so that we dont take, if we cannot apply it.
+        // And "get_selected_path" cannot be put before here as that uses a immutable self reference, but ".take" requires mutable.
+        if self.component.get_current_selected_node().is_none() {
+            return Ok(None);
+        }
+        let Some(old_path) = self.yanked_path.take() else {
+            return Ok(None);
+        };
+        let Some(selected_node_path) = self.get_selected_path() else {
+            return Ok(None);
+        };
+
+        let pold_filename = old_path.file_name().context("no file name found")?;
+        let old_parent = old_path.parent().context("old path had no parent")?;
+        let selected_parent = selected_node_path
+            .parent()
+            .context("No Parent for currently selected node")?;
+
+        let new_path = if selected_node_path.is_dir() {
+            selected_node_path.join(pold_filename)
+        } else {
+            selected_parent.join(pold_filename)
+        };
+
+        rename(&old_path, &new_path)?;
+
+        if new_path.starts_with(old_parent) {
+            // new path is contained within old path's parent directory
+            self.handle_reload_at(LIReloadPathData {
+                path: new_path,
+                change_focus: true,
+            });
+            self.handle_reload_at(LIReloadPathData {
+                path: old_path,
+                change_focus: false,
+            });
+        } else if old_parent.starts_with(selected_parent) {
+            // // new path is contained within old path's parent directory
+            // // We cannot use the sub-load functions here as they replace the given path's node
+            // // and does not clear open/closed status, which treeview cannot handle and panics on going up.
+            // // See <https://github.com/veeso/tui-realm-treeview/issues/15>
+            self.handle_reload_at(LIReloadPathData {
+                path: new_path.clone(),
+                change_focus: true,
+            });
+            self.handle_reload_at(LIReloadPathData {
+                path: old_path,
+                change_focus: false,
+            });
+            // self.trigger_load_with_focus(
+            //     selected_parent,
+            //     Some(new_path),
+            // );
+        } else {
+            // new path is not contained within old path's parent directory, so need to load both
+            self.handle_reload_at(LIReloadPathData {
+                path: new_path,
+                change_focus: true,
+            });
+            self.handle_reload_at(LIReloadPathData {
+                path: old_parent.to_path_buf(),
+                change_focus: false,
+            });
+        }
+
+        Ok(Some(LIMsg::PlaylistRunDelete))
     }
 
     /// Get the current root node's path, if there is one.
