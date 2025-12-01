@@ -545,7 +545,6 @@ impl OrxMusicLibraryComponent {
         // inital tree walker
         let mut walker = root_node.walk_with(&mut traverser);
 
-        // TODO: ask orx why "traverser" needs to live as long as "tree"
         walker.find(|v| v.data().path == path).map(|v| v.idx())
     }
 
