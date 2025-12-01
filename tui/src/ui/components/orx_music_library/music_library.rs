@@ -579,6 +579,8 @@ impl OrxMusicLibraryComponent {
             let idx = self.get_idx_of_path(&initial_node);
             if let Some(idx) = idx {
                 self.component.select(MotionDirection::Upwards, idx);
+                // always open the selected node
+                self.component.perform(Cmd::Move(Direction::Right));
             }
         } else {
             // always select the root node
@@ -609,6 +611,11 @@ impl OrxMusicLibraryComponent {
             self.component.clear_tree();
             // SAFETY: everything is already invalidated and cleared.
             *unsafe { self.component.get_tree_mut() } = recvec_to_tree(vec).1;
+
+            // always select the root node
+            self.component.perform(Cmd::Move(Direction::Down));
+            // always open the root node
+            self.component.perform(Cmd::Move(Direction::Right));
         } else {
             let vec_path = &vec.path;
             let mut traverser = Dfs::<OverNode>::new();
