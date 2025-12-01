@@ -626,7 +626,8 @@ impl OrxMusicLibraryComponent {
             // Unwrap is safe, as we literally just searched the tree for this node
             let mut node_mut = self.component.get_node_mut(found_node_idx).unwrap();
 
-            // TODO: ask orx-tree for replacement function
+            // TODO: consider using "NodeMut::replace" once available
+            // see <https://github.com/orxfun/orx-tree/issues/189>
             node_mut.push_sibling_tree(tuirealm_orx_tree::Side::Left, recvec_to_tree(vec).1);
             node_mut.prune();
             // NOTE: we dont need to re-set "is_loading" as the full node gets overwritten with new data, which defaults to "false"
