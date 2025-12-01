@@ -455,7 +455,7 @@ impl Model {
             xywh,
         };
 
-        model.library_scan_dir(path, None);
+        model.new_library_scan_dir(path, None);
 
         model
             .mount_main()
