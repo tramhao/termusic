@@ -112,11 +112,7 @@ tonic-prost = "0.14.1"
 tonic-prost-build = "0.14.1"
 tuirealm = { version = "~3.2.0", features = ["async-ports"] }
 tui-realm-stdlib = "~3.0"
-tui-realm-treeview = "~3.0"
 tuirealm-orx-tree = { version = "0.1.0", git = "https://github.com/hasezoey/tuirealm-orx-tree.git" }
-# keep in sync with minimal of "tui-realm-treeview"
-# manually defined as "treeview" depends on a older version, but more functionality is available
-orange-trees = "0.1.3"
 unicode-segmentation = "1.12"
 unicode-width = "^0.2.0"
 urlencoding = "2.1"
