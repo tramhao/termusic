@@ -3206,12 +3206,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "orange-trees"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f4ebbf92a33c244681ae21f611f2494f9edf72a3fca85abe430d63480ad496b"
-
-[[package]]
 name = "ordered-stream"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5017,7 +5011,6 @@ dependencies = [
  "lofty",
  "log",
  "lru",
- "orange-trees",
  "parking_lot",
  "pathdiff",
  "percent-encoding",
@@ -5037,7 +5030,6 @@ dependencies = [
  "tokio-util",
  "tonic",
  "tui-realm-stdlib",
- "tui-realm-treeview",
  "tuirealm",
  "tuirealm-orx-tree",
  "unicode-width 0.2.0",
@@ -5630,17 +5622,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83c5dd796e9ba2d0d2cfe26dc6a84d5a8287ec110ee1226a53d8cde9a24d67cf"
 dependencies = [
  "textwrap",
- "tuirealm",
- "unicode-width 0.2.0",
-]
-
-[[package]]
-name = "tui-realm-treeview"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deb75aceab87e6a39595a9765b833054046b9b4ff667927d5ba928fb85d605e3"
-dependencies = [
- "orange-trees",
  "tuirealm",
  "unicode-width 0.2.0",
 ]
