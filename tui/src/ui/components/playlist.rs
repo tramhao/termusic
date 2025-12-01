@@ -34,7 +34,7 @@ use tuirealm::{
 };
 
 use crate::ui::Model;
-use crate::ui::components::music_library::library_dir_tree;
+use crate::ui::components::orx_music_library::scanner::library_dir_tree;
 use crate::ui::ids::Id;
 use crate::ui::model::{TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria};

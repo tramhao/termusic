@@ -2,4 +2,4 @@
 
 mod model_ext;
 mod music_library;
-mod scanner;
+pub mod scanner;
