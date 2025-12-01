@@ -354,12 +354,12 @@ async fn wait_till_connected_tcp(
         match MusicPlayerClient::connect(addr.clone()).await {
             Err(err) => {
                 // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
-                if let Some(os_err) = find_source::<std::io::Error>(&err) {
-                    if os_err.kind() == std::io::ErrorKind::ConnectionRefused {
-                        debug!("Connection refused found!");
-                        tokio::time::sleep(WAIT_INTERVAL).await;
-                        continue;
-                    }
+                if let Some(os_err) = find_source::<std::io::Error>(&err)
+                    && os_err.kind() == std::io::ErrorKind::ConnectionRefused
+                {
+                    debug!("Connection refused found!");
+                    tokio::time::sleep(WAIT_INTERVAL).await;
+                    continue;
                 }
 
                 // return the error and stop if it is anything other than "Connection Refused"
@@ -511,10 +511,10 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
     let mut path = dir.to_path_buf();
 
     if path.exists() {
-        if !path.has_root() {
-            if let Ok(p_base) = std::env::current_dir() {
-                path = p_base.join(path);
-            }
+        if !path.has_root()
+            && let Ok(p_base) = std::env::current_dir()
+        {
+            path = p_base.join(path);
         }
 
         if let Ok(p_canonical) = path.canonicalize() {

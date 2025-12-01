@@ -141,17 +141,17 @@ impl Model {
         let mut need_update = false;
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
-        if let Some(track) = self.playback.current_track() {
-            if let Some(podcast_data) = track.as_podcast() {
-                let url = podcast_data.url();
-                'outer: for pod in &self.podcast.podcasts {
-                    for ep in &pod.episodes {
-                        if ep.url == url {
-                            pod_title.clone_from(&pod.title);
-                            ep_for_lyric = ep.clone();
-                            need_update = true;
-                            break 'outer;
-                        }
+        if let Some(track) = self.playback.current_track()
+            && let Some(podcast_data) = track.as_podcast()
+        {
+            let url = podcast_data.url();
+            'outer: for pod in &self.podcast.podcasts {
+                for ep in &pod.episodes {
+                    if ep.url == url {
+                        pod_title.clone_from(&pod.title);
+                        ep_for_lyric = ep.clone();
+                        need_update = true;
+                        break 'outer;
                     }
                 }
             }
@@ -327,14 +327,14 @@ impl Model {
     /// Needs to be run on:
     /// - track change from / to radio
     pub fn lyric_update_for_radio<T: AsRef<str>>(&mut self, radio_title: T) {
-        if let Some(song) = self.playback.current_track() {
-            if MediaTypesSimple::LiveRadio == song.media_type() {
-                let radio_title = radio_title.as_ref();
-                if radio_title.is_empty() {
-                    self.lyric_set_lyric("Radio");
-                } else {
-                    self.lyric_set_lyric(format!("Currently Playing: {radio_title}"));
-                }
+        if let Some(song) = self.playback.current_track()
+            && MediaTypesSimple::LiveRadio == song.media_type()
+        {
+            let radio_title = radio_title.as_ref();
+            if radio_title.is_empty() {
+                self.lyric_set_lyric("Radio");
+            } else {
+                self.lyric_set_lyric(format!("Currently Playing: {radio_title}"));
             }
         }
     }
@@ -354,15 +354,15 @@ impl Model {
     }
 
     pub fn lyric_cycle(&mut self) {
-        if let Some(extra) = self.current_track_lyric.as_mut() {
-            if let Some(f) = extra.cycle_lyric().ok().flatten() {
-                let lang_ext = f.description.clone();
-                self.update_show_message_timeout(
-                    "Lyric switch successful",
-                    format!("{lang_ext} lyric is showing").as_str(),
-                    None,
-                );
-            }
+        if let Some(extra) = self.current_track_lyric.as_mut()
+            && let Some(f) = extra.cycle_lyric().ok().flatten()
+        {
+            let lang_ext = f.description.clone();
+            self.update_show_message_timeout(
+                "Lyric switch successful",
+                format!("{lang_ext} lyric is showing").as_str(),
+                None,
+            );
         }
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
