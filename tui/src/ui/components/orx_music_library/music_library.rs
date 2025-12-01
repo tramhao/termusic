@@ -384,12 +384,69 @@ impl NewMusicLibraryComponent {
 
     /// Also known as going up in the tree
     fn handle_left_key(&mut self) -> (CmdResult, Option<Msg>) {
-        todo!();
+        let Some(selected_node) = self.component.get_current_selected_node() else {
+            return (CmdResult::None, None);
+        };
+
+        if selected_node.data().is_dir {
+            // When the selected node is a directory
+
+            // TODO: check is_open
+            if
+            /* is open */
+            true {
+                // Directory is selected, but still open, close it
+                // "Direction::Left" closes the current node
+                self.component.perform(Cmd::Move(Direction::Left));
+                return (CmdResult::None, Some(Msg::ForceRedraw));
+            }
+
+            // TODO: merge with upper path
+            // When the selected node is a closed directory, move focus to upper directory
+            // self.perform(Cmd::Custom(tuirealm_orx_tree::component::cmd::SELECT_PARENT));
+        } else {
+            // When the selected node is a file or a closed directory, move focus to upper directory
+            // self.perform(Cmd::Custom(tuirealm_orx_tree::component::cmd::SELECT_PARENT));
+            // self.perform(Cmd::GoTo(Position::Begin));
+            // self.perform(Cmd::Move(Direction::Up));
+            // TODO: custom command to move to select parent
+        }
+
+        (CmdResult::None, Some(Msg::ForceRedraw))
     }
 
     /// Also known as going down the tree / adding file to playlist
     fn handle_right_key(&mut self) -> (CmdResult, Option<Msg>) {
-        todo!();
+        let Some(selected_node) = self.component.get_current_selected_node() else {
+            return (CmdResult::None, None);
+        };
+
+        if selected_node.data().is_dir {
+            if selected_node.num_children() > 0 {
+                // Current node has children loaded, just open it.
+
+                // "Direction::Right" opens the current node
+                self.perform(Cmd::Move(Direction::Right));
+
+                (CmdResult::None, Some(Msg::ForceRedraw))
+            } else if !*selected_node.data().is_loading.borrow() {
+                // Current node does not have any children and is not loading, trigger a load for it
+                self.handle_reload_at(LIReloadPathData {
+                    path: selected_node.data().path.clone(),
+                    change_focus: true,
+                });
+                (CmdResult::None, None)
+            } else {
+                // Current node does not have any children is is loading, dont do anything
+                (CmdResult::None, None)
+            }
+        } else {
+            // Node is a file, try to add it to the playlist
+            (
+                CmdResult::None,
+                Some(Msg::Playlist(PLMsg::Add(selected_node.data().path.clone()))),
+            )
+        }
     }
 
     /// Handle sending a request to delete the currently selected node.
