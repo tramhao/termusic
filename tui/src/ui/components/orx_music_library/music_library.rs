@@ -23,7 +23,7 @@ use tuirealm::{
 use tuirealm_orx_tree::{
     NodeRef,
     component::TreeView,
-    traversal::{Dfs, OverData, OverNode, Traverser},
+    traversal::{Dfs, OverNode, Traverser},
     types::{MotionDirection, NodeIdx, NodeValue, Tree},
     widget::{CHILD_INDICATOR_LENGTH, RenderIndicator, calc_area_for_value},
 };
@@ -381,7 +381,7 @@ impl OrxMusicLibraryComponent {
                     path: selected_node.data().path.clone(),
                     change_focus: true,
                 });
-                (CmdResult::None, None)
+                (CmdResult::None, Some(Msg::ForceRedraw))
             } else {
                 // Current node does not have any children is is loading, dont do anything
                 (CmdResult::None, None)
@@ -488,31 +488,33 @@ impl OrxMusicLibraryComponent {
         // - the root node's path
         // - the nearest directory node's path
         let mut nearest_path = &root_node.data().path;
+        let mut nearest_idx = root_node.idx();
         let mut nearest_match = 0;
 
         let components_between_root_and_path: Vec<std::path::Component<'_>> =
             Self::split_components_root(&root_node.data().path, &path).collect();
 
-        let mut traverser = Dfs::<OverData>::new();
+        let mut traverser = Dfs::<OverNode>::new();
         // inital tree walker
         let walker = root_node.walk_with(&mut traverser);
 
         for node in walker {
             // exact match found, no need to further iterate
-            if node.path == path {
-                nearest_path = &node.path;
+            if node.data().path == path {
+                nearest_path = &node.data().path;
+                nearest_idx = node.idx();
                 break;
             }
 
             // The parent directory node will always contain the wanted path partially
             // skip everything else.
             // Otherwise it might decend into "root/to_delete/another" instead of wanted "root/dir/another".
-            if !path.starts_with(&node.path) {
+            if !path.starts_with(&node.data().path) {
                 continue;
             }
 
             for (idx, comp) in
-                Self::split_components_root(&root_node.data().path, &node.path).enumerate()
+                Self::split_components_root(&root_node.data().path, &node.data().path).enumerate()
             {
                 let Some(gotten) = components_between_root_and_path.get(idx) else {
                     break;
@@ -520,14 +522,17 @@ impl OrxMusicLibraryComponent {
 
                 if *gotten == comp && idx > nearest_match {
                     nearest_match = idx;
-                    nearest_path = &node.path;
+                    nearest_path = &node.data().path;
+                    nearest_idx = node.idx();
                 }
             }
         }
 
+        let nearest_path = nearest_path.clone();
+
         trace!(
             "found nearest match: {:#?}",
-            (&path, nearest_match, nearest_path)
+            (&path, nearest_match, &nearest_path)
         );
 
         let depth = components_between_root_and_path
@@ -537,11 +542,17 @@ impl OrxMusicLibraryComponent {
 
         let focus_node = if data.change_focus { Some(path) } else { None };
 
-        self.trigger_subload_with_focus(
-            nearest_path.clone(),
-            ScanDepth::Limited(depth),
-            focus_node,
-        );
+        // unwrap is safe as we literally just gotten the idx from the tree
+        // set current node to loading, to indicate such to the user
+        *self
+            .component
+            .get_node_mut(&nearest_idx)
+            .unwrap()
+            .data_mut()
+            .is_loading
+            .borrow_mut() = true;
+
+        self.trigger_subload_with_focus(nearest_path, ScanDepth::Limited(depth), focus_node);
     }
 
     /// Get the [`NodeIdx`] of a given [`Path`], searches from current tree root.
@@ -634,6 +645,7 @@ impl OrxMusicLibraryComponent {
             // TODO: ask orx-tree for replacement function
             node_mut.push_sibling_tree(tuirealm_orx_tree::Side::Left, recvec_to_tree(vec).1);
             node_mut.prune();
+            // NOTE: we dont need to re-set "is_loading" as the full node gets overwritten with new data, which defaults to "false"
 
             // try to set a initially selected node
             if self.component.get_current_selected_node().is_none() {
@@ -662,7 +674,7 @@ impl OrxMusicLibraryComponent {
             LIMsg::Reload(data) => self.handle_full_reload(data),
             LIMsg::ReloadPath(data) => {
                 self.handle_reload_at(data);
-                None
+                Some(Msg::ForceRedraw)
             }
             LIMsg::TreeNodeReady(data) => Some(self.handle_ready(data)),
             LIMsg::TreeNodeReadySub(data) => self.handle_ready_sub(data),
