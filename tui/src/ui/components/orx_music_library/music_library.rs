@@ -579,6 +579,11 @@ impl OrxMusicLibraryComponent {
             if let Some(idx) = idx {
                 self.component.select(MotionDirection::Upwards, idx);
             }
+        } else {
+            // always select the root node
+            self.component.perform(Cmd::Move(Direction::Down));
+            // always open the root node
+            self.component.perform(Cmd::Move(Direction::Right));
         }
 
         Msg::ForceRedraw
