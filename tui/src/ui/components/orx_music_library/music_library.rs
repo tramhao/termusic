@@ -29,7 +29,7 @@ use tuirealm_orx_tree::{
 };
 
 use crate::ui::{
-    components::orx_music_library::scanner::recvec_to_tree,
+    components::orx_music_library::scanner::{library_scan, library_scan_cb, recvec_to_tree},
     model::{DownloadTracker, TxToMain, UserEvent},
     msg::{
         DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
@@ -136,6 +136,8 @@ pub struct NewMusicLibraryComponent {
     component: TreeView<MusicLibData>,
     config: SharedTuiSettings,
 
+    tx_to_main: TxToMain,
+    download_tracker: DownloadTracker,
     /// The path of the last yanked node.
     yanked_path: Option<PathBuf>,
 }
@@ -180,7 +182,11 @@ impl NewMusicLibraryComponent {
     }
 
     /// Get a new empty instance, which shows "Loading..." while empty.
-    pub fn new_loading(config: SharedTuiSettings) -> Self {
+    pub fn new_loading(
+        config: SharedTuiSettings,
+        tx_to_main: TxToMain,
+        download_tracker: DownloadTracker,
+    ) -> Self {
         let component = {
             let config = config.read();
 
@@ -191,6 +197,8 @@ impl NewMusicLibraryComponent {
             component,
             config,
             yanked_path: None,
+            download_tracker,
+            tx_to_main,
         }
     }
 
@@ -198,40 +206,34 @@ impl NewMusicLibraryComponent {
     pub fn new(
         tree: Tree<MusicLibData>,
         config: SharedTuiSettings,
-        tx: TxToMain,
-        tracker: DownloadTracker,
+        tx_to_main: TxToMain,
+        download_tracker: DownloadTracker,
     ) -> Self {
-        let mut this = Self::new_loading(config);
+        let mut this = Self::new_loading(config, tx_to_main.clone(), download_tracker.clone());
 
-        this.component = this.component.tree(tree); /* .on_open(move |event, idx, tree| {
-        debug!("on_open {:#?}", (event, idx /* , tree */));
+        this.component = this.component.tree(tree); // .on_open(move |event, idx, tree| {
+        //     debug!("on_open {:#?}", (event, idx /* , tree */));
 
-        if tree.get_root().is_some_and(|v| v.idx() == idx) {
-        return;
-        }
+        //     if tree.get_root().is_some_and(|v| v.idx() == idx) {
+        //         return;
+        //     }
 
-        let node = tree.get_node_mut(&idx).unwrap();
-        let mut traverser = Dfs::<OverNode>::new();
-        // inital tree walker
-        let walker = node.walk_with(&mut traverser);
-        // filter only for leafs
-        let walker = walker.skip(1);
-        // filter only directories & not loading
-        let walker = walker.filter(|v| v.data().is_dir && !(*v.data().is_loading.borrow()));
-        for node in walker {
-        let idx = node.idx();
-        let data = node.data();
-        debug!("on_open found: {:#?}", data.path.file_name().unwrap());
-         *data.is_loading.borrow_mut() = true;
-        library_scan(
-        tracker.clone(),
-        &data.path,
-        ScanDepth::Limited(2),
-        tx.clone(),
-        Some(idx),
-        );
-        }
-        }); */
+        //     let node = tree.get_node_mut(&idx).unwrap();
+        //     let mut traverser = Dfs::<OverNode>::new();
+        //     // inital tree walker
+        //     let walker = node.walk_with(&mut traverser);
+        //     // filter only for leafs
+        //     let walker = walker.skip(1);
+        //     // filter only directories & not loading
+        //     let walker = walker.filter(|v| v.data().is_dir && !(*v.data().is_loading.borrow()));
+        //     for node in walker {
+        //         let idx = node.idx();
+        //         let data= node.data();
+        //         debug!("on_open found: {:#?}", data.path.file_name().unwrap());
+        //         *data.is_loading.borrow_mut() = true;
+        //         library_scan(download_tracker.clone(), &data.path, ScanDepth::Limited(2),tx_to_main.clone(), Some(idx));
+        //     }
+        // });
 
         debug!("what {this:#?}");
 
@@ -244,14 +246,13 @@ impl NewMusicLibraryComponent {
     ///
     /// This will send a [`LIMsg::TreeNodeReady`] and change the root to `path`.
     fn trigger_load_stepinto<P: Into<PathBuf>>(&self, path: P) {
-        todo!();
-        // library_scan(
-        //     self.download_tracker.clone(),
-        //     path,
-        //     ScanDepth::Limited(2),
-        //     self.tx_to_main.clone(),
-        //     None,
-        // );
+        library_scan(
+            self.download_tracker.clone(),
+            path,
+            ScanDepth::Limited(2),
+            self.tx_to_main.clone(),
+            None,
+        );
     }
 
     /// Trigger a load with a message to change the tree root to the given path.
@@ -260,15 +261,14 @@ impl NewMusicLibraryComponent {
     ///
     /// This will send a [`LIMsg::TreeNodeReady`] and change the root to `path`.
     fn trigger_load_with_focus<P: Into<PathBuf>>(&self, scan_path: P, focus_node: Option<PathBuf>) {
-        todo!();
-        // let path = scan_path.into();
-        // library_scan(
-        //     self.download_tracker.clone(),
-        //     path,
-        //     ScanDepth::Limited(2),
-        //     self.tx_to_main.clone(),
-        //     focus_node,
-        // );
+        let path = scan_path.into();
+        library_scan(
+            self.download_tracker.clone(),
+            path,
+            ScanDepth::Limited(2),
+            self.tx_to_main.clone(),
+            focus_node.map(|v| v.to_string_lossy().to_string()),
+        );
     }
 
     /// Trigger a load for the given path, with the given depth.
@@ -281,14 +281,13 @@ impl NewMusicLibraryComponent {
         depth: ScanDepth,
         focus_node: Option<PathBuf>,
     ) {
-        todo!();
-        // let tx = self.tx_to_main.clone();
-        // library_scan_cb(self.download_tracker.clone(), path, depth, move |vec| {
-        //     let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub {
-        //         vec,
-        //         focus_node,
-        //     })));
-        // });
+        let tx = self.tx_to_main.clone();
+        library_scan_cb(self.download_tracker.clone(), path, depth, move |vec| {
+            let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub {
+                vec,
+                focus_node,
+            })));
+        });
     }
 
     /// Store the currently selected node as yanked (for pasting with [`Self::paste`]).
