@@ -292,22 +292,14 @@ impl OrxMusicLibraryComponent {
                 change_focus: false,
             });
         } else if old_parent.starts_with(selected_parent) {
-            // // new path is contained within old path's parent directory
-            // // We cannot use the sub-load functions here as they replace the given path's node
-            // // and does not clear open/closed status, which treeview cannot handle and panics on going up.
-            // // See <https://github.com/veeso/tui-realm-treeview/issues/15>
             self.handle_reload_at(LIReloadPathData {
-                path: new_path.clone(),
+                path: new_path,
                 change_focus: true,
             });
             self.handle_reload_at(LIReloadPathData {
                 path: old_path,
                 change_focus: false,
             });
-            // self.trigger_load_with_focus(
-            //     selected_parent,
-            //     Some(new_path),
-            // );
         } else {
             // new path is not contained within old path's parent directory, so need to load both
             self.handle_reload_at(LIReloadPathData {
@@ -606,7 +598,13 @@ impl OrxMusicLibraryComponent {
             return None;
         };
 
-        if root_path == vec.path {
+        if !vec.path.exists() {
+            // Path does not exist anymore, for example after a paste / delete
+            if let Some(idx) = self.get_idx_of_path(&vec.path) {
+                // Unwrap is safe because we literally just searched it.
+                self.component.get_node_mut(&idx).unwrap().prune();
+            }
+        } else if root_path == vec.path {
             // the given data *is* the root, so we have to replace the whole tree
             self.component.clear_tree();
             // SAFETY: everything is already invalidated and cleared.
@@ -617,13 +615,7 @@ impl OrxMusicLibraryComponent {
             // always open the root node
             self.component.perform(Cmd::Move(Direction::Right));
         } else {
-            let vec_path = &vec.path;
-            let mut traverser = Dfs::<OverNode>::new();
-            // Unwrap is safe due to this path only being possible if there is a root path
-            let root_node = self.component.get_tree().get_root().unwrap();
-            // inital tree walker
-            let mut walker = root_node.walk_with(&mut traverser);
-            let Some(found_node) = walker.find(|v| &v.data().path == vec_path) else {
+            let Some(found_node_idx) = self.get_idx_of_path(&vec.path) else {
                 warn!(
                     "Ready node ({}) not found in tree ({})!",
                     vec.path.display(),
@@ -631,10 +623,6 @@ impl OrxMusicLibraryComponent {
                 );
                 return None;
             };
-            // explicitly drop the walker, as otherwise it stays around for the entire scope for some reason
-            drop(walker);
-
-            let found_node_idx = found_node.idx();
 
             // Unwrap is safe, as we literally just searched the tree for this node
             let mut node_mut = self.component.get_node_mut(&found_node_idx).unwrap();
