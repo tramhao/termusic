@@ -109,6 +109,8 @@ fn library_dir_tree_inner(path: &Path, depth: ScanDepth, is_dir: Option<bool>) -
 }
 
 /// Convert a [`RecVec`] to a [`Node`].
+///
+/// Returns the root nodeidx.
 pub fn recvec_to_tree(vec: RecVec) -> (NodeIdx<MusicLibData>, Tree<MusicLibData>) {
     let mut tree = Tree::default();
 

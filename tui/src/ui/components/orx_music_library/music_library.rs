@@ -29,7 +29,7 @@ use tuirealm_orx_tree::{
 };
 
 use crate::ui::{
-    components::orx_music_library::scanner::library_scan,
+    components::orx_music_library::scanner::{library_scan, recvec_to_tree},
     model::{DownloadTracker, TxToMain, UserEvent},
     msg::{
         DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
@@ -414,8 +414,29 @@ impl NewMusicLibraryComponent {
     /// Handle a full reload / potential change of the current tree root.
     ///
     /// Also changes focus, if requested.
-    fn handle_full_reload(&mut self, data: LIReloadData) -> Msg {
-        todo!();
+    #[expect(unsafe_code)]
+    fn handle_full_reload(&mut self, data: LIReloadData) -> Option<Msg> {
+        let Some(path) = data
+            .change_root_path
+            .or_else(|| self.get_root_path().map(Path::to_path_buf))
+        else {
+            debug!("No \"change_root_path\" and no current root, not reloading!");
+            return None;
+        };
+        let focus_node = data
+            .focus_node
+            .map(PathBuf::from)
+            .or_else(|| self.get_selected_path().map(Path::to_path_buf));
+
+        // TODO: call clear once available
+        // SAFETY: everything is invalidated, intentionally. Though this currently leaves some practically leaked data in tree state.
+        unsafe {
+            self.component.get_tree_mut().clear();
+        };
+
+        self.trigger_load_with_focus(path, focus_node);
+
+        Some(Msg::ForceRedraw)
     }
 
     /// Handle reloading of the given path, potentially without changing root, but also change focus.
@@ -428,8 +449,28 @@ impl NewMusicLibraryComponent {
     /// Apply the given data as the root of the tree, resetting the state of the tree.
     ///
     /// This will always replace the root of the tree.
+    #[expect(unsafe_code)]
     fn handle_ready(&mut self, data: LINodeReady) -> Msg {
-        todo!();
+        let vec = data.vec;
+        let initial_node = data.focus_node;
+
+        let initial_node = initial_node
+            .map(PathBuf::from)
+            .or_else(|| self.get_selected_path().map(Path::to_path_buf));
+
+        let (_, tree) = recvec_to_tree(vec);
+
+        // TODO: call clear once available
+        // SAFETY: everything is invalidated, intentionally. Though this currently leaves some practically leaked data in tree state.
+        unsafe {
+            self.component.get_tree_mut().clear();
+        }
+        // SAFETY: everything is already invalidated and cleared.
+        *unsafe { self.component.get_tree_mut() } = tree;
+
+        // TODO: set focus node once it becomes available
+
+        Msg::ForceRedraw
     }
 
     /// Apply the given data at the path the data is, potentially without changing root.
@@ -443,7 +484,7 @@ impl NewMusicLibraryComponent {
     fn handle_user_events(&mut self, ev: LIMsg) -> Option<Msg> {
         // handle subscriptions
         match ev {
-            LIMsg::Reload(data) => Some(self.handle_full_reload(data)),
+            LIMsg::Reload(data) => self.handle_full_reload(data),
             LIMsg::ReloadPath(data) => {
                 self.handle_reload_at(data);
                 None
