@@ -106,12 +106,12 @@ pub fn decode(content: &str) -> Result<Vec<ASXItem>> {
             }
             Ok(Event::End(_)) => {
                 let path = xml_stack.join("/");
-                if path == "asx/entry" {
-                    if let Some(transformed) = item.try_into_xspf_item_and_reset() {
-                        list.push(transformed);
-                    }
-                    // no else case, as log errors have already been issued
+                if path == "asx/entry"
+                    && let Some(transformed) = item.try_into_xspf_item_and_reset()
+                {
+                    list.push(transformed);
                 }
+                // no else case, as log errors have already been issued
                 xml_stack.pop();
             }
             Ok(Event::Text(e)) => {

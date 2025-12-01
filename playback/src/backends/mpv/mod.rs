@@ -212,19 +212,17 @@ impl MpvBackend {
                         *args.position.lock() = time_pos;
 
                         // Send a "About to Finish" signal to start pre-fetching / enqueue the next track
-                        if !args.send_atf {
-                            if let Some(total_duration) = *args.total_duration.lock() {
-                                let progress =
-                                    time_pos.as_secs_f64() / total_duration.as_secs_f64();
-                                if progress >= 0.5
-                                    && total_duration.saturating_sub(time_pos)
-                                        < Duration::from_secs(2)
-                                {
-                                    if let Err(e) = args.cmd_tx.send(PlayerCmd::AboutToFinish) {
-                                        error!("command AboutToFinish sent failed: {e}");
-                                    }
-                                    args.send_atf = true;
+                        if !args.send_atf
+                            && let Some(total_duration) = *args.total_duration.lock()
+                        {
+                            let progress = time_pos.as_secs_f64() / total_duration.as_secs_f64();
+                            if progress >= 0.5
+                                && total_duration.saturating_sub(time_pos) < Duration::from_secs(2)
+                            {
+                                if let Err(e) = args.cmd_tx.send(PlayerCmd::AboutToFinish) {
+                                    error!("command AboutToFinish sent failed: {e}");
                                 }
+                                args.send_atf = true;
                             }
                         }
                     }

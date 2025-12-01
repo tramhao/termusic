@@ -149,13 +149,13 @@ impl Lyric {
         let mut merged_captions = self.captions.clone();
         let mut offset = 1;
         for (i, old_caption) in self.captions.iter().enumerate().skip(1) {
-            if let Some(item) = merged_captions.get_mut(i - offset) {
-                if old_caption.timestamp - item.timestamp < 2000 {
-                    item.text += "  ";
-                    item.text += old_caption.text.as_ref();
-                    merged_captions.remove(i - offset + 1);
-                    offset += 1;
-                }
+            if let Some(item) = merged_captions.get_mut(i - offset)
+                && old_caption.timestamp - item.timestamp < 2000
+            {
+                item.text += "  ";
+                item.text += old_caption.text.as_ref();
+                merged_captions.remove(i - offset + 1);
+                offset += 1;
             }
         }
 

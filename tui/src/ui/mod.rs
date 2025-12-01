@@ -140,10 +140,10 @@ impl UI {
                 let mut parent_is_termusic = false;
                 match proc.parent() {
                     Some(s) => {
-                        if let Some(parent) = system.processes().get(&s) {
-                            if parent.name() == TUI_EXE {
-                                parent_is_termusic = true;
-                            }
+                        if let Some(parent) = system.processes().get(&s)
+                            && parent.name() == TUI_EXE
+                        {
+                            parent_is_termusic = true;
                         }
                     }
                     None => parent_is_termusic = false,
@@ -153,13 +153,14 @@ impl UI {
                 }
             }
         }
-        if clients <= 1 && target.is_some() {
-            if let Some(s) = target {
-                #[cfg(not(target_os = "windows"))]
-                s.kill_with(sysinfo::Signal::Term);
-                #[cfg(target_os = "windows")]
-                s.kill();
-            }
+        if clients <= 1
+            && target.is_some()
+            && let Some(s) = target
+        {
+            #[cfg(not(target_os = "windows"))]
+            s.kill_with(sysinfo::Signal::Term);
+            #[cfg(target_os = "windows")]
+            s.kill();
         }
     }
 }

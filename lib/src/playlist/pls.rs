@@ -138,14 +138,14 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
         })
         .collect();
 
-    if let Some(number_of_entries) = number_of_entries {
-        if number_of_entries as usize != list.len() {
-            warn!(
-                "NumberOfEntries mismatch! List: {}, NumberOfEntries: {}",
-                list.len(),
-                number_of_entries
-            );
-        }
+    if let Some(number_of_entries) = number_of_entries
+        && number_of_entries as usize != list.len()
+    {
+        warn!(
+            "NumberOfEntries mismatch! List: {}, NumberOfEntries: {}",
+            list.len(),
+            number_of_entries
+        );
     }
 
     // sort by the numbers (like `File1`) to actually be in playlist order
