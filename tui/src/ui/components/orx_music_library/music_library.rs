@@ -23,7 +23,7 @@ use tuirealm::{
 use tuirealm_orx_tree::{
     NodeRef,
     component::TreeView,
-    traversal::{Dfs, OverNode, Traverser},
+    traversal::{Dfs, OverData, OverNode, Traverser},
     types::{NodeValue, Tree},
     widget::{CHILD_INDICATOR_LENGTH, RenderIndicator, calc_area_for_value},
 };
@@ -271,6 +271,26 @@ impl NewMusicLibraryComponent {
         // );
     }
 
+    /// Trigger a load for the given path, with the given depth.
+    ///
+    /// This will send a [`LIMsg::TreeNodeReadySub`] and does not change the root, unless the
+    /// given path *is* the root.
+    fn trigger_subload_with_focus(
+        &self,
+        path: PathBuf,
+        depth: ScanDepth,
+        focus_node: Option<PathBuf>,
+    ) {
+        todo!();
+        // let tx = self.tx_to_main.clone();
+        // library_scan_cb(self.download_tracker.clone(), path, depth, move |vec| {
+        //     let _ = tx.send(Msg::Library(LIMsg::TreeNodeReadySub(LINodeReadySub {
+        //         vec,
+        //         focus_node,
+        //     })));
+        // });
+    }
+
     /// Store the currently selected node as yanked (for pasting with [`Self::paste`]).
     fn yank(&mut self) {
         if let Some(path) = self.get_selected_path() {
@@ -439,11 +459,93 @@ impl NewMusicLibraryComponent {
         Some(Msg::ForceRedraw)
     }
 
+    /// Truncate `node`'s path to `root_node`'s path, then split `node`'s path by the separator, iterate over the non-empty components.
+    ///
+    /// This assumes `node` contains `root_node`!
+    fn split_components_root<'a>(
+        root_node: &Path,
+        node: &'a Path,
+    ) -> impl Iterator<Item = std::path::Component<'a>> {
+        node.components().skip(root_node.components().count())
+    }
+
     /// Handle reloading of the given path, potentially without changing root, but also change focus.
     ///
     /// If necessary, load all paths in-between.
     fn handle_reload_at(&mut self, data: LIReloadPathData) {
-        todo!();
+        let path = data.path;
+        let Some(root_node) = self.component.get_tree().get_root() else {
+            debug!("No root node, not reloading!");
+            return;
+        };
+
+        if !path.starts_with(&root_node.data().path) {
+            debug!("Given path is outside of tree root, not loading!");
+            return;
+        }
+
+        // because of the if above, we know the node is at least within the tree
+        // so it is safe to use the root as the initial starting node.
+
+        // this contains one of 3:
+        // - the path of the node itself
+        // - the root node's path
+        // - the nearest directory node's path
+        let mut nearest_path = &root_node.data().path;
+        let mut nearest_match = 0;
+
+        let components_between_root_and_path: Vec<std::path::Component<'_>> =
+            Self::split_components_root(&root_node.data().path, &path).collect();
+
+        let mut traverser = Dfs::<OverData>::new();
+        // inital tree walker
+        let walker = root_node.walk_with(&mut traverser);
+
+        for node in walker {
+            // exact match found, no need to further iterate
+            if node.path == path {
+                nearest_path = &node.path;
+                break;
+            }
+
+            // The parent directory node will always contain the wanted path partially
+            // skip everything else.
+            // Otherwise it might decend into "root/to_delete/another" instead of wanted "root/dir/another".
+            if !path.starts_with(&node.path) {
+                continue;
+            }
+
+            for (idx, comp) in
+                Self::split_components_root(&root_node.data().path, &node.path).enumerate()
+            {
+                let Some(gotten) = components_between_root_and_path.get(idx) else {
+                    break;
+                };
+
+                if *gotten == comp && idx > nearest_match {
+                    nearest_match = idx;
+                    nearest_path = &node.path;
+                }
+            }
+        }
+
+        trace!(
+            "found nearest match: {:#?}",
+            (&path, nearest_match, nearest_path)
+        );
+
+        let depth = components_between_root_and_path
+            .len()
+            .saturating_sub(nearest_match);
+        let depth = u32::try_from(depth).unwrap_or_default();
+
+        let focus_node = if data.change_focus { Some(path) } else { None };
+
+        self.trigger_subload_with_focus(
+            nearest_path.clone(),
+            ScanDepth::Limited(depth),
+            focus_node,
+        );
     }
 
     /// Apply the given data as the root of the tree, resetting the state of the tree.
@@ -476,8 +578,69 @@ impl NewMusicLibraryComponent {
     /// Apply the given data at the path the data is, potentially without changing root.
     ///
     /// This will replace the root if the given data is starting at the root path.
+    #[expect(unsafe_code)]
     fn handle_ready_sub(&mut self, data: LINodeReadySub) -> Option<Msg> {
-        todo!();
+        let vec = data.vec;
+
+        // let tree_mut = self.component.tree_mut().root_mut();
+        let Some(root_path) = self.get_root_path() else {
+            // TODO: should we apply it?
+            debug!("No root path, not applying");
+            return None;
+        };
+
+        if root_path == vec.path {
+            // the given data *is* the root, so we have to replace the whole tree
+            // self.component.set_tree(Tree::new(recvec_to_node(vec)));
+            // TODO: call clear once available
+            // SAFETY: everything is invalidated, intentionally. Though this currently leaves some practically leaked data in tree state.
+            unsafe {
+                self.component.get_tree_mut().clear();
+            }
+            // SAFETY: everything is already invalidated and cleared.
+            *unsafe { self.component.get_tree_mut() } = recvec_to_tree(vec).1;
+        } else {
+            let vec_path = &vec.path;
+            let mut traverser = Dfs::<OverNode>::new();
+            // Unwrap is safe due to this path only being possible if there is a root path
+            let root_node = self.component.get_tree().get_root().unwrap();
+            // inital tree walker
+            let mut walker = root_node.walk_with(&mut traverser);
+            let Some(found_node) = walker.find(|v| &v.data().path == vec_path) else {
+                warn!(
+                    "Ready node ({}) not found in tree ({})!",
+                    vec.path.display(),
+                    self.component.get_tree().root().data().path.display()
+                );
+                return None;
+            };
+            // explicitly drop the walker, as otherwise it stays around for the entire scope for some reason
+            drop(walker);
+
+            let found_node_idx = found_node.idx();
+
+            // Unwrap is safe, as we literally just searched the tree for this node
+            let mut node_mut = self.component.get_node_mut(&found_node_idx).unwrap();
+
+            // TODO: ask orx-tree for replacement function
+            node_mut.push_sibling_tree(tuirealm_orx_tree::Side::Left, recvec_to_tree(vec).1);
+            node_mut.prune();
+
+            // try to set a initially selected node
+            if self.component.get_current_selected_node().is_none() {
+                self.component.perform(Cmd::GoTo(Position::Begin));
+            }
+
+            if let Some(focus_node) = data.focus_node {
+                // let focus_node_str = focus_node.to_string_lossy().to_string();
+                // self.move_focus_on_current_tree(&focus_node_str);
+                // TODO: select focus node
+            }
+
+            // TODO: call tree changed?
+        }
+
+        Some(Msg::ForceRedraw)
     }
 
     /// Handle all custom messages.
