@@ -335,7 +335,7 @@ impl OrxMusicLibraryComponent {
         let selected_node = self.component.get_current_selected_node()?;
 
         if !selected_node.data().is_dir
-            || !self.component.get_state().is_opened(&selected_node.idx())
+            || !self.component.get_state().is_opened(selected_node.idx())
         {
             // When the selected node is a file or a closed directory, move focus to upper directory
             self.perform(Cmd::Custom(
@@ -529,7 +529,7 @@ impl OrxMusicLibraryComponent {
         // unwrap is safe as we literally just gotten the idx from the tree
         // set current node to loading, to indicate such to the user
         self.component
-            .get_node_mut(&nearest_idx)
+            .get_node_mut(nearest_idx)
             .unwrap()
             .data_mut()
             .is_loading = true;
@@ -602,7 +602,7 @@ impl OrxMusicLibraryComponent {
             // Path does not exist anymore, for example after a paste / delete
             if let Some(idx) = self.get_idx_of_path(&vec.path) {
                 // Unwrap is safe because we literally just searched it.
-                self.component.get_node_mut(&idx).unwrap().prune();
+                self.component.get_node_mut(idx).unwrap().prune();
             }
         } else if root_path == vec.path {
             // the given data *is* the root, so we have to replace the whole tree
@@ -625,7 +625,7 @@ impl OrxMusicLibraryComponent {
             };
 
             // Unwrap is safe, as we literally just searched the tree for this node
-            let mut node_mut = self.component.get_node_mut(&found_node_idx).unwrap();
+            let mut node_mut = self.component.get_node_mut(found_node_idx).unwrap();
 
             // TODO: ask orx-tree for replacement function
             node_mut.push_sibling_tree(tuirealm_orx_tree::Side::Left, recvec_to_tree(vec).1);
@@ -641,7 +641,7 @@ impl OrxMusicLibraryComponent {
                 let idx = self.get_idx_of_path(&focus_node);
                 if let Some(idx) = idx {
                     self.component.select(MotionDirection::Upwards, idx);
-                    self.component.open_all_parents(&idx);
+                    self.component.open_all_parents(idx);
                     // always open the newly selected node
                     self.component.perform(Cmd::Move(Direction::Right));
                 }
