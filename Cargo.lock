@@ -5666,7 +5666,7 @@ dependencies = [
 [[package]]
 name = "tuirealm-orx-tree"
 version = "0.1.0"
-source = "git+https://github.com/hasezoey/tuirealm-orx-tree.git#3724173c6d8bfc39a9c7f9f82d537d6e1d1d6be7"
+source = "git+https://github.com/hasezoey/tuirealm-orx-tree.git#13866ef8a5688de71fab6ba63112416b7eb8059e"
 dependencies = [
  "log",
  "orx-tree",

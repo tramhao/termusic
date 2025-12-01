@@ -653,6 +653,7 @@ impl OrxMusicLibraryComponent {
                 let idx = self.get_idx_of_path(&focus_node);
                 if let Some(idx) = idx {
                     self.component.select(MotionDirection::Upwards, idx);
+                    self.component.open_all_parents(&idx);
                     // always open the newly selected node
                     self.component.perform(Cmd::Move(Direction::Right));
                 }
