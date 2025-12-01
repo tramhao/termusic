@@ -158,27 +158,6 @@ impl OrxMusicLibraryComponent {
             .highlight_color(config.settings.theme.library_highlight())
             .highlight_symbol(&config.settings.theme.style.library.highlight_symbol)
             .empty_tree_text(LOADING_TREE_TEXT)
-        // .on_open(|event, idx, tree| {
-        //     debug!("on_open {:#?}", (event, idx /* , tree */));
-
-        //     if tree.get_root().is_some_and(|v| v.idx() == idx) {
-        //         return;
-        //     }
-
-        //     let mut node = tree.get_node_mut(&idx).unwrap();
-        //     let mut traverser = Dfs::<OverData>::new();
-        //     // inital tree walker
-        //     let walker = node.walk_mut_with(&mut traverser);
-        //     // filter only for leafs
-        //     let walker = walker.skip(1);
-        //     // filter only directories & not loading
-        //     let walker = walker.filter(|v| v.is_dir && !v.is_loading);
-        //     for node in walker {
-        //         debug!("on_open found: {:#?}", node.path.file_name().unwrap());
-        //         node.is_loading = true;
-        //         scan_path_parent(tx, download_tracker, path, depth, parent);
-        //     }
-        // })
     }
 
     /// Get a new empty instance, which shows "Loading..." while empty.
@@ -203,6 +182,7 @@ impl OrxMusicLibraryComponent {
     }
 
     /// Create a new instance, with a tree already set.
+    #[expect(unused)]
     pub fn new(
         tree: Tree<MusicLibData>,
         config: SharedTuiSettings,
@@ -211,31 +191,7 @@ impl OrxMusicLibraryComponent {
     ) -> Self {
         let mut this = Self::new_loading(config, tx_to_main.clone(), download_tracker.clone());
 
-        this.component = this.component.tree(tree); // .on_open(move |event, idx, tree| {
-        //     debug!("on_open {:#?}", (event, idx /* , tree */));
-
-        //     if tree.get_root().is_some_and(|v| v.idx() == idx) {
-        //         return;
-        //     }
-
-        //     let node = tree.get_node_mut(&idx).unwrap();
-        //     let mut traverser = Dfs::<OverNode>::new();
-        //     // inital tree walker
-        //     let walker = node.walk_with(&mut traverser);
-        //     // filter only for leafs
-        //     let walker = walker.skip(1);
-        //     // filter only directories & not loading
-        //     let walker = walker.filter(|v| v.data().is_dir && !(*v.data().is_loading.borrow()));
-        //     for node in walker {
-        //         let idx = node.idx();
-        //         let data= node.data();
-        //         debug!("on_open found: {:#?}", data.path.file_name().unwrap());
-        //         *data.is_loading.borrow_mut() = true;
-        //         library_scan(download_tracker.clone(), &data.path, ScanDepth::Limited(2),tx_to_main.clone(), Some(idx));
-        //     }
-        // });
-
-        debug!("what {this:#?}");
+        this.component = this.component.tree(tree);
 
         this
     }
