@@ -533,6 +533,14 @@ impl OrxMusicLibraryComponent {
         walker.find(|v| v.data().path == path).map(|v| v.idx())
     }
 
+    /// Select, open all parents and open the given node.
+    fn select_and_open_node(&mut self, idx: NodeIdx<MusicLibData>) {
+        self.component.select(MotionDirection::Upwards, idx);
+        self.component.open_all_parents(idx);
+        // always open the selected node
+        self.component.perform(Cmd::Move(Direction::Right));
+    }
+
     /// Apply the given data as the root of the tree, resetting the state of the tree.
     ///
     /// This will always replace the root of the tree.
@@ -554,9 +562,20 @@ impl OrxMusicLibraryComponent {
         if let Some(initial_node) = initial_node {
             let idx = self.get_idx_of_path(&initial_node);
             if let Some(idx) = idx {
-                self.component.select(MotionDirection::Upwards, idx);
-                // always open the selected node
-                self.component.perform(Cmd::Move(Direction::Right));
+                self.select_and_open_node(idx);
+            } else {
+                // requested node is not within the tree, lets try to find the next nearest parent
+                let mut remaining_path = initial_node.as_path();
+                while let Some(parent) = remaining_path.parent()
+                    && parent.starts_with(&self.component.get_tree().root().data().path)
+                {
+                    if let Some(idx) = self.get_idx_of_path(parent) {
+                        self.select_and_open_node(idx);
+                        break;
+                    }
+
+                    remaining_path = parent;
+                }
             }
         } else {
             // always select the root node
@@ -629,10 +648,20 @@ impl OrxMusicLibraryComponent {
             if let Some(focus_node) = data.focus_node {
                 let idx = self.get_idx_of_path(&focus_node);
                 if let Some(idx) = idx {
-                    self.component.select(MotionDirection::Upwards, idx);
-                    self.component.open_all_parents(idx);
-                    // always open the newly selected node
-                    self.component.perform(Cmd::Move(Direction::Right));
+                    self.select_and_open_node(idx);
+                } else {
+                    // requested node is not within the tree, lets try to find the next nearest parent
+                    let mut remaining_path = focus_node.as_path();
+                    while let Some(parent) = remaining_path.parent()
+                        && parent.starts_with(&self.component.get_tree().root().data().path)
+                    {
+                        if let Some(idx) = self.get_idx_of_path(parent) {
+                            self.select_and_open_node(idx);
+                            break;
+                        }
+
+                        remaining_path = parent;
+                    }
                 }
             } else if is_node_selected {
                 self.component.select(MotionDirection::NoMotion, new_idx);
