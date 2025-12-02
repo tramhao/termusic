@@ -94,16 +94,14 @@ impl Instance {
                 ("type", "video"),
                 ("sort_by", "relevance"),
             ];
-            if let Ok(result) = client.get(&url).query(&query_vec).send().await {
-                if result.status() == 200 {
-                    if let Ok(text) = result.text().await {
-                        if let Some(vr) = Self::parse_youtube_options(&text) {
-                            video_result = vr;
-                            domain = v;
-                            break;
-                        }
-                    }
-                }
+            if let Ok(result) = client.get(&url).query(&query_vec).send().await
+                && result.status() == 200
+                && let Ok(text) = result.text().await
+                && let Some(vr) = Self::parse_youtube_options(&text)
+            {
+                video_result = vr;
+                domain = v;
+                break;
             }
         }
         if domain.len() < 2 {
@@ -238,10 +236,10 @@ impl Instance {
             let mut vec = Vec::new();
             if let Some(array) = value.as_array() {
                 for inner_value in array {
-                    if let Some((uri, health)) = Self::parse_instance(inner_value) {
-                        if health > 95.0 {
-                            vec.push(uri);
-                        }
+                    if let Some((uri, health)) = Self::parse_instance(inner_value)
+                        && health > 95.0
+                    {
+                        vec.push(uri);
                     }
                 }
             }

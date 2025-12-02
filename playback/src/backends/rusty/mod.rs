@@ -706,17 +706,16 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                 *args.position.lock() = new_position;
 
                 // Send a "About to Finish" signal to start pre-fetching / enqueue the next track
-                if !is_radio && !send_atf {
-                    if let Some(d) = *args.total_duration.lock() {
-                        let progress = new_position.as_secs_f64() / d.as_secs_f64();
-                        if progress >= 0.5
-                            && d.saturating_sub(new_position) < Duration::from_secs(2)
-                        {
-                            if let Err(e) = args.pcmd_tx.send(PlayerCmd::AboutToFinish) {
-                                error!("command AboutToFinish sent failed: {e}");
-                            }
-                            send_atf = true;
+                if !is_radio
+                    && !send_atf
+                    && let Some(d) = *args.total_duration.lock()
+                {
+                    let progress = new_position.as_secs_f64() / d.as_secs_f64();
+                    if progress >= 0.5 && d.saturating_sub(new_position) < Duration::from_secs(2) {
+                        if let Err(e) = args.pcmd_tx.send(PlayerCmd::AboutToFinish) {
+                            error!("command AboutToFinish sent failed: {e}");
                         }
+                        send_atf = true;
                     }
                 }
             }
@@ -733,10 +732,10 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                 }
                 if offset.is_positive() {
                     let new_pos = sink.elapsed().as_secs() + offset as u64;
-                    if let Some(d) = *args.total_duration.lock() {
-                        if new_pos < d.as_secs() - offset as u64 {
-                            sink.seek(Duration::from_secs(new_pos));
-                        }
+                    if let Some(d) = *args.total_duration.lock()
+                        && new_pos < d.as_secs() - offset as u64
+                    {
+                        sink.seek(Duration::from_secs(new_pos));
                     }
                 } else {
                     let new_pos = sink

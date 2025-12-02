@@ -581,10 +581,10 @@ fn do_container_metdata(
 /// No optimizations for when [`MediaTitleTxWrap`] is [`None`], should be done outside of this function
 #[inline]
 fn do_inline_metdata(media_title_tx: &mut MediaTitleTxWrap, format: &mut dyn FormatReader) {
-    if let Some(metadata_rev) = format.metadata().skip_to_latest() {
-        if let Some(title) = find_title_metadata(metadata_rev).cloned() {
-            media_title_tx.media_title_send(MediaTitleType::Value(title));
-        }
+    if let Some(metadata_rev) = format.metadata().skip_to_latest()
+        && let Some(title) = find_title_metadata(metadata_rev).cloned()
+    {
+        media_title_tx.media_title_send(MediaTitleType::Value(title));
     }
 }
 

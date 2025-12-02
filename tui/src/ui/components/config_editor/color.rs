@@ -914,12 +914,12 @@ impl ConfigInputHighlight {
         }
 
         // press enter to see preview
-        if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result {
-            if let Some(s) = Self::string_to_unicode_char(&symbol) {
-                self.attr(Attribute::Value, AttrValue::String(s.to_string()));
-                self.update_symbol_after(Color::Green);
-                return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
-            }
+        if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result
+            && let Some(s) = Self::string_to_unicode_char(&symbol)
+        {
+            self.attr(Attribute::Value, AttrValue::String(s.to_string()));
+            self.update_symbol_after(Color::Green);
+            return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
         }
         Msg::ForceRedraw
     }

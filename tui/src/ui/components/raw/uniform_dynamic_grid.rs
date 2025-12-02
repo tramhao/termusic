@@ -105,7 +105,7 @@ impl UniformDynamicGrid {
             // but in those cases we want to add another row to round-up.
             // the most proper way would be to use floating point division, but rust does not greatly
             // support converting >u32 to floating points, so this workaround is used instead for our purposes.
-            if (self.elems % usize::from(elems_per_row)) != 0 {
+            if !self.elems.is_multiple_of(usize::from(elems_per_row)) {
                 rows += 1;
             }
 

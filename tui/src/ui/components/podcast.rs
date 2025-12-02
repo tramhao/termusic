@@ -75,12 +75,11 @@ impl Component<Msg, UserEvent> for FeedsList {
                 code: Key::Down,
                 modifiers: KeyModifiers::NONE,
             }) => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
-                        if index >= t.len() - 1 {
-                            return Some(self.on_key_tab.clone());
-                        }
-                    }
+                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content)
+                    && let State::One(StateValue::Usize(index)) = self.state()
+                    && index >= t.len() - 1
+                {
+                    return Some(self.on_key_tab.clone());
                 }
                 self.perform(Cmd::Move(Direction::Down))
             }
@@ -89,12 +88,11 @@ impl Component<Msg, UserEvent> for FeedsList {
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
-                        if index >= t.len() - 1 {
-                            return Some(self.on_key_tab.clone());
-                        }
-                    }
+                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content)
+                    && let State::One(StateValue::Usize(index)) = self.state()
+                    && index >= t.len() - 1
+                {
+                    return Some(self.on_key_tab.clone());
                 }
                 self.perform(Cmd::Move(Direction::Down))
             }
@@ -245,10 +243,10 @@ impl Component<Msg, UserEvent> for EpisodeList {
                 code: Key::Up,
                 modifiers: KeyModifiers::NONE,
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    if index == 0 {
-                        return Some(self.on_key_backtab.clone());
-                    }
+                if let State::One(StateValue::Usize(index)) = self.state()
+                    && index == 0
+                {
+                    return Some(self.on_key_backtab.clone());
                 }
                 self.perform(Cmd::Move(Direction::Up));
                 return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
@@ -258,10 +256,10 @@ impl Component<Msg, UserEvent> for EpisodeList {
                 return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
             }
             Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    if index == 0 {
-                        return Some(self.on_key_backtab.clone());
-                    }
+                if let State::One(StateValue::Usize(index)) = self.state()
+                    && index == 0
+                {
+                    return Some(self.on_key_backtab.clone());
                 }
                 self.perform(Cmd::Move(Direction::Up));
                 return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
@@ -931,20 +929,20 @@ impl Model {
         if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
-        if let Some(track) = self.playback.current_track() {
-            if let Some(podcast_data) = track.as_podcast() {
-                let url = podcast_data.url();
-                'outer: for pod in &mut self.podcast.podcasts {
-                    for ep in &mut pod.episodes {
-                        if ep.url == url {
-                            if !ep.played {
-                                ep.played = true;
-                                self.podcast
-                                    .db_podcast
-                                    .set_played_status(ep.id, ep.played)?;
-                            }
-                            break 'outer;
+        if let Some(track) = self.playback.current_track()
+            && let Some(podcast_data) = track.as_podcast()
+        {
+            let url = podcast_data.url();
+            'outer: for pod in &mut self.podcast.podcasts {
+                for ep in &mut pod.episodes {
+                    if ep.url == url {
+                        if !ep.played {
+                            ep.played = true;
+                            self.podcast
+                                .db_podcast
+                                .set_played_status(ep.id, ep.played)?;
                         }
+                        break 'outer;
                     }
                 }
             }

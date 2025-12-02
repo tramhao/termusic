@@ -93,21 +93,21 @@ impl Component<Msg, UserEvent> for LabelSpan {
 impl MockComponent for LabelSpan {
     #[allow(clippy::cast_sign_loss)]
     fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
-        if let Some(start_time) = self.active_message_start_time {
-            if start_time.elapsed().as_secs() > self.time_out as u64 {
-                self.attr(
-                    Attribute::Text,
-                    AttrValue::Payload(PropPayload::Vec(
-                        self.default_span
-                            .iter()
-                            .cloned()
-                            .map(PropValue::TextSpan)
-                            .collect(),
-                    )),
-                );
-                self.active_message_start_time = None;
-                self.time_out = 10;
-            }
+        if let Some(start_time) = self.active_message_start_time
+            && start_time.elapsed().as_secs() > self.time_out as u64
+        {
+            self.attr(
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(
+                    self.default_span
+                        .iter()
+                        .cloned()
+                        .map(PropValue::TextSpan)
+                        .collect(),
+                )),
+            );
+            self.active_message_start_time = None;
+            self.time_out = 10;
         }
 
         self.component.view(render, area);
