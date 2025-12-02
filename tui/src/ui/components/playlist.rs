@@ -34,7 +34,7 @@ use tuirealm::{
 };
 
 use crate::ui::Model;
-use crate::ui::components::music_library::library_dir_tree;
+use crate::ui::components::orx_music_library::scanner::library_dir_tree;
 use crate::ui::ids::Id;
 use crate::ui::model::{TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria};
@@ -330,7 +330,7 @@ impl Model {
         let vec = library_dir_tree(path, ScanDepth::Limited(1));
         vec.children
             .into_iter()
-            .map(|v| v.id.to_string_lossy().to_string())
+            .map(|v| v.path.to_string_lossy().to_string())
             .collect()
     }
 
@@ -906,7 +906,7 @@ impl Model {
         // TODO: move this to server?
         self.playback.playlist.save_m3u(&filename)?;
 
-        self.library_reload_and_focus(filename);
+        self.new_library_reload_and_focus(filename);
 
         // only reload database results, if the criteria is for playlists
         if self.dw.criteria == SearchCriteria::Playlist {

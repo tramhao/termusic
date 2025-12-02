@@ -429,12 +429,12 @@ impl Playlist {
         // unset next track as we now want a previous track instead of the next enqueued
         self.set_next_track(None);
 
-        if !self.played_index.is_empty() {
-            if let Some(index) = self.played_index.pop() {
-                self.current_track_index = index;
-                self.is_modified = true;
-                return;
-            }
+        if !self.played_index.is_empty()
+            && let Some(index) = self.played_index.pop()
+        {
+            self.current_track_index = index;
+            self.is_modified = true;
+            return;
         }
         match self.loop_mode {
             LoopMode::Single => {}
@@ -999,10 +999,10 @@ impl Playlist {
 
         self.tracks.shuffle(&mut rand::rng());
 
-        if let Some(current_track_file) = current_track_file {
-            if let Some(index) = self.find_index_from_file(&current_track_file) {
-                self.current_track_index = index;
-            }
+        if let Some(current_track_file) = current_track_file
+            && let Some(index) = self.find_index_from_file(&current_track_file)
+        {
+            self.current_track_index = index;
         }
 
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistShuffled(

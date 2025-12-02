@@ -739,15 +739,15 @@ pub fn parse_metadata_from_file(
         handle_tag(tag, options, &mut res);
     }
 
-    if options.file_times {
-        if let Ok(metadata) = std::fs::metadata(path) {
-            let filetimes = FileTimes {
-                modified: metadata.modified().ok(),
-                created: metadata.created().ok(),
-            };
+    if options.file_times
+        && let Ok(metadata) = std::fs::metadata(path)
+    {
+        let filetimes = FileTimes {
+            modified: metadata.modified().ok(),
+            created: metadata.created().ok(),
+        };
 
-            res.file_times = Some(filetimes);
-        }
+        res.file_times = Some(filetimes);
     }
 
     Ok(res)
@@ -773,11 +773,12 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetad
             .map(ToString::to_string)
             .collect();
 
-        if artists.is_empty() && !options.artist_separators.is_empty() {
-            if let Some(artist) = tag.artist() {
-                let artists_iter = split_artists(&artist, options);
-                artists.extend(artists_iter);
-            }
+        if artists.is_empty()
+            && !options.artist_separators.is_empty()
+            && let Some(artist) = tag.artist()
+        {
+            let artists_iter = split_artists(&artist, options);
+            artists.extend(artists_iter);
         }
 
         res.artists = Some(artists);
@@ -803,14 +804,14 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetad
             .map(ToString::to_string)
             .collect();
 
-        if album_artists.is_empty() && !options.artist_separators.is_empty() {
-            if let Some(album_artist) = tag
+        if album_artists.is_empty()
+            && !options.artist_separators.is_empty()
+            && let Some(album_artist) = tag
                 .get(&ItemKey::AlbumArtist)
                 .and_then(|v| v.value().text())
-            {
-                let artists_iter = split_artists(album_artist, options);
-                album_artists.extend(artists_iter);
-            }
+        {
+            let artists_iter = split_artists(album_artist, options);
+            album_artists.extend(artists_iter);
         }
 
         res.album_artists = Some(album_artists);

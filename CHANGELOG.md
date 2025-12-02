@@ -2,6 +2,7 @@
 
 ### next
 
+- Change: updated MSRV to 1.88.
 - Change: change default log level to `info` (from `warn`).
 - Change: log the termusic version used.
 - Change(tui): on windows, properly spawn the server as a detached process.

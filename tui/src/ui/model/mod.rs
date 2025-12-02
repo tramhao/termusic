@@ -455,7 +455,7 @@ impl Model {
             xywh,
         };
 
-        model.library_scan_dir(path, None);
+        model.new_library_scan_dir(path, None);
 
         model
             .mount_main()
@@ -587,10 +587,10 @@ impl Model {
     }
 
     pub fn is_radio(&self) -> bool {
-        if let Some(track) = self.playback.current_track() {
-            if track.media_type() == MediaTypesSimple::LiveRadio {
-                return true;
-            }
+        if let Some(track) = self.playback.current_track()
+            && track.media_type() == MediaTypesSimple::LiveRadio
+        {
+            return true;
         }
         false
     }
