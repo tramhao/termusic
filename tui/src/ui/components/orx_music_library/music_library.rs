@@ -24,7 +24,7 @@ use tuirealm_orx_tree::{
     NodeRef,
     component::{TreeView, cmd},
     traversal::{Dfs, OverNode, Traverser},
-    types::{MotionDirection, NodeIdx, NodeValue, Tree},
+    types::{NodeIdx, NodeValue, Tree},
     widget::{CHILD_INDICATOR_LENGTH, RenderIndicator, calc_area_for_value},
 };
 
@@ -535,7 +535,7 @@ impl OrxMusicLibraryComponent {
 
     /// Select, open all parents and open the given node.
     fn select_and_open_node(&mut self, idx: NodeIdx<MusicLibData>) {
-        self.component.select(MotionDirection::Upwards, idx);
+        self.component.select(idx);
         self.component.open_all_parents(idx);
         // always open the selected node
         self.handle_right_key();
@@ -664,7 +664,7 @@ impl OrxMusicLibraryComponent {
                     }
                 }
             } else if is_node_selected {
-                self.component.select(MotionDirection::NoMotion, new_idx);
+                self.component.select_no_offset(new_idx);
             }
 
             // TODO: call tree changed?
