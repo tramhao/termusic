@@ -22,7 +22,7 @@ use tuirealm::{
 };
 use tuirealm_orx_tree::{
     NodeRef,
-    component::TreeView,
+    component::{TreeView, cmd},
     traversal::{Dfs, OverNode, Traverser},
     types::{MotionDirection, NodeIdx, NodeValue, Tree},
     widget::{CHILD_INDICATOR_LENGTH, RenderIndicator, calc_area_for_value},
@@ -745,11 +745,11 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            }) => self.perform(Cmd::Custom(cmd::PG_DOWN)),
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Scroll(Direction::Up)),
+            }) => self.perform(Cmd::Custom(cmd::PG_UP)),
 
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.goto_top.get() => {
                 self.perform(Cmd::GoTo(Position::Begin))
