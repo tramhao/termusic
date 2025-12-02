@@ -5647,7 +5647,8 @@ dependencies = [
 [[package]]
 name = "tuirealm-orx-tree"
 version = "0.1.0"
-source = "git+https://github.com/hasezoey/tuirealm-orx-tree.git#1b43aa92d4bfcea8b6bc4a4f0ba484645ec7e627"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3d2264a0dd652c0bf9ebeda585f8c371030d0002e8616e943bcb63c6f137831"
 dependencies = [
  "orx-tree",
  "tui-realm-stdlib",
