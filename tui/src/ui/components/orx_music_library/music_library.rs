@@ -608,19 +608,23 @@ impl OrxMusicLibraryComponent {
                 return None;
             };
 
+            // try to set a initially selected node
+            if self.component.get_current_selected_node().is_none() {
+                self.component.perform(Cmd::GoTo(Position::Begin));
+            }
+
+            // re-set focus to the removed node, if it had focus
+            let is_node_selected = self.component.get_state().selected() == Some(found_node_idx);
+
             // Unwrap is safe, as we literally just searched the tree for this node
             let mut node_mut = self.component.get_node_mut(found_node_idx).unwrap();
 
             // TODO: consider using "NodeMut::replace" once available
             // see <https://github.com/orxfun/orx-tree/issues/189>
-            node_mut.push_sibling_tree(tuirealm_orx_tree::Side::Left, recvec_to_tree(vec).1);
+            let new_idx =
+                node_mut.push_sibling_tree(tuirealm_orx_tree::Side::Left, recvec_to_tree(vec).1);
             node_mut.prune();
             // NOTE: we dont need to re-set "is_loading" as the full node gets overwritten with new data, which defaults to "false"
-
-            // try to set a initially selected node
-            if self.component.get_current_selected_node().is_none() {
-                self.component.perform(Cmd::GoTo(Position::Begin));
-            }
 
             if let Some(focus_node) = data.focus_node {
                 let idx = self.get_idx_of_path(&focus_node);
@@ -630,6 +634,8 @@ impl OrxMusicLibraryComponent {
                     // always open the newly selected node
                     self.component.perform(Cmd::Move(Direction::Right));
                 }
+            } else if is_node_selected {
+                self.component.select(MotionDirection::NoMotion, new_idx);
             }
 
             // TODO: call tree changed?
