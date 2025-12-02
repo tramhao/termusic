@@ -10,7 +10,7 @@ use std::{
 use anyhow::{Context, Result};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay, v2::server::ScanDepth};
 use tuirealm::{
-    Component, Event, MockComponent, State, StateValue,
+    Component, Event, MockComponent,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, Style},
@@ -194,21 +194,6 @@ impl OrxMusicLibraryComponent {
         this.component = this.component.tree(tree);
 
         this
-    }
-
-    /// Trigger a load with a message to change the tree root to the given path.
-    ///
-    /// This will make the given path(which will be the root node) the focused node.
-    ///
-    /// This will send a [`LIMsg::TreeNodeReady`] and change the root to `path`.
-    fn trigger_load_stepinto<P: Into<PathBuf>>(&self, path: P) {
-        library_scan(
-            self.download_tracker.clone(),
-            path,
-            ScanDepth::Limited(2),
-            self.tx_to_main.clone(),
-            None,
-        );
     }
 
     /// Trigger a load with a message to change the tree root to the given path.
@@ -794,6 +779,9 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                     // only trigger a load if we are not at the root of the filesystem already
                     if current_root != parent {
                         self.trigger_load_with_focus(parent, Some(current_root.to_path_buf()));
+
+                        // to draw the load spinner
+                        return Some(Msg::ForceRedraw);
                     }
                 }
 
@@ -803,7 +791,18 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Submit),
+            }) => {
+                if let Some(selected_node) = self.get_selected_path()
+                    && selected_node.is_dir()
+                {
+                    self.trigger_load_with_focus(selected_node, None);
+
+                    // to draw the load spinner
+                    return Some(Msg::ForceRedraw);
+                }
+
+                CmdResult::None
+            }
 
             // search
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
@@ -860,14 +859,6 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             _ => CmdResult::None,
         };
         match result {
-            CmdResult::Submit(State::One(StateValue::String(node))) => {
-                let path = Path::new(&node);
-                if path.is_dir() {
-                    self.trigger_load_stepinto(path);
-                    // there is no special indicator or message; the download_tracker should force a draw once active
-                }
-                None
-            }
             CmdResult::None => None,
             _ => Some(Msg::ForceRedraw),
         }
