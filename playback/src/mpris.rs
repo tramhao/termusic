@@ -219,10 +219,14 @@ impl GeneralPlayer {
                 if volume > 1.0 {
                     error!("SetVolume above 1.0 will be clamped to 1.0!");
                 }
-                // convert a 0.0 to 1.0 range to 0 to 100, because that is what termusic uses for volume
-                // default float to int casting will truncate values to the decimal point
+                // convert a 0.0 to 1.0 range to 0 to 100, because that is what termusic uses for volume.
+                let clamp_100 = volume.clamp(0.0, 1.0) * 100.0;
+                // Default float to int casting will truncate values to the decimal point,
+                // so we round instead.
+                // For example "volume: 0.5000" plus "playerctl volume 0.1+" results in "0.15000", but doing
+                // "playerctl volume 0.1-" now, results in "0.49999", so if we dont round we would get "Volume: 4".
                 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                let uvol = (volume.clamp(0.0, 1.0) * 100.0) as u16;
+                let uvol = clamp_100.round() as u16;
                 self.set_volume(uvol);
             }
             MediaControlEvent::Quit => {
