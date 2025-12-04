@@ -21,6 +21,7 @@
 - Fix(server): on rusty backend, update symphonia to fix various issues.
 - Fix(server): on rusty backend, update `rusty-libopus` to dynamic link without custom environment variable.
 - Fix(server): dont panic if backend in config is unavailable when overridden by cli argument.
+- Fix(server): if volume changed via MPRIS, populate the new volume back to mpris.
 
 ### [V0.12.0]
 - Released on: October 10, 2025.
