@@ -227,7 +227,8 @@ impl GeneralPlayer {
                 // "playerctl volume 0.1-" now, results in "0.49999", so if we dont round we would get "Volume: 4".
                 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                 let uvol = clamp_100.round() as u16;
-                self.set_volume(uvol);
+                // ignore error if sending failed
+                self.cmd_tx.send(PlayerCmd::VolumeSet(uvol)).ok();
             }
             MediaControlEvent::Quit => {
                 // ignore error if sending failed

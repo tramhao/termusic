@@ -570,6 +570,12 @@ fn player_loop(
                 set_volume(&player, &playerstats, new_volume);
                 info!("after volumeup: {new_volume}");
             }
+            PlayerCmd::VolumeSet(volume) => {
+                info!("before volumeset: {}", player.volume());
+                let new_volume = player.set_volume(volume);
+                set_volume(&player, &playerstats, new_volume);
+                info!("after volumeset: {new_volume}");
+            }
             PlayerCmd::Pause => {
                 player.pause();
             }

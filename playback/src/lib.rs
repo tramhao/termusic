@@ -136,6 +136,7 @@ pub enum PlayerCmd {
     TogglePause,
     VolumeDown,
     VolumeUp,
+    VolumeSet(Volume),
 
     PlaylistPlaySpecific(PlaylistPlaySpecific),
     PlaylistAddTrack(PlaylistAddTrack),
