@@ -21,7 +21,7 @@ use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
+    PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Volume, VolumeSigned,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -561,18 +561,14 @@ fn player_loop(
             PlayerCmd::VolumeDown => {
                 info!("before volumedown: {}", player.volume());
                 let new_volume = player.add_volume(-VOLUME_STEP);
-                player.config.write().settings.player.volume = new_volume;
+                set_volume(&player, &playerstats, new_volume);
                 info!("after volumedown: {new_volume}");
-                let mut p_tick = playerstats.lock();
-                p_tick.volume = new_volume;
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
                 let new_volume = player.add_volume(VOLUME_STEP);
-                player.config.write().settings.player.volume = new_volume;
+                set_volume(&player, &playerstats, new_volume);
                 info!("after volumeup: {new_volume}");
-                let mut p_tick = playerstats.lock();
-                p_tick.volume = new_volume;
             }
             PlayerCmd::Pause => {
                 player.pause();
@@ -775,4 +771,11 @@ async fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<(
     };
 
     Ok(())
+}
+
+/// Set the volume for the Config and the playerstats.
+fn set_volume(player: &GeneralPlayer, playerstats: &Arc<Mutex<PlayerStats>>, new_volume: Volume) {
+    player.config.write().settings.player.volume = new_volume;
+    let mut p_tick = playerstats.lock();
+    p_tick.volume = new_volume;
 }
