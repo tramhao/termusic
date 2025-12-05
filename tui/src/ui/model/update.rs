@@ -2,7 +2,9 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::{Result, anyhow};
-use termusiclib::player::{PlayerProgress, RunningStatus, UpdateEvents, UpdatePlaylistEvents};
+use termusiclib::player::{
+    PlayerProgress, RunningStatus, UpdateEvents, UpdatePlaylistEvents, clamp_u16,
+};
 use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
 use tokio::runtime::Handle;
@@ -1075,6 +1077,8 @@ impl Model {
                     pprogress.position,
                     pprogress.total_duration.unwrap_or_default(),
                 );
+
+                self.config_server.write().settings.player.volume = clamp_u16(response.volume);
 
                 self.lyric_update_for_radio(response.radio_title);
 
