@@ -565,17 +565,7 @@ impl OrxMusicLibraryComponent {
                 self.select_and_open_node(idx);
             } else {
                 // requested node is not within the tree, lets try to find the next nearest parent
-                let mut remaining_path = initial_node.as_path();
-                while let Some(parent) = remaining_path.parent()
-                    && parent.starts_with(&self.component.get_tree().root().data().path)
-                {
-                    if let Some(idx) = self.get_idx_of_path(parent) {
-                        self.select_and_open_node(idx);
-                        break;
-                    }
-
-                    remaining_path = parent;
-                }
+                self.select_nearest_parent_node(&initial_node);
             }
         } else {
             // always select the root node
@@ -585,6 +575,21 @@ impl OrxMusicLibraryComponent {
         }
 
         Msg::ForceRedraw
+    }
+
+    /// Select the next nearest parent node of the given `inital_path`.
+    fn select_nearest_parent_node(&mut self, inital_path: &Path) {
+        let mut remaining_path = inital_path;
+        while let Some(parent) = remaining_path.parent()
+            && parent.starts_with(&self.component.get_tree().root().data().path)
+        {
+            if let Some(idx) = self.get_idx_of_path(parent) {
+                self.select_and_open_node(idx);
+                break;
+            }
+
+            remaining_path = parent;
+        }
     }
 
     /// Apply the given data at the path the data is, potentially without changing root.
@@ -651,17 +656,7 @@ impl OrxMusicLibraryComponent {
                     self.select_and_open_node(idx);
                 } else {
                     // requested node is not within the tree, lets try to find the next nearest parent
-                    let mut remaining_path = focus_node.as_path();
-                    while let Some(parent) = remaining_path.parent()
-                        && parent.starts_with(&self.component.get_tree().root().data().path)
-                    {
-                        if let Some(idx) = self.get_idx_of_path(parent) {
-                            self.select_and_open_node(idx);
-                            break;
-                        }
-
-                        remaining_path = parent;
-                    }
+                    self.select_nearest_parent_node(&focus_node);
                 }
             } else if is_node_selected {
                 self.component.select_no_offset(new_idx);
