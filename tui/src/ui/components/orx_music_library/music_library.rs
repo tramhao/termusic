@@ -25,7 +25,9 @@ use tuirealm_orx_tree::{
     component::{TreeView, cmd},
     traversal::{Dfs, OverNode, Traverser},
     types::{NodeIdx, NodeValue, Tree},
-    widget::{CHILD_INDICATOR_LENGTH, HighlightDrawBehavior, Indicator, OrIndicators, calc_area_for_value},
+    widget::{
+        CHILD_INDICATOR_LENGTH, HighlightDrawBehavior, Indicator, OrIndicators, calc_area_for_value,
+    },
 };
 
 use crate::ui::{
@@ -120,7 +122,9 @@ impl NodeValue for MusicLibData {
             buf.set_style(indent_area, style);
         } else if !self.is_loading {
             // directory that is not loading
-            OrIndicators::default().with_style(style.fg(Color::Reset)).render(&mut offset, &mut area, buf, is_opened());
+            OrIndicators::default()
+                .with_style(style.fg(Color::Reset))
+                .render(&mut offset, &mut area, buf, is_opened());
         } else {
             // directory that is loading
             Indicator::render(LOADING_SYMBOL, 2, &mut offset, &mut area, buf, Some(style));
