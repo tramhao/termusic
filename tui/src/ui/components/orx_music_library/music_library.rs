@@ -13,7 +13,7 @@ use tuirealm::{
     Component, Event, MockComponent,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, Style},
+    props::{Alignment, BorderType, Borders, Color, Style},
     ratatui::{
         buffer::Buffer,
         layout::Rect,
@@ -25,7 +25,9 @@ use tuirealm_orx_tree::{
     component::{TreeView, cmd},
     traversal::{Dfs, OverNode, Traverser},
     types::{NodeIdx, NodeValue, Tree},
-    widget::{CHILD_INDICATOR_LENGTH, RenderIndicator, calc_area_for_value},
+    widget::{
+        CHILD_INDICATOR_LENGTH, HighlightDrawBehavior, Indicator, OrIndicators, calc_area_for_value,
+    },
 };
 
 use crate::ui::{
@@ -109,7 +111,7 @@ impl NodeValue for MusicLibData {
     ) {
         if self.is_error {
             // indicator error loading that directory / file
-            RenderIndicator::new(ERROR_SYMBOL, "", 2).render(&mut offset, &mut area, buf, true);
+            Indicator::render(ERROR_SYMBOL, 2, &mut offset, &mut area, buf, Some(style));
         } else if !self.is_dir {
             // not a directory
 
@@ -117,12 +119,15 @@ impl NodeValue for MusicLibData {
             let leaf_indent = CHILD_INDICATOR_LENGTH;
             let indent_area = calc_area_for_value(&mut offset, &mut area, usize::from(leaf_indent));
             Clear.render(indent_area, buf);
+            buf.set_style(indent_area, style);
         } else if !self.is_loading {
             // directory that is not loading
-            RenderIndicator::default().render(&mut offset, &mut area, buf, is_opened());
+            OrIndicators::default()
+                .with_style(style.fg(Color::Reset))
+                .render(&mut offset, &mut area, buf, is_opened());
         } else {
             // directory that is loading
-            RenderIndicator::new(LOADING_SYMBOL, "", 2).render(&mut offset, &mut area, buf, true);
+            Indicator::render(LOADING_SYMBOL, 2, &mut offset, &mut area, buf, Some(style));
         }
 
         self.render(buf, area, offset, style);
@@ -153,6 +158,8 @@ impl OrxMusicLibraryComponent {
                     .modifiers(BorderType::Rounded),
             )
             .indent_size(2)
+            .highlight_symbol_draw_width(2)
+            .highlight_symbol_draw_behavior(HighlightDrawBehavior::Static)
             .scroll_step_horizontal(NonZeroUsize::new(2).unwrap())
             .title(" Library ", Alignment::Left)
             .highlight_color(config.settings.theme.library_highlight())
