@@ -588,10 +588,8 @@ impl GeneralPlayer {
         }
 
         // should we really reset here already instead of just waiting until either next track or exit?
-        if restored {
-            if let Err(err) = self.set_last_position(&track, None) {
-                error!("Resetting last_position failed. Error: {err:#?}");
-            }
+        if restored && let Err(err) = self.set_last_position(&track, None) {
+            error!("Resetting last_position failed. Error: {err:#?}");
         }
     }
 

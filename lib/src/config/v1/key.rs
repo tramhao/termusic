@@ -559,14 +559,14 @@ impl BindingForEvent {
             }
         }
         let str_lower_case = str.to_lowercase();
-        if str_lower_case.len() < 4 {
-            if let Some(str) = str_lower_case.strip_prefix('f') {
-                let my_int = u8::from_str(str)?;
-                if my_int > 12 {
-                    bail!("Function key should be smaller than F12.");
-                }
-                return Ok(Key::Function(my_int));
+        if str_lower_case.len() < 4
+            && let Some(str) = str_lower_case.strip_prefix('f')
+        {
+            let my_int = u8::from_str(str)?;
+            if my_int > 12 {
+                bail!("Function key should be smaller than F12.");
             }
+            return Ok(Key::Function(my_int));
         }
         let special_key = match str_lower_case.as_ref() {
             "backspace" => Key::Backspace,

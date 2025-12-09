@@ -298,10 +298,10 @@ impl Model {
             PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
             PCMsg::SearchItunesCloseCancel => self.umount_podcast_search_table(),
             PCMsg::SearchItunesCloseOk(index) => {
-                if let Some(vec) = &self.podcast.search_results {
-                    if let Some(pod) = vec.get(index) {
-                        self.podcast_add(pod.url.clone());
-                    }
+                if let Some(vec) = &self.podcast.search_results
+                    && let Some(pod) = vec.get(index)
+                {
+                    self.podcast_add(pod.url.clone());
                 }
             }
             PCMsg::SearchSuccess(vec) => {
@@ -594,12 +594,12 @@ impl Model {
                 self.database_update_search_tracks(index);
             }
             DBMsg::AddPlaylist(index) => {
-                if !self.dw.search_tracks.is_empty() {
-                    if let Some(track) = self.dw.search_tracks.get(index) {
-                        let file = track.as_pathbuf();
-                        if let Err(e) = self.playlist_add(&file) {
-                            self.mount_error_popup(e.context("playlist add"));
-                        }
+                if !self.dw.search_tracks.is_empty()
+                    && let Some(track) = self.dw.search_tracks.get(index)
+                {
+                    let file = track.as_pathbuf();
+                    if let Err(e) = self.playlist_add(&file) {
+                        self.mount_error_popup(e.context("playlist add"));
                     }
                 }
             }
@@ -609,12 +609,11 @@ impl Model {
             }
 
             DBMsg::AddResultToPlaylist(index) => {
-                if let Some(result) = self.dw.search_results.get(index).cloned() {
-                    if let Some(result) =
+                if let Some(result) = self.dw.search_results.get(index).cloned()
+                    && let Some(result) =
                         self.database_get_tracks_by_criteria(self.dw.criteria, &result)
-                    {
-                        self.playlist_add_all_from_db(&result);
-                    }
+                {
+                    self.playlist_add_all_from_db(&result);
                 }
             }
             DBMsg::AddAllResultsToPlaylist => {
@@ -642,14 +641,14 @@ impl Model {
             }
             LIMsg::PasteError(err) => self.mount_error_popup(anyhow!(err)),
             LIMsg::PlaylistRunDelete => self.playlist_update_library_delete(),
-            LIMsg::SwitchRoot(old_path) => self.library_switch_root(&old_path),
+            LIMsg::SwitchRoot(old_path) => self.new_library_switch_root(&old_path),
             LIMsg::AddRoot(path) => {
-                if let Err(e) = self.library_add_root(path) {
+                if let Err(e) = self.new_library_add_root(path) {
                     self.mount_error_popup(e.context("library add root"));
                 }
             }
             LIMsg::RemoveRoot(path) => {
-                if let Err(e) = self.library_remove_root(path) {
+                if let Err(e) = self.new_library_remove_root(path) {
                     self.mount_error_popup(e.context("library remove root"));
                 }
             }
@@ -747,7 +746,7 @@ impl Model {
             }
             YTDLMsg::Completed(_url, file) => {
                 if let Some(path_str) = file {
-                    self.library_reload_and_focus(PathBuf::from(path_str));
+                    self.new_library_reload_and_focus(PathBuf::from(path_str));
                 }
             }
             YTDLMsg::Err(url, title, error_message) => {
@@ -774,7 +773,7 @@ impl Model {
             }
             GSMsg::PopupShowLibrary(path) => {
                 self.mount_search_library(path.clone());
-                self.library_update_search("*", path);
+                self.new_library_update_search("*", path);
             }
             GSMsg::PopupShowPlaylist => {
                 self.mount_search_playlist();
@@ -789,7 +788,7 @@ impl Model {
                 self.mount_search_podcast();
                 self.podcast_update_search_podcast("*");
             }
-            GSMsg::PopupUpdateLibrary(input, path) => self.library_update_search(input, path),
+            GSMsg::PopupUpdateLibrary(input, path) => self.new_library_update_search(input, path),
 
             GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(input),
 
@@ -887,7 +886,7 @@ impl Model {
     fn update_delete_confirmation(&mut self, msg: DeleteConfirmMsg) -> Option<Msg> {
         match msg {
             DeleteConfirmMsg::Show(path, focus_node) => {
-                self.library_show_delete_confirm(path, focus_node);
+                self.new_library_show_delete_confirm(path, focus_node);
             }
             DeleteConfirmMsg::CloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
@@ -904,7 +903,7 @@ impl Model {
                 if self.app.mounted(&Id::DeleteConfirmInputPopup) {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
-                if let Err(e) = self.library_delete_node(&path, focus_node) {
+                if let Err(e) = self.new_library_delete_node(&path, focus_node) {
                     self.mount_error_popup(e.context("library delete song"));
                 }
             }
