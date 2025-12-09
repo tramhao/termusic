@@ -136,6 +136,7 @@ pub enum PlayerCmd {
     TogglePause,
     VolumeDown,
     VolumeUp,
+    VolumeSet(Volume),
 
     PlaylistPlaySpecific(PlaylistPlaySpecific),
     PlaylistAddTrack(PlaylistAddTrack),
@@ -627,12 +628,14 @@ impl PlayerTrait for GeneralPlayer {
     }
     fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
         let vol = self.get_player_mut().add_volume(volume);
+        self.mpris_volume_update();
         self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
 
         vol
     }
     fn set_volume(&mut self, volume: Volume) -> Volume {
         let vol = self.get_player_mut().set_volume(volume);
+        self.mpris_volume_update();
         self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
 
         vol

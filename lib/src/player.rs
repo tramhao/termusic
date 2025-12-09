@@ -385,8 +385,12 @@ fn unwrap_msg<T>(opt: Option<T>, place: &str) -> Result<T, anyhow::Error> {
     }
 }
 
+/// Clamp a given `u32` to be `u16`.
+///
+/// This is mainly used for volume clamping as we only use u16 for that, but protobuf minimal number is u32.
 #[allow(clippy::cast_possible_truncation)]
-fn clamp_u16(val: u32) -> u16 {
+#[must_use]
+pub fn clamp_u16(val: u32) -> u16 {
     val.min(u32::from(u16::MAX)) as u16
 }
 
