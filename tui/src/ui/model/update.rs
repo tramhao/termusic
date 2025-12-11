@@ -298,10 +298,10 @@ impl Model {
             PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
             PCMsg::SearchItunesCloseCancel => self.umount_podcast_search_table(),
             PCMsg::SearchItunesCloseOk(index) => {
-                if let Some(vec) = &self.podcast.search_results {
-                    if let Some(pod) = vec.get(index) {
-                        self.podcast_add(pod.url.clone());
-                    }
+                if let Some(vec) = &self.podcast.search_results
+                    && let Some(pod) = vec.get(index)
+                {
+                    self.podcast_add(pod.url.clone());
                 }
             }
             PCMsg::SearchSuccess(vec) => {
@@ -594,12 +594,12 @@ impl Model {
                 self.database_update_search_tracks(index);
             }
             DBMsg::AddPlaylist(index) => {
-                if !self.dw.search_tracks.is_empty() {
-                    if let Some(track) = self.dw.search_tracks.get(index) {
-                        let file = track.as_pathbuf();
-                        if let Err(e) = self.playlist_add(&file) {
-                            self.mount_error_popup(e.context("playlist add"));
-                        }
+                if !self.dw.search_tracks.is_empty()
+                    && let Some(track) = self.dw.search_tracks.get(index)
+                {
+                    let file = track.as_pathbuf();
+                    if let Err(e) = self.playlist_add(&file) {
+                        self.mount_error_popup(e.context("playlist add"));
                     }
                 }
             }
@@ -609,12 +609,11 @@ impl Model {
             }
 
             DBMsg::AddResultToPlaylist(index) => {
-                if let Some(result) = self.dw.search_results.get(index).cloned() {
-                    if let Some(result) =
+                if let Some(result) = self.dw.search_results.get(index).cloned()
+                    && let Some(result) =
                         self.database_get_tracks_by_criteria(self.dw.criteria, &result)
-                    {
-                        self.playlist_add_all_from_db(&result);
-                    }
+                {
+                    self.playlist_add_all_from_db(&result);
                 }
             }
             DBMsg::AddAllResultsToPlaylist => {

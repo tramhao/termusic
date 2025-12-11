@@ -51,22 +51,20 @@ fn common_list_movement<C: MockComponent + OnKeyDB>(
             code: Key::Down,
             modifiers: KeyModifiers::NONE,
         }) => {
-            if let Some(AttrValue::Table(t)) = comp.query(Attribute::Content) {
-                if let State::One(StateValue::Usize(index)) = comp.state() {
-                    if index >= t.len() - 1 {
-                        return Some(Either::Right(comp.on_key_tab()));
-                    }
-                }
+            if let Some(AttrValue::Table(t)) = comp.query(Attribute::Content)
+                && let State::One(StateValue::Usize(index)) = comp.state()
+                && index >= t.len() - 1
+            {
+                return Some(Either::Right(comp.on_key_tab()));
             }
             comp.perform(Cmd::Move(Direction::Down))
         }
         Event::Keyboard(key) if *key == keys.navigation_keys.down.get() => {
-            if let Some(AttrValue::Table(t)) = comp.query(Attribute::Content) {
-                if let State::One(StateValue::Usize(index)) = comp.state() {
-                    if index >= t.len() - 1 {
-                        return Some(Either::Right(comp.on_key_tab()));
-                    }
-                }
+            if let Some(AttrValue::Table(t)) = comp.query(Attribute::Content)
+                && let State::One(StateValue::Usize(index)) = comp.state()
+                && index >= t.len() - 1
+            {
+                return Some(Either::Right(comp.on_key_tab()));
             }
             comp.perform(Cmd::Move(Direction::Down))
         }

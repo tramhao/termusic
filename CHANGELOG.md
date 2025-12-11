@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+
+- Change: updated MSRV to 1.88.
+
 ### [V0.12.1]
 - Released on: December 11, 2025.
 - Change: change default log level to `info` (from `warn`).

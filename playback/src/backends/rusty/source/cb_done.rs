@@ -58,10 +58,10 @@ where
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.input.next();
-        if next.is_none() {
-            if let Some(fun) = self.fun.take() {
-                fun();
-            }
+        if next.is_none()
+            && let Some(fun) = self.fun.take()
+        {
+            fun();
         }
         next
     }

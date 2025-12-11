@@ -83,24 +83,24 @@ impl MusicLibrary {
 
     /// Also known as going up in the tree
     fn handle_left_key(&mut self) -> (CmdResult, Option<Msg>) {
-        if let State::One(StateValue::String(node_id)) = self.state() {
-            if let Some(node) = self.component.tree().root().query(&node_id) {
-                if node.is_leaf() {
-                    // When the selected node is a file, move focus to upper directory
+        if let State::One(StateValue::String(node_id)) = self.state()
+            && let Some(node) = self.component.tree().root().query(&node_id)
+        {
+            if node.is_leaf() {
+                // When the selected node is a file, move focus to upper directory
+                self.perform(Cmd::GoTo(Position::Begin));
+                self.perform(Cmd::Move(Direction::Up));
+            } else {
+                // When the selected node is a directory
+                if self.component.tree_state().is_closed(node) {
                     self.perform(Cmd::GoTo(Position::Begin));
                     self.perform(Cmd::Move(Direction::Up));
-                } else {
-                    // When the selected node is a directory
-                    if self.component.tree_state().is_closed(node) {
-                        self.perform(Cmd::GoTo(Position::Begin));
-                        self.perform(Cmd::Move(Direction::Up));
-                        return (CmdResult::None, Some(Msg::ForceRedraw));
-                    }
-                    self.perform(Cmd::Custom(TREE_CMD_CLOSE));
+                    return (CmdResult::None, Some(Msg::ForceRedraw));
                 }
-
-                return (CmdResult::None, Some(Msg::ForceRedraw));
+                self.perform(Cmd::Custom(TREE_CMD_CLOSE));
             }
+
+            return (CmdResult::None, Some(Msg::ForceRedraw));
         }
         (CmdResult::None, None)
     }
@@ -875,20 +875,21 @@ pub fn library_dir_tree(path: &Path, depth: ScanDepth) -> RecVec {
         ScanDepth::Unlimited => u32::MAX,
     };
 
-    if depth > 0 && path.is_dir() {
-        if let Ok(paths) = std::fs::read_dir(path) {
-            let mut paths: Vec<(String, PathBuf)> = paths
-                .filter_map(std::result::Result::ok)
-                .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
-                .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v.path()))
-                .collect();
+    if depth > 0
+        && path.is_dir()
+        && let Ok(paths) = std::fs::read_dir(path)
+    {
+        let mut paths: Vec<(String, PathBuf)> = paths
+            .filter_map(std::result::Result::ok)
+            .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
+            .map(|v| (get_pin_yin(&v.file_name().to_string_lossy()), v.path()))
+            .collect();
 
-            paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
+        paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
 
-            for p in paths {
-                node.children
-                    .push(library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
-            }
+        for p in paths {
+            node.children
+                .push(library_dir_tree(&p.1, ScanDepth::Limited(depth - 1)));
         }
     }
     node
@@ -988,10 +989,10 @@ impl Model {
         for dir in &self.config_server.read().settings.player.music_dirs {
             let absolute_dir = shellexpand::path::tilde(dir);
 
-            if path.starts_with(absolute_dir) {
-                if let Err(err) = self.db.scan_path(&path, &config_read, false) {
-                    error!("Error scanning path {:#?}: {err:#?}", path.display());
-                }
+            if path.starts_with(absolute_dir)
+                && let Err(err) = self.db.scan_path(&path, &config_read, false)
+            {
+                error!("Error scanning path {:#?}: {err:#?}", path.display());
             }
         }
 
