@@ -1,7 +1,7 @@
 ## ChangeLog
 
-### next
-
+### [V0.12.1]
+- Released on: December 11, 2025.
 - Change: change default log level to `info` (from `warn`).
 - Change: log the termusic version used.
 - Change(tui): on windows, properly spawn the server as a detached process.
