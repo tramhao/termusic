@@ -61,6 +61,16 @@ const COLOR_LIST: [ColorTermusic; 19] = [
     ColorTermusic::LightWhite,
 ];
 
+/// Consistently get the label component
+fn get_label_comp(config: &SharedTuiSettings, text: &str) -> Label {
+    let config_tui = config.read_recursive();
+    Label::default()
+        .foreground(config_tui.settings.theme.lyric_foreground())
+        .background(config_tui.settings.theme.lyric_background())
+        .modifiers(TextModifiers::BOLD)
+        .text(text)
+}
+
 #[derive(MockComponent)]
 pub struct CEThemeSelectTable {
     component: Table,
@@ -394,12 +404,10 @@ pub struct ConfigLibraryTitle {
     component: Label,
 }
 
-impl Default for ConfigLibraryTitle {
-    fn default() -> Self {
+impl ConfigLibraryTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
         Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Library style "),
+            component: get_label_comp(config, " Library style "),
         }
     }
 }
@@ -523,12 +531,10 @@ pub struct ConfigPlaylistTitle {
     component: Label,
 }
 
-impl Default for ConfigPlaylistTitle {
-    fn default() -> Self {
+impl ConfigPlaylistTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
         Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Playlist style "),
+            component: get_label_comp(config, " Playlist style "),
         }
     }
 }
@@ -652,12 +658,10 @@ pub struct ConfigProgressTitle {
     component: Label,
 }
 
-impl Default for ConfigProgressTitle {
-    fn default() -> Self {
+impl ConfigProgressTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
         Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Progress style "),
+            component: get_label_comp(config, " Progress style "),
         }
     }
 }
@@ -754,12 +758,10 @@ pub struct ConfigLyricTitle {
     component: Label,
 }
 
-impl Default for ConfigLyricTitle {
-    fn default() -> Self {
+impl ConfigLyricTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
         Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Lyric style "),
+            component: get_label_comp(config, " Lyric style "),
         }
     }
 }
@@ -1093,12 +1095,10 @@ pub struct ConfigImportantPopupTitle {
     component: Label,
 }
 
-impl Default for ConfigImportantPopupTitle {
-    fn default() -> Self {
+impl ConfigImportantPopupTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
         Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Important Popup style "),
+            component: get_label_comp(config, " Important Popup style "),
         }
     }
 }
@@ -1195,12 +1195,10 @@ pub struct ConfigFallbackTitle {
     component: Label,
 }
 
-impl Default for ConfigFallbackTitle {
-    fn default() -> Self {
+impl ConfigFallbackTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
         Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Fallback style "),
+            component: get_label_comp(config, " Fallback style "),
         }
     }
 }
@@ -1336,7 +1334,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)),
-            Box::<ConfigLibraryTitle>::default(),
+            Box::new(ConfigLibraryTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1362,7 +1360,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistLabel)),
-            Box::<ConfigPlaylistTitle>::default(),
+            Box::new(ConfigPlaylistTitle::new(config)),
             Vec::new(),
         )?;
 
@@ -1392,7 +1390,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressLabel)),
-            Box::<ConfigProgressTitle>::default(),
+            Box::new(ConfigProgressTitle::new(config)),
             Vec::new(),
         )?;
 
@@ -1416,7 +1414,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricLabel)),
-            Box::<ConfigLyricTitle>::default(),
+            Box::new(ConfigLyricTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1437,7 +1435,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupLabel)),
-            Box::<ConfigImportantPopupTitle>::default(),
+            Box::new(ConfigImportantPopupTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1458,7 +1456,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackLabel)),
-            Box::<ConfigFallbackTitle>::default(),
+            Box::new(ConfigFallbackTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
