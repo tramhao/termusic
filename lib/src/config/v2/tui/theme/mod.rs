@@ -26,6 +26,10 @@ pub struct ThemeWrap {
 }
 
 impl ThemeWrap {
+    /// Resolve the given [`ColorTermusic`] to a display-able [`(ratatui)Color`](tuirealm::props::Color).
+    ///
+    /// This first resolves the corresponding [`ThemeColor`] from the given [`ColorTermusic`],
+    /// then resolved that [`ThemeColor`] to a display-able [`(ratatui)Color`](tuirealm::props::Color).
     #[must_use]
     pub fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
         // first step to get the theme path of what color to use
@@ -238,8 +242,8 @@ impl ThemeColor {
         Ok(Self::Hex(res))
     }
 
-    /// Output the current value as its string representation
-    #[allow(clippy::inherent_to_string)] // not wanting to implement "Display"
+    /// Output the current value as its string representation.
+    #[expect(clippy::inherent_to_string)] // not wanting to implement "Display"
     fn to_string(self) -> String {
         match self {
             ThemeColor::Native => "native".to_string(),
@@ -247,7 +251,7 @@ impl ThemeColor {
         }
     }
 
-    /// Resolve the current instance to either native coloring (requires `style`) or a rgb color
+    /// Resolve the current instance to either native coloring (requires `style`) or a rgb color.
     #[must_use]
     pub fn resolve_color(&self, style: ColorTermusic) -> Color {
         let hex = match self {
