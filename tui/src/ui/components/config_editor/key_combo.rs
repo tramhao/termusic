@@ -956,6 +956,7 @@ impl KEModifierSelect {
                     .color(config_r.settings.theme.fallback_border()),
             )
             .foreground(config_r.settings.theme.fallback_foreground())
+            .background(config_r.settings.theme.fallback_background())
             .title(name, Alignment::Left)
             .rewind(false)
             .highlighted_color(config_r.settings.theme.fallback_highlight())
