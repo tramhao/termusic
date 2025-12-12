@@ -61,16 +61,6 @@ const COLOR_LIST: [ColorTermusic; 19] = [
     ColorTermusic::LightWhite,
 ];
 
-/// Consistently get the label component
-fn get_label_comp(config: &SharedTuiSettings, text: &str) -> Label {
-    let config_tui = config.read_recursive();
-    Label::default()
-        .foreground(config_tui.settings.theme.lyric_foreground())
-        .background(config_tui.settings.theme.lyric_background())
-        .modifiers(TextModifiers::BOLD)
-        .text(text)
-}
-
 #[derive(MockComponent)]
 pub struct CEThemeSelectTable {
     component: Table,
@@ -400,22 +390,33 @@ impl Component<Msg, UserEvent> for CEColorSelect {
 }
 
 #[derive(MockComponent)]
-pub struct ConfigLibraryTitle {
+pub struct CEStyleTitle {
     component: Label,
 }
 
-impl ConfigLibraryTitle {
-    pub fn new(config: &SharedTuiSettings) -> Self {
+impl CEStyleTitle {
+    pub fn new(config: &SharedTuiSettings, text: &str) -> Self {
+        let config_tui = config.read_recursive();
+
         Self {
-            component: get_label_comp(config, " Library style "),
+            component: Label::default()
+                .foreground(config_tui.settings.theme.lyric_foreground())
+                .background(config_tui.settings.theme.lyric_background())
+                .modifiers(TextModifiers::BOLD)
+                .text(text),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for ConfigLibraryTitle {
+impl Component<Msg, UserEvent> for CEStyleTitle {
     fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
         None
     }
+}
+
+#[inline]
+fn library_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Library style ")
 }
 
 #[derive(MockComponent)]
@@ -526,23 +527,9 @@ impl Component<Msg, UserEvent> for ConfigLibraryHighlight {
     }
 }
 
-#[derive(MockComponent)]
-pub struct ConfigPlaylistTitle {
-    component: Label,
-}
-
-impl ConfigPlaylistTitle {
-    pub fn new(config: &SharedTuiSettings) -> Self {
-        Self {
-            component: get_label_comp(config, " Playlist style "),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigPlaylistTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
+#[inline]
+fn playlist_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Playlist style ")
 }
 
 #[derive(MockComponent)]
@@ -653,23 +640,9 @@ impl Component<Msg, UserEvent> for ConfigPlaylistHighlight {
     }
 }
 
-#[derive(MockComponent)]
-pub struct ConfigProgressTitle {
-    component: Label,
-}
-
-impl ConfigProgressTitle {
-    pub fn new(config: &SharedTuiSettings) -> Self {
-        Self {
-            component: get_label_comp(config, " Progress style "),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigProgressTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
+#[inline]
+fn progress_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Progress style ")
 }
 
 #[derive(MockComponent)]
@@ -753,23 +726,9 @@ impl Component<Msg, UserEvent> for ConfigProgressBorder {
     }
 }
 
-#[derive(MockComponent)]
-pub struct ConfigLyricTitle {
-    component: Label,
-}
-
-impl ConfigLyricTitle {
-    pub fn new(config: &SharedTuiSettings) -> Self {
-        Self {
-            component: get_label_comp(config, " Lyric style "),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLyricTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
+#[inline]
+fn lyric_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Lyric style ")
 }
 
 #[derive(MockComponent)]
@@ -1090,23 +1049,9 @@ impl Component<Msg, UserEvent> for ConfigCurrentlyPlayingTrackSymbol {
     }
 }
 
-#[derive(MockComponent)]
-pub struct ConfigImportantPopupTitle {
-    component: Label,
-}
-
-impl ConfigImportantPopupTitle {
-    pub fn new(config: &SharedTuiSettings) -> Self {
-        Self {
-            component: get_label_comp(config, " Important Popup style "),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigImportantPopupTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
+#[inline]
+fn important_popup_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Important Popup style ")
 }
 
 #[derive(MockComponent)]
@@ -1190,23 +1135,9 @@ impl Component<Msg, UserEvent> for ConfigImportantPopupBorder {
     }
 }
 
-#[derive(MockComponent)]
-pub struct ConfigFallbackTitle {
-    component: Label,
-}
-
-impl ConfigFallbackTitle {
-    pub fn new(config: &SharedTuiSettings) -> Self {
-        Self {
-            component: get_label_comp(config, " Fallback style "),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigFallbackTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
+#[inline]
+fn fallback_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Fallback style ")
 }
 
 #[derive(MockComponent)]
@@ -1334,7 +1265,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)),
-            Box::new(ConfigLibraryTitle::new(config)),
+            Box::new(library_title(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1360,7 +1291,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistLabel)),
-            Box::new(ConfigPlaylistTitle::new(config)),
+            Box::new(playlist_title(config)),
             Vec::new(),
         )?;
 
@@ -1390,7 +1321,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressLabel)),
-            Box::new(ConfigProgressTitle::new(config)),
+            Box::new(progress_title(config)),
             Vec::new(),
         )?;
 
@@ -1414,7 +1345,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricLabel)),
-            Box::new(ConfigLyricTitle::new(config)),
+            Box::new(lyric_title(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1435,7 +1366,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupLabel)),
-            Box::new(ConfigImportantPopupTitle::new(config)),
+            Box::new(important_popup_title(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1456,7 +1387,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackLabel)),
-            Box::new(ConfigFallbackTitle::new(config)),
+            Box::new(fallback_title(config)),
             Vec::new(),
         )?;
         self.app.remount(
