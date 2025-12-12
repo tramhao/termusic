@@ -184,8 +184,6 @@ pub struct CEColorSelect {
     component: Select,
     id: IdCETheme,
     config: SharedTuiSettings,
-    on_key_shift: Msg,
-    on_key_backshift: Msg,
 }
 
 impl CEColorSelect {
@@ -194,14 +192,7 @@ impl CEColorSelect {
     /// # Panics
     ///
     /// The only IDs expected are color IDs, everything else(like `*Symbol` or `*Label`) will panic.
-    pub fn new(
-        name: &str,
-        id: IdCETheme,
-        color: Color,
-        config: SharedTuiSettings,
-        on_key_shift: Msg,
-        on_key_backshift: Msg,
-    ) -> Self {
+    pub fn new(name: &str, id: IdCETheme, color: Color, config: SharedTuiSettings) -> Self {
         let init_value = Self::init_color_select(id, &config.read().settings.theme);
         let mut choices = Vec::new();
         for color in &COLOR_LIST {
@@ -225,8 +216,6 @@ impl CEColorSelect {
                 .value(init_value),
             id,
             config,
-            on_key_shift,
-            on_key_backshift,
         }
     }
 
@@ -346,24 +335,32 @@ impl Component<Msg, UserEvent> for CEColorSelect {
             },
 
             Event::Keyboard(key) if key == keys.navigation_keys.up.get() => match self.state() {
-                State::One(_) => return Some(self.on_key_backshift.clone()),
+                State::One(_) => {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
 
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => match self.state() {
-                State::One(_) => return Some(self.on_key_shift.clone()),
+                State::One(_) => {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
+                }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
-                State::One(_) => return Some(self.on_key_backshift.clone()),
+                State::One(_) => {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
 
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => match self.state() {
-                State::One(_) => return Some(self.on_key_shift.clone()),
+                State::One(_) => {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
+                }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
 
@@ -594,53 +591,25 @@ fn library_title(config: &SharedTuiSettings) -> CEStyleTitle {
 #[inline]
 fn library_fg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.library_foreground();
-    CEColorSelect::new(
-        " Foreground ",
-        IdCETheme::LibraryForeground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Foreground ", IdCETheme::LibraryForeground, color, config)
 }
 
 #[inline]
 fn library_bg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.library_background();
-    CEColorSelect::new(
-        " Background ",
-        IdCETheme::LibraryBackground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Background ", IdCETheme::LibraryBackground, color, config)
 }
 
 #[inline]
 fn library_border(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.library_border();
-    CEColorSelect::new(
-        " Border ",
-        IdCETheme::LibraryBorder,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Border ", IdCETheme::LibraryBorder, color, config)
 }
 
 #[inline]
 fn library_highlight(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.library_highlight();
-    CEColorSelect::new(
-        " Highlight ",
-        IdCETheme::LibraryHighlight,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Highlight ", IdCETheme::LibraryHighlight, color, config)
 }
 
 // --- Section Playlist Style ---
@@ -653,53 +622,25 @@ fn playlist_title(config: &SharedTuiSettings) -> CEStyleTitle {
 #[inline]
 fn playlist_fg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.playlist_foreground();
-    CEColorSelect::new(
-        " Foreground ",
-        IdCETheme::PlaylistForeground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Foreground ", IdCETheme::PlaylistForeground, color, config)
 }
 
 #[inline]
 fn playlist_bg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.playlist_background();
-    CEColorSelect::new(
-        " Background ",
-        IdCETheme::PlaylistBackground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Background ", IdCETheme::PlaylistBackground, color, config)
 }
 
 #[inline]
 fn playlist_border(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.playlist_border();
-    CEColorSelect::new(
-        " Border ",
-        IdCETheme::PlaylistBorder,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Border ", IdCETheme::PlaylistBorder, color, config)
 }
 
 #[inline]
 fn playlist_highlight(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.playlist_highlight();
-    CEColorSelect::new(
-        " Highlight ",
-        IdCETheme::PlaylistHighlight,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Highlight ", IdCETheme::PlaylistHighlight, color, config)
 }
 
 // --- Section Progress Style ---
@@ -712,40 +653,19 @@ fn progress_title(config: &SharedTuiSettings) -> CEStyleTitle {
 #[inline]
 fn progress_fg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.progress_foreground();
-    CEColorSelect::new(
-        " Foreground ",
-        IdCETheme::ProgressForeground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Foreground ", IdCETheme::ProgressForeground, color, config)
 }
 
 #[inline]
 fn progress_bg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.progress_background();
-    CEColorSelect::new(
-        " Background ",
-        IdCETheme::ProgressBackground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Background ", IdCETheme::ProgressBackground, color, config)
 }
 
 #[inline]
 fn progress_border(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.progress_border();
-    CEColorSelect::new(
-        " Border ",
-        IdCETheme::ProgressBorder,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Border ", IdCETheme::ProgressBorder, color, config)
 }
 
 // --- Section Lyric Style ---
@@ -758,40 +678,19 @@ fn lyric_title(config: &SharedTuiSettings) -> CEStyleTitle {
 #[inline]
 fn lyric_fg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.lyric_foreground();
-    CEColorSelect::new(
-        " Foreground ",
-        IdCETheme::LyricForeground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Foreground ", IdCETheme::LyricForeground, color, config)
 }
 
 #[inline]
 fn lyric_bg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.lyric_background();
-    CEColorSelect::new(
-        " Background ",
-        IdCETheme::LyricBackground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Background ", IdCETheme::LyricBackground, color, config)
 }
 
 #[inline]
 fn lyric_border(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.lyric_border();
-    CEColorSelect::new(
-        " Border ",
-        IdCETheme::LyricBorder,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Border ", IdCETheme::LyricBorder, color, config)
 }
 
 // --- Section Important Popup Style ---
@@ -813,8 +712,6 @@ fn important_popup_fg(config: SharedTuiSettings) -> CEColorSelect {
         IdCETheme::ImportantPopupForeground,
         color,
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
     )
 }
 
@@ -830,8 +727,6 @@ fn important_popup_bg(config: SharedTuiSettings) -> CEColorSelect {
         IdCETheme::ImportantPopupBackground,
         color,
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
     )
 }
 
@@ -842,14 +737,7 @@ fn important_popup_border(config: SharedTuiSettings) -> CEColorSelect {
         .settings
         .theme
         .important_popup_border();
-    CEColorSelect::new(
-        " Border ",
-        IdCETheme::ImportantPopupBorder,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Border ", IdCETheme::ImportantPopupBorder, color, config)
 }
 
 // --- Section Fallback Style ---
@@ -862,53 +750,25 @@ fn fallback_title(config: &SharedTuiSettings) -> CEStyleTitle {
 #[inline]
 fn fallback_fg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.fallback_foreground();
-    CEColorSelect::new(
-        " Foreground ",
-        IdCETheme::FallbackForeground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Foreground ", IdCETheme::FallbackForeground, color, config)
 }
 
 #[inline]
 fn fallback_bg(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.fallback_background();
-    CEColorSelect::new(
-        " Background ",
-        IdCETheme::FallbackBackground,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Background ", IdCETheme::FallbackBackground, color, config)
 }
 
 #[inline]
 fn fallback_border(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.fallback_border();
-    CEColorSelect::new(
-        " Border ",
-        IdCETheme::FallbackBorder,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Border ", IdCETheme::FallbackBorder, color, config)
 }
 
 #[inline]
 fn fallback_highlight(config: SharedTuiSettings) -> CEColorSelect {
     let color = config.read_recursive().settings.theme.fallback_highlight();
-    CEColorSelect::new(
-        " Highlight ",
-        IdCETheme::FallbackHighlight,
-        color,
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-    )
+    CEColorSelect::new(" Highlight ", IdCETheme::FallbackHighlight, color, config)
 }
 
 // --- Section Highlight Symbols ---
