@@ -389,7 +389,14 @@ impl Component<Msg, UserEvent> for CEColorSelect {
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
+            }) => {
+                // "Select" returns "None" as a result for "Submit" when transitioning from "closed" to "open" state.
+                // But does return something when transitioning from "open" to "closed" state.
+                match self.perform(Cmd::Submit) {
+                    CmdResult::None => return Some(Msg::ForceRedraw),
+                    v => v,
+                }
+            }
             _ => CmdResult::None,
         };
         match cmd_result {
