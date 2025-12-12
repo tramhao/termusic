@@ -3,6 +3,7 @@
 ### next
 
 - Change: updated MSRV to 1.88.
+- Feat(tui): change default theme to be "Native".
 
 ### [V0.12.1]
 - Released on: December 11, 2025.

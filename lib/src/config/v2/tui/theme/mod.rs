@@ -21,7 +21,7 @@ pub struct ThemeWrap {
     pub style: styles::Styles,
     // On full-on default, also set the names to "Termusic Default"
     // this function is only used if this property does not exist at all
-    #[serde(default = "ThemeColors::full_default")]
+    #[serde(default = "ThemeColors::full_native")]
     pub theme: ThemeColors,
 }
 
@@ -389,15 +389,7 @@ pub struct ThemeColors {
 
 impl Default for ThemeColors {
     fn default() -> Self {
-        Self {
-            file_name: None,
-            name: default_name(),
-            author: default_author(),
-            primary: ThemePrimary::default(),
-            cursor: ThemeCursor::default(),
-            normal: ThemeNormal::default(),
-            bright: ThemeBright::default(),
-        }
+        Self::full_native()
     }
 }
 
@@ -408,9 +400,13 @@ impl ThemeColors {
     #[must_use]
     pub fn full_default() -> Self {
         Self {
+            file_name: None,
             name: "Termusic Default".to_string(),
             author: "Termusic Developers".to_string(),
-            ..Default::default()
+            primary: ThemePrimary::default(),
+            cursor: ThemeCursor::default(),
+            normal: ThemeNormal::default(),
+            bright: ThemeBright::default(),
         }
     }
 
