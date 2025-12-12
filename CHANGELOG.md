@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+
+- Feat(tui): change default theme to be "Native".
+
 ### [V0.12.1]
 - Released on: December 11, 2025.
 - Change: change default log level to `info` (from `warn`).
