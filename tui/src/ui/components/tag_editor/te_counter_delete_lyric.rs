@@ -177,10 +177,16 @@ impl MockComponent for Counter {
             let inactive_style = self
                 .props
                 .get_ref(Attribute::FocusStyle)
-                .and_then(AttrValue::as_style);
+                .and_then(AttrValue::as_style)
+                .unwrap_or(Style::new().bg(background));
             frame.render_widget(
                 Paragraph::new(text)
-                    .block(get_block(borders, Some(&title), focus, inactive_style))
+                    .block(get_block(
+                        borders,
+                        Some(&title),
+                        focus,
+                        Some(inactive_style),
+                    ))
                     .style(
                         Style::default()
                             .fg(foreground)
