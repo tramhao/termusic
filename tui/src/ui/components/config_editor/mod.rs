@@ -59,6 +59,7 @@ impl CEHeader {
                     "Keys Other",
                 ])
                 .foreground(config.settings.theme.library_highlight())
+                .background(config.settings.theme.library_background())
                 .inactive(Style::default().fg(config.settings.theme.library_highlight()))
                 .value(match layout {
                     ConfigEditorLayout::General => 0,
@@ -84,28 +85,30 @@ pub struct CEFooter {
 impl CEFooter {
     pub fn new(config: &TuiOverlay) -> Self {
         Self {
-            component: Span::default().spans([
-                TextSpan::new(" Save parameters: ").bold(),
-                TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
-                    .bold()
-                    .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Exit: ").bold(),
-                TextSpan::new(format!("<{}>", config.settings.keys.escape))
-                    .bold()
-                    .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Change panel: ").bold(),
-                TextSpan::new("<TAB>")
-                    .bold()
-                    .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Change field: ").bold(),
-                TextSpan::new("<UP/DOWN>")
-                    .bold()
-                    .fg(config.settings.theme.library_highlight()),
-                TextSpan::new(" Select theme/Preview symbol: ").bold(),
-                TextSpan::new("<ENTER>")
-                    .bold()
-                    .fg(config.settings.theme.library_highlight()),
-            ]),
+            component: Span::default()
+                .background(config.settings.theme.library_background())
+                .spans([
+                    TextSpan::new(" Save parameters: ").bold(),
+                    TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
+                        .bold()
+                        .fg(config.settings.theme.library_highlight()),
+                    TextSpan::new(" Exit: ").bold(),
+                    TextSpan::new(format!("<{}>", config.settings.keys.escape))
+                        .bold()
+                        .fg(config.settings.theme.library_highlight()),
+                    TextSpan::new(" Change panel: ").bold(),
+                    TextSpan::new("<TAB>")
+                        .bold()
+                        .fg(config.settings.theme.library_highlight()),
+                    TextSpan::new(" Change field: ").bold(),
+                    TextSpan::new("<UP/DOWN>")
+                        .bold()
+                        .fg(config.settings.theme.library_highlight()),
+                    TextSpan::new(" Select theme/Preview symbol: ").bold(),
+                    TextSpan::new("<ENTER>")
+                        .bold()
+                        .fg(config.settings.theme.library_highlight()),
+                ]),
         }
     }
 }

@@ -594,7 +594,6 @@ impl SaveLastPosition {
         };
         let component = common_radio_comp(&config_tui, " Remember last played position: ")
             .choices(["Unsupported", "No", "Yes"])
-            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
             .value(save_last_position);
 
