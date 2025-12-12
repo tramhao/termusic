@@ -2,7 +2,7 @@ use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, TextSpan};
+use tuirealm::props::{Alignment, BorderType, Borders, Style, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
 
 use crate::ui::model::UserEvent;
@@ -25,6 +25,8 @@ impl TETextareaLyric {
                         .color(config.settings.theme.library_border()),
                 )
                 .foreground(config.settings.theme.library_foreground())
+                .background(config.settings.theme.library_background())
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(" Lyrics ", Alignment::Left)
                 .step(4)
                 .highlighted_str("\u{1f3b5}")

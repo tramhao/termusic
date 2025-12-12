@@ -2,7 +2,7 @@ use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders};
+use tuirealm::props::{Alignment, BorderType, Borders, Style};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::model::UserEvent;
@@ -25,6 +25,8 @@ impl TESelectLyric {
                         .color(config.settings.theme.library_border()),
                 )
                 .foreground(config.settings.theme.library_foreground())
+                .background(config.settings.theme.library_background())
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(" Select a lyric ", Alignment::Center)
                 .rewind(true)
                 .highlighted_color(config.settings.theme.library_highlight())
