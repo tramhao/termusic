@@ -283,7 +283,19 @@ impl CEColorSelect {
                 theme.style.important_popup.border_color.as_usize()
             }
 
-            // TODO: add fallback colors
+            IdConfigEditor::Theme(IdCETheme::FallbackForeground) => {
+                theme.style.fallback.foreground_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::FallbackBackground) => {
+                theme.style.fallback.background_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::FallbackBorder) => {
+                theme.style.fallback.border_color.as_usize()
+            }
+            IdConfigEditor::Theme(IdCETheme::FallbackHighlight) => {
+                theme.style.fallback.highlight_color.as_usize()
+            }
+
             _ => 0,
         }
     }
