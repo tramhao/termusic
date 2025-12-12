@@ -939,18 +939,10 @@ struct KEModifierSelect {
     component: KeyCombo,
     id: IdKey,
     config: SharedTuiSettings,
-    on_key_tab: Msg,
-    on_key_backtab: Msg,
 }
 
 impl KEModifierSelect {
-    pub fn new(
-        name: &str,
-        id: IdKey,
-        config: SharedTuiSettings,
-        on_key_tab: Msg,
-        on_key_backtab: Msg,
-    ) -> Self {
+    pub fn new(name: &str, id: IdKey, config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         let (init_select, init_key) = Self::init_modifier_select(id, &config_r.settings.keys);
         let mut choices = Vec::new();
@@ -978,8 +970,6 @@ impl KEModifierSelect {
             component,
             id,
             config,
-            on_key_tab,
-            on_key_backtab,
         }
     }
 
@@ -1152,6 +1142,22 @@ impl KEModifierSelect {
                 .attr_input(Attribute::Value, AttrValue::String(codes.to_lowercase()));
         }
     }
+
+    /// Get the Message to focus the next component.
+    fn msg_next(&self) -> Msg {
+        Msg::ConfigEditor(match self.id {
+            IdKey::Global(_) => ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next),
+            IdKey::Other(_) => ConfigEditorMsg::KeyFocusOther(KFMsg::Next),
+        })
+    }
+
+    /// Get the Message to focus the previous component.
+    fn msg_previous(&self) -> Msg {
+        Msg::ConfigEditor(match self.id {
+            IdKey::Global(_) => ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous),
+            IdKey::Other(_) => ConfigEditorMsg::KeyFocusOther(KFMsg::Previous),
+        })
+    }
 }
 
 impl Component<Msg, UserEvent> for KEModifierSelect {
@@ -1167,11 +1173,11 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => match self.state() {
-                State::One(_) => return Some(self.on_key_tab.clone()),
+                State::One(_) => return Some(self.msg_next()),
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
-                State::One(_) => return Some(self.on_key_backtab.clone()),
+                State::One(_) => return Some(self.msg_previous()),
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
@@ -1300,24 +1306,12 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
 
 #[inline]
 fn key_global_quit(config: SharedTuiSettings) -> KEModifierSelect {
-    KEModifierSelect::new(
-        " Quit ",
-        IdKey::Global(IdKeyGlobal::Quit),
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
-    )
+    KEModifierSelect::new(" Quit ", IdKey::Global(IdKeyGlobal::Quit), config)
 }
 
 #[inline]
 fn key_global_help(config: SharedTuiSettings) -> KEModifierSelect {
-    KEModifierSelect::new(
-        " Help ",
-        IdKey::Global(IdKeyGlobal::Help),
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
-    )
+    KEModifierSelect::new(" Help ", IdKey::Global(IdKeyGlobal::Help), config)
 }
 
 #[inline]
@@ -1326,8 +1320,6 @@ fn key_global_layout_treeview(config: SharedTuiSettings) -> KEModifierSelect {
         " Layout Tree ",
         IdKey::Global(IdKeyGlobal::LayoutTreeview),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1337,8 +1329,6 @@ fn key_global_layout_database(config: SharedTuiSettings) -> KEModifierSelect {
         " Layout DataBase ",
         IdKey::Global(IdKeyGlobal::LayoutDatabase),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1348,8 +1338,6 @@ fn key_global_layout_podcast(config: SharedTuiSettings) -> KEModifierSelect {
         " Layout Podcast ",
         IdKey::Global(IdKeyGlobal::LayoutPodcast),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1359,8 +1347,6 @@ fn key_global_config(config: SharedTuiSettings) -> KEModifierSelect {
         " Config Editor ",
         IdKey::Global(IdKeyGlobal::Config),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1370,8 +1356,6 @@ fn key_global_save_playlist(config: SharedTuiSettings) -> KEModifierSelect {
         " Global Save Playlist ",
         IdKey::Global(IdKeyGlobal::SavePlaylist),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1379,57 +1363,27 @@ fn key_global_save_playlist(config: SharedTuiSettings) -> KEModifierSelect {
 
 #[inline]
 fn key_global_nav_left(config: SharedTuiSettings) -> KEModifierSelect {
-    KEModifierSelect::new(
-        " Left ",
-        IdKey::Global(IdKeyGlobal::Left),
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
-    )
+    KEModifierSelect::new(" Left ", IdKey::Global(IdKeyGlobal::Left), config)
 }
 
 #[inline]
 fn key_global_nav_right(config: SharedTuiSettings) -> KEModifierSelect {
-    KEModifierSelect::new(
-        " Right ",
-        IdKey::Global(IdKeyGlobal::Right),
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
-    )
+    KEModifierSelect::new(" Right ", IdKey::Global(IdKeyGlobal::Right), config)
 }
 
 #[inline]
 fn key_global_nav_down(config: SharedTuiSettings) -> KEModifierSelect {
-    KEModifierSelect::new(
-        " Down ",
-        IdKey::Global(IdKeyGlobal::Down),
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
-    )
+    KEModifierSelect::new(" Down ", IdKey::Global(IdKeyGlobal::Down), config)
 }
 
 #[inline]
 fn key_global_nav_up(config: SharedTuiSettings) -> KEModifierSelect {
-    KEModifierSelect::new(
-        " Up ",
-        IdKey::Global(IdKeyGlobal::Up),
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
-    )
+    KEModifierSelect::new(" Up ", IdKey::Global(IdKeyGlobal::Up), config)
 }
 
 #[inline]
 fn key_global_nav_goto_top(config: SharedTuiSettings) -> KEModifierSelect {
-    KEModifierSelect::new(
-        " Goto Top ",
-        IdKey::Global(IdKeyGlobal::GotoTop),
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
-    )
+    KEModifierSelect::new(" Goto Top ", IdKey::Global(IdKeyGlobal::GotoTop), config)
 }
 
 #[inline]
@@ -1438,8 +1392,6 @@ fn key_global_nav_goto_bottom(config: SharedTuiSettings) -> KEModifierSelect {
         " Goto Bottom ",
         IdKey::Global(IdKeyGlobal::GotoBottom),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1451,8 +1403,6 @@ fn key_global_player_toggle_pause(config: SharedTuiSettings) -> KEModifierSelect
         " Toggle Pause/Play ",
         IdKey::Global(IdKeyGlobal::PlayerTogglePause),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1462,8 +1412,6 @@ fn key_global_player_next(config: SharedTuiSettings) -> KEModifierSelect {
         " Next Song ",
         IdKey::Global(IdKeyGlobal::PlayerNext),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1473,8 +1421,6 @@ fn key_global_player_preview(config: SharedTuiSettings) -> KEModifierSelect {
         " Previous Song ",
         IdKey::Global(IdKeyGlobal::PlayerPrevious),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1484,8 +1430,6 @@ fn key_global_player_volume_up(config: SharedTuiSettings) -> KEModifierSelect {
         " Increase Volume ",
         IdKey::Global(IdKeyGlobal::PlayerVolumeUp),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1495,8 +1439,6 @@ fn key_global_player_volume_down(config: SharedTuiSettings) -> KEModifierSelect 
         " Decrease Volume ",
         IdKey::Global(IdKeyGlobal::PlayerVolumeDown),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1506,8 +1448,6 @@ fn key_global_player_seek_forward(config: SharedTuiSettings) -> KEModifierSelect
         " Seek Forward ",
         IdKey::Global(IdKeyGlobal::PlayerSeekForward),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1517,8 +1457,6 @@ fn key_global_player_seek_backward(config: SharedTuiSettings) -> KEModifierSelec
         " Seek Backward ",
         IdKey::Global(IdKeyGlobal::PlayerSeekBackward),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1528,8 +1466,6 @@ fn key_global_player_speed_up(config: SharedTuiSettings) -> KEModifierSelect {
         " Increase Playback Speed ",
         IdKey::Global(IdKeyGlobal::PlayerSpeedUp),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1539,8 +1475,6 @@ fn key_global_player_speed_down(config: SharedTuiSettings) -> KEModifierSelect {
         " Decrease Playback Speed ",
         IdKey::Global(IdKeyGlobal::PlayerSpeedDown),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1550,8 +1484,6 @@ fn key_global_player_toggle_gapless(config: SharedTuiSettings) -> KEModifierSele
         " Gapless Toggle ",
         IdKey::Global(IdKeyGlobal::PlayerToggleGapless),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1563,8 +1495,6 @@ fn key_global_lyric_forward(config: SharedTuiSettings) -> KEModifierSelect {
         " Lyric Forward ",
         IdKey::Global(IdKeyGlobal::LyricAdjustForward),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1574,8 +1504,6 @@ fn key_global_lyric_backward(config: SharedTuiSettings) -> KEModifierSelect {
         " Lyric Backward ",
         IdKey::Global(IdKeyGlobal::LyricAdjustBackward),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1585,8 +1513,6 @@ fn key_global_lyric_cycle(config: SharedTuiSettings) -> KEModifierSelect {
         " Lyric Cycle ",
         IdKey::Global(IdKeyGlobal::LyricCycle),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1598,8 +1524,6 @@ fn key_global_xywh_move_left(config: SharedTuiSettings) -> KEModifierSelect {
         " Photo move left ",
         IdKey::Global(IdKeyGlobal::XywhMoveLeft),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1609,8 +1533,6 @@ fn key_global_xywh_move_right(config: SharedTuiSettings) -> KEModifierSelect {
         " Photo move right ",
         IdKey::Global(IdKeyGlobal::XywhMoveRight),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1620,8 +1542,6 @@ fn key_global_xywh_move_up(config: SharedTuiSettings) -> KEModifierSelect {
         " Photo move up ",
         IdKey::Global(IdKeyGlobal::XywhMoveUp),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1631,8 +1551,6 @@ fn key_global_xywh_move_down(config: SharedTuiSettings) -> KEModifierSelect {
         " Photo move down ",
         IdKey::Global(IdKeyGlobal::XywhMoveDown),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1642,8 +1560,6 @@ fn key_global_xywh_zoom_in(config: SharedTuiSettings) -> KEModifierSelect {
         " Photo zoom in ",
         IdKey::Global(IdKeyGlobal::XywhZoomIn),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
@@ -1653,20 +1569,12 @@ fn key_global_xywh_zoom_out(config: SharedTuiSettings) -> KEModifierSelect {
         " Photo zoom out ",
         IdKey::Global(IdKeyGlobal::XywhZoomOut),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
     )
 }
 
 #[inline]
 fn key_global_xywh_toggle_hide(config: SharedTuiSettings) -> KEModifierSelect {
-    KEModifierSelect::new(
-        " Photo hide ",
-        IdKey::Global(IdKeyGlobal::XywhHide),
-        config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusGlobal(KFMsg::Previous)),
-    )
+    KEModifierSelect::new(" Photo hide ", IdKey::Global(IdKeyGlobal::XywhHide), config)
 }
 
 // --- Section Library Keys ---
@@ -1677,8 +1585,6 @@ fn key_library_delete(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Delete ",
         IdKey::Other(IdKeyOther::LibraryDelete),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1688,8 +1594,6 @@ fn key_library_loaddir(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Load Dir ",
         IdKey::Other(IdKeyOther::LibraryLoadDir),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1699,8 +1603,6 @@ fn key_library_yank(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Yank ",
         IdKey::Other(IdKeyOther::LibraryYank),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1710,8 +1612,6 @@ fn key_library_paste(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Paste ",
         IdKey::Other(IdKeyOther::LibraryPaste),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1721,8 +1621,6 @@ fn key_library_search(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Search ",
         IdKey::Other(IdKeyOther::LibrarySearch),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1732,8 +1630,6 @@ fn key_library_search_yt(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Search Youtube ",
         IdKey::Other(IdKeyOther::LibrarySearchYoutube),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1743,8 +1639,6 @@ fn key_library_tag_editor(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Tag Editor ",
         IdKey::Other(IdKeyOther::LibraryTagEditor),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1754,8 +1648,6 @@ fn key_library_cycle_root(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Switch Root ",
         IdKey::Other(IdKeyOther::LibrarySwitchRoot),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1765,8 +1657,6 @@ fn key_library_add_root(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Add Root ",
         IdKey::Other(IdKeyOther::LibraryAddRoot),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1776,8 +1666,6 @@ fn key_library_remove_root(config: SharedTuiSettings) -> KEModifierSelect {
         " Library Remove Root ",
         IdKey::Other(IdKeyOther::LibraryRemoveRoot),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1789,8 +1677,6 @@ fn key_playlist_delete(config: SharedTuiSettings) -> KEModifierSelect {
         " Playlist Delete ",
         IdKey::Other(IdKeyOther::PlaylistDelete),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1800,8 +1686,6 @@ fn key_playlist_delete_all(config: SharedTuiSettings) -> KEModifierSelect {
         " Playlist Delete All ",
         IdKey::Other(IdKeyOther::PlaylistDeleteAll),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1811,8 +1695,6 @@ fn key_playlist_shuffle(config: SharedTuiSettings) -> KEModifierSelect {
         " Playlist Shuffle ",
         IdKey::Other(IdKeyOther::PlaylistShuffle),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1822,8 +1704,6 @@ fn key_playlist_mode_cycle(config: SharedTuiSettings) -> KEModifierSelect {
         " Playlist Mode Cycle ",
         IdKey::Other(IdKeyOther::PlaylistModeCycle),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1833,8 +1713,6 @@ fn key_playlist_play_selected(config: SharedTuiSettings) -> KEModifierSelect {
         " Playlist Play Selected ",
         IdKey::Other(IdKeyOther::PlaylistPlaySelected),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1844,8 +1722,6 @@ fn key_playlist_search(config: SharedTuiSettings) -> KEModifierSelect {
         " Playlist Search ",
         IdKey::Other(IdKeyOther::PlaylistSearch),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1855,8 +1731,6 @@ fn key_playlist_swap_down(config: SharedTuiSettings) -> KEModifierSelect {
         " Playlist Swap Down ",
         IdKey::Other(IdKeyOther::PlaylistSwapDown),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1866,8 +1740,6 @@ fn key_playlist_swap_up(config: SharedTuiSettings) -> KEModifierSelect {
         " Playlist Swap Up ",
         IdKey::Other(IdKeyOther::PlaylistSwapUp),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1877,8 +1749,6 @@ fn key_playlist_add_random_ablum(config: SharedTuiSettings) -> KEModifierSelect 
         " Playlist Select Album ",
         IdKey::Other(IdKeyOther::PlaylistAddRandomAlbum),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1888,8 +1758,6 @@ fn key_playlist_add_random_tracks(config: SharedTuiSettings) -> KEModifierSelect
         " Playlist Select Tracks ",
         IdKey::Other(IdKeyOther::PlaylistAddRandomTracks),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1901,8 +1769,6 @@ fn key_database_add_all(config: SharedTuiSettings) -> KEModifierSelect {
         " Database Add All ",
         IdKey::Other(IdKeyOther::DatabaseAddAll),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1912,8 +1778,6 @@ fn key_database_add_selected(config: SharedTuiSettings) -> KEModifierSelect {
         " Database Add Selected ",
         IdKey::Other(IdKeyOther::DatabaseAddSelected),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1925,8 +1789,6 @@ fn key_podcast_mark_played(config: SharedTuiSettings) -> KEModifierSelect {
         " Episode Mark Played",
         IdKey::Other(IdKeyOther::PodcastMarkPlayed),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1936,8 +1798,6 @@ fn key_podcast_mark_all_played(config: SharedTuiSettings) -> KEModifierSelect {
         " Episode mark all played ",
         IdKey::Other(IdKeyOther::PodcastMarkAllPlayed),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1947,8 +1807,6 @@ fn key_podcast_episode_download(config: SharedTuiSettings) -> KEModifierSelect {
         " Episode download",
         IdKey::Other(IdKeyOther::PodcastEpDownload),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1958,8 +1816,6 @@ fn key_podcast_episode_delete_file(config: SharedTuiSettings) -> KEModifierSelec
         " Episode delete file ",
         IdKey::Other(IdKeyOther::PodcastEpDeleteFile),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1969,8 +1825,6 @@ fn key_podcast_feed_delete(config: SharedTuiSettings) -> KEModifierSelect {
         " Podcast delete feed ",
         IdKey::Other(IdKeyOther::PodcastDeleteFeed),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1980,8 +1834,6 @@ fn key_podcast_feed_delete_all(config: SharedTuiSettings) -> KEModifierSelect {
         " Delete all feeds ",
         IdKey::Other(IdKeyOther::PodcastDeleteAllFeeds),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -1991,8 +1843,6 @@ fn key_podcast_feed_search_add(config: SharedTuiSettings) -> KEModifierSelect {
         " Podcast search add feed ",
         IdKey::Other(IdKeyOther::PodcastSearchAddFeed),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -2002,8 +1852,6 @@ fn key_podcast_feed_refresh(config: SharedTuiSettings) -> KEModifierSelect {
         " Refresh feed ",
         IdKey::Other(IdKeyOther::PodcastRefreshFeed),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
@@ -2013,8 +1861,6 @@ fn key_podcast_feed_refresh_all(config: SharedTuiSettings) -> KEModifierSelect {
         " Refresh all feeds ",
         IdKey::Other(IdKeyOther::PodcastRefreshAllFeeds),
         config,
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Next)),
-        Msg::ConfigEditor(ConfigEditorMsg::KeyFocusOther(KFMsg::Previous)),
     )
 }
 
