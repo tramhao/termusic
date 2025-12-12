@@ -394,10 +394,13 @@ pub struct ConfigLibraryTitle {
     component: Label,
 }
 
-impl Default for ConfigLibraryTitle {
-    fn default() -> Self {
+impl ConfigLibraryTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.library_foreground())
+                .background(config_tui.settings.theme.library_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Library style "),
         }
@@ -523,10 +526,13 @@ pub struct ConfigPlaylistTitle {
     component: Label,
 }
 
-impl Default for ConfigPlaylistTitle {
-    fn default() -> Self {
+impl ConfigPlaylistTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.playlist_foreground())
+                .background(config_tui.settings.theme.playlist_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Playlist style "),
         }
@@ -652,10 +658,13 @@ pub struct ConfigProgressTitle {
     component: Label,
 }
 
-impl Default for ConfigProgressTitle {
-    fn default() -> Self {
+impl ConfigProgressTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.progress_foreground())
+                .background(config_tui.settings.theme.progress_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Progress style "),
         }
@@ -754,10 +763,13 @@ pub struct ConfigLyricTitle {
     component: Label,
 }
 
-impl Default for ConfigLyricTitle {
-    fn default() -> Self {
+impl ConfigLyricTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.lyric_foreground())
+                .background(config_tui.settings.theme.lyric_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Lyric style "),
         }
@@ -881,6 +893,8 @@ impl ConfigInputHighlight {
                     .color(config_r.settings.theme.library_border()),
             )
             // .foreground(color)
+            .background(config_r.settings.theme.library_background())
+            .inactive(Style::new().bg(config_r.settings.theme.library_background()))
             .input_type(InputType::Text)
             .placeholder(
                 "1f984/1f680/1f8a5",
@@ -1093,10 +1107,13 @@ pub struct ConfigImportantPopupTitle {
     component: Label,
 }
 
-impl Default for ConfigImportantPopupTitle {
-    fn default() -> Self {
+impl ConfigImportantPopupTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.important_popup_foreground())
+                .background(config_tui.settings.theme.important_popup_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Important Popup style "),
         }
@@ -1195,10 +1212,13 @@ pub struct ConfigFallbackTitle {
     component: Label,
 }
 
-impl Default for ConfigFallbackTitle {
-    fn default() -> Self {
+impl ConfigFallbackTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.fallback_foreground())
+                .background(config_tui.settings.theme.fallback_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Fallback style "),
         }
@@ -1336,7 +1356,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)),
-            Box::<ConfigLibraryTitle>::default(),
+            Box::new(ConfigLibraryTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1362,7 +1382,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistLabel)),
-            Box::<ConfigPlaylistTitle>::default(),
+            Box::new(ConfigPlaylistTitle::new(config)),
             Vec::new(),
         )?;
 
@@ -1392,7 +1412,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressLabel)),
-            Box::<ConfigProgressTitle>::default(),
+            Box::new(ConfigProgressTitle::new(config)),
             Vec::new(),
         )?;
 
@@ -1416,7 +1436,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricLabel)),
-            Box::<ConfigLyricTitle>::default(),
+            Box::new(ConfigLyricTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1437,7 +1457,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupLabel)),
-            Box::<ConfigImportantPopupTitle>::default(),
+            Box::new(ConfigImportantPopupTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1458,7 +1478,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackLabel)),
-            Box::<ConfigFallbackTitle>::default(),
+            Box::new(ConfigFallbackTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(

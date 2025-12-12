@@ -64,6 +64,8 @@ impl MusicDir {
                     .modifiers(BorderType::Rounded),
             )
             .foreground(config_tui.settings.theme.library_highlight())
+            .background(config_tui.settings.theme.library_background())
+            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .input_type(InputType::Text)
             .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
             .title(
@@ -183,6 +185,8 @@ impl ExitConfirmation {
             )
             .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
+            .background(config_r.settings.theme.library_background())
+            .inactive(Style::new().bg(config_r.settings.theme.library_background()))
             .rewind(true)
             .title(" Show exit confirmation? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -271,6 +275,8 @@ impl PlaylistDisplaySymbol {
             )
             .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
+            .background(config_r.settings.theme.library_background())
+            .inactive(Style::new().bg(config_r.settings.theme.library_background()))
             .rewind(true)
             .title(" Use symbols for playlist loop mode? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -309,6 +315,8 @@ impl PlaylistRandomTrack {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("20", Style::default().fg(Color::Rgb(128, 128, 128)))
@@ -360,6 +368,8 @@ impl PlaylistRandomAlbum {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
@@ -414,6 +424,8 @@ impl PodcastDir {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::Text)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -468,6 +480,8 @@ impl PodcastSimulDownload {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -522,6 +536,8 @@ impl PodcastMaxRetries {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -582,6 +598,8 @@ impl AlbumPhotoAlign {
             )
             .choices(["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
             .foreground(config_r.settings.theme.library_highlight())
+            .background(config_r.settings.theme.library_background())
+            .inactive(Style::new().bg(config_r.settings.theme.library_background()))
             .rewind(true)
             .title(" Coverart Align: ", Alignment::Left)
             .value(align);
@@ -633,6 +651,8 @@ impl SaveLastPosition {
             )
             .choices(["Unsupported", "No", "Yes"])
             .foreground(config_tui.settings.theme.library_highlight())
+            .background(config_tui.settings.theme.library_background())
+            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
             .title(" Remember last played position: ", Alignment::Left)
             .value(save_last_position);
@@ -679,6 +699,8 @@ impl ConfigSeekStep {
             )
             .choices(["Unsupported"])
             .foreground(config_tui.settings.theme.library_highlight())
+            .background(config_tui.settings.theme.library_background())
+            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
             .title(" Seek step in seconds: ", Alignment::Left)
             .value(seek_step);
@@ -721,6 +743,8 @@ impl KillDaemon {
             )
             .choices(["Yes", "No"])
             .foreground(config_r.settings.theme.library_highlight())
+            .background(config_r.settings.theme.library_background())
+            .inactive(Style::new().bg(config_r.settings.theme.library_background()))
             .rewind(true)
             .title(" Stop Server on TUI exit? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -760,6 +784,8 @@ impl PlayerUseMpris {
             )
             .choices(["Yes", "No"])
             .foreground(config_tui.settings.theme.library_highlight())
+            .background(config_tui.settings.theme.library_background())
+            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
             .title(" Support Media Controls? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -802,6 +828,8 @@ impl PlayerUseDiscord {
             )
             .choices(["Yes", "No"])
             .foreground(config_tui.settings.theme.library_highlight())
+            .background(config_tui.settings.theme.library_background())
+            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
             .title(" Update discord rpc? ", Alignment::Left)
             .value(usize::from(!enabled));
@@ -844,6 +872,8 @@ impl PlayerPort {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -891,6 +921,8 @@ impl PlayerAddress {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::Text) // we likely could make a custom matcher
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -941,6 +973,8 @@ impl PlayerProtocol {
             )
             .choices(["HTTP", "UDS"])
             .foreground(config_tui.settings.theme.library_highlight())
+            .background(config_tui.settings.theme.library_background())
+            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
             .title(" Communication Protocol: ", Alignment::Left)
             .value(value);
@@ -982,6 +1016,8 @@ impl PlayerUDSPath {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::Text)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
@@ -1041,6 +1077,8 @@ impl PlayerBackend {
             )
             .choices(["Rusty", "MPV", "Gstreamer"])
             .foreground(config_tui.settings.theme.library_highlight())
+            .background(config_tui.settings.theme.library_background())
+            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
             .title(" Playback Backend: ", Alignment::Left)
             .value(value);
@@ -1083,11 +1121,13 @@ impl ExtraYtdlpArgs {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(config_tui.settings.theme.library_highlight())
+                .background(config_tui.settings.theme.library_background())
+                .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
                 .input_type(InputType::Text)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     r#"--cookies-from-browser brave+gnomekeyring or --cookies "d:\src\cookies.txt""#,
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                    Style::default().fg(Color::Rgb(128, 128, 128)).bg(config_tui.settings.theme.library_background()),
                 )
                 .title(" Extra Args for yt-dlp: ", Alignment::Left)
                 .value(&config_tui.settings.ytdlp.extra_args)

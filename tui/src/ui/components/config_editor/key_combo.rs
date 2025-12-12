@@ -479,22 +479,19 @@ impl KeyCombo {
 
     /// Draw all components once, sharing some lookups.
     fn view_common(&mut self, frame: &mut Frame<'_>, area: Rect) {
+        let normal_style = self.get_normal_style();
         // get style to use
         let inactive_style = self
             .props
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style)
-            .unwrap_or(Style::default().fg(Color::Reset));
+            .unwrap_or(Style::default().bg(normal_style.bg.unwrap_or(Color::Reset)));
         let focus = self
             .props
             .get_ref(Attribute::Focus)
             .and_then(AttrValue::as_flag)
             .unwrap_or(false);
-        let style_valid = if focus {
-            self.get_normal_style()
-        } else {
-            inactive_style
-        };
+        let style_valid = if focus { normal_style } else { inactive_style };
         let mut style = style_valid;
         let is_valid = self.is_valid();
 
