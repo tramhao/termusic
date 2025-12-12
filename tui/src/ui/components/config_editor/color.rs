@@ -414,6 +414,176 @@ impl Component<Msg, UserEvent> for CEStyleTitle {
     }
 }
 
+#[derive(MockComponent)]
+pub struct ConfigInputHighlight {
+    component: Input,
+    id: IdConfigEditor,
+    config: SharedTuiSettings,
+}
+
+impl ConfigInputHighlight {
+    pub fn new(name: &str, id: IdConfigEditor, config: SharedTuiSettings) -> Self {
+        let config_r = config.read();
+        // TODO: this should likely not be here, because it is a runtime error if it is unhandled
+        let highlight_str = match id {
+            IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => {
+                &config_r.settings.theme.style.library.highlight_symbol
+            }
+            IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => {
+                &config_r.settings.theme.style.playlist.highlight_symbol
+            }
+            IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => {
+                &config_r.settings.theme.style.playlist.current_track_symbol
+            }
+            _ => todo!("Unhandled IdConfigEditor Variant: {:#?}", id),
+        };
+        let component = Input::default()
+            .borders(
+                Borders::default()
+                    .modifiers(BorderType::Rounded)
+                    .color(config_r.settings.theme.library_border()),
+            )
+            // .foreground(color)
+            .background(config_r.settings.theme.library_background())
+            .inactive(Style::new().bg(config_r.settings.theme.library_background()))
+            .input_type(InputType::Text)
+            .placeholder(
+                "1f984/1f680/1f8a5",
+                Style::default().fg(Color::Rgb(128, 128, 128)),
+            )
+            .title(name, Alignment::Left)
+            .value(highlight_str);
+
+        drop(config_r);
+        Self {
+            component,
+            id,
+            config,
+        }
+    }
+    fn update_symbol(&mut self, result: CmdResult) -> Msg {
+        if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
+            if symbol.is_empty() {
+                let color = self.config.read().settings.theme.library_border();
+                self.update_symbol_after(color);
+                return Msg::ForceRedraw;
+            }
+            if let Some(s) = Self::string_to_unicode_char(&symbol) {
+                // success getting a unicode letter
+                self.update_symbol_after(Color::Green);
+                return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
+            }
+            // fail to get a unicode letter
+            self.update_symbol_after(Color::Red);
+        }
+
+        // press enter to see preview
+        if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result
+            && let Some(s) = Self::string_to_unicode_char(&symbol)
+        {
+            self.attr(Attribute::Value, AttrValue::String(s.to_string()));
+            self.update_symbol_after(Color::Green);
+            return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
+        }
+        Msg::ForceRedraw
+    }
+    fn update_symbol_after(&mut self, color: Color) {
+        self.attr(Attribute::Foreground, AttrValue::Color(color));
+        self.attr(
+            Attribute::Borders,
+            AttrValue::Borders(
+                Borders::default()
+                    .modifiers(BorderType::Rounded)
+                    .color(color),
+            ),
+        );
+    }
+    fn string_to_unicode_char(s: &str) -> Option<char> {
+        // Do something more appropriate to find the actual number
+        // let number = &s[..];
+
+        u32::from_str_radix(s, 16)
+            .ok()
+            .and_then(std::char::from_u32)
+    }
+}
+
+impl Component<Msg, UserEvent> for ConfigInputHighlight {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().settings.keys;
+        match ev {
+            // Global Hotkeys
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
+            }
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Left, ..
+            }) => {
+                self.perform(Cmd::Move(Direction::Left));
+                Some(Msg::ForceRedraw)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Right, ..
+            }) => {
+                self.perform(Cmd::Move(Direction::Right));
+                Some(Msg::ForceRedraw)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => {
+                self.perform(Cmd::GoTo(Position::Begin));
+                Some(Msg::ForceRedraw)
+            }
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End));
+                Some(Msg::ForceRedraw)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Delete, ..
+            }) => {
+                let result = self.perform(Cmd::Cancel);
+                Some(self.update_symbol(result))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Backspace,
+                ..
+            }) => {
+                let result = self.perform(Cmd::Delete);
+                Some(self.update_symbol(result))
+            }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Char(ch),
+                modifiers: KeyModifiers::NONE | KeyModifiers::SHIFT,
+            }) => {
+                let result = self.perform(Cmd::Type(ch));
+                Some(self.update_symbol(result))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next))),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)))
+            }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => {
+                let result = self.perform(Cmd::Submit);
+                Some(self.update_symbol(result))
+            }
+            _ => None,
+        }
+    }
+}
+
 // --- Section Library Style ---
 
 #[inline]
@@ -743,241 +913,31 @@ fn fallback_highlight(config: SharedTuiSettings) -> CEColorSelect {
 
 // --- Section Highlight Symbols ---
 
-#[derive(MockComponent)]
-pub struct ConfigInputHighlight {
-    component: Input,
-    id: IdConfigEditor,
-    config: SharedTuiSettings,
+#[inline]
+fn library_hg_symbol(config: SharedTuiSettings) -> ConfigInputHighlight {
+    ConfigInputHighlight::new(
+        " Highlight Symbol ",
+        IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol),
+        config,
+    )
 }
 
-impl ConfigInputHighlight {
-    pub fn new(name: &str, id: IdConfigEditor, config: SharedTuiSettings) -> Self {
-        let config_r = config.read();
-        // TODO: this should likely not be here, because it is a runtime error if it is unhandled
-        let highlight_str = match id {
-            IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol) => {
-                &config_r.settings.theme.style.library.highlight_symbol
-            }
-            IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol) => {
-                &config_r.settings.theme.style.playlist.highlight_symbol
-            }
-            IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => {
-                &config_r.settings.theme.style.playlist.current_track_symbol
-            }
-            _ => todo!("Unhandled IdConfigEditor Variant: {:#?}", id),
-        };
-        let component = Input::default()
-            .borders(
-                Borders::default()
-                    .modifiers(BorderType::Rounded)
-                    .color(config_r.settings.theme.library_border()),
-            )
-            // .foreground(color)
-            .input_type(InputType::Text)
-            .placeholder(
-                "1f984/1f680/1f8a5",
-                Style::default().fg(Color::Rgb(128, 128, 128)),
-            )
-            .title(name, Alignment::Left)
-            .value(highlight_str);
-
-        drop(config_r);
-        Self {
-            component,
-            id,
-            config,
-        }
-    }
-    fn update_symbol(&mut self, result: CmdResult) -> Msg {
-        if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
-            if symbol.is_empty() {
-                let color = self.config.read().settings.theme.library_border();
-                self.update_symbol_after(color);
-                return Msg::ForceRedraw;
-            }
-            if let Some(s) = Self::string_to_unicode_char(&symbol) {
-                // success getting a unicode letter
-                self.update_symbol_after(Color::Green);
-                return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
-            }
-            // fail to get a unicode letter
-            self.update_symbol_after(Color::Red);
-        }
-
-        // press enter to see preview
-        if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result
-            && let Some(s) = Self::string_to_unicode_char(&symbol)
-        {
-            self.attr(Attribute::Value, AttrValue::String(s.to_string()));
-            self.update_symbol_after(Color::Green);
-            return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
-        }
-        Msg::ForceRedraw
-    }
-    fn update_symbol_after(&mut self, color: Color) {
-        self.attr(Attribute::Foreground, AttrValue::Color(color));
-        self.attr(
-            Attribute::Borders,
-            AttrValue::Borders(
-                Borders::default()
-                    .modifiers(BorderType::Rounded)
-                    .color(color),
-            ),
-        );
-    }
-    fn string_to_unicode_char(s: &str) -> Option<char> {
-        // Do something more appropriate to find the actual number
-        // let number = &s[..];
-
-        u32::from_str_radix(s, 16)
-            .ok()
-            .and_then(std::char::from_u32)
-    }
+#[inline]
+fn playlist_hg_symbol(config: SharedTuiSettings) -> ConfigInputHighlight {
+    ConfigInputHighlight::new(
+        " Highlight Symbol ",
+        IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol),
+        config,
+    )
 }
 
-impl Component<Msg, UserEvent> for ConfigInputHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
-        let keys = &config.read().settings.keys;
-        match ev {
-            // Global Hotkeys
-            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
-            }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
-            }
-            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Left, ..
-            }) => {
-                self.perform(Cmd::Move(Direction::Left));
-                Some(Msg::ForceRedraw)
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Right, ..
-            }) => {
-                self.perform(Cmd::Move(Direction::Right));
-                Some(Msg::ForceRedraw)
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
-            }) => {
-                self.perform(Cmd::GoTo(Position::Begin));
-                Some(Msg::ForceRedraw)
-            }
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End));
-                Some(Msg::ForceRedraw)
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Delete, ..
-            }) => {
-                let result = self.perform(Cmd::Cancel);
-                Some(self.update_symbol(result))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Backspace,
-                ..
-            }) => {
-                let result = self.perform(Cmd::Delete);
-                Some(self.update_symbol(result))
-            }
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Char(ch),
-                modifiers: KeyModifiers::NONE | KeyModifiers::SHIFT,
-            }) => {
-                let result = self.perform(Cmd::Type(ch));
-                Some(self.update_symbol(result))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Down, ..
-            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next))),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)))
-            }
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
-            }) => {
-                let result = self.perform(Cmd::Submit);
-                Some(self.update_symbol(result))
-            }
-            _ => None,
-        }
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLibraryHighlightSymbol {
-    component: ConfigInputHighlight,
-}
-
-impl ConfigLibraryHighlightSymbol {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        Self {
-            component: ConfigInputHighlight::new(
-                " Highlight Symbol ",
-                IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol),
-                config,
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLibraryHighlightSymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigPlaylistHighlightSymbol {
-    component: ConfigInputHighlight,
-}
-
-impl ConfigPlaylistHighlightSymbol {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        Self {
-            component: ConfigInputHighlight::new(
-                " Highlight Symbol ",
-                IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol),
-                config,
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigPlaylistHighlightSymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigCurrentlyPlayingTrackSymbol {
-    component: ConfigInputHighlight,
-}
-
-impl ConfigCurrentlyPlayingTrackSymbol {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        Self {
-            component: ConfigInputHighlight::new(
-                " Current Track Symbol ",
-                IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol),
-                config,
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigCurrentlyPlayingTrackSymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+#[inline]
+fn currently_playing_track_symbol(config: SharedTuiSettings) -> ConfigInputHighlight {
+    ConfigInputHighlight::new(
+        " Current Track Symbol ",
+        IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol),
+        config,
+    )
 }
 
 impl Model {
@@ -1154,13 +1114,13 @@ impl Model {
     fn remount_config_color_symbols(&mut self, config: &SharedTuiSettings) -> Result<()> {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol)),
-            Box::new(ConfigLibraryHighlightSymbol::new(config.clone())),
+            Box::new(library_hg_symbol(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol)),
-            Box::new(ConfigPlaylistHighlightSymbol::new(config.clone())),
+            Box::new(playlist_hg_symbol(config.clone())),
             Vec::new(),
         )?;
 
@@ -1168,7 +1128,7 @@ impl Model {
             Id::ConfigEditor(IdConfigEditor::Theme(
                 IdCETheme::CurrentlyPlayingTrackSymbol,
             )),
-            Box::new(ConfigCurrentlyPlayingTrackSymbol::new(config.clone())),
+            Box::new(currently_playing_track_symbol(config.clone())),
             Vec::new(),
         )?;
 
