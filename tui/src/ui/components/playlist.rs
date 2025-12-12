@@ -22,8 +22,8 @@ use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
 use tui_realm_stdlib::Table;
-use tuirealm::props::Borders;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
+use tuirealm::props::{Borders, Style};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
     event::{Key, KeyEvent},
@@ -58,6 +58,7 @@ impl Playlist {
                 )
                 .background(config.settings.theme.playlist_background())
                 .foreground(config.settings.theme.playlist_foreground())
+                .inactive(Style::new().bg(config.settings.theme.playlist_background()))
                 .title(" Playlist ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(config.settings.theme.playlist_highlight())

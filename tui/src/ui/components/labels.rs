@@ -68,12 +68,13 @@ pub struct LabelSpan {
 }
 
 impl LabelSpan {
-    pub fn new(_config: &TuiOverlay, span: &[TextSpan]) -> Self {
+    pub fn new(config: &TuiOverlay, span: &[TextSpan]) -> Self {
         let default = span.to_vec();
 
         Self {
             // dont style the Span itself, style the TextSpan's themself
             component: Span::default()
+                .background(config.settings.theme.library_background())
                 .spans(default.clone())
                 .alignment(Alignment::Left)
                 .modifiers(TextModifiers::BOLD),
