@@ -12,7 +12,7 @@ use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
-    Alignment, AttrValue, Attribute, BorderType, Borders, PropPayload, PropValue, TextSpan,
+    Alignment, AttrValue, Attribute, BorderType, Borders, PropPayload, PropValue, Style, TextSpan,
 };
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
@@ -52,6 +52,7 @@ impl Lyric {
                 )
                 .background(config.settings.theme.lyric_background())
                 .foreground(config.settings.theme.lyric_foreground())
+                .inactive(Style::new().bg(config.settings.theme.lyric_background()))
                 .title(" Lyrics ", Alignment::Left)
                 // .wrap(true)
                 .step(4)

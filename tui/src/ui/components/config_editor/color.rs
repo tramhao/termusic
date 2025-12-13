@@ -182,16 +182,21 @@ impl Component<Msg, UserEvent> for CEThemeSelectTable {
 #[derive(MockComponent)]
 pub struct CEColorSelect {
     component: Select,
-    id: IdConfigEditor,
+    id: IdCETheme,
     config: SharedTuiSettings,
     on_key_shift: Msg,
     on_key_backshift: Msg,
 }
 
 impl CEColorSelect {
+    /// Get a new instance for a color selector.
+    ///
+    /// # Panics
+    ///
+    /// The only IDs expected are color IDs, everything else(like `*Symbol` or `*Label`) will panic.
     pub fn new(
         name: &str,
-        id: IdConfigEditor,
+        id: IdCETheme,
         color: Color,
         config: SharedTuiSettings,
         on_key_shift: Msg,
@@ -225,66 +230,50 @@ impl CEColorSelect {
         }
     }
 
-    const fn init_color_select(id: IdConfigEditor, theme: &ThemeWrap) -> usize {
+    /// Get the current color index in the current theme for the given ID.
+    ///
+    /// # Panics
+    ///
+    /// The only IDs expected are color IDs, everything else will panic.
+    const fn init_color_select(id: IdCETheme, theme: &ThemeWrap) -> usize {
         match id {
-            IdConfigEditor::Theme(IdCETheme::LibraryForeground) => {
-                theme.style.library.foreground_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::LibraryBackground) => {
-                theme.style.library.background_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::LibraryBorder) => {
-                theme.style.library.border_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::LibraryHighlight) => {
-                theme.style.library.highlight_color.as_usize()
-            }
-
-            IdConfigEditor::Theme(IdCETheme::PlaylistForeground) => {
-                theme.style.playlist.foreground_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::PlaylistBackground) => {
-                theme.style.playlist.background_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::PlaylistBorder) => {
-                theme.style.playlist.border_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::PlaylistHighlight) => {
-                theme.style.playlist.highlight_color.as_usize()
-            }
-
-            IdConfigEditor::Theme(IdCETheme::ProgressForeground) => {
-                theme.style.progress.foreground_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::ProgressBackground) => {
-                theme.style.progress.background_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::ProgressBorder) => {
-                theme.style.progress.border_color.as_usize()
-            }
-
-            IdConfigEditor::Theme(IdCETheme::LyricForeground) => {
-                theme.style.lyric.foreground_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::LyricBackground) => {
-                theme.style.lyric.background_color.as_usize()
-            }
-            IdConfigEditor::Theme(IdCETheme::LyricBorder) => {
-                theme.style.lyric.border_color.as_usize()
-            }
-
-            IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground) => {
+            IdCETheme::LibraryForeground => theme.style.library.foreground_color.as_usize(),
+            IdCETheme::LibraryBackground => theme.style.library.background_color.as_usize(),
+            IdCETheme::LibraryBorder => theme.style.library.border_color.as_usize(),
+            IdCETheme::LibraryHighlight => theme.style.library.highlight_color.as_usize(),
+            IdCETheme::PlaylistForeground => theme.style.playlist.foreground_color.as_usize(),
+            IdCETheme::PlaylistBackground => theme.style.playlist.background_color.as_usize(),
+            IdCETheme::PlaylistBorder => theme.style.playlist.border_color.as_usize(),
+            IdCETheme::PlaylistHighlight => theme.style.playlist.highlight_color.as_usize(),
+            IdCETheme::ProgressForeground => theme.style.progress.foreground_color.as_usize(),
+            IdCETheme::ProgressBackground => theme.style.progress.background_color.as_usize(),
+            IdCETheme::ProgressBorder => theme.style.progress.border_color.as_usize(),
+            IdCETheme::LyricForeground => theme.style.lyric.foreground_color.as_usize(),
+            IdCETheme::LyricBackground => theme.style.lyric.background_color.as_usize(),
+            IdCETheme::LyricBorder => theme.style.lyric.border_color.as_usize(),
+            IdCETheme::ImportantPopupForeground => {
                 theme.style.important_popup.foreground_color.as_usize()
             }
-            IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground) => {
+            IdCETheme::ImportantPopupBackground => {
                 theme.style.important_popup.background_color.as_usize()
             }
-            IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder) => {
-                theme.style.important_popup.border_color.as_usize()
-            }
+            IdCETheme::ImportantPopupBorder => theme.style.important_popup.border_color.as_usize(),
+            IdCETheme::FallbackForeground => theme.style.fallback.foreground_color.as_usize(),
+            IdCETheme::FallbackBackground => theme.style.fallback.background_color.as_usize(),
+            IdCETheme::FallbackBorder => theme.style.fallback.border_color.as_usize(),
+            IdCETheme::FallbackHighlight => theme.style.fallback.highlight_color.as_usize(),
 
-            // TODO: add fallback colors
-            _ => 0,
+            // explicitly handle all cases
+            IdCETheme::ThemeSelectTable
+            | IdCETheme::LibraryHighlightSymbol
+            | IdCETheme::LibraryLabel
+            | IdCETheme::LyricLabel
+            | IdCETheme::PlaylistHighlightSymbol
+            | IdCETheme::PlaylistLabel
+            | IdCETheme::CurrentlyPlayingTrackSymbol
+            | IdCETheme::ProgressLabel
+            | IdCETheme::ImportantPopupLabel
+            | IdCETheme::FallbackLabel => unreachable!(),
         }
     }
 
@@ -310,7 +299,10 @@ impl CEColorSelect {
                 Attribute::FocusStyle,
                 AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(color)),
             );
-            Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(self.id, *color_config))
+            Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(
+                IdConfigEditor::Theme(self.id),
+                *color_config,
+            ))
         } else {
             self.attr(Attribute::Background, AttrValue::Color(Color::Red));
             self.attr(
@@ -377,7 +369,14 @@ impl Component<Msg, UserEvent> for CEColorSelect {
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
+            }) => {
+                // "Select" returns "None" as a result for "Submit" when transitioning from "closed" to "open" state.
+                // But does return something when transitioning from "open" to "closed" state.
+                match self.perform(Cmd::Submit) {
+                    CmdResult::None => return Some(Msg::ForceRedraw),
+                    v => v,
+                }
+            }
             _ => CmdResult::None,
         };
         match cmd_result {
@@ -395,10 +394,13 @@ pub struct ConfigLibraryTitle {
     component: Label,
 }
 
-impl Default for ConfigLibraryTitle {
-    fn default() -> Self {
+impl ConfigLibraryTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.library_foreground())
+                .background(config_tui.settings.theme.library_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Library style "),
         }
@@ -422,7 +424,7 @@ impl ConfigLibraryForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::Theme(IdCETheme::LibraryForeground),
+                IdCETheme::LibraryForeground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -449,7 +451,7 @@ impl ConfigLibraryBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::Theme(IdCETheme::LibraryBackground),
+                IdCETheme::LibraryBackground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -476,7 +478,7 @@ impl ConfigLibraryBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::Theme(IdCETheme::LibraryBorder),
+                IdCETheme::LibraryBorder,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -503,7 +505,7 @@ impl ConfigLibraryHighlight {
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
-                IdConfigEditor::Theme(IdCETheme::LibraryHighlight),
+                IdCETheme::LibraryHighlight,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -524,10 +526,13 @@ pub struct ConfigPlaylistTitle {
     component: Label,
 }
 
-impl Default for ConfigPlaylistTitle {
-    fn default() -> Self {
+impl ConfigPlaylistTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.playlist_foreground())
+                .background(config_tui.settings.theme.playlist_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Playlist style "),
         }
@@ -551,7 +556,7 @@ impl ConfigPlaylistForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::Theme(IdCETheme::PlaylistForeground),
+                IdCETheme::PlaylistForeground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -578,7 +583,7 @@ impl ConfigPlaylistBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::Theme(IdCETheme::PlaylistBackground),
+                IdCETheme::PlaylistBackground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -605,7 +610,7 @@ impl ConfigPlaylistBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::Theme(IdCETheme::PlaylistBorder),
+                IdCETheme::PlaylistBorder,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -632,7 +637,7 @@ impl ConfigPlaylistHighlight {
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
-                IdConfigEditor::Theme(IdCETheme::PlaylistHighlight),
+                IdCETheme::PlaylistHighlight,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -653,10 +658,13 @@ pub struct ConfigProgressTitle {
     component: Label,
 }
 
-impl Default for ConfigProgressTitle {
-    fn default() -> Self {
+impl ConfigProgressTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.progress_foreground())
+                .background(config_tui.settings.theme.progress_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Progress style "),
         }
@@ -680,7 +688,7 @@ impl ConfigProgressForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::Theme(IdCETheme::ProgressForeground),
+                IdCETheme::ProgressForeground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -707,7 +715,7 @@ impl ConfigProgressBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::Theme(IdCETheme::ProgressBackground),
+                IdCETheme::ProgressBackground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -734,7 +742,7 @@ impl ConfigProgressBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::Theme(IdCETheme::ProgressBorder),
+                IdCETheme::ProgressBorder,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -755,10 +763,13 @@ pub struct ConfigLyricTitle {
     component: Label,
 }
 
-impl Default for ConfigLyricTitle {
-    fn default() -> Self {
+impl ConfigLyricTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.lyric_foreground())
+                .background(config_tui.settings.theme.lyric_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Lyric style "),
         }
@@ -782,7 +793,7 @@ impl ConfigLyricForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::Theme(IdCETheme::LyricForeground),
+                IdCETheme::LyricForeground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -809,7 +820,7 @@ impl ConfigLyricBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::Theme(IdCETheme::LyricBackground),
+                IdCETheme::LyricBackground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -836,7 +847,7 @@ impl ConfigLyricBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::Theme(IdCETheme::LyricBorder),
+                IdCETheme::LyricBorder,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -882,6 +893,8 @@ impl ConfigInputHighlight {
                     .color(config_r.settings.theme.library_border()),
             )
             // .foreground(color)
+            .background(config_r.settings.theme.library_background())
+            .inactive(Style::new().bg(config_r.settings.theme.library_background()))
             .input_type(InputType::Text)
             .placeholder(
                 "1f984/1f680/1f8a5",
@@ -1094,10 +1107,13 @@ pub struct ConfigImportantPopupTitle {
     component: Label,
 }
 
-impl Default for ConfigImportantPopupTitle {
-    fn default() -> Self {
+impl ConfigImportantPopupTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.important_popup_foreground())
+                .background(config_tui.settings.theme.important_popup_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Important Popup style "),
         }
@@ -1121,7 +1137,7 @@ impl ConfigImportantPopupForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground),
+                IdCETheme::ImportantPopupForeground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -1148,7 +1164,7 @@ impl ConfigImportantPopupBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground),
+                IdCETheme::ImportantPopupBackground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -1175,7 +1191,7 @@ impl ConfigImportantPopupBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder),
+                IdCETheme::ImportantPopupBorder,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -1196,10 +1212,13 @@ pub struct ConfigFallbackTitle {
     component: Label,
 }
 
-impl Default for ConfigFallbackTitle {
-    fn default() -> Self {
+impl ConfigFallbackTitle {
+    pub fn new(config: &SharedTuiSettings) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.fallback_foreground())
+                .background(config_tui.settings.theme.fallback_background())
                 .modifiers(TextModifiers::BOLD)
                 .text(" Fallback style "),
         }
@@ -1223,7 +1242,7 @@ impl ConfigFallbackForeground {
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
-                IdConfigEditor::Theme(IdCETheme::FallbackForeground),
+                IdCETheme::FallbackForeground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -1250,7 +1269,7 @@ impl ConfigFallbackBackground {
         Self {
             component: CEColorSelect::new(
                 " Background ",
-                IdConfigEditor::Theme(IdCETheme::FallbackBackground),
+                IdCETheme::FallbackBackground,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -1277,7 +1296,7 @@ impl ConfigFallbackBorder {
         Self {
             component: CEColorSelect::new(
                 " Border ",
-                IdConfigEditor::Theme(IdCETheme::FallbackBorder),
+                IdCETheme::FallbackBorder,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -1304,7 +1323,7 @@ impl ConfigFallbackHighlight {
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
-                IdConfigEditor::Theme(IdCETheme::FallbackHighlight),
+                IdCETheme::FallbackHighlight,
                 color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
@@ -1337,7 +1356,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)),
-            Box::<ConfigLibraryTitle>::default(),
+            Box::new(ConfigLibraryTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1363,7 +1382,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistLabel)),
-            Box::<ConfigPlaylistTitle>::default(),
+            Box::new(ConfigPlaylistTitle::new(config)),
             Vec::new(),
         )?;
 
@@ -1393,7 +1412,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressLabel)),
-            Box::<ConfigProgressTitle>::default(),
+            Box::new(ConfigProgressTitle::new(config)),
             Vec::new(),
         )?;
 
@@ -1417,7 +1436,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricLabel)),
-            Box::<ConfigLyricTitle>::default(),
+            Box::new(ConfigLyricTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1438,7 +1457,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupLabel)),
-            Box::<ConfigImportantPopupTitle>::default(),
+            Box::new(ConfigImportantPopupTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(
@@ -1459,7 +1478,7 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackLabel)),
-            Box::<ConfigFallbackTitle>::default(),
+            Box::new(ConfigFallbackTitle::new(config)),
             Vec::new(),
         )?;
         self.app.remount(

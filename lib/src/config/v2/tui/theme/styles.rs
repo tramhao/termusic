@@ -59,6 +59,7 @@ impl ColorTermusic {
     }
 }
 
+/// Mainly necessary for Native Theme
 impl From<ColorTermusic> for Color {
     fn from(value: ColorTermusic) -> Self {
         match value {
@@ -116,7 +117,7 @@ impl Default for StyleLibrary {
     fn default() -> Self {
         Self {
             foreground_color: ColorTermusic::Foreground,
-            background_color: ColorTermusic::Reset,
+            background_color: ColorTermusic::Background,
             border_color: ColorTermusic::Blue,
             highlight_color: ColorTermusic::LightYellow,
 
@@ -153,7 +154,7 @@ impl Default for StylePlaylist {
     fn default() -> Self {
         Self {
             foreground_color: ColorTermusic::Foreground,
-            background_color: ColorTermusic::Reset,
+            background_color: ColorTermusic::Background,
             border_color: ColorTermusic::Blue,
             highlight_color: ColorTermusic::LightYellow,
 
@@ -181,7 +182,7 @@ impl Default for StyleLyric {
     fn default() -> Self {
         Self {
             foreground_color: ColorTermusic::Foreground,
-            background_color: ColorTermusic::Reset,
+            background_color: ColorTermusic::Background,
             border_color: ColorTermusic::Blue,
         }
     }
@@ -203,7 +204,7 @@ impl Default for StyleProgress {
     fn default() -> Self {
         Self {
             foreground_color: ColorTermusic::LightBlack,
-            background_color: ColorTermusic::Reset,
+            background_color: ColorTermusic::Background,
             border_color: ColorTermusic::Blue,
         }
     }
@@ -225,7 +226,7 @@ impl Default for StyleImportantPopup {
     fn default() -> Self {
         Self {
             foreground_color: ColorTermusic::Yellow,
-            background_color: ColorTermusic::Reset,
+            background_color: ColorTermusic::Background,
             border_color: ColorTermusic::Yellow,
         }
     }
@@ -249,7 +250,7 @@ impl Default for StyleFallback {
     fn default() -> Self {
         Self {
             foreground_color: ColorTermusic::Foreground,
-            background_color: ColorTermusic::Reset,
+            background_color: ColorTermusic::Background,
             border_color: ColorTermusic::Blue,
             highlight_color: ColorTermusic::LightYellow,
         }

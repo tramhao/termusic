@@ -1,7 +1,7 @@
 use termusiclib::config::SharedTuiSettings;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, InputType};
+use tuirealm::props::{Alignment, BorderType, Borders, InputType, Style};
 use tuirealm::{Component, Event, MockComponent};
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
@@ -23,6 +23,7 @@ impl EditField {
             Input::default()
                 .foreground(config.settings.theme.library_foreground())
                 .background(config.settings.theme.library_background())
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .borders(
                     Borders::default()
                         .color(config.settings.theme.library_border())

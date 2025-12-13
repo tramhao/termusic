@@ -132,17 +132,17 @@ impl MockComponent for ProgressBar {
                 .unwrap_payload()
                 .unwrap_one()
                 .unwrap_f64();
-            let div = tui_realm_stdlib::utils::get_block(borders, title, true, None);
+            let normal_style = Style::default()
+                .fg(foreground)
+                .bg(background)
+                .add_modifier(modifiers);
+            let div = tui_realm_stdlib::utils::get_block(borders, title, true, Some(normal_style));
             // Make progress bar
             render.render_widget(
                 Gauge::default()
                     .block(div)
-                    .gauge_style(
-                        Style::default()
-                            .fg(foreground)
-                            .bg(background)
-                            .add_modifier(modifiers),
-                    )
+                    .style(normal_style)
+                    .gauge_style(normal_style)
                     .label(label)
                     .ratio(percentage)
                     .use_unicode(true),

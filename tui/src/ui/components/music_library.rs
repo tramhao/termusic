@@ -8,7 +8,7 @@ use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulte
 use tui_realm_treeview::{Node, TREE_CMD_CLOSE, TREE_CMD_OPEN, Tree, TreeView};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
+use tuirealm::props::{Alignment, BorderType, Borders, Style, TableBuilder, TextSpan};
 use tuirealm::{
     Attribute, Component, Event, MockComponent, State, StateValue, Sub, SubClause, SubEventClause,
 };
@@ -56,7 +56,7 @@ impl MusicLibrary {
                         .color(config.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                // .inactive(Style::default().fg(Color::Gray))
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .indent_size(2)
                 .scroll_step(6)
                 .title(" Library ", Alignment::Left)

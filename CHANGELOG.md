@@ -1,5 +1,11 @@
 ## ChangeLog
 
+### next
+
+- Feat(tui): change default theme to be "Native".
+- Fix(tui): fix that "native" and "termusic default" theme also get auto-selected in config editor, if active.
+- Fix(tui): fix a bunch of places where colors were not applied at all or not correctly applied.
+
 ### [V0.12.1]
 - Released on: December 11, 2025.
 - Change: change default log level to `info` (from `warn`).
