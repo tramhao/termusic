@@ -22,6 +22,7 @@ use termusiclib::config::SharedTuiSettings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use anyhow::Result;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -53,6 +54,14 @@ impl Counter {
             Attribute::Title,
             AttrValue::Title((label.as_ref().to_string(), Alignment::Center)),
         );
+        self
+    }
+    #[allow(dead_code)]
+    pub fn text<S>(mut self, t: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.attr(Attribute::Text, AttrValue::String(t.into()));
         self
     }
 
@@ -116,10 +125,15 @@ impl MockComponent for Counter {
         {
             // Get properties
             let value = self.get_state();
+            let text_base = self
+                .props
+                .get_ref(Attribute::Text)
+                .and_then(|v| v.as_string())
+                .map_or("", |v| v.as_str());
             let text = if let Some(value) = value {
-                format!("Delete Selected ({value})")
+                format!("{text_base} ({value})")
             } else {
-                "Delete Selected (-)".to_string()
+                "{text_base} (-)".to_string()
             };
 
             let alignment = self
@@ -215,7 +229,7 @@ pub struct TECounterDelete {
 }
 
 impl TECounterDelete {
-    pub fn new(initial_value: Option<usize>, config: SharedTuiSettings) -> Self {
+    pub fn new(initial_value: Option<usize>, text: &str, config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Counter::default()
@@ -233,6 +247,7 @@ impl TECounterDelete {
                     Color::Red,
                 )
                 .modifiers(TextModifiers::BOLD)
+                .text(text)
                 .value(initial_value)
         };
 
@@ -284,6 +299,79 @@ impl Component<Msg, UserEvent> for TECounterDelete {
         None
     }
 }
+
+#[derive(MockComponent)]
+pub struct TECounterSave {
+    component: Counter,
+    config: SharedTuiSettings,
+}
+
+impl TECounterSave {
+    pub fn new(initial_value: Option<usize>, text: &str, config: SharedTuiSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Counter::default()
+                .alignment(Alignment::Center)
+                .background(config.settings.theme.library_background())
+                .foreground(config.settings.theme.library_foreground())
+                .borders(
+                    Borders::default()
+                        .color(config.settings.theme.library_border())
+                        .modifiers(BorderType::Rounded),
+                )
+                .modifiers(TextModifiers::BOLD)
+                .text(text)
+                .value(initial_value)
+        };
+
+        Self { component, config }
+    }
+}
+
+impl Component<Msg, UserEvent> for TECounterSave {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        let keys = &self.config.read().settings.keys;
+        // Get command
+        let _cmd = match ev {
+            Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
+                return Some(Msg::TagEditor(TEMsg::Save));
+            }
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterSaveBlurDown)));
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterSaveBlurUp))),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterSaveBlurDown))),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterSaveBlurUp)));
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.quit.get() => {
+                return Some(Msg::TagEditor(TEMsg::Close));
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
+                return Some(Msg::TagEditor(TEMsg::Close));
+            }
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterSaveBlurUp)));
+            }
+
+            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
+                return Some(Msg::TagEditor(TEMsg::Focus(TFMsg::CounterSaveBlurDown)));
+            }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => return Some(Msg::TagEditor(TEMsg::CounterSaveOk)),
+            _ => Cmd::None,
+        };
+        None
+    }
+}
 impl Model {
     pub fn te_delete_lyric(&mut self) {
         if let Some(song) = self.tageditor_song.as_mut() {
@@ -302,12 +390,22 @@ impl Model {
                     // the unwrap should never happen as we are in a branch where we had a reference to it
                     let song = self.tageditor_song.take().unwrap();
                     // the unwrap should also never happen as all components should be properly mounted
-                    self.init_by_song(song).unwrap();
+                    match self.init_by_song(song) {
+                        Ok(()) => {}
+                        Err(e) => self.mount_error_popup(e),
+                    }
                 }
                 Err(e) => {
                     self.mount_error_popup(e);
                 }
             }
         }
+    }
+
+    pub fn te_save_lyric(&mut self) -> Result<()> {
+        if let Some(track) = self.tageditor_song.as_mut() {
+            track.save_lrc_selected()?;
+        }
+        Ok(())
     }
 }

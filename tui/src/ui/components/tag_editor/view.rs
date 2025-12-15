@@ -10,8 +10,8 @@ use tuirealm::ratatui::widgets::Clear;
 use super::TETrack;
 use crate::ui::components::tag_editor::te_footer::TEFooter;
 use crate::ui::components::{
-    LabelGeneric, TECounterDelete, TEInputAlbum, TEInputArtist, TEInputGenre, TEInputTitle,
-    TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    LabelGeneric, TECounterDelete, TECounterSave, TEInputAlbum, TEInputArtist, TEInputGenre,
+    TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
 };
 use crate::ui::ids::{Id, IdTagEditor};
 use crate::ui::model::Model;
@@ -56,13 +56,14 @@ impl Model {
 
                     let chunks_row4_right = Layout::vertical([
                         Constraint::Length(select_lyric_len),
+                        Constraint::Length(3),
                         Constraint::Min(2),
                     ])
                     .split(chunks_row4[1]);
 
-                    let chunks_row4_right_top =
+                    let chunks_row4_right_middle =
                         Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
-                            .split(chunks_row4_right[0]);
+                            .split(chunks_row4_right[1]);
 
                     // -- footer
                     if self.download_tracker.visible() {
@@ -98,17 +99,22 @@ impl Model {
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::SelectLyric),
                         f,
-                        chunks_row4_right_top[0],
+                        chunks_row4_right[0],
                     );
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::CounterDelete),
                         f,
-                        chunks_row4_right_top[1],
+                        chunks_row4_right_middle[0],
+                    );
+                    self.app.view(
+                        &Id::TagEditor(IdTagEditor::CounterSave),
+                        f,
+                        chunks_row4_right_middle[1],
                     );
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::TextareaLyric),
                         f,
-                        chunks_row4_right[1],
+                        chunks_row4_right[2],
                     );
 
                     if self.app.mounted(&Id::MessagePopup) {
@@ -173,7 +179,20 @@ impl Model {
         )?;
         self.app.remount(
             Id::TagEditor(IdTagEditor::CounterDelete),
-            Box::new(TECounterDelete::new(None, self.config_tui.clone())),
+            Box::new(TECounterDelete::new(
+                None,
+                "Delete Selected",
+                self.config_tui.clone(),
+            )),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::TagEditor(IdTagEditor::CounterSave),
+            Box::new(TECounterSave::new(
+                None,
+                "Save LRC",
+                self.config_tui.clone(),
+            )),
             Vec::new(),
         )?;
         self.app.remount(
@@ -226,6 +245,7 @@ impl Model {
         self.app.umount(&Id::TagEditor(IdTagEditor::SelectLyric))?;
         self.app
             .umount(&Id::TagEditor(IdTagEditor::CounterDelete))?;
+        self.app.umount(&Id::TagEditor(IdTagEditor::CounterSave))?;
         self.app
             .umount(&Id::TagEditor(IdTagEditor::TextareaLyric))?;
 
@@ -329,6 +349,11 @@ impl Model {
         )?;
         self.app.attr(
             &Id::TagEditor(IdTagEditor::CounterDelete),
+            Attribute::Value,
+            AttrValue::Payload(PropPayload::One(PropValue::Usize(selected_index_display))),
+        )?;
+        self.app.attr(
+            &Id::TagEditor(IdTagEditor::CounterSave),
             Attribute::Value,
             AttrValue::Payload(PropPayload::One(PropValue::Usize(selected_index_display))),
         )?;

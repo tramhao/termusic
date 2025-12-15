@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use id3::frame::Lyrics;
 use lofty::{
     config::WriteOptions,
@@ -229,6 +229,41 @@ impl TETrack {
             FileType::Mpeg => self.save_tag_mpeg(),
             _ => self.save_tag_generic(),
         }
+    }
+
+    /// Save selected lyric to lrc file in the same directory
+    ///  of track, with same name but different extension
+    pub fn save_lrc_selected(&mut self) -> Result<()> {
+        if self.lyric_frames.is_empty() {
+            return Ok(());
+        }
+
+        if let Some(lyric) = self.lyric_selected().as_mut() {
+            let raw = self.lyric_frames.get(self.lyric_selected_idx);
+            let lang = raw.map_or_else(|| "eng".to_string(), |v| v.lang.clone());
+            let description = raw.map_or_else(
+                || "Adjusted".to_string(),
+                |v| {
+                    if v.description.starts_with("Adjusted") {
+                        v.description.clone()
+                    } else {
+                        format!("Adjusted {}", v.description)
+                    }
+                },
+            );
+
+            // 2. Format the LRC header
+            let header = format!("[la:{}]\n[re:{}]\n", lang, description);
+
+            // 3. Combine header with existing content
+            let full_content = format!("{}{}", header, lyric.text);
+            let lrc_path = self.path().with_extension("lrc");
+
+            std::fs::write(&lrc_path, full_content)
+                .with_context(|| format!("Failed to save lyrics to {:?}", lrc_path))?;
+        }
+
+        Ok(())
     }
 
     /// Save the tag in a lofty handled generic way

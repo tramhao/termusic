@@ -565,6 +565,7 @@ pub enum TEMsg {
     Open(PathBuf),
     Close,
     CounterDeleteOk,
+    CounterSaveOk,
     Download(usize),
     /// Request to embed the data from `param1` into the current track.
     Embed(usize),
@@ -593,6 +594,8 @@ pub enum TEMsg {
 pub enum TFMsg {
     CounterDeleteBlurDown,
     CounterDeleteBlurUp,
+    CounterSaveBlurDown,
+    CounterSaveBlurUp,
     InputArtistBlurDown,
     InputArtistBlurUp,
     InputTitleBlurDown,

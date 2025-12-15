@@ -23,6 +23,11 @@ impl Model {
             TEMsg::CounterDeleteOk => {
                 self.te_delete_lyric();
             }
+            TEMsg::CounterSaveOk => {
+                if let Err(e) = self.te_save_lyric() {
+                    self.mount_error_popup(e.context("save lrc selected"));
+                }
+            }
             TEMsg::SelectLyricOk(index) => {
                 if let Some(mut song) = self.tageditor_song.take() {
                     song.set_lyric_selected_index(index);
@@ -96,12 +101,17 @@ impl Model {
                     .active(&Id::TagEditor(IdTagEditor::SelectLyric))
                     .ok();
             }
-            TFMsg::SelectLyricBlurDown | TFMsg::TextareaLyricBlurUp => {
+            TFMsg::SelectLyricBlurDown | TFMsg::CounterSaveBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::CounterDelete))
                     .ok();
             }
-            TFMsg::CounterDeleteBlurDown | TFMsg::InputArtistBlurUp => {
+            TFMsg::CounterDeleteBlurDown | TFMsg::TextareaLyricBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::CounterSave))
+                    .ok();
+            }
+            TFMsg::CounterSaveBlurDown | TFMsg::InputArtistBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TextareaLyric))
                     .ok();

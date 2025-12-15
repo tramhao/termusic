@@ -39,6 +39,7 @@ pub enum Id {
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum IdTagEditor {
     CounterDelete,
+    CounterSave,
     LabelHint,
     InputArtist,
     InputTitle,
