@@ -253,14 +253,14 @@ impl TETrack {
             );
 
             // 2. Format the LRC header
-            let header = format!("[la:{}]\n[re:{}]\n", lang, description);
+            let header = format!("[la:{lang}]\n[re:{description}]\n");
 
             // 3. Combine header with existing content
             let full_content = format!("{}{}", header, lyric.text);
             let lrc_path = self.path().with_extension("lrc");
 
             std::fs::write(&lrc_path, full_content)
-                .with_context(|| format!("Failed to save lyrics to {:?}", lrc_path))?;
+                .with_context(|| format!("Failed to save lyrics to {}", lrc_path.display()))?;
         }
 
         Ok(())
