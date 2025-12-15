@@ -245,10 +245,10 @@ impl GeneralPlayer {
 
     /// Handle Media-Controls events, if enabled to be used
     pub fn mpris_handle_events(&mut self) {
-        if let Some(ref mut mpris) = self.mpris {
-            if let Ok(m) = mpris.rx.try_recv() {
-                self.mpris_handler(m);
-            }
+        if let Some(ref mut mpris) = self.mpris
+            && let Ok(m) = mpris.rx.try_recv()
+        {
+            self.mpris_handler(m);
         }
     }
 

@@ -128,11 +128,11 @@ impl Model {
                         return Ok(());
                     }
                 };
-                if let Some(picture) = res {
-                    if let Ok(image) = image::load_from_memory(picture.data()) {
-                        self.show_image(&image)?;
-                        return Ok(());
-                    }
+                if let Some(picture) = res
+                    && let Ok(image) = image::load_from_memory(picture.data())
+                {
+                    self.show_image(&image)?;
+                    return Ok(());
                 }
             }
             MediaTypes::Radio(_radio_track_data) => (),

@@ -225,12 +225,11 @@ impl Model {
             search_str.push_str(&title);
         }
 
-        if search_str.len() < 4 {
-            if let Some(song) = &self.tageditor_song {
-                if let Some(stem) = song.path().file_stem() {
-                    search_str = stem.to_string_lossy().to_string();
-                }
-            }
+        if search_str.len() < 4
+            && let Some(song) = &self.tageditor_song
+            && let Some(stem) = song.path().file_stem()
+        {
+            search_str = stem.to_string_lossy().to_string();
         }
 
         let handle = Handle::current();

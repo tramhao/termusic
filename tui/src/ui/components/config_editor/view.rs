@@ -725,18 +725,16 @@ impl Model {
 
         if let Ok(State::One(StateValue::String(random_track_quantity_str))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)),
-        ) {
-            if let Ok(quantity) = random_track_quantity_str.parse::<NonZeroU32>() {
-                config_server.settings.player.random_track_quantity = quantity;
-            }
+        ) && let Ok(quantity) = random_track_quantity_str.parse::<NonZeroU32>()
+        {
+            config_server.settings.player.random_track_quantity = quantity;
         }
 
         if let Ok(State::One(StateValue::String(random_album_quantity_str))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)),
-        ) {
-            if let Ok(quantity) = random_album_quantity_str.parse::<NonZeroU32>() {
-                config_server.settings.player.random_album_min_quantity = quantity;
-            }
+        ) && let Ok(quantity) = random_album_quantity_str.parse::<NonZeroU32>()
+        {
+            config_server.settings.player.random_album_min_quantity = quantity;
         }
 
         if let Ok(State::One(StateValue::String(podcast_dir))) = self.app.state(&Id::ConfigEditor(
@@ -749,20 +747,18 @@ impl Model {
         }
         if let Ok(State::One(StateValue::String(podcast_simul_download))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)),
-        ) {
-            if let Ok(quantity) = podcast_simul_download.parse::<NonZeroU8>() {
-                config_server.settings.podcast.concurrent_downloads_max = quantity;
-            }
+        ) && let Ok(quantity) = podcast_simul_download.parse::<NonZeroU8>()
+        {
+            config_server.settings.podcast.concurrent_downloads_max = quantity;
         }
         if let Ok(State::One(StateValue::String(podcast_max_retries))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)),
-        ) {
-            if let Ok(quantity) = podcast_max_retries.parse::<u8>() {
-                if (1..11).contains(&quantity) {
-                    config_server.settings.podcast.max_download_retries = quantity;
-                } else {
-                    bail!(" It's not recommended to set max retries to more than 10. ");
-                }
+        ) && let Ok(quantity) = podcast_max_retries.parse::<u8>()
+        {
+            if (1..11).contains(&quantity) {
+                config_server.settings.podcast.max_download_retries = quantity;
+            } else {
+                bail!(" It's not recommended to set max retries to more than 10. ");
             }
         }
         if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
@@ -836,22 +832,20 @@ impl Model {
 
         if let Ok(State::One(StateValue::String(player_port))) = self.app.state(&Id::ConfigEditor(
             IdConfigEditor::General(IdCEGeneral::PlayerPort),
-        )) {
-            if let Ok(port) = player_port.parse::<u16>() {
-                if (1024..u16::MAX).contains(&port) {
-                    config_server.settings.com.port = port;
-                } else {
-                    bail!(" It's not recommended to use ports below 1024 for the player. ");
-                }
+        )) && let Ok(port) = player_port.parse::<u16>()
+        {
+            if (1024..u16::MAX).contains(&port) {
+                config_server.settings.com.port = port;
+            } else {
+                bail!(" It's not recommended to use ports below 1024 for the player. ");
             }
         }
 
         if let Ok(State::One(StateValue::String(player_port))) = self.app.state(&Id::ConfigEditor(
             IdConfigEditor::General(IdCEGeneral::PlayerAddress),
-        )) {
-            if let Ok(addr) = player_port.parse::<IpAddr>() {
-                config_server.settings.com.address = addr;
-            }
+        )) && let Ok(addr) = player_port.parse::<IpAddr>()
+        {
+            config_server.settings.com.address = addr;
         }
 
         if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(

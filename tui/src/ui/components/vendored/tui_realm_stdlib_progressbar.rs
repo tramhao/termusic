@@ -156,10 +156,10 @@ impl MockComponent for ProgressBar {
     }
 
     fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        if let Attribute::Value = attr {
-            if let AttrValue::Payload(p) = value.clone() {
-                Self::assert_progress(p.unwrap_one().unwrap_f64());
-            }
+        if let Attribute::Value = attr
+            && let AttrValue::Payload(p) = value.clone()
+        {
+            Self::assert_progress(p.unwrap_one().unwrap_f64());
         }
         self.props.set(attr, value);
     }

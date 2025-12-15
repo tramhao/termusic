@@ -336,21 +336,21 @@ impl MockComponent for Input {
             let mut block =
                 tui_realm_stdlib::utils::get_block(borders, Some(&title), focus, inactive_style);
             // Apply invalid style
-            if focus && !self.is_valid() {
-                if let Some(style) = self
+            if focus
+                && !self.is_valid()
+                && let Some(style) = self
                     .props
                     .get(Attribute::Custom(INPUT_INVALID_STYLE))
                     .map(tuirealm::AttrValue::unwrap_style)
-                {
-                    let borders = self
-                        .props
-                        .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
-                        .unwrap_borders()
-                        .color(style.fg.unwrap_or(Color::Reset));
-                    block = tui_realm_stdlib::utils::get_block(borders, Some(&title), focus, None);
-                    foreground = style.fg.unwrap_or(Color::Reset);
-                    background = style.bg.unwrap_or(Color::Reset);
-                }
+            {
+                let borders = self
+                    .props
+                    .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
+                    .unwrap_borders()
+                    .color(style.fg.unwrap_or(Color::Reset));
+                block = tui_realm_stdlib::utils::get_block(borders, Some(&title), focus, None);
+                foreground = style.fg.unwrap_or(Color::Reset);
+                background = style.bg.unwrap_or(Color::Reset);
             }
 
             // Create input's area

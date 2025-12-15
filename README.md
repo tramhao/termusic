@@ -3,7 +3,7 @@
 [![Build status](https://github.com/tramhao/termusic/actions/workflows/build.yml/badge.svg)](https://github.com/tramhao/termusic/actions)
 [![crates.io](https://img.shields.io/crates/v/termusic.svg)](https://crates.io/crates/termusic)
 [![dependency status](https://deps.rs/repo/github/tramhao/termusic/status.svg)](https://deps.rs/repo/github/tramhao/termusic)
-[![MSRV](https://img.shields.io/badge/MSRV-1.85.0-blue)](https://releases.rs/docs/1.85.0/)
+[![MSRV](https://img.shields.io/badge/MSRV-1.88.0-blue)](https://releases.rs/docs/1.88.0/)
 
 Listen to music and podcasts freely as both in freedom and free of charge!
 
@@ -65,7 +65,7 @@ In the case that metadata is not supported, an attempt will still be made to pla
 
 #### MSRV
 
-The minimal Rust version required to build this project is `1.85.0`.
+The minimal Rust version required to build this project is `1.88.0`.
 
 Note that using non-default features might increase the MSRV.
 

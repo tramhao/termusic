@@ -398,41 +398,35 @@ impl Model {
             .ok();
     }
     pub fn general_search_after_library_select(&mut self) {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
-            if let Ok(Some(AttrValue::Table(table))) =
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
+            && let Ok(Some(AttrValue::Table(table))) =
                 self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                if let Some(line) = table.get(index) {
-                    if let Some(text_span) = line.get(1) {
-                        let node = text_span.content.clone();
-                        assert!(
-                            self.app
-                                .attr(
-                                    &Id::Library,
-                                    Attribute::Custom(TREE_INITIAL_NODE),
-                                    AttrValue::String(node),
-                                )
-                                .is_ok()
-                        );
-                    }
-                }
-            }
+            && let Some(line) = table.get(index)
+            && let Some(text_span) = line.get(1)
+        {
+            let node = text_span.content.clone();
+            assert!(
+                self.app
+                    .attr(
+                        &Id::Library,
+                        Attribute::Custom(TREE_INITIAL_NODE),
+                        AttrValue::String(node),
+                    )
+                    .is_ok()
+            );
         }
     }
 
     pub fn general_search_after_library_add_playlist(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
-            if let Ok(Some(AttrValue::Table(table))) =
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
+            && let Ok(Some(AttrValue::Table(table))) =
                 self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                if let Some(line) = table.get(index) {
-                    if let Some(text_span) = line.get(1) {
-                        let text = &text_span.content;
-                        let path = Path::new(text);
-                        self.playlist_add(path)?;
-                    }
-                }
-            }
+            && let Some(line) = table.get(index)
+            && let Some(text_span) = line.get(1)
+        {
+            let text = &text_span.content;
+            let path = Path::new(text);
+            self.playlist_add(path)?;
         }
         Ok(())
     }
@@ -442,32 +436,26 @@ impl Model {
         let mut matched = false;
         if let Ok(State::One(StateValue::Usize(result_index))) =
             self.app.state(&Id::GeneralSearchTable)
-        {
-            if let Ok(Some(AttrValue::Table(table))) =
+            && let Ok(Some(AttrValue::Table(table))) =
                 self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                if let Some(line) = table.get(result_index) {
-                    if let Some(file_name_text_span) = line.get(3) {
-                        let file_name = &file_name_text_span.content;
-                        for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
-                            // NOTE: i dont know if this should apply to anything other than "track_data"
-                            let lower_matched = match item.inner() {
-                                MediaTypes::Track(track_data) => {
-                                    track_data.path().to_string_lossy() == file_name.as_str()
-                                }
-                                MediaTypes::Radio(radio_track_data) => {
-                                    radio_track_data.url() == file_name
-                                }
-                                MediaTypes::Podcast(podcast_track_data) => {
-                                    podcast_track_data.url() == file_name
-                                }
-                            };
-                            if lower_matched {
-                                index = idx;
-                                matched = true;
-                            }
-                        }
+            && let Some(line) = table.get(result_index)
+            && let Some(file_name_text_span) = line.get(3)
+        {
+            let file_name = &file_name_text_span.content;
+            for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
+                // NOTE: i dont know if this should apply to anything other than "track_data"
+                let lower_matched = match item.inner() {
+                    MediaTypes::Track(track_data) => {
+                        track_data.path().to_string_lossy() == file_name.as_str()
                     }
+                    MediaTypes::Radio(radio_track_data) => radio_track_data.url() == file_name,
+                    MediaTypes::Podcast(podcast_track_data) => {
+                        podcast_track_data.url() == file_name
+                    }
+                };
+                if lower_matched {
+                    index = idx;
+                    matched = true;
                 }
             }
         }
@@ -482,32 +470,26 @@ impl Model {
         let mut matched = false;
         if let Ok(State::One(StateValue::Usize(result_index))) =
             self.app.state(&Id::GeneralSearchTable)
-        {
-            if let Ok(Some(AttrValue::Table(table))) =
+            && let Ok(Some(AttrValue::Table(table))) =
                 self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                if let Some(line) = table.get(result_index) {
-                    if let Some(file_name_text_span) = line.get(3) {
-                        let file_name = &file_name_text_span.content;
-                        for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
-                            // NOTE: i dont know if this should apply to anything other than "track_data"
-                            let lower_matched = match item.inner() {
-                                MediaTypes::Track(track_data) => {
-                                    track_data.path().to_string_lossy() == file_name.as_str()
-                                }
-                                MediaTypes::Radio(radio_track_data) => {
-                                    radio_track_data.url() == file_name
-                                }
-                                MediaTypes::Podcast(podcast_track_data) => {
-                                    podcast_track_data.url() == file_name
-                                }
-                            };
-                            if lower_matched {
-                                index = idx;
-                                matched = true;
-                            }
-                        }
+            && let Some(line) = table.get(result_index)
+            && let Some(file_name_text_span) = line.get(3)
+        {
+            let file_name = &file_name_text_span.content;
+            for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
+                // NOTE: i dont know if this should apply to anything other than "track_data"
+                let lower_matched = match item.inner() {
+                    MediaTypes::Track(track_data) => {
+                        track_data.path().to_string_lossy() == file_name.as_str()
                     }
+                    MediaTypes::Radio(radio_track_data) => radio_track_data.url() == file_name,
+                    MediaTypes::Podcast(podcast_track_data) => {
+                        podcast_track_data.url() == file_name
+                    }
+                };
+                if lower_matched {
+                    index = idx;
+                    matched = true;
                 }
             }
         }
@@ -550,18 +532,17 @@ impl Model {
     }
 
     pub fn general_search_get_info(&mut self, column: usize) -> Result<String> {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
-            if let Ok(Some(AttrValue::Table(table))) =
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
+            && let Ok(Some(AttrValue::Table(table))) =
                 self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                let line = table
-                    .get(index)
-                    .ok_or_else(|| anyhow!("error getting index from table"))?;
-                let text_span = line
-                    .get(column)
-                    .ok_or_else(|| anyhow!("error getting text span"))?;
-                return Ok(text_span.content.clone());
-            }
+        {
+            let line = table
+                .get(index)
+                .ok_or_else(|| anyhow!("error getting index from table"))?;
+            let text_span = line
+                .get(column)
+                .ok_or_else(|| anyhow!("error getting text span"))?;
+            return Ok(text_span.content.clone());
         }
         bail!("column cannot find in general search")
     }

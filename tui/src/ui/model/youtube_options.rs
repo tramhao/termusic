@@ -364,11 +364,11 @@ fn extract_filepath(output: &str, dir: &str) -> Option<String> {
     //     }
     // }
     // #[cfg(feature = "yt-dlp")]
-    if let Some(cap) = RE_FILENAME_YTDLP.captures(output) {
-        if let Some(c) = cap.name("name") {
-            let filename = format!("{dir}/{}.mp3", c.as_str());
-            return Some(filename);
-        }
+    if let Some(cap) = RE_FILENAME_YTDLP.captures(output)
+        && let Some(c) = cap.name("name")
+    {
+        let filename = format!("{dir}/{}.mp3", c.as_str());
+        return Some(filename);
     }
     None
 }
