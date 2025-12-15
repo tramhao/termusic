@@ -13,7 +13,7 @@ use tuirealm::{
     Component, Event, MockComponent,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, Color, Style},
+    props::{Alignment, BorderType, Borders, Style},
     ratatui::{buffer::Buffer, layout::Rect},
 };
 use tuirealm_orx_tree::{
@@ -117,9 +117,12 @@ impl NodeValue for MusicLibData {
             buf.set_style(indent_area, style);
         } else if !self.is_loading {
             // directory that is not loading
-            OrIndicators::default()
-                .with_style(style.fg(Color::Reset))
-                .render(&mut offset, &mut area, buf, is_opened());
+            OrIndicators::default().with_style(style).render(
+                &mut offset,
+                &mut area,
+                buf,
+                is_opened(),
+            );
         } else {
             // directory that is loading
             Indicator::render(LOADING_SYMBOL, 2, &mut offset, &mut area, buf, Some(style));
