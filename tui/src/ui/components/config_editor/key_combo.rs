@@ -418,8 +418,9 @@ impl KeyCombo {
                 .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
                 .and_then(AttrValue::as_style)
         {
-            let foreground = style_invalid.fg.unwrap_or(Color::Reset);
-            let background = style_invalid.bg.unwrap_or(Color::Reset);
+            // unwraps are safe as "get_normal_style" already ensures it is set
+            let foreground = style_invalid.fg.unwrap_or(style.fg.unwrap());
+            let background = style_invalid.bg.unwrap_or(style.bg.unwrap());
             style = style.fg(foreground).bg(background);
         }
 
