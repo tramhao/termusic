@@ -21,11 +21,15 @@ pub struct ThemeWrap {
     pub style: styles::Styles,
     // On full-on default, also set the names to "Termusic Default"
     // this function is only used if this property does not exist at all
-    #[serde(default = "ThemeColors::full_default")]
+    #[serde(default = "ThemeColors::full_native")]
     pub theme: ThemeColors,
 }
 
 impl ThemeWrap {
+    /// Resolve the given [`ColorTermusic`] to a display-able [`(ratatui)Color`](tuirealm::props::Color).
+    ///
+    /// This first resolves the corresponding [`ThemeColor`] from the given [`ColorTermusic`],
+    /// then resolved that [`ThemeColor`] to a display-able [`(ratatui)Color`](tuirealm::props::Color).
     #[must_use]
     pub fn get_color_from_theme(&self, color: ColorTermusic) -> Color {
         // first step to get the theme path of what color to use
@@ -238,8 +242,8 @@ impl ThemeColor {
         Ok(Self::Hex(res))
     }
 
-    /// Output the current value as its string representation
-    #[allow(clippy::inherent_to_string)] // not wanting to implement "Display"
+    /// Output the current value as its string representation.
+    #[expect(clippy::inherent_to_string)] // not wanting to implement "Display"
     fn to_string(self) -> String {
         match self {
             ThemeColor::Native => "native".to_string(),
@@ -247,7 +251,7 @@ impl ThemeColor {
         }
     }
 
-    /// Resolve the current instance to either native coloring (requires `style`) or a rgb color
+    /// Resolve the current instance to either native coloring (requires `style`) or a rgb color.
     #[must_use]
     pub fn resolve_color(&self, style: ColorTermusic) -> Color {
         let hex = match self {
@@ -389,15 +393,7 @@ pub struct ThemeColors {
 
 impl Default for ThemeColors {
     fn default() -> Self {
-        Self {
-            file_name: None,
-            name: default_name(),
-            author: default_author(),
-            primary: ThemePrimary::default(),
-            cursor: ThemeCursor::default(),
-            normal: ThemeNormal::default(),
-            bright: ThemeBright::default(),
-        }
+        Self::full_native()
     }
 }
 
@@ -408,9 +404,13 @@ impl ThemeColors {
     #[must_use]
     pub fn full_default() -> Self {
         Self {
+            file_name: None,
             name: "Termusic Default".to_string(),
             author: "Termusic Developers".to_string(),
-            ..Default::default()
+            primary: ThemePrimary::default(),
+            cursor: ThemeCursor::default(),
+            normal: ThemeNormal::default(),
+            bright: ThemeBright::default(),
         }
     }
 

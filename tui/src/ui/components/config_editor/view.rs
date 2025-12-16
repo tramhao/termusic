@@ -32,6 +32,7 @@ use termusiclib::config::v2::server::{
     Backend, ComProtocol, PositionYesNo, PositionYesNoLower, RememberLastPosition,
 };
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
+use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
 use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout, Rect};
@@ -1002,6 +1003,10 @@ impl Model {
                         break;
                     }
                 }
+            } else if self.config_editor.theme.theme.name == ThemeColors::full_default().name {
+                index = Some(0);
+            } else if self.config_editor.theme.theme.name == ThemeColors::full_native().name {
+                index = Some(1);
             }
 
             index.unwrap_or(0)
