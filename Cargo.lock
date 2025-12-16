@@ -3216,12 +3216,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "orange-trees"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f4ebbf92a33c244681ae21f611f2494f9edf72a3fca85abe430d63480ad496b"
-
-[[package]]
 name = "ordered-stream"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3229,6 +3223,98 @@ checksum = "9aa2b01e1d916879f73a53d01d1d6cee68adbb31d6d9177a8cfce093cced1d50"
 dependencies = [
  "futures-core",
  "pin-project-lite",
+]
+
+[[package]]
+name = "orx-concurrent-iter"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78e4381d6f1393a99e5a2bebe63e7a4c58c2526cdf25e01830baa11410c7ece1"
+dependencies = [
+ "orx-iterable",
+ "orx-pseudo-default",
+]
+
+[[package]]
+name = "orx-fixed-vec"
+version = "3.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96586d7477170175263986dfdfd36cc9a4b08bcc1743084f06115d6610181bb4"
+dependencies = [
+ "orx-concurrent-iter",
+ "orx-iterable",
+ "orx-pinned-vec",
+ "orx-pseudo-default",
+]
+
+[[package]]
+name = "orx-iterable"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dfa2cb3f82a187c68835faac9cf03faaee70b93f4da3b85515ac1b4c6f8a432d"
+dependencies = [
+ "orx-self-or",
+]
+
+[[package]]
+name = "orx-pinned-vec"
+version = "3.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d38ff024d902a587fefdc502598107bbbf3d2a5350d63247bef34bd6a5518de9"
+dependencies = [
+ "orx-iterable",
+ "orx-pseudo-default",
+]
+
+[[package]]
+name = "orx-pseudo-default"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34eaace9ae01f7025804fbca40ec45b87c19ba0328d97195e01c6135897762a8"
+
+[[package]]
+name = "orx-self-or"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67a8e35dfe18921e475b9861266fd58a5ecfd681161f242d24a9e2d1e07fbc28"
+
+[[package]]
+name = "orx-selfref-col"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e719611dd7fe235cd5e0d3ae4268fa01b36dfed45852d4f1d78e5cb3359621e4"
+dependencies = [
+ "orx-fixed-vec",
+ "orx-pinned-vec",
+ "orx-pseudo-default",
+ "orx-split-vec",
+]
+
+[[package]]
+name = "orx-split-vec"
+version = "3.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "794100ff181e3903c90398e91147bbba7734ab0a1c6e13c4c569f4a15bccd6f7"
+dependencies = [
+ "orx-concurrent-iter",
+ "orx-iterable",
+ "orx-pinned-vec",
+ "orx-pseudo-default",
+]
+
+[[package]]
+name = "orx-tree"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca165979d144396fd18a694eee8cb586c543c3334c81746aafa6c4d27c0a3ca0"
+dependencies = [
+ "orx-concurrent-iter",
+ "orx-iterable",
+ "orx-pinned-vec",
+ "orx-pseudo-default",
+ "orx-self-or",
+ "orx-selfref-col",
+ "orx-split-vec",
 ]
 
 [[package]]
@@ -4940,7 +5026,6 @@ dependencies = [
  "lofty",
  "log",
  "lru",
- "orange-trees",
  "parking_lot",
  "pathdiff",
  "percent-encoding",
@@ -4960,8 +5045,8 @@ dependencies = [
  "tokio-util",
  "tonic",
  "tui-realm-stdlib",
- "tui-realm-treeview",
  "tuirealm",
+ "tuirealm-orx-tree",
  "unicode-width 0.2.0",
  "viuer",
  "walkdir",
@@ -5557,17 +5642,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tui-realm-treeview"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deb75aceab87e6a39595a9765b833054046b9b4ff667927d5ba928fb85d605e3"
-dependencies = [
- "orange-trees",
- "tuirealm",
- "unicode-width 0.2.0",
-]
-
-[[package]]
 name = "tuirealm"
 version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5583,6 +5657,17 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tuirealm_derive",
+]
+
+[[package]]
+name = "tuirealm-orx-tree"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d58a5c3c92a527cd5032943ea913f0ad272525db523a14a6b43d07fc4bdbfa0f"
+dependencies = [
+ "orx-tree",
+ "tui-realm-stdlib",
+ "tuirealm",
 ]
 
 [[package]]

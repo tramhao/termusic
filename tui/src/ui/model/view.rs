@@ -47,7 +47,7 @@ impl Model {
     pub fn mount_main(&mut self) -> Result<()> {
         self.remount_global_listener()?;
 
-        self.mount_library()?;
+        self.mount_new_library()?;
         self.remount_database_search()?;
 
         self.app.mount(

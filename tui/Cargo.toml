@@ -42,8 +42,7 @@ shell-words.workspace = true
 sysinfo.workspace = true
 tuirealm.workspace = true #   = { version = "1", features = ["serialize"] }
 tui-realm-stdlib.workspace = true #   = "1"
-tui-realm-treeview.workspace = true #   = "1"
-orange-trees.workspace = true
+tuirealm-orx-tree.workspace = true
 unicode-width.workspace = true #   = "^0.1.8"
 viuer.workspace = true
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
