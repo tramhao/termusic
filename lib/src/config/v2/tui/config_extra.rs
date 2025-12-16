@@ -132,12 +132,7 @@ impl TuiConfigVersionedDefaulted<'_> {
 
         info!("Migrating tui config from v1 format to v2");
 
-        let old_settings = {
-            let mut settings = Settings::default();
-            settings.load()?;
-
-            settings
-        };
+        let old_settings = Settings::load(v1_path)?;
 
         let new_settings = TuiSettings::from(old_settings);
 

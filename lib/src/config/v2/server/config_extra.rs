@@ -107,17 +107,12 @@ impl ServerConfigVersionedDefaulted<'_> {
 
     /// Load the old settings, then transform them into the new settings
     // public in config_v2 module so that the TUI can migrate the server config before itself
-    pub(in super::super) fn migrate_from_v1(_v1_path: &Path, v2_path: &Path) -> Result<Self> {
+    pub(in super::super) fn migrate_from_v1(v1_path: &Path, v2_path: &Path) -> Result<Self> {
         use super::super::super::v1::Settings;
 
         info!("Migrating server config from v1 format to v2");
 
-        let old_settings = {
-            let mut settings = Settings::default();
-            settings.load()?;
-
-            settings
-        };
+        let old_settings = Settings::load(v1_path)?;
 
         let new_settings = ServerSettings::try_from(old_settings)
             .context("Failed to convert server config from v1 to v2 config")?;

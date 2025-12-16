@@ -1,7 +1,6 @@
 mod key;
 mod theme;
 
-use crate::utils::get_app_config_path;
 use anyhow::{Result, bail};
 use figment::{
     Figment,
@@ -10,7 +9,7 @@ use figment::{
 use image::DynamicImage;
 pub use key::{BindingForEvent, Keys};
 use serde::{Deserialize, Serialize};
-use std::{fs, net::IpAddr};
+use std::{net::IpAddr, path::Path};
 use std::{path::PathBuf, sync::LazyLock};
 pub use theme::{Alacritty, AlacrittyColor, ColorTermusic, StyleColorSymbol};
 
@@ -308,29 +307,17 @@ impl Default for Settings {
 }
 
 impl Settings {
-    pub fn save(&self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push(FILE_NAME);
-        let string = toml::to_string(self)?;
-
-        fs::write(path, string)?;
-
-        Ok(())
-    }
-
-    pub fn load(&mut self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push(FILE_NAME);
+    /// Load the V1 Config from the given path, not creating it if it does not exist.
+    ///
+    /// If the path does not exist, returns [`Self::default`].
+    pub fn load(path: &Path) -> Result<Self> {
         if !path.exists() {
-            let config = Self::default();
-            config.save()?;
+            return Ok(Self::default());
         }
 
         let figment = Figment::new()
             .merge(Serialized::defaults(Settings::default()))
             .merge(Toml::file(path));
-        let config: Settings = figment.extract()?;
-        *self = config;
-        Ok(())
+        Ok(figment.extract()?)
     }
 }
