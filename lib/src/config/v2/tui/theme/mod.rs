@@ -673,6 +673,7 @@ fn default_fff() -> ThemeColor {
     ThemeColor::new_hex(0xFF, 0xFF, 0xFF)
 }
 
+#[cfg(feature = "config-v1-compat")]
 mod v1_interop {
     use super::{
         ThemeBright, ThemeColor, ThemeColorHex, ThemeColors, ThemeCursor, ThemeNormal,

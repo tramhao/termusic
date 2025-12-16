@@ -488,6 +488,7 @@ impl From<&ComSettings> for SocketAddr {
     }
 }
 
+#[cfg(feature = "config-v1-compat")]
 mod v1_interop {
     use std::num::TryFromIntError;
 

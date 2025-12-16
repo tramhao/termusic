@@ -82,7 +82,8 @@ tonic-prost-build.workspace = true
 
 
 [features]
-default = []
+default = ["config-v1-compat"]
+config-v1-compat = []
 
 [dev-dependencies]
 pretty_assertions.workspace = true
