@@ -29,7 +29,6 @@ bytesize.workspace = true
 chrono.workspace = true #   = "^0.4.23"
 dirs.workspace = true
 escaper.workspace = true #   = "0.1.1"
-figment.workspace = true # = { version="0.10", features = ["toml"]}
 hex.workspace = true # = "0.4"
 id3.workspace = true # = "1"
 indoc.workspace = true

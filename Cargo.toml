@@ -39,7 +39,6 @@ criterion = "0.7"
 dirs = "6.0"
 discord-rich-presence = "0.2.5"
 escaper = "0.1.1"
-figment = { version = "0.10", features = ["toml"] }
 glib = { version = "0.21.1" }
 gstreamer = { version = "0.24.1" }
 hex = "0.4"
