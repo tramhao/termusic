@@ -253,14 +253,6 @@ impl std::fmt::Display for LastPosition {
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
     pub music_dir: Vec<PathBuf>,
-    #[serde(skip)]
-    pub music_dir_from_cli: Option<PathBuf>,
-    #[serde(skip)]
-    pub disable_album_art_from_cli: bool,
-    #[serde(skip)]
-    pub disable_discord_rpc_from_cli: bool,
-    #[serde(skip)]
-    pub max_depth_cli: usize,
     pub player_port: u16,
     pub player_interface: IpAddr,
     pub player_loop_mode: Loop,
@@ -289,7 +281,6 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             music_dir: MUSIC_DIR.clone(),
-            music_dir_from_cli: None,
             player_loop_mode: Loop::Random,
             player_volume: 70,
             player_speed: 10,
@@ -303,9 +294,6 @@ impl Default for Settings {
             album_photo_xywh: Xywh::default(),
             playlist_select_random_track_quantity: 20,
             playlist_select_random_album_quantity: 5,
-            disable_album_art_from_cli: false,
-            disable_discord_rpc_from_cli: false,
-            max_depth_cli: 4,
             podcast_simultanious_download: 3,
             podcast_dir: PODCAST_DIR.clone(),
             podcast_max_retries: 3,
