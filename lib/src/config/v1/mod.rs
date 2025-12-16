@@ -13,20 +13,16 @@ pub use theme::{Alacritty, AlacrittyColor, ColorTermusic, StyleColorSymbol};
 pub const FILE_NAME: &str = "config.toml";
 
 static MUSIC_DIR: LazyLock<Vec<PathBuf>> = LazyLock::new(|| {
-    let mut vec = Vec::new();
-    let mut path =
+    let path =
         dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
-    vec.push(path.clone());
-    path.push("mp3");
-    vec.push(path);
-    vec
+    let path2 = path.join("mp3");
+    Vec::from([path, path2])
 });
 
 static PODCAST_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
-    let mut path =
-        dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
-    path.push("podcast");
-    path
+    dirs::audio_dir()
+        .unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")))
+        .join("podcast")
 });
 
 #[derive(Clone, Copy, Default, Deserialize, Serialize, Debug)]
