@@ -1,11 +1,7 @@
 mod key;
 mod theme;
 
-use anyhow::{Result, bail};
-use figment::{
-    Figment,
-    providers::{Format, Serialized, Toml},
-};
+use anyhow::{Context, Result, bail};
 use image::DynamicImage;
 pub use key::{BindingForEvent, Keys};
 use serde::{Deserialize, Serialize};
@@ -60,6 +56,7 @@ impl Loop {
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
+#[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct Xywh {
     pub x_between_1_100: u32,
     pub y_between_1_100: u32,
@@ -250,6 +247,7 @@ impl std::fmt::Display for LastPosition {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 #[allow(clippy::struct_excessive_bools)]
+#[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct Settings {
     pub music_dir: Vec<PathBuf>,
     pub player_port: u16,
@@ -315,9 +313,8 @@ impl Settings {
             return Ok(Self::default());
         }
 
-        let figment = Figment::new()
-            .merge(Serialized::defaults(Settings::default()))
-            .merge(Toml::file(path));
-        Ok(figment.extract()?)
+        let file_data = std::fs::read_to_string(path).context("Reading v1 Config from file")?;
+
+        toml::from_str(&file_data).context("Parsing v1 Config")
     }
 }
