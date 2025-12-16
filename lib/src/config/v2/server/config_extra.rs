@@ -1,10 +1,6 @@
 use std::{borrow::Cow, fmt::Write as _, path::Path};
 
 use anyhow::{Context, Result};
-use figment::{
-    Figment,
-    providers::{Format, Toml},
-};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::get_app_config_path;
@@ -93,7 +89,8 @@ impl ServerConfigVersionedDefaulted<'_> {
             return Ok(Self::Unversioned(config));
         }
 
-        let data: Self = Figment::new().merge(Toml::file(path)).extract()?;
+        let file_data = std::fs::read_to_string(path).context("Reading Server Config from file")?;
+        let data = toml::from_str(&file_data).context("Parsing Server Config")?;
 
         Ok(data)
     }

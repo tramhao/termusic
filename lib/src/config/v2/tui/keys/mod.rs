@@ -2619,10 +2619,6 @@ mod test {
     }
 
     mod keys {
-        use figment::{
-            Figment,
-            providers::{Format, Toml},
-        };
         use pretty_assertions::assert_eq;
 
         use super::*;
@@ -2631,10 +2627,7 @@ mod test {
         fn should_parse_default_keys() {
             let serialized = toml::to_string(&Keys::default()).unwrap();
 
-            let parsed: Keys = Figment::new()
-                .merge(Toml::string(&serialized))
-                .extract()
-                .unwrap();
+            let parsed: Keys = toml::from_str(&serialized).unwrap();
 
             assert_eq!(Keys::default(), parsed);
         }

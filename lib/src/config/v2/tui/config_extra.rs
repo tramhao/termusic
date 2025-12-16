@@ -1,10 +1,6 @@
 use std::{borrow::Cow, fmt::Write as _, path::Path};
 
-use anyhow::Result;
-use figment::{
-    Figment,
-    providers::{Format, Toml},
-};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::get_app_config_path;
@@ -94,7 +90,9 @@ impl TuiConfigVersionedDefaulted<'_> {
             Self::save_file(path, &config)?;
             Self::Unversioned(config)
         } else {
-            Figment::new().merge(Toml::file(path)).extract()?
+            let file_data =
+                std::fs::read_to_string(path).context("Reading Tui Config from file")?;
+            toml::from_str(&file_data).context("Parsing Tui Config")?
         };
 
         match data {
