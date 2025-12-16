@@ -325,6 +325,7 @@ pub enum ViuerSupported {
     NotSupported,
 }
 
+#[allow(unused)] // "config" may be listed as unused if no "cover-*" features are enabled
 fn get_viuer_support(config: &TuiOverlay) -> ViuerSupported {
     #[cfg(feature = "cover-viuer-kitty")]
     if config.cover_protocol_enabled(CoverArtProtocol::Kitty)
