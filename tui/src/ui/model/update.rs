@@ -1041,10 +1041,12 @@ impl Model {
                 }
             }
             SavePlaylistMsg::CloseCancel => {
-                self.umount_save_playlist();
+                self.umount_save_playlist()
+                    .expect("Expected SavePlaylist to unmount correctly");
             }
             SavePlaylistMsg::CloseOk(filename) => {
-                self.umount_save_playlist();
+                self.umount_save_playlist()
+                    .expect("Expected SavePlaylist to unmount correctly");
                 if let Err(e) = self.playlist_save_m3u_before(filename) {
                     self.mount_error_popup(e.context("save m3u playlist before"));
                 }
@@ -1054,13 +1056,15 @@ impl Model {
                 self.remount_save_playlist_label(&PathBuf::new(), &filename);
             }
             SavePlaylistMsg::OverwriteCancel => {
-                self.umount_save_playlist_confirm();
+                self.umount_save_playlist_confirm()
+                    .expect("Expected SavePlaylist to unmount correctly");
             }
             SavePlaylistMsg::OverwriteOk(filename) => {
                 if let Err(e) = self.playlist_save_m3u(filename) {
                     self.mount_error_popup(e.context("save m3u playlist"));
                 }
-                self.umount_save_playlist_confirm();
+                self.umount_save_playlist_confirm()
+                    .expect("Expected SavePlaylistConfirm to unmount correctly");
             }
         }
 

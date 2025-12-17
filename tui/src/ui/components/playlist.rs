@@ -894,7 +894,8 @@ impl Model {
         };
 
         if path_m3u.exists() {
-            self.mount_save_playlist_confirm(path_m3u);
+            self.mount_save_playlist_confirm(path_m3u)
+                .expect("Expected SavePlaylistConfirm to mount correctly");
             return Ok(());
         }
 

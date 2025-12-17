@@ -131,6 +131,7 @@ impl Component<Msg, UserEvent> for SavePlaylistConfirmPopup {
 }
 
 impl Model {
+    /// Mount the [`SavePlaylistPopup`] component.
     pub fn mount_save_playlist(&mut self, path: &Path) -> Result<()> {
         self.app.remount(
             Id::SavePlaylistPopup,
@@ -139,36 +140,38 @@ impl Model {
         )?;
 
         self.remount_save_playlist_label(path, &PathBuf::new());
-        assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
+        self.app.active(&Id::SavePlaylistPopup)?;
         Ok(())
     }
 
-    pub fn umount_save_playlist(&mut self) {
+    /// Unount the [`SavePlaylistPopup`] component.
+    pub fn umount_save_playlist(&mut self) -> Result<()> {
         if self.app.mounted(&Id::SavePlaylistPopup) {
-            assert!(self.app.umount(&Id::SavePlaylistPopup).is_ok());
-            assert!(self.app.umount(&Id::SavePlaylistLabel).is_ok());
+            self.app.umount(&Id::SavePlaylistPopup)?;
+            self.app.umount(&Id::SavePlaylistLabel)?;
         }
+
+        Ok(())
     }
 
-    pub fn mount_save_playlist_confirm(&mut self, filename: PathBuf) {
-        assert!(
-            self.app
-                .remount(
-                    Id::SavePlaylistConfirm,
-                    Box::new(SavePlaylistConfirmPopup::new(
-                        self.config_tui.clone(),
-                        filename
-                    )),
-                    Vec::new()
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::SavePlaylistConfirm).is_ok());
+    /// Mount the overwrite confirmation dialog.
+    pub fn mount_save_playlist_confirm(&mut self, path: PathBuf) -> Result<()> {
+        self.app.remount(
+            Id::SavePlaylistConfirm,
+            Box::new(SavePlaylistConfirmPopup::new(self.config_tui.clone(), path)),
+            Vec::new(),
+        )?;
+        self.app.active(&Id::SavePlaylistConfirm)?;
+
+        Ok(())
     }
 
-    pub fn umount_save_playlist_confirm(&mut self) {
+    /// Unmount the overwrite confirmation dialog.
+    pub fn umount_save_playlist_confirm(&mut self) -> Result<()> {
         if self.app.mounted(&Id::SavePlaylistConfirm) {
-            assert!(self.app.umount(&Id::SavePlaylistConfirm).is_ok());
+            self.app.umount(&Id::SavePlaylistConfirm)?;
         }
+
+        Ok(())
     }
 }
