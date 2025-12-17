@@ -1,15 +1,15 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tuirealm::EventListenerCfg;
+use tuirealm::Frame;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
-use tuirealm::{Frame, State, StateValue};
 
 use crate::ui::Application;
 use crate::ui::components::{
@@ -392,15 +392,10 @@ impl Model {
             .expect("Expected to remount without error");
     }
 
-    pub fn remount_save_playlist_label(&mut self, filename: &Path) -> Result<()> {
-        let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
-            State::One(StateValue::String(id)) => id,
-            _ => bail!("Invalid node selected in library"),
-        };
+    pub fn remount_save_playlist_label(&mut self, raw_path: &Path, filename: &Path) {
+        let directory = get_parent_folder(raw_path);
 
-        let mut path_string = get_parent_folder(Path::new(&current_node))
-            .to_string_lossy()
-            .to_string();
+        let mut path_string = directory.to_string_lossy().to_string();
         // push extra "/" as "Path::to_string()" does not end with a "/"
         path_string.push('/');
 
@@ -429,7 +424,6 @@ impl Model {
                 Vec::new(),
             )
             .expect("Expected to remount without error");
-        Ok(())
     }
 
     pub fn show_message_timeout_label_help<S: Into<String>>(

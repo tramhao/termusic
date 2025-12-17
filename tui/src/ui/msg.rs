@@ -7,6 +7,7 @@ use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusi
 use termusiclib::player::{GetProgressResponse, PlaylistTracks, UpdateEvents};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
+use tokio::sync::mpsc;
 
 use crate::ui::components::TETrack;
 use crate::ui::ids::{IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
@@ -76,8 +77,10 @@ pub enum PlayerMsg {
 /// Save Playlist Popup related messages
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SavePlaylistMsg {
-    /// Show the Popup.
-    Show,
+    /// Show the Popup. Contains the path to write to.
+    ///
+    /// The container path may be a directory or a file.
+    Show(PathBuf),
     /// Update the "Full Path Label". Contains the filename without extension.
     Update(PathBuf),
     /// The Popup confirmed to save. Contains the filename without extension.
@@ -265,6 +268,32 @@ impl PartialEq for LINodeReadySub {
     }
 }
 
+/// Data for [`LIMsg::RequestCurrentNode`].
+///
+/// This should likely be just a Callback fn, but it would also need to satisfy "Eq" and "Clone", which is annoying with dyn traits.
+#[derive(Clone, Debug)]
+pub struct LIReqNode {
+    // This is practically used as a oneshot, but `tokio::sync::oneshot::Sender` is not "Clone", but this one is.
+    pub sender: mpsc::Sender<Option<PathBuf>>,
+}
+
+/// Data returned from this should not be passed around.
+impl Default for LIReqNode {
+    fn default() -> Self {
+        let (bogus_tx, _) = mpsc::channel(1);
+        Self { sender: bogus_tx }
+    }
+}
+
+impl Eq for LIReqNode {}
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LIReqNode {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
     /// Run a full reload of the current tree. This will clear the tree until new data is available.
@@ -293,6 +322,9 @@ pub enum LIMsg {
     ///
     /// Does not replace the tree root.
     TreeNodeReadySub(LINodeReadySub),
+
+    /// Get the currently selected node's path and reply to on the given channel.
+    RequestCurrentPath(LIReqNode),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

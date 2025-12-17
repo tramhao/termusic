@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
@@ -131,18 +131,14 @@ impl Component<Msg, UserEvent> for SavePlaylistConfirmPopup {
 }
 
 impl Model {
-    pub fn mount_save_playlist(&mut self) -> Result<()> {
-        assert!(
-            self.app
-                .remount(
-                    Id::SavePlaylistPopup,
-                    Box::new(SavePlaylistPopup::new(&self.config_tui.read())),
-                    vec![]
-                )
-                .is_ok()
-        );
+    pub fn mount_save_playlist(&mut self, path: &Path) -> Result<()> {
+        self.app.remount(
+            Id::SavePlaylistPopup,
+            Box::new(SavePlaylistPopup::new(&self.config_tui.read())),
+            Vec::new(),
+        )?;
 
-        self.remount_save_playlist_label(&PathBuf::new())?;
+        self.remount_save_playlist_label(path, &PathBuf::new());
         assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
         Ok(())
     }
@@ -163,7 +159,7 @@ impl Model {
                         self.config_tui.clone(),
                         filename
                     )),
-                    vec![]
+                    Vec::new()
                 )
                 .is_ok()
         );

@@ -658,6 +658,7 @@ impl Model {
             LIMsg::ReloadPath(_data) => (),
             LIMsg::TreeNodeReady(_data) => (),
             LIMsg::TreeNodeReadySub(_data) => (),
+            LIMsg::RequestCurrentPath(_data) => (),
         }
     }
 
@@ -1034,8 +1035,8 @@ impl Model {
     /// Handle & update [`SavePlaylistMsg`] related components.
     fn update_save_playlist(&mut self, msg: SavePlaylistMsg) -> Option<Msg> {
         match msg {
-            SavePlaylistMsg::Show => {
-                if let Err(e) = self.mount_save_playlist() {
+            SavePlaylistMsg::Show(path) => {
+                if let Err(e) = self.mount_save_playlist(&path) {
                     self.mount_error_popup(e.context("mount save playlist"));
                 }
             }
@@ -1049,9 +1050,8 @@ impl Model {
                 }
             }
             SavePlaylistMsg::Update(filename) => {
-                if let Err(e) = self.remount_save_playlist_label(&filename) {
-                    self.mount_error_popup(e.context("remount save playlist label"));
-                }
+                // TODO: debug this is bad, we dont keep the path; this will be refactored shortly
+                self.remount_save_playlist_label(&PathBuf::new(), &filename);
             }
             SavePlaylistMsg::OverwriteCancel => {
                 self.umount_save_playlist_confirm();

@@ -31,7 +31,7 @@ use crate::ui::{
     model::{DownloadTracker, TxToMain, UserEvent},
     msg::{
         DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
-        LIReloadPathData, Msg, PLMsg, TEMsg, YSMsg,
+        LIReloadPathData, LIReqNode, Msg, PLMsg, TEMsg, YSMsg,
     },
 };
 
@@ -673,6 +673,15 @@ impl OrxMusicLibraryComponent {
         Some(Msg::ForceRedraw)
     }
 
+    /// Reply to the request for the currently selected node path.
+    fn handle_request_current_node(&self, data: &LIReqNode) {
+        let current_node = self.get_selected_path().map(Path::to_path_buf);
+        // We dont care if the sending fails. It is used as a one-shot, so we should be the only senders
+        // so it should only fail if the receiver is already dropped.
+        // We also cannot use "blocking_send" as that panics tokio as this might be in a async runtime context.
+        let _ = data.sender.try_send(current_node);
+    }
+
     /// Handle all custom messages.
     fn handle_user_events(&mut self, ev: LIMsg) -> Option<Msg> {
         // handle subscriptions
@@ -684,6 +693,10 @@ impl OrxMusicLibraryComponent {
             }
             LIMsg::TreeNodeReady(data) => Some(self.handle_ready(data)),
             LIMsg::TreeNodeReadySub(data) => self.handle_ready_sub(data),
+            LIMsg::RequestCurrentPath(data) => {
+                self.handle_request_current_node(&data);
+                None
+            }
             _ => None,
         }
     }
