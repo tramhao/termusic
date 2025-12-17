@@ -8,7 +8,7 @@ use tuirealm_orx_tree::types::{NodeIdx, Tree};
 use crate::ui::{
     components::orx_music_library::music_library::MusicLibData,
     model::{DownloadTracker, TxToMain},
-    msg::{LIMsg, LINodeReady, Msg, RecVec},
+    msg::{IsDir, LIMsg, LINodeReady, Msg, RecVec},
 };
 
 /// Execute a library scan on a different thread.
@@ -68,8 +68,11 @@ fn library_dir_tree_inner(path: &Path, depth: ScanDepth, is_dir: Option<bool>) -
     let is_dir = is_dir.unwrap_or_else(|| path.is_dir());
     let mut node = RecVec {
         path: path.to_path_buf(),
-        is_dir,
-        is_empty: None,
+        is_dir: if is_dir {
+            IsDir::YesNotLoaded
+        } else {
+            IsDir::No
+        },
         children: Vec::new(),
     };
 
@@ -97,7 +100,11 @@ fn library_dir_tree_inner(path: &Path, depth: ScanDepth, is_dir: Option<bool>) -
 
         paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
 
-        node.is_empty = Some(paths.is_empty());
+        node.is_dir = if paths.is_empty() {
+            IsDir::YesLoadedEmpty
+        } else {
+            IsDir::YesLoaded
+        };
 
         for (_sort_str, (path, is_dir)) in paths {
             node.children.push(library_dir_tree_inner(
@@ -130,9 +137,9 @@ pub fn recvec_to_node_rec(
     let nodeidx = if let Some(idx) = parent_node {
         tree.get_node_mut(idx)
             .unwrap()
-            .push_child(MusicLibData::new(vec.path, vec.is_dir, vec.is_empty))
+            .push_child(MusicLibData::new(vec.path, vec.is_dir))
     } else {
-        tree.push_root(MusicLibData::new(vec.path, vec.is_dir, vec.is_empty))
+        tree.push_root(MusicLibData::new(vec.path, vec.is_dir))
     };
 
     for val in vec.children {

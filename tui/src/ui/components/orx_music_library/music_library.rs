@@ -30,7 +30,7 @@ use crate::ui::{
     components::orx_music_library::scanner::{library_scan, library_scan_cb, recvec_to_tree},
     model::{DownloadTracker, TxToMain, UserEvent},
     msg::{
-        DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
+        DeleteConfirmMsg, GSMsg, IsDir, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
         LIReloadPathData, LIReqNode, Msg, PLMsg, TEMsg, YSMsg,
     },
 };
@@ -42,13 +42,7 @@ pub struct MusicLibData {
     path: PathBuf,
     // TODO: refactor bools to be bitflags to save on storage?
     /// Store whether that path is a dir to show indicators & use for prefetching
-    is_dir: bool,
-    /// If `Some` it means the directory has been checked, and includes the actual value `is_empty` value.
-    /// This is necessary to prevent some infinite loading loops on empty directories.
-    /// 
-    /// Only valid if `is_dir: true`.
-    /// Can be ignored if `children.len > 0`.
-    is_empty_dir: Option<bool>,
+    is_dir: IsDir,
     /// Indicator if the we already send a request to fetch this directory
     is_loading: bool,
     /// Indicator that loading information about this (file EACCESS) or directory loading has failed.
@@ -62,7 +56,7 @@ pub struct MusicLibData {
 
 impl MusicLibData {
     /// Create new data.
-    pub fn new(path: PathBuf, is_dir: bool, is_empty: Option<bool>) -> Self {
+    pub fn new(path: PathBuf, is_dir: IsDir) -> Self {
         assert!(path.is_absolute());
         let cell = OnceCell::new();
         // Due to our expectation of the path not ending in `..`, we can assume
@@ -75,7 +69,6 @@ impl MusicLibData {
         Self {
             path,
             is_dir,
-            is_empty_dir: is_empty,
             is_loading: false,
             is_error: false,
             as_str: OnceCell::default(),
@@ -115,7 +108,7 @@ impl NodeValue for MusicLibData {
         if self.is_error {
             // indicator error loading that directory / file
             Indicator::render(ERROR_SYMBOL, 2, &mut offset, &mut area, buf, Some(style));
-        } else if !self.is_dir {
+        } else if !self.is_dir.is_dir() {
             // not a directory
 
             // indent leaf nodes by what is taken up on the parent by the indicators, otherwise children and the parent would have the same visible indent
@@ -331,7 +324,7 @@ impl OrxMusicLibraryComponent {
     fn handle_left_key(&mut self) -> Option<Msg> {
         let selected_node = self.component.get_current_selected_node()?;
 
-        if !selected_node.data().is_dir
+        if !selected_node.data().is_dir.is_dir()
             || !self.component.get_state().is_opened(selected_node.idx())
         {
             // When the selected node is a file or a closed directory, move focus to upper directory
@@ -353,9 +346,9 @@ impl OrxMusicLibraryComponent {
     fn handle_right_key(&mut self, from_load: bool) -> Option<Msg> {
         let selected_node = self.component.get_current_selected_node()?;
 
-        if selected_node.data().is_dir {
+        if selected_node.data().is_dir.is_dir() {
             if selected_node.num_children() > 0
-                || selected_node.data().is_empty_dir.is_some_and(|v| v)
+                || selected_node.data().is_dir == IsDir::YesLoadedEmpty
             {
                 // Current node has children loaded, just open it.
 

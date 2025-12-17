@@ -183,18 +183,33 @@ pub enum LyricMsg {
     TextAreaBlurDown,
 }
 
+/// Determine if the value is meant to represent a directory and it content state.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum IsDir {
+    /// It is not a directory
+    No,
+    /// It is a directory, but it is unknown if it contains anything.
+    YesNotLoaded,
+    /// It is a directory, and it is known to not be empty.
+    YesLoaded,
+    /// It is a directory, and is known to be empty.
+    YesLoadedEmpty,
+}
+
+impl IsDir {
+    #[inline]
+    pub fn is_dir(self) -> bool {
+        !matches!(self, IsDir::No)
+    }
+}
+
 /// Recursive structure which may contain more of itself.
 ///
 /// Basically a `tui-realm-treeview` Tree Node, without the extra things.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecVec {
     pub path: PathBuf,
-    pub is_dir: bool,
-    /// If `Some` it means the directory has been checked, and includes the actual value `is_empty` value.
-    ///
-    /// Only valid if `is_dir: true`.
-    /// Can be ignored if `children.len > 0`.
-    pub is_empty: Option<bool>,
+    pub is_dir: IsDir,
     pub children: Vec<RecVec>,
 }
 
@@ -244,8 +259,7 @@ impl Default for LINodeReady {
     fn default() -> Self {
         let bogus_recvec = RecVec {
             path: PathBuf::new(),
-            is_dir: false,
-            is_empty: None,
+            is_dir: IsDir::No,
             children: Vec::new(),
         };
         Self {
@@ -276,8 +290,7 @@ impl Default for LINodeReadySub {
     fn default() -> Self {
         let bogus_recvec = RecVec {
             path: PathBuf::new(),
-            is_dir: false,
-            is_empty: None,
+            is_dir: IsDir::No,
             children: Vec::new(),
         };
         Self {
