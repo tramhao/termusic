@@ -102,7 +102,7 @@ pub enum SavePlaylistMsg {
     Show(PathBuf),
     /// Update the "Full Path Label". Contains the filename without extension.
     Update(SPUpdateData),
-    /// The Popup confirmed to save. Contains the filename without extension.
+    /// The Popup confirmed to save. Contains the the full path.
     CloseOk(PathBuf),
     /// The Popup has been canceled without doing anything.
     CloseCancel,

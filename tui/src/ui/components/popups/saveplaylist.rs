@@ -27,10 +27,12 @@ use crate::ui::{ids::Id, msg::SPUpdateData};
 pub struct SavePlaylistPopup {
     component: Input,
     tx_to_main: TxToMain,
+
+    directory: PathBuf,
 }
 
 impl SavePlaylistPopup {
-    pub fn new(config: &TuiOverlay, tx_to_main: TxToMain) -> Self {
+    pub fn new(config: &TuiOverlay, tx_to_main: TxToMain, directory: PathBuf) -> Self {
         let settings = &config.settings;
         Self {
             component: Input::default()
@@ -45,6 +47,7 @@ impl SavePlaylistPopup {
                 .input_type(InputType::Text)
                 .title(" Save Playlist as: (Enter to confirm) ", Alignment::Left),
             tx_to_main,
+            directory,
         }
     }
 }
@@ -87,10 +90,11 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => match self.component.state() {
-                State::One(StateValue::String(input_string)) => {
-                    return Some(Msg::SavePlaylist(SavePlaylistMsg::CloseOk(PathBuf::from(
-                        input_string,
-                    ))));
+                State::One(StateValue::String(mut input_string)) => {
+                    input_string.push_str(".m3u");
+                    let joined = self.directory.join(input_string);
+
+                    return Some(Msg::SavePlaylist(SavePlaylistMsg::CloseOk(joined)));
                 }
                 _ => CmdResult::None,
             },
@@ -186,9 +190,7 @@ impl SavePlaylistFullpath {
     }
 
     /// Create a new label component.
-    pub fn new(config: SharedTuiSettings, raw_path: &Path) -> Self {
-        let directory = get_parent_folder(raw_path).to_path_buf();
-
+    pub fn new(config: SharedTuiSettings, directory: PathBuf) -> Self {
         let component = {
             let config = config.read_recursive();
 
@@ -246,19 +248,25 @@ impl Component<Msg, UserEvent> for SavePlaylistFullpath {
 
 impl Model {
     /// Mount/Remount the [`SavePlaylistPopup`] component.
-    pub fn mount_save_playlist(&mut self, path: &Path) -> Result<()> {
+    pub fn mount_save_playlist(&mut self, raw_path: &Path) -> Result<()> {
+        let directory = get_parent_folder(raw_path).to_path_buf();
+
         self.app.remount(
             Id::SavePlaylistPopup,
             Box::new(SavePlaylistPopup::new(
                 &self.config_tui.read(),
                 self.tx_to_main.clone(),
+                directory.clone(),
             )),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::SavePlaylistLabel,
-            Box::new(SavePlaylistFullpath::new(self.config_tui.clone(), path)),
+            Box::new(SavePlaylistFullpath::new(
+                self.config_tui.clone(),
+                directory,
+            )),
             SavePlaylistFullpath::subs(),
         )?;
         self.app.active(&Id::SavePlaylistPopup)?;
