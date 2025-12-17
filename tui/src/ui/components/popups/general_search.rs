@@ -6,7 +6,7 @@ use termusiclib::track::MediaTypes;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan};
+use tuirealm::props::{Alignment, BorderType, Borders, InputType, Style, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 use crate::ui::Model;
@@ -25,8 +25,9 @@ pub struct GSInputPopup {
 #[inline]
 fn common_input_comp(config: &TuiOverlay, title: &str) -> Input {
     Input::default()
-        .background(config.settings.theme.fallback_background())
         .foreground(config.settings.theme.fallback_foreground())
+        .background(config.settings.theme.fallback_background())
+        .inactive(Style::new().bg(config.settings.theme.fallback_background()))
         .borders(
             Borders::default()
                 .color(config.settings.theme.fallback_border())
@@ -145,8 +146,9 @@ fn common_table_comp(config: &TuiOverlay, title: String) -> Table {
                 .color(config.settings.theme.fallback_border())
                 .modifiers(BorderType::Rounded),
         )
-        .background(config.settings.theme.fallback_background())
         .foreground(config.settings.theme.fallback_foreground())
+        .background(config.settings.theme.fallback_background())
+        .inactive(Style::new().bg(config.settings.theme.fallback_background()))
         .title(title, Alignment::Left)
         .scroll(true)
         .highlighted_color(config.settings.theme.fallback_highlight())
