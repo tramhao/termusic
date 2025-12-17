@@ -64,6 +64,7 @@ impl TuiSettings {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct BehaviorSettings {
     /// Stop / Exit the Server on TUI quit
     pub quit_server_on_exit: bool,

@@ -1,16 +1,10 @@
 mod key;
 mod theme;
 
-use crate::utils::get_app_config_path;
-use anyhow::{Result, bail};
-use figment::{
-    Figment,
-    providers::{Format, Serialized, Toml},
-};
-use image::DynamicImage;
+use anyhow::{Context, Result};
 pub use key::{BindingForEvent, Keys};
 use serde::{Deserialize, Serialize};
-use std::{fs, net::IpAddr};
+use std::{net::IpAddr, path::Path};
 use std::{path::PathBuf, sync::LazyLock};
 pub use theme::{Alacritty, AlacrittyColor, ColorTermusic, StyleColorSymbol};
 
@@ -18,20 +12,16 @@ pub use theme::{Alacritty, AlacrittyColor, ColorTermusic, StyleColorSymbol};
 pub const FILE_NAME: &str = "config.toml";
 
 static MUSIC_DIR: LazyLock<Vec<PathBuf>> = LazyLock::new(|| {
-    let mut vec = Vec::new();
-    let mut path =
+    let path =
         dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
-    vec.push(path.clone());
-    path.push("mp3");
-    vec.push(path);
-    vec
+    let path2 = path.join("mp3");
+    Vec::from([path, path2])
 });
 
 static PODCAST_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
-    let mut path =
-        dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")));
-    path.push("podcast");
-    path
+    dirs::audio_dir()
+        .unwrap_or_else(|| PathBuf::from(shellexpand::path::tilde("~/Music")))
+        .join("podcast")
 });
 
 #[derive(Clone, Copy, Default, Deserialize, Serialize, Debug)]
@@ -42,25 +32,8 @@ pub enum Loop {
     Random,
 }
 
-impl Loop {
-    pub fn display(self, display_symbol: bool) -> String {
-        if display_symbol {
-            match self {
-                Self::Single => "🔂".to_string(),
-                Self::Playlist => "🔁".to_string(),
-                Self::Random => "🔀".to_string(),
-            }
-        } else {
-            match self {
-                Self::Single => "single".to_string(),
-                Self::Playlist => "playlist".to_string(),
-                Self::Random => "random".to_string(),
-            }
-        }
-    }
-}
-
 #[derive(Clone, Deserialize, Serialize, Debug)]
+#[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct Xywh {
     pub x_between_1_100: u32,
     pub y_between_1_100: u32,
@@ -84,36 +57,11 @@ pub enum Alignment {
     TopLeft,
 }
 
-impl Alignment {
-    const fn x(self, absolute_x: u32, width: u32) -> u32 {
-        match self {
-            Self::BottomRight | Self::TopRight => Self::get_size_substract(absolute_x, width),
-            Self::BottomLeft | Self::TopLeft => absolute_x,
-        }
-    }
-    const fn y(self, absolute_y: u32, height: u32) -> u32 {
-        match self {
-            Self::BottomRight | Self::BottomLeft => {
-                Self::get_size_substract(absolute_y, height / 2)
-            }
-            Self::TopRight | Self::TopLeft => absolute_y,
-        }
-    }
-
-    const fn get_size_substract(absolute_size: u32, size: u32) -> u32 {
-        if absolute_size > size {
-            return absolute_size - size;
-        }
-        0
-    }
-}
-
 impl Default for Xywh {
-    #[allow(clippy::cast_lossless, clippy::cast_possible_truncation)]
     fn default() -> Self {
         let width = 20_u32;
         let height = 20_u32;
-        let (term_width, term_height) = Self::get_terminal_size_u32();
+        let (term_width, term_height) = (50, 70);
         let x = term_width - 1;
         let y = term_height - 9;
 
@@ -127,89 +75,6 @@ impl Default for Xywh {
             height,
             align: Alignment::BottomRight,
         }
-    }
-}
-impl Xywh {
-    pub fn move_left(&mut self) {
-        self.x_between_1_100 = self.x_between_1_100.saturating_sub(1);
-    }
-
-    pub fn move_right(&mut self) {
-        self.x_between_1_100 += 1;
-        self.x_between_1_100 = self.x_between_1_100.min(100);
-    }
-
-    pub fn move_up(&mut self) {
-        self.y_between_1_100 = self.y_between_1_100.saturating_sub(2);
-    }
-
-    pub fn move_down(&mut self) {
-        self.y_between_1_100 += 2;
-        self.y_between_1_100 = self.y_between_1_100.min(100);
-    }
-    pub fn zoom_in(&mut self) {
-        self.width_between_1_100 += 1;
-        self.width_between_1_100 = self.width_between_1_100.min(100);
-    }
-
-    pub fn zoom_out(&mut self) {
-        self.width_between_1_100 = self.width_between_1_100.saturating_sub(1);
-    }
-
-    pub fn update_size(&self, image: &DynamicImage) -> Result<Self> {
-        let (term_width, term_height) = Self::get_terminal_size_u32();
-        let (x, y, width, height) = self.calculate_xywh(term_width, term_height, image)?;
-        Ok(Self {
-            x_between_1_100: self.x_between_1_100,
-            y_between_1_100: self.y_between_1_100,
-            width_between_1_100: self.width_between_1_100,
-            x,
-            y,
-            width,
-            height,
-            align: self.align,
-        })
-    }
-    fn calculate_xywh(
-        &self,
-        term_width: u32,
-        term_height: u32,
-        image: &DynamicImage,
-    ) -> Result<(u32, u32, u32, u32)> {
-        let width = self.get_width(term_width)?;
-        let height = Self::get_height(width, term_height, image)?;
-        let (absolute_x, absolute_y) = (
-            self.x_between_1_100 * term_width / 100,
-            self.y_between_1_100 * term_height / 100,
-        );
-        let (x, y) = (
-            self.align.x(absolute_x, width),
-            self.align.y(absolute_y, height),
-        );
-        Ok((x, y, width, height))
-    }
-
-    fn get_width(&self, term_width: u32) -> Result<u32> {
-        let width = self.width_between_1_100 * term_width / 100;
-        Self::safe_guard_width_or_height(width, term_width)
-    }
-
-    fn safe_guard_width_or_height(size: u32, size_max: u32) -> Result<u32> {
-        if size > size_max {
-            bail!("image width is too big, please reduce image width");
-        }
-        Ok(size)
-    }
-
-    fn get_height(width: u32, term_height: u32, image: &DynamicImage) -> Result<u32> {
-        let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
-        let height = (width * pic_height_orig) / (pic_width_orig);
-        Self::safe_guard_width_or_height(height, term_height * 2)
-    }
-
-    pub fn get_terminal_size_u32() -> (u32, u32) {
-        let (term_width, term_height) = viuer::terminal_size();
-        (u32::from(term_width), u32::from(term_height))
     }
 }
 
@@ -251,16 +116,9 @@ impl std::fmt::Display for LastPosition {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 #[allow(clippy::struct_excessive_bools)]
+#[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct Settings {
     pub music_dir: Vec<PathBuf>,
-    #[serde(skip)]
-    pub music_dir_from_cli: Option<PathBuf>,
-    #[serde(skip)]
-    pub disable_album_art_from_cli: bool,
-    #[serde(skip)]
-    pub disable_discord_rpc_from_cli: bool,
-    #[serde(skip)]
-    pub max_depth_cli: usize,
     pub player_port: u16,
     pub player_interface: IpAddr,
     pub player_loop_mode: Loop,
@@ -289,7 +147,6 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             music_dir: MUSIC_DIR.clone(),
-            music_dir_from_cli: None,
             player_loop_mode: Loop::Random,
             player_volume: 70,
             player_speed: 10,
@@ -303,9 +160,6 @@ impl Default for Settings {
             album_photo_xywh: Xywh::default(),
             playlist_select_random_track_quantity: 20,
             playlist_select_random_album_quantity: 5,
-            disable_album_art_from_cli: false,
-            disable_discord_rpc_from_cli: false,
-            max_depth_cli: 4,
             podcast_simultanious_download: 3,
             podcast_dir: PODCAST_DIR.clone(),
             podcast_max_retries: 3,
@@ -320,29 +174,16 @@ impl Default for Settings {
 }
 
 impl Settings {
-    pub fn save(&self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push(FILE_NAME);
-        let string = toml::to_string(self)?;
-
-        fs::write(path, string)?;
-
-        Ok(())
-    }
-
-    pub fn load(&mut self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push(FILE_NAME);
+    /// Load the V1 Config from the given path, not creating it if it does not exist.
+    ///
+    /// If the path does not exist, returns [`Self::default`].
+    pub fn load(path: &Path) -> Result<Self> {
         if !path.exists() {
-            let config = Self::default();
-            config.save()?;
+            return Ok(Self::default());
         }
 
-        let figment = Figment::new()
-            .merge(Serialized::defaults(Settings::default()))
-            .merge(Toml::file(path));
-        let config: Settings = figment.extract()?;
-        *self = config;
-        Ok(())
+        let file_data = std::fs::read_to_string(path).context("Reading v1 Config from file")?;
+
+        toml::from_str(&file_data).context("Parsing v1 Config")
     }
 }

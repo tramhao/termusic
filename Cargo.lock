@@ -383,15 +383,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "atomic"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d818003e740b63afc82337e3160717f4f63078720a810b7b903e70a5d1d2994"
-dependencies = [
- "bytemuck",
-]
-
-[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1494,19 +1485,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4f9bfee30e4dedf0ab8b422f03af778d9612b63f502710fc500a334ebe2de645"
 dependencies = [
  "simd-adler32",
-]
-
-[[package]]
-name = "figment"
-version = "0.10.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cb01cd46b0cf372153850f4c6c272d9cbea2da513e07538405148f95bd789f3"
-dependencies = [
- "atomic",
- "serde",
- "toml 0.8.22",
- "uncased",
- "version_check",
 ]
 
 [[package]]
@@ -5070,7 +5048,6 @@ dependencies = [
  "dirs",
  "either",
  "escaper",
- "figment",
  "futures-util",
  "hex",
  "id3",
@@ -5441,7 +5418,6 @@ dependencies = [
  "serde",
  "serde_spanned 0.6.8",
  "toml_datetime 0.6.9",
- "toml_write",
  "winnow 0.7.10",
 ]
 
@@ -5453,12 +5429,6 @@ checksum = "b551886f449aa90d4fe2bdaa9f4a2577ad2dde302c61ecf262d80b116db95c10"
 dependencies = [
  "winnow 0.7.10",
 ]
-
-[[package]]
-name = "toml_write"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfb942dfe1d8e29a7ee7fcbde5bd2b9a25fb89aa70caea2eba3bee836ff41076"
 
 [[package]]
 name = "toml_writer"
@@ -5696,15 +5666,6 @@ dependencies = [
  "memoffset 0.9.1",
  "tempfile",
  "winapi",
-]
-
-[[package]]
-name = "uncased"
-version = "0.9.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1b88fcfe09e89d3866a5c11019378088af2d24c3fbd4f0543f96b479ec90697"
-dependencies = [
- "version_check",
 ]
 
 [[package]]

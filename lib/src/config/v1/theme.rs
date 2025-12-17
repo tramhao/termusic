@@ -1,12 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::BufReader;
 use std::num::ParseIntError;
-use std::path::Path;
 use tuirealm::props::Color;
-
-use crate::config::yaml_theme::YAMLTheme;
 
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub enum ColorTermusic {
@@ -60,36 +55,6 @@ impl From<ColorTermusic> for &'static str {
 impl From<ColorTermusic> for String {
     fn from(cc: ColorTermusic) -> Self {
         <ColorTermusic as Into<&'static str>>::into(cc).to_owned()
-    }
-}
-
-impl ColorTermusic {
-    pub fn color(self, alacritty_theme: &Alacritty) -> Color {
-        match self {
-            Self::Foreground => alacritty_theme.foreground.into(),
-            Self::Background => alacritty_theme.background.into(),
-            Self::Black => alacritty_theme.black.into(),
-            Self::Red => alacritty_theme.red.into(),
-            Self::Green => alacritty_theme.green.into(),
-            Self::Yellow => alacritty_theme.yellow.into(),
-            Self::Blue => alacritty_theme.blue.into(),
-            Self::Magenta => alacritty_theme.magenta.into(),
-            Self::Cyan => alacritty_theme.cyan.into(),
-            Self::White => alacritty_theme.white.into(),
-            Self::LightBlack => alacritty_theme.light_black.into(),
-            Self::LightRed => alacritty_theme.light_red.into(),
-            Self::LightGreen => alacritty_theme.light_green.into(),
-            Self::LightYellow => alacritty_theme.light_yellow.into(),
-            Self::LightBlue => alacritty_theme.light_blue.into(),
-            Self::LightMagenta => alacritty_theme.light_magenta.into(),
-            Self::LightCyan => alacritty_theme.light_cyan.into(),
-            Self::LightWhite => alacritty_theme.light_white.into(),
-            Self::Reset => Color::Reset,
-        }
-    }
-
-    pub const fn as_usize(self) -> usize {
-        self as usize
     }
 }
 
@@ -163,77 +128,6 @@ impl Default for StyleColorSymbol {
             alacritty_theme: Alacritty::default(),
             currently_playing_track_symbol: "►".to_string(),
         }
-    }
-}
-
-impl StyleColorSymbol {
-    pub fn library_foreground(&self) -> Color {
-        self.library_foreground.color(&self.alacritty_theme)
-    }
-    pub fn library_background(&self) -> Color {
-        self.library_background.color(&self.alacritty_theme)
-    }
-    pub fn library_highlight(&self) -> Color {
-        self.library_highlight.color(&self.alacritty_theme)
-    }
-    pub fn library_border(&self) -> Color {
-        self.library_border.color(&self.alacritty_theme)
-    }
-
-    pub fn playlist_foreground(&self) -> Color {
-        self.playlist_foreground.color(&self.alacritty_theme)
-    }
-    pub fn playlist_background(&self) -> Color {
-        self.playlist_background.color(&self.alacritty_theme)
-    }
-    pub fn playlist_highlight(&self) -> Color {
-        self.playlist_highlight.color(&self.alacritty_theme)
-    }
-    pub fn playlist_border(&self) -> Color {
-        self.playlist_border.color(&self.alacritty_theme)
-    }
-
-    pub fn progress_foreground(&self) -> Color {
-        self.progress_foreground.color(&self.alacritty_theme)
-    }
-    pub fn progress_background(&self) -> Color {
-        self.progress_background.color(&self.alacritty_theme)
-    }
-    pub fn progress_border(&self) -> Color {
-        self.progress_border.color(&self.alacritty_theme)
-    }
-
-    pub fn lyric_foreground(&self) -> Color {
-        self.lyric_foreground.color(&self.alacritty_theme)
-    }
-    pub fn lyric_background(&self) -> Color {
-        self.lyric_background.color(&self.alacritty_theme)
-    }
-    pub fn lyric_border(&self) -> Color {
-        self.lyric_border.color(&self.alacritty_theme)
-    }
-
-    pub fn important_popup_foreground(&self) -> Color {
-        self.important_popup_foreground.color(&self.alacritty_theme)
-    }
-    pub fn important_popup_background(&self) -> Color {
-        self.important_popup_background.color(&self.alacritty_theme)
-    }
-    pub fn important_popup_border(&self) -> Color {
-        self.important_popup_border.color(&self.alacritty_theme)
-    }
-
-    pub fn fallback_foreground(&self) -> Color {
-        self.fallback_foreground.color(&self.alacritty_theme)
-    }
-    pub fn fallback_background(&self) -> Color {
-        self.fallback_background.color(&self.alacritty_theme)
-    }
-    pub fn fallback_highlight(&self) -> Color {
-        self.fallback_highlight.color(&self.alacritty_theme)
-    }
-    pub fn fallback_border(&self) -> Color {
-        self.fallback_border.color(&self.alacritty_theme)
     }
 }
 
@@ -381,48 +275,6 @@ impl Default for Alacritty {
             light_cyan: AlacrittyColor::from_hex("#99faf2").unwrap(),
             light_white: AlacrittyColor::from_hex("#ffffff").unwrap(),
         }
-    }
-}
-
-impl Alacritty {
-    /// Convert a [`YAMLTheme`] to this type
-    ///
-    /// Cannot be a [`From`] implementation because of the additional set `path` parameter
-    pub fn from_yaml_theme(value: YAMLTheme, path: String) -> Result<Self, ColorParseError> {
-        let colors = value.colors;
-        Ok(Alacritty {
-            path,
-            name: colors.name.unwrap_or_else(default_name),
-            author: colors.author.unwrap_or_else(default_name),
-            background: colors.primary.background.try_into()?,
-            foreground: colors.primary.foreground.try_into()?,
-            cursor: colors.cursor.cursor.try_into()?,
-            text: colors.cursor.text.try_into()?,
-            black: colors.normal.black.try_into()?,
-            red: colors.normal.red.try_into()?,
-            green: colors.normal.green.try_into()?,
-            yellow: colors.normal.yellow.try_into()?,
-            blue: colors.normal.blue.try_into()?,
-            magenta: colors.normal.magenta.try_into()?,
-            cyan: colors.normal.cyan.try_into()?,
-            white: colors.normal.white.try_into()?,
-            light_black: colors.bright.black.try_into()?,
-            light_red: colors.bright.red.try_into()?,
-            light_green: colors.bright.green.try_into()?,
-            light_yellow: colors.bright.yellow.try_into()?,
-            light_blue: colors.bright.blue.try_into()?,
-            light_magenta: colors.bright.magenta.try_into()?,
-            light_cyan: colors.bright.cyan.try_into()?,
-            light_white: colors.bright.white.try_into()?,
-        })
-    }
-
-    /// Load a YAML Theme and then convert it to a [`Alacritty`] instance
-    pub fn from_yaml_file(path: &Path) -> Result<Self> {
-        let parsed: YAMLTheme = serde_yaml::from_reader(BufReader::new(File::open(path)?))?;
-        let path_str = path.to_string_lossy().to_string();
-
-        Ok(Self::from_yaml_theme(parsed, path_str)?)
     }
 }
 

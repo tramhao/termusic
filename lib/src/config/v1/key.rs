@@ -1,9 +1,5 @@
-use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::hash::Hash;
-use std::iter::once;
-use std::str::FromStr;
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -79,104 +75,7 @@ pub struct Keys {
     pub podcast_refresh_all_feeds: BindingForEvent,
 }
 
-impl Keys {
-    // In order to check if duplicate keys are configured, please ensure all are included here
-    fn iter_global(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
-        once(self.global_esc)
-            .chain(once(self.global_quit))
-            .chain(once(self.global_left))
-            .chain(once(self.global_down))
-            .chain(once(self.global_up))
-            .chain(once(self.global_right))
-            .chain(once(self.global_goto_top))
-            .chain(once(self.global_goto_bottom))
-            .chain(once(self.global_player_toggle_pause))
-            .chain(once(self.global_player_next))
-            .chain(once(self.global_player_previous))
-            .chain(once(self.global_player_volume_plus_1))
-            .chain(once(self.global_player_volume_plus_2))
-            .chain(once(self.global_player_volume_minus_1))
-            .chain(once(self.global_player_volume_minus_2))
-            .chain(once(self.global_help))
-            .chain(once(self.global_player_seek_forward))
-            .chain(once(self.global_player_seek_backward))
-            .chain(once(self.global_lyric_adjust_forward))
-            .chain(once(self.global_lyric_adjust_backward))
-            .chain(once(self.global_player_speed_up))
-            .chain(once(self.global_player_speed_down))
-            .chain(once(self.global_lyric_cycle))
-            .chain(once(self.global_layout_treeview))
-            .chain(once(self.global_layout_database))
-            .chain(once(self.global_player_toggle_gapless))
-            .chain(once(self.global_config_open))
-            .chain(once(self.global_save_playlist))
-            .chain(once(self.global_layout_podcast))
-            .chain(once(self.global_xywh_move_left))
-            .chain(once(self.global_xywh_move_right))
-            .chain(once(self.global_xywh_move_up))
-            .chain(once(self.global_xywh_move_down))
-            .chain(once(self.global_xywh_zoom_in))
-            .chain(once(self.global_xywh_zoom_out))
-            .chain(once(self.global_xywh_hide))
-        // .chain(once(self.config_save))
-    }
-
-    fn iter_library(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
-        once(self.library_load_dir)
-            .chain(once(self.library_delete))
-            .chain(once(self.library_yank))
-            .chain(once(self.library_paste))
-            .chain(once(self.library_search))
-            .chain(once(self.library_search_youtube))
-            .chain(once(self.library_tag_editor_open))
-            .chain(once(self.library_switch_root))
-            .chain(once(self.library_add_root))
-            .chain(once(self.library_remove_root))
-    }
-
-    fn iter_playlist(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
-        once(self.playlist_delete)
-            .chain(once(self.playlist_delete_all))
-            .chain(once(self.playlist_shuffle))
-            .chain(once(self.playlist_mode_cycle))
-            .chain(once(self.playlist_play_selected))
-            .chain(once(self.playlist_search))
-            .chain(once(self.playlist_swap_down))
-            .chain(once(self.playlist_swap_up))
-            .chain(once(self.playlist_add_random_album))
-            .chain(once(self.playlist_add_random_tracks))
-    }
-
-    fn iter_podcast(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
-        once(self.podcast_search_add_feed)
-            .chain(once(self.podcast_refresh_feed))
-            .chain(once(self.podcast_refresh_all_feeds))
-            .chain(once(self.podcast_delete_feed))
-            .chain(once(self.podcast_delete_all_feeds))
-    }
-
-    fn iter_episode(&self) -> impl Iterator<Item = BindingForEvent> + use<> {
-        once(self.podcast_mark_played)
-            .chain(once(self.podcast_mark_all_played))
-            .chain(once(self.podcast_episode_download))
-            .chain(once(self.podcast_episode_delete_file))
-    }
-
-    pub fn has_unique_elements(&self) -> bool {
-        let mut uniq_global = HashSet::new();
-        let mut uniq_library = HashSet::new();
-        let mut uniq_playlist = HashSet::new();
-        let mut uniq_podcast = HashSet::new();
-        let mut uniq_episode = HashSet::new();
-        self.iter_global().all(move |x| uniq_global.insert(x))
-            && self.iter_library().all(move |x| uniq_library.insert(x))
-            && self.iter_playlist().all(move |x| uniq_playlist.insert(x))
-            && self.iter_podcast().all(move |x| uniq_podcast.insert(x))
-            && self.iter_episode().all(move |x| uniq_episode.insert(x))
-    }
-}
-
-/// Custom Serialize / Deserialize for [`Key`] so that library updates mess with the config layout
+/// Custom Serialize / Deserialize for [`Key`] so that library updates dont mess with the config layout
 mod key_serde_code {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use tuirealm::event::{Key, MediaKeyCode};
@@ -413,7 +312,7 @@ mod key_serde_code {
     }
 }
 
-/// Custom Serialize / Deserialize for [`KeyModifiers`] so that library updates mess with the config layout
+/// Custom Serialize / Deserialize for [`KeyModifiers`] so that library updates dont mess with the config layout
 mod key_serde_modifier {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use tuirealm::event::KeyModifiers;
@@ -482,113 +381,12 @@ impl std::fmt::Display for BindingForEvent {
 }
 
 impl BindingForEvent {
+    #[inline]
     pub const fn key_event(&self) -> KeyEvent {
         KeyEvent {
             code: self.code,
             modifiers: self.modifier,
         }
-    }
-
-    /// Get the Current Modifier, and the string representation of the key
-    pub fn mod_key(&self) -> (KeyModifiers, String) {
-        (self.modifier, self.key())
-    }
-
-    pub fn key(&self) -> String {
-        match self.code {
-            Key::Backspace => "Backspace".to_string(),
-            Key::Enter => "Enter".to_string(),
-            Key::Left => "Left".to_string(),
-            Key::Right => "Right".to_string(),
-            Key::Up => "Up".to_string(),
-            Key::Down => "Down".to_string(),
-            Key::Home => "Home".to_string(),
-            Key::End => "End".to_string(),
-            Key::PageUp => "PageUp".to_string(),
-            Key::PageDown => "PageDown".to_string(),
-            Key::Tab => "Tab".to_string(),
-            Key::BackTab => "BackTab".to_string(),
-            Key::Delete => "Delete".to_string(),
-            Key::Insert => "Insert".to_string(),
-            Key::Function(int) => format!("F{int}"),
-            Key::Char(char) => {
-                if char == ' ' {
-                    "Space".to_string()
-                } else {
-                    format!("{char}")
-                }
-            }
-            Key::Null => "Null".to_string(),
-            Key::Esc => "Esc".to_string(),
-            Key::CapsLock => "CapsLock".to_string(),
-            Key::ScrollLock => "ScrollLock".to_string(),
-            Key::NumLock => "NumLock".to_string(),
-            Key::PrintScreen => "PrintScreen".to_string(),
-            Key::Pause => "Pause".to_string(),
-            Key::Menu => "Menu".to_string(),
-            Key::KeypadBegin => "KeyPadBegin".to_string(),
-            Key::Media(media_key) => format!("Media {media_key:?}"),
-
-            // the following are new events with tuirealm 2.0, but only available in backend "termion", which we dont use
-            Key::ShiftLeft
-            | Key::AltLeft
-            | Key::CtrlLeft
-            | Key::ShiftRight
-            | Key::AltRight
-            | Key::CtrlRight
-            | Key::ShiftUp
-            | Key::AltUp
-            | Key::CtrlUp
-            | Key::ShiftDown
-            | Key::AltDown
-            | Key::CtrlDown
-            | Key::CtrlHome
-            | Key::CtrlEnd => unimplemented!(),
-        }
-    }
-
-    pub fn key_from_str(str: &str) -> Result<Key> {
-        if str.is_empty() {
-            bail!("Empty key")
-        }
-
-        if str.len() < 2 {
-            let mut chars = str.chars();
-            if let Some(char) = chars.next() {
-                return Ok(Key::Char(char));
-            }
-        }
-        let str_lower_case = str.to_lowercase();
-        if str_lower_case.len() < 4
-            && let Some(str) = str_lower_case.strip_prefix('f')
-        {
-            let my_int = u8::from_str(str)?;
-            if my_int > 12 {
-                bail!("Function key should be smaller than F12.");
-            }
-            return Ok(Key::Function(my_int));
-        }
-        let special_key = match str_lower_case.as_ref() {
-            "backspace" => Key::Backspace,
-            "enter" => Key::Enter,
-            "left" => Key::Left,
-            "right" => Key::Right,
-            "up" => Key::Up,
-            "down" => Key::Down,
-            "home" => Key::Home,
-            "end" => Key::End,
-            "pageup" => Key::PageUp,
-            "pagedown" => Key::PageDown,
-            "tab" => Key::Tab,
-            "backtab" => Key::BackTab,
-            "delete" => Key::Delete,
-            "insert" => Key::Insert,
-            "esc" => Key::Esc,
-            "space" => Key::Char(' '),
-            // "null" => Key::Null,
-            inv_key => bail!("Provided invalid special key: {}", inv_key),
-        };
-        Ok(special_key)
     }
 }
 
