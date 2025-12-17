@@ -1,3 +1,4 @@
+#[cfg(feature = "config-v1-compat")]
 mod v1;
 pub mod v2;
 mod yaml_theme;

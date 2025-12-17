@@ -1807,6 +1807,7 @@ impl From<SupportedModifiers> for tuievents::KeyModifiers {
     }
 }
 
+#[cfg(feature = "config-v1-compat")]
 mod v1_interop {
     use super::{
         KeyBinding, Keys, KeysConfigEditor, KeysDatabase, KeysLibrary, KeysLyric, KeysMoveCoverArt,

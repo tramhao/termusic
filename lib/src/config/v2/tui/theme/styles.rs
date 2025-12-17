@@ -256,6 +256,7 @@ impl Default for StyleFallback {
     }
 }
 
+#[cfg(feature = "config-v1-compat")]
 mod v1_interop {
     use super::{
         ColorTermusic, StyleFallback, StyleImportantPopup, StyleLibrary, StyleLyric, StylePlaylist,

@@ -169,6 +169,7 @@ pub struct Ytdlp {
     pub extra_args: String,
 }
 
+#[cfg(feature = "config-v1-compat")]
 mod v1_interop {
     use super::{Alignment, BehaviorSettings, CoverArt, MaybeComSettings, TuiSettings, Ytdlp};
     use crate::config::{v1, v2::tui::CoverArtProtocolsSet};
