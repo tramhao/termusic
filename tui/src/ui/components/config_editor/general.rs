@@ -22,9 +22,10 @@
  * SOFTWARE.
  */
 use anyhow::Result;
-use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::{Backend, ComProtocol, default_uds_socket_path};
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::Radio;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{
@@ -38,6 +39,42 @@ use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+
+/// Get a [`Input`] component with the common style applied.
+#[inline]
+fn common_input_comp(config: &TuiOverlay, title: &str) -> Input {
+    Input::default()
+        .borders(
+            Borders::default()
+                .color(config.settings.theme.library_border())
+                .modifiers(BorderType::Rounded),
+        )
+        .foreground(config.settings.theme.library_highlight())
+        .background(config.settings.theme.library_background())
+        .inactive(Style::new().bg(config.settings.theme.library_background()))
+        .invalid_style(
+            Style::default().fg(config
+                .settings
+                .theme
+                .get_color_from_theme(ColorTermusic::Red)),
+        )
+        .title(title, Alignment::Left)
+}
+
+/// Get a [`Radio`] component with the common style applied.
+#[inline]
+fn common_radio_comp(config: &TuiOverlay, title: &str) -> Radio {
+    Radio::default()
+        .borders(
+            Borders::default()
+                .color(config.settings.theme.library_border())
+                .modifiers(BorderType::Rounded),
+        )
+        .foreground(config.settings.theme.library_highlight())
+        .background(config.settings.theme.library_background())
+        .inactive(Style::new().bg(config.settings.theme.library_background()))
+        .title(title, Alignment::Left)
+}
 
 #[derive(MockComponent)]
 pub struct MusicDir {
@@ -57,20 +94,11 @@ impl MusicDir {
         if !music_dir_input.is_empty() {
             music_dir_input.remove(music_dir_input.len() - 1);
         }
-        let component = Input::default()
-            .borders(
-                Borders::default()
-                    .color(config_tui.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
-            .foreground(config_tui.settings.theme.library_highlight())
-            .input_type(InputType::Text)
-            .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
-            .title(
-                " Root Music Directory:(use ; to separate) ",
-                Alignment::Left,
-            )
-            .value(music_dir_input);
+        let component =
+            common_input_comp(&config_tui, " Root Music Directory:(use ; to separate) ")
+                .input_type(InputType::Text)
+                .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
+                .value(music_dir_input);
 
         drop(config_tui);
         Self {
@@ -175,16 +203,9 @@ impl ExitConfirmation {
     pub fn new(config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         let enabled = config_r.settings.behavior.confirm_quit;
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_r.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_r, " Show exit confirmation? ")
             .choices(["Yes", "No"])
-            .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Show exit confirmation? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_r);
@@ -263,16 +284,9 @@ impl PlaylistDisplaySymbol {
     pub fn new(config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         let enabled = config_r.settings.theme.style.playlist.use_loop_mode_symbol;
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_r.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_r, " Use symbols for playlist loop mode? ")
             .choices(["Yes", "No"])
-            .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Use symbols for playlist loop mode? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_r);
@@ -302,17 +316,9 @@ impl PlaylistRandomTrack {
     pub fn new(config: CombinedSettings) -> Self {
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
+            common_input_comp(&config_tui, " Playlist Select Random Track Quantity: ")
                 .input_type(InputType::UnsignedInteger)
-                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("20", Style::default().fg(Color::Rgb(128, 128, 128)))
-                .title(" Playlist Select Random Track Quantity: ", Alignment::Left)
                 .value(
                     config
                         .server
@@ -353,29 +359,21 @@ impl PlaylistRandomAlbum {
     pub fn new(config: CombinedSettings) -> Self {
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
-                .input_type(InputType::UnsignedInteger)
-                .invalid_style(Style::default().fg(Color::Red))
-                .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
-                .title(
-                    " Playlist Select Random Album with tracks no less than: ",
-                    Alignment::Left,
-                )
-                .value(
-                    config
-                        .server
-                        .read()
-                        .settings
-                        .player
-                        .random_album_min_quantity
-                        .to_string(),
-                )
+            common_input_comp(
+                &config_tui,
+                " Playlist Select Random Album with tracks no less than: ",
+            )
+            .input_type(InputType::UnsignedInteger)
+            .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
+            .value(
+                config
+                    .server
+                    .read()
+                    .settings
+                    .player
+                    .random_album_min_quantity
+                    .to_string(),
+            )
         };
 
         Self {
@@ -407,20 +405,12 @@ impl PodcastDir {
     pub fn new(config: CombinedSettings) -> Self {
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
+            common_input_comp(&config_tui, " Podcast Download Directory: ")
                 .input_type(InputType::Text)
-                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     "~/Music/podcast",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Podcast Download Directory: ", Alignment::Left)
                 .value(
                     config
                         .server
@@ -461,20 +451,12 @@ impl PodcastSimulDownload {
     pub fn new(config: CombinedSettings) -> Self {
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
+            common_input_comp(&config_tui, " Podcast Simultaneous Download: ")
                 .input_type(InputType::UnsignedInteger)
-                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     "between 1 ~ 5 suggested",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Podcast Simultaneous Download: ", Alignment::Left)
                 .value(
                     config
                         .server
@@ -515,20 +497,12 @@ impl PodcastMaxRetries {
     pub fn new(config: CombinedSettings) -> Self {
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
+            common_input_comp(&config_tui, " Podcast Download Max Retries: ")
                 .input_type(InputType::UnsignedInteger)
-                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     "between 1 ~ 5 suggested",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Podcast Download Max Retries: ", Alignment::Left)
                 .value(
                     config
                         .server
@@ -574,16 +548,9 @@ impl AlbumPhotoAlign {
             XywhAlign::TopRight => 2,
             XywhAlign::TopLeft => 3,
         };
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_r.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_r, " Coverart Align: ")
             .choices(["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
-            .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Coverart Align: ", Alignment::Left)
             .value(align);
 
         drop(config_r);
@@ -625,16 +592,10 @@ impl SaveLastPosition {
             // LastPosition::No => 1,
             // LastPosition::Yes => 2,
         };
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_tui.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_tui, " Remember last played position: ")
             .choices(["Unsupported", "No", "Yes"])
-            .foreground(config_tui.settings.theme.library_highlight())
+            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
-            .title(" Remember last played position: ", Alignment::Left)
             .value(save_last_position);
 
         drop(config_tui);
@@ -671,16 +632,9 @@ impl ConfigSeekStep {
         //     SeekStep::Long => 2,
         // };
         let seek_step = 0;
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_tui.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_tui, " Seek step in seconds: ")
             .choices(["Unsupported"])
-            .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Seek step in seconds: ", Alignment::Left)
             .value(seek_step);
 
         drop(config_tui);
@@ -713,16 +667,9 @@ impl KillDaemon {
     pub fn new(config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         let enabled = config_r.settings.behavior.quit_server_on_exit;
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_r.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_r, " Stop Server on TUI exit? ")
             .choices(["Yes", "No"])
-            .foreground(config_r.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Stop Server on TUI exit? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_r);
@@ -752,16 +699,9 @@ impl PlayerUseMpris {
     pub fn new(config: CombinedSettings) -> Self {
         let config_tui = config.tui.read();
         let enabled = config.server.read().settings.player.use_mediacontrols;
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_tui.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_tui, " Support Media Controls? ")
             .choices(["Yes", "No"])
-            .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Support Media Controls? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_tui);
@@ -794,16 +734,9 @@ impl PlayerUseDiscord {
     pub fn new(config: CombinedSettings) -> Self {
         let config_tui = config.tui.read();
         let enabled = config.server.read().settings.player.set_discord_status;
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_tui.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_tui, " Update discord rpc? ")
             .choices(["Yes", "No"])
-            .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Update discord rpc? ", Alignment::Left)
             .value(usize::from(!enabled));
 
         drop(config_tui);
@@ -837,20 +770,12 @@ impl PlayerPort {
         // TODO: this should likely also cover the MaybeCom settings from the TUI
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
+            common_input_comp(&config_tui, " Player Port: ")
                 .input_type(InputType::UnsignedInteger)
-                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     "between 1000 ~ 60000 suggested",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Player Port: ", Alignment::Left)
                 .value(config.server.read().settings.com.port.to_string())
         };
 
@@ -884,20 +809,12 @@ impl PlayerAddress {
         // TODO: this should likely also cover the MaybeCom settings from the TUI
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
+            common_input_comp(&config_tui, " Player Address: ")
                 .input_type(InputType::Text) // we likely could make a custom matcher
-                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     "::1 or 127.0.0.1 recommended",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Player Address: ", Alignment::Left)
                 .value(config.server.read().settings.com.address.to_string())
         };
 
@@ -933,16 +850,9 @@ impl PlayerProtocol {
             ComProtocol::HTTP => 0,
             ComProtocol::UDS => 1,
         };
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_tui.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_tui, " Communication Protocol: ")
             .choices(["HTTP", "UDS"])
-            .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Communication Protocol: ", Alignment::Left)
             .value(value);
 
         drop(config_tui);
@@ -975,20 +885,12 @@ impl PlayerUDSPath {
     pub fn new(config: CombinedSettings) -> Self {
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
+            common_input_comp(&config_tui, " Player UDS Socket Path: ")
                 .input_type(InputType::Text)
-                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     default_uds_socket_path().display().to_string(),
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Player UDS Socket Path: ", Alignment::Left)
                 .value(
                     config
                         .server
@@ -1033,16 +935,9 @@ impl PlayerBackend {
             Backend::Mpv => 1,
             Backend::Gstreamer => 2,
         };
-        let component = Radio::default()
-            .borders(
-                Borders::default()
-                    .color(config_tui.settings.theme.library_border())
-                    .modifiers(BorderType::Rounded),
-            )
+        let component = common_radio_comp(&config_tui, " Playback Backend: ")
             .choices(["Rusty", "MPV", "Gstreamer"])
-            .foreground(config_tui.settings.theme.library_highlight())
             .rewind(true)
-            .title(" Playback Backend: ", Alignment::Left)
             .value(value);
 
         drop(config_tui);
@@ -1076,20 +971,12 @@ impl ExtraYtdlpArgs {
         // TODO: this should likely also cover the MaybeCom settings from the TUI
         let component = {
             let config_tui = config.tui.read();
-            Input::default()
-                .borders(
-                    Borders::default()
-                        .color(config_tui.settings.theme.library_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(config_tui.settings.theme.library_highlight())
+            common_input_comp(&config_tui, " Extra Args for yt-dlp: ")
                 .input_type(InputType::Text)
-                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     r#"--cookies-from-browser brave+gnomekeyring or --cookies "d:\src\cookies.txt""#,
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Extra Args for yt-dlp: ", Alignment::Left)
                 .value(&config_tui.settings.ytdlp.extra_args)
         };
 

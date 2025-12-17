@@ -184,8 +184,6 @@ pub struct CEColorSelect {
     component: Select,
     id: IdCETheme,
     config: SharedTuiSettings,
-    on_key_shift: Msg,
-    on_key_backshift: Msg,
 }
 
 impl CEColorSelect {
@@ -194,14 +192,7 @@ impl CEColorSelect {
     /// # Panics
     ///
     /// The only IDs expected are color IDs, everything else(like `*Symbol` or `*Label`) will panic.
-    pub fn new(
-        name: &str,
-        id: IdCETheme,
-        color: Color,
-        config: SharedTuiSettings,
-        on_key_shift: Msg,
-        on_key_backshift: Msg,
-    ) -> Self {
+    pub fn new(name: &str, id: IdCETheme, color: Color, config: SharedTuiSettings) -> Self {
         let init_value = Self::init_color_select(id, &config.read().settings.theme);
         let mut choices = Vec::new();
         for color in &COLOR_LIST {
@@ -225,8 +216,6 @@ impl CEColorSelect {
                 .value(init_value),
             id,
             config,
-            on_key_shift,
-            on_key_backshift,
         }
     }
 
@@ -346,24 +335,32 @@ impl Component<Msg, UserEvent> for CEColorSelect {
             },
 
             Event::Keyboard(key) if key == keys.navigation_keys.up.get() => match self.state() {
-                State::One(_) => return Some(self.on_key_backshift.clone()),
+                State::One(_) => {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
 
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => match self.state() {
-                State::One(_) => return Some(self.on_key_shift.clone()),
+                State::One(_) => {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
+                }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
-                State::One(_) => return Some(self.on_key_backshift.clone()),
+                State::One(_) => {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
 
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => match self.state() {
-                State::One(_) => return Some(self.on_key_shift.clone()),
+                State::One(_) => {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
+                }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
 
@@ -390,464 +387,27 @@ impl Component<Msg, UserEvent> for CEColorSelect {
 }
 
 #[derive(MockComponent)]
-pub struct ConfigLibraryTitle {
+pub struct CEStyleTitle {
     component: Label,
 }
 
-impl Default for ConfigLibraryTitle {
-    fn default() -> Self {
+impl CEStyleTitle {
+    pub fn new(config: &SharedTuiSettings, text: &str) -> Self {
+        let config_tui = config.read_recursive();
+
         Self {
             component: Label::default()
+                .foreground(config_tui.settings.theme.lyric_foreground())
+                .background(config_tui.settings.theme.lyric_background())
                 .modifiers(TextModifiers::BOLD)
-                .text(" Library style "),
+                .text(text),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for ConfigLibraryTitle {
+impl Component<Msg, UserEvent> for CEStyleTitle {
     fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
         None
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLibraryForeground {
-    component: CEColorSelect,
-}
-
-impl ConfigLibraryForeground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.library_foreground();
-        Self {
-            component: CEColorSelect::new(
-                " Foreground ",
-                IdCETheme::LibraryForeground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLibraryForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLibraryBackground {
-    component: CEColorSelect,
-}
-
-impl ConfigLibraryBackground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.library_background();
-        Self {
-            component: CEColorSelect::new(
-                " Background ",
-                IdCETheme::LibraryBackground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLibraryBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLibraryBorder {
-    component: CEColorSelect,
-}
-
-impl ConfigLibraryBorder {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.library_border();
-        Self {
-            component: CEColorSelect::new(
-                " Border ",
-                IdCETheme::LibraryBorder,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLibraryBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLibraryHighlight {
-    component: CEColorSelect,
-}
-
-impl ConfigLibraryHighlight {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.library_highlight();
-        Self {
-            component: CEColorSelect::new(
-                " Highlight ",
-                IdCETheme::LibraryHighlight,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLibraryHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigPlaylistTitle {
-    component: Label,
-}
-
-impl Default for ConfigPlaylistTitle {
-    fn default() -> Self {
-        Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Playlist style "),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigPlaylistTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigPlaylistForeground {
-    component: CEColorSelect,
-}
-
-impl ConfigPlaylistForeground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.playlist_foreground();
-        Self {
-            component: CEColorSelect::new(
-                " Foreground ",
-                IdCETheme::PlaylistForeground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigPlaylistForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigPlaylistBackground {
-    component: CEColorSelect,
-}
-
-impl ConfigPlaylistBackground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.playlist_background();
-        Self {
-            component: CEColorSelect::new(
-                " Background ",
-                IdCETheme::PlaylistBackground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigPlaylistBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigPlaylistBorder {
-    component: CEColorSelect,
-}
-
-impl ConfigPlaylistBorder {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.playlist_border();
-        Self {
-            component: CEColorSelect::new(
-                " Border ",
-                IdCETheme::PlaylistBorder,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigPlaylistBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigPlaylistHighlight {
-    component: CEColorSelect,
-}
-
-impl ConfigPlaylistHighlight {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.playlist_highlight();
-        Self {
-            component: CEColorSelect::new(
-                " Highlight ",
-                IdCETheme::PlaylistHighlight,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigPlaylistHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigProgressTitle {
-    component: Label,
-}
-
-impl Default for ConfigProgressTitle {
-    fn default() -> Self {
-        Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Progress style "),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigProgressTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigProgressForeground {
-    component: CEColorSelect,
-}
-
-impl ConfigProgressForeground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.progress_foreground();
-        Self {
-            component: CEColorSelect::new(
-                " Foreground ",
-                IdCETheme::ProgressForeground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigProgressForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigProgressBackground {
-    component: CEColorSelect,
-}
-
-impl ConfigProgressBackground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.progress_background();
-        Self {
-            component: CEColorSelect::new(
-                " Background ",
-                IdCETheme::ProgressBackground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigProgressBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigProgressBorder {
-    component: CEColorSelect,
-}
-
-impl ConfigProgressBorder {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.progress_border();
-        Self {
-            component: CEColorSelect::new(
-                " Border ",
-                IdCETheme::ProgressBorder,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigProgressBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLyricTitle {
-    component: Label,
-}
-
-impl Default for ConfigLyricTitle {
-    fn default() -> Self {
-        Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Lyric style "),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLyricTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLyricForeground {
-    component: CEColorSelect,
-}
-
-impl ConfigLyricForeground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.lyric_foreground();
-        Self {
-            component: CEColorSelect::new(
-                " Foreground ",
-                IdCETheme::LyricForeground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLyricForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLyricBackground {
-    component: CEColorSelect,
-}
-
-impl ConfigLyricBackground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.lyric_background();
-        Self {
-            component: CEColorSelect::new(
-                " Background ",
-                IdCETheme::LyricBackground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLyricBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigLyricBorder {
-    component: CEColorSelect,
-}
-
-impl ConfigLyricBorder {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.lyric_border();
-        Self {
-            component: CEColorSelect::new(
-                " Border ",
-                IdCETheme::LyricBorder,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigLyricBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
     }
 }
 
@@ -881,6 +441,8 @@ impl ConfigInputHighlight {
                     .color(config_r.settings.theme.library_border()),
             )
             // .foreground(color)
+            .background(config_r.settings.theme.library_background())
+            .inactive(Style::new().bg(config_r.settings.theme.library_background()))
             .input_type(InputType::Text)
             .placeholder(
                 "1f984/1f680/1f8a5",
@@ -1019,304 +581,223 @@ impl Component<Msg, UserEvent> for ConfigInputHighlight {
     }
 }
 
-#[derive(MockComponent)]
-pub struct ConfigLibraryHighlightSymbol {
-    component: ConfigInputHighlight,
+// --- Section Library Style ---
+
+#[inline]
+fn library_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Library style ")
 }
 
-impl ConfigLibraryHighlightSymbol {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        Self {
-            component: ConfigInputHighlight::new(
-                " Highlight Symbol ",
-                IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol),
-                config,
-            ),
-        }
-    }
+#[inline]
+fn library_fg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.library_foreground();
+    CEColorSelect::new(" Foreground ", IdCETheme::LibraryForeground, color, config)
 }
 
-impl Component<Msg, UserEvent> for ConfigLibraryHighlightSymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+#[inline]
+fn library_bg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.library_background();
+    CEColorSelect::new(" Background ", IdCETheme::LibraryBackground, color, config)
 }
 
-#[derive(MockComponent)]
-pub struct ConfigPlaylistHighlightSymbol {
-    component: ConfigInputHighlight,
+#[inline]
+fn library_border(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.library_border();
+    CEColorSelect::new(" Border ", IdCETheme::LibraryBorder, color, config)
 }
 
-impl ConfigPlaylistHighlightSymbol {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        Self {
-            component: ConfigInputHighlight::new(
-                " Highlight Symbol ",
-                IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol),
-                config,
-            ),
-        }
-    }
+#[inline]
+fn library_highlight(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.library_highlight();
+    CEColorSelect::new(" Highlight ", IdCETheme::LibraryHighlight, color, config)
 }
 
-impl Component<Msg, UserEvent> for ConfigPlaylistHighlightSymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+// --- Section Playlist Style ---
+
+#[inline]
+fn playlist_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Playlist style ")
 }
 
-#[derive(MockComponent)]
-pub struct ConfigCurrentlyPlayingTrackSymbol {
-    component: ConfigInputHighlight,
+#[inline]
+fn playlist_fg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.playlist_foreground();
+    CEColorSelect::new(" Foreground ", IdCETheme::PlaylistForeground, color, config)
 }
 
-impl ConfigCurrentlyPlayingTrackSymbol {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        Self {
-            component: ConfigInputHighlight::new(
-                " Current Track Symbol ",
-                IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol),
-                config,
-            ),
-        }
-    }
+#[inline]
+fn playlist_bg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.playlist_background();
+    CEColorSelect::new(" Background ", IdCETheme::PlaylistBackground, color, config)
 }
 
-impl Component<Msg, UserEvent> for ConfigCurrentlyPlayingTrackSymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+#[inline]
+fn playlist_border(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.playlist_border();
+    CEColorSelect::new(" Border ", IdCETheme::PlaylistBorder, color, config)
 }
 
-#[derive(MockComponent)]
-pub struct ConfigImportantPopupTitle {
-    component: Label,
+#[inline]
+fn playlist_highlight(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.playlist_highlight();
+    CEColorSelect::new(" Highlight ", IdCETheme::PlaylistHighlight, color, config)
 }
 
-impl Default for ConfigImportantPopupTitle {
-    fn default() -> Self {
-        Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Important Popup style "),
-        }
-    }
+// --- Section Progress Style ---
+
+#[inline]
+fn progress_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Progress style ")
 }
 
-impl Component<Msg, UserEvent> for ConfigImportantPopupTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
+#[inline]
+fn progress_fg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.progress_foreground();
+    CEColorSelect::new(" Foreground ", IdCETheme::ProgressForeground, color, config)
 }
 
-#[derive(MockComponent)]
-pub struct ConfigImportantPopupForeground {
-    component: CEColorSelect,
+#[inline]
+fn progress_bg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.progress_background();
+    CEColorSelect::new(" Background ", IdCETheme::ProgressBackground, color, config)
 }
 
-impl ConfigImportantPopupForeground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.important_popup_foreground();
-        Self {
-            component: CEColorSelect::new(
-                " Foreground ",
-                IdCETheme::ImportantPopupForeground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
+#[inline]
+fn progress_border(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.progress_border();
+    CEColorSelect::new(" Border ", IdCETheme::ProgressBorder, color, config)
 }
 
-impl Component<Msg, UserEvent> for ConfigImportantPopupForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+// --- Section Lyric Style ---
+
+#[inline]
+fn lyric_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Lyric style ")
 }
 
-#[derive(MockComponent)]
-pub struct ConfigImportantPopupBackground {
-    component: CEColorSelect,
+#[inline]
+fn lyric_fg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.lyric_foreground();
+    CEColorSelect::new(" Foreground ", IdCETheme::LyricForeground, color, config)
 }
 
-impl ConfigImportantPopupBackground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.important_popup_background();
-        Self {
-            component: CEColorSelect::new(
-                " Background ",
-                IdCETheme::ImportantPopupBackground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
+#[inline]
+fn lyric_bg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.lyric_background();
+    CEColorSelect::new(" Background ", IdCETheme::LyricBackground, color, config)
 }
 
-impl Component<Msg, UserEvent> for ConfigImportantPopupBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+#[inline]
+fn lyric_border(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.lyric_border();
+    CEColorSelect::new(" Border ", IdCETheme::LyricBorder, color, config)
 }
 
-#[derive(MockComponent)]
-pub struct ConfigImportantPopupBorder {
-    component: CEColorSelect,
+// --- Section Important Popup Style ---
+
+#[inline]
+fn important_popup_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Important Popup style ")
 }
 
-impl ConfigImportantPopupBorder {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.important_popup_border();
-        Self {
-            component: CEColorSelect::new(
-                " Border ",
-                IdCETheme::ImportantPopupBorder,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
+#[inline]
+fn important_popup_fg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config
+        .read_recursive()
+        .settings
+        .theme
+        .important_popup_foreground();
+    CEColorSelect::new(
+        " Foreground ",
+        IdCETheme::ImportantPopupForeground,
+        color,
+        config,
+    )
 }
 
-impl Component<Msg, UserEvent> for ConfigImportantPopupBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+#[inline]
+fn important_popup_bg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config
+        .read_recursive()
+        .settings
+        .theme
+        .important_popup_background();
+    CEColorSelect::new(
+        " Background ",
+        IdCETheme::ImportantPopupBackground,
+        color,
+        config,
+    )
 }
 
-#[derive(MockComponent)]
-pub struct ConfigFallbackTitle {
-    component: Label,
+#[inline]
+fn important_popup_border(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config
+        .read_recursive()
+        .settings
+        .theme
+        .important_popup_border();
+    CEColorSelect::new(" Border ", IdCETheme::ImportantPopupBorder, color, config)
 }
 
-impl Default for ConfigFallbackTitle {
-    fn default() -> Self {
-        Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text(" Fallback style "),
-        }
-    }
+// --- Section Fallback Style ---
+
+#[inline]
+fn fallback_title(config: &SharedTuiSettings) -> CEStyleTitle {
+    CEStyleTitle::new(config, " Fallback style ")
 }
 
-impl Component<Msg, UserEvent> for ConfigFallbackTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
-        None
-    }
+#[inline]
+fn fallback_fg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.fallback_foreground();
+    CEColorSelect::new(" Foreground ", IdCETheme::FallbackForeground, color, config)
 }
 
-#[derive(MockComponent)]
-pub struct ConfigFallbackForeground {
-    component: CEColorSelect,
+#[inline]
+fn fallback_bg(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.fallback_background();
+    CEColorSelect::new(" Background ", IdCETheme::FallbackBackground, color, config)
 }
 
-impl ConfigFallbackForeground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.fallback_foreground();
-        Self {
-            component: CEColorSelect::new(
-                " Foreground ",
-                IdCETheme::FallbackForeground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
+#[inline]
+fn fallback_border(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.fallback_border();
+    CEColorSelect::new(" Border ", IdCETheme::FallbackBorder, color, config)
 }
 
-impl Component<Msg, UserEvent> for ConfigFallbackForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+#[inline]
+fn fallback_highlight(config: SharedTuiSettings) -> CEColorSelect {
+    let color = config.read_recursive().settings.theme.fallback_highlight();
+    CEColorSelect::new(" Highlight ", IdCETheme::FallbackHighlight, color, config)
 }
 
-#[derive(MockComponent)]
-pub struct ConfigFallbackBackground {
-    component: CEColorSelect,
+// --- Section Highlight Symbols ---
+
+#[inline]
+fn library_hg_symbol(config: SharedTuiSettings) -> ConfigInputHighlight {
+    ConfigInputHighlight::new(
+        " Highlight Symbol ",
+        IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol),
+        config,
+    )
 }
 
-impl ConfigFallbackBackground {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.library_background();
-        Self {
-            component: CEColorSelect::new(
-                " Background ",
-                IdCETheme::FallbackBackground,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
+#[inline]
+fn playlist_hg_symbol(config: SharedTuiSettings) -> ConfigInputHighlight {
+    ConfigInputHighlight::new(
+        " Highlight Symbol ",
+        IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol),
+        config,
+    )
 }
 
-impl Component<Msg, UserEvent> for ConfigFallbackBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigFallbackBorder {
-    component: CEColorSelect,
-}
-
-impl ConfigFallbackBorder {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.library_border();
-        Self {
-            component: CEColorSelect::new(
-                " Border ",
-                IdCETheme::FallbackBorder,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigFallbackBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigFallbackHighlight {
-    component: CEColorSelect,
-}
-
-impl ConfigFallbackHighlight {
-    pub fn new(config: SharedTuiSettings) -> Self {
-        let color = config.read().settings.theme.library_highlight();
-        Self {
-            component: CEColorSelect::new(
-                " Highlight ",
-                IdCETheme::FallbackHighlight,
-                color,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)),
-                Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, UserEvent> for ConfigFallbackHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
+#[inline]
+fn currently_playing_track_symbol(config: SharedTuiSettings) -> ConfigInputHighlight {
+    ConfigInputHighlight::new(
+        " Current Track Symbol ",
+        IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol),
+        config,
+    )
 }
 
 impl Model {
@@ -1336,149 +817,149 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryLabel)),
-            Box::<ConfigLibraryTitle>::default(),
+            Box::new(library_title(config)),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryForeground)),
-            Box::new(ConfigLibraryForeground::new(config.clone())),
+            Box::new(library_fg(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryBackground)),
-            Box::new(ConfigLibraryBackground::new(config.clone())),
+            Box::new(library_bg(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryBorder)),
-            Box::new(ConfigLibraryBorder::new(config.clone())),
+            Box::new(library_border(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlight)),
-            Box::new(ConfigLibraryHighlight::new(config.clone())),
+            Box::new(library_highlight(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistLabel)),
-            Box::<ConfigPlaylistTitle>::default(),
+            Box::new(playlist_title(config)),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistForeground)),
-            Box::new(ConfigPlaylistForeground::new(config.clone())),
+            Box::new(playlist_fg(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistBackground)),
-            Box::new(ConfigPlaylistBackground::new(config.clone())),
+            Box::new(playlist_bg(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistBorder)),
-            Box::new(ConfigPlaylistBorder::new(config.clone())),
+            Box::new(playlist_border(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlight)),
-            Box::new(ConfigPlaylistHighlight::new(config.clone())),
+            Box::new(playlist_highlight(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressLabel)),
-            Box::<ConfigProgressTitle>::default(),
+            Box::new(progress_title(config)),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressForeground)),
-            Box::new(ConfigProgressForeground::new(config.clone())),
+            Box::new(progress_fg(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressBackground)),
-            Box::new(ConfigProgressBackground::new(config.clone())),
+            Box::new(progress_bg(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ProgressBorder)),
-            Box::new(ConfigProgressBorder::new(config.clone())),
+            Box::new(progress_border(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricLabel)),
-            Box::<ConfigLyricTitle>::default(),
+            Box::new(lyric_title(config)),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricForeground)),
-            Box::new(ConfigLyricForeground::new(config.clone())),
+            Box::new(lyric_fg(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricBackground)),
-            Box::new(ConfigLyricBackground::new(config.clone())),
+            Box::new(lyric_bg(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LyricBorder)),
-            Box::new(ConfigLyricBorder::new(config.clone())),
+            Box::new(lyric_border(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupLabel)),
-            Box::<ConfigImportantPopupTitle>::default(),
+            Box::new(important_popup_title(config)),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupForeground)),
-            Box::new(ConfigImportantPopupForeground::new(config.clone())),
+            Box::new(important_popup_fg(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupBackground)),
-            Box::new(ConfigImportantPopupBackground::new(config.clone())),
+            Box::new(important_popup_bg(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ImportantPopupBorder)),
-            Box::new(ConfigImportantPopupBorder::new(config.clone())),
+            Box::new(important_popup_border(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackLabel)),
-            Box::<ConfigFallbackTitle>::default(),
+            Box::new(fallback_title(config)),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackForeground)),
-            Box::new(ConfigFallbackForeground::new(config.clone())),
+            Box::new(fallback_fg(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackBackground)),
-            Box::new(ConfigFallbackBackground::new(config.clone())),
+            Box::new(fallback_bg(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackBorder)),
-            Box::new(ConfigFallbackBorder::new(config.clone())),
+            Box::new(fallback_border(config.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::FallbackHighlight)),
-            Box::new(ConfigFallbackHighlight::new(config.clone())),
+            Box::new(fallback_highlight(config.clone())),
             Vec::new(),
         )?;
 
@@ -1493,13 +974,13 @@ impl Model {
     fn remount_config_color_symbols(&mut self, config: &SharedTuiSettings) -> Result<()> {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::LibraryHighlightSymbol)),
-            Box::new(ConfigLibraryHighlightSymbol::new(config.clone())),
+            Box::new(library_hg_symbol(config.clone())),
             Vec::new(),
         )?;
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::PlaylistHighlightSymbol)),
-            Box::new(ConfigPlaylistHighlightSymbol::new(config.clone())),
+            Box::new(playlist_hg_symbol(config.clone())),
             Vec::new(),
         )?;
 
@@ -1507,7 +988,7 @@ impl Model {
             Id::ConfigEditor(IdConfigEditor::Theme(
                 IdCETheme::CurrentlyPlayingTrackSymbol,
             )),
-            Box::new(ConfigCurrentlyPlayingTrackSymbol::new(config.clone())),
+            Box::new(currently_playing_track_symbol(config.clone())),
             Vec::new(),
         )?;
 
