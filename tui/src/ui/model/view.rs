@@ -27,7 +27,7 @@ use crate::ui::utils::{
 
 impl Model {
     pub fn init_app(
-        tx_to_main: UnboundedReceiver<Msg>,
+        rx_to_main: UnboundedReceiver<Msg>,
         stream_event_port: PortStreamEvents,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
@@ -38,7 +38,7 @@ impl Model {
                 .poll_timeout(Duration::from_secs(10))
                 .async_tick(true)
                 .tick_interval(Duration::from_secs(1))
-                .add_async_port(Box::new(PortRxMain::new(tx_to_main)), Duration::ZERO, 10)
+                .add_async_port(Box::new(PortRxMain::new(rx_to_main)), Duration::ZERO, 10)
                 .add_async_port(Box::new(stream_event_port), Duration::ZERO, 1),
         )
     }
