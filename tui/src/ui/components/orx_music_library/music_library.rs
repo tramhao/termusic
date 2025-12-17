@@ -383,16 +383,15 @@ impl OrxMusicLibraryComponent {
                     .parent()
                     .map(|parent| parent.data().path.clone())
             } else {
+                let sibling_idx = current_node.sibling_idx();
                 // use the next closest sibling after delete of current node
-                let next_child = current_node
-                    .sibling_idx()
-                    .min(num_siblings.saturating_sub(1));
+                let next_child_idx = (sibling_idx + 1).min(num_siblings.saturating_sub(1).min(sibling_idx.saturating_sub(1)));
                 // if we have more than one siblings, it is guranteed to have a parent
                 Some(
                     current_node
                         .parent()
                         .unwrap()
-                        .child(next_child)
+                        .child(next_child_idx)
                         .data()
                         .path
                         .clone(),
