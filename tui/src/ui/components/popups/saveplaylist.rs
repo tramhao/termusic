@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tuirealm::{
@@ -70,15 +72,15 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
                 self.perform(Cmd::Submit)
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::SavePlaylist(SavePlaylistMsg::PopupCloseCancel));
+                return Some(Msg::SavePlaylist(SavePlaylistMsg::CloseCancel));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => match self.component.state() {
                 State::One(StateValue::String(input_string)) => {
-                    return Some(Msg::SavePlaylist(SavePlaylistMsg::PopupCloseOk(
+                    return Some(Msg::SavePlaylist(SavePlaylistMsg::CloseOk(PathBuf::from(
                         input_string,
-                    )));
+                    ))));
                 }
                 _ => CmdResult::None,
             },
@@ -86,7 +88,7 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
         };
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::String(input_string))) => Some(
-                Msg::SavePlaylist(SavePlaylistMsg::PopupUpdate(input_string)),
+                Msg::SavePlaylist(SavePlaylistMsg::Update(PathBuf::from(input_string))),
             ),
             CmdResult::None => None,
             _ => Some(Msg::ForceRedraw),
@@ -97,11 +99,11 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
 #[derive(MockComponent)]
 pub struct SavePlaylistConfirmPopup {
     component: YNConfirm,
-    filename: String,
+    full_path: PathBuf,
 }
 
 impl SavePlaylistConfirmPopup {
-    pub fn new(config: SharedTuiSettings, filename: &str) -> Self {
+    pub fn new(config: SharedTuiSettings, filename: PathBuf) -> Self {
         let component = YNConfirm::new_with_cb(config, " Playlist exists. Overwrite? ", |config| {
             YNConfirmStyle {
                 foreground_color: config.settings.theme.important_popup_foreground(),
@@ -113,7 +115,7 @@ impl SavePlaylistConfirmPopup {
 
         Self {
             component,
-            filename: filename.to_string(),
+            full_path: filename,
         }
     }
 }
@@ -122,8 +124,8 @@ impl Component<Msg, UserEvent> for SavePlaylistConfirmPopup {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
-            Msg::SavePlaylist(SavePlaylistMsg::ConfirmCloseOk(self.filename.clone())),
-            Msg::SavePlaylist(SavePlaylistMsg::ConfirmCloseCancel),
+            Msg::SavePlaylist(SavePlaylistMsg::OverwriteOk(self.full_path.clone())),
+            Msg::SavePlaylist(SavePlaylistMsg::OverwriteCancel),
         )
     }
 }
@@ -140,7 +142,7 @@ impl Model {
                 .is_ok()
         );
 
-        self.remount_save_playlist_label("")?;
+        self.remount_save_playlist_label(&PathBuf::new())?;
         assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
         Ok(())
     }
@@ -152,7 +154,7 @@ impl Model {
         }
     }
 
-    pub fn mount_save_playlist_confirm(&mut self, filename: &str) {
+    pub fn mount_save_playlist_confirm(&mut self, filename: PathBuf) {
         assert!(
             self.app
                 .remount(

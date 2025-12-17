@@ -392,7 +392,7 @@ impl Model {
             .expect("Expected to remount without error");
     }
 
-    pub fn remount_save_playlist_label(&mut self, filename: &str) -> Result<()> {
+    pub fn remount_save_playlist_label(&mut self, filename: &Path) -> Result<()> {
         let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => id,
             _ => bail!("Invalid node selected in library"),
@@ -418,7 +418,9 @@ impl Model {
                         TextSpan::new(path_string)
                             .fg(config.settings.theme.fallback_foreground())
                             .bold(),
-                        TextSpan::new(filename).fg(Color::Cyan).bold(),
+                        TextSpan::new(filename.to_string_lossy())
+                            .fg(Color::Cyan)
+                            .bold(),
                         TextSpan::new(".m3u")
                             .fg(config.settings.theme.fallback_foreground())
                             .bold(),

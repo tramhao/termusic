@@ -76,12 +76,20 @@ pub enum PlayerMsg {
 /// Save Playlist Popup related messages
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SavePlaylistMsg {
-    PopupShow,
-    PopupCloseCancel,
-    PopupUpdate(String),
-    PopupCloseOk(String),
-    ConfirmCloseCancel,
-    ConfirmCloseOk(String),
+    /// Show the Popup.
+    Show,
+    /// Update the "Full Path Label". Contains the filename without extension.
+    Update(PathBuf),
+    /// The Popup confirmed to save. Contains the filename without extension.
+    CloseOk(PathBuf),
+    /// The Popup has been canceled without doing anything.
+    CloseCancel,
+
+    // Playlist exists, overwrite popup
+    /// The Popup has been canceled without doing anything.
+    OverwriteCancel,
+    /// The Popup confirmed to save and overwrite. Contains the full path to save to.
+    OverwriteOk(PathBuf),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

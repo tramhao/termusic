@@ -878,7 +878,7 @@ impl Model {
     }
 
     /// Save the current playlist as m3u with the given `filename`
-    pub fn playlist_save_m3u_before(&mut self, filename: &str) -> Result<()> {
+    pub fn playlist_save_m3u_before(&mut self, filename: PathBuf) -> Result<()> {
         let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => id,
             _ => bail!("Invalid node selected in library"),
@@ -894,19 +894,19 @@ impl Model {
         };
 
         if path_m3u.exists() {
-            self.mount_save_playlist_confirm(&path_m3u.to_string_lossy());
+            self.mount_save_playlist_confirm(path_m3u);
             return Ok(());
         }
 
         self.playlist_save_m3u(path_m3u)
     }
 
-    /// Save the current playlist as m3u in the given full path
-    pub fn playlist_save_m3u(&mut self, filename: PathBuf) -> Result<()> {
+    /// Save the current playlist as m3u in the given full path.
+    pub fn playlist_save_m3u(&mut self, path: PathBuf) -> Result<()> {
         // TODO: move this to server?
-        self.playback.playlist.save_m3u(&filename)?;
+        self.playback.playlist.save_m3u(&path)?;
 
-        self.new_library_reload_and_focus(filename);
+        self.new_library_reload_and_focus(path);
 
         // only reload database results, if the criteria is for playlists
         if self.dw.criteria == SearchCriteria::Playlist {

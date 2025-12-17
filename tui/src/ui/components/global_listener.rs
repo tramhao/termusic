@@ -106,7 +106,7 @@ impl Component<Msg, UserEvent> for GlobalListener {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.save_playlist.get() => {
-                Some(Msg::SavePlaylist(SavePlaylistMsg::PopupShow))
+                Some(Msg::SavePlaylist(SavePlaylistMsg::Show))
             }
             Event::Keyboard(keyevent) if keyevent == keys.move_cover_art_keys.move_left.get() => {
                 Some(Msg::Xywh(XYWHMsg::MoveLeft))

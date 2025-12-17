@@ -1034,30 +1034,30 @@ impl Model {
     /// Handle & update [`SavePlaylistMsg`] related components.
     fn update_save_playlist(&mut self, msg: SavePlaylistMsg) -> Option<Msg> {
         match msg {
-            SavePlaylistMsg::PopupShow => {
+            SavePlaylistMsg::Show => {
                 if let Err(e) = self.mount_save_playlist() {
                     self.mount_error_popup(e.context("mount save playlist"));
                 }
             }
-            SavePlaylistMsg::PopupCloseCancel => {
+            SavePlaylistMsg::CloseCancel => {
                 self.umount_save_playlist();
             }
-            SavePlaylistMsg::PopupCloseOk(filename) => {
+            SavePlaylistMsg::CloseOk(filename) => {
                 self.umount_save_playlist();
-                if let Err(e) = self.playlist_save_m3u_before(&filename) {
+                if let Err(e) = self.playlist_save_m3u_before(filename) {
                     self.mount_error_popup(e.context("save m3u playlist before"));
                 }
             }
-            SavePlaylistMsg::PopupUpdate(filename) => {
+            SavePlaylistMsg::Update(filename) => {
                 if let Err(e) = self.remount_save_playlist_label(&filename) {
                     self.mount_error_popup(e.context("remount save playlist label"));
                 }
             }
-            SavePlaylistMsg::ConfirmCloseCancel => {
+            SavePlaylistMsg::OverwriteCancel => {
                 self.umount_save_playlist_confirm();
             }
-            SavePlaylistMsg::ConfirmCloseOk(filename) => {
-                if let Err(e) = self.playlist_save_m3u(PathBuf::from(filename)) {
+            SavePlaylistMsg::OverwriteOk(filename) => {
+                if let Err(e) = self.playlist_save_m3u(filename) {
                     self.mount_error_popup(e.context("save m3u playlist"));
                 }
                 self.umount_save_playlist_confirm();
