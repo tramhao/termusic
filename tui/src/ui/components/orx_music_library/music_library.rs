@@ -43,6 +43,12 @@ pub struct MusicLibData {
     // TODO: refactor bools to be bitflags to save on storage?
     /// Store whether that path is a dir to show indicators & use for prefetching
     is_dir: bool,
+    /// If `Some` it means the directory has been checked, and includes the actual value `is_empty` value.
+    /// This is necessary to prevent some infinite loading loops on empty directories.
+    /// 
+    /// Only valid if `is_dir: true`.
+    /// Can be ignored if `children.len > 0`.
+    is_empty_dir: Option<bool>,
     /// Indicator if the we already send a request to fetch this directory
     is_loading: bool,
     /// Indicator that loading information about this (file EACCESS) or directory loading has failed.
@@ -56,7 +62,7 @@ pub struct MusicLibData {
 
 impl MusicLibData {
     /// Create new data.
-    pub fn new(path: PathBuf, is_dir: bool) -> Self {
+    pub fn new(path: PathBuf, is_dir: bool, is_empty: Option<bool>) -> Self {
         assert!(path.is_absolute());
         let cell = OnceCell::new();
         // Due to our expectation of the path not ending in `..`, we can assume
@@ -69,6 +75,7 @@ impl MusicLibData {
         Self {
             path,
             is_dir,
+            is_empty_dir: is_empty,
             is_loading: false,
             is_error: false,
             as_str: OnceCell::default(),
@@ -340,12 +347,16 @@ impl OrxMusicLibraryComponent {
         Some(Msg::ForceRedraw)
     }
 
-    /// Also known as going down the tree / adding file to playlist
-    fn handle_right_key(&mut self) -> Option<Msg> {
+    /// Also known as going down the tree / adding file to playlist.
+    ///
+    /// If `from_load: true`, disabled any extra functionality.
+    fn handle_right_key(&mut self, from_load: bool) -> Option<Msg> {
         let selected_node = self.component.get_current_selected_node()?;
 
         if selected_node.data().is_dir {
-            if selected_node.num_children() > 0 {
+            if selected_node.num_children() > 0
+                || selected_node.data().is_empty_dir.is_some_and(|v| v)
+            {
                 // Current node has children loaded, just open it.
 
                 // "Direction::Right" opens the current node
@@ -360,12 +371,15 @@ impl OrxMusicLibraryComponent {
                 });
                 Some(Msg::ForceRedraw)
             } else {
-                // Current node does not have any children is is loading, dont do anything
+                // Current node does not have any children and is loading, dont do anything
                 None
             }
-        } else {
-            // Node is a file, try to add it to the playlist
+        } else if !from_load {
+            // Node is a file, try to add it to the playlist; at least if we are not in a load
             Some(Msg::Playlist(PLMsg::Add(selected_node.data().path.clone())))
+        } else {
+            // we are in a load, so we dont want to handle files here
+            None
         }
     }
 
@@ -385,7 +399,11 @@ impl OrxMusicLibraryComponent {
             } else {
                 let sibling_idx = current_node.sibling_idx();
                 // use the next closest sibling after delete of current node
-                let next_child_idx = (sibling_idx + 1).min(num_siblings.saturating_sub(1).min(sibling_idx.saturating_sub(1)));
+                let next_child_idx = (sibling_idx + 1).min(
+                    num_siblings
+                        .saturating_sub(1)
+                        .min(sibling_idx.saturating_sub(1)),
+                );
                 // if we have more than one siblings, it is guranteed to have a parent
                 Some(
                     current_node
@@ -542,7 +560,7 @@ impl OrxMusicLibraryComponent {
         self.component.select(idx);
         self.component.open_all_parents(idx);
         // always open the selected node
-        self.handle_right_key();
+        self.handle_right_key(true);
     }
 
     /// Apply the given data as the root of the tree, resetting the state of the tree.
@@ -719,7 +737,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 }
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
-                match self.handle_right_key() {
+                match self.handle_right_key(false) {
                     Some(msg) => return Some(msg),
                     None => CmdResult::None,
                 }
@@ -740,7 +758,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
-            }) => match self.handle_right_key() {
+            }) => match self.handle_right_key(false) {
                 Some(msg) => return Some(msg),
                 None => CmdResult::None,
             },

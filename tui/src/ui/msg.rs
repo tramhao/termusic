@@ -190,6 +190,11 @@ pub enum LyricMsg {
 pub struct RecVec {
     pub path: PathBuf,
     pub is_dir: bool,
+    /// If `Some` it means the directory has been checked, and includes the actual value `is_empty` value.
+    ///
+    /// Only valid if `is_dir: true`.
+    /// Can be ignored if `children.len > 0`.
+    pub is_empty: Option<bool>,
     pub children: Vec<RecVec>,
 }
 
@@ -240,6 +245,7 @@ impl Default for LINodeReady {
         let bogus_recvec = RecVec {
             path: PathBuf::new(),
             is_dir: false,
+            is_empty: None,
             children: Vec::new(),
         };
         Self {
@@ -271,6 +277,7 @@ impl Default for LINodeReadySub {
         let bogus_recvec = RecVec {
             path: PathBuf::new(),
             is_dir: false,
+            is_empty: None,
             children: Vec::new(),
         };
         Self {

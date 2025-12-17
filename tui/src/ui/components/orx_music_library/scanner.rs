@@ -69,6 +69,7 @@ fn library_dir_tree_inner(path: &Path, depth: ScanDepth, is_dir: Option<bool>) -
     let mut node = RecVec {
         path: path.to_path_buf(),
         is_dir,
+        is_empty: None,
         children: Vec::new(),
     };
 
@@ -95,6 +96,8 @@ fn library_dir_tree_inner(path: &Path, depth: ScanDepth, is_dir: Option<bool>) -
             .collect();
 
         paths.sort_by(|a, b| alphanumeric_sort::compare_str(&a.0, &b.0));
+
+        node.is_empty = Some(paths.is_empty());
 
         for (_sort_str, (path, is_dir)) in paths {
             node.children.push(library_dir_tree_inner(
@@ -124,13 +127,12 @@ pub fn recvec_to_node_rec(
     parent_node: Option<NodeIdx<MusicLibData>>,
     tree: &mut Tree<MusicLibData>,
 ) -> NodeIdx<MusicLibData> {
-    let is_dir = vec.path.is_dir();
     let nodeidx = if let Some(idx) = parent_node {
         tree.get_node_mut(idx)
             .unwrap()
-            .push_child(MusicLibData::new(vec.path, is_dir))
+            .push_child(MusicLibData::new(vec.path, vec.is_dir, vec.is_empty))
     } else {
-        tree.push_root(MusicLibData::new(vec.path, is_dir))
+        tree.push_root(MusicLibData::new(vec.path, vec.is_dir, vec.is_empty))
     };
 
     for val in vec.children {
