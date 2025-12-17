@@ -21,36 +21,34 @@ pub struct GSInputPopup {
     source: Source,
 }
 
+/// Get a [`Input`] component with the common style applied.
+#[inline]
+fn common_input_comp(config: &TuiOverlay, title: &str) -> Input {
+    Input::default()
+        .background(config.settings.theme.fallback_background())
+        .foreground(config.settings.theme.fallback_foreground())
+        .borders(
+            Borders::default()
+                .color(config.settings.theme.fallback_border())
+                .modifiers(BorderType::Rounded),
+        )
+        .title(title, Alignment::Left)
+}
+
 impl GSInputPopup {
     pub fn new(source: Source, config: &TuiOverlay) -> Self {
         match source {
             Source::Episode => Self {
-                component: Input::default()
-                    .background(config.settings.theme.fallback_background())
-                    .foreground(config.settings.theme.fallback_foreground())
-                    .borders(
-                        Borders::default()
-                            .color(config.settings.theme.fallback_border())
-                            .modifiers(BorderType::Rounded),
-                    )
-                    .input_type(InputType::Text)
-                    .title(
-                        " Search for all episodes from all feeds: (support * and ?) ",
-                        Alignment::Left,
-                    ),
+                component: common_input_comp(
+                    config,
+                    " Search for all episodes from all feeds: (support * and ?) ",
+                )
+                .input_type(InputType::Text),
                 source,
             },
             _ => Self {
-                component: Input::default()
-                    .background(config.settings.theme.fallback_background())
-                    .foreground(config.settings.theme.fallback_foreground())
-                    .borders(
-                        Borders::default()
-                            .color(config.settings.theme.fallback_border())
-                            .modifiers(BorderType::Rounded),
-                    )
-                    .input_type(InputType::Text)
-                    .title(" Search for: (support * and ?) ", Alignment::Left),
+                component: common_input_comp(config, " Search for: (support * and ?) ")
+                    .input_type(InputType::Text),
                 source,
             },
         }
@@ -138,6 +136,33 @@ pub enum Source {
     Episode,
     Podcast,
 }
+
+/// Get a [`Table`] component with the common style applied.
+fn common_table_comp(config: &TuiOverlay, title: String) -> Table {
+    Table::default()
+        .borders(
+            Borders::default()
+                .color(config.settings.theme.fallback_border())
+                .modifiers(BorderType::Rounded),
+        )
+        .background(config.settings.theme.fallback_background())
+        .foreground(config.settings.theme.fallback_foreground())
+        .title(title, Alignment::Left)
+        .scroll(true)
+        .highlighted_color(config.settings.theme.fallback_highlight())
+        .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+        .rewind(false)
+        .step(4)
+        .row_height(1)
+        .column_spacing(3)
+        .table(
+            TableBuilder::default()
+                .add_col(TextSpan::from("Empty result."))
+                .add_col(TextSpan::from("Loading..."))
+                .build(),
+        )
+}
+
 impl GSTablePopup {
     #[allow(clippy::too_many_lines)]
     pub fn new(source: Source, config: SharedTuiSettings) -> Self {
@@ -162,127 +187,22 @@ impl GSTablePopup {
 
         let title_podcast = " Results: (Enter: locate) ";
         let component = match source {
-            Source::Library(_) => Table::default()
-                .borders(
-                    Borders::default()
-                        .color(config_r.settings.theme.fallback_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .background(config_r.settings.theme.fallback_background())
-                .foreground(config_r.settings.theme.fallback_foreground())
-                .title(title_library, Alignment::Left)
-                .scroll(true)
-                .highlighted_color(config_r.settings.theme.fallback_highlight())
-                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
-                .rewind(false)
-                .step(4)
-                .row_height(1)
+            Source::Library(_) => common_table_comp(&config_r, title_library)
                 .headers(["idx", "File name"])
-                .column_spacing(3)
-                .widths(&[5, 95])
-                .table(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty result."))
-                        .add_col(TextSpan::from("Loading..."))
-                        .build(),
-                ),
+                .widths(&[5, 95]),
 
-            Source::Playlist => Table::default()
-                .borders(
-                    Borders::default()
-                        .color(config_r.settings.theme.fallback_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .background(config_r.settings.theme.fallback_background())
-                .foreground(config_r.settings.theme.fallback_foreground())
-                .title(title_playlist, Alignment::Left)
-                .scroll(true)
-                .highlighted_color(config_r.settings.theme.fallback_highlight())
-                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
-                .rewind(false)
-                .step(4)
-                .row_height(1)
+            Source::Playlist => common_table_comp(&config_r, title_playlist)
                 .headers(["Duration", "Artist", "Title"])
-                .column_spacing(3)
-                .widths(&[14, 30, 56])
-                .table(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty result."))
-                        .add_col(TextSpan::from("Loading..."))
-                        .build(),
-                ),
-            Source::Database => Table::default()
-                .borders(
-                    Borders::default()
-                        .color(config_r.settings.theme.fallback_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .background(config_r.settings.theme.fallback_background())
-                .foreground(config_r.settings.theme.fallback_foreground())
-                .title(title_database, Alignment::Left)
-                .scroll(true)
-                .highlighted_color(config_r.settings.theme.fallback_highlight())
-                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
-                .rewind(false)
-                .step(4)
-                .row_height(1)
+                .widths(&[14, 30, 56]),
+            Source::Database => common_table_comp(&config_r, title_database)
                 .headers(["Duration", "Artist", "Title"])
-                .column_spacing(3)
-                .widths(&[14, 30, 56])
-                .table(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty result."))
-                        .add_col(TextSpan::from("Loading..."))
-                        .build(),
-                ),
-            Source::Episode => Table::default()
-                .borders(
-                    Borders::default()
-                        .color(config_r.settings.theme.fallback_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .background(config_r.settings.theme.fallback_background())
-                .foreground(config_r.settings.theme.fallback_foreground())
-                .title(title_episode, Alignment::Left)
-                .scroll(true)
-                .highlighted_color(config_r.settings.theme.fallback_highlight())
-                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
-                .rewind(false)
-                .step(4)
-                .row_height(1)
+                .widths(&[14, 30, 56]),
+            Source::Episode => common_table_comp(&config_r, title_episode)
                 .headers(["idx", "Episode Title"])
-                .column_spacing(3)
-                .widths(&[5, 95])
-                .table(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty result."))
-                        .add_col(TextSpan::from("Loading..."))
-                        .build(),
-                ),
-            Source::Podcast => Table::default()
-                .borders(
-                    Borders::default()
-                        .color(config_r.settings.theme.fallback_border())
-                        .modifiers(BorderType::Rounded),
-                )
-                .background(config_r.settings.theme.fallback_background())
-                .foreground(config_r.settings.theme.fallback_foreground())
-                .title(title_podcast, Alignment::Left)
-                .scroll(true)
-                .highlighted_color(config_r.settings.theme.fallback_highlight())
-                .highlighted_str(&config_r.settings.theme.style.library.highlight_symbol)
-                .rewind(false)
-                .step(4)
-                .row_height(1)
+                .widths(&[5, 95]),
+            Source::Podcast => common_table_comp(&config_r, title_podcast.to_string())
                 .headers(["idx", "Podcast Title"])
-                .column_spacing(3)
-                .widths(&[5, 95])
-                .table(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty result."))
-                        .add_col(TextSpan::from("Loading..."))
-                        .build(),
-                ),
+                .widths(&[5, 95]),
         };
 
         drop(config_r);
@@ -396,6 +316,7 @@ impl Model {
             )
             .ok();
     }
+
     pub fn general_search_after_library_select(&mut self) {
         if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
             && let Ok(Some(AttrValue::Table(table))) =
