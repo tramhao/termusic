@@ -1,5 +1,6 @@
 //! This Module contains all TUI-specific message types.
 
+use std::ffi::OsString;
 use std::path::PathBuf;
 
 use image::DynamicImage;
@@ -74,6 +75,24 @@ pub enum PlayerMsg {
     SeekBackward,
 }
 
+/// Data for [`SavePlaylistMsg::Update`].
+///
+/// This is wrapper struct is necessary so we can overwrite the [`Eq`] matching, as otherwise the
+/// subscriptions will only fire if the path is the *exact* same.
+///
+/// The path given is the one that is reloaded and also focused.
+#[derive(Clone, Debug, Eq, Default)]
+pub struct SPUpdateData {
+    pub path: OsString,
+}
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for SPUpdateData {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
 /// Save Playlist Popup related messages
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SavePlaylistMsg {
@@ -82,7 +101,7 @@ pub enum SavePlaylistMsg {
     /// The container path may be a directory or a file.
     Show(PathBuf),
     /// Update the "Full Path Label". Contains the filename without extension.
-    Update(PathBuf),
+    Update(SPUpdateData),
     /// The Popup confirmed to save. Contains the filename without extension.
     CloseOk(PathBuf),
     /// The Popup has been canceled without doing anything.

@@ -1051,10 +1051,6 @@ impl Model {
                     self.mount_error_popup(e.context("save m3u playlist before"));
                 }
             }
-            SavePlaylistMsg::Update(filename) => {
-                // TODO: debug this is bad, we dont keep the path; this will be refactored shortly
-                self.remount_save_playlist_label(&PathBuf::new(), &filename);
-            }
             SavePlaylistMsg::OverwriteCancel => {
                 self.umount_save_playlist_confirm()
                     .expect("Expected SavePlaylist to unmount correctly");
@@ -1066,6 +1062,9 @@ impl Model {
                 self.umount_save_playlist_confirm()
                     .expect("Expected SavePlaylistConfirm to unmount correctly");
             }
+
+            // handled by the component
+            SavePlaylistMsg::Update(_filename) => (),
         }
 
         None

@@ -1,27 +1,36 @@
-use std::path::{Path, PathBuf};
+use std::{
+    ffi::{OsStr, OsString},
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
-use termusiclib::config::{SharedTuiSettings, TuiOverlay};
+use termusiclib::{
+    config::{SharedTuiSettings, TuiOverlay, v2::tui::theme::styles::ColorTermusic},
+    utils::get_parent_folder,
+};
+use tui_realm_stdlib::Span;
 use tuirealm::{
-    Component, Event, MockComponent, State, StateValue,
+    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue, Sub, SubClause,
+    SubEventClause,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, InputType},
+    props::{Alignment, BorderType, Borders, InputType, PropPayload, PropValue, TextSpan},
 };
 
 use super::{YNConfirm, YNConfirmStyle};
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
-use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, SavePlaylistMsg};
+use crate::ui::{components::vendored::tui_realm_stdlib_input::Input, model::TxToMain};
+use crate::ui::{ids::Id, msg::SPUpdateData};
 
 #[derive(MockComponent)]
 pub struct SavePlaylistPopup {
     component: Input,
+    tx_to_main: TxToMain,
 }
 
 impl SavePlaylistPopup {
-    pub fn new(config: &TuiOverlay) -> Self {
+    pub fn new(config: &TuiOverlay, tx_to_main: TxToMain) -> Self {
         let settings = &config.settings;
         Self {
             component: Input::default()
@@ -35,6 +44,7 @@ impl SavePlaylistPopup {
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title(" Save Playlist as: (Enter to confirm) ", Alignment::Left),
+            tx_to_main,
         }
     }
 }
@@ -87,9 +97,17 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => Some(
-                Msg::SavePlaylist(SavePlaylistMsg::Update(PathBuf::from(input_string))),
-            ),
+            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
+                // We cannot just pass the message as a return from this, as that will just provide the message to "Model::update"
+                // and not to any component subscriptions, but it *is* when we send it to a port.
+                let _ = self
+                    .tx_to_main
+                    .send(Msg::SavePlaylist(SavePlaylistMsg::Update(SPUpdateData {
+                        path: OsString::from(input_string),
+                    })));
+
+                None
+            }
             CmdResult::None => None,
             _ => Some(Msg::ForceRedraw),
         }
@@ -130,16 +148,119 @@ impl Component<Msg, UserEvent> for SavePlaylistConfirmPopup {
     }
 }
 
+#[derive(MockComponent)]
+pub struct SavePlaylistFullpath {
+    // Cannot use "tui_realm_stdlib::Paragraph" as it will draw each span *as a new line*, but we want *a single line*
+    component: Span,
+
+    directory: PathBuf,
+    filename: OsString,
+
+    config: SharedTuiSettings,
+}
+
+impl SavePlaylistFullpath {
+    /// Consistently get the text-spans to display
+    pub fn get_text_spans(
+        config: &TuiOverlay,
+        directory: &Path,
+        filename: &OsStr,
+    ) -> [TextSpan; 4] {
+        let mut path_string = directory.to_string_lossy().to_string();
+        // push extra "/" as "Path::to_string()" does not end with a "/"
+        path_string.push('/');
+
+        [
+            TextSpan::new("Full name: ")
+                .fg(config.settings.theme.fallback_highlight())
+                .bold(),
+            TextSpan::new(path_string).bold(),
+            TextSpan::new(filename.to_string_lossy())
+                .fg(config
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::Cyan))
+                .bold(),
+            TextSpan::new(".m3u").bold(),
+        ]
+    }
+
+    /// Create a new label component.
+    pub fn new(config: SharedTuiSettings, raw_path: &Path) -> Self {
+        let directory = get_parent_folder(raw_path).to_path_buf();
+
+        let component = {
+            let config = config.read_recursive();
+
+            Span::default()
+                .foreground(config.settings.theme.fallback_foreground())
+                .background(config.settings.theme.fallback_background())
+                .spans(Self::get_text_spans(&config, &directory, OsStr::new("")))
+        };
+
+        Self {
+            component,
+            directory,
+            filename: OsString::new(),
+            config,
+        }
+    }
+
+    /// Get the subscriptions for this component.
+    fn subs() -> Vec<Sub<Id, UserEvent>> {
+        vec![Sub::new(
+            SubEventClause::User(UserEvent::Forward(Msg::SavePlaylist(
+                SavePlaylistMsg::Update(SPUpdateData::default()),
+            ))),
+            SubClause::Always,
+        )]
+    }
+}
+
+impl Component<Msg, UserEvent> for SavePlaylistFullpath {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+        if let Event::User(UserEvent::Forward(Msg::SavePlaylist(SavePlaylistMsg::Update(update)))) =
+            ev
+        {
+            self.filename = update.path;
+
+            let values = Self::get_text_spans(
+                &self.config.read_recursive(),
+                &self.directory,
+                &self.filename,
+            );
+
+            self.attr(
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(
+                    values.into_iter().map(PropValue::TextSpan).collect(),
+                )),
+            );
+
+            return Some(Msg::ForceRedraw);
+        }
+
+        None
+    }
+}
+
 impl Model {
-    /// Mount the [`SavePlaylistPopup`] component.
+    /// Mount/Remount the [`SavePlaylistPopup`] component.
     pub fn mount_save_playlist(&mut self, path: &Path) -> Result<()> {
         self.app.remount(
             Id::SavePlaylistPopup,
-            Box::new(SavePlaylistPopup::new(&self.config_tui.read())),
+            Box::new(SavePlaylistPopup::new(
+                &self.config_tui.read(),
+                self.tx_to_main.clone(),
+            )),
             Vec::new(),
         )?;
 
-        self.remount_save_playlist_label(path, &PathBuf::new());
+        self.app.remount(
+            Id::SavePlaylistLabel,
+            Box::new(SavePlaylistFullpath::new(self.config_tui.clone(), path)),
+            SavePlaylistFullpath::subs(),
+        )?;
         self.app.active(&Id::SavePlaylistPopup)?;
         Ok(())
     }

@@ -1,8 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Result;
-use termusiclib::utils::get_parent_folder;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tuirealm::EventListenerCfg;
@@ -14,7 +13,7 @@ use tuirealm::ratatui::widgets::Clear;
 use crate::ui::Application;
 use crate::ui::components::{
     DBListCriteria, DownloadSpinner, EpisodeList, FeedsList, Footer, GSInputPopup, GSTablePopup,
-    LabelSpan, Lyric, Playlist, Progress, Source,
+    Lyric, Playlist, Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
@@ -389,40 +388,6 @@ impl Model {
         let config = self.config_tui.read();
         self.app
             .remount(Id::Label, Box::new(Footer::new(&config)), Vec::new())
-            .expect("Expected to remount without error");
-    }
-
-    pub fn remount_save_playlist_label(&mut self, raw_path: &Path, filename: &Path) {
-        let directory = get_parent_folder(raw_path);
-
-        let mut path_string = directory.to_string_lossy().to_string();
-        // push extra "/" as "Path::to_string()" does not end with a "/"
-        path_string.push('/');
-
-        let config = self.config_tui.read();
-
-        self.app
-            .remount(
-                Id::SavePlaylistLabel,
-                Box::new(LabelSpan::new(
-                    &config,
-                    &[
-                        TextSpan::new("Full name: ")
-                            .fg(config.settings.theme.fallback_highlight())
-                            .bold(),
-                        TextSpan::new(path_string)
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                        TextSpan::new(filename.to_string_lossy())
-                            .fg(Color::Cyan)
-                            .bold(),
-                        TextSpan::new(".m3u")
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                    ],
-                )),
-                Vec::new(),
-            )
             .expect("Expected to remount without error");
     }
 
