@@ -1044,10 +1044,10 @@ impl Model {
                 self.umount_save_playlist()
                     .expect("Expected SavePlaylist to unmount correctly");
             }
-            SavePlaylistMsg::CloseOk(filename) => {
+            SavePlaylistMsg::CloseOk(full_path) => {
                 self.umount_save_playlist()
                     .expect("Expected SavePlaylist to unmount correctly");
-                if let Err(e) = self.playlist_save_m3u_before(filename) {
+                if let Err(e) = self.playlist_save_m3u_before(full_path) {
                     self.mount_error_popup(e.context("save m3u playlist before"));
                 }
             }
