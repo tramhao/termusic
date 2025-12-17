@@ -45,21 +45,23 @@ impl ErrorPopup {
         error!("Displaying error popup: {msg:?}");
         // TODO: Consider changing to ":?" to output "Caused By" (and possibly backtrace) OR do a custom printing (copied from anyhow) once more than 4 lines can be displayed in height
         let msg = format!("{msg:#}");
-        Self {
-            component: Paragraph::default()
-                .borders(
-                    Borders::default()
-                        .color(Color::Red)
-                        .modifiers(BorderType::Rounded),
-                )
-                .title(" Error ", Alignment::Center)
-                .foreground(Color::Red)
-                // .background(Color::Black)
-                .modifiers(TextModifiers::BOLD)
-                .alignment(Alignment::Center)
-                .text([TextSpan::from(msg)]/* &msg.lines().map(|v| TextSpan::from(v)).collect::<Vec<_>>() */),
-                config
-        }
+
+        let component = {
+            Paragraph::default()
+            .borders(
+                Borders::default()
+                    .color(Color::Red)
+                    .modifiers(BorderType::Rounded),
+            )
+            .title(" Error ", Alignment::Center)
+            .foreground(Color::Red)
+            .background(config.read_recursive().settings.theme.fallback_background())
+            .modifiers(TextModifiers::BOLD)
+            .alignment(Alignment::Center)
+            .text([TextSpan::from(msg)]/* &msg.lines().map(|v| TextSpan::from(v)).collect::<Vec<_>>() */)
+        };
+
+        Self { component, config }
     }
 }
 
