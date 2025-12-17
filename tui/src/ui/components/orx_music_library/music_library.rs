@@ -655,19 +655,19 @@ impl OrxMusicLibraryComponent {
             node_mut.prune();
             // NOTE: we dont need to re-set "is_loading" as the full node gets overwritten with new data, which defaults to "false"
 
-            if let Some(focus_node) = data.focus_node {
-                let idx = self.get_idx_of_path(&focus_node);
-                if let Some(idx) = idx {
-                    self.select_and_open_node(idx);
-                } else {
-                    // requested node is not within the tree, lets try to find the next nearest parent
-                    self.select_nearest_parent_node(&focus_node);
-                }
-            } else if is_node_selected {
+            if data.focus_node.is_none() && is_node_selected {
                 self.component.select_no_offset(new_idx);
             }
+        }
 
-            // TODO: call tree changed?
+        if let Some(focus_node) = data.focus_node {
+            let idx = self.get_idx_of_path(&focus_node);
+            if let Some(idx) = idx {
+                self.select_and_open_node(idx);
+            } else {
+                // requested node is not within the tree, lets try to find the next nearest parent
+                self.select_nearest_parent_node(&focus_node);
+            }
         }
 
         Some(Msg::ForceRedraw)
