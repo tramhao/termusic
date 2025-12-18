@@ -271,6 +271,10 @@ Or declaratively in `/etc/nixos/configuration.nix`:
 }
 ```
 
+### Availability
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/termusic.svg?columns=2)](https://repology.org/project/termusic/versions)
+
 ## TODO
 
 - [ ] Better interface to adjust timestamp of lyric.
