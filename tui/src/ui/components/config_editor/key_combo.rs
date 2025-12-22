@@ -418,8 +418,9 @@ impl KeyCombo {
                 .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
                 .and_then(AttrValue::as_style)
         {
-            let foreground = style_invalid.fg.unwrap_or(Color::Reset);
-            let background = style_invalid.bg.unwrap_or(Color::Reset);
+            // unwraps are safe as "get_normal_style" already ensures it is set
+            let foreground = style_invalid.fg.unwrap_or(style.fg.unwrap());
+            let background = style_invalid.bg.unwrap_or(style.bg.unwrap());
             style = style.fg(foreground).bg(background);
         }
 
@@ -479,22 +480,19 @@ impl KeyCombo {
 
     /// Draw all components once, sharing some lookups.
     fn view_common(&mut self, frame: &mut Frame<'_>, area: Rect) {
+        let normal_style = self.get_normal_style();
         // get style to use
         let inactive_style = self
             .props
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style)
-            .unwrap_or(Style::default().fg(Color::Reset));
+            .unwrap_or(Style::default().bg(normal_style.bg.unwrap_or(Color::Reset)));
         let focus = self
             .props
             .get_ref(Attribute::Focus)
             .and_then(AttrValue::as_flag)
             .unwrap_or(false);
-        let style_valid = if focus {
-            self.get_normal_style()
-        } else {
-            inactive_style
-        };
+        let style_valid = if focus { normal_style } else { inactive_style };
         let mut style = style_valid;
         let is_valid = self.is_valid();
 
@@ -956,6 +954,7 @@ impl KEModifierSelect {
                     .color(config_r.settings.theme.fallback_border()),
             )
             .foreground(config_r.settings.theme.fallback_foreground())
+            .background(config_r.settings.theme.fallback_background())
             .title(name, Alignment::Left)
             .rewind(false)
             .highlighted_color(config_r.settings.theme.fallback_highlight())

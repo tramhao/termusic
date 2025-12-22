@@ -34,7 +34,7 @@ use termusiclib::config::v2::server::{
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
-use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
+use tuirealm::props::{PropPayload, PropValue, Style, TableBuilder, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout, Rect};
 use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
@@ -104,7 +104,13 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let chunk_main = Self::view_config_editor_common(&mut self.app, f);
+                let common_style = Style::new().bg(self
+                    .config_tui
+                    .read_recursive()
+                    .settings
+                    .theme
+                    .fallback_background());
+                let chunk_main = Self::view_config_editor_common(&mut self.app, f, common_style);
 
                 match self.config_editor.layout {
                     ConfigEditorLayout::General => {
@@ -131,6 +137,7 @@ impl Model {
     fn view_config_editor_common(
         app: &mut Application<Id, Msg, UserEvent>,
         f: &mut Frame<'_>,
+        common_style: Style,
     ) -> Rect {
         let [header, chunk_main, footer] = Layout::vertical([
             Constraint::Length(3), // config header
@@ -140,6 +147,9 @@ impl Model {
         .areas(f.area());
 
         app.view(&Id::ConfigEditor(IdConfigEditor::Header), f, header);
+
+        // apply basic style to whole area, otherwise the style will only be applied to the area used by components
+        f.buffer_mut().set_style(chunk_main, common_style);
 
         // draw before main chunk, to easily tell if something is overdrawing
         app.view(&Id::ConfigEditor(IdConfigEditor::Footer), f, footer);

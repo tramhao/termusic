@@ -10,7 +10,7 @@ use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
+use tuirealm::props::{Alignment, BorderType, Style, TableBuilder, TextSpan};
 use tuirealm::props::{Borders, PropPayload, PropValue};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
@@ -42,6 +42,7 @@ impl FeedsList {
                 )
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(" Podcast Feeds: ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(config.settings.theme.library_highlight())
@@ -203,6 +204,7 @@ impl EpisodeList {
                 )
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(" Episodes: ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(config.settings.theme.library_highlight())

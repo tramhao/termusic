@@ -21,6 +21,7 @@ pub struct HelpPopup {
 }
 
 impl HelpPopup {
+    /// Generate a consistent keybinding string from the given keybindings.
     fn key(keys: &[&KeyBinding]) -> TextSpan {
         let mut text = String::new();
         for (idx, key) in keys.iter().enumerate() {
@@ -31,11 +32,22 @@ impl HelpPopup {
         }
         TextSpan::from(text).bold().fg(Color::Cyan)
     }
+
+    /// Generate a consistent key explanation comment.
     fn comment(text: &str) -> TextSpan {
         TextSpan::new(text)
     }
+
     #[allow(clippy::too_many_lines)]
     pub fn new(config: SharedTuiSettings) -> Self {
+        // The following cannot be constants due to ".into()" not being allowed in a constant context
+        let focus_keys = &[
+            &KeyEvent::new(Key::Tab, KeyModifiers::NONE).into(),
+            &KeyEvent::new(Key::Tab, KeyModifiers::SHIFT).into(),
+        ];
+        let enter = &[&KeyEvent::new(Key::Enter, KeyModifiers::NONE).into()];
+        let backspace = &[&KeyEvent::new(Key::Backspace, KeyModifiers::NONE).into()];
+
         let component = {
             let config = config.read();
             let keys = &config.settings.keys;
@@ -64,8 +76,8 @@ impl HelpPopup {
                         .add_col(Self::key(&[&keys.escape, &keys.quit]))
                         .add_col(Self::comment("Exit"))
                         .add_row()
-                        .add_col(TextSpan::new("<TAB>, <SHIFT+TAB>").bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Switch focus"))
+                        .add_col(Self::key(focus_keys))
+                        .add_col(Self::comment("Switch Focus"))
                         .add_row()
                         .add_col(Self::key(&[
                             &keys.navigation_keys.left,
@@ -116,9 +128,7 @@ impl HelpPopup {
                         .add_row()
                         .add_col(Self::key(&[
                             &keys.player_keys.volume_up,
-                            // &keys.player_keys.volume_plus_2,
                             &keys.player_keys.volume_down,
-                            // &keys.player_keys.volume_minus_2,
                         ]))
                         .add_col(Self::comment("Increase/Decrease volume"))
                         .add_row()
@@ -181,11 +191,11 @@ impl HelpPopup {
                         ]))
                         .add_col(Self::comment("Yank and Paste files"))
                         .add_row()
-                        .add_col(TextSpan::new("<Enter>").bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Open sub directory as root"))
+                        .add_col(Self::key(enter))
+                        .add_col(Self::comment("Open sub directory as root"))
                         .add_row()
-                        .add_col(TextSpan::new("<Backspace>").bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Go back to parent directory"))
+                        .add_col(Self::key(backspace))
+                        .add_col(Self::comment("Go back to parent directory"))
                         .add_row()
                         .add_col(Self::key(&[&keys.library_keys.search]))
                         .add_col(Self::comment("Search in library"))

@@ -3,7 +3,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use tuirealm::State;
-use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
+use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, Style, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
 
@@ -91,6 +91,14 @@ impl Model {
                         .view(&Id::TagEditor(IdTagEditor::InputAlbum), f, chunks_row2[0]);
                     self.app
                         .view(&Id::TagEditor(IdTagEditor::InputGenre), f, chunks_row2[1]);
+                    let common_style = Style::new().bg(self
+                        .config_tui
+                        .read_recursive()
+                        .settings
+                        .theme
+                        .fallback_background());
+                    f.buffer_mut().set_style(chunks_row2[2], common_style);
+                    f.buffer_mut().set_style(chunks_row2[3], common_style);
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::TableLyricOptions),
                         f,

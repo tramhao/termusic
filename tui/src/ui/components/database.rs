@@ -13,8 +13,8 @@ use termusiclib::track::{DurationFmtShort, Track};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::props::Borders;
 use tuirealm::props::{Alignment, BorderType, Table, TableBuilder, TextSpan};
+use tuirealm::props::{Borders, Style};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
     event::{Key, KeyEvent, KeyModifiers},
@@ -188,6 +188,7 @@ impl DBListCriteria {
                 )
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(" DataBase ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(config.settings.theme.library_highlight())
@@ -312,6 +313,7 @@ impl DBListSearchResult {
                 )
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(" Result ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(config.settings.theme.library_highlight())
@@ -413,6 +415,7 @@ impl DBListSearchTracks {
                 )
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(" Tracks ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(config.settings.theme.library_highlight())

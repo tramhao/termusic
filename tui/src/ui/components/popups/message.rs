@@ -1,3 +1,4 @@
+use termusiclib::config::{SharedTuiSettings, v2::tui::theme::styles::ColorTermusic};
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent,
@@ -14,7 +15,8 @@ pub struct MessagePopup {
 }
 
 impl MessagePopup {
-    pub fn new<S: Into<String>>(title: S, msg: S) -> Self {
+    pub fn new<S: Into<String>>(config: &SharedTuiSettings, title: S, msg: S) -> Self {
+        let config_tui = config.read_recursive();
         Self {
             component: Paragraph::default()
                 .borders(
@@ -22,8 +24,13 @@ impl MessagePopup {
                         .color(Color::Cyan)
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::Green)
-                // .background(Color::Black)
+                .foreground(
+                    config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::Green),
+                )
+                .background(config_tui.settings.theme.library_background())
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
                 .title(title.into(), Alignment::Center)
@@ -44,7 +51,7 @@ impl Model {
             self.app
                 .remount(
                     Id::MessagePopup,
-                    Box::new(MessagePopup::new(title, text)),
+                    Box::new(MessagePopup::new(&self.config_tui, title, text)),
                     vec![]
                 )
                 .is_ok()

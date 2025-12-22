@@ -49,7 +49,7 @@ fn common_input_comp(config: &TuiOverlay, title: &str) -> Input {
                 .color(config.settings.theme.library_border())
                 .modifiers(BorderType::Rounded),
         )
-        .foreground(config.settings.theme.library_highlight())
+        .foreground(config.settings.theme.library_foreground())
         .background(config.settings.theme.library_background())
         .inactive(Style::new().bg(config.settings.theme.library_background()))
         .invalid_style(
@@ -70,7 +70,7 @@ fn common_radio_comp(config: &TuiOverlay, title: &str) -> Radio {
                 .color(config.settings.theme.library_border())
                 .modifiers(BorderType::Rounded),
         )
-        .foreground(config.settings.theme.library_highlight())
+        .foreground(config.settings.theme.library_foreground())
         .background(config.settings.theme.library_background())
         .inactive(Style::new().bg(config.settings.theme.library_background()))
         .title(title, Alignment::Left)
@@ -594,7 +594,6 @@ impl SaveLastPosition {
         };
         let component = common_radio_comp(&config_tui, " Remember last played position: ")
             .choices(["Unsupported", "No", "Yes"])
-            .inactive(Style::new().bg(config_tui.settings.theme.library_background()))
             .rewind(true)
             .value(save_last_position);
 
@@ -968,7 +967,6 @@ pub struct ExtraYtdlpArgs {
 
 impl ExtraYtdlpArgs {
     pub fn new(config: CombinedSettings) -> Self {
-        // TODO: this should likely also cover the MaybeCom settings from the TUI
         let component = {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Extra Args for yt-dlp: ")
