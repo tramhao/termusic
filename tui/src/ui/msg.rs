@@ -1,5 +1,6 @@
 //! This Module contains all TUI-specific message types.
 
+use std::ffi::OsString;
 use std::path::PathBuf;
 
 use image::DynamicImage;
@@ -7,6 +8,7 @@ use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusi
 use termusiclib::player::{GetProgressResponse, PlaylistTracks, UpdateEvents};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
+use tokio::sync::mpsc;
 
 use crate::ui::components::TETrack;
 use crate::ui::ids::{IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
@@ -73,15 +75,43 @@ pub enum PlayerMsg {
     SeekBackward,
 }
 
+/// Data for [`SavePlaylistMsg::Update`].
+///
+/// This is wrapper struct is necessary so we can overwrite the [`Eq`] matching, as otherwise the
+/// subscriptions will only fire if the path is the *exact* same.
+///
+/// The path given is the one that is reloaded and also focused.
+#[derive(Clone, Debug, Eq, Default)]
+pub struct SPUpdateData {
+    pub path: OsString,
+}
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for SPUpdateData {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
 /// Save Playlist Popup related messages
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SavePlaylistMsg {
-    PopupShow,
-    PopupCloseCancel,
-    PopupUpdate(String),
-    PopupCloseOk(String),
-    ConfirmCloseCancel,
-    ConfirmCloseOk(String),
+    /// Show the Popup. Contains the path to write to.
+    ///
+    /// The container path may be a directory or a file.
+    Show(PathBuf),
+    /// Update the "Full Path Label". Contains the filename without extension.
+    Update(SPUpdateData),
+    /// The Popup confirmed to save. Contains the the full path.
+    CloseOk(PathBuf),
+    /// The Popup has been canceled without doing anything.
+    CloseCancel,
+
+    // Playlist exists, overwrite popup
+    /// The Popup has been canceled without doing anything.
+    OverwriteCancel,
+    /// The Popup confirmed to save and overwrite. Contains the full path to save to.
+    OverwriteOk(PathBuf),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -153,13 +183,33 @@ pub enum LyricMsg {
     TextAreaBlurDown,
 }
 
+/// Determine if the value is meant to represent a directory and it content state.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum IsDir {
+    /// It is not a directory
+    No,
+    /// It is a directory, but it is unknown if it contains anything.
+    YesNotLoaded,
+    /// It is a directory, and it is known to not be empty.
+    YesLoaded,
+    /// It is a directory, and is known to be empty.
+    YesLoadedEmpty,
+}
+
+impl IsDir {
+    #[inline]
+    pub fn is_dir(self) -> bool {
+        !matches!(self, IsDir::No)
+    }
+}
+
 /// Recursive structure which may contain more of itself.
 ///
 /// Basically a `tui-realm-treeview` Tree Node, without the extra things.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecVec {
     pub path: PathBuf,
-    pub is_dir: bool,
+    pub is_dir: IsDir,
     pub children: Vec<RecVec>,
 }
 
@@ -209,7 +259,7 @@ impl Default for LINodeReady {
     fn default() -> Self {
         let bogus_recvec = RecVec {
             path: PathBuf::new(),
-            is_dir: false,
+            is_dir: IsDir::No,
             children: Vec::new(),
         };
         Self {
@@ -240,7 +290,7 @@ impl Default for LINodeReadySub {
     fn default() -> Self {
         let bogus_recvec = RecVec {
             path: PathBuf::new(),
-            is_dir: false,
+            is_dir: IsDir::No,
             children: Vec::new(),
         };
         Self {
@@ -252,6 +302,32 @@ impl Default for LINodeReadySub {
 
 /// `PartialEq` is only used for subscriptions.
 impl PartialEq for LINodeReadySub {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+/// Data for [`LIMsg::RequestCurrentNode`].
+///
+/// This should likely be just a Callback fn, but it would also need to satisfy "Eq" and "Clone", which is annoying with dyn traits.
+#[derive(Clone, Debug)]
+pub struct LIReqNode {
+    // This is practically used as a oneshot, but `tokio::sync::oneshot::Sender` is not "Clone", but this one is.
+    pub sender: mpsc::Sender<Option<PathBuf>>,
+}
+
+/// Data returned from this should not be passed around.
+impl Default for LIReqNode {
+    fn default() -> Self {
+        let (bogus_tx, _) = mpsc::channel(1);
+        Self { sender: bogus_tx }
+    }
+}
+
+impl Eq for LIReqNode {}
+
+/// `PartialEq` is only used for subscriptions.
+impl PartialEq for LIReqNode {
     fn eq(&self, _other: &Self) -> bool {
         true
     }
@@ -285,6 +361,9 @@ pub enum LIMsg {
     ///
     /// Does not replace the tree root.
     TreeNodeReadySub(LINodeReadySub),
+
+    /// Get the currently selected node's path and reply to on the given channel.
+    RequestCurrentPath(LIReqNode),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

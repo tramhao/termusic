@@ -658,6 +658,7 @@ impl Model {
             LIMsg::ReloadPath(_data) => (),
             LIMsg::TreeNodeReady(_data) => (),
             LIMsg::TreeNodeReadySub(_data) => (),
+            LIMsg::RequestCurrentPath(_data) => (),
         }
     }
 
@@ -1034,34 +1035,36 @@ impl Model {
     /// Handle & update [`SavePlaylistMsg`] related components.
     fn update_save_playlist(&mut self, msg: SavePlaylistMsg) -> Option<Msg> {
         match msg {
-            SavePlaylistMsg::PopupShow => {
-                if let Err(e) = self.mount_save_playlist() {
+            SavePlaylistMsg::Show(path) => {
+                if let Err(e) = self.mount_save_playlist(&path) {
                     self.mount_error_popup(e.context("mount save playlist"));
                 }
             }
-            SavePlaylistMsg::PopupCloseCancel => {
-                self.umount_save_playlist();
+            SavePlaylistMsg::CloseCancel => {
+                self.umount_save_playlist()
+                    .expect("Expected SavePlaylist to unmount correctly");
             }
-            SavePlaylistMsg::PopupCloseOk(filename) => {
-                self.umount_save_playlist();
-                if let Err(e) = self.playlist_save_m3u_before(&filename) {
+            SavePlaylistMsg::CloseOk(full_path) => {
+                self.umount_save_playlist()
+                    .expect("Expected SavePlaylist to unmount correctly");
+                if let Err(e) = self.playlist_save_m3u_before(full_path) {
                     self.mount_error_popup(e.context("save m3u playlist before"));
                 }
             }
-            SavePlaylistMsg::PopupUpdate(filename) => {
-                if let Err(e) = self.remount_save_playlist_label(&filename) {
-                    self.mount_error_popup(e.context("remount save playlist label"));
-                }
+            SavePlaylistMsg::OverwriteCancel => {
+                self.umount_save_playlist_confirm()
+                    .expect("Expected SavePlaylist to unmount correctly");
             }
-            SavePlaylistMsg::ConfirmCloseCancel => {
-                self.umount_save_playlist_confirm();
-            }
-            SavePlaylistMsg::ConfirmCloseOk(filename) => {
-                if let Err(e) = self.playlist_save_m3u(PathBuf::from(filename)) {
+            SavePlaylistMsg::OverwriteOk(filename) => {
+                if let Err(e) = self.playlist_save_m3u(filename) {
                     self.mount_error_popup(e.context("save m3u playlist"));
                 }
-                self.umount_save_playlist_confirm();
+                self.umount_save_playlist_confirm()
+                    .expect("Expected SavePlaylistConfirm to unmount correctly");
             }
+
+            // handled by the component
+            SavePlaylistMsg::Update(_filename) => (),
         }
 
         None

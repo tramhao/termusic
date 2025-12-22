@@ -30,8 +30,8 @@ use crate::ui::{
     components::orx_music_library::scanner::{library_scan, library_scan_cb, recvec_to_tree},
     model::{DownloadTracker, TxToMain, UserEvent},
     msg::{
-        DeleteConfirmMsg, GSMsg, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
-        LIReloadPathData, Msg, PLMsg, TEMsg, YSMsg,
+        DeleteConfirmMsg, GSMsg, IsDir, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
+        LIReloadPathData, LIReqNode, Msg, PLMsg, TEMsg, YSMsg,
     },
 };
 
@@ -42,7 +42,7 @@ pub struct MusicLibData {
     path: PathBuf,
     // TODO: refactor bools to be bitflags to save on storage?
     /// Store whether that path is a dir to show indicators & use for prefetching
-    is_dir: bool,
+    is_dir: IsDir,
     /// Indicator if the we already send a request to fetch this directory
     is_loading: bool,
     /// Indicator that loading information about this (file EACCESS) or directory loading has failed.
@@ -56,7 +56,7 @@ pub struct MusicLibData {
 
 impl MusicLibData {
     /// Create new data.
-    pub fn new(path: PathBuf, is_dir: bool) -> Self {
+    pub fn new(path: PathBuf, is_dir: IsDir) -> Self {
         assert!(path.is_absolute());
         let cell = OnceCell::new();
         // Due to our expectation of the path not ending in `..`, we can assume
@@ -108,7 +108,7 @@ impl NodeValue for MusicLibData {
         if self.is_error {
             // indicator error loading that directory / file
             Indicator::render(ERROR_SYMBOL, 2, &mut offset, &mut area, buf, Some(style));
-        } else if !self.is_dir {
+        } else if !self.is_dir.is_dir() {
             // not a directory
 
             // indent leaf nodes by what is taken up on the parent by the indicators, otherwise children and the parent would have the same visible indent
@@ -324,7 +324,7 @@ impl OrxMusicLibraryComponent {
     fn handle_left_key(&mut self) -> Option<Msg> {
         let selected_node = self.component.get_current_selected_node()?;
 
-        if !selected_node.data().is_dir
+        if !selected_node.data().is_dir.is_dir()
             || !self.component.get_state().is_opened(selected_node.idx())
         {
             // When the selected node is a file or a closed directory, move focus to upper directory
@@ -340,12 +340,16 @@ impl OrxMusicLibraryComponent {
         Some(Msg::ForceRedraw)
     }
 
-    /// Also known as going down the tree / adding file to playlist
-    fn handle_right_key(&mut self) -> Option<Msg> {
+    /// Also known as going down the tree / adding file to playlist.
+    ///
+    /// If `from_load: true`, disabled any extra functionality.
+    fn handle_right_key(&mut self, from_load: bool) -> Option<Msg> {
         let selected_node = self.component.get_current_selected_node()?;
 
-        if selected_node.data().is_dir {
-            if selected_node.num_children() > 0 {
+        if selected_node.data().is_dir.is_dir() {
+            if selected_node.num_children() > 0
+                || selected_node.data().is_dir == IsDir::YesLoadedEmpty
+            {
                 // Current node has children loaded, just open it.
 
                 // "Direction::Right" opens the current node
@@ -360,12 +364,15 @@ impl OrxMusicLibraryComponent {
                 });
                 Some(Msg::ForceRedraw)
             } else {
-                // Current node does not have any children is is loading, dont do anything
+                // Current node does not have any children and is loading, dont do anything
                 None
             }
-        } else {
-            // Node is a file, try to add it to the playlist
+        } else if !from_load {
+            // Node is a file, try to add it to the playlist; at least if we are not in a load
             Some(Msg::Playlist(PLMsg::Add(selected_node.data().path.clone())))
+        } else {
+            // we are in a load, so we dont want to handle files here
+            None
         }
     }
 
@@ -383,16 +390,19 @@ impl OrxMusicLibraryComponent {
                     .parent()
                     .map(|parent| parent.data().path.clone())
             } else {
+                let sibling_idx = current_node.sibling_idx();
                 // use the next closest sibling after delete of current node
-                let next_child = current_node
-                    .sibling_idx()
-                    .min(num_siblings.saturating_sub(1));
+                let next_child_idx = (sibling_idx + 1).min(
+                    num_siblings
+                        .saturating_sub(1)
+                        .min(sibling_idx.saturating_sub(1)),
+                );
                 // if we have more than one siblings, it is guranteed to have a parent
                 Some(
                     current_node
                         .parent()
                         .unwrap()
-                        .child(next_child)
+                        .child(next_child_idx)
                         .data()
                         .path
                         .clone(),
@@ -543,7 +553,7 @@ impl OrxMusicLibraryComponent {
         self.component.select(idx);
         self.component.open_all_parents(idx);
         // always open the selected node
-        self.handle_right_key();
+        self.handle_right_key(true);
     }
 
     /// Apply the given data as the root of the tree, resetting the state of the tree.
@@ -655,22 +665,31 @@ impl OrxMusicLibraryComponent {
             node_mut.prune();
             // NOTE: we dont need to re-set "is_loading" as the full node gets overwritten with new data, which defaults to "false"
 
-            if let Some(focus_node) = data.focus_node {
-                let idx = self.get_idx_of_path(&focus_node);
-                if let Some(idx) = idx {
-                    self.select_and_open_node(idx);
-                } else {
-                    // requested node is not within the tree, lets try to find the next nearest parent
-                    self.select_nearest_parent_node(&focus_node);
-                }
-            } else if is_node_selected {
+            if data.focus_node.is_none() && is_node_selected {
                 self.component.select_no_offset(new_idx);
             }
+        }
 
-            // TODO: call tree changed?
+        if let Some(focus_node) = data.focus_node {
+            let idx = self.get_idx_of_path(&focus_node);
+            if let Some(idx) = idx {
+                self.select_and_open_node(idx);
+            } else {
+                // requested node is not within the tree, lets try to find the next nearest parent
+                self.select_nearest_parent_node(&focus_node);
+            }
         }
 
         Some(Msg::ForceRedraw)
+    }
+
+    /// Reply to the request for the currently selected node path.
+    fn handle_request_current_node(&self, data: &LIReqNode) {
+        let current_node = self.get_selected_path().map(Path::to_path_buf);
+        // We dont care if the sending fails. It is used as a one-shot, so we should be the only senders
+        // so it should only fail if the receiver is already dropped.
+        // We also cannot use "blocking_send" as that panics tokio as this might be in a async runtime context.
+        let _ = data.sender.try_send(current_node);
     }
 
     /// Handle all custom messages.
@@ -684,6 +703,10 @@ impl OrxMusicLibraryComponent {
             }
             LIMsg::TreeNodeReady(data) => Some(self.handle_ready(data)),
             LIMsg::TreeNodeReadySub(data) => self.handle_ready_sub(data),
+            LIMsg::RequestCurrentPath(data) => {
+                self.handle_request_current_node(&data);
+                None
+            }
             _ => None,
         }
     }
@@ -707,7 +730,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 }
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
-                match self.handle_right_key() {
+                match self.handle_right_key(false) {
                     Some(msg) => return Some(msg),
                     None => CmdResult::None,
                 }
@@ -728,7 +751,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
-            }) => match self.handle_right_key() {
+            }) => match self.handle_right_key(false) {
                 Some(msg) => return Some(msg),
                 None => CmdResult::None,
             },

@@ -1,9 +1,8 @@
 use std::borrow::Cow;
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use anyhow::{Context as _, Result, anyhow, bail};
+use anyhow::{Context as _, Result, anyhow};
 use rand::seq::IndexedRandom;
 use termusiclib::common::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::config::SharedTuiSettings;
@@ -20,7 +19,7 @@ use termusiclib::player::{
 };
 use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
-use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
+use termusiclib::utils::{filetype_supported, is_playlist, playlist_get_vec};
 use tui_realm_stdlib::Table;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::props::{Borders, Style};
@@ -878,36 +877,23 @@ impl Model {
         result
     }
 
-    /// Save the current playlist as m3u with the given `filename`
-    pub fn playlist_save_m3u_before(&mut self, filename: &str) -> Result<()> {
-        let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
-            State::One(StateValue::String(id)) => id,
-            _ => bail!("Invalid node selected in library"),
-        };
-
-        let path_m3u = {
-            let mut parent_folder = get_parent_folder(Path::new(&current_node)).to_path_buf();
-            let mut filename = OsString::from(filename);
-            filename.push(".m3u");
-            parent_folder.push(filename);
-
-            parent_folder
-        };
-
-        if path_m3u.exists() {
-            self.mount_save_playlist_confirm(&path_m3u.to_string_lossy());
+    /// Save the current playlist as m3u to the given path
+    pub fn playlist_save_m3u_before(&mut self, path: PathBuf) -> Result<()> {
+        if path.exists() {
+            self.mount_save_playlist_confirm(path)
+                .expect("Expected SavePlaylistConfirm to mount correctly");
             return Ok(());
         }
 
-        self.playlist_save_m3u(path_m3u)
+        self.playlist_save_m3u(path)
     }
 
-    /// Save the current playlist as m3u in the given full path
-    pub fn playlist_save_m3u(&mut self, filename: PathBuf) -> Result<()> {
+    /// Save the current playlist as m3u in the given full path.
+    pub fn playlist_save_m3u(&mut self, path: PathBuf) -> Result<()> {
         // TODO: move this to server?
-        self.playback.playlist.save_m3u(&filename)?;
+        self.playback.playlist.save_m3u(&path)?;
 
-        self.new_library_reload_and_focus(filename);
+        self.new_library_reload_and_focus(path);
 
         // only reload database results, if the criteria is for playlists
         if self.dw.criteria == SearchCriteria::Playlist {

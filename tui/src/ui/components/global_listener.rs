@@ -3,28 +3,32 @@ use std::sync::Arc;
 use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
+use tokio::runtime::Handle;
+use tokio::sync::mpsc;
 use tui_realm_stdlib::Phantom;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
 
 use crate::ui::Model;
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
-use crate::ui::model::UserEvent;
+use crate::ui::model::{TxToMain, UserEvent};
 use crate::ui::msg::{
-    ConfigEditorMsg, HelpPopupMsg, LyricMsg, MainLayoutMsg, Msg, PLMsg, PlayerMsg, QuitPopupMsg,
-    SavePlaylistMsg, XYWHMsg,
+    ConfigEditorMsg, HelpPopupMsg, LIMsg, LIReqNode, LyricMsg, MainLayoutMsg, Msg, PLMsg,
+    PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg,
 };
 
 #[derive(MockComponent)]
 pub struct GlobalListener {
     component: Phantom,
     config: SharedTuiSettings,
+    tx_to_main: TxToMain,
 }
 
 impl GlobalListener {
-    pub fn new(config: SharedTuiSettings) -> Self {
+    pub fn new(config: SharedTuiSettings, tx_to_main: TxToMain) -> Self {
         Self {
             component: Phantom::default(),
             config,
+            tx_to_main,
         }
     }
 }
@@ -106,7 +110,27 @@ impl Component<Msg, UserEvent> for GlobalListener {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.save_playlist.get() => {
-                Some(Msg::SavePlaylist(SavePlaylistMsg::PopupShow))
+                let (tx, mut rx) = mpsc::channel(1);
+                let tx_to_main = self.tx_to_main.clone();
+                Handle::current().spawn(async move {
+                    let value = rx.recv().await.flatten();
+                    match value {
+                        Some(value) => {
+                            let _ = tx_to_main.send(Msg::SavePlaylist(SavePlaylistMsg::Show(value)));
+                        },
+                        None => debug!("Current node request for Save Playlist canceled, no current node selected"),
+                    }
+                });
+
+                // We cannot just pass the message as a return from this, as that will just provide the message to "Model::update"
+                // and not to any component subscriptions, but it *is* when we send it to a port.
+                let _ = self
+                    .tx_to_main
+                    .send(Msg::Library(LIMsg::RequestCurrentPath(LIReqNode {
+                        sender: tx,
+                    })));
+
+                None
             }
             Event::Keyboard(keyevent) if keyevent == keys.move_cover_art_keys.move_left.get() => {
                 Some(Msg::Xywh(XYWHMsg::MoveLeft))
@@ -148,7 +172,10 @@ impl Model {
     pub fn remount_global_listener(&mut self) -> Result<()> {
         self.app.remount(
             Id::GlobalListener,
-            Box::new(GlobalListener::new(self.config_tui.clone())),
+            Box::new(GlobalListener::new(
+                self.config_tui.clone(),
+                self.tx_to_main.clone(),
+            )),
             global_listener_subscriptions(&self.config_tui.read().settings.keys),
         )?;
 

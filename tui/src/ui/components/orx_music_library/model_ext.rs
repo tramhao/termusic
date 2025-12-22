@@ -18,7 +18,7 @@ use crate::ui::{
     },
     ids::Id,
     model::{Model, UserEvent},
-    msg::{LIMsg, LINodeReady, LINodeReadySub, LIReloadData, LIReloadPathData, Msg},
+    msg::{LIMsg, LINodeReady, LINodeReadySub, LIReloadData, LIReloadPathData, LIReqNode, Msg},
     tui_cmd::TuiCmd,
 };
 
@@ -46,6 +46,12 @@ fn library_subs() -> Vec<Sub<Id, UserEvent>> {
         Sub::new(
             SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
                 LINodeReadySub::default(),
+            )))),
+            SubClause::Always,
+        ),
+        Sub::new(
+            SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::RequestCurrentPath(
+                LIReqNode::default(),
             )))),
             SubClause::Always,
         ),

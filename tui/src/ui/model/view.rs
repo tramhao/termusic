@@ -1,20 +1,19 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Duration;
 
-use anyhow::{Result, bail};
-use termusiclib::utils::get_parent_folder;
+use anyhow::Result;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tuirealm::EventListenerCfg;
+use tuirealm::Frame;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
-use tuirealm::{Frame, State, StateValue};
 
 use crate::ui::Application;
 use crate::ui::components::{
     DBListCriteria, DownloadSpinner, EpisodeList, FeedsList, Footer, GSInputPopup, GSTablePopup,
-    LabelSpan, Lyric, Playlist, Progress, Source,
+    Lyric, Playlist, Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
@@ -27,7 +26,7 @@ use crate::ui::utils::{
 
 impl Model {
     pub fn init_app(
-        tx_to_main: UnboundedReceiver<Msg>,
+        rx_to_main: UnboundedReceiver<Msg>,
         stream_event_port: PortStreamEvents,
     ) -> Application<Id, Msg, UserEvent> {
         // Setup application
@@ -38,7 +37,7 @@ impl Model {
                 .poll_timeout(Duration::from_secs(10))
                 .async_tick(true)
                 .tick_interval(Duration::from_secs(1))
-                .add_async_port(Box::new(PortRxMain::new(tx_to_main)), Duration::ZERO, 10)
+                .add_async_port(Box::new(PortRxMain::new(rx_to_main)), Duration::ZERO, 10)
                 .add_async_port(Box::new(stream_event_port), Duration::ZERO, 1),
         )
     }
@@ -390,44 +389,6 @@ impl Model {
         self.app
             .remount(Id::Label, Box::new(Footer::new(&config)), Vec::new())
             .expect("Expected to remount without error");
-    }
-
-    pub fn remount_save_playlist_label(&mut self, filename: &str) -> Result<()> {
-        let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
-            State::One(StateValue::String(id)) => id,
-            _ => bail!("Invalid node selected in library"),
-        };
-
-        let mut path_string = get_parent_folder(Path::new(&current_node))
-            .to_string_lossy()
-            .to_string();
-        // push extra "/" as "Path::to_string()" does not end with a "/"
-        path_string.push('/');
-
-        let config = self.config_tui.read();
-
-        self.app
-            .remount(
-                Id::SavePlaylistLabel,
-                Box::new(LabelSpan::new(
-                    &config,
-                    &[
-                        TextSpan::new("Full name: ")
-                            .fg(config.settings.theme.fallback_highlight())
-                            .bold(),
-                        TextSpan::new(path_string)
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                        TextSpan::new(filename).fg(Color::Cyan).bold(),
-                        TextSpan::new(".m3u")
-                            .fg(config.settings.theme.fallback_foreground())
-                            .bold(),
-                    ],
-                )),
-                Vec::new(),
-            )
-            .expect("Expected to remount without error");
-        Ok(())
     }
 
     pub fn show_message_timeout_label_help<S: Into<String>>(
