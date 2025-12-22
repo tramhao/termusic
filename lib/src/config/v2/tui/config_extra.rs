@@ -33,14 +33,12 @@ impl<'a, 'de> Deserialize<'de> for TuiConfigVersionedDefaulted<'a> {
     where
         D: serde::Deserializer<'de>,
     {
-        // Note that those are marked "private", but are used in the derives, and there is no to me known public way, but saves some implementation complexity
-        let content =
-            <serde::__private::de::Content<'_> as serde::Deserialize>::deserialize(deserializer)?;
-        let deserializer = serde::__private::de::ContentRefDeserializer::<D::Error>::new(&content);
+        let content = serde_content::Value::deserialize(deserializer)?;
+        let deserializer = serde_content::Deserializer::new(content);
 
         let mut err_res = String::new();
 
-        match <TuiConfigVersioned<'a>>::deserialize(deserializer)
+        match <TuiConfigVersioned<'a>>::deserialize(deserializer.clone())
             .map(TuiConfigVersionedDefaulted::Versioned)
         {
             Ok(val) => return Ok(val),
@@ -48,7 +46,9 @@ impl<'a, 'de> Deserialize<'de> for TuiConfigVersionedDefaulted<'a> {
                 let _ = write!(err_res, "{err:#}");
             }
         }
-        match TuiSettings::deserialize(deserializer).map(TuiConfigVersionedDefaulted::Unversioned) {
+        match Intermediate::deserialize(deserializer)
+            .map(|v| TuiConfigVersionedDefaulted::Unversioned(v.into_settings()))
+        {
             Ok(val) => return Ok(val),
             // no need to check if "err_res" is empty, as this code can only be executed if the above has failed
             Err(err) => {
@@ -200,6 +200,26 @@ impl TuiConfigVersioned<'_> {
     fn resolve_com(&mut self, tui_path: &Path) -> Result<()> {
         match self {
             TuiConfigVersioned::V2(v) => v.to_mut().resolve_com(tui_path),
+        }
+    }
+}
+
+/// This type exists due to a bug in `serde-content`, where without it fails to properly parse untagged enum values
+/// see <https://github.com/rushmorem/serde-content/issues/27>.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum Intermediate {
+    Some(ApplicationType),
+}
+
+impl Intermediate {
+    /// Convert Into the type used by the application, instead of what is parsed
+    ///
+    /// Will convert any version into the latest
+    #[must_use]
+    pub fn into_settings(self) -> ApplicationType {
+        match self {
+            Intermediate::Some(v) => v,
         }
     }
 }
