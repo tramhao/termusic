@@ -1,5 +1,6 @@
 use std::ffi::OsStr;
-use std::net::SocketAddr;
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::ops::ControlFlow;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -10,6 +11,7 @@ use std::{error::Error, path::Path};
 use anyhow::{Context, Result, bail};
 use clap::Parser;
 use flexi_logger::LogSpecification;
+use futures_util::future::OptionFuture;
 use parking_lot::Mutex;
 use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
@@ -26,6 +28,7 @@ use tokio::process::{Child, Command};
 use tokio::sync::RwLock;
 use tokio::task::AbortHandle;
 use tokio_util::sync::CancellationToken;
+use tonic::transport::Channel;
 
 use ui::UI;
 
@@ -321,13 +324,41 @@ async fn wait_till_connected_tcp(
     config: &CombinedSettings,
     pid: u32,
 ) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
-    let addr = {
+    let (mut addr1, mut addr2) = {
         let config_read = config.tui.read();
-        SocketAddr::from(config_read.settings.get_com().ok_or(anyhow::anyhow!(
+        let com = config_read.settings.get_com().ok_or(anyhow::anyhow!(
             "Expected tui-com settings to be resolved at this point"
-        ))?)
+        ))?;
+        match (
+            com.emulate_dual_stack,
+            com.address.is_loopback(),
+            com.address.is_unspecified(),
+        ) {
+            // ::1 / 127.0.0.1 (loopback)
+            (true, true, false) => (
+                format!(
+                    "http://{}",
+                    SocketAddr::from((Ipv6Addr::LOCALHOST, com.port))
+                ),
+                Some(format!(
+                    "http://{}",
+                    SocketAddr::from((Ipv4Addr::LOCALHOST, com.port))
+                )),
+            ),
+            // ::0 / 0.0.0.0 (unspecified)
+            (true, false, true) => (
+                format!(
+                    "http://{}",
+                    SocketAddr::from((Ipv6Addr::UNSPECIFIED, com.port))
+                ),
+                Some(format!(
+                    "http://{}",
+                    SocketAddr::from((Ipv4Addr::UNSPECIFIED, com.port))
+                )),
+            ),
+            _ => (format!("http://{}", SocketAddr::from(com)), None),
+        }
     };
-    let addr = format!("http://{addr}");
 
     let mut sys = sysinfo::System::new();
     let sys_pid = Pid::from_u32(pid);
@@ -351,22 +382,65 @@ async fn wait_till_connected_tcp(
             anyhow::bail!("Process {pid} exited before being able to connect!");
         }
 
-        match MusicPlayerClient::connect(addr.clone()).await {
-            Err(err) => {
-                // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
-                if let Some(os_err) = find_source::<std::io::Error>(&err)
-                    && os_err.kind() == std::io::ErrorKind::ConnectionRefused
-                {
-                    debug!("Connection refused found!");
-                    tokio::time::sleep(WAIT_INTERVAL).await;
-                    continue;
-                }
+        let fut1 = MusicPlayerClient::connect(addr1.clone());
+        let fut2_is_some = addr2.is_some();
+        let fut2 = OptionFuture::from(addr2.clone().map(MusicPlayerClient::connect));
 
-                // return the error and stop if it is anything other than "Connection Refused"
-                anyhow::bail!(err);
+        let res = tokio::select! {
+            biased; // we want to use the main address if both are ready
+            res = fut1 => {
+                match wait_tcp_handle_connect_result(res).await {
+                    Ok(v) => (v, &addr1),
+                    Err(err) => {
+                        // continue trying other address if available
+                        if let Some(addr2) = addr2.take() {
+                            info!("Connecting to secondary {} failed: {}", &addr1, err);
+                            addr1 = addr2;
+                            continue;
+                        }
+                        return Err(err);
+                    }
+                }
+             },
+            res = fut2, if fut2_is_some => {
+                // unwrap is safe here due to this branch only being possible if it is "Some"
+                match wait_tcp_handle_connect_result(res.unwrap()).await {
+                    Ok(v) => (v, addr2.as_ref().unwrap()),
+                    Err(err) => {
+                        info!("Connecting to secondary {} failed: {}", addr2.as_ref().unwrap(), err);
+                        addr2.take();
+                        continue;
+                    }
+                }
             }
-            Ok(client) => return Ok((client, addr)),
+        };
+
+        if let ControlFlow::Break(val) = res.0 {
+            return Ok((val, res.1.clone()));
         }
+        // otherwise continue
+    }
+}
+
+/// Convert the given result to contine or break, while also mapping the error cases.
+async fn wait_tcp_handle_connect_result(
+    res: Result<MusicPlayerClient<Channel>, tonic::transport::Error>,
+) -> Result<ControlFlow<MusicPlayerClient<tonic::transport::Channel>, ()>> {
+    match res {
+        Err(err) => {
+            // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
+            if let Some(os_err) = find_source::<std::io::Error>(&err)
+                && os_err.kind() == std::io::ErrorKind::ConnectionRefused
+            {
+                debug!("Connection refused found!");
+                tokio::time::sleep(WAIT_INTERVAL).await;
+                return Ok(ControlFlow::Continue(()));
+            }
+
+            // return the error and stop if it is anything other than "Connection Refused"
+            anyhow::bail!(err);
+        }
+        Ok(client) => Ok(ControlFlow::Break(client)),
     }
 }
 
