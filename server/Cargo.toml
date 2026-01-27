@@ -33,6 +33,7 @@ tokio-stream.workspace = true
 tokio-util.workspace = true
 tonic.workspace = true
 clap.workspace = true
+futures-util.workspace = true
 
 
 [features]

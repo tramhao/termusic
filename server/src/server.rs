@@ -2,7 +2,8 @@ mod cli;
 mod logger;
 mod music_player_service;
 
-use std::net::SocketAddr;
+use std::fmt::Write as _;
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -10,6 +11,7 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
+use futures_util::stream::SelectAll;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
@@ -23,6 +25,7 @@ use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
     PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Volume, VolumeSigned,
 };
+use tokio::net::TcpListener;
 use tokio::runtime::Handle;
 use tokio::select;
 use tokio::sync::{broadcast, oneshot};
@@ -246,7 +249,20 @@ async fn start_service(
     let handle = match protocol {
         ComProtocol::HTTP => {
             let (tcp_stream, addr) = tcp_stream(config).await?;
-            info!("Server listening on {addr}");
+            info!(
+                "Server listening on {}",
+                addr.iter()
+                    .enumerate()
+                    .fold(String::new(), |mut acc, (idx, v)| {
+                        // Unwrap should never fail as we write directly into a string
+                        if idx == 0 {
+                            write!(acc, "{v}").unwrap();
+                        } else {
+                            write!(acc, " & {v}").unwrap();
+                        }
+                        acc
+                    })
+            );
 
             tokio::spawn(
                 Server::builder()
@@ -277,11 +293,79 @@ async fn start_service(
     Ok(handle)
 }
 
+/// Convert the given results to a [`SelectAll`], depending on which one started.
+///
+/// Mainly uses to de-duplicate the paths regarding `::0` and `::1`.
+fn tcp_stream_convert_dual_stack(
+    tcp_ipv6: std::io::Result<TcpListener>,
+    tcp_ipv4: std::io::Result<TcpListener>,
+) -> Result<(SelectAll<TcpIncoming>, Vec<SocketAddr>)> {
+    let mut stream = SelectAll::new();
+
+    Ok(match (tcp_ipv6, tcp_ipv4) {
+        (Ok(tcp_ipv6), Ok(tcp_ipv4)) => {
+            let addr_v6 = tcp_ipv6.local_addr()?;
+            let addr_v4 = tcp_ipv4.local_addr()?;
+            let stream_v6 = TcpIncoming::from(tcp_ipv6).with_nodelay(Some(true));
+            let stream_v4 = TcpIncoming::from(tcp_ipv4).with_nodelay(Some(true));
+
+            stream.push(stream_v6);
+            stream.push(stream_v4);
+
+            (stream, vec![addr_v6, addr_v4])
+        }
+        (Ok(tcp_ipv6), Err(err_v4)) => {
+            info!("Binding to IPv4 address failed: {}", err_v4);
+            let addr = tcp_ipv6.local_addr()?;
+
+            stream.push(TcpIncoming::from(tcp_ipv6).with_nodelay(Some(true)));
+
+            (stream, vec![addr])
+        }
+        (Err(err_v6), Ok(tcp_ipv4)) => {
+            info!("Binding to IPv6 address failed: {}", err_v6);
+            let addr = tcp_ipv4.local_addr()?;
+
+            stream.push(TcpIncoming::from(tcp_ipv4).with_nodelay(Some(true)));
+
+            (stream, vec![addr])
+        }
+        (Err(err_v6), Err(err_v4)) => {
+            info!("Binding to address v4 failed: {}", err_v4);
+
+            return Err(err_v6.into());
+        }
+    })
+}
+
 /// Create the TCP Stream for HTTP requests.
-async fn tcp_stream(config: &SharedServerSettings) -> Result<(TcpIncoming, SocketAddr)> {
+async fn tcp_stream(
+    config: &SharedServerSettings,
+) -> Result<(SelectAll<TcpIncoming>, Vec<SocketAddr>)> {
     let addr = SocketAddr::from(&config.read().settings.com);
 
-    // workaround to print address once sever "actually" is started and address is known
+    if config.read_recursive().settings.com.emulate_dual_stack {
+        // ::1 / 127.0.0.1 (loopback)
+        if addr.ip().is_loopback() {
+            let tcp_ipv6_fut = tokio::net::TcpListener::bind((Ipv6Addr::LOCALHOST, addr.port()));
+            let tcp_ipv4_fut = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, addr.port()));
+
+            let (tcp_ipv6, tcp_ipv4) = tokio::join!(tcp_ipv6_fut, tcp_ipv4_fut);
+
+            return tcp_stream_convert_dual_stack(tcp_ipv6, tcp_ipv4);
+        }
+        // ::0 / 0.0.0.0 (unspecified)
+        if addr.ip().is_unspecified() {
+            let tcp_ipv6_fut = tokio::net::TcpListener::bind((Ipv6Addr::UNSPECIFIED, addr.port()));
+            let tcp_ipv4_fut = tokio::net::TcpListener::bind((Ipv4Addr::UNSPECIFIED, addr.port()));
+
+            let (tcp_ipv6, tcp_ipv4) = tokio::join!(tcp_ipv6_fut, tcp_ipv4_fut);
+
+            return tcp_stream_convert_dual_stack(tcp_ipv6, tcp_ipv4);
+        }
+    }
+
+    // workaround to print address once sever is "actually" started and address is known
     // see https://github.com/hyperium/tonic/issues/351
     let tcp_listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -290,9 +374,10 @@ async fn tcp_stream(config: &SharedServerSettings) -> Result<(TcpIncoming, Socke
     // workaround as "TcpIncoming" does not provide a function to get the address
     let socket_addr = tcp_listener.local_addr()?;
 
-    let stream = TcpIncoming::from(tcp_listener).with_nodelay(Some(true));
+    let mut stream = SelectAll::new();
+    stream.push(TcpIncoming::from(tcp_listener).with_nodelay(Some(true)));
 
-    Ok((stream, socket_addr))
+    Ok((stream, vec![socket_addr]))
 }
 
 #[cfg(unix)]
