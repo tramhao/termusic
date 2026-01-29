@@ -87,6 +87,7 @@ Note that using non-default features might increase the MSRV.
 |       `libopus`       |      `libopus`      |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
 |      `libsixel`       |     `libsixel`      |    X     |                 | `cover-viuer-sixel` |                Sixel protocol support                 |          |
 |     `ueberzugpp`      |    `ueberzugpp`     |          |                 |  `cover-ueberzug`   |               Ueberzug protocol support               |          |
+|     `libstdc++6`      |     `gcc-libs`      |          |                 | `rusty-soundtouch`  |       Soundtouch requires linking to libstdc++        |          |
 
 #### Windows
 
@@ -103,6 +104,7 @@ All the packages here can be installed via various sources, for ease of install 
 |               unknown               |                                           |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
 |             unavailable             | [libopus official site][libopus-download] |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
 |             unavailable             |    [libsixel source][libsixel-source]     |    X     |                 | `cover-viuer-sixel` |                Sixel protocol support                 |          |
+|               unknown               |                  unknown                  |          |                 | `rusty-soundtouch`  |       Soundtouch requires linking to libstdc++        |          |
 
 - See [MSVC Prerequisites: only the required components](https://rust-lang.github.io/rustup/installation/windows-msvc.html#installing-only-the-required-components-optional) for a minimal install
 
