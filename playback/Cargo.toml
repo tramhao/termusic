@@ -52,6 +52,11 @@ features = [
 	"Win32_UI_WindowsAndMessaging"
 ]
 
+[target.'cfg(target_os = "windows")'.dependencies.symphonia-adapter-libopus]
+workspace = true
+optional = true
+features = ["bundled"]
+
 [features]
 # NOTE: do NOT enable any backends here, enable them in crate "server"!
 # otherwise you will not be able to start that backend
