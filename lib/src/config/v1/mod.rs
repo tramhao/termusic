@@ -167,7 +167,7 @@ impl Default for Settings {
             kill_daemon_when_quit: true,
             player_use_mpris: true,
             player_use_discord: true,
-            player_port: 50101,
+            player_port: 5101,
             player_interface: "::1".parse().unwrap(),
         }
     }

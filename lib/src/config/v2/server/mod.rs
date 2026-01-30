@@ -476,7 +476,7 @@ impl Default for ComSettings {
 
             socket_path: default_uds_socket_path(),
 
-            port: 50101,
+            port: 5101,
             address: "::1".parse().unwrap(),
         }
     }
@@ -657,7 +657,7 @@ mod v1_interop {
                 converted.com,
                 ComSettings {
                     protocol: ComProtocol::HTTP,
-                    port: 50101,
+                    port: 5101,
                     address: "::1".parse().unwrap(),
                     ..Default::default()
                 }
