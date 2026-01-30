@@ -60,6 +60,22 @@ struct Controls {
     position: RwLock<Duration>,
 }
 
+impl Controls {
+    /// Gets the volume of the sound after cubic scaling.
+    ///
+    /// The value `1.0` is the "normal" volume (unfiltered input). Any value other than 1.0 will
+    /// multiply each sample by this value.
+    ///
+    /// Unlike a direct access of `Controls::volume`, this method cubes the raw linear volume to get a human-natural
+    /// sound curve.
+    ///
+    /// Reference: <https://www.dr-lex.be/info-stuff/volumecontrols.html>
+    #[inline]
+    pub fn real_volume(&self) -> f32 {
+        self.volume.lock().powi(3)
+    }
+}
+
 /// Options to apply to a specific source
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceOptions {
@@ -171,7 +187,7 @@ impl Sink {
                     *controls.position.write() = src.inner().inner().inner().inner().get_pos();
 
                     let amp = src.inner_mut();
-                    amp.inner_mut().set_factor(*controls.volume.lock());
+                    amp.inner_mut().set_factor(controls.real_volume());
                     amp.set_paused(controls.pause.load(Ordering::SeqCst));
 
                     amp.inner_mut()
