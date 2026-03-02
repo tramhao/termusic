@@ -246,6 +246,14 @@ Arch Linux users can install [`termusic-git` from the AUR](https://aur.archlinux
 pamac install termusic-git
 ```
 
+#### macOS
+
+macOS users can install termusic from [Homebrew](https://brew.sh/) through its [Formula](https://formulae.brew.sh/formula/termusic)
+
+```bash`
+brew install termusic
+```
+
 #### NetBSD
 
 NetBSD users can install `termusic` from the official repositories.
