@@ -250,7 +250,7 @@ pamac install termusic-git
 
 macOS users can install termusic from [Homebrew](https://brew.sh/) through its [Formula](https://formulae.brew.sh/formula/termusic)
 
-```bash`
+```bash
 brew install termusic
 ```
 
