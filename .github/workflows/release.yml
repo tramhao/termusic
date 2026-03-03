@@ -94,7 +94,7 @@ jobs:
 
       - name: Build release binary (cargo x86_64-macos)
         if: matrix.build == 'x86_64-macos'
-        run: cargo build --features cover-viuer-iterm --release --all --target ${{ matrix.target }}
+        run: cargo build --features cover-viuer-iterm,rusty-soundtouch --release --all --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-windows)
         if: matrix.build == 'x86_64-windows'

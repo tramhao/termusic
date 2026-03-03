@@ -91,11 +91,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check --workspace --features cover-viuer-iterm
+        run: cargo check --workspace --features cover-viuer-iterm,rusty-soundtouch
         # run: cargo check --workspace --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test --workspace --features cover-viuer-iterm
+        run: cargo test --workspace --features cover-viuer-iterm,rusty-soundtouch
         # run: cargo test --workspace --features cover,all-backends
 
   test-win:
