@@ -5145,6 +5145,7 @@ dependencies = [
  "colored",
  "ctrlc",
  "flexi_logger",
+ "futures-util",
  "log",
  "parking_lot",
  "serde",

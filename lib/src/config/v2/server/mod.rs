@@ -457,6 +457,10 @@ pub struct ComSettings {
     pub port: u16,
     /// gRPC server interface / address
     pub address: IpAddr,
+    /// Emulate dual-stack sockets.
+    ///
+    /// This will bind to both `IPv4` and `IPv6` if the address is `::0` / `0.0.0.0` or `::1` / `127.0.0.1` and will not fail if one is unavailable.
+    pub emulate_dual_stack: bool,
 }
 
 /// Helper function to get the default UDS socker path.
@@ -478,6 +482,7 @@ impl Default for ComSettings {
 
             port: 5101,
             address: "::1".parse().unwrap(),
+            emulate_dual_stack: true,
         }
     }
 }

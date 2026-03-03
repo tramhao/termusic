@@ -3,6 +3,7 @@
 ### next
 
 - Change: updated MSRV to 1.88.
+- Feat: add support for listening (and connecting) to both IPv6 and IPv4 with `http` connection mode.
 - Feat(tui): change default theme to be "Native".
 - Fix: change default port to `5101` to be below 49k
 - Fix(tui): fix that "native" and "termusic default" theme also get auto-selected in config editor, if active.
