@@ -78,8 +78,8 @@ jobs:
         if: matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
         run: | 
             brew update
-            brew install protobuf 
-            brew install libsixel
+            brew install protobuf
+            # brew install libsixel
   
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-windows'
