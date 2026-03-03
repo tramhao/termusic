@@ -91,6 +91,8 @@ jobs:
             # brew install mpv
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Run cargo check
         run: cargo check --target ${{ matrix.target }} --workspace --features cover-viuer-iterm,rusty-soundtouch,rusty-simd
