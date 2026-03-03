@@ -4,6 +4,7 @@
 
 - Change: updated MSRV to 1.88.
 - Change: enable feature `rusty-soundtouch` for linux, macos & windows CI builds
+- Change: enable feature `rusty-simd` on macos CI builds
 - Change: provide arm64 binaries for macos
 - Fix: change default port to `5101` to be below 49k
 - Fix(tui): fix that "native" and "termusic default" theme also get auto-selected in config editor, if active.
