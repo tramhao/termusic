@@ -122,7 +122,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check --workspace
+        run: cargo check --workspace --features rusty-soundtouch
 
       - name: Run cargo test
-        run: cargo test --workspace
+        run: cargo test --workspace --features rusty-soundtouch
