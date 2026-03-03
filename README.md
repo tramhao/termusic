@@ -240,10 +240,18 @@ pacman -S termusic
 
 #### Arch Linux GIT (AUR)
 
-Arch Linux users can install [`termusic-git` from the AUR](https://aur.archlinux.org/packages/termusic-git) using [pamac](https://aur.archlinux.org/packages/pamac-cli).
+Arch Linux users can install [`termusic-git` from the AUR](https://aur.archlinux.org/packages/termusic-git) using [pamac](https://aur.archlinux.org/packages/pamac-cli) or any other [AUR helper](https://wiki.archlinux.org/title/AUR_helpers).
 
 ```bash
 pamac install termusic-git
+```
+
+#### macOS
+
+macOS users can install termusic from [Homebrew](https://brew.sh/) through its [Formula](https://formulae.brew.sh/formula/termusic)
+
+```bash
+brew install termusic
 ```
 
 #### NetBSD
