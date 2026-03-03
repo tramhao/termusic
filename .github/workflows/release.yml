@@ -90,7 +90,7 @@ jobs:
 
       - name: Build release binary (cargo x86_64-linux)
         if: matrix.build == 'x86_64-linux'
-        run: cargo build --features cover,all-backends --release --all --target ${{ matrix.target }}
+        run: cargo build --features cover,all-backends,rusty-soundtouch --release --all --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-macos)
         if: matrix.build == 'x86_64-macos'
