@@ -70,6 +70,7 @@ jobs:
       matrix:
         os: [macos-latest]
         rust: [stable]
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -79,6 +80,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
 
       - name: Install developer package dependencies
         run: | 
@@ -91,11 +93,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check --workspace --features cover-viuer-iterm,rusty-soundtouch
+        run: cargo check --target ${{ matrix.target }} --workspace --features cover-viuer-iterm,rusty-soundtouch
         # run: cargo check --workspace --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test --workspace --features cover-viuer-iterm,rusty-soundtouch
+        run: cargo test --target ${{ matrix.target }} --workspace --features cover-viuer-iterm,rusty-soundtouch
         # run: cargo test --workspace --features cover,all-backends
 
   test-win:
