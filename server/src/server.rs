@@ -13,7 +13,7 @@ use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
+use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
@@ -397,6 +397,11 @@ fn player_loop(
 
     let mut had_enqueue_error = false;
 
+    // Start the playback, if wanted on startup
+    if player.config.read().settings.player.startup_state == StartupState::Playing {
+        player.resume_from_stopped();
+    }
+
     while let Some((cmd, cb)) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {
@@ -504,23 +509,7 @@ fn player_loop(
                 player.mpris_handle_events();
                 let mut p_tick = playerstats.lock();
                 let mut playlist = player.playlist.read();
-                // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore
-                if playlist.status() == RunningStatus::Stopped {
-                    if playlist.is_empty() {
-                        continue;
-                    }
-                    debug!(
-                        "current track index: {:?}",
-                        playlist.get_current_track_index()
-                    );
-                    drop(playlist);
-                    let mut playlist = player.playlist.write();
-                    playlist.clear_current_track();
-                    playlist.proceed_false();
-                    drop(playlist);
-                    player.start_play();
-                    continue;
-                }
+
                 if let Some(progress) = player.get_progress() {
                     let pl_status = playlist.status();
                     p_tick.progress = progress;
@@ -596,8 +585,16 @@ fn player_loop(
                 player.next();
             }
             PlayerCmd::PlaylistAddTrack(info) => {
-                if let Err(err) = player.playlist.write().add_tracks(info, &player.db_podcast) {
+                let mut playlist_write = player.playlist.write();
+                let was_empty = playlist_write.is_empty();
+                if let Err(err) = playlist_write.add_tracks(info, &player.db_podcast) {
                     error!("Error adding tracks: {err}");
+                }
+                drop(playlist_write);
+
+                // automatically start the playlist once something is loaded into it, if it was empty before
+                if was_empty {
+                    player.resume_from_stopped();
                 }
             }
             PlayerCmd::PlaylistRemoveTrack(info) => {

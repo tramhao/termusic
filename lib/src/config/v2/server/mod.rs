@@ -240,6 +240,21 @@ impl Default for RememberLastPosition {
     }
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum StartupState {
+    /// The startup state should be "Paused / Stopped"
+    #[serde(alias = "stop")]
+    #[serde(alias = "paused")]
+    #[serde(alias = "pause")]
+    Stopped,
+    /// The startup state should be "Playing / Resume"
+    #[serde(alias = "play")]
+    #[serde(alias = "resume")]
+    #[default]
+    Playing,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(default)] // allow missing fields and fill them with the `..Self::default()` in this struct
 pub struct PlayerSettings {
@@ -281,6 +296,9 @@ pub struct PlayerSettings {
 
     /// The backend to use
     pub backend: Backend,
+
+    /// The startup play behavior for when the server starts and the playlist is not empty.
+    pub startup_state: StartupState,
 }
 
 /// Get the default Music dir, which uses OS-specific paths, or home/Music
@@ -311,6 +329,7 @@ impl Default for PlayerSettings {
             random_album_min_quantity: NonZeroU32::new(5).unwrap(),
 
             backend: Backend::default(),
+            startup_state: StartupState::default(),
         }
     }
 }
@@ -497,7 +516,10 @@ mod v1_interop {
         PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
         ServerSettings, backends::BackendSettings,
     };
-    use crate::config::{v1, v2::server::metadata::MetadataSettings};
+    use crate::config::{
+        v1,
+        v2::server::{StartupState, metadata::MetadataSettings},
+    };
 
     impl From<v1::Loop> for LoopMode {
         fn from(value: v1::Loop) -> Self {
@@ -612,6 +634,7 @@ mod v1_interop {
                 })?,
 
                 backend: Backend::default(),
+                startup_state: StartupState::default(),
             };
 
             Ok(Self {
@@ -694,6 +717,7 @@ mod v1_interop {
                     random_track_quantity: NonZeroU32::new(20).unwrap(),
                     random_album_min_quantity: NonZeroU32::new(5).unwrap(),
                     backend: Backend::default(),
+                    startup_state: StartupState::default()
                 }
             );
         }
