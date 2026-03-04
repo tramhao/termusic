@@ -676,7 +676,7 @@ fn player_eos(player: &mut GeneralPlayer, use_skip: bool) {
         );
         drop(playlist);
         // this path should also call stop, but currently stop on a non-empty playlist basically resets playback on tick
-        // player.stop();
+        player.stop();
         return;
     }
     debug!(
