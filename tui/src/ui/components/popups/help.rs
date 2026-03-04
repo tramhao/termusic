@@ -5,7 +5,7 @@ use termusiclib::config::v2::tui::keys::KeyBinding;
 use tui_realm_stdlib::Table;
 use tuirealm::{
     Component, Event, MockComponent,
-    command::{Cmd, CmdResult, Direction},
+    command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan},
 };
@@ -297,18 +297,7 @@ impl Component<Msg, UserEvent> for HelpPopup {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::HelpPopup(HelpPopupMsg::Close)),
-
-            Event::Keyboard(key) if key == keys.quit.get() => {
-                return Some(Msg::HelpPopup(HelpPopupMsg::Close));
-            }
-            Event::Keyboard(key) if key == keys.escape.get() => {
-                return Some(Msg::HelpPopup(HelpPopupMsg::Close));
-            }
-
+            // navigation
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
@@ -323,6 +312,43 @@ impl Component<Msg, UserEvent> for HelpPopup {
                 code: Key::Up,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
+            // fast navigation
+            Event::Keyboard(KeyEvent {
+                code: Key::PageDown,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::PageUp,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Scroll(Direction::Up)),
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
+
+            // close popup
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::HelpPopup(HelpPopupMsg::Close)),
+
+            Event::Keyboard(key) if key == keys.quit.get() => {
+                return Some(Msg::HelpPopup(HelpPopupMsg::Close));
+            }
+            Event::Keyboard(key) if key == keys.escape.get() => {
+                return Some(Msg::HelpPopup(HelpPopupMsg::Close));
+            }
+
             _ => CmdResult::None,
         };
 
