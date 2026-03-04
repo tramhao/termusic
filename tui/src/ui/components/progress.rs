@@ -131,13 +131,12 @@ impl Model {
         };
 
         drop(config_server);
-        self.app
-            .attr(
-                &Id::Progress,
-                Attribute::Title,
-                AttrValue::Title((progress_title, Alignment::Center)),
-            )
-            .ok();
+        let _ = self.app.attr(
+            &Id::Progress,
+            Attribute::Title,
+            AttrValue::Title((progress_title, Alignment::Center)),
+        );
+
         self.force_redraw();
     }
 
@@ -163,16 +162,9 @@ impl Model {
     }
 
     /// Set the progress bar text.
-    fn progress_set(&mut self, progress: f64, total_duration: Duration) {
-        self.app
-            .attr(
-                &Id::Progress,
-                Attribute::Value,
-                AttrValue::Payload(PropPayload::One(PropValue::F64(progress))),
-            )
-            .ok();
-
+    fn progress_set(&mut self, mut progress: f64, total_duration: Duration) {
         let text = if self.playback.is_stopped() {
+            progress = 0.0;
             DurationFmtShort::fmt_empty().to_string()
         } else if total_duration.is_zero() {
             format!("{}", DurationFmtShort(self.playback.current_track_pos()),)
@@ -184,6 +176,11 @@ impl Model {
             )
         };
 
+        let _ = self.app.attr(
+            &Id::Progress,
+            Attribute::Value,
+            AttrValue::Payload(PropPayload::One(PropValue::F64(progress))),
+        );
         let _ = self
             .app
             .attr(&Id::Progress, Attribute::Text, AttrValue::String(text));

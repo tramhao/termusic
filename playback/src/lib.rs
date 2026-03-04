@@ -404,11 +404,11 @@ impl GeneralPlayer {
     /// Skip to the next track, if there is one
     pub fn next(&mut self) {
         if self.playlist.read().current_track().is_some() {
-            info!("skip route 1 which is in most cases.");
+            debug!("next: current_track is some");
             self.playlist.write().set_next_track(None);
             self.skip_one();
         } else {
-            info!("skip route 2 cause no current track.");
+            info!("next: playlist is empty, stopping");
             self.stop();
         }
     }
