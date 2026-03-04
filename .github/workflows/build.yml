@@ -95,11 +95,11 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Run cargo check
-        run: cargo check --target ${{ matrix.target }} --workspace --features cover-viuer-iterm,rusty-soundtouch,rusty-simd
+        run: cargo check --target ${{ matrix.target }} --workspace --features rusty-soundtouch,rusty-simd
         # run: cargo check --workspace --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test --target ${{ matrix.target }} --workspace --features cover-viuer-iterm,rusty-soundtouch,rusty-simd
+        run: cargo test --target ${{ matrix.target }} --workspace --features rusty-soundtouch,rusty-simd
         # run: cargo test --workspace --features cover,all-backends
 
   test-win:

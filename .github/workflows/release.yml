@@ -95,7 +95,7 @@ jobs:
 
       - name: Build release binary (cargo x86_64-macos)
         if: matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
-        run: cargo build --features cover-viuer-iterm,rusty-soundtouch,rusty-simd --release --all --target ${{ matrix.target }}
+        run: cargo build --features rusty-soundtouch,rusty-simd --release --all --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-windows)
         if: matrix.build == 'x86_64-windows'
