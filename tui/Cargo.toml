@@ -79,7 +79,7 @@ cover-ueberzug = []
 cover-viuer = ["cover-viuer-iterm", "cover-viuer-kitty", "cover-viuer-sixel"]
 cover-viuer-iterm = []
 cover-viuer-kitty = []
-cover-viuer-sixel = ["viuer/sixel"]
+cover-viuer-sixel = ["viuer/icy_sixel"]
 
 [dev-dependencies]
 pretty_assertions.workspace = true # = "1"

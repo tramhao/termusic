@@ -395,15 +395,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
-name = "autotools"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef941527c41b0fc0dd48511a8154cd5fc7e29200a0ff8b7203c5d777dbc795cf"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "av1-grain"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2707,12 +2698,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "make-cmd"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8ca8afbe8af1785e09636acb5a41e08a765f5f0340568716c18a8700ba3c0d3"
-
-[[package]]
 name = "malloc_buf"
 version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4505,25 +4490,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sixel-rs"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "647374721a1c61401bd833aa3ae182f10396b875cc8de77a1c1705383dae1465"
-dependencies = [
- "sixel-sys",
-]
-
-[[package]]
-name = "sixel-sys"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "968d15a5794a8d2bb241cca4dee36d5d87c21ea43ed498a87fb0abe6e0befc46"
-dependencies = [
- "autotools",
- "make-cmd",
-]
-
-[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5838,7 +5804,6 @@ dependencies = [
  "crossterm 0.29.0",
  "icy_sixel",
  "image",
- "sixel-rs",
  "tempfile",
  "termcolor",
 ]
