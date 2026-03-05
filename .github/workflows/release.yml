@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
-        build: [x86_64-linux,x86_64-macos,x86_64-windows ] #,aarch64-macos] #, aarch64-linux, x86_64-macos, x86_64-windows] #, x86_64-win-gnu, win32-msvc
+        build: [x86_64-linux,x86_64-macos,x86_64-windows,aarch64-macos] #, aarch64-linux] #, x86_64-win-gnu, win32-msvc
         include:
         - build: x86_64-linux
           os: ubuntu-latest
@@ -39,15 +39,16 @@ jobs:
           rust: stable
           target: x86_64-apple-darwin
           cross: false
+        - build: aarch64-macos
+          os: macos-latest
+          rust: stable
+          target: aarch64-apple-darwin
+          cross: false
         - build: x86_64-windows
           os: windows-latest
           rust: stable
           target: x86_64-pc-windows-msvc
           cross: false
-        # - build: aarch64-macos
-        #   os: macos-latest
-        #   rust: stable
-        #   target: aarch64-apple-darwin
         # - build: x86_64-win-gnu
         #   os: windows-2019
         #   rust: stable-x86_64-gnu
@@ -74,39 +75,38 @@ jobs:
         run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev libmpv-dev
 
       - name: Install developer package dependencies
-        if: matrix.build == 'x86_64-macos'
+        if: matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
         run: | 
             brew update
-            brew install protobuf 
-            brew install sound-touch
-            brew install libsixel
+            brew install protobuf
+            # brew install libsixel
   
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-windows'
         run: choco install protoc 
       
       - name: Run cargo test (cargo)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'x86_64-windows') && !matrix.cross
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos' || matrix.build == 'x86_64-windows') && !matrix.cross
         run: cargo test --release --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-linux)
         if: matrix.build == 'x86_64-linux'
-        run: cargo build --features cover,all-backends --release --all --target ${{ matrix.target }}
+        run: cargo build --features cover,all-backends,rusty-soundtouch --release --all --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-macos)
-        if: matrix.build == 'x86_64-macos'
-        run: cargo build --features cover-viuer-iterm --release --all --target ${{ matrix.target }}
+        if: matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
+        run: cargo build --features rusty-soundtouch,rusty-simd --release --all --target ${{ matrix.target }}
 
       - name: Build release binary (cargo x86_64-windows)
         if: matrix.build == 'x86_64-windows'
-        run: cargo build --release --all --target ${{ matrix.target }}
+        run: cargo build --features rusty-soundtouch --release --all --target ${{ matrix.target }}
 
       - name: Install cross (cross)
         if: matrix.cross
         run: cargo install cross
 
       - name: Run cargo test (cross)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'x86_64-windows') && matrix.cross
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos' || matrix.build == 'x86_64-windows') && matrix.cross
         run: cargo test --release --target ${{ matrix.target }}
 
       - name: Build release binary (cross)
@@ -114,7 +114,7 @@ jobs:
         run: cargo build --features cover,all-backends --release --all --target ${{ matrix.target }}
 
       - name: Strip release binary (linux and macos)
-        if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos'
+        if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
         run: |
           strip "target/${{ matrix.target }}/release/$BIN_NAME"
           strip "target/${{ matrix.target }}/release/$BIN_NAME_SERVER"
