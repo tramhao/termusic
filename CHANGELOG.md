@@ -9,6 +9,7 @@
 - Fix: change default port to `5101` to be below 49k
 - Fix(tui): fix that "native" and "termusic default" theme also get auto-selected in config editor, if active.
 - Fix(tui): fix a bunch of places where colors were not applied at all or not correctly applied.
+- Fix(tui): fix help popup not having "fast navigation" (like PageUp / PageDown, Home / End).
 - Feat(tui): change default theme to be "Native".
 - Feat(server): change volume scaling from linear to cubic for better perceptual volume consistency.
 
