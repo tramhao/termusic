@@ -3,11 +3,14 @@
 ### next
 
 - Change: updated MSRV to 1.88.
-- Feat(tui): change default theme to be "Native".
+- Change: enable feature `rusty-soundtouch` for linux, macos & windows CI builds
+- Change: enable feature `rusty-simd` on macos CI builds
+- Change: provide arm64 binaries for macos
 - Fix: change default port to `5101` to be below 49k
 - Fix(tui): fix that "native" and "termusic default" theme also get auto-selected in config editor, if active.
 - Fix(tui): fix a bunch of places where colors were not applied at all or not correctly applied.
 - Fix(tui): fix help popup not having "fast navigation" (like PageUp / PageDown, Home / End).
+- Feat(tui): change default theme to be "Native".
 - Feat(server): change volume scaling from linear to cubic for better perceptual volume consistency.
 
 ### [V0.12.1]

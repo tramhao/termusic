@@ -59,10 +59,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check --workspace --features cover,all-backends
+        run: cargo check --workspace --features cover,all-backends,rusty-soundtouch
 
       - name: Run cargo test
-        run: cargo test --workspace --features cover,all-backends
+        run: cargo test --workspace --features cover,all-backends,rusty-soundtouch
 
   test_macos:
     name: Test Mac
@@ -70,6 +70,7 @@ jobs:
       matrix:
         os: [macos-latest]
         rust: [stable]
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -79,24 +80,26 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
 
       - name: Install developer package dependencies
         run: | 
             brew update
             brew install protobuf
-            brew install sound-touch
             # brew install libsixel
             # brew install gstreamer
             # brew install mpv
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Run cargo check
-        run: cargo check --workspace --features cover-viuer-iterm
+        run: cargo check --target ${{ matrix.target }} --workspace --features rusty-soundtouch,rusty-simd
         # run: cargo check --workspace --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test --workspace --features cover-viuer-iterm
+        run: cargo test --target ${{ matrix.target }} --workspace --features rusty-soundtouch,rusty-simd
         # run: cargo test --workspace --features cover,all-backends
 
   test-win:
@@ -121,7 +124,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check --workspace
+        run: cargo check --workspace --features rusty-soundtouch
 
       - name: Run cargo test
-        run: cargo test --workspace
+        run: cargo test --workspace --features rusty-soundtouch
