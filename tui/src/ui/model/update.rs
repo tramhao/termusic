@@ -935,7 +935,7 @@ impl Model {
             PLMsg::LoopModeCycle => {
                 self.command(TuiCmd::CycleLoop);
                 self.config_server.write().settings.player.loop_mode =
-                    self.playback.playlist.cycle_loop_mode();
+                    self.playback.playlist.cycle_loop_mode(); // TODO: this could be removed, no?
                 self.playlist_update_title();
             }
             PLMsg::PlaylistTableBlurDown => match self.layout {

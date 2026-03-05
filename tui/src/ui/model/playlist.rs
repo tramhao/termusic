@@ -45,14 +45,16 @@ impl TUIPlaylist {
     /// Cycle through the loop modes and return the new mode.
     ///
     /// order:
-    /// [Random](LoopMode::Random) -> [Playlist](LoopMode::Playlist)
-    /// [Playlist](LoopMode::Playlist) -> [Single](LoopMode::Single)
-    /// [Single](LoopMode::Single) -> [Random](LoopMode::Random)
+    /// [`Random`](LoopMode::Random) -> [`Playlist`](LoopMode::Playlist)
+    /// [`Playlist`](LoopMode::Playlist) -> [`PlaylistOnce`](LoopMode::PlaylistOnce)
+    /// [`PlaylistOnce`](LoopMode::PlaylistOnce) -> [`Single`](LoopMode::Track)
+    /// [`Single`](LoopMode::Track) -> [`Random`](LoopMode::Random)
     pub fn cycle_loop_mode(&mut self) -> LoopMode {
         let new_mode = match self.loop_mode {
             LoopMode::Random => LoopMode::Playlist,
-            LoopMode::Playlist => LoopMode::Single,
-            LoopMode::Single => LoopMode::Random,
+            LoopMode::Playlist => LoopMode::PlaylistOnce,
+            LoopMode::PlaylistOnce => LoopMode::Track,
+            LoopMode::Track => LoopMode::Random,
         };
 
         self.set_loop_mode(new_mode);

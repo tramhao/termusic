@@ -94,13 +94,16 @@ impl Playlist {
     }
 
     /// Advance the playlist to the next track.
-    pub fn proceed(&mut self) {
+    ///
+    /// Returns whether playback should be stopped.
+    pub fn proceed(&mut self, from_state: RunningStatus) -> bool {
         debug!("need to proceed to next: {}", self.need_proceed_to_next);
         self.is_modified = true;
         if self.need_proceed_to_next {
-            self.next();
+            self.next(from_state)
         } else {
             self.need_proceed_to_next = true;
+            false
         }
     }
 
@@ -322,15 +325,25 @@ impl Playlist {
     }
 
     /// Change to the next track.
-    pub fn next(&mut self) {
+    ///
+    /// Returns whether playback should stop
+    pub fn next(&mut self, from_state: RunningStatus) -> bool {
         self.played_index.push(self.current_track_index);
         // Note: the next index is *not* taken here, as ".proceed/next" is called first,
         // then "has_next_track" is later used to check if enqueuing has used.
         if let Some(index) = self.next_track_index {
             self.current_track_index = index;
-            return;
+            return false;
         }
-        self.current_track_index = self.get_next_track_index();
+
+        let Some(next_track_idx) = self.get_next_track_index(from_state) else {
+            self.clear_current_track();
+            self.stop();
+            return true;
+        };
+        self.current_track_index = next_track_idx;
+
+        false
     }
 
     /// Check that the given `info` track source matches the given `track_inner` types.
@@ -405,21 +418,32 @@ impl Playlist {
     }
 
     /// Get the next track index based on the [`LoopMode`] used.
-    fn get_next_track_index(&self) -> usize {
+    // TODO: i dont quite like having to rely on RunningStatus for this; maybe once playlist is refactored a better option would be available to indicate change reason (like user next, or last track EOS)
+    fn get_next_track_index(&self, from_state: RunningStatus) -> Option<usize> {
         let mut next_track_index = self.current_track_index;
         match self.loop_mode {
-            LoopMode::Single => {}
+            LoopMode::Track => {}
             LoopMode::Playlist => {
                 next_track_index += 1;
                 if next_track_index >= self.len() {
                     next_track_index = 0;
                 }
             }
+            LoopMode::PlaylistOnce => {
+                next_track_index += 1;
+                if next_track_index >= self.len() {
+                    if from_state == RunningStatus::Stopped {
+                        next_track_index = 0;
+                    } else {
+                        return None;
+                    }
+                }
+            }
             LoopMode::Random => {
                 next_track_index = self.get_random_index();
             }
         }
-        next_track_index
+        Some(next_track_index)
     }
 
     /// Change to the previous track played.
@@ -437,8 +461,9 @@ impl Playlist {
             return;
         }
         match self.loop_mode {
-            LoopMode::Single => {}
-            LoopMode::Playlist => {
+            LoopMode::Track => {}
+            // doing both with one impl is fine as long as we dont have a "reverse play" option
+            LoopMode::Playlist | LoopMode::PlaylistOnce => {
                 if self.current_track_index == 0 {
                     self.current_track_index = self.len() - 1;
                 } else {
@@ -542,7 +567,7 @@ impl Playlist {
 
     /// Get the next track index and return a reference to it.
     pub fn fetch_next_track(&mut self) -> Option<&Track> {
-        let next_index = self.get_next_track_index();
+        let next_index = self.get_next_track_index(RunningStatus::Running)?;
         self.next_track_index = Some(next_index);
         self.tracks.get(next_index)
     }
@@ -573,14 +598,16 @@ impl Playlist {
     /// Cycle through the loop modes and return the new mode.
     ///
     /// order:
-    /// [Random](LoopMode::Random) -> [Playlist](LoopMode::Playlist)
-    /// [Playlist](LoopMode::Playlist) -> [Single](LoopMode::Single)
-    /// [Single](LoopMode::Single) -> [Random](LoopMode::Random)
+    /// [`Random`](LoopMode::Random) -> [`Playlist`](LoopMode::Playlist)
+    /// [`Playlist`](LoopMode::Playlist) -> [`PlaylistOnce`](LoopMode::PlaylistOnce)
+    /// [`PlaylistOnce`](LoopMode::PlaylistOnce) -> [`Single`](LoopMode::Track)
+    /// [`Single`](LoopMode::Track) -> [`Random`](LoopMode::Random)
     pub fn cycle_loop_mode(&mut self) -> LoopMode {
         let new_mode = match self.loop_mode {
             LoopMode::Random => LoopMode::Playlist,
-            LoopMode::Playlist => LoopMode::Single,
-            LoopMode::Single => LoopMode::Random,
+            LoopMode::Playlist => LoopMode::PlaylistOnce,
+            LoopMode::PlaylistOnce => LoopMode::Track,
+            LoopMode::Track => LoopMode::Random,
         };
 
         self.set_loop_mode(new_mode);
