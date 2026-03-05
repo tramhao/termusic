@@ -404,11 +404,11 @@ impl GeneralPlayer {
     /// Skip to the next track, if there is one
     pub fn next(&mut self) {
         if self.playlist.read().current_track().is_some() {
-            info!("skip route 1 which is in most cases.");
+            debug!("next: current_track is some");
             self.playlist.write().set_next_track(None);
             self.skip_one();
         } else {
-            info!("skip route 2 cause no current track.");
+            info!("next: playlist is empty, stopping");
             self.stop();
         }
     }
@@ -422,7 +422,9 @@ impl GeneralPlayer {
         self.next();
     }
 
-    /// Resume playback if paused, pause playback if running
+    /// Resume playback if paused, pause playback if running.
+    ///
+    /// Also starts playback if the state was "stopped".
     pub fn toggle_pause(&mut self) {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
@@ -431,7 +433,9 @@ impl GeneralPlayer {
             RunningStatus::Running => {
                 <Self as PlayerTrait>::pause(self);
             }
-            RunningStatus::Stopped => {}
+            RunningStatus::Stopped => {
+                self.resume_from_stopped();
+            }
             RunningStatus::Paused => {
                 <Self as PlayerTrait>::resume(self);
             }
@@ -457,12 +461,48 @@ impl GeneralPlayer {
         // see https://github.com/rust-lang/rust/issues/93883
         let status = self.playlist.read().status();
         match status {
-            RunningStatus::Running | RunningStatus::Stopped => {}
+            RunningStatus::Running => {}
+            RunningStatus::Stopped => {
+                self.resume_from_stopped();
+            }
             RunningStatus::Paused => {
                 <Self as PlayerTrait>::resume(self);
             }
         }
     }
+
+    /// Resume playback if stopped.
+    ///
+    /// Tries to transition from a [`RunningStatus::Stopped`] to a [`RunningStatus::Running`].
+    pub fn resume_from_stopped(&mut self) {
+        // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
+        // see https://github.com/rust-lang/rust/issues/93883
+        let playlist_read = self.playlist.read();
+        let status = playlist_read.status();
+        match status {
+            RunningStatus::Running | RunningStatus::Paused => {}
+            RunningStatus::Stopped => {
+                // nothing to play
+                if playlist_read.is_empty() {
+                    return;
+                }
+
+                drop(playlist_read);
+                let mut playlist_write = self.playlist.write();
+                playlist_write.clear_current_track();
+                playlist_write.proceed_false();
+
+                info!(
+                    "Resuming from stopped status. Next track: {:#?}",
+                    playlist_write.current_track()
+                );
+                drop(playlist_write);
+
+                self.start_play();
+            }
+        }
+    }
+
     /// # Panics
     ///
     /// if the underlying "seek" returns a error (which current never happens)
