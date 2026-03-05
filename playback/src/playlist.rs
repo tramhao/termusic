@@ -453,9 +453,7 @@ impl Playlist {
         // unset next track as we now want a previous track instead of the next enqueued
         self.set_next_track(None);
 
-        if !self.played_index.is_empty()
-            && let Some(index) = self.played_index.pop()
-        {
+        if let Some(index) = self.played_index.pop() {
             self.current_track_index = index;
             self.is_modified = true;
             return;
