@@ -33,14 +33,12 @@ impl<'a, 'de> Deserialize<'de> for ServerConfigVersionedDefaulted<'a> {
     where
         D: serde::Deserializer<'de>,
     {
-        // Note that those are marked "private", but are used in the derives, and there is no to me known public way, but saves some implementation complexity
-        let content =
-            <serde::__private::de::Content<'_> as serde::Deserialize>::deserialize(deserializer)?;
-        let deserializer = serde::__private::de::ContentRefDeserializer::<D::Error>::new(&content);
+        let content = serde_content::Value::deserialize(deserializer)?;
+        let deserializer = serde_content::Deserializer::new(content).coerce_numbers();
 
         let mut err_res = String::new();
 
-        match <ServerConfigVersioned<'a>>::deserialize(deserializer)
+        match <ServerConfigVersioned<'a>>::deserialize(deserializer.clone())
             .map(ServerConfigVersionedDefaulted::Versioned)
         {
             Ok(val) => return Ok(val),
@@ -48,8 +46,8 @@ impl<'a, 'de> Deserialize<'de> for ServerConfigVersionedDefaulted<'a> {
                 let _ = write!(err_res, "{err:#}");
             }
         }
-        match ServerSettings::deserialize(deserializer)
-            .map(ServerConfigVersionedDefaulted::Unversioned)
+        match Intermediate::deserialize(deserializer)
+            .map(|v| ServerConfigVersionedDefaulted::Unversioned(v.into_settings()))
         {
             Ok(val) => return Ok(val),
             // no need to check if "err_res" is empty, as this code can only be executed if the above has failed
@@ -173,6 +171,26 @@ impl ServerConfigVersioned<'_> {
     pub fn into_settings(self) -> ApplicationType {
         match self {
             ServerConfigVersioned::V2(v) => v.into_owned(),
+        }
+    }
+}
+
+/// This type exists due to a bug in `serde-content`, where without it fails to properly parse untagged enum values
+/// see <https://github.com/rushmorem/serde-content/issues/27>.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum Intermediate {
+    Some(ApplicationType),
+}
+
+impl Intermediate {
+    /// Convert Into the type used by the application, instead of what is parsed
+    ///
+    /// Will convert any version into the latest
+    #[must_use]
+    pub fn into_settings(self) -> ApplicationType {
+        match self {
+            Intermediate::Some(v) => v,
         }
     }
 }

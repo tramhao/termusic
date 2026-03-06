@@ -54,6 +54,7 @@ semver.workspace = true #   = "^1"
 serde.workspace = true #  = { version = "1.0", features = ["derive"] }
 serde_json.workspace = true #  = "1.0"
 serde_yaml.workspace = true
+serde-content.workspace = true
 shellexpand.workspace = true #  = "3"
 textwrap.workspace = true #   = "0.16"
 toml.workspace = true #  = "0.7"
