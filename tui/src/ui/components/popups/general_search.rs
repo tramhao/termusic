@@ -175,11 +175,11 @@ impl GSTablePopup {
         );
         let title_playlist = format!(
             " Results: (Enter: locate/{}: play selected) ",
-            config_r.settings.keys.playlist_keys.play_selected
+            config_r.settings.keys.library_keys.load_track
         );
         let title_database = format!(
             " Results: ({}: load to playlist) ",
-            config_r.settings.keys.database_keys.add_selected
+            config_r.settings.keys.library_keys.load_track
         );
         let title_episode = format!(
             " Results: (Enter: locate/{}: load to playlist) ",
@@ -269,9 +269,9 @@ impl Component<Msg, UserEvent> for GSTablePopup {
                     Source::Library(_) | Source::Episode => {
                         keyevent == keys.library_keys.load_track.get()
                     }
-                    Source::Playlist => keyevent == keys.playlist_keys.play_selected.get(),
-                    Source::Database => keyevent == keys.database_keys.add_selected.get(),
-                    Source::Podcast => false,
+                    Source::Playlist | Source::Database | Source::Podcast => {
+                        keyevent == keys.library_keys.load_track.get()
+                    },
                 } =>
             {
                 match self.source {
@@ -287,7 +287,9 @@ impl Component<Msg, UserEvent> for GSTablePopup {
                     Source::Episode => {
                         return Some(Msg::GeneralSearch(GSMsg::PopupCloseEpisodeAddPlaylist));
                     }
-                    Source::Podcast => return None,
+                    Source::Podcast => {
+                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPodcastLocate));
+                    }
                 }
             }
             Event::Keyboard(KeyEvent {
