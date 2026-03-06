@@ -264,15 +264,7 @@ impl Component<Msg, UserEvent> for GSTablePopup {
                 return Some(Msg::GeneralSearch(GSMsg::TableBlur));
             }
 
-            Event::Keyboard(keyevent)
-                if match self.source {
-                    Source::Library(_)
-                    | Source::Episode
-                    | Source::Playlist
-                    | Source::Database
-                    | Source::Podcast => keyevent == keys.library_keys.load_track.get(),
-                } =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_track.get() => {
                 match self.source {
                     Source::Library(_) => {
                         return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist));
