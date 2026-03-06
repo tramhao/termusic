@@ -368,12 +368,15 @@ impl Display for Backend {
 #[repr(u8)]
 pub enum LoopMode {
     /// Loop one track
-    Single = 0,
+    #[serde(alias = "single")]
+    Track = 0,
     /// Loop the entire Playlist (after last index comes the first)
     #[default]
     Playlist = 1,
     /// Select a random track on each next track
     Random = 2,
+    /// Play the playlist in sequence, but dont loop the playlist.
+    PlaylistOnce = 3,
 }
 
 impl LoopMode {
@@ -381,15 +384,17 @@ impl LoopMode {
     pub fn display(self, display_symbol: bool) -> &'static str {
         if display_symbol {
             match self {
-                Self::Single => "🔂",
+                Self::Track => "🔂",
                 Self::Playlist => "🔁",
                 Self::Random => "🔀",
+                Self::PlaylistOnce => "⮕",
             }
         } else {
             match self {
-                Self::Single => "single",
+                Self::Track => "track",
                 Self::Playlist => "playlist",
                 Self::Random => "random",
+                Self::PlaylistOnce => "playlist once",
             }
         }
     }
@@ -404,9 +409,10 @@ impl LoopMode {
     #[must_use]
     pub fn tryfrom_discriminant(num: u8) -> Option<Self> {
         Some(match num {
-            0 => Self::Single,
+            0 => Self::Track,
             1 => Self::Playlist,
             2 => Self::Random,
+            3 => Self::PlaylistOnce,
             _ => return None,
         })
     }
@@ -524,7 +530,7 @@ mod v1_interop {
     impl From<v1::Loop> for LoopMode {
         fn from(value: v1::Loop) -> Self {
             match value {
-                v1::Loop::Single => Self::Single,
+                v1::Loop::Single => Self::Track,
                 v1::Loop::Playlist => Self::Playlist,
                 v1::Loop::Random => Self::Random,
             }

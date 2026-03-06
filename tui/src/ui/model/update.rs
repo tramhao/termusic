@@ -934,9 +934,6 @@ impl Model {
             }
             PLMsg::LoopModeCycle => {
                 self.command(TuiCmd::CycleLoop);
-                self.config_server.write().settings.player.loop_mode =
-                    self.playback.playlist.cycle_loop_mode();
-                self.playlist_update_title();
             }
             PLMsg::PlaylistTableBlurDown => match self.layout {
                 TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),

@@ -323,11 +323,17 @@ impl GeneralPlayer {
     /// if `current_track_index` in playlist is above u32
     pub fn start_play(&mut self) {
         let mut playlist = self.playlist.write();
+        let original_state = playlist.status();
         if playlist.is_stopped() | playlist.is_paused() {
             playlist.set_status(RunningStatus::Running);
         }
 
-        playlist.proceed();
+        if playlist.proceed(original_state) {
+            drop(playlist);
+            info!("Stopping playback due to \"proceed\" saying so");
+            self.stop();
+            return;
+        }
 
         if let Some(track) = playlist.current_track().cloned() {
             info!("Starting Track {track:#?}");

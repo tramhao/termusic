@@ -41,25 +41,6 @@ impl TUIPlaylist {
         self.current_track_idx.take();
     }
 
-    // TODO: make this explicit with the server instead of saying "cycle"
-    /// Cycle through the loop modes and return the new mode.
-    ///
-    /// order:
-    /// [Random](LoopMode::Random) -> [Playlist](LoopMode::Playlist)
-    /// [Playlist](LoopMode::Playlist) -> [Single](LoopMode::Single)
-    /// [Single](LoopMode::Single) -> [Random](LoopMode::Random)
-    pub fn cycle_loop_mode(&mut self) -> LoopMode {
-        let new_mode = match self.loop_mode {
-            LoopMode::Random => LoopMode::Playlist,
-            LoopMode::Playlist => LoopMode::Single,
-            LoopMode::Single => LoopMode::Random,
-        };
-
-        self.set_loop_mode(new_mode);
-
-        self.loop_mode
-    }
-
     /// Set a specific [`LoopMode`].
     pub fn set_loop_mode(&mut self, new_mode: LoopMode) {
         self.loop_mode = new_mode;
