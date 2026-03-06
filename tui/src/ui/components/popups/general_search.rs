@@ -169,22 +169,21 @@ impl GSTablePopup {
     #[allow(clippy::too_many_lines)]
     pub fn new(source: Source, config: SharedTuiSettings) -> Self {
         let config_r = config.read();
-        // TODO: fix this up to be the proper keys
         let title_library = format!(
             " Results: (Enter: locate/{}: load to playlist) ",
-            config_r.settings.keys.navigation_keys.right
+            config_r.settings.keys.library_keys.load_track
         );
         let title_playlist = format!(
             " Results: (Enter: locate/{}: play selected) ",
-            config_r.settings.keys.navigation_keys.right
+            config_r.settings.keys.playlist_keys.play_selected
         );
         let title_database = format!(
             " Results: ({}: load to playlist) ",
-            config_r.settings.keys.navigation_keys.right
+            config_r.settings.keys.database_keys.add_selected
         );
         let title_episode = format!(
             " Results: (Enter: locate/{}: load to playlist) ",
-            config_r.settings.keys.navigation_keys.right
+            config_r.settings.keys.library_keys.load_track
         );
 
         let title_podcast = " Results: (Enter: locate) ";
@@ -265,7 +264,16 @@ impl Component<Msg, UserEvent> for GSTablePopup {
                 return Some(Msg::GeneralSearch(GSMsg::TableBlur));
             }
 
-            Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
+            Event::Keyboard(keyevent)
+                if match self.source {
+                    Source::Library(_) | Source::Episode => {
+                        keyevent == keys.library_keys.load_track.get()
+                    }
+                    Source::Playlist => keyevent == keys.playlist_keys.play_selected.get(),
+                    Source::Database => keyevent == keys.database_keys.add_selected.get(),
+                    Source::Podcast => false,
+                } =>
+            {
                 match self.source {
                     Source::Library(_) => {
                         return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist));
