@@ -12,6 +12,8 @@
 - Fix(tui): fix help popup not having "fast navigation" (like PageUp / PageDown, Home / End).
 - Feat: add ability to control startup playing state behavior.
 - Feat: add playlist loop mode to only play the playlist once, then stop.
+- Fix(tui): change to use `icy_sixel`, removing the need for `libsixel`.
+- Feat: add ability to control startup playing state behavior.
 - Feat(tui): change default theme to be "Native".
 - Feat(server): change volume scaling from linear to cubic for better perceptual volume consistency.
 
