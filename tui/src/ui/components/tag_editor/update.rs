@@ -51,7 +51,7 @@ impl Model {
             TEMsg::EmbedDone(song) => {
                 self.te_load_lyric_and_photo_done(song);
             }
-            TEMsg::EmbedErr(err) => {
+            TEMsg::EmbedErr(err) | TEMsg::TrackDownloadPreError(err) => {
                 self.mount_error_popup(anyhow!(err));
             }
             TEMsg::Save => {
@@ -63,9 +63,6 @@ impl Model {
 
             TEMsg::SearchLyricResult(msg) => self.te_update_lyric_results(msg),
             TEMsg::TrackDownloadResult(msg) => self.te_update_download_msg(msg),
-            TEMsg::TrackDownloadPreError(err) => {
-                self.mount_error_popup(anyhow!(err));
-            }
         }
     }
 

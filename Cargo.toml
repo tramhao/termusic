@@ -120,7 +120,7 @@ wildmatch = "2.4"
 windows = { default-features = false, version = "0.61", features = ["Win32_System_Threading"] }
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.31"
-alphanumeric-sort = "1.5"
+alphanumeric-sort = "1.5.5"
 # for less dependencies, keep in sync with the version ratatui uses
 lru = "0.12.5"
 either = "1.15"
