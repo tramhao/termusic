@@ -266,12 +266,11 @@ impl Component<Msg, UserEvent> for GSTablePopup {
 
             Event::Keyboard(keyevent)
                 if match self.source {
-                    Source::Library(_) | Source::Episode => {
-                        keyevent == keys.library_keys.load_track.get()
-                    }
-                    Source::Playlist | Source::Database | Source::Podcast => {
-                        keyevent == keys.library_keys.load_track.get()
-                    },
+                    Source::Library(_)
+                    | Source::Episode
+                    | Source::Playlist
+                    | Source::Database
+                    | Source::Podcast => keyevent == keys.library_keys.load_track.get(),
                 } =>
             {
                 match self.source {
