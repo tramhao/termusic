@@ -52,8 +52,14 @@ where
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // This is to skip calculation if speed is not changed
-        if (self.factor - 1.0).abs() < 0.05 {
+        // This is to skip soundtouch processing if speed is nominal 1.0.
+        // Note that due to how soundtouch consumes and produces samples, once we go to non-1.0 once, we might not be able to use this path anymore
+        // for the duration of this source, at least not without losing samples.
+        // Due to float weirdness, the following has to be done to check for a approximation of "1.0"
+        if (self.factor - 1.0).abs() < 0.000_000_005
+            && self.out_buffer.is_empty()
+            && self.soundtouch.num_unprocessed_samples() == 0
+        {
             // use the samples from the in_buffer, otherwise we could be dropping samples without actually playing them
             // when quickly changing between 1.0 and other speeds, there may still be a audible drop, but this lowers it
             if !self.in_buffer.is_empty() {
