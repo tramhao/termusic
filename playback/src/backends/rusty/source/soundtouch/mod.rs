@@ -163,10 +163,8 @@ where
 
         let channels = usize::try_from(channels).unwrap();
 
-        self.input
-            .by_ref()
-            .take(take_samples)
-            .for_each(|x| self.in_buffer.push_back(x));
+        self.in_buffer
+            .extend(self.input.by_ref().take(take_samples));
 
         let len_input = self.in_buffer.len() / channels;
         self.soundtouch
