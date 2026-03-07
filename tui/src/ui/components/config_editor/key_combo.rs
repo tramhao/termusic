@@ -1182,6 +1182,11 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab, ..
+            }) => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayoutBack));
+            }
             // Local Hotkey
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => match self.state() {
                 State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),

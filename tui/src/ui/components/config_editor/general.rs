@@ -140,6 +140,9 @@ fn handle_input_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
+        Event::Keyboard(KeyEvent {
+            code: Key::BackTab, ..
+        }) => Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayoutBack)),
         Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
@@ -245,6 +248,9 @@ fn handle_radio_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
+        Event::Keyboard(KeyEvent {
+            code: Key::BackTab, ..
+        }) => Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayoutBack)),
         Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
             Some(on_key_down)
         }

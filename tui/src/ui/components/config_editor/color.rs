@@ -158,7 +158,7 @@ impl Component<Msg, UserEvent> for CEThemeSelectTable {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayoutBack));
             }
 
             Event::Keyboard(KeyEvent {
@@ -323,6 +323,11 @@ impl Component<Msg, UserEvent> for CEColorSelect {
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab, ..
+            }) => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
             }
 
             Event::Keyboard(key) if key == keys.escape.get() => match self.state() {
@@ -517,6 +522,9 @@ impl Component<Msg, UserEvent> for ConfigInputHighlight {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab, ..
+            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous))),
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             }

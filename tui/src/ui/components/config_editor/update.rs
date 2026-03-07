@@ -40,6 +40,7 @@ impl Model {
                 }
             }
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
+            ConfigEditorMsg::ChangeLayoutBack => self.action_change_layout_back(),
             ConfigEditorMsg::ConfigChanged => self.config_editor.config_changed = true,
 
             ConfigEditorMsg::ConfigSaveOk => {

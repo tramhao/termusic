@@ -629,6 +629,7 @@ impl Model {
         Ok(())
     }
 
+    /// Change the Config Editor Layout to the next Tab.
     pub fn action_change_layout(&mut self) {
         match self.config_editor.layout {
             ConfigEditorLayout::General => self.config_editor.layout = ConfigEditorLayout::Color,
@@ -638,40 +639,68 @@ impl Model {
             ConfigEditorLayout::Key2 => self.config_editor.layout = ConfigEditorLayout::General,
         }
 
-        assert!(
-            self.app
-                .remount(
-                    Id::ConfigEditor(IdConfigEditor::Header),
-                    Box::new(CEHeader::new(
-                        self.config_editor.layout,
-                        &self.config_tui.read()
-                    )),
-                    vec![]
-                )
-                .is_ok()
-        );
+        self.app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Header),
+                Box::new(CEHeader::new(
+                    self.config_editor.layout,
+                    &self.config_tui.read(),
+                )),
+                Vec::new(),
+            )
+            .expect("To successfully remount");
         match self.config_editor.layout {
-            ConfigEditorLayout::General => self
-                .app
-                .active(&Id::ConfigEditor(IdConfigEditor::General(
-                    IdCEGeneral::MusicDir,
-                )))
-                .ok(),
-            ConfigEditorLayout::Color => self
-                .app
-                .active(&Id::ConfigEditor(IdConfigEditor::Theme(
-                    IdCETheme::ThemeSelectTable,
-                )))
-                .ok(),
+            ConfigEditorLayout::General => self.app.active(&Id::ConfigEditor(
+                IdConfigEditor::General(IdCEGeneral::MusicDir),
+            )),
+            ConfigEditorLayout::Color => self.app.active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                IdCETheme::ThemeSelectTable,
+            ))),
             ConfigEditorLayout::Key1 => self
                 .app
-                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into()))
-                .ok(),
+                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into())),
             ConfigEditorLayout::Key2 => self
                 .app
-                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into()))
-                .ok(),
-        };
+                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into())),
+        }
+        .expect("Expected to focus mounted component");
+    }
+
+    /// Change the Config Editor Layout to the previous Tab.
+    pub fn action_change_layout_back(&mut self) {
+        match self.config_editor.layout {
+            ConfigEditorLayout::General => self.config_editor.layout = ConfigEditorLayout::Key2,
+
+            ConfigEditorLayout::Color => self.config_editor.layout = ConfigEditorLayout::General,
+            ConfigEditorLayout::Key1 => self.config_editor.layout = ConfigEditorLayout::Color,
+            ConfigEditorLayout::Key2 => self.config_editor.layout = ConfigEditorLayout::Key1,
+        }
+
+        self.app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Header),
+                Box::new(CEHeader::new(
+                    self.config_editor.layout,
+                    &self.config_tui.read(),
+                )),
+                Vec::new(),
+            )
+            .expect("To successfully remount");
+        match self.config_editor.layout {
+            ConfigEditorLayout::General => self.app.active(&Id::ConfigEditor(
+                IdConfigEditor::General(IdCEGeneral::MusicDir),
+            )),
+            ConfigEditorLayout::Color => self.app.active(&Id::ConfigEditor(IdConfigEditor::Theme(
+                IdCETheme::LibraryForeground,
+            ))),
+            ConfigEditorLayout::Key1 => self
+                .app
+                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into())),
+            ConfigEditorLayout::Key2 => self
+                .app
+                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into())),
+        }
+        .expect("Expected to focus mounted component");
     }
 
     /// Mount quit popup

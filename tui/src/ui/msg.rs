@@ -369,6 +369,7 @@ pub enum LIMsg {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ConfigEditorMsg {
     ChangeLayout,
+    ChangeLayoutBack,
     CloseCancel,
     CloseOk,
     ColorChanged(IdConfigEditor, ColorTermusic),
