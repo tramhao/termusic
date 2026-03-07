@@ -154,12 +154,12 @@ where
                     * channels;
             let initial_latency = usize::try_from(initial_latency).unwrap();
 
-            self.out_buffer.resize(initial_latency, 0.0);
-            self.in_buffer.reserve(initial_latency);
-
             // Soundtouch may need a different amount for the initial batch of samples
             take_samples = initial_latency;
         }
+
+        self.out_buffer.resize(take_samples, 0.0);
+        self.in_buffer.reserve(take_samples);
 
         let channels = usize::try_from(channels).unwrap();
 
@@ -175,8 +175,6 @@ where
             // soundtouch may not output anything if there are not at least "min_samples", unless "flush" is called, which fills with empty samples
             self.soundtouch.flush();
         }
-
-        self.out_buffer.resize(self.min_samples, 0.0);
 
         let len_output = self.in_buffer.len() / channels;
         let read = self
