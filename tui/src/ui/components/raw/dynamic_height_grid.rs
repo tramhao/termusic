@@ -466,4 +466,18 @@ mod tests {
         assert_eq!(areas[1], Rect::new(0, 3, 3, 4));
         assert_eq!(areas[2], Rect::new(0, 7, 3, 3));
     }
+
+    #[test]
+    fn should_not_panic_not_enough_width_for_one_elem_with_focus_node() {
+        // test relies on having less width available than a element wants
+        // and having a focus node set
+        let area = Rect::new(0, 0, 3, 10);
+        let elems = [3, 4, 3];
+
+        let areas = DynamicHeightGrid::new(elems, 3)
+            .focus_node(Some(0))
+            .split(area);
+
+        assert_eq!(areas.len(), 3);
+    }
 }
