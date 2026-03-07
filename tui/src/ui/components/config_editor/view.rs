@@ -46,9 +46,7 @@ use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
 use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{Model, UserEvent};
-use crate::ui::msg::{
-    CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg,
-};
+use crate::ui::msg::{ConfigEditorLayout, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
 use crate::ui::utils::draw_area_in_absolute;
 
 // NOTE: the macros either have to be in a different file OR be defined *before* they are used, otherwise they are not in scope
@@ -114,7 +112,13 @@ impl Model {
                     .fallback_background());
                 let chunk_main = Self::view_config_editor_common(&mut self.app, f, common_style);
 
-                match self.config_editor.layout {
+                let Some(Id::ConfigEditor(focus_id)) = self.app.focus() else {
+                    // should never happen currently, but might in the future if something was forgotten
+                    return;
+                };
+                let layout = ConfigEditorLayout::from(*focus_id);
+
+                match layout {
                     ConfigEditorLayout::General => {
                         Self::view_config_editor_general(&mut self.app, f, chunk_main);
                     }
@@ -567,8 +571,6 @@ impl Model {
 
     /// Mount the Config Editor.
     pub fn mount_config_editor(&mut self) {
-        self.config_editor.layout = CONFIG_EDITOR_TABS_ORDER[0].into();
-
         self.mount_config_editor_components()
             .expect("Expected Config Editor Components to mount correctly");
 
@@ -583,8 +585,6 @@ impl Model {
 
     /// Mount all the Config Editor Components.
     fn mount_config_editor_components(&mut self) -> Result<()> {
-        self.remount_config_header_footer()?;
-
         self.remount_config_general()?;
 
         self.remount_config_color(&self.config_tui.clone(), None)?;
@@ -595,6 +595,9 @@ impl Model {
         self.app.active(&Id::ConfigEditor(IdConfigEditor::General(
             IdCEGeneral::MusicDir,
         )))?;
+
+        // remount last, as it is sensitive to the focused component
+        self.remount_config_header_footer()?;
 
         Ok(())
     }

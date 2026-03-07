@@ -31,7 +31,7 @@ use crate::ui::Application;
 use crate::ui::ids::Id;
 use crate::ui::model::ports::stream_events::{PortStreamEvents, WrappedStreamEvents};
 use crate::ui::model::youtube_options::YoutubeOptions;
-use crate::ui::msg::{CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, Msg, SearchCriteria};
+use crate::ui::msg::{Msg, SearchCriteria};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use crate::ui::ueberzug::UeInstance;
 pub use download_tracker::DownloadTracker;
@@ -96,8 +96,6 @@ pub struct ConfigEditorData {
     pub theme: ThemeWrap,
     /// The Keybindings to preview before saving
     pub key_config: Keys,
-    /// The current tab in the config editor
-    pub layout: ConfigEditorLayout,
     /// Indicator to prompt a save on config editor exit
     pub config_changed: bool,
 }
@@ -436,7 +434,6 @@ impl Model {
                 themes: Vec::new(),
                 theme: ce_theme,
                 key_config: Keys::default(),
-                layout: CONFIG_EDITOR_TABS_ORDER[0].into(),
                 config_changed: false,
             },
             taskpool,

@@ -11,8 +11,8 @@ use crate::ui::Model;
 use crate::ui::components::CEHeader;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::msg::{
-    CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, ConfigEditorMsg, GENERAL_FOCUS_ORDER,
-    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg, THEME_FOCUS_ORDER,
+    CONFIG_EDITOR_TABS_ORDER, ConfigEditorMsg, GENERAL_FOCUS_ORDER, KFGLOBAL_FOCUS_ORDER, KFMsg,
+    KFOTHER_FOCUS_ORDER, Msg, THEME_FOCUS_ORDER,
 };
 use crate::ui::tui_cmd::TuiCmd;
 
@@ -181,15 +181,10 @@ impl Model {
             return;
         };
 
-        self.config_editor.layout = ConfigEditorLayout::from(id);
-
         self.app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(
-                    self.config_editor.layout,
-                    &self.config_tui.read(),
-                )),
+                Box::new(CEHeader::new(id, &self.config_tui.read())),
                 Vec::new(),
             )
             .expect("To successfully remount");
