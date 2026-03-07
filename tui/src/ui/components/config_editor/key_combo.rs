@@ -1180,12 +1180,16 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout(
+                    KFMsg::Next,
+                )));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab, ..
             }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayoutBack));
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout(
+                    KFMsg::Previous,
+                )));
             }
             // Local Hotkey
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => match self.state() {

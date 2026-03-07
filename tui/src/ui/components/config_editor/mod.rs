@@ -29,8 +29,8 @@ use tuirealm::{Component, Event, MockComponent};
 
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::ids::{Id, IdConfigEditor};
-use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
-use crate::ui::msg::{ConfigEditorMsg, Msg};
+use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{ConfigEditorLayout, ConfigEditorMsg, Msg};
 
 mod color;
 mod general;
@@ -52,21 +52,11 @@ impl CEHeader {
                         .modifiers(BorderType::Plain)
                         .sides(BorderSides::BOTTOM),
                 )
-                .choices([
-                    "General Configuration",
-                    "Themes and Colors",
-                    "Keys Global",
-                    "Keys Other",
-                ])
+                .choices(ConfigEditorLayout::choice_array())
                 .foreground(config.settings.theme.library_highlight())
                 .background(config.settings.theme.library_background())
                 .inactive(Style::default().fg(config.settings.theme.library_highlight()))
-                .value(match layout {
-                    ConfigEditorLayout::General => 0,
-                    ConfigEditorLayout::Color => 1,
-                    ConfigEditorLayout::Key1 => 2,
-                    ConfigEditorLayout::Key2 => 3,
-                }),
+                .value(layout.to_array_idx()),
         }
     }
 }

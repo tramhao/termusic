@@ -31,7 +31,7 @@ use crate::ui::Application;
 use crate::ui::ids::Id;
 use crate::ui::model::ports::stream_events::{PortStreamEvents, WrappedStreamEvents};
 use crate::ui::model::youtube_options::YoutubeOptions;
-use crate::ui::msg::{Msg, SearchCriteria};
+use crate::ui::msg::{CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, Msg, SearchCriteria};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use crate::ui::ueberzug::UeInstance;
 pub use download_tracker::DownloadTracker;
@@ -50,14 +50,6 @@ pub enum TermusicLayout {
     TreeView,
     DataBase,
     Podcast,
-}
-
-#[derive(Debug, PartialEq, Clone, Copy, Eq)]
-pub enum ConfigEditorLayout {
-    General,
-    Color,
-    Key1,
-    Key2,
 }
 
 /// All data specific to the Database Widget / View
@@ -444,7 +436,7 @@ impl Model {
                 themes: Vec::new(),
                 theme: ce_theme,
                 key_config: Keys::default(),
-                layout: ConfigEditorLayout::General,
+                layout: CONFIG_EDITOR_TABS_ORDER[0].into(),
                 config_changed: false,
             },
             taskpool,

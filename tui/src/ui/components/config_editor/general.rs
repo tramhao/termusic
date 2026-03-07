@@ -137,12 +137,14 @@ fn handle_input_ev(
             code: Key::Down, ..
         }) => Some(on_key_down),
         Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(on_key_up),
-        Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
-        }
+        Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(Msg::ConfigEditor(
+            ConfigEditorMsg::ChangeLayout(KFMsg::Next),
+        )),
         Event::Keyboard(KeyEvent {
             code: Key::BackTab, ..
-        }) => Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayoutBack)),
+        }) => Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout(
+            KFMsg::Previous,
+        ))),
         Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
@@ -245,12 +247,14 @@ fn handle_radio_ev(
             code: Key::Down, ..
         }) => Some(on_key_down),
         Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(on_key_up),
-        Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
-        }
+        Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(Msg::ConfigEditor(
+            ConfigEditorMsg::ChangeLayout(KFMsg::Next),
+        )),
         Event::Keyboard(KeyEvent {
             code: Key::BackTab, ..
-        }) => Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayoutBack)),
+        }) => Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout(
+            KFMsg::Previous,
+        ))),
         Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
             Some(on_key_down)
         }

@@ -40,13 +40,15 @@ use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 
 use crate::ui::Application;
+use crate::ui::components::ConfigSavePopup;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
-use crate::ui::components::{CEHeader, ConfigSavePopup};
 use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
-use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
-use crate::ui::msg::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
+use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{
+    CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg,
+};
 use crate::ui::utils::draw_area_in_absolute;
 
 // NOTE: the macros either have to be in a different file OR be defined *before* they are used, otherwise they are not in scope
@@ -116,13 +118,13 @@ impl Model {
                     ConfigEditorLayout::General => {
                         Self::view_config_editor_general(&mut self.app, f, chunk_main);
                     }
-                    ConfigEditorLayout::Color => {
+                    ConfigEditorLayout::ThemeAndColor => {
                         Self::view_config_editor_color(&mut self.app, f, chunk_main);
                     }
-                    ConfigEditorLayout::Key1 => {
+                    ConfigEditorLayout::KeyGlobal => {
                         Self::view_config_editor_key1(&mut self.app, f, chunk_main);
                     }
-                    ConfigEditorLayout::Key2 => {
+                    ConfigEditorLayout::KeyOther => {
                         Self::view_config_editor_key2(&mut self.app, f, chunk_main);
                     }
                 }
@@ -565,7 +567,7 @@ impl Model {
 
     /// Mount the Config Editor.
     pub fn mount_config_editor(&mut self) {
-        self.config_editor.layout = ConfigEditorLayout::General;
+        self.config_editor.layout = CONFIG_EDITOR_TABS_ORDER[0].into();
 
         self.mount_config_editor_components()
             .expect("Expected Config Editor Components to mount correctly");
@@ -627,80 +629,6 @@ impl Model {
         self.umount_config_keys()?;
 
         Ok(())
-    }
-
-    /// Change the Config Editor Layout to the next Tab.
-    pub fn action_change_layout(&mut self) {
-        match self.config_editor.layout {
-            ConfigEditorLayout::General => self.config_editor.layout = ConfigEditorLayout::Color,
-
-            ConfigEditorLayout::Color => self.config_editor.layout = ConfigEditorLayout::Key1,
-            ConfigEditorLayout::Key1 => self.config_editor.layout = ConfigEditorLayout::Key2,
-            ConfigEditorLayout::Key2 => self.config_editor.layout = ConfigEditorLayout::General,
-        }
-
-        self.app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(
-                    self.config_editor.layout,
-                    &self.config_tui.read(),
-                )),
-                Vec::new(),
-            )
-            .expect("To successfully remount");
-        match self.config_editor.layout {
-            ConfigEditorLayout::General => self.app.active(&Id::ConfigEditor(
-                IdConfigEditor::General(IdCEGeneral::MusicDir),
-            )),
-            ConfigEditorLayout::Color => self.app.active(&Id::ConfigEditor(IdConfigEditor::Theme(
-                IdCETheme::ThemeSelectTable,
-            ))),
-            ConfigEditorLayout::Key1 => self
-                .app
-                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into())),
-            ConfigEditorLayout::Key2 => self
-                .app
-                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into())),
-        }
-        .expect("Expected to focus mounted component");
-    }
-
-    /// Change the Config Editor Layout to the previous Tab.
-    pub fn action_change_layout_back(&mut self) {
-        match self.config_editor.layout {
-            ConfigEditorLayout::General => self.config_editor.layout = ConfigEditorLayout::Key2,
-
-            ConfigEditorLayout::Color => self.config_editor.layout = ConfigEditorLayout::General,
-            ConfigEditorLayout::Key1 => self.config_editor.layout = ConfigEditorLayout::Color,
-            ConfigEditorLayout::Key2 => self.config_editor.layout = ConfigEditorLayout::Key1,
-        }
-
-        self.app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(
-                    self.config_editor.layout,
-                    &self.config_tui.read(),
-                )),
-                Vec::new(),
-            )
-            .expect("To successfully remount");
-        match self.config_editor.layout {
-            ConfigEditorLayout::General => self.app.active(&Id::ConfigEditor(
-                IdConfigEditor::General(IdCEGeneral::MusicDir),
-            )),
-            ConfigEditorLayout::Color => self.app.active(&Id::ConfigEditor(IdConfigEditor::Theme(
-                IdCETheme::LibraryForeground,
-            ))),
-            ConfigEditorLayout::Key1 => self
-                .app
-                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into())),
-            ConfigEditorLayout::Key2 => self
-                .app
-                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into())),
-        }
-        .expect("Expected to focus mounted component");
     }
 
     /// Mount quit popup

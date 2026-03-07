@@ -8,10 +8,11 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::utils::get_app_config_path;
 
 use crate::ui::Model;
+use crate::ui::components::CEHeader;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::msg::{
-    ConfigEditorMsg, GENERAL_FOCUS_ORDER, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg,
-    THEME_FOCUS_ORDER,
+    CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, ConfigEditorMsg, GENERAL_FOCUS_ORDER,
+    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg, THEME_FOCUS_ORDER,
 };
 use crate::ui::tui_cmd::TuiCmd;
 
@@ -39,8 +40,6 @@ impl Model {
                     self.umount_config_editor();
                 }
             }
-            ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
-            ConfigEditorMsg::ChangeLayoutBack => self.action_change_layout_back(),
             ConfigEditorMsg::ConfigChanged => self.config_editor.config_changed = true,
 
             ConfigEditorMsg::ConfigSaveOk => {
@@ -119,6 +118,7 @@ impl Model {
             ConfigEditorMsg::Theme(msg) => self.update_theme(msg),
             ConfigEditorMsg::KeyFocusGlobal(msg) => self.update_key_focus_global(msg),
             ConfigEditorMsg::KeyFocusOther(msg) => self.update_key_focus_other(msg),
+            ConfigEditorMsg::ChangeLayout(msg) => self.change_layout(msg),
         }
         None
     }
@@ -171,6 +171,28 @@ impl Model {
         config.settings.theme = self.config_editor.theme.clone();
         let config = new_shared_tui_settings(config);
         self.remount_config_color(&config, Some(index)).unwrap();
+    }
+
+    /// Change the Config Editor Layout to the next Tab.
+    pub fn change_layout(&mut self, msg: KFMsg) {
+        set_next_in_focus_array(self, msg, CONFIG_EDITOR_TABS_ORDER, Some);
+
+        let Some(Id::ConfigEditor(id)) = self.app.focus() else {
+            return;
+        };
+
+        self.config_editor.layout = ConfigEditorLayout::from(*id);
+
+        self.app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Header),
+                Box::new(CEHeader::new(
+                    self.config_editor.layout,
+                    &self.config_tui.read(),
+                )),
+                Vec::new(),
+            )
+            .expect("To successfully remount");
     }
 
     /// Handle focus of the "General" tab

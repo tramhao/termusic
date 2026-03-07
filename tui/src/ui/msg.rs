@@ -368,8 +368,6 @@ pub enum LIMsg {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ConfigEditorMsg {
-    ChangeLayout,
-    ChangeLayoutBack,
     CloseCancel,
     CloseOk,
     ColorChanged(IdConfigEditor, ColorTermusic),
@@ -380,6 +378,7 @@ pub enum ConfigEditorMsg {
     ConfigSaveCancel,
 
     Open,
+    ChangeLayout(KFMsg),
     KeyFocusGlobal(KFMsg),
     KeyFocusOther(KFMsg),
     General(KFMsg),
@@ -528,6 +527,73 @@ pub enum KFMsg {
     Next,
     Previous,
 }
+
+#[derive(Debug, PartialEq, Clone, Copy, Eq)]
+pub enum ConfigEditorLayout {
+    General,
+    ThemeAndColor,
+    KeyGlobal,
+    KeyOther,
+}
+
+impl ConfigEditorLayout {
+    /// Get the Tab names in-order for the Header.
+    // TODO: should we use strum?
+    pub fn choice_array() -> [&'static str; 4] {
+        // Note: keep order in-sync with "CONFIG_EDITOR_TABS_ORDER"!
+        [
+            "General Configuration",
+            "Themes and Colors",
+            "Keys Global",
+            "Keys Other",
+        ]
+    }
+
+    /// Get index for the current value into the [`choice_array`](Self::choice_array) array.
+    pub fn to_array_idx(self) -> usize {
+        match self {
+            Self::General => 0,
+            Self::ThemeAndColor => 1,
+            Self::KeyGlobal => 2,
+            Self::KeyOther => 3,
+        }
+    }
+}
+
+impl From<ConfigEditorLayout> for IdConfigEditor {
+    fn from(value: ConfigEditorLayout) -> Self {
+        match value {
+            ConfigEditorLayout::General => IdConfigEditor::General(IdCEGeneral::MusicDir),
+            ConfigEditorLayout::ThemeAndColor => {
+                IdConfigEditor::Theme(IdCETheme::LibraryForeground)
+            }
+            ConfigEditorLayout::KeyGlobal => KFGLOBAL_FOCUS_ORDER[0].into(),
+            ConfigEditorLayout::KeyOther => KFOTHER_FOCUS_ORDER[0].into(),
+        }
+    }
+}
+
+impl From<IdConfigEditor> for ConfigEditorLayout {
+    fn from(value: IdConfigEditor) -> Self {
+        match value {
+            // Note: keep in sync with all values from "CONFIG_EDITOR_TABS_ORDER"!
+            IdConfigEditor::General(_) => Self::General,
+            IdConfigEditor::Theme(_) => Self::ThemeAndColor,
+            IdConfigEditor::KeyGlobal(_) => Self::KeyGlobal,
+            IdConfigEditor::KeyOther(_) => Self::KeyOther,
+            // ensured by tests that all `CONFIG_EDITOR_TABS_ORDER` map
+            val => unimplemented!("Mapping from {:#?} is not supported", val),
+        }
+    }
+}
+
+/// This array defines the order the IDs listed are displayed and which gains next / previous focus.
+pub const CONFIG_EDITOR_TABS_ORDER: &[IdConfigEditor] = &[
+    IdConfigEditor::General(IdCEGeneral::MusicDir),
+    IdConfigEditor::Theme(IdCETheme::LibraryForeground),
+    KFGLOBAL_FOCUS_ORDER[0].into_idconfigeditor(),
+    KFOTHER_FOCUS_ORDER[0].into_idconfigeditor(),
+];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DBMsg {
@@ -775,7 +841,12 @@ impl Eq for ServerReqResponse {}
 
 #[cfg(test)]
 mod tests {
-    use crate::ui::ids::IdKey;
+    use std::hint::black_box;
+
+    use crate::ui::{
+        ids::IdKey,
+        msg::{CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout},
+    };
 
     use super::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
 
@@ -814,6 +885,22 @@ mod tests {
                 std::mem::discriminant(entry),
                 std::mem::discriminant(&IdKey::Other(crate::ui::ids::IdKeyOther::DatabaseAddAll))
             );
+        }
+    }
+
+    // ensure that assumptions about "CONFIG_EDITOR_TABS_ORDER[0]" can be made correctly
+    #[test]
+    // clippy complains that it is always "false", but if the array actually *is* empty, then rust will **NOT** complain on "[0]" access
+    #[allow(clippy::const_is_empty)]
+    fn config_editor_tabs_order_should_be_nonzero() {
+        assert!(!CONFIG_EDITOR_TABS_ORDER.is_empty());
+    }
+
+    #[test]
+    fn config_editor_tabs_order_maps_to_enum() {
+        // there is currently no compile-time way to ensure the array maps fully
+        for id in CONFIG_EDITOR_TABS_ORDER {
+            let _ = black_box(ConfigEditorLayout::from(*id));
         }
     }
 }
