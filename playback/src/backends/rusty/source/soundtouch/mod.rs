@@ -160,7 +160,7 @@ where
             take_samples = initial_latency;
         }
 
-        self.out_buffer.resize(take_samples, 0.0);
+        self.out_buffer.reserve(take_samples);
         self.in_buffer.reserve(take_samples);
 
         let channels = usize::try_from(channels).unwrap();
@@ -179,13 +179,16 @@ where
             self.soundtouch.flush();
         }
 
-        let len_output = self.in_buffer.len() / channels;
-        // NOTE: this is undocumented, but the returned number from "receive_samples" is "max_samples / channels"
-        // NOTE: meaning the actually read number is "read * channels"!
-        let read = self
-            .soundtouch
-            .receive_samples(self.out_buffer.make_contiguous(), len_output);
-        self.out_buffer.truncate(read * channels);
+        let mut read = 1;
+        while read > 0 {
+            let mut buffer = [0.0; 4096];
+            let len = buffer.len() / channels;
+            // NOTE: this is undocumented, but the returned number from "receive_samples" is "max_samples / channels"
+            // NOTE: meaning the actually read number is "read * channels"!
+            read = self.soundtouch.receive_samples(&mut buffer, len);
+            // directly using "out_buffer" in "receive_samples" is messy, so we use a intermediate buffer instead
+            self.out_buffer.extend(buffer[..read * channels].iter());
+        }
 
         // The following check is basically just debug, but if this should ever happen, it is not fatal (hence no assert)
         // but it would be good to know
