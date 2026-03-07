@@ -23,6 +23,32 @@ thread_local! {
 
 /// A dynamic grid where all elements are of `elem_height` and `elem_width`.
 /// Split automatically into rows and colums, if there is not enough space on the current row.
+///
+/// # Behavior
+///
+/// ## Low width
+///
+/// If there is lower width available than the set element width, ex `3` width is available, but element width is `10`,
+/// then there will only be one element per row, which has `3` width.
+///
+/// ## Low height
+///
+/// If available height is lower than the set element height, ex `3` height is available, but element height is `10`,
+/// then there will be only one element per area, which has `3` height.
+///
+/// If there is not enough height to evenly divide each element, then if `draw_row_low_space` is set, the last row will have the remaining height.
+/// Example: `5` height is available, but element height is `3`, then the first row will have `3` height, but the last row has `2` height.
+///
+/// If `draw_row_low_space` is unset, the last element will have height `0` and be effectively not drawn.
+///
+/// ## Uneven width
+///
+/// If there is more width available than set element width, then if `distribute_row_space` is set, elements will dynamically
+/// get more width to consume the remainder width, distributed evenly among all elements in the row.
+/// This will mean the width of each element will get up to `(element_width*2)-1` at most.
+///
+/// If `distribute_row_space` is unset, all elements in a row will have at most `element_width` width, leaving the remaining area empty.
+/// (elements are *not* spaced)
 #[derive(Debug, Clone, Copy, Hash, PartialEq, PartialOrd, Eq)]
 pub struct UniformDynamicGrid {
     elems: usize,
@@ -96,18 +122,29 @@ impl UniformDynamicGrid {
 
         let mut remaining_elems = 0..self.elems;
 
-        let elems_per_row = remaining_area.width / self.elem_width;
+        let elems_per_row = {
+            let result = remaining_area
+                .width
+                .checked_div(self.elem_width)
+                .unwrap_or_default();
+
+            // have one element per row if available with is not 0
+            // this is to avoid empty space if for example available width is 50, but wanted width is 55
+            if result == 0 && remaining_area.width != 0 {
+                1
+            } else {
+                result
+            }
+        };
 
         // only run total height calculation for skip if a skip is defined
         let mut rows_to_skip = if let Some(focus_idx) = self.focus_node {
-            let mut rows = self.elems / usize::from(elems_per_row);
-            // integer division cuts-off the decimal, or said differently, rounds down
-            // but in those cases we want to add another row to round-up.
-            // the most proper way would be to use floating point division, but rust does not greatly
-            // support converting >u32 to floating points, so this workaround is used instead for our purposes.
-            if !self.elems.is_multiple_of(usize::from(elems_per_row)) {
-                rows += 1;
-            }
+            // this "if" is necessary, as no "checked_div_ciel" exists as of rust 1.93
+            let rows = if elems_per_row != 0 {
+                self.elems.div_ceil(usize::from(elems_per_row))
+            } else {
+                0
+            };
 
             // get the total height this grid would consume if fully allocating all elements
             let total_height = usize::from(self.elem_height) * rows;
@@ -214,6 +251,19 @@ mod tests {
         assert_eq!(areas[0], Rect::new(0, 0, 0, 0));
         assert_eq!(areas[1], Rect::new(0, 0, 0, 0));
         assert_eq!(areas[2], Rect::new(0, 0, 0, 0));
+    }
+
+    #[test]
+    fn should_not_panic_not_enough_width_for_one_elem_with_focus_node() {
+        // test relies on having less width available than a element wants
+        // and having a focus node set
+        let area = Rect::new(0, 0, 3, 10);
+
+        let areas = UniformDynamicGrid::new(3, 3, 10)
+            .focus_node(Some(0))
+            .split(area);
+
+        assert_eq!(areas.len(), 3);
     }
 
     #[test]
@@ -324,5 +374,17 @@ mod tests {
         assert_eq!(areas[4], Rect::new(10, 0, 10, 3));
         assert_eq!(areas[5], Rect::new(20, 0, 10, 3));
         assert_eq!(areas[6], Rect::new(0, 3, 10, 3));
+    }
+
+    #[test]
+    fn should_draw_in_lower_width() {
+        let area = Rect::new(0, 0, 3, 10);
+
+        let areas = UniformDynamicGrid::new(3, 3, 10).split(area);
+
+        assert_eq!(areas.len(), 3);
+        assert_eq!(areas[0], Rect::new(0, 0, 3, 3));
+        assert_eq!(areas[1], Rect::new(0, 3, 3, 3));
+        assert_eq!(areas[2], Rect::new(0, 6, 3, 3));
     }
 }

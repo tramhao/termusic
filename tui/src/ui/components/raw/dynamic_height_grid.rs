@@ -23,6 +23,32 @@ thread_local! {
 
 /// A dynamic grid where all elements are of `elem_width` and dynamic height.
 /// Split automatically into rows and colums, if there is not enough space on the current row.
+///
+/// # Behavior
+///
+/// ## Low width
+///
+/// If there is lower width available than the set element width, ex `3` width is available, but element width is `10`,
+/// then there will only be one element per row, which has `3` width.
+///
+/// ## Low height
+///
+/// If available height is lower than the set element height, ex `3` height is available, but element height is `10`,
+/// then there will be only one element per area, which has `3` height.
+///
+/// If there is not enough height for each element, then if `draw_row_low_space` is set, the last row will have the remaining height.
+/// Example: `5` height is available, but element height is `3`, then the first row will have `3` height, but the last row has `2` height.
+///
+/// If `draw_row_low_space` is unset, the last element will have height `0` and be effectively not drawn.
+///
+/// ## Uneven width
+///
+/// If there is more width available than set element width, then if `distribute_row_space` is set, elements will dynamically
+/// get more width to consume the remainder width, distributed evenly among all elements in the row.
+/// This will mean the width of each element will get up to `(element_width*2)-1` at most.
+///
+/// If `distribute_row_space` is unset, all elements in a row will have at most `element_width` width, leaving the remaining area empty.
+/// (elements are *not* spaced)
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct DynamicHeightGrid {
     elems_height: Box<[u16]>,
@@ -93,7 +119,20 @@ impl DynamicHeightGrid {
 
         let mut remaining_elems = self.elems_height.iter().peekable();
 
-        let elems_per_row = remaining_area.width / self.elem_width;
+        let elems_per_row = {
+            let result = remaining_area
+                .width
+                .checked_div(self.elem_width)
+                .unwrap_or_default();
+
+            // have one element per row if available with is not 0
+            // this is to avoid empty space if for example available width is 50, but wanted width is 55
+            if result == 0 && remaining_area.width != 0 {
+                1
+            } else {
+                result
+            }
+        };
 
         // too low area to even a single element, return all 0-length areas
         if elems_per_row == 0 {
@@ -413,5 +452,32 @@ mod tests {
         assert_eq!(areas[4], Rect::new(10, 0, 10, 3));
         assert_eq!(areas[5], Rect::new(20, 0, 10, 3));
         assert_eq!(areas[6], Rect::new(0, 0, 0, 0));
+    }
+
+    #[test]
+    fn should_draw_in_lower_width() {
+        let area = Rect::new(0, 0, 3, 10);
+        let elems = [3, 4, 3];
+
+        let areas = DynamicHeightGrid::new(elems, 10).split(area);
+
+        assert_eq!(areas.len(), 3);
+        assert_eq!(areas[0], Rect::new(0, 0, 3, 3));
+        assert_eq!(areas[1], Rect::new(0, 3, 3, 4));
+        assert_eq!(areas[2], Rect::new(0, 7, 3, 3));
+    }
+
+    #[test]
+    fn should_not_panic_not_enough_width_for_one_elem_with_focus_node() {
+        // test relies on having less width available than a element wants
+        // and having a focus node set
+        let area = Rect::new(0, 0, 3, 10);
+        let elems = [3, 4, 3];
+
+        let areas = DynamicHeightGrid::new(elems, 3)
+            .focus_node(Some(0))
+            .split(area);
+
+        assert_eq!(areas.len(), 3);
     }
 }
