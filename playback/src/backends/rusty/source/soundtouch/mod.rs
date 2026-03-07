@@ -143,6 +143,8 @@ where
         self.min_samples = usize::try_from(min_samples).unwrap();
 
         self.in_buffer.clear();
+        // the following is not strictly necessary, but should remove the need for "make_contiguous" on zeroed data
+        self.out_buffer.clear();
 
         let mut take_samples = self.min_samples;
 
@@ -177,16 +179,17 @@ where
         }
 
         let len_output = self.in_buffer.len() / channels;
+        // NOTE: this is undocumented, but the returned number from "receive_samples" is "max_samples / channels"
+        // NOTE: meaning the actually read number is "read * channels"!
         let read = self
             .soundtouch
             .receive_samples(self.out_buffer.make_contiguous(), len_output);
+        self.out_buffer.truncate(read * channels);
 
         // The following check is basically just debug, but if this should ever happen, it is not fatal (hence no assert)
         // but it would be good to know
         if self.in_buffer.len() < self.min_samples && self.soundtouch.is_empty() != 0 {
             error!("Soundtouch was not empty!");
         }
-
-        self.out_buffer.truncate(read * channels);
     }
 }
