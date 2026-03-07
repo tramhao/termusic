@@ -96,15 +96,22 @@ impl UniformDynamicGrid {
 
         let mut remaining_elems = 0..self.elems;
 
-        let elems_per_row = remaining_area.width / self.elem_width;
+        let elems_per_row = remaining_area
+            .width
+            .checked_div(self.elem_width)
+            .unwrap_or_default();
 
         // only run total height calculation for skip if a skip is defined
         let mut rows_to_skip = if let Some(focus_idx) = self.focus_node {
-            let mut rows = self.elems / usize::from(elems_per_row);
+            let mut rows = self
+                .elems
+                .checked_div(usize::from(elems_per_row))
+                .unwrap_or_default();
             // integer division cuts-off the decimal, or said differently, rounds down
             // but in those cases we want to add another row to round-up.
             // the most proper way would be to use floating point division, but rust does not greatly
             // support converting >u32 to floating points, so this workaround is used instead for our purposes.
+            // Update: shouldnt "::div_ciel" work here?
             if !self.elems.is_multiple_of(usize::from(elems_per_row)) {
                 rows += 1;
             }
@@ -214,6 +221,19 @@ mod tests {
         assert_eq!(areas[0], Rect::new(0, 0, 0, 0));
         assert_eq!(areas[1], Rect::new(0, 0, 0, 0));
         assert_eq!(areas[2], Rect::new(0, 0, 0, 0));
+    }
+
+    #[test]
+    fn should_not_panic_not_enough_width_for_one_elem_with_focus_node() {
+        // test relies on having less width available than a element wants
+        // and having a focus node set
+        let area = Rect::new(0, 0, 3, 10);
+
+        let areas = UniformDynamicGrid::new(3, 3, 10)
+            .focus_node(Some(0))
+            .split(area);
+
+        assert_eq!(areas.len(), 3);
     }
 
     #[test]
