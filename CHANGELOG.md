@@ -13,6 +13,7 @@
 - Fix(tui): change to use `icy_sixel`, removing the need for `libsixel`.
 - Fix(tui): fix `alphanumeric-sort` not building due to yanked versions.
 - Fix(tui): change search popup load keys to use `library_keys.load_track` instead of `navigation_keys.right`.
+- Fix(server): on rusty backend with `soundtouch`, fix a issue causing seemingly long delay between tempo changes.
 - Feat: add ability to control startup playing state behavior.
 - Feat: add playlist loop mode to only play the playlist once, then stop.
 - Feat: add ability to control startup playing state behavior.
