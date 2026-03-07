@@ -103,18 +103,12 @@ impl UniformDynamicGrid {
 
         // only run total height calculation for skip if a skip is defined
         let mut rows_to_skip = if let Some(focus_idx) = self.focus_node {
-            let mut rows = self
-                .elems
-                .checked_div(usize::from(elems_per_row))
-                .unwrap_or_default();
-            // integer division cuts-off the decimal, or said differently, rounds down
-            // but in those cases we want to add another row to round-up.
-            // the most proper way would be to use floating point division, but rust does not greatly
-            // support converting >u32 to floating points, so this workaround is used instead for our purposes.
-            // Update: shouldnt "::div_ciel" work here?
-            if !self.elems.is_multiple_of(usize::from(elems_per_row)) {
-                rows += 1;
-            }
+            // this "if" is necessary, as no "checked_div_ciel" exists as of rust 1.93
+            let rows = if elems_per_row != 0 {
+                self.elems.div_ceil(usize::from(elems_per_row))
+            } else {
+                0
+            };
 
             // get the total height this grid would consume if fully allocating all elements
             let total_height = usize::from(self.elem_height) * rows;
