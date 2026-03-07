@@ -175,13 +175,13 @@ impl Model {
 
     /// Change the Config Editor Layout to the next Tab.
     pub fn change_layout(&mut self, msg: KFMsg) {
-        set_next_in_focus_array(self, msg, CONFIG_EDITOR_TABS_ORDER, Some);
+        let focus = set_next_in_focus_array(self, msg, CONFIG_EDITOR_TABS_ORDER, Some);
 
-        let Some(Id::ConfigEditor(id)) = self.app.focus() else {
+        let Some(id) = focus else {
             return;
         };
 
-        self.config_editor.layout = ConfigEditorLayout::from(*id);
+        self.config_editor.layout = ConfigEditorLayout::from(id);
 
         self.app
             .remount(
@@ -446,14 +446,21 @@ impl Model {
 ///
 /// If focus elem is somehow not available or in the array, defaults to `array[0]`.
 /// Does nothing if the array is empty.
-fn set_next_in_focus_array<T, F>(model: &mut Model, msg: KFMsg, array: &[T], transform: F)
+///
+/// Returns the newly focused element, if the array is not empty.
+fn set_next_in_focus_array<T, F>(
+    model: &mut Model,
+    msg: KFMsg,
+    array: &[T],
+    transform: F,
+) -> Option<IdConfigEditor>
 where
     F: FnOnce(IdConfigEditor) -> Option<T>,
     T: Copy + PartialEq + Into<IdConfigEditor>,
 {
     // simple protection as the code below assumes at least 1 element in the array
     if array.is_empty() {
-        return;
+        return None;
     }
 
     let focus_elem = model.app.focus().and_then(|id| {
@@ -466,8 +473,9 @@ where
 
     // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
     let Some(focus_elem) = focus_elem else {
-        let _ = model.app.active(&Id::ConfigEditor(array[0].into()));
-        return;
+        let id = array[0].into();
+        let _ = model.app.active(&Id::ConfigEditor(id));
+        return Some(id);
     };
 
     let focus = match msg {
@@ -484,5 +492,8 @@ where
             .unwrap_or(array.last().unwrap()),
     };
 
-    let _ = model.app.active(&Id::ConfigEditor((*focus).into()));
+    let id = (*focus).into();
+    let _ = model.app.active(&Id::ConfigEditor(id));
+
+    Some(id)
 }
