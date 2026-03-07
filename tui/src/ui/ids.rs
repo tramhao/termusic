@@ -243,20 +243,26 @@ pub enum IdKey {
     Other(IdKeyOther),
 }
 
-impl From<&IdKey> for IdConfigEditor {
-    fn from(value: &IdKey) -> Self {
-        match *value {
+impl IdKey {
+    /// Basically `From<IdKey> for IdConfigEditor` but able to be used in const contexts.
+    ///
+    /// This is necessary due to traits not being able to be used in const contexts yet.
+    pub const fn into_idconfigeditor(self) -> IdConfigEditor {
+        match self {
             IdKey::Global(id_key_global) => IdConfigEditor::KeyGlobal(id_key_global),
             IdKey::Other(id_key_other) => IdConfigEditor::KeyOther(id_key_other),
         }
     }
 }
 
+impl From<&IdKey> for IdConfigEditor {
+    fn from(value: &IdKey) -> Self {
+        value.into_idconfigeditor()
+    }
+}
+
 impl From<IdKey> for IdConfigEditor {
     fn from(value: IdKey) -> Self {
-        match value {
-            IdKey::Global(id_key_global) => IdConfigEditor::KeyGlobal(id_key_global),
-            IdKey::Other(id_key_other) => IdConfigEditor::KeyOther(id_key_other),
-        }
+        value.into_idconfigeditor()
     }
 }

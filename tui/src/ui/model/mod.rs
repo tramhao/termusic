@@ -52,14 +52,6 @@ pub enum TermusicLayout {
     Podcast,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Eq)]
-pub enum ConfigEditorLayout {
-    General,
-    Color,
-    Key1,
-    Key2,
-}
-
 /// All data specific to the Database Widget / View
 #[derive(Debug)]
 pub struct DatabaseWidgetData {
@@ -104,8 +96,6 @@ pub struct ConfigEditorData {
     pub theme: ThemeWrap,
     /// The Keybindings to preview before saving
     pub key_config: Keys,
-    /// The current tab in the config editor
-    pub layout: ConfigEditorLayout,
     /// Indicator to prompt a save on config editor exit
     pub config_changed: bool,
 }
@@ -444,7 +434,6 @@ impl Model {
                 themes: Vec::new(),
                 theme: ce_theme,
                 key_config: Keys::default(),
-                layout: ConfigEditorLayout::General,
                 config_changed: false,
             },
             taskpool,
