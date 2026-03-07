@@ -173,7 +173,8 @@ where
             .put_samples(self.in_buffer.make_contiguous(), len_input);
 
         // this could only mean the inner source has ended
-        if self.in_buffer.len() < self.min_samples {
+        if self.in_buffer.len() < self.min_samples && self.soundtouch.num_unprocessed_samples() > 0
+        {
             // soundtouch may not output anything if there are not at least "min_samples", unless "flush" is called, which fills with empty samples
             self.soundtouch.flush();
         }
