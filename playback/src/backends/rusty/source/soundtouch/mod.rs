@@ -52,8 +52,14 @@ where
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // This is to skip calculation if speed is not changed
-        if (self.factor - 1.0).abs() < 0.05 {
+        // This is to skip soundtouch processing if speed is nominal 1.0.
+        // Note that due to how soundtouch consumes and produces samples, once we go to non-1.0 once, we might not be able to use this path anymore
+        // for the duration of this source, at least not without losing samples.
+        // Due to float weirdness, the following has to be done to check for a approximation of "1.0"
+        if (self.factor - 1.0).abs() < 0.000_000_005
+            && self.out_buffer.is_empty()
+            && self.soundtouch.num_unprocessed_samples() == 0
+        {
             // use the samples from the in_buffer, otherwise we could be dropping samples without actually playing them
             // when quickly changing between 1.0 and other speeds, there may still be a audible drop, but this lowers it
             if !self.in_buffer.is_empty() {
@@ -143,6 +149,8 @@ where
         self.min_samples = usize::try_from(min_samples).unwrap();
 
         self.in_buffer.clear();
+        // the following is not strictly necessary, but should remove the need for "make_contiguous" on zeroed data
+        self.out_buffer.clear();
 
         let mut take_samples = self.min_samples;
 
@@ -154,43 +162,44 @@ where
                     * channels;
             let initial_latency = usize::try_from(initial_latency).unwrap();
 
-            self.out_buffer.resize(initial_latency, 0.0);
-            self.in_buffer.reserve(initial_latency);
-
             // Soundtouch may need a different amount for the initial batch of samples
             take_samples = initial_latency;
         }
 
+        self.out_buffer.reserve(take_samples);
+        self.in_buffer.reserve(take_samples);
+
         let channels = usize::try_from(channels).unwrap();
 
-        self.input
-            .by_ref()
-            .take(take_samples)
-            .for_each(|x| self.in_buffer.push_back(x));
+        self.in_buffer
+            .extend(self.input.by_ref().take(take_samples));
 
         let len_input = self.in_buffer.len() / channels;
         self.soundtouch
             .put_samples(self.in_buffer.make_contiguous(), len_input);
 
         // this could only mean the inner source has ended
-        if self.in_buffer.len() < self.min_samples {
+        if self.in_buffer.len() < self.min_samples && self.soundtouch.num_unprocessed_samples() > 0
+        {
             // soundtouch may not output anything if there are not at least "min_samples", unless "flush" is called, which fills with empty samples
             self.soundtouch.flush();
         }
 
-        self.out_buffer.resize(self.min_samples, 0.0);
-
-        let len_output = self.in_buffer.len() / channels;
-        let read = self
-            .soundtouch
-            .receive_samples(self.out_buffer.make_contiguous(), len_output);
+        let mut read = 1;
+        while read > 0 {
+            let mut buffer = [0.0; 4096];
+            let len = buffer.len() / channels;
+            // NOTE: this is undocumented, but the returned number from "receive_samples" is "max_samples / channels"
+            // NOTE: meaning the actually read number is "read * channels"!
+            read = self.soundtouch.receive_samples(&mut buffer, len);
+            // directly using "out_buffer" in "receive_samples" is messy, so we use a intermediate buffer instead
+            self.out_buffer.extend(buffer[..read * channels].iter());
+        }
 
         // The following check is basically just debug, but if this should ever happen, it is not fatal (hence no assert)
         // but it would be good to know
         if self.in_buffer.len() < self.min_samples && self.soundtouch.is_empty() != 0 {
             error!("Soundtouch was not empty!");
         }
-
-        self.out_buffer.truncate(read * channels);
     }
 }
