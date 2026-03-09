@@ -40,13 +40,13 @@ use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 
 use crate::ui::Application;
+use crate::ui::components::ConfigSavePopup;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
-use crate::ui::components::{CEHeader, ConfigSavePopup};
 use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
-use crate::ui::model::{ConfigEditorLayout, Model, UserEvent};
-use crate::ui::msg::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
+use crate::ui::model::{Model, UserEvent};
+use crate::ui::msg::{ConfigEditorLayout, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
 use crate::ui::utils::draw_area_in_absolute;
 
 // NOTE: the macros either have to be in a different file OR be defined *before* they are used, otherwise they are not in scope
@@ -112,17 +112,23 @@ impl Model {
                     .fallback_background());
                 let chunk_main = Self::view_config_editor_common(&mut self.app, f, common_style);
 
-                match self.config_editor.layout {
+                let Some(Id::ConfigEditor(focus_id)) = self.app.focus() else {
+                    // should never happen currently, but might in the future if something was forgotten
+                    return;
+                };
+                let layout = ConfigEditorLayout::from(*focus_id);
+
+                match layout {
                     ConfigEditorLayout::General => {
                         Self::view_config_editor_general(&mut self.app, f, chunk_main);
                     }
-                    ConfigEditorLayout::Color => {
+                    ConfigEditorLayout::ThemeAndColor => {
                         Self::view_config_editor_color(&mut self.app, f, chunk_main);
                     }
-                    ConfigEditorLayout::Key1 => {
+                    ConfigEditorLayout::KeyGlobal => {
                         Self::view_config_editor_key1(&mut self.app, f, chunk_main);
                     }
-                    ConfigEditorLayout::Key2 => {
+                    ConfigEditorLayout::KeyOther => {
                         Self::view_config_editor_key2(&mut self.app, f, chunk_main);
                     }
                 }
@@ -565,8 +571,6 @@ impl Model {
 
     /// Mount the Config Editor.
     pub fn mount_config_editor(&mut self) {
-        self.config_editor.layout = ConfigEditorLayout::General;
-
         self.mount_config_editor_components()
             .expect("Expected Config Editor Components to mount correctly");
 
@@ -581,8 +585,6 @@ impl Model {
 
     /// Mount all the Config Editor Components.
     fn mount_config_editor_components(&mut self) -> Result<()> {
-        self.remount_config_header_footer()?;
-
         self.remount_config_general()?;
 
         self.remount_config_color(&self.config_tui.clone(), None)?;
@@ -593,6 +595,9 @@ impl Model {
         self.app.active(&Id::ConfigEditor(IdConfigEditor::General(
             IdCEGeneral::MusicDir,
         )))?;
+
+        // remount last, as it is sensitive to the focused component
+        self.remount_config_header_footer()?;
 
         Ok(())
     }
@@ -627,51 +632,6 @@ impl Model {
         self.umount_config_keys()?;
 
         Ok(())
-    }
-
-    pub fn action_change_layout(&mut self) {
-        match self.config_editor.layout {
-            ConfigEditorLayout::General => self.config_editor.layout = ConfigEditorLayout::Color,
-
-            ConfigEditorLayout::Color => self.config_editor.layout = ConfigEditorLayout::Key1,
-            ConfigEditorLayout::Key1 => self.config_editor.layout = ConfigEditorLayout::Key2,
-            ConfigEditorLayout::Key2 => self.config_editor.layout = ConfigEditorLayout::General,
-        }
-
-        assert!(
-            self.app
-                .remount(
-                    Id::ConfigEditor(IdConfigEditor::Header),
-                    Box::new(CEHeader::new(
-                        self.config_editor.layout,
-                        &self.config_tui.read()
-                    )),
-                    vec![]
-                )
-                .is_ok()
-        );
-        match self.config_editor.layout {
-            ConfigEditorLayout::General => self
-                .app
-                .active(&Id::ConfigEditor(IdConfigEditor::General(
-                    IdCEGeneral::MusicDir,
-                )))
-                .ok(),
-            ConfigEditorLayout::Color => self
-                .app
-                .active(&Id::ConfigEditor(IdConfigEditor::Theme(
-                    IdCETheme::ThemeSelectTable,
-                )))
-                .ok(),
-            ConfigEditorLayout::Key1 => self
-                .app
-                .active(&Id::ConfigEditor(KFGLOBAL_FOCUS_ORDER[0].into()))
-                .ok(),
-            ConfigEditorLayout::Key2 => self
-                .app
-                .active(&Id::ConfigEditor(KFOTHER_FOCUS_ORDER[0].into()))
-                .ok(),
-        };
     }
 
     /// Mount quit popup

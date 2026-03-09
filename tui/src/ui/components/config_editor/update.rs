@@ -8,10 +8,11 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::utils::get_app_config_path;
 
 use crate::ui::Model;
+use crate::ui::components::CEHeader;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::msg::{
-    ConfigEditorMsg, GENERAL_FOCUS_ORDER, KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg,
-    THEME_FOCUS_ORDER,
+    CONFIG_EDITOR_TABS_ORDER, ConfigEditorMsg, GENERAL_FOCUS_ORDER, KFGLOBAL_FOCUS_ORDER, KFMsg,
+    KFOTHER_FOCUS_ORDER, Msg, THEME_FOCUS_ORDER,
 };
 use crate::ui::tui_cmd::TuiCmd;
 
@@ -39,7 +40,6 @@ impl Model {
                     self.umount_config_editor();
                 }
             }
-            ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_editor.config_changed = true,
 
             ConfigEditorMsg::ConfigSaveOk => {
@@ -118,6 +118,7 @@ impl Model {
             ConfigEditorMsg::Theme(msg) => self.update_theme(msg),
             ConfigEditorMsg::KeyFocusGlobal(msg) => self.update_key_focus_global(msg),
             ConfigEditorMsg::KeyFocusOther(msg) => self.update_key_focus_other(msg),
+            ConfigEditorMsg::ChangeLayout(msg) => self.change_layout(msg),
         }
         None
     }
@@ -170,6 +171,23 @@ impl Model {
         config.settings.theme = self.config_editor.theme.clone();
         let config = new_shared_tui_settings(config);
         self.remount_config_color(&config, Some(index)).unwrap();
+    }
+
+    /// Change the Config Editor Layout to the next Tab.
+    pub fn change_layout(&mut self, msg: KFMsg) {
+        let focus = set_next_in_focus_array(self, msg, CONFIG_EDITOR_TABS_ORDER, Some);
+
+        let Some(id) = focus else {
+            return;
+        };
+
+        self.app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Header),
+                Box::new(CEHeader::new(id, &self.config_tui.read())),
+                Vec::new(),
+            )
+            .expect("To successfully remount");
     }
 
     /// Handle focus of the "General" tab
@@ -423,14 +441,21 @@ impl Model {
 ///
 /// If focus elem is somehow not available or in the array, defaults to `array[0]`.
 /// Does nothing if the array is empty.
-fn set_next_in_focus_array<T, F>(model: &mut Model, msg: KFMsg, array: &[T], transform: F)
+///
+/// Returns the newly focused element, if the array is not empty.
+fn set_next_in_focus_array<T, F>(
+    model: &mut Model,
+    msg: KFMsg,
+    array: &[T],
+    transform: F,
+) -> Option<IdConfigEditor>
 where
     F: FnOnce(IdConfigEditor) -> Option<T>,
     T: Copy + PartialEq + Into<IdConfigEditor>,
 {
     // simple protection as the code below assumes at least 1 element in the array
     if array.is_empty() {
-        return;
+        return None;
     }
 
     let focus_elem = model.app.focus().and_then(|id| {
@@ -443,8 +468,9 @@ where
 
     // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
     let Some(focus_elem) = focus_elem else {
-        let _ = model.app.active(&Id::ConfigEditor(array[0].into()));
-        return;
+        let id = array[0].into();
+        let _ = model.app.active(&Id::ConfigEditor(id));
+        return Some(id);
     };
 
     let focus = match msg {
@@ -461,5 +487,8 @@ where
             .unwrap_or(array.last().unwrap()),
     };
 
-    let _ = model.app.active(&Id::ConfigEditor((*focus).into()));
+    let id = (*focus).into();
+    let _ = model.app.active(&Id::ConfigEditor(id));
+
+    Some(id)
 }

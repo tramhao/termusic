@@ -158,7 +158,9 @@ impl Component<Msg, UserEvent> for CEThemeSelectTable {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout(
+                    KFMsg::Previous,
+                )));
             }
 
             Event::Keyboard(KeyEvent {
@@ -322,7 +324,14 @@ impl Component<Msg, UserEvent> for CEColorSelect {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout(
+                    KFMsg::Next,
+                )));
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab, ..
+            }) => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
             }
 
             Event::Keyboard(key) if key == keys.escape.get() => match self.state() {
@@ -514,9 +523,12 @@ impl Component<Msg, UserEvent> for ConfigInputHighlight {
             Event::Keyboard(keyevent) if keyevent == keys.config_keys.save.get() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
-            }
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(Msg::ConfigEditor(
+                ConfigEditorMsg::ChangeLayout(KFMsg::Next),
+            )),
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab, ..
+            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous))),
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             }
