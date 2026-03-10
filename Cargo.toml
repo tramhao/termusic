@@ -42,7 +42,7 @@ escaper = "0.1.1"
 glib = { version = "0.21.1" }
 gstreamer = { version = "0.24.1" }
 hex = "0.4"
-id3 = "1.16.3"
+id3 = "1.16.4"
 indoc = "2.0.6"
 # image must be upgraded together with viuer
 image = "0.25.6"
