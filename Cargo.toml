@@ -71,7 +71,7 @@ reqwest = { version = "0.12.23", features = [
     "json",
     "stream",
 ] }
-rfc822_sanitizer = "0.3"
+rfc822_sanitizer = "0.3.7"
 rss = { version = "2.0.12", default-features = false }
 rusqlite = { version = "0.37", features = ["bundled"] }
 sanitize-filename = "0.6"
