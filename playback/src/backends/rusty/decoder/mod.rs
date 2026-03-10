@@ -1,5 +1,6 @@
 use std::{fmt, io::ErrorKind, num::NonZeroU64, sync::LazyLock, time::Duration};
 
+use rodio::{ChannelCount, SampleRate};
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
@@ -301,13 +302,19 @@ impl Source for Symphonia {
 
     #[inline]
     #[allow(clippy::cast_possible_truncation)]
-    fn channels(&self) -> u16 {
-        self.spec.channels.count() as u16
+    fn channels(&self) -> ChannelCount {
+        u16::try_from(self.spec.channels.count())
+            .ok()
+            .and_then(|v| v.try_into().ok())
+            .expect("Valid non-zero channel count")
     }
 
     #[inline]
-    fn sample_rate(&self) -> u32 {
-        self.spec.rate
+    fn sample_rate(&self) -> SampleRate {
+        self.spec
+            .rate
+            .try_into()
+            .expect("Valid non-zero sample rate")
     }
 
     #[inline]

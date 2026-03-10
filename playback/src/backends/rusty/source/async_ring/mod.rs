@@ -6,7 +6,7 @@ use async_ringbuf::{
     traits::{AsyncConsumer, AsyncProducer, Consumer, Observer, Split},
 };
 use parking_lot::RwLock;
-use rodio::Source;
+use rodio::{ChannelCount, SampleRate, Source};
 use symphonia::core::audio::SignalSpec;
 use tokio::{
     runtime::Handle,
@@ -456,13 +456,17 @@ impl Source for AsyncRingSource {
 
     #[inline]
     #[allow(clippy::cast_possible_truncation)]
-    fn channels(&self) -> u16 {
+    fn channels(&self) -> ChannelCount {
+        // TODO: consider changing types?
         self.channels
+            .try_into()
+            .expect("Valid non-zero Channel count")
     }
 
     #[inline]
-    fn sample_rate(&self) -> u32 {
-        self.rate
+    fn sample_rate(&self) -> SampleRate {
+        // TODO: consider changing types?
+        self.rate.try_into().expect("Valid non-zero Sample Rate")
     }
 
     #[inline]
@@ -485,9 +489,9 @@ impl Source for AsyncRingSource {
 
         // Wait for the Producer to have processed the seek and get the final value of elements to skip
         let to_skip = cb_rx.blocking_recv().map_err(|_| {
-            rodio::source::SeekError::Other(
-                anyhow!("Seek Callback channel exited unexpectedly").into(),
-            )
+            rodio::source::SeekError::Other(Arc::from(
+                anyhow!("Seek Callback channel exited unexpectedly").into_boxed_dyn_error(),
+            ))
         })?;
 
         // skip possible new elements

@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, time::Duration};
 
-use rodio::Source;
+use rodio::{ChannelCount, SampleRate, Source};
 use soundtouch::{Setting, SoundTouch};
 
 /// Modify samples to sound similar as 1.0 speed when sped-up or slowed-down via [`::soundtouch`] (via `libSoundTouch`)
@@ -10,9 +10,9 @@ where
 {
     let mut st = SoundTouch::new();
 
-    let channels = u32::from(input.channels());
+    let channels = u32::from(input.channels().get());
     st.set_channels(channels);
-    st.set_sample_rate(input.sample_rate());
+    st.set_sample_rate(input.sample_rate().get());
     st.set_tempo(f64::from(rate));
 
     let min_samples =
@@ -92,11 +92,11 @@ where
         Some(self.min_samples)
     }
 
-    fn channels(&self) -> u16 {
+    fn channels(&self) -> ChannelCount {
         self.input.channels()
     }
 
-    fn sample_rate(&self) -> u32 {
+    fn sample_rate(&self) -> SampleRate {
         self.input.sample_rate()
     }
 
@@ -136,12 +136,13 @@ where
     ///
     /// Will completely overwrite the `in_buffer` & `out_buffer`.
     fn get_new_samples(&mut self) {
-        let channels = u32::from(self.input.channels());
+        let channels = u32::from(self.input.channels().get());
 
         // in rodio and symphonia, any of these factors could have changed since the last time
         self.soundtouch.set_tempo(self.factor);
         self.soundtouch.set_channels(channels);
-        self.soundtouch.set_sample_rate(self.input.sample_rate());
+        self.soundtouch
+            .set_sample_rate(self.input.sample_rate().get());
 
         let min_samples = u32::try_from(self.soundtouch.get_setting(Setting::NominalInputSequence))
             .unwrap()

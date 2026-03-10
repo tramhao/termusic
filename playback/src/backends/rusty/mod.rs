@@ -9,9 +9,8 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use parking_lot::Mutex;
-use rodio::OutputStreamBuilder;
-use rodio::Source;
-use std::num::{NonZeroU16, NonZeroUsize};
+use rodio::{DeviceSinkBuilder, Source, nz};
+use std::num::{NonZeroU16, NonZeroU32, NonZeroUsize};
 use stream_download::http::{
     HttpStream,
     reqwest::{
@@ -93,7 +92,13 @@ impl RustyBackend {
         let volume_local = volume.clone();
         let speed = config_read.settings.player.speed;
         let gapless = config_read.settings.player.gapless;
-        let output_sample_rate = config_read.settings.backends.rusty.output_sample_rate;
+        let output_sample_rate = config_read
+            .settings
+            .backends
+            .rusty
+            .output_sample_rate
+            .try_into()
+            .unwrap_or(nz!(48_000));
         drop(config_read);
 
         let position = Arc::new(Mutex::new(Duration::default()));
@@ -604,7 +609,7 @@ struct PlayerThreadArgs {
     volume_inside: Arc<AtomicU16>,
     speed_inside: i32,
 
-    output_sample_rate: u32,
+    output_sample_rate: NonZeroU32,
 }
 
 /// Player thread loop
@@ -625,10 +630,10 @@ async fn player_thread(mut args: PlayerThreadArgs) {
     let mut send_atf = false;
 
     let stream = {
-        let builder = OutputStreamBuilder::from_default_device().unwrap();
+        let builder = DeviceSinkBuilder::from_default_device().unwrap();
         builder
             .with_sample_rate(args.output_sample_rate)
-            .open_stream_or_fallback()
+            .open_sink_or_fallback()
             .unwrap()
     };
     let handle = stream.mixer();

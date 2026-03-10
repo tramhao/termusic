@@ -47,6 +47,7 @@ pub struct RustyBackendSettings {
     ///
     /// Default `48_000`
     /// Recommeded Values: `44_100`, `48_000`, `96_000` `192_000`.
+    // TODO: try changing to NonZero
     pub output_sample_rate: u32,
 }
 
