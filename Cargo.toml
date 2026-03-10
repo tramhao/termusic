@@ -60,7 +60,7 @@ opml = "1.1"
 parking_lot = "^0.12.5"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 percent-encoding = "2.3.2"
-pinyin = "0.10"
+pinyin = "0.11"
 pretty_assertions = "1.4.1"
 quick-xml = "0.38.3"
 rand = "0.10.0"
