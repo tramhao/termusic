@@ -102,7 +102,7 @@ sysinfo = { version = "^0.36.1", default-features = false, features = ["system"]
 textwrap = "0.16.2"
 tokio = { version = "1.47", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot", "process"] }
 tokio-util = "0.7.18"
-tokio-stream = { version = "0.1.17", features = ["sync"] }
+tokio-stream = { version = "0.1.18", features = ["sync"] }
 # versions >=0.9.7 require serde higher than 1.0.221
 toml = "0.9.6"
 # only update prost and tonic major versions together
