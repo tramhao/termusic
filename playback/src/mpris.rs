@@ -276,15 +276,16 @@ impl GeneralPlayer {
 #[allow(clippy::cast_possible_truncation, unsafe_code)]
 mod windows {
     use std::io::Error;
-    use std::mem;
+    // use std::mem;
 
     use windows::core::w;
     // use windows::core::PCWSTR;
-    use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
-    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+    // use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+    use windows::Win32::Foundation::HWND;
+    // use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
-        CreateWindowExW, DefWindowProcW, DestroyWindow, RegisterClassExW, WINDOW_EX_STYLE,
-        WINDOW_STYLE, WNDCLASSEXW,
+        CreateWindowExW, /* DefWindowProcW, */ DestroyWindow,
+        /* RegisterClassExW, */ WINDOW_EX_STYLE, WINDOW_STYLE, /* WNDCLASSEXW, */
     };
 
     pub struct DummyWindow {
@@ -347,14 +348,14 @@ mod windows {
 
             handle_result.map(|handle| DummyWindow { handle })
         }
-        extern "system" fn wnd_proc(
-            hwnd: HWND,
-            msg: u32,
-            wparam: WPARAM,
-            lparam: LPARAM,
-        ) -> LRESULT {
-            unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
-        }
+        // extern "system" fn wnd_proc(
+        //     hwnd: HWND,
+        //     msg: u32,
+        //     wparam: WPARAM,
+        //     lparam: LPARAM,
+        // ) -> LRESULT {
+        //     unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
+        // }
     }
 
     impl Drop for DummyWindow {
