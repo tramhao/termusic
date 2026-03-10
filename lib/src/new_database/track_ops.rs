@@ -198,7 +198,7 @@ pub fn set_last_position(conn: &Connection, track: &Path, to: Option<Duration>) 
     let file_stem = file_stem.to_string_lossy();
     let file_ext = file_ext.to_string_lossy();
 
-    let last_position = to.map(|v| v.as_secs());
+    let last_position = to.map(|v| v.as_secs().cast_signed());
 
     let mut stmt = conn.prepare_cached(indoc!{"
         UPDATE tracks SET last_position=:last_position

@@ -405,15 +405,14 @@ impl Database {
             .ok_or(anyhow!("Track is not a Podcast track!"))?;
         let query = "SELECT last_position FROM episodes WHERE url = ?1";
 
-        let mut last_position: Duration = Duration::from_secs(0);
-        self.conn
+        let last_position = self
+            .conn
             .query_row(query, params![podcast_data.url()], |row| {
-                let last_position_u64: u64 = row.get(0)?;
-                // error!("last_position_u64 is {last_position_u64}");
-                last_position = Duration::from_secs(last_position_u64);
-                Ok(last_position)
+                let last_position_i64: i64 = row.get(0)?;
+                // simply cast as we when we store, we also cast to "i64"
+                Ok(Duration::from_secs(last_position_i64.cast_unsigned()))
             })?;
-        // error!("get last pos as {}", last_position.as_secs());
+        // info!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
 
@@ -427,7 +426,10 @@ impl Database {
             .ok_or(anyhow!("Track is not a Podcast track!"))?;
         let query = "UPDATE episodes SET last_position = ?1 WHERE url = ?2";
         self.conn
-            .execute(query, params![last_position.as_secs(), podcast_data.url(),])
+            .execute(
+                query,
+                params![last_position.as_secs().cast_signed(), podcast_data.url()],
+            )
             .context("update last position failed.")?;
         // error!("set last position as {}", last_position.as_secs());
 

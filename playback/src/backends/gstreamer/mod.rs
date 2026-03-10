@@ -550,8 +550,8 @@ impl PlayerTrait for GStreamerBackend {
         if let Some(time_pos) = self.playbin.get_position()
             && let Some(duration) = self.playbin.get_duration()
         {
-            let time_pos = time_pos.seconds() as i64;
-            let duration = duration.seconds() as i64;
+            let time_pos = time_pos.seconds().cast_signed();
+            let duration = duration.seconds().cast_signed();
 
             let mut seek_pos = time_pos + secs;
             if seek_pos < 0 {

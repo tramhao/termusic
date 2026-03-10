@@ -195,7 +195,7 @@ impl GeneralPlayer {
             }
             MediaControlEvent::SeekBy(direction, duration) => {
                 #[allow(clippy::cast_possible_wrap)]
-                let as_secs = duration.as_secs().min(i64::MAX as u64) as i64;
+                let as_secs = duration.as_secs().min(i64::MAX as u64).cast_signed();
 
                 // mpris seeking is in micro-seconds (not milliseconds or seconds)
                 if as_secs == 0 {

@@ -249,8 +249,8 @@ impl InsertTrack<'_> {
         "})?;
 
         let now = chrono::Utc::now().to_rfc3339();
-        let duration = self.duration.map(|v| v.as_secs());
-        let last_position = self.last_position.map(|v| v.as_secs());
+        let duration = self.duration.map(|v| v.as_secs().cast_signed());
+        let last_position = self.last_position.map(|v| v.as_secs().cast_signed());
 
         let id = stmt.query_row(
             named_params! {

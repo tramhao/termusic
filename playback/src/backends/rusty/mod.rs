@@ -701,8 +701,7 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                 }
             }
             PlayerInternalCmd::Progress(new_position) => {
-                // let position = sink.elapsed().as_secs() as i64;
-                // error!("position in rusty backend is: {}", position);
+                // error!("position in rusty backend is: {}", new_position);
                 *args.position.lock() = new_position;
 
                 // Send a "About to Finish" signal to start pre-fetching / enqueue the next track

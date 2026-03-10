@@ -73,7 +73,7 @@ reqwest = { version = "0.12.23", features = [
 ] }
 rfc822_sanitizer = "0.3.7"
 rss = { version = "2.0.12", default-features = false }
-rusqlite = { version = "0.37", features = ["bundled"] }
+rusqlite = { version = "0.38", features = ["bundled"] }
 sanitize-filename = "0.6"
 semver = "1.0.27"
 # locked as the next version removes access to "__private"

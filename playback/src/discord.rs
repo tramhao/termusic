@@ -55,7 +55,7 @@ impl Rpc {
         #[allow(clippy::cast_possible_wrap)]
         if let Some(time_pos) = time_pos {
             self.tx
-                .send(RpcCommand::Resume(time_pos.as_secs() as i64))
+                .send(RpcCommand::Resume(time_pos.as_secs().cast_signed()))
                 .ok();
         }
     }
