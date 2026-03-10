@@ -325,7 +325,7 @@ mod windows {
                     0,
                     None,
                     None,
-                    instance,
+                    instance.into(),
                     None,
                 ) {
                     Ok(v) => v,
