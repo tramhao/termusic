@@ -586,6 +586,9 @@ impl Model {
 
     /// Mount all the Config Editor Components.
     fn mount_config_editor_components(&mut self) -> Result<()> {
+        // when opening the config editor, always be on the default / first page, instead of the one it was closed on
+        self.config_editor.last_layout = ConfigEditorLayout::default();
+
         self.remount_config_general()?;
 
         self.remount_config_color(&self.config_tui.clone(), None)?;
