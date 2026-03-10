@@ -560,6 +560,14 @@ impl ConfigEditorLayout {
     }
 }
 
+impl Default for ConfigEditorLayout {
+    /// Get the default layout from the [`CONFIG_EDITOR_TABS_ORDER`] array.
+    fn default() -> Self {
+        ConfigEditorLayout::try_from(CONFIG_EDITOR_TABS_ORDER[0])
+            .expect("Expected CONFIG_EDITOR_TABS_ORDER to map")
+    }
+}
+
 impl From<ConfigEditorLayout> for IdConfigEditor {
     fn from(value: ConfigEditorLayout) -> Self {
         match value {
@@ -573,17 +581,23 @@ impl From<ConfigEditorLayout> for IdConfigEditor {
     }
 }
 
-impl From<IdConfigEditor> for ConfigEditorLayout {
-    fn from(value: IdConfigEditor) -> Self {
-        match value {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UnsupportedId;
+
+impl TryFrom<IdConfigEditor> for ConfigEditorLayout {
+    type Error = UnsupportedId;
+
+    fn try_from(value: IdConfigEditor) -> Result<Self, Self::Error> {
+        Ok(match value {
             // Note: keep in sync with all values from "CONFIG_EDITOR_TABS_ORDER"!
             IdConfigEditor::General(_) => Self::General,
             IdConfigEditor::Theme(_) => Self::ThemeAndColor,
             IdConfigEditor::KeyGlobal(_) => Self::KeyGlobal,
             IdConfigEditor::KeyOther(_) => Self::KeyOther,
-            // ensured by tests that all `CONFIG_EDITOR_TABS_ORDER` map
-            val => unimplemented!("Mapping from {:#?} is not supported", val),
-        }
+            // it is ensured by tests that all `CONFIG_EDITOR_TABS_ORDER` map
+            // but might still happen with popups
+            _ => return Err(UnsupportedId),
+        })
     }
 }
 
@@ -841,8 +855,6 @@ impl Eq for ServerReqResponse {}
 
 #[cfg(test)]
 mod tests {
-    use std::hint::black_box;
-
     use crate::ui::{
         ids::IdKey,
         msg::{CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout},
@@ -900,7 +912,7 @@ mod tests {
     fn config_editor_tabs_order_maps_to_enum() {
         // there is currently no compile-time way to ensure the array maps fully
         for id in CONFIG_EDITOR_TABS_ORDER {
-            let _ = black_box(ConfigEditorLayout::from(*id));
+            assert!(ConfigEditorLayout::try_from(*id).is_ok());
         }
     }
 }

@@ -112,13 +112,7 @@ impl Model {
                     .fallback_background());
                 let chunk_main = Self::view_config_editor_common(&mut self.app, f, common_style);
 
-                let Some(Id::ConfigEditor(focus_id)) = self.app.focus() else {
-                    // should never happen currently, but might in the future if something was forgotten
-                    return;
-                };
-                let layout = ConfigEditorLayout::from(*focus_id);
-
-                match layout {
+                match self.config_editor.last_layout {
                     ConfigEditorLayout::General => {
                         Self::view_config_editor_general(&mut self.app, f, chunk_main);
                     }

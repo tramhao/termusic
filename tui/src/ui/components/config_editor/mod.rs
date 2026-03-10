@@ -30,7 +30,7 @@ use tuirealm::{Component, Event, MockComponent};
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::ids::{Id, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
-use crate::ui::msg::{CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, ConfigEditorMsg, Msg};
+use crate::ui::msg::{ConfigEditorLayout, ConfigEditorMsg, Msg};
 
 mod color;
 mod general;
@@ -44,8 +44,7 @@ pub struct CEHeader {
 }
 
 impl CEHeader {
-    pub fn new(id: IdConfigEditor, config: &TuiOverlay) -> Self {
-        let layout = ConfigEditorLayout::from(id);
+    pub fn new(layout: ConfigEditorLayout, config: &TuiOverlay) -> Self {
         Self {
             component: Radio::default()
                 .borders(
@@ -143,20 +142,10 @@ impl Component<Msg, UserEvent> for ConfigSavePopup {
 impl Model {
     /// Mount / Remount the Config-Editor's Header & Footer.
     fn remount_config_header_footer(&mut self) -> Result<()> {
-        let id = self
-            .app
-            .focus()
-            .and_then(|v| {
-                if let Id::ConfigEditor(id) = *v {
-                    Some(id)
-                } else {
-                    None
-                }
-            })
-            .unwrap_or(CONFIG_EDITOR_TABS_ORDER[0]);
+        let layout = self.config_editor.last_layout;
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::Header),
-            Box::new(CEHeader::new(id, &self.config_tui.read())),
+            Box::new(CEHeader::new(layout, &self.config_tui.read())),
             Vec::new(),
         )?;
         self.app.remount(
