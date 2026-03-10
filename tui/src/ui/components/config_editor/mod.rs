@@ -24,8 +24,8 @@
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::{Radio, Span};
-use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Style, TextSpan};
-use tuirealm::{Component, Event, MockComponent};
+use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, TextSpan};
+use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
 
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::ids::{Id, IdConfigEditor};
@@ -45,19 +45,26 @@ pub struct CEHeader {
 
 impl CEHeader {
     pub fn new(layout: ConfigEditorLayout, config: &TuiOverlay) -> Self {
-        Self {
+        let mut this = Self {
             component: Radio::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Plain)
-                        .sides(BorderSides::BOTTOM),
+                        .sides(BorderSides::BOTTOM)
+                        .color(config.settings.theme.library_highlight()),
                 )
                 .choices(ConfigEditorLayout::choice_array())
                 .foreground(config.settings.theme.library_highlight())
                 .background(config.settings.theme.library_background())
-                .inactive(Style::default().fg(config.settings.theme.library_highlight()))
+                // .inactive(Style::default().fg(config.settings.theme.library_highlight()))
                 .value(layout.to_array_idx()),
-        }
+        };
+
+        // trick the component into using the "focused" paths; this should be fixed upstream
+        // re https://github.com/veeso/tui-realm-stdlib/issues/61
+        this.attr(Attribute::Focus, AttrValue::Flag(true));
+
+        this
     }
 }
 

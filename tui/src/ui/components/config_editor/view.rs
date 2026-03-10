@@ -140,7 +140,7 @@ impl Model {
         common_style: Style,
     ) -> Rect {
         let [header, chunk_main, footer] = Layout::vertical([
-            Constraint::Length(3), // config header
+            Constraint::Length(2), // config header
             Constraint::Min(3),
             Constraint::Length(1), // config footer
         ])
