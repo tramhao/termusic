@@ -155,6 +155,7 @@ impl OrxMusicLibraryComponent {
                     .color(config.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
+            .inactive_style(Style::new().bg(config.settings.theme.library_background()))
             .indent_size(2)
             .highlight_symbol_draw_width(2)
             .highlight_symbol_draw_behavior(HighlightDrawBehavior::Static)
