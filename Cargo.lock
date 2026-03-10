@@ -4913,10 +4913,11 @@ dependencies = [
 
 [[package]]
 name = "symphonia-adapter-libopus"
-version = "0.2.0"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cfcdb75eaa95a602bbad6d09d923296e109606b71d4d3ffbd58ed67dfe283d7"
+checksum = "5bb56e67fc0f362731bc7a2920562ebb5668281b202444a0d274ddd3b5af61e6"
 dependencies = [
+ "log",
  "opusic-sys",
  "symphonia-core",
 ]
