@@ -175,7 +175,9 @@ impl Model {
 
     /// Change the Config Editor Layout to the next Tab.
     pub fn change_layout(&mut self, msg: KFMsg) {
-        let focus = set_next_in_focus_array(self, msg, CONFIG_EDITOR_TABS_ORDER, Some);
+        let focus = set_next_in_focus_array(self, msg, CONFIG_EDITOR_TABS_ORDER, |v| {
+            ConfigEditorLayout::try_from(v).ok()
+        });
 
         let Some(id) = focus else {
             return;

@@ -528,7 +528,7 @@ pub enum KFMsg {
     Previous,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Eq)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq, Hash)]
 pub enum ConfigEditorLayout {
     General,
     ThemeAndColor,
@@ -563,8 +563,7 @@ impl ConfigEditorLayout {
 impl Default for ConfigEditorLayout {
     /// Get the default layout from the [`CONFIG_EDITOR_TABS_ORDER`] array.
     fn default() -> Self {
-        ConfigEditorLayout::try_from(CONFIG_EDITOR_TABS_ORDER[0])
-            .expect("Expected CONFIG_EDITOR_TABS_ORDER to map")
+        CONFIG_EDITOR_TABS_ORDER[0]
     }
 }
 
@@ -572,9 +571,7 @@ impl From<ConfigEditorLayout> for IdConfigEditor {
     fn from(value: ConfigEditorLayout) -> Self {
         match value {
             ConfigEditorLayout::General => IdConfigEditor::General(IdCEGeneral::MusicDir),
-            ConfigEditorLayout::ThemeAndColor => {
-                IdConfigEditor::Theme(IdCETheme::LibraryForeground)
-            }
+            ConfigEditorLayout::ThemeAndColor => IdConfigEditor::Theme(IdCETheme::ThemeSelectTable),
             ConfigEditorLayout::KeyGlobal => KFGLOBAL_FOCUS_ORDER[0].into(),
             ConfigEditorLayout::KeyOther => KFOTHER_FOCUS_ORDER[0].into(),
         }
@@ -601,12 +598,12 @@ impl TryFrom<IdConfigEditor> for ConfigEditorLayout {
     }
 }
 
-/// This array defines the order the IDs listed are displayed and which gains next / previous focus.
-pub const CONFIG_EDITOR_TABS_ORDER: &[IdConfigEditor] = &[
-    IdConfigEditor::General(IdCEGeneral::MusicDir),
-    IdConfigEditor::Theme(IdCETheme::LibraryForeground),
-    KFGLOBAL_FOCUS_ORDER[0].into_idconfigeditor(),
-    KFOTHER_FOCUS_ORDER[0].into_idconfigeditor(),
+/// This array defines the order the Layouts listed are displayed and which gains next / previous focus.
+pub const CONFIG_EDITOR_TABS_ORDER: &[ConfigEditorLayout] = &[
+    ConfigEditorLayout::General,
+    ConfigEditorLayout::ThemeAndColor,
+    ConfigEditorLayout::KeyGlobal,
+    ConfigEditorLayout::KeyOther,
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -855,10 +852,9 @@ impl Eq for ServerReqResponse {}
 
 #[cfg(test)]
 mod tests {
-    use crate::ui::{
-        ids::IdKey,
-        msg::{CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout},
-    };
+    use std::collections::HashSet;
+
+    use crate::ui::{ids::IdKey, msg::CONFIG_EDITOR_TABS_ORDER};
 
     use super::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
 
@@ -910,9 +906,13 @@ mod tests {
 
     #[test]
     fn config_editor_tabs_order_maps_to_enum() {
+        let mut set = HashSet::new();
         // there is currently no compile-time way to ensure the array maps fully
         for id in CONFIG_EDITOR_TABS_ORDER {
-            assert!(ConfigEditorLayout::try_from(*id).is_ok());
+            assert!(
+                set.insert(*id),
+                "Duplicate value in CONFIG_EDITOR_TABS_ORDER2!"
+            );
         }
     }
 }
