@@ -30,7 +30,7 @@ async-ringbuf = "0.3"
 thiserror = "2.0.18"
 async-trait = "0.1.89"
 base64 = "0.22"
-bytes = "1.10"
+bytes = "1.11"
 bytesize = { version = "2.3", features = ["serde"] }
 chrono = "0.4.41"
 clap = { version = "4.5.60", features = ["derive", "env"] }
