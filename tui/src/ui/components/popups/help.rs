@@ -7,7 +7,7 @@ use tuirealm::{
     Component, Event, MockComponent,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan},
+    props::{Alignment, BorderType, Borders, Color, Style, TableBuilder, TextSpan},
 };
 
 use crate::ui::ids::Id;
@@ -57,6 +57,7 @@ impl HelpPopup {
                         .modifiers(BorderType::Rounded)
                         .color(config.settings.theme.fallback_border()),
                 )
+                .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .foreground(config.settings.theme.fallback_foreground())
                 .background(config.settings.theme.fallback_background())
                 .highlighted_color(config.settings.theme.fallback_highlight())
