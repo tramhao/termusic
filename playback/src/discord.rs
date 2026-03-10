@@ -24,7 +24,7 @@ enum RpcCommand {
 
 impl Default for Rpc {
     fn default() -> Self {
-        let client = DiscordIpcClient::new(APP_ID).unwrap();
+        let client = DiscordIpcClient::new(APP_ID);
         let (tx, rx): (Sender<RpcCommand>, Receiver<RpcCommand>) = mpsc::channel();
 
         std::thread::Builder::new()
