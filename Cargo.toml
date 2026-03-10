@@ -27,7 +27,7 @@ termusic-playback = { path = "playback/", version = "0.12.1", default-features =
 ahash = "^0.8.12"
 anyhow = { version = "1.0.102", features = ["backtrace"] }
 async-ringbuf = "0.3"
-thiserror = "2.0.16"
+thiserror = "2.0.18"
 async-trait = "0.1.89"
 base64 = "0.22"
 bytes = "1.10"
