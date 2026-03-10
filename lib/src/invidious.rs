@@ -145,7 +145,7 @@ impl Instance {
         match result.status() {
             StatusCode::OK => match result.text().await {
                 Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
-                Err(e) => bail!("Error during search: {}", e),
+                Err(e) => bail!("Error during search: {e}"),
             },
             _ => bail!("Error during search"),
         }
@@ -161,7 +161,7 @@ impl Instance {
         match result.status() {
             StatusCode::OK => match result.text().await {
                 Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
-                Err(e) => bail!("Error during search: {}", e),
+                Err(e) => bail!("Error during search: {e}"),
             },
             _ => bail!("Error during search"),
         }
