@@ -366,9 +366,9 @@ dependencies = [
 
 [[package]]
 name = "async-ringbuf"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e2495ca646b600f2fb09278bdf28dd2227ad45cab155cd7a25d4fd2b7002952"
+checksum = "e37deacf8e605bab4b2ece2d3c05dd4dc169252fca252fe791c326a4d67029cf"
 dependencies = [
  "futures-util",
  "ringbuf",
