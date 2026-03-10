@@ -147,6 +147,7 @@ pub struct OrxMusicLibraryComponent {
 
 impl OrxMusicLibraryComponent {
     fn get_inner_comp(config: &TuiOverlay) -> TreeView<MusicLibData> {
+        // TODO: this component should either remount or listen to style changes and apply them
         TreeView::<MusicLibData>::default()
             .background(config.settings.theme.library_background())
             .foreground(config.settings.theme.library_foreground())
