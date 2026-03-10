@@ -8,7 +8,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result, bail};
 use parking_lot::RwLock;
 use pathdiff::diff_paths;
-use rand::Rng;
+use rand::RngExt;
 use rand::seq::SliceRandom;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
