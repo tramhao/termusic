@@ -35,7 +35,7 @@ bytesize = { version = "2.0", features = ["serde"] }
 chrono = "0.4.41"
 clap = { version = "4.5.60", features = ["derive", "env"] }
 ctrlc = { version = "3.5.2", features = ["termination"] }
-criterion = "0.7"
+criterion = "0.8"
 dirs = "6.0"
 discord-rich-presence = "1.1.0"
 escaper = "0.1.1"
