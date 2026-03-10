@@ -3387,9 +3387,9 @@ checksum = "67a8e35dfe18921e475b9861266fd58a5ecfd681161f242d24a9e2d1e07fbc28"
 
 [[package]]
 name = "orx-selfref-col"
-version = "3.0.0"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e719611dd7fe235cd5e0d3ae4268fa01b36dfed45852d4f1d78e5cb3359621e4"
+checksum = "57a9af6a51926cf2d47330ec55a9a9d6c4c8d11cdaa89cef11d9f28ab11808d8"
 dependencies = [
  "orx-fixed-vec",
  "orx-pinned-vec",
@@ -3411,9 +3411,9 @@ dependencies = [
 
 [[package]]
 name = "orx-tree"
-version = "2.1.0"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca165979d144396fd18a694eee8cb586c543c3334c81746aafa6c4d27c0a3ca0"
+checksum = "74eadf71bece9393c30ea4bf216a9d40df90f42279213d5bcb78aaf7da00c199"
 dependencies = [
  "orx-concurrent-iter",
  "orx-iterable",
@@ -5799,9 +5799,9 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "tui-realm-stdlib"
-version = "3.0.0"
+version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83c5dd796e9ba2d0d2cfe26dc6a84d5a8287ec110ee1226a53d8cde9a24d67cf"
+checksum = "333d8b8da2b3479a68fdf4bd2621f888fa869501d6c5c72bac940d0eeb19b083"
 dependencies = [
  "textwrap",
  "tuirealm",
@@ -5829,9 +5829,9 @@ dependencies = [
 
 [[package]]
 name = "tuirealm-orx-tree"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d58a5c3c92a527cd5032943ea913f0ad272525db523a14a6b43d07fc4bdbfa0f"
+checksum = "613dc3389b4b640851f5f6d3669deb532b1a4085b53bd00d939913a26ad60ee1"
 dependencies = [
  "orx-tree",
  "tui-realm-stdlib",
