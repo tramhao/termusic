@@ -1400,6 +1400,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
+name = "dyn-clone"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
+
+[[package]]
 name = "educe"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5804,13 +5810,14 @@ dependencies = [
 
 [[package]]
 name = "tuirealm"
-version = "3.2.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "698bf34f6e1b191b1bfab793b869bd39196eeb07d7e5d0a01a24df07499a59b0"
+checksum = "c3a96abaf33552e9e2487bf56f537e49fad1d1fbc55a3fd542449d4e30e7c8f3"
 dependencies = [
  "async-trait",
  "bitflags 2.11.0",
  "crossterm 0.29.0",
+ "dyn-clone",
  "futures-util",
  "lazy-regex",
  "ratatui",
