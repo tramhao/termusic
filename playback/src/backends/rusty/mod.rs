@@ -9,7 +9,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use parking_lot::Mutex;
-use rodio::{DeviceSinkBuilder, Source, nz};
+use rodio::{DeviceSinkBuilder, Source};
 use std::num::{NonZeroU16, NonZeroU32, NonZeroUsize};
 use stream_download::http::{
     HttpStream,
@@ -92,13 +92,7 @@ impl RustyBackend {
         let volume_local = volume.clone();
         let speed = config_read.settings.player.speed;
         let gapless = config_read.settings.player.gapless;
-        let output_sample_rate = config_read
-            .settings
-            .backends
-            .rusty
-            .output_sample_rate
-            .try_into()
-            .unwrap_or(nz!(48_000));
+        let output_sample_rate = config_read.settings.backends.rusty.output_sample_rate;
         drop(config_read);
 
         let position = Arc::new(Mutex::new(Duration::default()));

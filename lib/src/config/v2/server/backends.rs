@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use bytesize::ByteSize;
 use serde::{Deserialize, Serialize};
 
@@ -47,8 +49,7 @@ pub struct RustyBackendSettings {
     ///
     /// Default `48_000`
     /// Recommeded Values: `44_100`, `48_000`, `96_000` `192_000`.
-    // TODO: try changing to NonZero
-    pub output_sample_rate: u32,
+    pub output_sample_rate: NonZeroU32,
 }
 
 impl Default for RustyBackendSettings {
@@ -57,7 +58,7 @@ impl Default for RustyBackendSettings {
             soundtouch: true,
             file_buffer_size: ByteSize::b(FILEBUF_SIZE_DEFAULT),
             decoded_buffer_size: ByteSize::b(DECODEDBUF_SIZE_DEFAULT),
-            output_sample_rate: 48_000,
+            output_sample_rate: const { NonZeroU32::new(48_000).expect("Valid non-zero number") },
         }
     }
 }
