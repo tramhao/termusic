@@ -1,7 +1,7 @@
 use std::fmt::Write as _;
 
-use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::KeyBinding;
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::Table;
 use tuirealm::{
     Component, Event, MockComponent,
@@ -38,6 +38,13 @@ impl HelpPopup {
         TextSpan::new(text)
     }
 
+    /// Generate a consistent header element
+    fn header(config: &TuiOverlay, text: &str) -> TextSpan {
+        TextSpan::new(text)
+            .bold()
+            .fg(config.settings.theme.library_highlight())
+    }
+
     #[allow(clippy::too_many_lines)]
     pub fn new(config: SharedTuiSettings) -> Self {
         // The following cannot be constants due to ".into()" not being allowed in a constant context
@@ -72,7 +79,7 @@ impl HelpPopup {
                 .widths(&[40, 60])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::new("Global").bold().fg(Color::LightYellow))
+                        .add_col(Self::header(&config, "Global"))
                         .add_row()
                         .add_col(Self::key(&[&keys.escape, &keys.quit]))
                         .add_col(Self::comment("Exit"))
@@ -169,7 +176,7 @@ impl HelpPopup {
                         .add_col(Self::key(&[&keys.move_cover_art_keys.toggle_hide]))
                         .add_col(Self::comment("Hide/Show album cover"))
                         .add_row()
-                        .add_col(TextSpan::new("Library").bold().fg(Color::LightYellow))
+                        .add_col(Self::header(&config, "Library"))
                         .add_row()
                         .add_col(Self::key(&[
                             &keys.library_keys.load_track,
@@ -210,7 +217,7 @@ impl HelpPopup {
                         .add_col(Self::key(&[&keys.library_keys.remove_root]))
                         .add_col(Self::comment("Remove current root from root folder list"))
                         .add_row()
-                        .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
+                        .add_col(Self::header(&config, "Playlist"))
                         .add_row()
                         .add_col(Self::key(&[
                             &keys.playlist_keys.delete,
@@ -242,7 +249,7 @@ impl HelpPopup {
                         ]))
                         .add_col(Self::comment("Select random tracks/albums to playlist"))
                         .add_row()
-                        .add_col(TextSpan::new("Database").bold().fg(Color::LightYellow))
+                        .add_col(Self::header(&config, "Database"))
                         .add_row()
                         .add_col(Self::key(&[
                             &keys.database_keys.add_selected,
@@ -254,7 +261,7 @@ impl HelpPopup {
                         .add_col(Self::key(&[&keys.library_keys.search]))
                         .add_col(Self::comment("Search in database"))
                         .add_row()
-                        .add_col(TextSpan::new("Podcast").bold().fg(Color::LightYellow))
+                        .add_col(Self::header(&config, "Podcast"))
                         .add_row()
                         .add_col(Self::key(&[&keys.podcast_keys.search]))
                         .add_col(Self::comment("Feeds: search for new feeds"))
