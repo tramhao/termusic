@@ -21,12 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::config::SharedTuiSettings;
+use termusiclib::config::{SharedTuiSettings, v2::tui::theme::styles::ColorTermusic};
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     Component, Event, MockComponent,
     event::{Key, KeyEvent},
-    props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan},
+    props::{Alignment, BorderType, Borders, TextModifiers, TextSpan},
 };
 
 use crate::ui::ids::Id;
@@ -46,20 +46,25 @@ impl ErrorPopup {
         // TODO: Consider changing to ":?" to output "Caused By" (and possibly backtrace) OR do a custom printing (copied from anyhow) once more than 4 lines can be displayed in height
         let msg = format!("{msg:#}");
 
+        let config_r = config.read_recursive();
+        let color = // TODO: make this configurable
+        config_r.settings.theme.get_color_from_theme(ColorTermusic::Red);
+
         let component = {
             Paragraph::default()
             .borders(
                 Borders::default()
-                    .color(Color::Red)
+                    .color(color)
                     .modifiers(BorderType::Rounded),
             )
             .title(" Error ", Alignment::Center)
-            .foreground(Color::Red)
-            .background(config.read_recursive().settings.theme.fallback_background())
+            .foreground(color)
+            .background(config_r.settings.theme.fallback_background())
             .modifiers(TextModifiers::BOLD)
             .alignment(Alignment::Center)
             .text([TextSpan::from(msg)]/* &msg.lines().map(|v| TextSpan::from(v)).collect::<Vec<_>>() */)
         };
+        drop(config_r);
 
         Self { component, config }
     }

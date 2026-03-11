@@ -23,6 +23,7 @@ use termusiclib::config::SharedTuiSettings;
  * SOFTWARE.
  */
 use anyhow::Result;
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -232,7 +233,11 @@ impl TECounterDelete {
                     // config
                     //     .settings.theme
                     //     .library_highlight(),
-                    Color::Red,
+                    // TODO: make this configurable
+                    config
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::Red),
                 )
                 .modifiers(TextModifiers::BOLD)
                 .text(text)

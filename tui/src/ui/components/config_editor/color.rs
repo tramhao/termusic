@@ -300,6 +300,7 @@ impl CEColorSelect {
                 *color_config,
             ))
         } else {
+            // This path should never happen, as all indexes should map into the COLOR_LIST
             self.attr(Attribute::Background, AttrValue::Color(Color::Red));
             self.attr(
                 Attribute::Borders,
@@ -475,7 +476,7 @@ impl ConfigInputHighlight {
     fn update_symbol(&mut self, result: CmdResult) -> Msg {
         if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
             if symbol.is_empty() {
-                let color = self.config.read().settings.theme.library_border();
+                let color = self.config.read_recursive().settings.theme.library_border();
                 self.update_symbol_after(color);
                 return Msg::ForceRedraw;
             }
@@ -485,7 +486,9 @@ impl ConfigInputHighlight {
                 return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
             }
             // fail to get a unicode letter
-            self.update_symbol_after(Color::Red);
+            let fail_color = // TODO: make this configurable
+            self.config.read_recursive().settings.theme.get_color_from_theme(ColorTermusic::Red);
+            self.update_symbol_after(fail_color);
         }
 
         // press enter to see preview

@@ -26,6 +26,7 @@ use std::fmt::Display;
 use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use tui_realm_stdlib::utils::calc_utf8_cursor_position;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -967,7 +968,15 @@ impl KEModifierSelect {
             .highlighted_str(">> ")
             .choices(choices)
             .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
-            .invalid_style(Style::default().fg(Color::Red))
+            .invalid_style(
+                Style::default().fg(
+                    // TODO: make this configurable
+                    config_r
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::Red),
+                ),
+            )
             .value(init_select, init_key);
 
         drop(config_r);
