@@ -444,7 +444,10 @@ impl ConfigInputHighlight {
             .input_type(InputType::Text)
             .placeholder(
                 "1f984/1f680/1f8a5",
-                Style::default().fg(Color::Rgb(128, 128, 128)),
+                Style::default().fg(config_r
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::LightBlack)),
             )
             .title(name, Alignment::Left)
             .value(highlight_str);

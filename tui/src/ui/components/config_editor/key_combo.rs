@@ -950,10 +950,9 @@ impl KEModifierSelect {
     pub fn new(name: &str, id: IdKey, config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         let (init_select, init_key) = Self::init_modifier_select(id, &config_r.settings.keys);
-        let mut choices = Vec::new();
-        for modifier in MyModifiers::LIST {
-            choices.push(modifier.as_str());
-        }
+
+        let choices = MyModifiers::LIST.map(MyModifiers::as_str);
+
         let component = KeyCombo::default()
             .borders(
                 Borders::default()
@@ -967,7 +966,13 @@ impl KEModifierSelect {
             .highlighted_color(config_r.settings.theme.fallback_highlight())
             .highlighted_str(">> ")
             .choices(choices)
-            .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
+            .placeholder(
+                "a/b/c",
+                Style::default().fg(config_r
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::LightBlack)),
+            )
             .invalid_style(
                 Style::default().fg(
                     // TODO: make this configurable

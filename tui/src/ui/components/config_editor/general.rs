@@ -27,7 +27,7 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::Radio;
-use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
+use tuirealm::props::{Alignment, BorderType, Borders, InputType, Style};
 use tuirealm::{
     Component, Event, MockComponent,
     command::{Cmd, Direction, Position},
@@ -97,7 +97,13 @@ impl MusicDir {
         let component =
             common_input_comp(&config_tui, " Root Music Directory:(use ; to separate) ")
                 .input_type(InputType::Text)
-                .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
+                .placeholder(
+                    "~/Music",
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
+                )
                 .value(music_dir_input);
 
         drop(config_tui);
@@ -328,7 +334,13 @@ impl PlaylistRandomTrack {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Playlist Select Random Track Quantity: ")
                 .input_type(InputType::UnsignedInteger)
-                .placeholder("20", Style::default().fg(Color::Rgb(128, 128, 128)))
+                .placeholder(
+                    "20",
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
+                )
                 .value(
                     config
                         .server
@@ -374,7 +386,13 @@ impl PlaylistRandomAlbum {
                 " Playlist Select Random Album with tracks no less than: ",
             )
             .input_type(InputType::UnsignedInteger)
-            .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
+            .placeholder(
+                "1",
+                Style::default().fg(config_tui
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::LightBlack)),
+            )
             .value(
                 config
                     .server
@@ -419,7 +437,10 @@ impl PodcastDir {
                 .input_type(InputType::Text)
                 .placeholder(
                     "~/Music/podcast",
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
                 )
                 .value(
                     config
@@ -465,7 +486,10 @@ impl PodcastSimulDownload {
                 .input_type(InputType::UnsignedInteger)
                 .placeholder(
                     "between 1 ~ 5 suggested",
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
                 )
                 .value(
                     config
@@ -511,7 +535,10 @@ impl PodcastMaxRetries {
                 .input_type(InputType::UnsignedInteger)
                 .placeholder(
                     "between 1 ~ 5 suggested",
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
                 )
                 .value(
                     config
@@ -783,7 +810,10 @@ impl PlayerPort {
                 .input_type(InputType::UnsignedInteger)
                 .placeholder(
                     "between 1000 ~ 60000 suggested",
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
                 )
                 .value(config.server.read().settings.com.port.to_string())
         };
@@ -822,7 +852,10 @@ impl PlayerAddress {
                 .input_type(InputType::Text) // we likely could make a custom matcher
                 .placeholder(
                     "::1 or 127.0.0.1 recommended",
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
                 )
                 .value(config.server.read().settings.com.address.to_string())
         };
@@ -898,7 +931,10 @@ impl PlayerUDSPath {
                 .input_type(InputType::Text)
                 .placeholder(
                     default_uds_socket_path().display().to_string(),
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
                 )
                 .value(
                     config
@@ -983,7 +1019,7 @@ impl ExtraYtdlpArgs {
                 .input_type(InputType::Text)
                 .placeholder(
                     r#"--cookies-from-browser brave+gnomekeyring or --cookies "d:\src\cookies.txt""#,
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                    Style::default().fg(config_tui.settings.theme.get_color_from_theme(ColorTermusic::LightBlack)),
                 )
                 .value(&config_tui.settings.ytdlp.extra_args)
         };

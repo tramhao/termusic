@@ -16,6 +16,7 @@ pub enum ColorTermusic {
     Magenta = 8,
     Cyan = 9,
     White = 10,
+    /// Also known as "Grey"
     LightBlack = 11,
     LightRed = 12,
     LightGreen = 13,
