@@ -273,50 +273,36 @@ impl CEColorSelect {
         }
     }
 
+    /// Apply the given choice index as the color for the current component to preview.
     fn update_color(&mut self, index: usize) -> Msg {
-        if let Some(color_config) = COLOR_LIST.get(index) {
-            let color = self
-                .config
-                .read()
-                .settings
-                .theme
-                .get_color_from_theme(*color_config);
-            // self.attr(Attribute::Foreground, AttrValue::Color(color));
-            self.attr(Attribute::Background, AttrValue::Color(color));
-            self.attr(
-                Attribute::Borders,
-                AttrValue::Borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(color),
-                ),
-            );
-            self.attr(
-                Attribute::FocusStyle,
-                AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(color)),
-            );
-            Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(
-                IdConfigEditor::Theme(self.id),
-                *color_config,
-            ))
-        } else {
-            // This path should never happen, as all indexes should map into the COLOR_LIST
-            self.attr(Attribute::Background, AttrValue::Color(Color::Red));
-            self.attr(
-                Attribute::Borders,
-                AttrValue::Borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Red),
-                ),
-            );
-            self.attr(
-                Attribute::FocusStyle,
-                AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(Color::Red)),
-            );
-
-            Msg::ForceRedraw
-        }
+        // this *should* never panic as the choices that get build are directly from the list
+        let color_config = COLOR_LIST
+            .get(index)
+            .expect("Index to always be within list bounds");
+        let color = self
+            .config
+            .read()
+            .settings
+            .theme
+            .get_color_from_theme(*color_config);
+        // self.attr(Attribute::Foreground, AttrValue::Color(color));
+        self.attr(Attribute::Background, AttrValue::Color(color));
+        self.attr(
+            Attribute::Borders,
+            AttrValue::Borders(
+                Borders::default()
+                    .modifiers(BorderType::Rounded)
+                    .color(color),
+            ),
+        );
+        self.attr(
+            Attribute::FocusStyle,
+            AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(color)),
+        );
+        Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(
+            IdConfigEditor::Theme(self.id),
+            *color_config,
+        ))
     }
 }
 
