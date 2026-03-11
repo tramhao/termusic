@@ -468,7 +468,9 @@ impl ConfigInputHighlight {
             }
             if let Some(s) = Self::string_to_unicode_char(&symbol) {
                 // success getting a unicode letter
-                self.update_symbol_after(Color::Green);
+                let success_color = // TODO: make this configurable
+                self.config.read_recursive().settings.theme.get_color_from_theme(ColorTermusic::Green);
+                self.update_symbol_after(success_color);
                 return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
             }
             // fail to get a unicode letter
@@ -482,7 +484,9 @@ impl ConfigInputHighlight {
             && let Some(s) = Self::string_to_unicode_char(&symbol)
         {
             self.attr(Attribute::Value, AttrValue::String(s.to_string()));
-            self.update_symbol_after(Color::Green);
+            let success_color = // TODO: make this configurable
+                self.config.read_recursive().settings.theme.get_color_from_theme(ColorTermusic::Green);
+            self.update_symbol_after(success_color);
             return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
         }
         Msg::ForceRedraw
