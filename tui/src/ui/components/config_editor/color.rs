@@ -195,11 +195,16 @@ impl CEColorSelect {
     ///
     /// The only IDs expected are color IDs, everything else(like `*Symbol` or `*Label`) will panic.
     pub fn new(name: &str, id: IdCETheme, color: Color, config: SharedTuiSettings) -> Self {
-        let init_value = Self::init_color_select(id, &config.read().settings.theme);
+        let config_read = config.read_recursive();
+        let init_value = Self::init_color_select(id, &config_read.settings.theme);
+        let hg_color = config_read.settings.theme.library_highlight();
+        drop(config_read);
+
         let mut choices = Vec::new();
         for color in &COLOR_LIST {
             choices.push(color.as_ref());
         }
+
         Self {
             component: Select::default()
                 .borders(
@@ -212,7 +217,7 @@ impl CEColorSelect {
                 .title(name, Alignment::Left)
                 .rewind(false)
                 .inactive(Style::default().add_modifier(Modifier::BOLD).bg(color))
-                .highlighted_color(Color::LightGreen)
+                .highlighted_color(hg_color)
                 .highlighted_str(">> ")
                 .choices(choices)
                 .value(init_value),
