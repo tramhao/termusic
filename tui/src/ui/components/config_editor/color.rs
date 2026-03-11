@@ -200,10 +200,7 @@ impl CEColorSelect {
         let hg_color = config_read.settings.theme.library_highlight();
         drop(config_read);
 
-        let mut choices = Vec::new();
-        for color in &COLOR_LIST {
-            choices.push(color.as_ref());
-        }
+        let choices = COLOR_LIST.map(ColorTermusic::as_ref_const);
 
         Self {
             component: Select::default()

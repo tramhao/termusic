@@ -26,8 +26,10 @@ pub enum ColorTermusic {
     LightWhite = 18,
 }
 
-impl AsRef<str> for ColorTermusic {
-    fn as_ref(&self) -> &str {
+impl ColorTermusic {
+    /// Same as [`AsRef`], but allowable in `const` and giving static references
+    #[must_use]
+    pub const fn as_ref_const(self) -> &'static str {
         match self {
             ColorTermusic::Reset => "reset",
             ColorTermusic::Foreground => "foreground",
@@ -49,6 +51,12 @@ impl AsRef<str> for ColorTermusic {
             ColorTermusic::LightCyan => "bright_cyan",
             ColorTermusic::LightWhite => "bright_white",
         }
+    }
+}
+
+impl AsRef<str> for ColorTermusic {
+    fn as_ref(&self) -> &str {
+        self.as_ref_const()
     }
 }
 
