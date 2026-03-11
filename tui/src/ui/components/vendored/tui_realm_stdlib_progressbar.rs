@@ -25,11 +25,12 @@ Copyright (c) 2021-2024 Christian Visintin
 
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::props::{
-    Alignment, AttrValue, Attribute, Borders, Color, PropPayload, PropValue, Props, Style,
-    TextModifiers,
+    Alignment, AttrValue, Attribute, Borders, Color, PropPayload, PropValue, Props, TextModifiers,
 };
 use tuirealm::ratatui::{layout::Rect, widgets::Gauge};
 use tuirealm::{Frame, MockComponent, State};
+
+use crate::ui::utils::get_style;
 
 // -- Component
 
@@ -99,21 +100,7 @@ impl MockComponent for ProgressBar {
                 .props
                 .get_or(Attribute::Text, AttrValue::String(String::default()))
                 .unwrap_string();
-            let foreground = self
-                .props
-                .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
-                .unwrap_color();
-            let background = self
-                .props
-                .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
-                .unwrap_color();
-            let modifiers = self
-                .props
-                .get_or(
-                    Attribute::TextProps,
-                    AttrValue::TextModifiers(TextModifiers::empty()),
-                )
-                .unwrap_text_modifiers();
+            let style = get_style(&self.props);
             let borders = self
                 .props
                 .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
@@ -132,17 +119,13 @@ impl MockComponent for ProgressBar {
                 .unwrap_payload()
                 .unwrap_one()
                 .unwrap_f64();
-            let normal_style = Style::default()
-                .fg(foreground)
-                .bg(background)
-                .add_modifier(modifiers);
-            let div = tui_realm_stdlib::utils::get_block(borders, title, true, Some(normal_style));
+            let div = tui_realm_stdlib::utils::get_block(borders, title, true, Some(style));
             // Make progress bar
             render.render_widget(
                 Gauge::default()
                     .block(div)
-                    .style(normal_style)
-                    .gauge_style(normal_style)
+                    .style(style)
+                    .gauge_style(style)
                     .label(label)
                     .ratio(percentage)
                     .use_unicode(true),

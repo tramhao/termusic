@@ -377,18 +377,24 @@ impl KeyCombo {
 
     /// Get the style for the closed normal, focused, non-invalid color
     fn get_normal_style(&self) -> Style {
-        let foreground = self
+        let mut style = Style::default();
+
+        if let Some(fg) = self
             .props
             .get_ref(Attribute::Foreground)
             .and_then(AttrValue::as_color)
-            .unwrap_or(Color::Reset);
-        let background = self
+        {
+            style = style.fg(fg);
+        }
+        if let Some(bg) = self
             .props
             .get_ref(Attribute::Background)
             .and_then(AttrValue::as_color)
-            .unwrap_or(Color::Reset);
+        {
+            style = style.bg(bg);
+        }
 
-        Style::default().bg(background).fg(foreground)
+        style
     }
 
     /// Draw the Input field for the keybinding.
@@ -486,7 +492,7 @@ impl KeyCombo {
             .props
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style)
-            .unwrap_or(Style::default().bg(normal_style.bg.unwrap_or(Color::Reset)));
+            .unwrap_or(normal_style);
         let focus = self
             .props
             .get_ref(Attribute::Focus)
