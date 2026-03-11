@@ -800,7 +800,7 @@ impl Model {
 
     pub fn playlist_update_search(&mut self, input: &str) {
         let filtered_music = Model::update_search(self.playback.playlist.tracks(), input);
-        self.general_search_update_show(Model::build_table(filtered_music));
+        self.general_search_update_show(Model::build_table(filtered_music, &self.config_tui));
     }
 
     /// Select the given index in the playlist list component
