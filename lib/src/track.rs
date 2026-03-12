@@ -755,7 +755,7 @@ pub fn parse_metadata_from_file(
 
 /// The inner working to actually copy data from the given [`LoftyTag`] into the `res`ult
 fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetadata) {
-    if let Some(len_tag) = tag.get_string(&ItemKey::Length) {
+    if let Some(len_tag) = tag.get_string(ItemKey::Length) {
         match len_tag.parse::<u64>() {
             Ok(v) => res.duration = Some(Duration::from_millis(v)),
             Err(_) => warn!(
@@ -769,7 +769,7 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetad
     }
     if options.artists {
         let mut artists: Vec<String> = tag
-            .get_strings(&ItemKey::TrackArtists)
+            .get_strings(ItemKey::TrackArtists)
             .map(ToString::to_string)
             .collect();
 
@@ -788,27 +788,19 @@ fn handle_tag(tag: &LoftyTag, options: MetadataOptions<'_>, res: &mut TrackMetad
     }
     if options.album_artist {
         res.album_artist = tag
-            .get(&ItemKey::AlbumArtist)
+            .get(ItemKey::AlbumArtist)
             .and_then(|v| v.value().text())
             .map(ToString::to_string);
     }
     if options.album_artists {
-        // TODO: manually split if convenient tag is not available
-
-        // manual implementation as it currently does not exist upstream
-        // see https://github.com/Serial-ATA/lofty-rs/issues/522
-        // res.album_artists = Some(tag.get_strings(&ItemKey::AlbumArtists).map(ToString::to_string).collect());
-        // lofty already separates them from a "; "
         let mut album_artists: Vec<String> = tag
-            .get_strings(&ItemKey::Unknown("ALBUMARTISTS".to_string()))
+            .get_strings(ItemKey::AlbumArtists)
             .map(ToString::to_string)
             .collect();
 
         if album_artists.is_empty()
             && !options.artist_separators.is_empty()
-            && let Some(album_artist) = tag
-                .get(&ItemKey::AlbumArtist)
-                .and_then(|v| v.value().text())
+            && let Some(album_artist) = tag.get(ItemKey::AlbumArtist).and_then(|v| v.value().text())
         {
             let artists_iter = split_artists(album_artist, options);
             album_artists.extend(artists_iter);
@@ -853,7 +845,7 @@ fn split_artists<'a>(
 
 /// Fetch all lyrics from the given Lofty tag into the given array.
 fn get_lyrics_from_tags(tag: &LoftyTag, lyric_frames: &mut Vec<Id3Lyrics>) {
-    let lyrics = tag.get_items(&ItemKey::Lyrics);
+    let lyrics = tag.get_items(ItemKey::Lyrics);
     for lyric in lyrics {
         if let ItemValue::Text(lyrics_text) = lyric.value() {
             lyric_frames.push(Id3Lyrics {

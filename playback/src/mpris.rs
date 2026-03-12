@@ -195,7 +195,7 @@ impl GeneralPlayer {
             }
             MediaControlEvent::SeekBy(direction, duration) => {
                 #[allow(clippy::cast_possible_wrap)]
-                let as_secs = duration.as_secs().min(i64::MAX as u64) as i64;
+                let as_secs = duration.as_secs().min(i64::MAX as u64).cast_signed();
 
                 // mpris seeking is in micro-seconds (not milliseconds or seconds)
                 if as_secs == 0 {
@@ -276,15 +276,16 @@ impl GeneralPlayer {
 #[allow(clippy::cast_possible_truncation, unsafe_code)]
 mod windows {
     use std::io::Error;
-    use std::mem;
+    // use std::mem;
 
     use windows::core::w;
     // use windows::core::PCWSTR;
-    use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
-    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+    // use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+    use windows::Win32::Foundation::HWND;
+    // use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
-        CreateWindowExW, DefWindowProcW, DestroyWindow, RegisterClassExW, WINDOW_EX_STYLE,
-        WINDOW_STYLE, WNDCLASSEXW,
+        CreateWindowExW, /* DefWindowProcW, */ DestroyWindow,
+        /* RegisterClassExW, */ WINDOW_EX_STYLE, WINDOW_STYLE, /* WNDCLASSEXW, */
     };
 
     pub struct DummyWindow {
@@ -296,23 +297,23 @@ mod windows {
             let class_name = w!("SimpleTray");
 
             let handle_result = unsafe {
-                let instance = GetModuleHandleW(None)
-                    .map_err(|e| format!("Getting module handle failed: {e}"))?;
+                // let instance = GetModuleHandleW(None)
+                //     .map_err(|e| format!("Getting module handle failed: {e}"))?;
 
-                let wnd_class = WNDCLASSEXW {
-                    cbSize: mem::size_of::<WNDCLASSEXW>() as u32,
-                    hInstance: instance.into(),
-                    lpszClassName: class_name,
-                    lpfnWndProc: Some(Self::wnd_proc),
-                    ..Default::default()
-                };
+                // let wnd_class = WNDCLASSEXW {
+                //     cbSize: mem::size_of::<WNDCLASSEXW>() as u32,
+                //     hInstance: instance.into(),
+                //     lpszClassName: class_name,
+                //     lpfnWndProc: Some(Self::wnd_proc),
+                //     ..Default::default()
+                // };
 
-                if RegisterClassExW(&wnd_class) == 0 {
-                    return Err(format!(
-                        "Registering class failed: {}",
-                        Error::last_os_error()
-                    ));
-                }
+                // if RegisterClassExW(&wnd_class) == 0 {
+                //     return Err(format!(
+                //         "Registering class failed: {}",
+                //         Error::last_os_error()
+                //     ));
+                // }
 
                 let handle = match CreateWindowExW(
                     WINDOW_EX_STYLE::default(),
@@ -325,7 +326,8 @@ mod windows {
                     0,
                     None,
                     None,
-                    instance,
+                    // instance.into(),
+                    None,
                     None,
                 ) {
                     Ok(v) => v,
@@ -346,14 +348,14 @@ mod windows {
 
             handle_result.map(|handle| DummyWindow { handle })
         }
-        extern "system" fn wnd_proc(
-            hwnd: HWND,
-            msg: u32,
-            wparam: WPARAM,
-            lparam: LPARAM,
-        ) -> LRESULT {
-            unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
-        }
+        // extern "system" fn wnd_proc(
+        //     hwnd: HWND,
+        //     msg: u32,
+        //     wparam: WPARAM,
+        //     lparam: LPARAM,
+        // ) -> LRESULT {
+        //     unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
+        // }
     }
 
     impl Drop for DummyWindow {

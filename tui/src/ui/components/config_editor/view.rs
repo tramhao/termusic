@@ -104,21 +104,22 @@ impl Model {
         self.terminal
             .raw_mut()
             .draw(|f| {
-                let common_style = Style::new().bg(self
-                    .config_tui
-                    .read_recursive()
-                    .settings
-                    .theme
-                    .fallback_background());
+                // The common style to apply, even in areas that are unused.
+                // To not look out-of-place, we need to get the preview theme style if on that layout, to properly preview.
+                let common_style =
+                    if self.config_editor.last_layout == ConfigEditorLayout::ThemeAndColor {
+                        Style::new().bg(self.config_editor.theme.fallback_background())
+                    } else {
+                        Style::new().bg(self
+                            .config_tui
+                            .read_recursive()
+                            .settings
+                            .theme
+                            .fallback_background())
+                    };
                 let chunk_main = Self::view_config_editor_common(&mut self.app, f, common_style);
 
-                let Some(Id::ConfigEditor(focus_id)) = self.app.focus() else {
-                    // should never happen currently, but might in the future if something was forgotten
-                    return;
-                };
-                let layout = ConfigEditorLayout::from(*focus_id);
-
-                match layout {
+                match self.config_editor.last_layout {
                     ConfigEditorLayout::General => {
                         Self::view_config_editor_general(&mut self.app, f, chunk_main);
                     }
@@ -146,7 +147,7 @@ impl Model {
         common_style: Style,
     ) -> Rect {
         let [header, chunk_main, footer] = Layout::vertical([
-            Constraint::Length(3), // config header
+            Constraint::Length(2), // config header
             Constraint::Min(3),
             Constraint::Length(1), // config footer
         ])
@@ -585,6 +586,9 @@ impl Model {
 
     /// Mount all the Config Editor Components.
     fn mount_config_editor_components(&mut self) -> Result<()> {
+        // when opening the config editor, always be on the default / first page, instead of the one it was closed on
+        self.config_editor.last_layout = ConfigEditorLayout::default();
+
         self.remount_config_general()?;
 
         self.remount_config_color(&self.config_tui.clone(), None)?;

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use rodio::Source;
+use rodio::{ChannelCount, SampleRate, Source};
 
 use super::SampleType;
 
@@ -70,11 +70,11 @@ where
         self.as_source().current_span_len()
     }
 
-    fn channels(&self) -> u16 {
+    fn channels(&self) -> ChannelCount {
         self.as_source().channels()
     }
 
-    fn sample_rate(&self) -> u32 {
+    fn sample_rate(&self) -> SampleRate {
         self.as_source().sample_rate()
     }
 

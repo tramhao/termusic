@@ -1,4 +1,7 @@
-use std::ops::Range;
+use std::{
+    num::{NonZeroU16, NonZeroU32},
+    ops::Range,
+};
 
 use symphonia::core::audio::SignalSpec;
 
@@ -117,13 +120,15 @@ pub enum RingMsgParse2 {
     Eos,
 }
 
+/// In the OK case, contains the resulting type and the read amount of bytes.
+/// In the ERR case, contains the amount of bytes necessary to read the message.
 pub type PResult<T> = Result<(T, usize), usize>;
 
 /// The Content and result of a [`RingMessages::Spec`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MessageSpecResult {
-    pub rate: u32,
-    pub channels: u16,
+    pub rate: NonZeroU32,
+    pub channels: NonZeroU16,
     pub current_span_len: usize,
 }
 
@@ -151,7 +156,11 @@ impl MessageSpec {
         let current_span_len: [u8; USIZE_LEN] = buf[6..6 + USIZE_LEN].try_into().unwrap();
 
         let rate = u32::from_ne_bytes(rate);
+        // This message is also the serializer, meaning it cannot contain zero types
+        let rate = NonZeroU32::new(rate).expect("Expected async-ring to not contain invalid data");
         let channels = u16::from_ne_bytes(channels);
+        let channels =
+            NonZeroU16::new(channels).expect("Expected async-ring to not contain invalid data");
         let current_span_len = usize::from_ne_bytes(current_span_len);
 
         Ok((
@@ -170,9 +179,14 @@ impl MessageSpec {
             return Err(Self::MESSAGE_SIZE - buf.len());
         }
 
-        (buf[..=3]).copy_from_slice(&spec.rate.to_ne_bytes());
-        let channels_u16 = u16::try_from(spec.channels.count()).unwrap();
-        (buf[4..=5]).copy_from_slice(&channels_u16.to_ne_bytes());
+        let rate_nonzero =
+            NonZeroU32::new(spec.rate).expect("Expected input Sample Rate to be non-zero");
+        // unwrap should be save as symphonia does not actually go above 16 channels
+        let channels_nonzero = NonZeroU16::new(u16::try_from(spec.channels.count()).unwrap())
+            .expect("Expected input Channels to be non-zero");
+
+        (buf[..=3]).copy_from_slice(&rate_nonzero.get().to_ne_bytes());
+        (buf[4..=5]).copy_from_slice(&channels_nonzero.get().to_ne_bytes());
         (buf[6..6 + USIZE_LEN]).copy_from_slice(&current_span_len.to_ne_bytes());
 
         Ok(((), Self::MESSAGE_SIZE))
@@ -335,6 +349,8 @@ mod tests {
     }
 
     mod parse_message_spec {
+        use std::num::{NonZeroU16, NonZeroU32};
+
         use crate::backends::rusty::source::async_ring::{MessageSpec, MessageSpecResult};
 
         #[test]
@@ -353,8 +369,8 @@ mod tests {
             assert_eq!(
                 res,
                 MessageSpecResult {
-                    rate: 44000,
-                    channels: 2,
+                    rate: NonZeroU32::new(44000).unwrap(),
+                    channels: NonZeroU16::new(2).unwrap(),
                     current_span_len: 10,
                 }
             );
@@ -384,8 +400,8 @@ mod tests {
             assert_eq!(
                 res,
                 MessageSpecResult {
-                    rate: 44000,
-                    channels: 2,
+                    rate: NonZeroU32::new(44000).unwrap(),
+                    channels: NonZeroU16::new(2).unwrap(),
                     current_span_len: 10,
                 }
             );
@@ -815,6 +831,30 @@ mod tests {
 
             let expected: &[u8] = &[RingMessages::Eos.as_u8()];
             assert_eq!(out_buf, expected);
+        }
+
+        #[test]
+        #[should_panic = "Expected input Channels to be non-zero"]
+        fn should_panic_on_zero_channels() {
+            let out_buf = &mut [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
+
+            let _ = RingMsgWrite2::try_write_spec(
+                SignalSpec::new(44000, Channels::empty()),
+                10,
+                out_buf,
+            );
+        }
+
+        #[test]
+        #[should_panic = "Expected input Sample Rate to be non-zero"]
+        fn should_panic_on_zero_rate() {
+            let out_buf = &mut [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
+
+            let _ = RingMsgWrite2::try_write_spec(
+                SignalSpec::new(0, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                10,
+                out_buf,
+            );
         }
     }
 }

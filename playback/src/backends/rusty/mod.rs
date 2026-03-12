@@ -9,9 +9,8 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use parking_lot::Mutex;
-use rodio::OutputStreamBuilder;
-use rodio::Source;
-use std::num::{NonZeroU16, NonZeroUsize};
+use rodio::{DeviceSinkBuilder, Source};
+use std::num::{NonZeroU16, NonZeroU32, NonZeroUsize};
 use stream_download::http::{
     HttpStream,
     reqwest::{
@@ -604,7 +603,7 @@ struct PlayerThreadArgs {
     volume_inside: Arc<AtomicU16>,
     speed_inside: i32,
 
-    output_sample_rate: u32,
+    output_sample_rate: NonZeroU32,
 }
 
 /// Player thread loop
@@ -625,10 +624,10 @@ async fn player_thread(mut args: PlayerThreadArgs) {
     let mut send_atf = false;
 
     let stream = {
-        let builder = OutputStreamBuilder::from_default_device().unwrap();
+        let builder = DeviceSinkBuilder::from_default_device().unwrap();
         builder
             .with_sample_rate(args.output_sample_rate)
-            .open_stream_or_fallback()
+            .open_sink_or_fallback()
             .unwrap()
     };
     let handle = stream.mixer();
@@ -701,8 +700,7 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                 }
             }
             PlayerInternalCmd::Progress(new_position) => {
-                // let position = sink.elapsed().as_secs() as i64;
-                // error!("position in rusty backend is: {}", position);
+                // error!("position in rusty backend is: {}", new_position);
                 *args.position.lock() = new_position;
 
                 // Send a "About to Finish" signal to start pre-fetching / enqueue the next track

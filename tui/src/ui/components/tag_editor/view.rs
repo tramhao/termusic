@@ -215,7 +215,9 @@ impl Model {
     /// Mount the tageditor with the given path.
     pub fn mount_tageditor(&mut self, path: &Path) {
         if path.is_dir() {
-            self.mount_error_popup(anyhow::anyhow!("{path:?} directory doesn't have tag!"));
+            #[allow(clippy::unnecessary_debug_formatting)]
+            // we want debug information about a path (especially have it escaped)
+            self.mount_error_popup(anyhow::anyhow!("{path:#?} directory doesn't have tag!"));
             return;
         }
 

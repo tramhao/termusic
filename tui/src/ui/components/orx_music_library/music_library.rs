@@ -147,6 +147,7 @@ pub struct OrxMusicLibraryComponent {
 
 impl OrxMusicLibraryComponent {
     fn get_inner_comp(config: &TuiOverlay) -> TreeView<MusicLibData> {
+        // TODO: this component should either remount or listen to style changes and apply them
         TreeView::<MusicLibData>::default()
             .background(config.settings.theme.library_background())
             .foreground(config.settings.theme.library_foreground())
@@ -155,6 +156,7 @@ impl OrxMusicLibraryComponent {
                     .color(config.settings.theme.library_border())
                     .modifiers(BorderType::Rounded),
             )
+            .inactive_style(Style::new().bg(config.settings.theme.library_background()))
             .indent_size(2)
             .highlight_symbol_draw_width(2)
             .highlight_symbol_draw_behavior(HighlightDrawBehavior::Static)

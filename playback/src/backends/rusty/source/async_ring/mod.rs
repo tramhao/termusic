@@ -1,4 +1,11 @@
-use std::{fmt::Debug, future::Future, iter::FusedIterator, sync::Arc, time::Duration};
+use std::{
+    fmt::Debug,
+    future::Future,
+    iter::FusedIterator,
+    num::{NonZeroU16, NonZeroU32},
+    sync::Arc,
+    time::Duration,
+};
 
 use anyhow::anyhow;
 use async_ringbuf::{
@@ -6,7 +13,7 @@ use async_ringbuf::{
     traits::{AsyncConsumer, AsyncProducer, Consumer, Observer, Split},
 };
 use parking_lot::RwLock;
-use rodio::Source;
+use rodio::{ChannelCount, SampleRate, Source};
 use symphonia::core::audio::SignalSpec;
 use tokio::{
     runtime::Handle,
@@ -238,8 +245,8 @@ pub struct AsyncRingSource {
     handle: Handle,
 
     // cached information on how to treat current data until a update
-    channels: u16,
-    rate: u32,
+    channels: NonZeroU16,
+    rate: NonZeroU32,
     /// Always above 0, unless EOS had been reached.
     current_span_len: usize,
     total_duration: Option<Duration>,
@@ -271,8 +278,9 @@ impl AsyncRingSource {
             seek_tx: Some(tx),
             // SAFETY: as of symphonia 0.5.4, there can only be at most 26 channels (Channels::all().count())
             channels: u16::try_from(spec.channels.count())
-                .expect("Channel size to be within u16::MAX"),
-            rate: spec.rate,
+                .and_then(TryInto::try_into)
+                .expect("Channel size to be within \">0 <=u16::MAX\""),
+            rate: NonZeroU32::new(spec.rate).expect("Valid non-zero Sample rate"),
             total_duration,
             current_span_len,
             last_msg: None,
@@ -456,12 +464,12 @@ impl Source for AsyncRingSource {
 
     #[inline]
     #[allow(clippy::cast_possible_truncation)]
-    fn channels(&self) -> u16 {
+    fn channels(&self) -> ChannelCount {
         self.channels
     }
 
     #[inline]
-    fn sample_rate(&self) -> u32 {
+    fn sample_rate(&self) -> SampleRate {
         self.rate
     }
 
@@ -485,9 +493,9 @@ impl Source for AsyncRingSource {
 
         // Wait for the Producer to have processed the seek and get the final value of elements to skip
         let to_skip = cb_rx.blocking_recv().map_err(|_| {
-            rodio::source::SeekError::Other(
-                anyhow!("Seek Callback channel exited unexpectedly").into(),
-            )
+            rodio::source::SeekError::Other(Arc::from(
+                anyhow!("Seek Callback channel exited unexpectedly").into_boxed_dyn_error(),
+            ))
         })?;
 
         // skip possible new elements

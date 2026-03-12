@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow};
 use pinyin::ToPinyin;
-use rand::Rng;
+use rand::RngExt;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::config::ServerOverlay;

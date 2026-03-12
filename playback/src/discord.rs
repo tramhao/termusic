@@ -24,7 +24,7 @@ enum RpcCommand {
 
 impl Default for Rpc {
     fn default() -> Self {
-        let client = DiscordIpcClient::new(APP_ID).unwrap();
+        let client = DiscordIpcClient::new(APP_ID);
         let (tx, rx): (Sender<RpcCommand>, Receiver<RpcCommand>) = mpsc::channel();
 
         std::thread::Builder::new()
@@ -55,7 +55,7 @@ impl Rpc {
         #[allow(clippy::cast_possible_wrap)]
         if let Some(time_pos) = time_pos {
             self.tx
-                .send(RpcCommand::Resume(time_pos.as_secs() as i64))
+                .send(RpcCommand::Resume(time_pos.as_secs().cast_signed()))
                 .ok();
         }
     }

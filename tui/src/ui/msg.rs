@@ -528,7 +528,7 @@ pub enum KFMsg {
     Previous,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Eq)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq, Hash)]
 pub enum ConfigEditorLayout {
     General,
     ThemeAndColor,
@@ -560,39 +560,50 @@ impl ConfigEditorLayout {
     }
 }
 
+impl Default for ConfigEditorLayout {
+    /// Get the default layout from the [`CONFIG_EDITOR_TABS_ORDER`] array.
+    fn default() -> Self {
+        CONFIG_EDITOR_TABS_ORDER[0]
+    }
+}
+
 impl From<ConfigEditorLayout> for IdConfigEditor {
     fn from(value: ConfigEditorLayout) -> Self {
         match value {
             ConfigEditorLayout::General => IdConfigEditor::General(IdCEGeneral::MusicDir),
-            ConfigEditorLayout::ThemeAndColor => {
-                IdConfigEditor::Theme(IdCETheme::LibraryForeground)
-            }
+            ConfigEditorLayout::ThemeAndColor => IdConfigEditor::Theme(IdCETheme::ThemeSelectTable),
             ConfigEditorLayout::KeyGlobal => KFGLOBAL_FOCUS_ORDER[0].into(),
             ConfigEditorLayout::KeyOther => KFOTHER_FOCUS_ORDER[0].into(),
         }
     }
 }
 
-impl From<IdConfigEditor> for ConfigEditorLayout {
-    fn from(value: IdConfigEditor) -> Self {
-        match value {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UnsupportedId;
+
+impl TryFrom<IdConfigEditor> for ConfigEditorLayout {
+    type Error = UnsupportedId;
+
+    fn try_from(value: IdConfigEditor) -> Result<Self, Self::Error> {
+        Ok(match value {
             // Note: keep in sync with all values from "CONFIG_EDITOR_TABS_ORDER"!
             IdConfigEditor::General(_) => Self::General,
             IdConfigEditor::Theme(_) => Self::ThemeAndColor,
             IdConfigEditor::KeyGlobal(_) => Self::KeyGlobal,
             IdConfigEditor::KeyOther(_) => Self::KeyOther,
-            // ensured by tests that all `CONFIG_EDITOR_TABS_ORDER` map
-            val => unimplemented!("Mapping from {:#?} is not supported", val),
-        }
+            // it is ensured by tests that all `CONFIG_EDITOR_TABS_ORDER` map
+            // but might still happen with popups
+            _ => return Err(UnsupportedId),
+        })
     }
 }
 
-/// This array defines the order the IDs listed are displayed and which gains next / previous focus.
-pub const CONFIG_EDITOR_TABS_ORDER: &[IdConfigEditor] = &[
-    IdConfigEditor::General(IdCEGeneral::MusicDir),
-    IdConfigEditor::Theme(IdCETheme::LibraryForeground),
-    KFGLOBAL_FOCUS_ORDER[0].into_idconfigeditor(),
-    KFOTHER_FOCUS_ORDER[0].into_idconfigeditor(),
+/// This array defines the order the Layouts listed are displayed and which gains next / previous focus.
+pub const CONFIG_EDITOR_TABS_ORDER: &[ConfigEditorLayout] = &[
+    ConfigEditorLayout::General,
+    ConfigEditorLayout::ThemeAndColor,
+    ConfigEditorLayout::KeyGlobal,
+    ConfigEditorLayout::KeyOther,
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -841,12 +852,9 @@ impl Eq for ServerReqResponse {}
 
 #[cfg(test)]
 mod tests {
-    use std::hint::black_box;
+    use std::collections::HashSet;
 
-    use crate::ui::{
-        ids::IdKey,
-        msg::{CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout},
-    };
+    use crate::ui::{ids::IdKey, msg::CONFIG_EDITOR_TABS_ORDER};
 
     use super::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
 
@@ -898,9 +906,13 @@ mod tests {
 
     #[test]
     fn config_editor_tabs_order_maps_to_enum() {
+        let mut set = HashSet::new();
         // there is currently no compile-time way to ensure the array maps fully
         for id in CONFIG_EDITOR_TABS_ORDER {
-            let _ = black_box(ConfigEditorLayout::from(*id));
+            assert!(
+                set.insert(*id),
+                "Duplicate value in CONFIG_EDITOR_TABS_ORDER2!"
+            );
         }
     }
 }
