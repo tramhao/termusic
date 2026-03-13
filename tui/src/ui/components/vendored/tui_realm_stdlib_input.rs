@@ -22,11 +22,11 @@ Copyright (c) 2021-2024 Christian Visintin
 use tui_realm_stdlib::props::{INPUT_INVALID_STYLE, INPUT_PLACEHOLDER, INPUT_PLACEHOLDER_STYLE};
 use tui_realm_stdlib::utils::calc_utf8_cursor_position;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::props::{
-    Alignment, AttrValue, Attribute, Borders, Color, InputType, Props, Style, TextModifiers,
-};
+use tuirealm::props::{Alignment, AttrValue, Attribute, Borders, Color, InputType, Props, Style};
 use tuirealm::ratatui::{layout::Rect, widgets::Paragraph};
 use tuirealm::{Frame, MockComponent, State, StateValue};
+
+use crate::ui::utils::get_style;
 
 // -- states
 
@@ -304,21 +304,7 @@ impl Input {
 impl MockComponent for Input {
     fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
         if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
-            let mut foreground = self
-                .props
-                .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
-                .unwrap_color();
-            let mut background = self
-                .props
-                .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
-                .unwrap_color();
-            let modifiers = self
-                .props
-                .get_or(
-                    Attribute::TextProps,
-                    AttrValue::TextModifiers(TextModifiers::empty()),
-                )
-                .unwrap_text_modifiers();
+            let mut style = get_style(&self.props);
             let title = tui_realm_stdlib::utils::get_title_or_center(&self.props);
             let borders = self
                 .props
@@ -338,19 +324,22 @@ impl MockComponent for Input {
             // Apply invalid style
             if focus
                 && !self.is_valid()
-                && let Some(style) = self
+                && let Some(invalid_style) = self
                     .props
                     .get(Attribute::Custom(INPUT_INVALID_STYLE))
                     .map(tuirealm::AttrValue::unwrap_style)
             {
-                let borders = self
+                let mut borders = self
                     .props
                     .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
-                    .unwrap_borders()
-                    .color(style.fg.unwrap_or(Color::Reset));
+                    .unwrap_borders();
+
+                if let Some(color) = &invalid_style.fg {
+                    borders = borders.color(*color);
+                }
+
                 block = tui_realm_stdlib::utils::get_block(borders, Some(&title), focus, None);
-                foreground = style.fg.unwrap_or(Color::Reset);
-                background = style.bg.unwrap_or(Color::Reset);
+                style = style.patch(invalid_style);
             }
 
             // Create input's area
@@ -375,10 +364,7 @@ impl MockComponent for Input {
             };
             // Choose paragraph style based on whether is valid or not and if has focus and if should show placeholder
             let paragraph_style = if focus {
-                Style::default()
-                    .fg(foreground)
-                    .bg(background)
-                    .add_modifier(modifiers)
+                style
             } else {
                 inactive_style.unwrap_or_default()
             };

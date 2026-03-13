@@ -162,6 +162,12 @@ impl Model {
     /// Build the Songtag Results table and assign it
     fn te_sync_songtag_options(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
+        let artist_color = self
+            .config_tui
+            .read_recursive()
+            .settings
+            .theme
+            .library_highlight();
 
         for (idx, record) in self.songtag_options.iter().enumerate() {
             if idx > 0 {
@@ -179,7 +185,7 @@ impl Model {
             };
 
             table
-                .add_col(TextSpan::new(artist).fg(tuirealm::ratatui::style::Color::LightYellow))
+                .add_col(TextSpan::new(artist).fg(artist_color))
                 .add_col(TextSpan::new(title).bold())
                 .add_col(TextSpan::new(album))
                 .add_col(TextSpan::new(api))

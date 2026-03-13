@@ -23,10 +23,11 @@ use termusiclib::config::SharedTuiSettings;
  * SOFTWARE.
  */
 use anyhow::Result;
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, Borders, Color, PropPayload, PropValue, Style, TextModifiers};
+use tuirealm::props::{Alignment, Borders, Color, PropPayload, PropValue, TextModifiers};
 use tuirealm::ratatui::layout::Rect;
 use tuirealm::ratatui::widgets::{BorderType, Paragraph};
 use tuirealm::{
@@ -35,6 +36,7 @@ use tuirealm::{
 
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
+use crate::ui::utils::get_style;
 
 /// ## Counter
 ///
@@ -141,21 +143,7 @@ impl MockComponent for Counter {
                 .get_ref(Attribute::TextAlign)
                 .and_then(AttrValue::as_alignment)
                 .unwrap_or(Alignment::Left);
-            let foreground = self
-                .props
-                .get_ref(Attribute::Foreground)
-                .and_then(AttrValue::as_color)
-                .unwrap_or(Color::Reset);
-            let background = self
-                .props
-                .get_ref(Attribute::Background)
-                .and_then(AttrValue::as_color)
-                .unwrap_or(Color::Reset);
-            let modifiers = self
-                .props
-                .get_ref(Attribute::TextProps)
-                .and_then(AttrValue::as_text_modifiers)
-                .unwrap_or(TextModifiers::empty());
+            let style = get_style(&self.props);
             let title = self
                 .props
                 .get_ref(Attribute::Title)
@@ -178,7 +166,7 @@ impl MockComponent for Counter {
                 .props
                 .get_ref(Attribute::FocusStyle)
                 .and_then(AttrValue::as_style)
-                .unwrap_or(Style::new().bg(background));
+                .unwrap_or(style);
             frame.render_widget(
                 Paragraph::new(text)
                     .block(get_block(
@@ -187,12 +175,7 @@ impl MockComponent for Counter {
                         focus,
                         Some(inactive_style),
                     ))
-                    .style(
-                        Style::default()
-                            .fg(foreground)
-                            .bg(background)
-                            .add_modifier(modifiers),
-                    )
+                    .style(style)
                     .alignment(alignment),
                 area,
             );
@@ -250,7 +233,11 @@ impl TECounterDelete {
                     // config
                     //     .settings.theme
                     //     .library_highlight(),
-                    Color::Red,
+                    // TODO: make this configurable
+                    config
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::Red),
                 )
                 .modifiers(TextModifiers::BOLD)
                 .text(text)

@@ -612,6 +612,12 @@ impl Model {
         }
 
         let mut table: TableBuilder = TableBuilder::default();
+        let artist_color = self
+            .config_tui
+            .read_recursive()
+            .settings
+            .theme
+            .library_highlight();
 
         for (idx, track) in self.playback.playlist.tracks().iter().enumerate() {
             if idx > 0 {
@@ -649,7 +655,7 @@ impl Model {
 
             table
                 .add_col(TextSpan::new(duration_str.as_str()))
-                .add_col(TextSpan::new(artist).fg(tuirealm::ratatui::style::Color::LightYellow))
+                .add_col(TextSpan::new(artist).fg(artist_color))
                 .add_col(TextSpan::new(title).bold())
                 .add_col(TextSpan::new(album));
         }
@@ -800,7 +806,7 @@ impl Model {
 
     pub fn playlist_update_search(&mut self, input: &str) {
         let filtered_music = Model::update_search(self.playback.playlist.tracks(), input);
-        self.general_search_update_show(Model::build_table(filtered_music));
+        self.general_search_update_show(Model::build_table(filtered_music, &self.config_tui));
     }
 
     /// Select the given index in the playlist list component

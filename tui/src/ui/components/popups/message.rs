@@ -2,7 +2,7 @@ use termusiclib::config::{SharedTuiSettings, v2::tui::theme::styles::ColorTermus
 use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent,
-    props::{Alignment, BorderType, Borders, Color, PropPayload, TextModifiers, TextSpan},
+    props::{Alignment, BorderType, Borders, PropPayload, TextModifiers, TextSpan},
 };
 
 use crate::ui::ids::Id;
@@ -21,7 +21,12 @@ impl MessagePopup {
             component: Paragraph::default()
                 .borders(
                     Borders::default()
-                        .color(Color::Cyan)
+                        .color(
+                            config_tui
+                                .settings
+                                .theme
+                                .get_color_from_theme(ColorTermusic::Cyan),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(

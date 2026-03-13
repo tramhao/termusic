@@ -988,7 +988,10 @@ impl Model {
             .filter(move |&record| Model::match_record(record, &search))
     }
 
-    pub fn build_table<T: Matchable, I: Iterator<Item = T>>(data: I) -> Table {
+    pub fn build_table<T: Matchable, I: Iterator<Item = T>>(
+        data: I,
+        config: &SharedTuiSettings,
+    ) -> Table {
         let mut peekable_data = data.peekable();
         let mut table: TableBuilder = TableBuilder::default();
         if peekable_data.peek().is_none() {
@@ -997,6 +1000,8 @@ impl Model {
             table.add_col(TextSpan::from(""));
             return table.build();
         }
+
+        let artist_color = config.read_recursive().settings.theme.library_highlight();
 
         for (idx, record) in peekable_data.enumerate() {
             if idx > 0 {
@@ -1013,8 +1018,7 @@ impl Model {
             table
                 .add_col(TextSpan::new(duration_string))
                 .add_col(
-                    TextSpan::new(record.meta_artist().unwrap_or(UNKNOWN_ARTIST))
-                        .fg(tuirealm::ratatui::style::Color::LightYellow),
+                    TextSpan::new(record.meta_artist().unwrap_or(UNKNOWN_ARTIST)).fg(artist_color),
                 )
                 .add_col(TextSpan::new(record.meta_title().unwrap_or(UNKNOWN_TITLE)).bold())
                 .add_col(TextSpan::new(
@@ -1033,7 +1037,7 @@ impl Model {
         }
 
         let filtered_music = Model::update_search(&db_tracks, input);
-        self.general_search_update_show(Model::build_table(filtered_music));
+        self.general_search_update_show(Model::build_table(filtered_music, &self.config_tui));
     }
 
     /// Mount the [`AddAlbumConfirm`] popup

@@ -195,11 +195,13 @@ impl CEColorSelect {
     ///
     /// The only IDs expected are color IDs, everything else(like `*Symbol` or `*Label`) will panic.
     pub fn new(name: &str, id: IdCETheme, color: Color, config: SharedTuiSettings) -> Self {
-        let init_value = Self::init_color_select(id, &config.read().settings.theme);
-        let mut choices = Vec::new();
-        for color in &COLOR_LIST {
-            choices.push(color.as_ref());
-        }
+        let config_read = config.read_recursive();
+        let init_value = Self::init_color_select(id, &config_read.settings.theme);
+        let hg_color = config_read.settings.theme.library_highlight();
+        drop(config_read);
+
+        let choices = COLOR_LIST.map(ColorTermusic::as_ref_const);
+
         Self {
             component: Select::default()
                 .borders(
@@ -212,7 +214,7 @@ impl CEColorSelect {
                 .title(name, Alignment::Left)
                 .rewind(false)
                 .inactive(Style::default().add_modifier(Modifier::BOLD).bg(color))
-                .highlighted_color(Color::LightGreen)
+                .highlighted_color(hg_color)
                 .highlighted_str(">> ")
                 .choices(choices)
                 .value(init_value),
@@ -268,49 +270,36 @@ impl CEColorSelect {
         }
     }
 
+    /// Apply the given choice index as the color for the current component to preview.
     fn update_color(&mut self, index: usize) -> Msg {
-        if let Some(color_config) = COLOR_LIST.get(index) {
-            let color = self
-                .config
-                .read()
-                .settings
-                .theme
-                .get_color_from_theme(*color_config);
-            // self.attr(Attribute::Foreground, AttrValue::Color(color));
-            self.attr(Attribute::Background, AttrValue::Color(color));
-            self.attr(
-                Attribute::Borders,
-                AttrValue::Borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(color),
-                ),
-            );
-            self.attr(
-                Attribute::FocusStyle,
-                AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(color)),
-            );
-            Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(
-                IdConfigEditor::Theme(self.id),
-                *color_config,
-            ))
-        } else {
-            self.attr(Attribute::Background, AttrValue::Color(Color::Red));
-            self.attr(
-                Attribute::Borders,
-                AttrValue::Borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Red),
-                ),
-            );
-            self.attr(
-                Attribute::FocusStyle,
-                AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(Color::Red)),
-            );
-
-            Msg::ForceRedraw
-        }
+        // this *should* never panic as the choices that get build are directly from the list
+        let color_config = COLOR_LIST
+            .get(index)
+            .expect("Index to always be within list bounds");
+        let color = self
+            .config
+            .read()
+            .settings
+            .theme
+            .get_color_from_theme(*color_config);
+        // self.attr(Attribute::Foreground, AttrValue::Color(color));
+        self.attr(Attribute::Background, AttrValue::Color(color));
+        self.attr(
+            Attribute::Borders,
+            AttrValue::Borders(
+                Borders::default()
+                    .modifiers(BorderType::Rounded)
+                    .color(color),
+            ),
+        );
+        self.attr(
+            Attribute::FocusStyle,
+            AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(color)),
+        );
+        Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(
+            IdConfigEditor::Theme(self.id),
+            *color_config,
+        ))
     }
 }
 
@@ -455,7 +444,10 @@ impl ConfigInputHighlight {
             .input_type(InputType::Text)
             .placeholder(
                 "1f984/1f680/1f8a5",
-                Style::default().fg(Color::Rgb(128, 128, 128)),
+                Style::default().fg(config_r
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::LightBlack)),
             )
             .title(name, Alignment::Left)
             .value(highlight_str);
@@ -470,17 +462,21 @@ impl ConfigInputHighlight {
     fn update_symbol(&mut self, result: CmdResult) -> Msg {
         if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
             if symbol.is_empty() {
-                let color = self.config.read().settings.theme.library_border();
+                let color = self.config.read_recursive().settings.theme.library_border();
                 self.update_symbol_after(color);
                 return Msg::ForceRedraw;
             }
             if let Some(s) = Self::string_to_unicode_char(&symbol) {
                 // success getting a unicode letter
-                self.update_symbol_after(Color::Green);
+                let success_color = // TODO: make this configurable
+                self.config.read_recursive().settings.theme.get_color_from_theme(ColorTermusic::Green);
+                self.update_symbol_after(success_color);
                 return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
             }
             // fail to get a unicode letter
-            self.update_symbol_after(Color::Red);
+            let fail_color = // TODO: make this configurable
+            self.config.read_recursive().settings.theme.get_color_from_theme(ColorTermusic::Red);
+            self.update_symbol_after(fail_color);
         }
 
         // press enter to see preview
@@ -488,7 +484,9 @@ impl ConfigInputHighlight {
             && let Some(s) = Self::string_to_unicode_char(&symbol)
         {
             self.attr(Attribute::Value, AttrValue::String(s.to_string()));
-            self.update_symbol_after(Color::Green);
+            let success_color = // TODO: make this configurable
+                self.config.read_recursive().settings.theme.get_color_from_theme(ColorTermusic::Green);
+            self.update_symbol_after(success_color);
             return Msg::ConfigEditor(ConfigEditorMsg::SymbolChanged(self.id, s.to_string()));
         }
         Msg::ForceRedraw

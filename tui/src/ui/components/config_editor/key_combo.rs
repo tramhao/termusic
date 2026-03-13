@@ -26,6 +26,7 @@ use std::fmt::Display;
 use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use tui_realm_stdlib::utils::calc_utf8_cursor_position;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -377,18 +378,24 @@ impl KeyCombo {
 
     /// Get the style for the closed normal, focused, non-invalid color
     fn get_normal_style(&self) -> Style {
-        let foreground = self
+        let mut style = Style::default();
+
+        if let Some(fg) = self
             .props
             .get_ref(Attribute::Foreground)
             .and_then(AttrValue::as_color)
-            .unwrap_or(Color::Reset);
-        let background = self
+        {
+            style = style.fg(fg);
+        }
+        if let Some(bg) = self
             .props
             .get_ref(Attribute::Background)
             .and_then(AttrValue::as_color)
-            .unwrap_or(Color::Reset);
+        {
+            style = style.bg(bg);
+        }
 
-        Style::default().bg(background).fg(foreground)
+        style
     }
 
     /// Draw the Input field for the keybinding.
@@ -486,7 +493,7 @@ impl KeyCombo {
             .props
             .get_ref(Attribute::FocusStyle)
             .and_then(AttrValue::as_style)
-            .unwrap_or(Style::default().bg(normal_style.bg.unwrap_or(Color::Reset)));
+            .unwrap_or(normal_style);
         let focus = self
             .props
             .get_ref(Attribute::Focus)
@@ -943,10 +950,9 @@ impl KEModifierSelect {
     pub fn new(name: &str, id: IdKey, config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         let (init_select, init_key) = Self::init_modifier_select(id, &config_r.settings.keys);
-        let mut choices = Vec::new();
-        for modifier in MyModifiers::LIST {
-            choices.push(modifier.as_str());
-        }
+
+        let choices = MyModifiers::LIST.map(MyModifiers::as_str);
+
         let component = KeyCombo::default()
             .borders(
                 Borders::default()
@@ -960,8 +966,22 @@ impl KEModifierSelect {
             .highlighted_color(config_r.settings.theme.fallback_highlight())
             .highlighted_str(">> ")
             .choices(choices)
-            .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
-            .invalid_style(Style::default().fg(Color::Red))
+            .placeholder(
+                "a/b/c",
+                Style::default().fg(config_r
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::LightBlack)),
+            )
+            .invalid_style(
+                Style::default().fg(
+                    // TODO: make this configurable
+                    config_r
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::Red),
+                ),
+            )
             .value(init_select, init_key);
 
         drop(config_r);
