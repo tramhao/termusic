@@ -276,10 +276,9 @@ impl GeneralPlayer {
 #[allow(clippy::cast_possible_truncation, unsafe_code)]
 mod windows {
     use std::io::Error;
-    use std::mem;
+    use std::mem::size_of;
 
     use windows::core::w;
-    // use windows::core::PCWSTR;
     use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
@@ -296,23 +295,23 @@ mod windows {
             let class_name = w!("SimpleTray");
 
             let handle_result = unsafe {
-                // let instance = GetModuleHandleW(None)
-                //     .map_err(|e| format!("Getting module handle failed: {e}"))?;
+                let instance = GetModuleHandleW(None)
+                    .map_err(|e| format!("Getting module handle failed: {e}"))?;
 
-                // let wnd_class = WNDCLASSEXW {
-                //     cbSize: mem::size_of::<WNDCLASSEXW>() as u32,
-                //     hInstance: instance.into(),
-                //     lpszClassName: class_name,
-                //     lpfnWndProc: Some(Self::wnd_proc),
-                //     ..Default::default()
-                // };
+                let wnd_class = WNDCLASSEXW {
+                    cbSize: size_of::<WNDCLASSEXW>() as u32,
+                    hInstance: instance.into(),
+                    lpszClassName: class_name,
+                    lpfnWndProc: Some(Self::wnd_proc),
+                    ..Default::default()
+                };
 
-                // if RegisterClassExW(&wnd_class) == 0 {
-                //     return Err(format!(
-                //         "Registering class failed: {}",
-                //         Error::last_os_error()
-                //     ));
-                // }
+                if RegisterClassExW(&wnd_class) == 0 {
+                    return Err(format!(
+                        "Registering class failed: {}",
+                        Error::last_os_error()
+                    ));
+                }
 
                 let handle = match CreateWindowExW(
                     WINDOW_EX_STYLE::default(),
@@ -325,8 +324,7 @@ mod windows {
                     0,
                     None,
                     None,
-                    // instance.into(),
-                    None,
+                    Some(instance.into()),
                     None,
                 ) {
                     Ok(v) => v,
