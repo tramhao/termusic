@@ -306,7 +306,7 @@ mod windows {
                     ..Default::default()
                 };
 
-                if RegisterClassExW(&wnd_class) == 0 {
+                if RegisterClassExW(&raw const wnd_class) == 0 {
                     return Err(format!(
                         "Registering class failed: {}",
                         Error::last_os_error()
