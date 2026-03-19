@@ -58,6 +58,17 @@ impl Mpris {
             })
             .ok();
 
+        // SPAWN THE LOOP IN A BACKGROUND THREAD
+        std::thread::spawn(move || {
+            let refresh_duration = std::time::Duration::from_millis(1000);
+            loop {
+                std::thread::sleep(refresh_duration);
+
+                // Windows event queue processing
+                #[cfg(target_os = "windows")]
+                windows::pump_event_queue();
+            }
+        });
         Self { controls, rx }
     }
 }
@@ -280,9 +291,11 @@ mod windows {
     use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
-        CreateWindowExW, DefWindowProcW, DestroyWindow, RegisterClassExW, WINDOW_EX_STYLE,
-        WINDOW_STYLE, WNDCLASSEXW,
+        CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GA_ROOT, GetAncestor,
+        IsDialogMessageW, MSG, PM_REMOVE, PeekMessageW, RegisterClassExW, TranslateMessage,
+        WINDOW_EX_STYLE, WINDOW_STYLE, WM_QUIT, WNDCLASSEXW,
     };
+
     use windows::core::PCWSTR;
     use windows::w;
 
@@ -360,6 +373,24 @@ mod windows {
             unsafe {
                 DestroyWindow(self.handle);
             }
+        }
+    }
+
+    pub fn pump_event_queue() -> bool {
+        #[allow(unsafe_code)]
+        unsafe {
+            let mut msg: MSG = std::mem::zeroed();
+            let mut has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
+            while msg.message != WM_QUIT && has_message {
+                if !IsDialogMessageW(GetAncestor(msg.hwnd, GA_ROOT), &msg).as_bool() {
+                    TranslateMessage(&msg);
+                    DispatchMessageW(&msg);
+                }
+
+                has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
+            }
+
+            msg.message == WM_QUIT
         }
     }
 }
