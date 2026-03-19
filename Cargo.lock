@@ -5231,7 +5231,7 @@ dependencies = [
  "viuer",
  "walkdir",
  "wildmatch",
- "windows 0.44.0",
+ "windows 0.62.2",
  "ytd-rs",
 ]
 
@@ -5325,7 +5325,7 @@ dependencies = [
  "symphonia-adapter-libopus",
  "termusic-lib",
  "tokio",
- "windows 0.44.0",
+ "windows 0.62.2",
 ]
 
 [[package]]
