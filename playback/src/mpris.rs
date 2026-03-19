@@ -35,7 +35,7 @@ impl Mpris {
         #[cfg(target_os = "windows")]
         let (hwnd, _dummy_window) = {
             let dummy_window = windows::DummyWindow::new().unwrap();
-            let handle = Some(dummy_window.handle.0);
+            let handle = Some(dummy_window.handle.0 as _);
             (handle, dummy_window)
         };
 
@@ -273,15 +273,18 @@ impl GeneralPlayer {
 // demonstrates how to make a minimal window to allow use of media keys on the command line
 // ref: https://github.com/Sinono3/souvlaki/blob/master/examples/print_events.rs
 #[cfg(target_os = "windows")]
-#[allow(clippy::cast_possible_truncation, unsafe_code)]
 mod windows {
     use std::io::Error;
+    use std::mem;
 
-    use windows::Win32::Foundation::HWND;
+    use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
-        CreateWindowExW, DestroyWindow, WINDOW_EX_STYLE, WINDOW_STYLE,
+        CreateWindowExW, DefWindowProcW, DestroyWindow, RegisterClassExW, WINDOW_EX_STYLE,
+        WINDOW_STYLE, WNDCLASSEXW,
     };
-    use windows::core::w;
+    use windows::core::PCWSTR;
+    use windows::w;
 
     pub struct DummyWindow {
         pub handle: HWND,
@@ -291,8 +294,27 @@ mod windows {
         pub fn new() -> Result<DummyWindow, String> {
             let class_name = w!("SimpleTray");
 
+            #[allow(unsafe_code)]
             let handle_result = unsafe {
-                let handle = match CreateWindowExW(
+                let instance = GetModuleHandleW(None)
+                    .map_err(|e| format!("Getting module handle failed: {e}"))?;
+
+                let wnd_class = WNDCLASSEXW {
+                    cbSize: mem::size_of::<WNDCLASSEXW>() as u32,
+                    hInstance: instance,
+                    lpszClassName: PCWSTR::from(class_name),
+                    lpfnWndProc: Some(Self::wnd_proc),
+                    ..Default::default()
+                };
+
+                if RegisterClassExW(&wnd_class) == 0 {
+                    return Err(format!(
+                        "Registering class failed: {}",
+                        Error::last_os_error()
+                    ));
+                }
+
+                let handle = CreateWindowExW(
                     WINDOW_EX_STYLE::default(),
                     class_name,
                     w!(""),
@@ -303,16 +325,11 @@ mod windows {
                     0,
                     None,
                     None,
+                    instance,
                     None,
-                    None,
-                ) {
-                    Ok(v) => v,
-                    Err(err) => {
-                        return Err(format!("{err}"));
-                    }
-                };
+                );
 
-                if handle.is_invalid() {
+                if handle.0 == 0 {
                     Err(format!(
                         "Message only window creation failed: {}",
                         Error::last_os_error()
@@ -324,12 +341,24 @@ mod windows {
 
             handle_result.map(|handle| DummyWindow { handle })
         }
+        extern "system" fn wnd_proc(
+            hwnd: HWND,
+            msg: u32,
+            wparam: WPARAM,
+            lparam: LPARAM,
+        ) -> LRESULT {
+            #[allow(unsafe_code)]
+            unsafe {
+                DefWindowProcW(hwnd, msg, wparam, lparam)
+            }
+        }
     }
 
     impl Drop for DummyWindow {
         fn drop(&mut self) {
+            #[allow(unsafe_code)]
             unsafe {
-                DestroyWindow(self.handle).unwrap();
+                DestroyWindow(self.handle);
             }
         }
     }
