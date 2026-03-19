@@ -276,12 +276,17 @@ impl GeneralPlayer {
 #[allow(clippy::cast_possible_truncation, unsafe_code)]
 mod windows {
     use std::io::Error;
+    // use std::mem;
 
-    use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::WindowsAndMessaging::{
-        CreateWindowExW, DestroyWindow, WINDOW_EX_STYLE, WINDOW_STYLE,
-    };
     use windows::core::w;
+    // use windows::core::PCWSTR;
+    // use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+    use windows::Win32::Foundation::HWND;
+    // use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        CreateWindowExW, /* DefWindowProcW, */ DestroyWindow,
+        /* RegisterClassExW, */ WINDOW_EX_STYLE, WINDOW_STYLE, /* WNDCLASSEXW, */
+    };
 
     pub struct DummyWindow {
         pub handle: HWND,
@@ -292,6 +297,24 @@ mod windows {
             let class_name = w!("SimpleTray");
 
             let handle_result = unsafe {
+                // let instance = GetModuleHandleW(None)
+                //     .map_err(|e| format!("Getting module handle failed: {e}"))?;
+
+                // let wnd_class = WNDCLASSEXW {
+                //     cbSize: mem::size_of::<WNDCLASSEXW>() as u32,
+                //     hInstance: instance.into(),
+                //     lpszClassName: class_name,
+                //     lpfnWndProc: Some(Self::wnd_proc),
+                //     ..Default::default()
+                // };
+
+                // if RegisterClassExW(&wnd_class) == 0 {
+                //     return Err(format!(
+                //         "Registering class failed: {}",
+                //         Error::last_os_error()
+                //     ));
+                // }
+
                 let handle = match CreateWindowExW(
                     WINDOW_EX_STYLE::default(),
                     class_name,
@@ -303,6 +326,7 @@ mod windows {
                     0,
                     None,
                     None,
+                    // instance.into(),
                     None,
                     None,
                 ) {
@@ -324,6 +348,14 @@ mod windows {
 
             handle_result.map(|handle| DummyWindow { handle })
         }
+        // extern "system" fn wnd_proc(
+        //     hwnd: HWND,
+        //     msg: u32,
+        //     wparam: WPARAM,
+        //     lparam: LPARAM,
+        // ) -> LRESULT {
+        //     unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
+        // }
     }
 
     impl Drop for DummyWindow {
@@ -333,4 +365,22 @@ mod windows {
             }
         }
     }
+
+    // #[allow(dead_code)]
+    // pub fn pump_event_queue() -> bool {
+    //     unsafe {
+    //         let mut msg: MSG = std::mem::zeroed();
+    //         let mut has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
+    //         while msg.message != WM_QUIT && has_message {
+    //             if !IsDialogMessageW(GetAncestor(msg.hwnd, GA_ROOT), &msg).as_bool() {
+    //                 TranslateMessage(&msg);
+    //                 DispatchMessageW(&msg);
+    //             }
+
+    //             has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
+    //         }
+
+    //         msg.message == WM_QUIT
+    //     }
+    // }
 }
