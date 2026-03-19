@@ -18,23 +18,13 @@ pub struct Mpris {
 
 impl Mpris {
     pub fn new(cmd_tx: crate::PlayerCmdSender) -> Self {
-        // #[cfg(not(target_os = "windows"))]
-        // let hwnd = None;
-
-        // #[cfg(target_os = "windows")]
-        // let hwnd = {
-        //     use raw_window_handle::windows::WindowsHandle;
-
-        //     let handle: WindowsHandle = unimplemented!();
-        //     Some(handle.hwnd)
-        // };
-
         #[cfg(not(target_os = "windows"))]
         let hwnd = None;
 
         #[cfg(target_os = "windows")]
         let (hwnd, _dummy_window) = {
-            let dummy_window = windows::DummyWindow::new().unwrap();
+            let dummy_window =
+                windows::DummyWindow::new().expect("Failed to create Windows Dummy window");
             let handle = Some(dummy_window.handle.0);
             (handle, dummy_window)
         };
@@ -270,7 +260,6 @@ impl GeneralPlayer {
     }
 }
 
-// demonstrates how to make a minimal window to allow use of media keys on the command line
 // ref: https://github.com/Sinono3/souvlaki/blob/master/examples/print_events.rs
 #[cfg(target_os = "windows")]
 #[allow(clippy::cast_possible_truncation, unsafe_code)]
@@ -278,13 +267,13 @@ mod windows {
     use std::io::Error;
     use std::mem::size_of;
 
-    use windows::core::w;
     use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
         CreateWindowExW, DefWindowProcW, DestroyWindow, RegisterClassExW, WINDOW_EX_STYLE,
         WINDOW_STYLE, WNDCLASSEXW,
     };
+    use windows::core::w;
 
     pub struct DummyWindow {
         pub handle: HWND,
@@ -316,7 +305,7 @@ mod windows {
                 let handle = match CreateWindowExW(
                     WINDOW_EX_STYLE::default(),
                     class_name,
-                    w!(""),
+                    w!("Termusic MediaControl Dummy window"),
                     WINDOW_STYLE::default(),
                     0,
                     0,
