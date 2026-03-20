@@ -18,25 +18,14 @@ pub struct Mpris {
 
 impl Mpris {
     pub fn new(cmd_tx: crate::PlayerCmdSender) -> Self {
-        // #[cfg(not(target_os = "windows"))]
-        // let hwnd = None;
-
-        // #[cfg(target_os = "windows")]
-        // let hwnd = {
-        //     use raw_window_handle::windows::WindowsHandle;
-
-        //     let handle: WindowsHandle = unimplemented!();
-        //     Some(handle.hwnd)
-        // };
-
         #[cfg(not(target_os = "windows"))]
         let hwnd = None;
 
         #[cfg(target_os = "windows")]
-        let (hwnd, _dummy_window) = {
-            let dummy_window = windows::DummyWindow::new().unwrap();
-            let handle = Some(dummy_window.handle.0 as _);
-            (handle, dummy_window)
+        let hwnd = {
+            let dummy_window =
+                windows::DummyWindow::new().expect("Failed to create Windows Dummy window");
+            Some(dummy_window.handle.0)
         };
 
         let config = PlatformConfig {
@@ -58,17 +47,6 @@ impl Mpris {
             })
             .ok();
 
-        // SPAWN THE LOOP IN A BACKGROUND THREAD
-        std::thread::spawn(move || {
-            let refresh_duration = std::time::Duration::from_millis(1000);
-            loop {
-                std::thread::sleep(refresh_duration);
-
-                // Windows event queue processing
-                #[cfg(target_os = "windows")]
-                windows::pump_event_queue();
-            }
-        });
         Self { controls, rx }
     }
 }
@@ -281,56 +259,56 @@ impl GeneralPlayer {
     }
 }
 
-// demonstrates how to make a minimal window to allow use of media keys on the command line
 // ref: https://github.com/Sinono3/souvlaki/blob/master/examples/print_events.rs
 #[cfg(target_os = "windows")]
+#[allow(clippy::cast_possible_truncation, unsafe_code)]
 mod windows {
     use std::io::Error;
-    use std::mem;
+    use std::mem::size_of;
 
     use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
-        CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GA_ROOT, GetAncestor,
-        IsDialogMessageW, MSG, PM_REMOVE, PeekMessageW, RegisterClassExW, TranslateMessage,
-        WINDOW_EX_STYLE, WINDOW_STYLE, WM_QUIT, WNDCLASSEXW,
+        CreateWindowExW, DefWindowProcW, RegisterClassExW, WINDOW_EX_STYLE, WINDOW_STYLE,
+        WNDCLASSEXW,
     };
+    use windows::core::w;
 
-    use windows::core::PCWSTR;
-    use windows::w;
-
+    /// A Dummy Window HWND Handle for souvlaki.
+    ///
+    /// Note that this window is invisible and never dropped until termusic quits.
     pub struct DummyWindow {
         pub handle: HWND,
     }
 
     impl DummyWindow {
+        /// Create a Dummy Window for souvlaki as `ISystemMediaTransportControlsInterop`'s only way to access the Media Controls requires a window / HWND.
         pub fn new() -> Result<DummyWindow, String> {
             let class_name = w!("SimpleTray");
 
-            #[allow(unsafe_code)]
             let handle_result = unsafe {
                 let instance = GetModuleHandleW(None)
                     .map_err(|e| format!("Getting module handle failed: {e}"))?;
 
                 let wnd_class = WNDCLASSEXW {
-                    cbSize: mem::size_of::<WNDCLASSEXW>() as u32,
-                    hInstance: instance,
-                    lpszClassName: PCWSTR::from(class_name),
+                    cbSize: size_of::<WNDCLASSEXW>() as u32,
+                    hInstance: instance.into(),
+                    lpszClassName: class_name,
                     lpfnWndProc: Some(Self::wnd_proc),
                     ..Default::default()
                 };
 
-                if RegisterClassExW(&wnd_class) == 0 {
+                if RegisterClassExW(&raw const wnd_class) == 0 {
                     return Err(format!(
                         "Registering class failed: {}",
                         Error::last_os_error()
                     ));
                 }
 
-                let handle = CreateWindowExW(
+                let handle = match CreateWindowExW(
                     WINDOW_EX_STYLE::default(),
                     class_name,
-                    w!(""),
+                    w!("Termusic MediaControl Dummy window"),
                     WINDOW_STYLE::default(),
                     0,
                     0,
@@ -338,11 +316,16 @@ mod windows {
                     0,
                     None,
                     None,
-                    instance,
+                    Some(instance.into()),
                     None,
-                );
+                ) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        return Err(format!("{err}"));
+                    }
+                };
 
-                if handle.0 == 0 {
+                if handle.is_invalid() {
                     Err(format!(
                         "Message only window creation failed: {}",
                         Error::last_os_error()
@@ -352,6 +335,12 @@ mod windows {
                 }
             };
 
+            // The following does not seem to be necessary
+            // std::thread::Builder::new()
+            //     .name("Windows Message Pump".to_string())
+            //     .spawn(pump_event_queue)
+            //     .expect("Expected to start the windows message queue pump");
+
             handle_result.map(|handle| DummyWindow { handle })
         }
         extern "system" fn wnd_proc(
@@ -360,37 +349,36 @@ mod windows {
             wparam: WPARAM,
             lparam: LPARAM,
         ) -> LRESULT {
-            #[allow(unsafe_code)]
-            unsafe {
-                DefWindowProcW(hwnd, msg, wparam, lparam)
-            }
+            unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
         }
     }
 
-    impl Drop for DummyWindow {
-        fn drop(&mut self) {
-            #[allow(unsafe_code)]
-            unsafe {
-                DestroyWindow(self.handle);
-            }
-        }
-    }
+    // Dont drop the window until termusic exists, as otherwise Media Controls will silently fail after dropping the handle
+    // impl Drop for DummyWindow {
+    //     fn drop(&mut self) {
+    //         unsafe {
+    //             DestroyWindow(self.handle).unwrap();
+    //         }
+    //     }
+    // }
 
-    pub fn pump_event_queue() -> bool {
-        #[allow(unsafe_code)]
-        unsafe {
-            let mut msg: MSG = std::mem::zeroed();
-            let mut has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
-            while msg.message != WM_QUIT && has_message {
-                if !IsDialogMessageW(GetAncestor(msg.hwnd, GA_ROOT), &msg).as_bool() {
-                    TranslateMessage(&msg);
-                    DispatchMessageW(&msg);
-                }
+    // The following does not seem to be necessary, hence disabled
+    // /// Blockingly handle the windows event queue.
+    // ///
+    // /// This should be spawned on a extra thread
+    // pub fn pump_event_queue() {
+    //     use windows::Win32::UI::WindowsAndMessaging::{MSG, WM_QUIT, GetMessageW, TranslateMessage, DispatchMessageW};
 
-                has_message = PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool();
-            }
+    //     let mut msg = MSG::default();
 
-            msg.message == WM_QUIT
-        }
-    }
+    //     info!("Windows Event Queue Pump Starting");
+    //     unsafe {
+    //         while GetMessageW(&mut msg, None, 0, 0).as_bool() && msg.message != WM_QUIT {
+    //             debug!("Windows Message: {:#?}", msg);
+    //             let _ = TranslateMessage(&msg);
+    //             DispatchMessage(&msg);
+    //         }
+    //     }
+    //     info!("Windows Event Queue Pump Ending");
+    // }
 }

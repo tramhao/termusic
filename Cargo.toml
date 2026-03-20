@@ -120,14 +120,7 @@ unicode-width = "^0.2.0"
 urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.4"
-# windows = { default-features = false, version = "0.62" }
-windows = { version = "0.44", features = [
-   
-	"Win32_Foundation",
-	"Win32_Graphics_Gdi",
-	"Win32_System_LibraryLoader",
-	"Win32_UI_WindowsAndMessaging"
-] }
+windows = { default-features = false, version = "0.62" }
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.32"
 alphanumeric-sort = "1.5.5"
