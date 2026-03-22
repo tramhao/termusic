@@ -678,7 +678,7 @@ impl Model {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
                 if url.starts_with("http") {
-                    match self.youtube_dl(&url, current_node) {
+                    match self.youtube_dl(&url, &current_node) {
                         Ok(()) => {}
                         Err(e) => {
                             self.mount_error_popup(e.context("youtube-dl download"));
@@ -707,7 +707,7 @@ impl Model {
             }
 
             YSMsg::TablePopupCloseOk(index, current_node) => {
-                if let Err(e) = self.youtube_options_download(index, current_node) {
+                if let Err(e) = self.youtube_options_download(index, &current_node) {
                     self.mount_error_popup(e.context("youtube-dl options download"));
                 }
             }

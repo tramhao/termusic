@@ -108,7 +108,7 @@ impl YoutubeOptions {
 }
 
 impl Model {
-    pub fn youtube_options_download(&mut self, index: usize, current_node: PathBuf) -> Result<()> {
+    pub fn youtube_options_download(&mut self, index: usize, current_node: &Path) -> Result<()> {
         // download from search result here
         if let Ok(item) = self.youtube_options.get_by_index(index) {
             let url = format!("https://www.youtube.com/watch?v={}", item.video_id);
@@ -243,8 +243,8 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn youtube_dl(&mut self, url: &str, current_node: PathBuf) -> Result<()> {
-        let path: PathBuf = get_parent_folder(&current_node).into_owned();
+    pub fn youtube_dl(&mut self, url: &str, current_node: &Path) -> Result<()> {
+        let path: PathBuf = get_parent_folder(current_node).into_owned();
         let config_tui = self.config_tui.read();
         let mut args = vec![
             Arg::new("--no-playlist"),
@@ -359,19 +359,20 @@ pub enum YTDLMsg {
 // example ~/path/to/song/song.mp3
 //
 fn extract_filepath(output: &str, dir: &str) -> Option<String> {
-    if let Some(cap) = RE_FILENAME_YTDLP.captures(output) {
-        if let Some(c) = cap.name("name") {
-            let filename = format!("{dir}/{}", c.as_str());
-            return Some(filename);
-        }
+    if let Some(cap) = RE_FILENAME_YTDLP.captures(output)
+        && let Some(c) = cap.name("name")
+    {
+        let filename = format!("{dir}/{}", c.as_str());
+        return Some(filename);
     }
 
-    if let Some(cap) = RE_FILENAME_YTDLP_DUPLICATE.captures(output) {
-        if let Some(c) = cap.name("name") {
-            let filename = format!("{dir}/{}", c.as_str());
-            return Some(filename);
-        }
+    if let Some(cap) = RE_FILENAME_YTDLP_DUPLICATE.captures(output)
+        && let Some(c) = cap.name("name")
+    {
+        let filename = format!("{dir}/{}", c.as_str());
+        return Some(filename);
     }
+
     None
 }
 
