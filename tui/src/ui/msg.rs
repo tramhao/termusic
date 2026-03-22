@@ -692,9 +692,9 @@ pub enum GSMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum YSMsg {
-    InputPopupShow,
+    InputPopupShow(PathBuf),
     InputPopupCloseCancel,
-    InputPopupCloseOk(String),
+    InputPopupCloseOk(String, PathBuf),
 
     ReqNextPage,
     ReqPreviousPage,
@@ -705,7 +705,7 @@ pub enum YSMsg {
     PageLoadError(String),
 
     TablePopupCloseCancel,
-    TablePopupCloseOk(usize),
+    TablePopupCloseOk(usize, PathBuf),
 
     /// The youtube search was a success, with all values.
     YoutubeSearchSuccess(YoutubeOptions),

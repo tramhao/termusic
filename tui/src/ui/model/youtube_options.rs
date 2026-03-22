@@ -12,19 +12,21 @@ use termusiclib::invidious::{Instance, YoutubeVideo};
 use termusiclib::track::DurationFmtShort;
 use termusiclib::utils::get_parent_folder;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
-use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
 
 use super::Model;
 use crate::ui::ids::Id;
 use crate::ui::msg::{Msg, YSMsg};
 
-#[expect(dead_code)]
-static RE_FILENAME: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\[ffmpeg\] Destination: (?P<name>.*)\.mp3").unwrap());
+// static RE_FILENAME_YTDLP: LazyLock<Regex> =
+//     LazyLock::new(|| Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap());
 
 static RE_FILENAME_YTDLP: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap());
+    LazyLock::new(|| Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*?\.mp3)").unwrap());
+
+static RE_FILENAME_YTDLP_DUPLICATE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\[ExtractAudio\] Not converting audio (?P<name>.*?\.mp3)").unwrap()
+});
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct YoutubeData {
@@ -106,11 +108,12 @@ impl YoutubeOptions {
 }
 
 impl Model {
-    pub fn youtube_options_download(&mut self, index: usize) -> Result<()> {
+    pub fn youtube_options_download(&mut self, index: usize, current_node: PathBuf) -> Result<()> {
         // download from search result here
         if let Ok(item) = self.youtube_options.get_by_index(index) {
             let url = format!("https://www.youtube.com/watch?v={}", item.video_id);
-            self.youtube_dl(url.as_ref()).context("YTDL Download")?;
+            self.youtube_dl(url.as_ref(), current_node)
+                .context("YTDL Download")?;
         }
         Ok(())
     }
@@ -240,11 +243,8 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn youtube_dl(&mut self, url: &str) -> Result<()> {
-        let mut path: PathBuf = std::env::temp_dir();
-        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            path = get_parent_folder(Path::new(&node_id)).to_path_buf();
-        }
+    pub fn youtube_dl(&mut self, url: &str, current_node: PathBuf) -> Result<()> {
+        let path: PathBuf = get_parent_folder(&current_node).into_owned();
         let config_tui = self.config_tui.read();
         let mut args = vec![
             Arg::new("--no-playlist"),
@@ -286,6 +286,8 @@ impl Model {
             // check what the result is and print out the path to the download or the error
             match download {
                 Ok(result) => {
+                    // left for debug
+                    // eprintln!("{}", result.output());
                     tx.send(Msg::YoutubeSearch(YSMsg::Download(YTDLMsg::Success(
                         url.clone(),
                     ))))
@@ -355,20 +357,20 @@ pub enum YTDLMsg {
 // This just parsing the output from youtubedl to get the audio path
 // This is used because we need to get the song name
 // example ~/path/to/song/song.mp3
+//
 fn extract_filepath(output: &str, dir: &str) -> Option<String> {
-    // #[cfg(not(feature = "yt-dlp"))]
-    // if let Some(cap) = RE_FILENAME.captures(output) {
-    //     if let Some(c) = cap.name("name") {
-    //         let filename = format!("{}/{}.mp3", dir, c.as_str());
-    //         return Ok(filename);
-    //     }
-    // }
-    // #[cfg(feature = "yt-dlp")]
-    if let Some(cap) = RE_FILENAME_YTDLP.captures(output)
-        && let Some(c) = cap.name("name")
-    {
-        let filename = format!("{dir}/{}.mp3", c.as_str());
-        return Some(filename);
+    if let Some(cap) = RE_FILENAME_YTDLP.captures(output) {
+        if let Some(c) = cap.name("name") {
+            let filename = format!("{dir}/{}", c.as_str());
+            return Some(filename);
+        }
+    }
+
+    if let Some(cap) = RE_FILENAME_YTDLP_DUPLICATE.captures(output) {
+        if let Some(c) = cap.name("name") {
+            let filename = format!("{dir}/{}", c.as_str());
+            return Some(filename);
+        }
     }
     None
 }

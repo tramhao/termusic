@@ -875,7 +875,12 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.youtube_search.get() => {
-                return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow));
+                if let Some(path) = self.get_selected_path() {
+                    return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow(
+                        path.to_path_buf(),
+                    )));
+                }
+                CmdResult::None
             }
 
             // load into playlist

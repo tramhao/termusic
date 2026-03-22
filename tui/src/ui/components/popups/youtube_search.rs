@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use std::path::PathBuf;
+
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -36,10 +38,11 @@ use crate::ui::msg::{Msg, YSMsg};
 #[derive(MockComponent)]
 pub struct YSInputPopup {
     component: Input,
+    current_node: PathBuf,
 }
 
 impl YSInputPopup {
-    pub fn new(config: &TuiOverlay) -> Self {
+    pub fn new(config: &TuiOverlay, current_node: PathBuf) -> Self {
         let settings = &config.settings;
         Self {
             component: Input::default()
@@ -53,6 +56,7 @@ impl YSInputPopup {
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title(" Download url or search: ", Alignment::Left),
+            current_node,
         }
     }
 }
@@ -93,7 +97,10 @@ impl Component<Msg, UserEvent> for YSInputPopup {
         };
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                Some(Msg::YoutubeSearch(YSMsg::InputPopupCloseOk(input_string)))
+                Some(Msg::YoutubeSearch(YSMsg::InputPopupCloseOk(
+                    input_string,
+                    self.current_node.clone(),
+                )))
             }
 
             CmdResult::None => None,
@@ -106,10 +113,11 @@ impl Component<Msg, UserEvent> for YSInputPopup {
 pub struct YSTablePopup {
     component: Table,
     config: SharedTuiSettings,
+    current_node: PathBuf,
 }
 
 impl YSTablePopup {
-    pub fn new(config: SharedTuiSettings) -> Self {
+    pub fn new(config: SharedTuiSettings, current_node: PathBuf) -> Self {
         let component = {
             let config = config.read();
             Table::default()
@@ -143,7 +151,11 @@ impl YSTablePopup {
                 )
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config,
+            current_node,
+        }
     }
 }
 
@@ -203,7 +215,10 @@ impl Component<Msg, UserEvent> for YSTablePopup {
                 code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseOk(index)));
+                    return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseOk(
+                        index,
+                        self.current_node.clone(),
+                    )));
                 }
                 CmdResult::None
             }
@@ -217,12 +232,12 @@ impl Component<Msg, UserEvent> for YSTablePopup {
 }
 
 impl Model {
-    pub fn mount_youtube_search_input(&mut self) {
+    pub fn mount_youtube_search_input(&mut self, current_node: PathBuf) {
         assert!(
             self.app
                 .remount(
                     Id::YoutubeSearchInputPopup,
-                    Box::new(YSInputPopup::new(&self.config_tui.read())),
+                    Box::new(YSInputPopup::new(&self.config_tui.read(), current_node)),
                     vec![]
                 )
                 .is_ok()
@@ -230,12 +245,12 @@ impl Model {
         assert!(self.app.active(&Id::YoutubeSearchInputPopup).is_ok());
     }
 
-    pub fn mount_youtube_search_table(&mut self) {
+    pub fn mount_youtube_search_table(&mut self, current_node: PathBuf) {
         assert!(
             self.app
                 .remount(
                     Id::YoutubeSearchTablePopup,
-                    Box::new(YSTablePopup::new(self.config_tui.clone())),
+                    Box::new(YSTablePopup::new(self.config_tui.clone(), current_node)),
                     vec![]
                 )
                 .is_ok()

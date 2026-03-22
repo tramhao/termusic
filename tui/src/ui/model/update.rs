@@ -665,27 +665,27 @@ impl Model {
     /// Handle all [`YSMsg`] messages. Sub-function for [`update`](Self::update).
     fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
-            YSMsg::InputPopupShow => {
-                self.mount_youtube_search_input();
+            YSMsg::InputPopupShow(current_node) => {
+                self.mount_youtube_search_input(current_node);
             }
             YSMsg::InputPopupCloseCancel => {
                 if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
             }
-            YSMsg::InputPopupCloseOk(url) => {
+            YSMsg::InputPopupCloseOk(url, current_node) => {
                 if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
                 if url.starts_with("http") {
-                    match self.youtube_dl(&url) {
+                    match self.youtube_dl(&url, current_node) {
                         Ok(()) => {}
                         Err(e) => {
                             self.mount_error_popup(e.context("youtube-dl download"));
                         }
                     }
                 } else {
-                    self.mount_youtube_search_table();
+                    self.mount_youtube_search_table(current_node);
                     self.youtube_options_search(url);
                 }
             }
@@ -706,8 +706,8 @@ impl Model {
                 self.mount_error_popup(anyhow!(err));
             }
 
-            YSMsg::TablePopupCloseOk(index) => {
-                if let Err(e) = self.youtube_options_download(index) {
+            YSMsg::TablePopupCloseOk(index, current_node) => {
+                if let Err(e) = self.youtube_options_download(index, current_node) {
                     self.mount_error_popup(e.context("youtube-dl options download"));
                 }
             }
