@@ -15,6 +15,7 @@
 - Fix(tui): change search popup load keys to use `library_keys.load_track` instead of `navigation_keys.right`.
 - Fix(tui): fix yt-dlp download error caused by orx treeview.
 - Fix(server): on rusty backend with `soundtouch`, fix a issue causing seemingly long delay between tempo changes.
+- Fix(server): on rusty backend with `soundtouch`, fix not being able to build on "eager" linkers (ex windows-msvc and windows-gnu)
 - Feat: add ability to control startup playing state behavior.
 - Feat: add playlist loop mode to only play the playlist once, then stop.
 - Feat: add ability to control startup playing state behavior.

@@ -102,11 +102,26 @@ All the packages here can be installed via various sources, for ease of install 
 |               unknown               |                                           |          |                 |        `mpv`        |                      MPV Backend                      |          |
 |               unknown               |                                           |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
 |             unavailable             | [libopus official site][libopus-download] |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
-|               unknown               |                  unknown                  |          |                 | `rusty-soundtouch`  |       Soundtouch requires linking to libstdc++        |          |
+|               *see list below*               |                                    |          |         X        | `rusty-soundtouch`  |       Soundtouch requires linking to libstdc++        |          |
 
 - See [MSVC Prerequisites: only the required components](https://rust-lang.github.io/rustup/installation/windows-msvc.html#installing-only-the-required-components-optional) for a minimal install
 
 [libopus-download]: <https://opus-codec.org/downloads/> "Needs to be manually compiled for windows"
+
+##### Windows `rusty-soundtouch`
+
+Compiling feature `rusty-soundtouch` on windows requires a bunch extra dependencies that are otherwise not required.
+
+It is recommended to just use the pre-built binaries by Github Actions to avoid installing ~2GB of extra C++ Dependencies and potentially having to mess around with dependencies.
+
+If you actually still wanted to compile this yourself, you will need:
+
+1. Install `C++ CMake tools for Windows` via `Microsoft.VisualStudio.BuildTools` (or also known as `Visual Studio Installer`)
+2. Install a Clang compiler
+  At the time of writing, `Microsoft.VisualStudio.BuildTools` does not provide a `clang.dll` / `libclang.dll`, which the `cc` crate needs for building C++.
+  Instead, simply install `llvm` via `winget`: `winget install llvm`
+
+This should be everything and feature `rusty-soundtouch` should compile without problems.
 
 #### Backends
 
