@@ -68,10 +68,10 @@ post:
 install: release post
 
 win:
-	cargo build --all
+	cargo build --workspace --features rusty-soundtouch
 
 winrelease:
-	cargo build --release --all
+	cargo build --release --workspace --features rusty-soundtouch
 
 winpost:
 	powershell -command "Copy-Item -force -Path 'target\release\$(prog)' -Destination '$(install_to)'"
