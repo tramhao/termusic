@@ -35,6 +35,27 @@ tonic.workspace = true
 clap.workspace = true
 
 
+# archive is named "termusic-v..." not "termusic-server-v..."
+[package.metadata.binstall.overrides.x86_64-unknown-linux-gnu]
+pkg-url = "{ repo }/releases/download/v{ version }/termusic-v{ version }-x86_64-linux.tar.xz"
+bin-dir = "termusic-v{ version }-x86_64-linux/{ bin }{ binary-ext }"
+pkg-fmt = "txz"
+
+[package.metadata.binstall.overrides.x86_64-unknown-linux-musl]
+pkg-url = "{ repo }/releases/download/v{ version }/termusic-v{ version }-x86_64-linux.tar.xz"
+bin-dir = "termusic-v{ version }-x86_64-linux/{ bin }{ binary-ext }"
+pkg-fmt = "txz"
+
+[package.metadata.binstall.overrides.x86_64-apple-darwin]
+pkg-url = "{ repo }/releases/download/v{ version }/termusic-v{ version }-x86_64-macos.tar.xz"
+bin-dir = "termusic-v{ version }-x86_64-macos/{ bin }{ binary-ext }"
+pkg-fmt = "txz"
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
+pkg-url = "{ repo }/releases/download/v{ version }/termusic-v{ version }-x86_64-windows.zip"
+bin-dir = "termusic-v{ version }-x86_64-windows/{ bin }{ binary-ext }"
+pkg-fmt = "zip"
+
 [features]
 # NOTE: this package fails to compile if not one of the backends (rusty, gst, mpv) are compiled in!
 default = []

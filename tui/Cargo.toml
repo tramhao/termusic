@@ -81,6 +81,26 @@ cover-viuer-iterm = []
 cover-viuer-kitty = []
 cover-viuer-sixel = ["viuer/icy_sixel"]
 
+[package.metadata.binstall.overrides.x86_64-unknown-linux-gnu]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-v{ version }-x86_64-linux.tar.xz"
+bin-dir = "{ name }-v{ version }-x86_64-linux/{ bin }{ binary-ext }"
+pkg-fmt = "txz"
+
+[package.metadata.binstall.overrides.x86_64-unknown-linux-musl]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-v{ version }-x86_64-linux.tar.xz"
+bin-dir = "{ name }-v{ version }-x86_64-linux/{ bin }{ binary-ext }"
+pkg-fmt = "txz"
+
+[package.metadata.binstall.overrides.x86_64-apple-darwin]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-v{ version }-x86_64-macos.tar.xz"
+bin-dir = "{ name }-v{ version }-x86_64-macos/{ bin }{ binary-ext }"
+pkg-fmt = "txz"
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-v{ version }-x86_64-windows.zip"
+bin-dir = "{ name }-v{ version }-x86_64-windows/{ bin }{ binary-ext }"
+pkg-fmt = "zip"
+
 [dev-dependencies]
 pretty_assertions.workspace = true # = "1"
 # anyhow = "1"

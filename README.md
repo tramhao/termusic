@@ -201,6 +201,12 @@ Note that log files are only created on the first log line to be saved.
 cargo install termusic termusic-server --locked
 ```
 
+#### cargo-binstall
+
+```bash
+cargo binstall termusic termusic-server
+```
+
 ### From Source
 
 ```bash
