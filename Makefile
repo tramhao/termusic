@@ -71,7 +71,7 @@ win:
 	cargo build --workspace --features rusty-soundtouch
 
 winrelease:
-	cargo build --release --workspace --features rusty-soundtouch
+	set "CARGO_PROFILE_RELEASE_LTO=off" && cargo build --release --workspace --features rusty-soundtouch
 
 winpost:
 	powershell -command "Copy-Item -force -Path 'target\release\$(prog)' -Destination '$(install_to)'"
