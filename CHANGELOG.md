@@ -2,6 +2,7 @@
 
 ### next
 
+- Feat: add `cargo-binstall` metadata to tui and server crates for pre-built binary installs.
 - Change: updated MSRV to 1.88.
 - Change: enable feature `rusty-soundtouch` for linux, macos & windows CI builds
 - Change: enable feature `rusty-simd` on macos CI builds
