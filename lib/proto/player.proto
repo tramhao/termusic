@@ -40,6 +40,7 @@ service MusicPlayer {
   // Misc Commands
   rpc ReloadConfig(Empty) returns (Empty);
   rpc SubscribeServerUpdates(Empty) returns (stream StreamUpdates);
+  rpc QuitServer(Empty) returns (Empty);
 }
 
 message Empty {}

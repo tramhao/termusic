@@ -1,7 +1,7 @@
 use anyhow::Result;
 use futures_util::StreamExt;
-use sysinfo::Pid;
-use sysinfo::System;
+// use sysinfo::Pid;
+// use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::sync::mpsc::{self};
 use tonic::transport::Channel;
@@ -105,62 +105,9 @@ impl UI {
             .behavior
             .quit_server_on_exit
         {
-            Self::quit_server();
+            self.model.cmd_to_server_tx.send(TuiCmd::QuitServer)?;
         }
 
         Ok(())
-    }
-
-    /// Quit the server, if any is found with the proper name.
-    // TODO: send the server a message to quit instead of a signal.
-    fn quit_server() {
-        #[cfg(windows)]
-        const SERVER_EXE: &str = "termusic-server.exe";
-        #[cfg(not(windows))]
-        const SERVER_EXE: &str = "termusic-server";
-        #[cfg(windows)]
-        const TUI_EXE: &str = "termusic.exe";
-        #[cfg(not(windows))]
-        const TUI_EXE: &str = "termusic";
-
-        let mut system = System::new();
-        system.refresh_all();
-        let mut target = None;
-        let mut clients = 0;
-        for proc in system.processes().values() {
-            if let Some(exe) = proc.name().to_str() {
-                if exe == SERVER_EXE {
-                    if &proc.pid() == crate::SERVER_PID.get().unwrap_or(&Pid::from_u32(0))
-                        || target.is_none()
-                    {
-                        target = Some(proc);
-                    }
-                    continue;
-                }
-                let mut parent_is_termusic = false;
-                match proc.parent() {
-                    Some(s) => {
-                        if let Some(parent) = system.processes().get(&s)
-                            && parent.name() == TUI_EXE
-                        {
-                            parent_is_termusic = true;
-                        }
-                    }
-                    None => parent_is_termusic = false,
-                }
-                if exe == TUI_EXE && !parent_is_termusic {
-                    clients += 1;
-                }
-            }
-        }
-        if clients <= 1
-            && target.is_some()
-            && let Some(s) = target
-        {
-            #[cfg(not(target_os = "windows"))]
-            s.kill_with(sysinfo::Signal::Term);
-            #[cfg(target_os = "windows")]
-            s.kill();
-        }
     }
 }

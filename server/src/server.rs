@@ -5,13 +5,15 @@ mod music_player_service;
 use std::net::SocketAddr;
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::process;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
+use sysinfo::{Pid, System};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
@@ -41,6 +43,16 @@ pub const SPEED_STEP: SpeedSigned = 1;
 
 /// The Limit of continues errors before stopping playback and awaiting user input to start something specific again.
 const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
+
+/// Store the server's PID (set once at startup)
+pub static SERVER_PID: OnceLock<Pid> = OnceLock::new();
+
+/// Set the current server PID
+fn set_server_pid() {
+    let pid = Pid::from_u32(process::id());
+    let _ = SERVER_PID.set(pid);
+    info!("Server PID initialized: {:?}", pid);
+}
 
 /// Stats for the music player responses
 #[derive(Debug, Clone, PartialEq)]
@@ -110,6 +122,8 @@ async fn actual_main() -> Result<()> {
     }
 
     info!("Server starting...");
+
+    set_server_pid();
 
     // do this before anything else so that we exit early on invalid/unavailable backends
     let backend = {
@@ -241,8 +255,10 @@ async fn start_service(
     music_player_service: MusicPlayerService,
     cancel_token: CancellationToken,
 ) -> Result<JoinHandle<Result<(), tonic::transport::Error>>> {
-    // otherwise the MutexGuard would be held across await points
     let protocol = config.read().settings.com.protocol;
+
+    let svc = MusicPlayerServer::new(music_player_service);
+
     let handle = match protocol {
         ComProtocol::HTTP => {
             let (tcp_stream, addr) = tcp_stream(config).await?;
@@ -250,27 +266,24 @@ async fn start_service(
 
             tokio::spawn(
                 Server::builder()
-                    .add_service(MusicPlayerServer::new(music_player_service))
+                    .add_service(svc)
                     .serve_with_incoming_shutdown(tcp_stream, cancel_token.cancelled_owned()),
             )
         }
         #[cfg(unix)]
         ComProtocol::UDS => {
-            // TODO: unlink socket file if it already exists
             let (uds_stream, addr) = uds::uds_stream(config).await?;
             info!("Server listening on {addr}");
 
             tokio::spawn(
                 Server::builder()
-                    .add_service(MusicPlayerServer::new(music_player_service))
+                    .add_service(svc)
                     .serve_with_incoming_shutdown(uds_stream, cancel_token.cancelled_owned()),
             )
         }
         #[cfg(not(unix))]
         ComProtocol::UDS => {
-            // runtime error to not plaster "cfg(unix)" everywhere and because the default for those systems is "HTTP"
-            // and windows in tonic(and lower) will support uds soon-ish
-            unimplemented!("UDS/Unix Domain Sockets are only implemented for unix targets")
+            unimplemented!("UDS/Unix Domain Sockets are only implemented for Unix targets");
         }
     };
 
@@ -419,20 +432,25 @@ fn player_loop(
             PlayerCmd::Quit => {
                 info!("PlayerCmd::Quit received");
                 // to have a consistent last position
-                player.pause();
-                player.player_save_last_position();
-                if let Err(e) = player.playlist.write().save() {
-                    error!("error when saving playlist: {e}");
-                };
-                // clear out all currently queued rodio sources
-                // without this, on rusty backend, may keep the process around until the last source has been consumed
-                player.stop();
-                if let Err(e) =
-                    ServerConfigVersionedDefaulted::save_config_path(&player.config.read().settings)
-                {
-                    error!("error when saving config: {e}");
-                };
-                return Ok(());
+                if !is_server_quitable() {
+                    info!("Not quiting server as there are other clients connected");
+                } else {
+                    info!("Quitting server");
+                    player.pause();
+                    player.player_save_last_position();
+                    if let Err(e) = player.playlist.write().save() {
+                        error!("error when saving playlist: {e}");
+                    };
+                    // clear out all currently queued rodio sources
+                    // without this, on rusty backend, may keep the process around until the last source has been consumed
+                    player.stop();
+                    if let Err(e) = ServerConfigVersionedDefaulted::save_config_path(
+                        &player.config.read().settings,
+                    ) {
+                        error!("error when saving config: {e}");
+                    };
+                    return Ok(());
+                }
             }
             PlayerCmd::CycleLoop => {
                 player.config.write().settings.player.loop_mode =
@@ -781,4 +799,59 @@ fn set_volume(player: &GeneralPlayer, playerstats: &Arc<Mutex<PlayerStats>>, new
     player.config.write().settings.player.volume = new_volume;
     let mut p_tick = playerstats.lock();
     p_tick.volume = new_volume;
+}
+
+/// Check if the server can safely shut down
+/// Returns true if NO other termusic clients are running
+fn is_server_quitable() -> bool {
+    #[cfg(windows)]
+    const SERVER_EXE: &str = "termusic-server.exe";
+    #[cfg(not(windows))]
+    const SERVER_EXE: &str = "termusic-server";
+
+    #[cfg(windows)]
+    const TUI_EXE: &str = "termusic.exe";
+    #[cfg(not(windows))]
+    const TUI_EXE: &str = "termusic";
+
+    let mut system = System::new();
+    system.refresh_all();
+
+    let mut target_server = None;
+    let mut client_count = 0;
+
+    // Get stored server PID (fixed: no reference to temporary value)
+    let stored_pid = SERVER_PID.get().copied().unwrap_or(Pid::from_u32(0));
+
+    for proc in system.processes().values() {
+        if let Some(exe) = proc.name().to_str() {
+            // Match our server process
+            if exe == SERVER_EXE {
+                if proc.pid() == stored_pid || target_server.is_none() {
+                    target_server = Some(proc);
+                }
+                continue;
+            }
+
+            // Check if parent process is termusic (skip child processes)
+            let mut parent_is_client = false;
+            if let Some(parent_pid) = proc.parent()
+                && let Some(parent_proc) = system.processes().get(&parent_pid)
+                && parent_proc.name() == TUI_EXE
+            {
+                parent_is_client = true;
+            }
+
+            // Count valid standalone clients
+            if exe == TUI_EXE && !parent_is_client {
+                client_count += 1;
+            }
+        }
+    }
+
+    info!("Active Termusic clients: {}", client_count);
+    info!("Server process found: {}", target_server.is_some());
+
+    // Safe to quit when no clients are active
+    client_count == 0 && target_server.is_some()
 }

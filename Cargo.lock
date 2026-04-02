@@ -5340,6 +5340,7 @@ dependencies = [
  "log",
  "parking_lot",
  "serde",
+ "sysinfo",
  "termusic-lib",
  "termusic-playback",
  "tokio",

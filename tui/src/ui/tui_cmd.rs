@@ -25,6 +25,7 @@ pub enum TuiCmd {
     ReloadConfig,
 
     Playlist(PlaylistCmd),
+    QuitServer,
 }
 
 /// Enum for Commands to send specificly for Playlist

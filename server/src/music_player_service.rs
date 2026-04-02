@@ -335,4 +335,11 @@ impl MusicPlayer for MusicPlayerService {
 
         Ok(Response::new(reply))
     }
+
+    async fn quit_server(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
+        let reply = Empty {};
+        self.command(PlayerCmd::Quit);
+
+        Ok(Response::new(reply))
+    }
 }

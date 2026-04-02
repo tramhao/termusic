@@ -103,6 +103,9 @@ impl ServerRequestActor {
                 self.client_handle.reload_config().await?;
             }
             TuiCmd::Playlist(playlist_cmd) => self.handle_playlist_cmd(playlist_cmd).await?,
+            TuiCmd::QuitServer => {
+                let () = self.client_handle.quit_server().await?;
+            }
         }
 
         Ok(())

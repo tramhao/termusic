@@ -199,4 +199,12 @@ impl Playback {
 
         Ok(())
     }
+
+    pub async fn quit_server(&mut self) -> Result<()> {
+        let request = tonic::Request::new(Empty {});
+        let response = self.client.quit_server(request).await?;
+        info!("Got response from server: {response:?}");
+
+        Ok(())
+    }
 }
