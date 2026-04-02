@@ -7,7 +7,7 @@
 # You may check the current default at
 #   https://github.com/Canop/bacon/blob/main/defaults/default-bacon.toml
 
-default_job = "check"
+default_job = "make"
 env.CARGO_TERM_COLOR = "always"
 
 [jobs.check]
