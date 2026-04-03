@@ -13,10 +13,13 @@ use anyhow::{Context as _, Result, bail};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
-use sysinfo::{Pid, System};
+use sysinfo::Pid;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
+use termusiclib::monitor_service::{
+    MonitorService, monitor::connection_monitor_server::ConnectionMonitorServer,
+};
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
 use termusiclib::track::{MediaTypesSimple, Track};
@@ -173,7 +176,7 @@ async fn actual_main() -> Result<()> {
 
     let service_cancel_token = CancellationToken::new();
 
-    let join_handle =
+    let (join_handle, monitor_service) =
         start_service(&config, music_player_service, service_cancel_token.clone()).await?;
 
     let tokio_handle = Handle::current();
@@ -195,6 +198,7 @@ async fn actual_main() -> Result<()> {
                 playerstats,
                 stream_tx,
                 playlist,
+                monitor_service,
             );
             let _ = player_handle_os_tx.send(res);
         })?;
@@ -254,10 +258,15 @@ async fn start_service(
     config: &SharedServerSettings,
     music_player_service: MusicPlayerService,
     cancel_token: CancellationToken,
-) -> Result<JoinHandle<Result<(), tonic::transport::Error>>> {
+) -> Result<(
+    JoinHandle<Result<(), tonic::transport::Error>>,
+    MonitorService,
+)> {
     let protocol = config.read().settings.com.protocol;
 
     let svc = MusicPlayerServer::new(music_player_service);
+    let monitor_service = MonitorService::new();
+    let monitor_svc = ConnectionMonitorServer::new(monitor_service.clone());
 
     let handle = match protocol {
         ComProtocol::HTTP => {
@@ -267,6 +276,7 @@ async fn start_service(
             tokio::spawn(
                 Server::builder()
                     .add_service(svc)
+                    .add_service(monitor_svc)
                     .serve_with_incoming_shutdown(tcp_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -278,6 +288,7 @@ async fn start_service(
             tokio::spawn(
                 Server::builder()
                     .add_service(svc)
+                    .add_service(monitor_svc)
                     .serve_with_incoming_shutdown(uds_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -287,7 +298,7 @@ async fn start_service(
         }
     };
 
-    Ok(handle)
+    Ok((handle, monitor_service))
 }
 
 /// Create the TCP Stream for HTTP requests.
@@ -405,6 +416,7 @@ fn player_loop(
     playerstats: Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
     playlist: SharedPlaylist,
+    monitor_service: MonitorService,
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
 
@@ -432,7 +444,8 @@ fn player_loop(
             PlayerCmd::Quit => {
                 info!("PlayerCmd::Quit received");
                 // to have a consistent last position
-                if !is_server_quitable() {
+                let has_clients = monitor_service.has_active_clients_sync();
+                if has_clients {
                     info!("Not quiting server as there are other clients connected");
                 } else {
                     info!("Quitting server");
@@ -799,59 +812,4 @@ fn set_volume(player: &GeneralPlayer, playerstats: &Arc<Mutex<PlayerStats>>, new
     player.config.write().settings.player.volume = new_volume;
     let mut p_tick = playerstats.lock();
     p_tick.volume = new_volume;
-}
-
-/// Check if the server can safely shut down
-/// Returns true if NO other termusic clients are running
-fn is_server_quitable() -> bool {
-    #[cfg(windows)]
-    const SERVER_EXE: &str = "termusic-server.exe";
-    #[cfg(not(windows))]
-    const SERVER_EXE: &str = "termusic-server";
-
-    #[cfg(windows)]
-    const TUI_EXE: &str = "termusic.exe";
-    #[cfg(not(windows))]
-    const TUI_EXE: &str = "termusic";
-
-    let mut system = System::new();
-    system.refresh_all();
-
-    let mut target_server = None;
-    let mut client_count = 0;
-
-    // Get stored server PID (fixed: no reference to temporary value)
-    let stored_pid = SERVER_PID.get().copied().unwrap_or(Pid::from_u32(0));
-
-    for proc in system.processes().values() {
-        if let Some(exe) = proc.name().to_str() {
-            // Match our server process
-            if exe == SERVER_EXE {
-                if proc.pid() == stored_pid || target_server.is_none() {
-                    target_server = Some(proc);
-                }
-                continue;
-            }
-
-            // Check if parent process is termusic (skip child processes)
-            let mut parent_is_client = false;
-            if let Some(parent_pid) = proc.parent()
-                && let Some(parent_proc) = system.processes().get(&parent_pid)
-                && parent_proc.name() == TUI_EXE
-            {
-                parent_is_client = true;
-            }
-
-            // Count valid standalone clients
-            if exe == TUI_EXE && !parent_is_client {
-                client_count += 1;
-            }
-        }
-    }
-
-    info!("Active Termusic clients: {}", client_count);
-    info!("Server process found: {}", target_server.is_some());
-
-    // Safe to quit when no clients are active
-    client_count <= 1 && target_server.is_some()
 }
