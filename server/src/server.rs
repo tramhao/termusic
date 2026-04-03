@@ -853,5 +853,5 @@ fn is_server_quitable() -> bool {
     info!("Server process found: {}", target_server.is_some());
 
     // Safe to quit when no clients are active
-    client_count == 0 && target_server.is_some()
+    client_count <= 1 && target_server.is_some()
 }
