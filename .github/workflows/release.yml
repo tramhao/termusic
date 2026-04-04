@@ -22,18 +22,18 @@ jobs:
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
-        build: [x86_64-linux,x86_64-macos,x86_64-windows,aarch64-macos] #, aarch64-linux] #, x86_64-win-gnu, win32-msvc
+        build: [x86_64-linux, aarch64-linux, x86_64-macos, x86_64-windows, aarch64-macos] # x86_64-win-gnu, win32-msvc
         include:
         - build: x86_64-linux
           os: ubuntu-latest
           rust: stable
           target: x86_64-unknown-linux-gnu
           cross: false
-        # - build: aarch64-linux
-        #   os: ubuntu-20.04
-        #   rust: stable
-        #   target: aarch64-unknown-linux-gnu
-        #   cross: true
+        - build: aarch64-linux
+          os: ubuntu-24.04-arm
+          rust: stable
+          target: aarch64-unknown-linux-gnu
+          cross: false
         - build: x86_64-macos
           os: macos-latest
           rust: stable
@@ -71,7 +71,7 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install developer package dependencies
-        if: matrix.build == 'x86_64-linux'
+        if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux'
         run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev libmpv-dev
 
       - name: Install developer package dependencies
@@ -85,14 +85,14 @@ jobs:
         run: choco install protoc 
       
       - name: Run cargo test (cargo)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos' || matrix.build == 'x86_64-windows') && !matrix.cross
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos' || matrix.build == 'x86_64-windows') && !matrix.cross
         run: cargo test --release --target ${{ matrix.target }}
 
-      - name: Build release binary (cargo x86_64-linux)
-        if: matrix.build == 'x86_64-linux'
+      - name: Build release binary (cargo x86_64-linux and aarch64-linux)
+        if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux'
         run: cargo build --features cover,all-backends,rusty-soundtouch --release --all --target ${{ matrix.target }}
 
-      - name: Build release binary (cargo x86_64-macos)
+      - name: Build release binary (cargo x86_64-macos and aarch64-macos)
         if: matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
         run: cargo build --features rusty-soundtouch,rusty-simd --release --all --target ${{ matrix.target }}
 
@@ -105,7 +105,7 @@ jobs:
         run: cargo install cross
 
       - name: Run cargo test (cross)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos' || matrix.build == 'x86_64-windows') && matrix.cross
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos' || matrix.build == 'x86_64-windows') && matrix.cross
         run: cargo test --release --target ${{ matrix.target }}
 
       - name: Build release binary (cross)
@@ -113,24 +113,10 @@ jobs:
         run: cargo build --features cover,all-backends --release --all --target ${{ matrix.target }}
 
       - name: Strip release binary (linux and macos)
-        if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
+        if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
         run: |
           strip "target/${{ matrix.target }}/release/$BIN_NAME"
           strip "target/${{ matrix.target }}/release/$BIN_NAME_SERVER"
-
-      - name: Strip release binary (arm)
-        if: matrix.build == 'aarch64-linux'
-        run: |
-          docker run --rm -v \
-            "$PWD/target:/target:Z" \
-            rustembedded/cross:${{ matrix.target }} \
-            aarch64-linux-gnu-strip \
-            /target/${{ matrix.target }}/release/$BIN_NAME
-          docker run --rm -v \
-            "$PWD/target:/target:Z" \
-            rustembedded/cross:${{ matrix.target }} \
-            aarch64-linux-gnu-strip \
-            /target/${{ matrix.target }}/release/$BIN_NAME_SERVER
 
       - name: Build archive
         shell: bash
