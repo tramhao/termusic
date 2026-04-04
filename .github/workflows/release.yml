@@ -144,7 +144,7 @@ jobs:
             cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER" "dist/"
           fi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bins-${{ matrix.build }}
           path: dist
