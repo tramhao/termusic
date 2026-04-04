@@ -60,9 +60,9 @@ jobs:
 
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          submodules: true
+          persist-credentials: false
 
       - name: Install ${{ matrix.rust }} toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -155,9 +155,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          submodules: false
+          persist-credentials: false
 
       - uses: actions/download-artifact@v4
         # with:
