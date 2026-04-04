@@ -12,9 +12,6 @@ use sysinfo::Pid;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
-use termusiclib::monitor_service::{
-    MonitorService, monitor::connection_monitor_server::ConnectionMonitorServer,
-};
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
 use termusiclib::track::{MediaTypesSimple, Track};
@@ -31,7 +28,7 @@ use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
-use crate::connection::tcp_stream;
+use crate::connection::{ActiveConnectionData, ActiveConnections, tcp_stream};
 
 mod cli;
 mod connection;
@@ -177,7 +174,7 @@ async fn actual_main() -> Result<()> {
 
     let service_cancel_token = CancellationToken::new();
 
-    let (join_handle, monitor_service) =
+    let (join_handle, active_connections_data) =
         start_service(&config, music_player_service, service_cancel_token.clone()).await?;
 
     let tokio_handle = Handle::current();
@@ -199,7 +196,7 @@ async fn actual_main() -> Result<()> {
                 playerstats,
                 stream_tx,
                 playlist,
-                monitor_service,
+                active_connections_data,
             );
             let _ = player_handle_os_tx.send(res);
         })?;
@@ -261,23 +258,21 @@ async fn start_service(
     cancel_token: CancellationToken,
 ) -> Result<(
     JoinHandle<Result<(), tonic::transport::Error>>,
-    MonitorService,
+    ActiveConnections,
 )> {
     let protocol = config.read().settings.com.protocol;
 
     let svc = MusicPlayerServer::new(music_player_service);
-    let monitor_service = MonitorService::new();
-    let monitor_svc = ConnectionMonitorServer::new(monitor_service.clone());
+    let active_connection_count: ActiveConnections = Arc::new(ActiveConnectionData::default());
 
     let handle = match protocol {
         ComProtocol::HTTP => {
-            let (tcp_stream, addr) = tcp_stream(config).await?;
+            let (tcp_stream, addr) = tcp_stream(config, active_connection_count.clone()).await?;
             info!("Server listening on {addr}");
 
             tokio::spawn(
                 Server::builder()
                     .add_service(svc)
-                    .add_service(monitor_svc)
                     .serve_with_incoming_shutdown(tcp_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -285,13 +280,12 @@ async fn start_service(
         ComProtocol::UDS => {
             use crate::connection::uds_stream;
 
-            let (uds_stream, addr) = uds_stream(config).await?;
+            let (uds_stream, addr) = uds_stream(config, active_connection_count.clone()).await?;
             info!("Server listening on {addr}");
 
             tokio::spawn(
                 Server::builder()
                     .add_service(svc)
-                    .add_service(monitor_svc)
                     .serve_with_incoming_shutdown(uds_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -301,7 +295,7 @@ async fn start_service(
         }
     };
 
-    Ok((handle, monitor_service))
+    Ok((handle, active_connection_count))
 }
 
 /// The main player loop where we handle all events
@@ -314,7 +308,7 @@ fn player_loop(
     playerstats: Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
     playlist: SharedPlaylist,
-    monitor_service: MonitorService,
+    active_connections_data: ActiveConnections,
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
 
@@ -342,8 +336,7 @@ fn player_loop(
             PlayerCmd::Quit => {
                 info!("PlayerCmd::Quit received");
                 // to have a consistent last position
-                let has_clients = monitor_service.has_active_clients_sync();
-                if has_clients {
+                if active_connections_data.has_active_connections() {
                     info!("Not quiting server as there are other clients connected");
                 } else {
                     info!("No active clients connected. Quitting server");
@@ -434,6 +427,18 @@ fn player_loop(
                 p_tick.speed = new_speed;
             }
             PlayerCmd::Tick => {
+                // Quit once having had at least one client connected and now no more connections active.
+                // TODO: This should likely be configurable.
+                // for now this is insurance that the server exits correctly once the tui closes.
+                if active_connections_data.had_first_connection()
+                    && !active_connections_data.has_active_connections()
+                {
+                    info!(
+                        "No more active connections and had at least one client connected before, sending quit"
+                    );
+                    let _ = player.cmd_tx.send(PlayerCmd::Quit);
+                }
+
                 // info!("tick received");
                 player.mpris_handle_events();
                 let mut p_tick = playerstats.lock();
