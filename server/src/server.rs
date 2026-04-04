@@ -1,14 +1,12 @@
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
-use std::process;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
-use sysinfo::Pid;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
@@ -45,16 +43,6 @@ pub const SPEED_STEP: SpeedSigned = 1;
 
 /// The Limit of continues errors before stopping playback and awaiting user input to start something specific again.
 const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
-
-/// Store the server's PID (set once at startup)
-pub static SERVER_PID: OnceLock<Pid> = OnceLock::new();
-
-/// Set the current server PID
-fn set_server_pid() {
-    let pid = Pid::from_u32(process::id());
-    let _ = SERVER_PID.set(pid);
-    info!("Server PID initialized: {:?}", pid);
-}
 
 /// Stats for the music player responses
 #[derive(Debug, Clone, PartialEq)]
@@ -124,8 +112,6 @@ async fn actual_main() -> Result<()> {
     }
 
     info!("Server starting...");
-
-    set_server_pid();
 
     // do this before anything else so that we exit early on invalid/unavailable backends
     let backend = {
