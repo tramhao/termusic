@@ -1,7 +1,5 @@
 use anyhow::Result;
 use futures_util::StreamExt;
-// use sysinfo::Pid;
-// use sysinfo::System;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::sync::mpsc::{self};
 use tonic::transport::Channel;

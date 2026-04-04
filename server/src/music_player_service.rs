@@ -338,7 +338,7 @@ impl MusicPlayer for MusicPlayerService {
 
     async fn quit_server(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
-        self.command(PlayerCmd::Quit);
+        self.command(PlayerCmd::Quit(crate::quit_sources::CLIENT));
 
         Ok(Response::new(reply))
     }

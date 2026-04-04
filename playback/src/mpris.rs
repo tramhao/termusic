@@ -221,7 +221,9 @@ impl GeneralPlayer {
             }
             MediaControlEvent::Quit => {
                 // ignore error if sending failed
-                self.cmd_tx.send(PlayerCmd::Quit).ok();
+                let _ = self
+                    .cmd_tx
+                    .send(PlayerCmd::Quit(crate::quit_sources::MPRIS));
             }
             MediaControlEvent::Stop => {
                 // TODO: handle "Stop"

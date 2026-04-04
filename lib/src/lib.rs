@@ -19,8 +19,6 @@ pub mod track;
 pub mod utils;
 pub mod xywh;
 
-pub mod monitor_service;
-
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 use include_dir::{Dir, include_dir};

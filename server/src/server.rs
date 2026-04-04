@@ -1,25 +1,15 @@
-mod cli;
-mod logger;
-mod music_player_service;
-
-use std::net::SocketAddr;
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
-use std::process;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
-use sysinfo::Pid;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
-use termusiclib::monitor_service::{
-    MonitorService, monitor::connection_monitor_server::ConnectionMonitorServer,
-};
 use termusiclib::player::music_player_server::MusicPlayerServer;
 use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
 use termusiclib::track::{MediaTypesSimple, Track};
@@ -27,6 +17,7 @@ use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
     PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Volume, VolumeSigned,
+    quit_sources,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -35,7 +26,13 @@ use tokio::task::JoinHandle;
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
-use tonic::transport::server::TcpIncoming;
+
+use crate::connection::{ActiveConnectionData, ActiveConnections, tcp_stream};
+
+mod cli;
+mod connection;
+mod logger;
+mod music_player_service;
 
 #[macro_use]
 extern crate log;
@@ -46,16 +43,6 @@ pub const SPEED_STEP: SpeedSigned = 1;
 
 /// The Limit of continues errors before stopping playback and awaiting user input to start something specific again.
 const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
-
-/// Store the server's PID (set once at startup)
-pub static SERVER_PID: OnceLock<Pid> = OnceLock::new();
-
-/// Set the current server PID
-fn set_server_pid() {
-    let pid = Pid::from_u32(process::id());
-    let _ = SERVER_PID.set(pid);
-    info!("Server PID initialized: {:?}", pid);
-}
 
 /// Stats for the music player responses
 #[derive(Debug, Clone, PartialEq)]
@@ -126,8 +113,6 @@ async fn actual_main() -> Result<()> {
 
     info!("Server starting...");
 
-    set_server_pid();
-
     // do this before anything else so that we exit early on invalid/unavailable backends
     let backend = {
         let config_backend = config.settings.player.backend.try_into();
@@ -169,14 +154,14 @@ async fn actual_main() -> Result<()> {
 
     ctrlc::set_handler(move || {
         cmd_tx_ctrlc
-            .send(PlayerCmd::Quit)
+            .send(PlayerCmd::Quit(quit_sources::CTRLC))
             .expect("Could not send signal on channel.");
     })
     .expect("Error setting Ctrl-C handler");
 
     let service_cancel_token = CancellationToken::new();
 
-    let (join_handle, monitor_service) =
+    let (join_handle, active_connections_data) =
         start_service(&config, music_player_service, service_cancel_token.clone()).await?;
 
     let tokio_handle = Handle::current();
@@ -198,7 +183,7 @@ async fn actual_main() -> Result<()> {
                 playerstats,
                 stream_tx,
                 playlist,
-                monitor_service,
+                active_connections_data,
             );
             let _ = player_handle_os_tx.send(res);
         })?;
@@ -260,35 +245,34 @@ async fn start_service(
     cancel_token: CancellationToken,
 ) -> Result<(
     JoinHandle<Result<(), tonic::transport::Error>>,
-    MonitorService,
+    ActiveConnections,
 )> {
     let protocol = config.read().settings.com.protocol;
 
     let svc = MusicPlayerServer::new(music_player_service);
-    let monitor_service = MonitorService::new();
-    let monitor_svc = ConnectionMonitorServer::new(monitor_service.clone());
+    let active_connection_count: ActiveConnections = Arc::new(ActiveConnectionData::default());
 
     let handle = match protocol {
         ComProtocol::HTTP => {
-            let (tcp_stream, addr) = tcp_stream(config).await?;
+            let (tcp_stream, addr) = tcp_stream(config, active_connection_count.clone()).await?;
             info!("Server listening on {addr}");
 
             tokio::spawn(
                 Server::builder()
                     .add_service(svc)
-                    .add_service(monitor_svc)
                     .serve_with_incoming_shutdown(tcp_stream, cancel_token.cancelled_owned()),
             )
         }
         #[cfg(unix)]
         ComProtocol::UDS => {
-            let (uds_stream, addr) = uds::uds_stream(config).await?;
+            use crate::connection::uds_stream;
+
+            let (uds_stream, addr) = uds_stream(config, active_connection_count.clone()).await?;
             info!("Server listening on {addr}");
 
             tokio::spawn(
                 Server::builder()
                     .add_service(svc)
-                    .add_service(monitor_svc)
                     .serve_with_incoming_shutdown(uds_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -298,113 +282,7 @@ async fn start_service(
         }
     };
 
-    Ok((handle, monitor_service))
-}
-
-/// Create the TCP Stream for HTTP requests.
-async fn tcp_stream(config: &SharedServerSettings) -> Result<(TcpIncoming, SocketAddr)> {
-    let addr = SocketAddr::from(&config.read().settings.com);
-
-    // workaround to print address once sever "actually" is started and address is known
-    // see https://github.com/hyperium/tonic/issues/351
-    let tcp_listener = tokio::net::TcpListener::bind(addr)
-        .await
-        .with_context(|| format!("Error binding address: {addr}"))?;
-
-    // workaround as "TcpIncoming" does not provide a function to get the address
-    let socket_addr = tcp_listener.local_addr()?;
-
-    let stream = TcpIncoming::from(tcp_listener).with_nodelay(Some(true));
-
-    Ok((stream, socket_addr))
-}
-
-#[cfg(unix)]
-mod uds {
-    use std::{
-        io,
-        pin::Pin,
-        task::{Context, Poll},
-    };
-
-    use anyhow::{Context as _, Result};
-    use termusiclib::config::SharedServerSettings;
-    use tokio::net::{UnixListener, UnixStream};
-    use tokio_stream::Stream;
-
-    /// Create the UDS Stream for UDS requests.
-    pub async fn uds_stream(config: &SharedServerSettings) -> Result<(UnixListenerStream, String)> {
-        let path = &config.read().settings.com.socket_path;
-
-        // if the file already exists, tokio will error with "Address already in use"
-        // not using async here because of MutexGuard and being before anything important
-        if path.exists() {
-            warn!("Socket Path {} already exists, unlinking!", path.display());
-            let _ = std::fs::remove_file(path);
-        }
-
-        let path_str = path.display().to_string();
-        let uds = UnixListener::bind(path).with_context(|| path_str.clone())?;
-
-        let stream = UnixListenerStream::new(uds);
-
-        Ok((stream, path_str))
-    }
-
-    /// A wrapper around [`UnixListener`] that implements [`Stream`].
-    ///
-    /// Copied from [`tokio_stream::wrappers::UnixListenerStream`], which is licensed MIT.
-    ///
-    /// Modified because the normal implementation does not remove the socket on drop.
-    #[derive(Debug)]
-    #[cfg_attr(docsrs, doc(cfg(all(unix, feature = "net"))))]
-    pub struct UnixListenerStream {
-        inner: UnixListener,
-    }
-
-    impl UnixListenerStream {
-        /// Create a new `UnixListenerStream`.
-        pub fn new(listener: UnixListener) -> Self {
-            Self { inner: listener }
-        }
-    }
-
-    impl Stream for UnixListenerStream {
-        type Item = io::Result<UnixStream>;
-
-        fn poll_next(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-        ) -> Poll<Option<io::Result<UnixStream>>> {
-            match self.inner.poll_accept(cx) {
-                Poll::Ready(Ok((stream, _))) => Poll::Ready(Some(Ok(stream))),
-                Poll::Ready(Err(err)) => Poll::Ready(Some(Err(err))),
-                Poll::Pending => Poll::Pending,
-            }
-        }
-    }
-
-    impl AsRef<UnixListener> for UnixListenerStream {
-        fn as_ref(&self) -> &UnixListener {
-            &self.inner
-        }
-    }
-
-    impl AsMut<UnixListener> for UnixListenerStream {
-        fn as_mut(&mut self) -> &mut UnixListener {
-            &mut self.inner
-        }
-    }
-
-    impl Drop for UnixListenerStream {
-        fn drop(&mut self) {
-            // unlink socket file as it is not done so by default
-            let tmp = self.inner.local_addr().ok();
-            if let Some(val) = tmp.as_ref().and_then(|v| v.as_pathname()) {
-                let _ = std::fs::remove_file(val);
-            }
-        }
-    }
+    Ok((handle, active_connection_count))
 }
 
 /// The main player loop where we handle all events
@@ -417,11 +295,12 @@ fn player_loop(
     playerstats: Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
     playlist: SharedPlaylist,
-    monitor_service: MonitorService,
+    active_connections_data: ActiveConnections,
 ) -> Result<()> {
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
 
     let mut had_enqueue_error = false;
+    let mut should_quit = false;
 
     // Start the playback, if wanted on startup
     if player.config.read().settings.player.startup_state == StartupState::Playing {
@@ -442,14 +321,20 @@ fn player_loop(
                     player.enqueue_next_from_playlist();
                 }
             }
-            PlayerCmd::Quit => {
-                info!("PlayerCmd::Quit received");
-                // to have a consistent last position
-                let has_clients = monitor_service.has_active_clients_sync();
-                if has_clients {
+            PlayerCmd::Quit(source) => {
+                info!("PlayerCmd::Quit received, source: \"{}\"", source);
+
+                // only quit if there are no more active clients OR a client triggered it and is the last client
+                if (source != quit_sources::CLIENT
+                    && active_connections_data.has_active_connections())
+                    || (source == quit_sources::CLIENT
+                        && active_connections_data.active_connection_count() > 1)
+                {
                     info!("Not quiting server as there are other clients connected");
+                    should_quit = true;
                 } else {
                     info!("No active clients connected. Quitting server");
+                    // to have a consistent last position
                     player.pause();
                     player.player_save_last_position();
                     if let Err(e) = player.playlist.write().save() {
@@ -537,6 +422,18 @@ fn player_loop(
                 p_tick.speed = new_speed;
             }
             PlayerCmd::Tick => {
+                // Quit once there are no more connections active and having had at least one connection.
+                // This should only quit if there was a quit event previously that was ignored.
+                if active_connections_data.had_first_connection()
+                    && !active_connections_data.has_active_connections()
+                    && should_quit
+                {
+                    info!(
+                        "No more active connections and had at least one client connected before, sending quit"
+                    );
+                    let _ = player.cmd_tx.send(PlayerCmd::Quit(quit_sources::TICK));
+                }
+
                 // info!("tick received");
                 player.mpris_handle_events();
                 let mut p_tick = playerstats.lock();

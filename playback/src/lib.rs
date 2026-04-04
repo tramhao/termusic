@@ -124,7 +124,8 @@ pub enum PlayerCmd {
     SkipPrevious,
     Pause,
     Play,
-    Quit,
+    /// Quit the server process. Includes the source triggering the quit.
+    Quit(&'static str),
     ReloadConfig,
     ReloadPlaylist,
     SeekBackward,
@@ -145,6 +146,14 @@ pub enum PlayerCmd {
     PlaylistSwapTrack(PlaylistSwapTrack),
     PlaylistShuffle,
     PlaylistRemoveDeletedTracks,
+}
+
+/// Sources for [`PlayerCmd::Quit`].
+pub mod quit_sources {
+    pub const CLIENT: &str = "client quit";
+    pub const TICK: &str = "tick";
+    pub const CTRLC: &str = "ctrl c";
+    pub const MPRIS: &str = "mpris";
 }
 
 pub type StreamTX = broadcast::Sender<UpdateEvents>;
