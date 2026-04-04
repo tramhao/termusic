@@ -408,6 +408,7 @@ mod uds {
 }
 
 /// The main player loop where we handle all events
+#[allow(clippy::too_many_arguments)]
 fn player_loop(
     backend: BackendSelect,
     cmd_tx: PlayerCmdSender,
@@ -448,7 +449,7 @@ fn player_loop(
                 if has_clients {
                     info!("Not quiting server as there are other clients connected");
                 } else {
-                    info!("Quitting server");
+                    info!("No active clients connected. Quitting server");
                     player.pause();
                     player.player_save_last_position();
                     if let Err(e) = player.playlist.write().save() {

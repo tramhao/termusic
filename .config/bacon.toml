@@ -118,7 +118,7 @@ need_stdout = true
 allow_warnings = true
 
 [jobs.make]
-command = ["make", "full"]
+command = ["sh", "-c", "make && make full"]
 need_stdout = true
 allow_warnings = true
 background = false
