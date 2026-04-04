@@ -314,6 +314,7 @@ fn player_loop(
     let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
 
     let mut had_enqueue_error = false;
+    let mut should_quit = false;
 
     // Start the playback, if wanted on startup
     if player.config.read().settings.player.startup_state == StartupState::Playing {
@@ -344,6 +345,7 @@ fn player_loop(
                         && active_connections_data.active_connection_count() > 1)
                 {
                     info!("Not quiting server as there are other clients connected");
+                    should_quit = true;
                 } else {
                     info!("No active clients connected. Quitting server");
                     // to have a consistent last position
@@ -434,11 +436,11 @@ fn player_loop(
                 p_tick.speed = new_speed;
             }
             PlayerCmd::Tick => {
-                // Quit once having had at least one client connected and now no more connections active.
-                // TODO: This should likely be configurable.
-                // for now this is insurance that the server exits correctly once the tui closes.
+                // Quit once there are no more connections active and having had at least one connection.
+                // This should only quit if there was a quit event previously that was ignored.
                 if active_connections_data.had_first_connection()
                     && !active_connections_data.has_active_connections()
+                    && should_quit
                 {
                     info!(
                         "No more active connections and had at least one client connected before, sending quit"
