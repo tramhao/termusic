@@ -19,6 +19,7 @@ use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
     PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Volume, VolumeSigned,
+    quit_sources,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -167,7 +168,7 @@ async fn actual_main() -> Result<()> {
 
     ctrlc::set_handler(move || {
         cmd_tx_ctrlc
-            .send(PlayerCmd::Quit)
+            .send(PlayerCmd::Quit(quit_sources::CTRLC))
             .expect("Could not send signal on channel.");
     })
     .expect("Error setting Ctrl-C handler");
@@ -333,13 +334,19 @@ fn player_loop(
                     player.enqueue_next_from_playlist();
                 }
             }
-            PlayerCmd::Quit => {
-                info!("PlayerCmd::Quit received");
-                // to have a consistent last position
-                if active_connections_data.has_active_connections() {
+            PlayerCmd::Quit(source) => {
+                info!("PlayerCmd::Quit received, source: \"{}\"", source);
+
+                // only quit if there are no more active clients OR a client triggered it and is the last client
+                if (source != quit_sources::CLIENT
+                    && active_connections_data.has_active_connections())
+                    || (source == quit_sources::CLIENT
+                        && active_connections_data.active_connection_count() > 1)
+                {
                     info!("Not quiting server as there are other clients connected");
                 } else {
                     info!("No active clients connected. Quitting server");
+                    // to have a consistent last position
                     player.pause();
                     player.player_save_last_position();
                     if let Err(e) = player.playlist.write().save() {
@@ -436,7 +443,7 @@ fn player_loop(
                     info!(
                         "No more active connections and had at least one client connected before, sending quit"
                     );
-                    let _ = player.cmd_tx.send(PlayerCmd::Quit);
+                    let _ = player.cmd_tx.send(PlayerCmd::Quit(quit_sources::TICK));
                 }
 
                 // info!("tick received");

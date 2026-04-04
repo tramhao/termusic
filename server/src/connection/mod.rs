@@ -30,6 +30,11 @@ impl ActiveConnectionData {
         self.count.load(Ordering::SeqCst) != 0
     }
 
+    /// Get how many active connections there are.
+    pub fn active_connection_count(&self) -> usize {
+        self.count.load(Ordering::SeqCst)
+    }
+
     /// Get wheter we had at least one connection.
     pub fn had_first_connection(&self) -> bool {
         self.had_first_connection.load(Ordering::SeqCst)
