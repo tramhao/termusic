@@ -159,13 +159,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         # with:
         #   path: dist
       # - run: ls -al ./dist
       - run: ls -al bins-*
 
-      # - uses: actions/download-artifact@v2
+      # - uses: actions/download-artifact@v8
       #   # with:
       #   windowspath: dist
       # - runchoco install protoc ls -al ./dist
