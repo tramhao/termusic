@@ -46,7 +46,7 @@ gst:
 	cargo build --no-default-features --features cover,gst --release --all
 
 all-backends:
-	cargo build  --features cover,all-backends --release --all
+	export "CARGO_PROFILE_RELEASE_LTO=off" && cargo build  --features cover,all-backends --release --all
 
 all-backends-test:
 	cargo build  --features cover,all-backends --all

@@ -45,8 +45,9 @@ pub fn to_lyric(json: &str) -> Result<String> {
 
     let lyric = value
         .get("lrc")
+        .and_then(|v| v.get("lyric"))
         .and_then(Value::as_str)
-        .ok_or(NeteaseParseError::MissingProperty("lrc"))?
+        .ok_or(NeteaseParseError::MissingProperty("lrc.lyric"))?
         .to_owned();
 
     Ok(lyric)
