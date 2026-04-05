@@ -3,7 +3,7 @@ use std::{
     ops::Range,
 };
 
-use symphonia::core::audio::SignalSpec;
+use symphonia::core::audio::AudioSpec;
 
 use crate::backends::rusty::source::SampleType;
 
@@ -70,7 +70,7 @@ impl RingMsgWrite2 {
     ///
     /// This function will only write anything if there is enough space in the input buffer.
     pub fn try_write_spec(
-        spec: SignalSpec,
+        spec: &AudioSpec,
         current_span_len: usize,
         buf: &mut [u8],
     ) -> PResult<()> {
@@ -174,15 +174,15 @@ impl MessageSpec {
     }
 
     /// Try to write a message to the given buffer, or return how many bytes are still necessary
-    pub fn try_write_buf(spec: SignalSpec, current_span_len: usize, buf: &mut [u8]) -> PResult<()> {
+    pub fn try_write_buf(spec: &AudioSpec, current_span_len: usize, buf: &mut [u8]) -> PResult<()> {
         if buf.len() < Self::MESSAGE_SIZE {
             return Err(Self::MESSAGE_SIZE - buf.len());
         }
 
         let rate_nonzero =
-            NonZeroU32::new(spec.rate).expect("Expected input Sample Rate to be non-zero");
+            NonZeroU32::new(spec.rate()).expect("Expected input Sample Rate to be non-zero");
         // unwrap should be save as symphonia does not actually go above 16 channels
-        let channels_nonzero = NonZeroU16::new(u16::try_from(spec.channels.count()).unwrap())
+        let channels_nonzero = NonZeroU16::new(u16::try_from(spec.channels().count()).unwrap())
             .expect("Expected input Channels to be non-zero");
 
         (buf[..=3]).copy_from_slice(&rate_nonzero.get().to_ne_bytes());
@@ -409,7 +409,7 @@ mod tests {
     }
 
     mod write_message_spec {
-        use symphonia::core::audio::{Channels, SignalSpec};
+        use symphonia::core::audio::{AudioSpec, Position};
 
         use crate::backends::rusty::source::async_ring::MessageSpec;
 
@@ -419,7 +419,7 @@ mod tests {
             assert_eq!(out_buf.len(), MessageSpec::MESSAGE_SIZE);
 
             let msg_spec = MessageSpec::try_write_buf(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 10,
                 out_buf,
             );
@@ -442,7 +442,7 @@ mod tests {
             assert_eq!(out_buf.len(), MessageSpec::MESSAGE_SIZE);
 
             let msg_spec = MessageSpec::try_write_buf(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 10,
                 &mut out_buf[..=3],
             );
@@ -451,7 +451,7 @@ mod tests {
 
             // check the 0 length buffer given path
             let msg_spec = MessageSpec::try_write_buf(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 10,
                 &mut [],
             );
@@ -460,7 +460,7 @@ mod tests {
 
             // finish with the last bytes
             let msg_spec = MessageSpec::try_write_buf(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 10,
                 out_buf,
             );
@@ -738,7 +738,7 @@ mod tests {
     }
 
     mod write_ring_messages {
-        use symphonia::core::audio::{Channels, SignalSpec};
+        use symphonia::core::audio::{AudioSpec, Channels, Position};
 
         use crate::{
             __bench::async_ring::messages::SAMPLE_TYPE_SIZE,
@@ -757,7 +757,7 @@ mod tests {
             );
 
             let res = RingMsgWrite2::try_write_spec(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 10,
                 out_buf,
             );
@@ -838,11 +838,8 @@ mod tests {
         fn should_panic_on_zero_channels() {
             let out_buf = &mut [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
 
-            let _ = RingMsgWrite2::try_write_spec(
-                SignalSpec::new(44000, Channels::empty()),
-                10,
-                out_buf,
-            );
+            let _ =
+                RingMsgWrite2::try_write_spec(&AudioSpec::new(44000, Channels::None), 10, out_buf);
         }
 
         #[test]
@@ -851,7 +848,7 @@ mod tests {
             let out_buf = &mut [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
 
             let _ = RingMsgWrite2::try_write_spec(
-                SignalSpec::new(0, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(0, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 10,
                 out_buf,
             );

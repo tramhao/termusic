@@ -360,7 +360,7 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
         let (spec, current_span_len) = decoder.get_spec();
         let total_duration = decoder.total_duration();
         let (prod, cons) = AsyncRingSource::new(
-            spec,
+            &spec,
             total_duration,
             current_span_len,
             common_options.ringbuf_size,
@@ -431,7 +431,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
         }
         let new_spec = decoder.get_spec();
         if spec_len != new_spec {
-            prod.new_spec(new_spec.0, new_spec.1).await.ok()?;
+            prod.new_spec(&new_spec.0, new_spec.1).await.ok()?;
         }
     }
 }
@@ -450,7 +450,7 @@ async fn decode_task_seek_fut(
     decoder.try_seek(seek_data.0).ok()?;
 
     let spec = decoder.get_spec();
-    prod.process_seek(spec.0, spec.1, seek_data.1).await;
+    prod.process_seek(&spec.0, spec.1, seek_data.1).await;
 
     Some(())
 }
