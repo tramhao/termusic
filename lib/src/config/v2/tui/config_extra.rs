@@ -2,6 +2,7 @@ use std::{borrow::Cow, fmt::Write as _, path::Path};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use serde_content_ref::{Content, ContentRefDeserializer};
 
 use crate::utils::get_app_config_path;
 
@@ -33,10 +34,8 @@ impl<'a, 'de> Deserialize<'de> for TuiConfigVersionedDefaulted<'a> {
     where
         D: serde::Deserializer<'de>,
     {
-        // Note that those are marked "private", but are used in the derives, and there is no to me known public way, but saves some implementation complexity
-        let content =
-            <serde::__private::de::Content<'_> as serde::Deserialize>::deserialize(deserializer)?;
-        let deserializer = serde::__private::de::ContentRefDeserializer::<D::Error>::new(&content);
+        let content = Content::deserialize(deserializer)?;
+        let deserializer = ContentRefDeserializer::<D::Error>::new(&content);
 
         let mut err_res = String::new();
 
