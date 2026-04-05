@@ -92,8 +92,7 @@ pub struct Symphonia {
     decoder: Box<dyn codecs::audio::AudioDecoder>,
     current_frame_offset: usize,
     probed: Box<dyn FormatReader>,
-    buffer: Vec<SampleType>,
-    buffer_frame_len: usize,
+    buffer: OurAudioBuffer,
     spec: AudioSpec,
     duration: Option<Duration>,
     track_id: u32,
@@ -165,11 +164,11 @@ impl Symphonia {
         };
 
         // decode the first part, to get the spec and initial buffer
-        let mut buffer = None;
+        let mut buffer = OurAudioBuffer::new();
         let DecodeLoopResult { spec } = decode_loop(
             &mut *probed,
             &mut *decoder,
-            BufferInputType::New(&mut buffer),
+            &mut buffer,
             track_id,
             time_base,
             &mut media_title_tx,
@@ -178,16 +177,12 @@ impl Symphonia {
         )?
         .ok_or(SymphoniaDecoderError::UnexpectedEOFInit)?;
 
-        // safe to unwrap because "decode_loop" ensures it will be set
-        let (buffer, buffer_frame_len) = buffer.unwrap();
-
         Ok((
             Self {
                 decoder,
                 current_frame_offset: 0,
                 probed,
                 buffer,
-                buffer_frame_len,
                 spec,
                 duration,
                 track_id,
@@ -210,35 +205,6 @@ impl Symphonia {
         })
     }
 
-    /// Copy passed [`GenericAudioBufferRef`] into a new Buffer
-    ///
-    /// also see [`Self::maybe_reuse_buffer`]
-    #[inline]
-    #[allow(clippy::needless_pass_by_value)]
-    fn get_buffer_new(decoded: GenericAudioBufferRef<'_>) -> (Vec<SampleType>, usize) {
-        let mut buffer = Vec::<SampleType>::with_capacity(decoded.capacity());
-        decoded.copy_to_vec_interleaved(&mut buffer);
-        (buffer, decoded.frames())
-    }
-
-    /// Copy passed [`GenericAudioBufferRef`] into the existing Buffer, if possible, otherwise create a new
-    #[inline]
-    fn maybe_reuse_buffer(
-        buffer: (&mut Vec<SampleType>, &mut usize),
-        decoded: GenericAudioBufferRef<'_>,
-    ) {
-        // calculate what capacity the Buffer will need
-        let required_capacity = decoded.byte_len_as::<SampleType>();
-        // avoid a allocation if not actually necessary
-        // this also covers the case if the spec changed from the buffer and decoded
-        if required_capacity <= buffer.0.capacity() {
-            decoded.copy_to_vec_interleaved(buffer.0);
-            *buffer.1 = decoded.frames();
-        } else {
-            (*buffer.0, *buffer.1) = Self::get_buffer_new(decoded);
-        }
-    }
-
     /// Run a potential decode, if the buffer is exhausted.
     ///
     /// No-op if buffer is not exhausted.
@@ -249,7 +215,7 @@ impl Symphonia {
             let DecodeLoopResult { spec } = decode_loop(
                 &mut *self.probed,
                 &mut *self.decoder,
-                BufferInputType::Existing((&mut self.buffer, &mut self.buffer_frame_len)),
+                &mut self.buffer,
                 self.track_id,
                 self.time_base,
                 &mut self.media_title_tx,
@@ -306,7 +272,7 @@ impl Symphonia {
 impl Source for Symphonia {
     #[inline]
     fn current_span_len(&self) -> Option<usize> {
-        Some(self.buffer_frame_len)
+        Some(self.buffer.frame_len)
     }
 
     #[inline]
@@ -382,6 +348,60 @@ impl Iterator for Symphonia {
     }
 }
 
+/// Our implementation of a Sample Buffer, as it does not exist in Symphonia 0.6 anymore.
+#[derive(Debug, Clone, PartialEq)]
+struct OurAudioBuffer {
+    /// The interleaved sample buffer
+    buf: Vec<SampleType>,
+    /// The frame length. How many `samples / channels` there are.
+    frame_len: usize,
+}
+
+impl OurAudioBuffer {
+    fn new() -> Self {
+        Self {
+            buf: Vec::new(),
+            frame_len: 0,
+        }
+    }
+
+    /// Copy passed [`GenericAudioBufferRef`] into our Buffer
+    #[inline]
+    fn copy_buffers(&mut self, decoded: &GenericAudioBufferRef<'_>) {
+        let required_capacity = decoded.byte_len_as::<SampleType>();
+        self.buf.resize(required_capacity, SampleType::default());
+
+        decoded.copy_to_vec_interleaved(&mut self.buf);
+        self.frame_len = decoded.frames();
+    }
+
+    /// Clears the buffer and frame length
+    fn clear(&mut self) {
+        self.buf.clear();
+        self.frame_len = 0;
+    }
+
+    /// Get if the inner buffer is empty
+    fn is_empty(&self) -> bool {
+        self.buf.is_empty()
+    }
+
+    /// Get the length of the buffer
+    fn len(&self) -> usize {
+        self.buf.len()
+    }
+
+    /// Get a value at the index
+    fn get(&self, index: usize) -> Option<&SampleType> {
+        self.buf.get(index)
+    }
+
+    /// Get the whole buffer as a slice
+    fn as_slice(&self) -> &[SampleType] {
+        &self.buf
+    }
+}
+
 /// Error that can happen when creating a decoder.
 #[derive(Debug, Clone)]
 pub enum SymphoniaDecoderError {
@@ -446,33 +466,14 @@ struct DecodeLoopResult {
     spec: AudioSpec,
 }
 
-// is there maybe a better option for this?
-enum BufferInputType<'a> {
-    /// Allocate a new Buffer in the specified location (without unsafe)
-    New(&'a mut Option<(Vec<SampleType>, usize)>),
-    /// Try to reuse the provided Buffer
-    Existing((&'a mut Vec<SampleType>, &'a mut usize)),
-}
-
-impl std::fmt::Debug for BufferInputType<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::New(_) => f.debug_tuple("New").finish(),
-            Self::Existing(_) => f.debug_tuple("Existing").finish(),
-        }
-    }
-}
-
 #[allow(clippy::too_many_arguments)]
 /// Decode until finding a valid packet and get the samples from it
-///
-/// If [`BufferInputType::New`] is used, it is guaranteed to be [`Some`] if function result is [`Ok`].
 ///
 /// If `Ok(None)` is returned, it means End-of-File (EOF/EOS).
 fn decode_loop(
     format: &mut dyn FormatReader,
     decoder: &mut dyn codecs::audio::AudioDecoder,
-    buffer: BufferInputType<'_>,
+    buffer: &mut OurAudioBuffer,
     track_id: u32,
     time_base: Option<TimeBase>,
     media_title_tx: &mut MediaTitleTxWrap,
@@ -540,14 +541,7 @@ fn decode_loop(
 
     let spec = audio_buf.spec().clone();
 
-    match buffer {
-        BufferInputType::New(buffer) => {
-            *buffer = Some(Symphonia::get_buffer_new(audio_buf));
-        }
-        BufferInputType::Existing(buffer) => {
-            Symphonia::maybe_reuse_buffer(buffer, audio_buf);
-        }
-    }
+    buffer.copy_buffers(&audio_buf);
 
     Ok(Some(DecodeLoopResult { spec }))
 }
