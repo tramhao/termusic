@@ -16,6 +16,7 @@
 - Fix(tui): change search popup load keys to use `library_keys.load_track` instead of `navigation_keys.right`.
 - Fix(tui): fix yt-dlp download error caused by orx treeview.
 - Fix(tui): fix netease lyric download error.
+- Fix(tui): fix migu search/lyric download error.
 - Fix(server): on rusty backend with `soundtouch`, fix a issue causing seemingly long delay between tempo changes.
 - Fix(server): on rusty backend with `soundtouch`, fix not being able to build on "eager" linkers (ex windows-msvc and windows-gnu)
 - Fix(server and tui): server cannot be closed properly under windows, configuration are not saved.

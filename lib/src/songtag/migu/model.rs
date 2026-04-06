@@ -1,7 +1,7 @@
 use crate::songtag::UrlTypes;
 
 use super::super::{ServiceProvider, SongTag};
-use serde_json::{Value, from_str, json};
+use serde_json::{Value, from_str};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MiguParseError {
@@ -54,9 +54,9 @@ fn check_msg(value: &Value) -> Result<()> {
 
 /// Check the `success` property for if there was a error
 fn check_success(value: &Value) -> Result<()> {
-    let success = get_code_prop(value, "success")?;
+    let success = get_code_prop(value, "code")?;
 
-    if !success.eq(&true) {
+    if !success.eq("000000") {
         let message = success.to_string();
 
         return Err(MiguParseError::UnexpectedStatus {
@@ -70,6 +70,7 @@ fn check_success(value: &Value) -> Result<()> {
     Ok(())
 }
 
+#[allow(unused)]
 /// Try to get the lyric lrc content from the given result
 pub fn to_lyric(json: &str) -> Result<String> {
     let value = from_str::<Value>(json)?;
@@ -85,6 +86,7 @@ pub fn to_lyric(json: &str) -> Result<String> {
     Ok(lyric)
 }
 
+#[allow(unused)]
 /// Try to get the picture url from the json response
 pub fn to_pic_url(json: &str) -> Result<String> {
     let value = from_str::<Value>(json)?;
@@ -107,9 +109,11 @@ pub fn to_song_info(json: &str) -> Result<Vec<SongTag>> {
     check_success(&value)?;
 
     let array = value
-        .get("musics")
+        .get("songResultData")
+        .and_then(Value::as_object)
+        .and_then(|v| v.get("result"))
         .and_then(Value::as_array)
-        .ok_or(MiguParseError::MissingProperty("musics"))?;
+        .ok_or(MiguParseError::MissingProperty("songResultData.result"))?;
 
     let mut vec: Vec<SongTag> = Vec::new();
 
@@ -127,20 +131,32 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
     // not using "Value::to_string()" as that produces a escaped string
 
     let pic_id = v
-        .get("cover")
-        .and_then(Value::as_str)
-        .map(ToOwned::to_owned);
-    let artist = v
-        .get("singerName")
-        .and_then(Value::as_str)
-        .map(ToOwned::to_owned);
-    let title = v
-        .get("songName")
+        .get("imgItems")
+        .and_then(|v| v.get(0))
+        .and_then(|v| v.get("img"))
         .and_then(Value::as_str)
         .map(ToOwned::to_owned);
 
+    let artist = v
+        .get("singers")
+        .and_then(|v| v.get(0))
+        .and_then(|v| v.get("name"))
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
+
+    let title = v.get("name").and_then(Value::as_str).map(ToOwned::to_owned);
+
     let album_id = v
-        .get("albumId")
+        .get("albums")
+        .and_then(|v| v.get(0))
+        .and_then(|v| v.get("id"))
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
+
+    let album = v
+        .get("albums")
+        .and_then(|v| v.get(0))
+        .and_then(|v| v.get("name"))
         .and_then(Value::as_str)
         .map(ToOwned::to_owned);
 
@@ -152,7 +168,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         });
 
     let lyric_id = v
-        .get("copyrightId")
+        .get("lyricUrl")
         .and_then(Value::as_str)
         .map(ToOwned::to_owned);
 
@@ -163,13 +179,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
         song_id,
         title,
         artist,
-        album: Some(
-            v.get("albumName")
-                .unwrap_or(&json!("Unknown Album"))
-                .as_str()
-                .unwrap_or("")
-                .to_owned(),
-        ),
+        album,
         pic_id,
         lang_ext: Some("migu".to_string()),
         service_provider: ServiceProvider::Migu,

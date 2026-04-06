@@ -80,7 +80,7 @@ pub async fn search(search_str: &str, tx_done: impl Fn(SongtagSearchResult) + Se
 
     let handle_migu = async {
         let migu_api = migu::Api::new();
-        migu_api.search_recording(search_str, 0, 30).await
+        migu_api.search_recording(search_str, 1, 30).await
     };
 
     let handle_kugou = async {

@@ -1,10 +1,11 @@
 mod model;
 
 use anyhow::anyhow;
-use bytes::Buf;
-use lofty::picture::Picture;
-use model::{to_lyric, to_pic_url, to_song_info};
+use image::ImageFormat;
+use lofty::picture::{MimeType, Picture, PictureType};
+use model::to_song_info;
 use reqwest::{Client, ClientBuilder};
+use std::io::Cursor;
 use std::time::Duration;
 
 use super::{
@@ -12,11 +13,9 @@ use super::{
     service::{SongTagService, SongTagServiceError, SongTagServiceErrorWhere},
 };
 
-const URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";
-const URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
-const URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
-const REFERER: &str = "https://m.music.migu.cn";
-
+const URL_SEARCH_MIGU: &str = "https://pd.musicapp.migu.cn/MIGUM2.0/v1.0/content/search_all.do?&ua=Android_migu&version=5.0.1";
+const REFERER: &str = "https://music.migu.cn";
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 pub struct Api {
     client: Client,
 }
@@ -48,22 +47,18 @@ impl SongTagService for Api {
         offset: u32,
         limit: u32,
     ) -> std::result::Result<Vec<SongTag>, super::service::SongTagServiceError<Self::Error>> {
-        let offset = offset.to_string();
-        let limit = limit.to_string();
+        // let offset = offset.to_string();
+        // let limit = limit.to_string();
 
-        let query_params = vec![
-            ("keyword", keywords),
-            ("pgc", &offset),
-            ("rows", &limit),
-            // i assume "2" stands for type "Song"
-            ("type", "2"),
-        ];
+        let url = format!(
+            "{URL_SEARCH_MIGU}&text={keywords}&pageNo={offset}&pageSize={limit}&searchSwitch="
+        );
 
         let result = self
             .client
-            .post(URL_SEARCH_MIGU)
+            .get(&url)
+            .header("User-Agent", USER_AGENT)
             .header("Referer", REFERER)
-            .query(&query_params)
             .send()
             .await
             .map_err(anyhow::Error::from)?
@@ -87,29 +82,24 @@ impl SongTagService for Api {
             ));
         }
 
-        let Some(lyric_id) = song.lyric_id.as_ref() else {
-            return Err(SongTagServiceError::Other(anyhow!(
+        if let Some(lyric_id) = song.lyric_id.as_ref() {
+            let result = self
+                .client
+                .get(lyric_id)
+                .header("Referer", REFERER)
+                .send()
+                .await
+                .map_err(anyhow::Error::from)?
+                .text()
+                .await
+                .map_err(anyhow::Error::from)?;
+
+            Ok(result)
+        } else {
+            Err(SongTagServiceError::Other(anyhow!(
                 "Provided songtag does not have a lyric_id!"
-            )));
-        };
-
-        let query_params = &[("copyrightId", &lyric_id)];
-
-        let result = self
-            .client
-            .get(URL_LYRIC_MIGU)
-            .header("Referer", REFERER)
-            .query(&query_params)
-            .send()
-            .await
-            .map_err(anyhow::Error::from)?
-            .text()
-            .await
-            .map_err(anyhow::Error::from)?;
-
-        to_lyric(&result).map_err(|err| {
-            SongTagServiceError::Other(anyhow!(err).context("Extract Lyric text from result"))
-        })
+            )))
+        }
     }
 
     async fn get_picture(
@@ -123,36 +113,38 @@ impl SongTagService for Api {
             ));
         }
 
-        let query_params = &[("songId", &song.song_id)];
+        if let Some(url) = song.pic_id.as_ref() {
+            let result = self
+                .client
+                .get(url)
+                .send()
+                .await
+                .map_err(anyhow::Error::from)?;
 
-        let result = self
-            .client
-            .get(URL_PIC_MIGU)
-            .header("Referer", REFERER)
-            .query(query_params)
-            .send()
-            .await
-            .map_err(anyhow::Error::from)?
-            .text()
-            .await
-            .map_err(anyhow::Error::from)?;
+            let bytes = result.bytes().await.map_err(anyhow::Error::from)?;
 
-        let pic_url = to_pic_url(&result).map_err(|err| {
-            SongTagServiceError::Other(anyhow!(err).context("Extract picture url from result"))
-        })?;
-        let url = format!("https:{pic_url}");
+            let format = image::guess_format(&bytes).map_err(anyhow::Error::from)?;
 
-        let result = self
-            .client
-            .get(url)
-            .send()
-            .await
-            .map_err(anyhow::Error::from)?;
+            let picture = if format == ImageFormat::WebP {
+                let img = image::load_from_memory(&bytes).map_err(anyhow::Error::from)?;
+                let mut jpg_buf = Vec::new();
+                img.write_to(&mut Cursor::new(&mut jpg_buf), ImageFormat::Jpeg)
+                    .map_err(anyhow::Error::from)?;
 
-        let mut reader = result.bytes().await.map_err(anyhow::Error::from)?.reader();
-        let picture = Picture::from_reader(&mut reader).map_err(anyhow::Error::from)?;
+                Picture::unchecked(jpg_buf)
+                    .pic_type(PictureType::CoverFront)
+                    .mime_type(MimeType::Jpeg)
+                    .build()
+            } else {
+                Picture::from_reader(&mut Cursor::new(bytes)).map_err(anyhow::Error::from)?
+            };
 
-        Ok(picture)
+            Ok(picture)
+        } else {
+            Err(SongTagServiceError::Other(anyhow!(
+                "Provided songtag does not have a pic_id!"
+            )))
+        }
     }
 
     async fn download_recording(
