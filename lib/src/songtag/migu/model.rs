@@ -203,6 +203,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn should_parse_songinfo() {
         const ARTIST: &str = "Some Artist";
 
