@@ -2,7 +2,9 @@ name: Release
 on:
   push:
     tags:
-    - 'v[0-99]+.[0-99]+.[0-99]+'
+      - 'v[0-99]+.[0-99]+.[0-99]+'
+    branches: # validate workflow works as expected
+      - "*"
 
 env:
   BIN_NAME: termusic
@@ -57,14 +59,14 @@ jobs:
 
       - name: Install developer package dependencies (MacOS)
         if: runner.os == 'macos'
-        run: | 
+        run: |
             brew update
             brew install protobuf
-  
+
       - name: Install developer package dependencies (Windows)
         if: runner.os == 'windows'
         run: choco install protoc
-      
+
       - name: Run cargo test
         run: cargo test --release --target ${{ matrix.build.target }}
 
@@ -161,6 +163,7 @@ jobs:
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
