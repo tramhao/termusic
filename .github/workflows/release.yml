@@ -51,53 +51,55 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
 
-      - name: Install developer package dependencies
-        if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux'
+      - name: Install developer package dependencies (Linux)
+        if: runner.os == 'linux'
         run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev libmpv-dev
 
-      - name: Install developer package dependencies
-        if: matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
+      - name: Install developer package dependencies (MacOS)
+        if: runner.os == 'macos'
         run: | 
             brew update
             brew install protobuf
   
-      - name: Install developer package dependencies
-        if: matrix.build == 'x86_64-windows'
-        run: choco install protoc 
+      - name: Install developer package dependencies (Windows)
+        if: runner.os == 'windows'
+        run: choco install protoc
       
-      - name: Run cargo test (cargo)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos' || matrix.build == 'x86_64-windows')
+      - name: Run cargo test
         run: cargo test --release --target ${{ matrix.target }}
 
-      - name: Build release binary (cargo x86_64-linux and aarch64-linux)
-        if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux'
+      - name: Build release binary (Linux)
+        if: runner.os == 'linux'
         run: cargo build --features cover,all-backends,rusty-soundtouch --release --all --target ${{ matrix.target }}
 
-      - name: Build release binary (cargo x86_64-macos and aarch64-macos)
-        if: matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
+      - name: Build release binary (MacOS)
+        if: runner.os == 'macos'
         run: cargo build --features rusty-soundtouch,rusty-simd --release --all --target ${{ matrix.target }}
 
-      - name: Build release binary (cargo x86_64-windows)
-        if: matrix.build == 'x86_64-windows'
+      - name: Build release binary (Windows)
+        if: runner.os == 'windows'
         run: cargo build --features rusty-soundtouch --release --all --target ${{ matrix.target }}
 
-      - name: Strip release binary (linux and macos)
-        if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
+      - name: Strip release binary (Linux & MacOS)
+        if: runner.os == 'linux' || runner.os == 'macos'
         run: |
           strip "target/${{ matrix.target }}/release/$BIN_NAME"
           strip "target/${{ matrix.target }}/release/$BIN_NAME_SERVER"
 
-      - name: Build archive
+      - name: Build archive (Windows)
+        if: runner.os == 'windows'
+        run: |
+          mkdir dist
+          cp "target/${{ matrix.target }}/release/$BIN_NAME.exe" "dist/"
+          cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER.exe" "dist/"
+
+      - name: Build archive (Unix)
+        if: runner.os != 'windows'
         shell: bash
         run: |
           mkdir dist
-          if [ "${{ matrix.os }}" = "windows-2019" ]; then
-            cp "target/${{ matrix.target }}/release/$BIN_NAME.exe" "dist/"
-            cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER.exe" "dist/"
-          else
-            cp "target/${{ matrix.target }}/release/$BIN_NAME" "dist/"
-            cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER" "dist/"
-          fi
+          cp "target/${{ matrix.target }}/release/$BIN_NAME" "dist/"
+          cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER" "dist/"
 
       - uses: actions/upload-artifact@v7
         with:
