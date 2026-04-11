@@ -6,8 +6,8 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-    paths:
-      - ".github/workflows/release.yml" # trigger this workflow to check itself being valid
+    # paths:
+    #   - ".github/workflows/release.yml" # trigger this workflow to check itself being valid
   pull_request:
     paths:
       - ".github/workflows/release.yml" # trigger this workflow to check itself being valid
