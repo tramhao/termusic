@@ -6,6 +6,9 @@ on:
     branches: # validate workflow works as expected
       - "*"
 
+permissions:
+  contents: read
+
 env:
   BIN_NAME: termusic
   BIN_NAME_SERVER: termusic-server
@@ -112,6 +115,8 @@ jobs:
     name: Publish
     needs: [dist]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # for actions/checkout to fetch code and for "upload-release-action" to actually set a release
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
