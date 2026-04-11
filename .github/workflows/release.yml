@@ -24,22 +24,31 @@ jobs:
           - archive: x86_64-linux
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            features: cover,all-backends,rusty-soundtouch
+
           # linux arm64
           - archive: aarch64-linux
             os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
+            features: cover,all-backends,rusty-soundtouch
+
           # mac x86
           - archive: x86_64-macos
             os: macos-latest
             target: x86_64-apple-darwin
+            features: rusty-soundtouch,rusty-simd
+
           # mac arm64
           - archive: aarch64-macos
             os: macos-latest
             target: aarch64-apple-darwin
+            features: rusty-soundtouch,rusty-simd
+
           # windows x86
           - archive: x86_64-windows
             os: windows-latest
             target: x86_64-pc-windows-msvc
+            features: rusty-soundtouch
 
     steps:
       - name: Checkout sources
@@ -70,17 +79,8 @@ jobs:
       - name: Run cargo test
         run: cargo test --release --target ${{ matrix.build.target }}
 
-      - name: Build release binary (Linux)
-        if: runner.os == 'linux'
-        run: cargo build --features cover,all-backends,rusty-soundtouch --release --all --target ${{ matrix.build.target }}
-
-      - name: Build release binary (MacOS)
-        if: runner.os == 'macos'
-        run: cargo build --features rusty-soundtouch,rusty-simd --release --all --target ${{ matrix.build.target }}
-
-      - name: Build release binary (Windows)
-        if: runner.os == 'windows'
-        run: cargo build --features rusty-soundtouch --release --all --target ${{ matrix.build.target }}
+      - name: Build release binary
+        run: cargo build --features ${{ matrix.build.features }} --release --all --target ${{ matrix.build.target }}
 
       - name: Strip release binary (Linux & MacOS)
         if: runner.os == 'linux' || runner.os == 'macos'
