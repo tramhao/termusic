@@ -91,7 +91,7 @@ jobs:
       - name: Build release binary
         run: cargo build --release --workspace --features ${{ matrix.build.features }} --target ${{ matrix.build.target }}
 
-      - name: Strip release binary (Linux & MacOS)
+      - name: Strip release binary (Unix)
         if: runner.os == 'linux' || runner.os == 'macos'
         run: |
           strip "target/${{ matrix.build.target }}/release/${{ env.BIN_NAME }}"
