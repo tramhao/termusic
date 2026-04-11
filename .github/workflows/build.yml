@@ -12,6 +12,7 @@ jobs:
   lint:
     name: Lint (Linux)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -46,6 +47,7 @@ jobs:
         os: [ubuntu-latest, ubuntu-24.04-arm]
         rust: [stable, "1.88"]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -79,6 +81,7 @@ jobs:
         rust: [stable]
         target: [aarch64-apple-darwin, x86_64-apple-darwin]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -117,6 +120,7 @@ jobs:
         os: [windows-latest]
         rust: [stable]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6

@@ -24,6 +24,7 @@ jobs:
   dist:
     name: Dist
     runs-on: ${{ matrix.build.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
@@ -58,7 +59,6 @@ jobs:
             os: windows-latest
             target: x86_64-pc-windows-msvc
             features: rusty-soundtouch
-
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -121,6 +121,7 @@ jobs:
     name: Publish
     needs: [dist]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write  # for actions/checkout to fetch code and for "upload-release-action" to actually set a release
     steps:
