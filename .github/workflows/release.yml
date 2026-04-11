@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v[0-99]+.[0-99]+.[0-99]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     branches: # validate workflow works as expected
       - "*"
 
@@ -69,8 +69,8 @@ jobs:
       - name: Install developer package dependencies (MacOS)
         if: runner.os == 'macos'
         run: |
-            brew update
-            brew install protobuf
+          brew update
+          brew install protobuf
 
       - name: Install developer package dependencies (Windows)
         if: runner.os == 'windows'
@@ -120,7 +120,8 @@ jobs:
 
       - uses: actions/download-artifact@v8
 
-      - run: ls -al bins-*
+      - name: List all input binaries
+        run: ls -al bins-*
 
       - name: Calculate tag name
         run: |
@@ -163,14 +164,14 @@ jobs:
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
+        # only actually publish things if a tag started this workflow
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
           file_glob: true
-          # tag: ${{ steps.tagname.outputs.TAG }}
           tag: ${{ github.ref }}
-          overwrite: true
+          # overwrite: true
 
       - name: Extract version
         id: extract-version
