@@ -85,23 +85,23 @@ jobs:
       - name: Strip release binary (Linux & MacOS)
         if: runner.os == 'linux' || runner.os == 'macos'
         run: |
-          strip "target/${{ matrix.build.target }}/release/$BIN_NAME"
-          strip "target/${{ matrix.build.target }}/release/$BIN_NAME_SERVER"
+          strip "target/${{ matrix.build.target }}/release/${{ env.BIN_NAME }}"
+          strip "target/${{ matrix.build.target }}/release/${{ env.BIN_NAME_SERVER }}"
 
       - name: Build archive (Windows)
         if: runner.os == 'windows'
         run: |
           mkdir dist
-          cp "target/${{ matrix.build.target }}/release/$BIN_NAME.exe" "dist/"
-          cp "target/${{ matrix.build.target }}/release/$BIN_NAME_SERVER.exe" "dist/"
+          cp "target/${{ matrix.build.target }}/release/${{ env.BIN_NAME }}.exe" "dist/"
+          cp "target/${{ matrix.build.target }}/release/${{ env.BIN_NAME_SERVER }}.exe" "dist/"
 
       - name: Build archive (Unix)
         if: runner.os != 'windows'
         shell: bash
         run: |
           mkdir dist
-          cp "target/${{ matrix.build.target }}/release/$BIN_NAME" "dist/"
-          cp "target/${{ matrix.build.target }}/release/$BIN_NAME_SERVER" "dist/"
+          cp "target/${{ matrix.build.target }}/release/${{ env.BIN_NAME }}" "dist/"
+          cp "target/${{ matrix.build.target }}/release/${{ env.BIN_NAME_SERVER }}" "dist/"
 
       - uses: actions/upload-artifact@v7
         with:
