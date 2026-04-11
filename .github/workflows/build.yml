@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: '00 01 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint (Linux)
