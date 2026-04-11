@@ -77,10 +77,10 @@ jobs:
         run: choco install protoc
 
       - name: Run cargo test
-        run: cargo test --release --features ${{ matrix.build.features }} --target ${{ matrix.build.target }}
+        run: cargo test --release --workspace --features ${{ matrix.build.features }} --target ${{ matrix.build.target }}
 
       - name: Build release binary
-        run: cargo build --release --features ${{ matrix.build.features }} --all --target ${{ matrix.build.target }}
+        run: cargo build --release --workspace --features ${{ matrix.build.features }} --target ${{ matrix.build.target }}
 
       - name: Strip release binary (Linux & MacOS)
         if: runner.os == 'linux' || runner.os == 'macos'
