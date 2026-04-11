@@ -12,32 +12,32 @@ env:
 jobs:
   dist:
     name: Dist
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.build.os }}
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
-        build: [x86_64-linux, aarch64-linux, x86_64-macos, x86_64-windows, aarch64-macos] # x86_64-win-gnu, win32-msvc
-        include:
-        - build: x86_64-linux
-          os: ubuntu-latest
-          rust: stable
-          target: x86_64-unknown-linux-gnu
-        - build: aarch64-linux
-          os: ubuntu-24.04-arm
-          rust: stable
-          target: aarch64-unknown-linux-gnu
-        - build: x86_64-macos
-          os: macos-latest
-          rust: stable
-          target: x86_64-apple-darwin
-        - build: aarch64-macos
-          os: macos-latest
-          rust: stable
-          target: aarch64-apple-darwin
-        - build: x86_64-windows
-          os: windows-latest
-          rust: stable
-          target: x86_64-pc-windows-msvc
+        rust: [stable]
+        build:
+          # linux x86
+          - archive: x86_64-linux
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          # linux arm64
+          - archive: aarch64-linux
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          # mac x86
+          - archive: x86_64-macos
+            os: macos-latest
+            target: x86_64-apple-darwin
+          # mac arm64
+          - archive: aarch64-macos
+            os: macos-latest
+            target: aarch64-apple-darwin
+          # windows x86
+          - archive: x86_64-windows
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
 
     steps:
       - name: Checkout sources
@@ -49,7 +49,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.build.target }}
 
       - name: Install developer package dependencies (Linux)
         if: runner.os == 'linux'
@@ -66,44 +66,44 @@ jobs:
         run: choco install protoc
       
       - name: Run cargo test
-        run: cargo test --release --target ${{ matrix.target }}
+        run: cargo test --release --target ${{ matrix.build.target }}
 
       - name: Build release binary (Linux)
         if: runner.os == 'linux'
-        run: cargo build --features cover,all-backends,rusty-soundtouch --release --all --target ${{ matrix.target }}
+        run: cargo build --features cover,all-backends,rusty-soundtouch --release --all --target ${{ matrix.build.target }}
 
       - name: Build release binary (MacOS)
         if: runner.os == 'macos'
-        run: cargo build --features rusty-soundtouch,rusty-simd --release --all --target ${{ matrix.target }}
+        run: cargo build --features rusty-soundtouch,rusty-simd --release --all --target ${{ matrix.build.target }}
 
       - name: Build release binary (Windows)
         if: runner.os == 'windows'
-        run: cargo build --features rusty-soundtouch --release --all --target ${{ matrix.target }}
+        run: cargo build --features rusty-soundtouch --release --all --target ${{ matrix.build.target }}
 
       - name: Strip release binary (Linux & MacOS)
         if: runner.os == 'linux' || runner.os == 'macos'
         run: |
-          strip "target/${{ matrix.target }}/release/$BIN_NAME"
-          strip "target/${{ matrix.target }}/release/$BIN_NAME_SERVER"
+          strip "target/${{ matrix.build.target }}/release/$BIN_NAME"
+          strip "target/${{ matrix.build.target }}/release/$BIN_NAME_SERVER"
 
       - name: Build archive (Windows)
         if: runner.os == 'windows'
         run: |
           mkdir dist
-          cp "target/${{ matrix.target }}/release/$BIN_NAME.exe" "dist/"
-          cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER.exe" "dist/"
+          cp "target/${{ matrix.build.target }}/release/$BIN_NAME.exe" "dist/"
+          cp "target/${{ matrix.build.target }}/release/$BIN_NAME_SERVER.exe" "dist/"
 
       - name: Build archive (Unix)
         if: runner.os != 'windows'
         shell: bash
         run: |
           mkdir dist
-          cp "target/${{ matrix.target }}/release/$BIN_NAME" "dist/"
-          cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER" "dist/"
+          cp "target/${{ matrix.build.target }}/release/$BIN_NAME" "dist/"
+          cp "target/${{ matrix.build.target }}/release/$BIN_NAME_SERVER" "dist/"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: bins-${{ matrix.build }}
+          name: bins-${{ matrix.build.archive }}
           path: dist
 
   publish:
