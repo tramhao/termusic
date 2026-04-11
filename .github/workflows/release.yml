@@ -1,6 +1,8 @@
 name: Release
 on:
   workflow_dispatch: # allow manually running the workflow on a given branch to check that it works before running a release
+  schedule:
+    - cron: '0 0 * * 1' # Once every monday
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
