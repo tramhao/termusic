@@ -8,6 +8,7 @@
 - Change: provide arm64 binaries for macos
 - Change: add `cargo-binstall` metadata to tui and server crates for pre-built binary installs.
 - Fix: change default port to `5101` to be below 49k
+- Fix server cannot be closed properly under windows, configuration are not saved.
 - Fix(tui): fix that "native" and "termusic default" theme also get auto-selected in config editor, if active.
 - Fix(tui): fix a bunch of places where colors were not applied at all or not correctly applied.
 - Fix(tui): fix help popup not having "fast navigation" (like PageUp / PageDown, Home / End).
@@ -19,10 +20,8 @@
 - Fix(tui): fix migu search/lyric download error.
 - Fix(server): on rusty backend with `soundtouch`, fix a issue causing seemingly long delay between tempo changes.
 - Fix(server): on rusty backend with `soundtouch`, fix not being able to build on "eager" linkers (ex windows-msvc and windows-gnu)
-- Fix(server and tui): server cannot be closed properly under windows, configuration are not saved.
 - Feat: add ability to control startup playing state behavior.
 - Feat: add playlist loop mode to only play the playlist once, then stop.
-- Feat: add ability to control startup playing state behavior.
 - Feat(tui): change default theme to be "Native".
 - Feat(server): change volume scaling from linear to cubic for better perceptual volume consistency.
 
