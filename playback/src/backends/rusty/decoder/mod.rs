@@ -1,16 +1,15 @@
-use std::{fmt, io::ErrorKind, num::NonZeroU64, sync::LazyLock, time::Duration};
+use std::{fmt, sync::LazyLock, time::Duration};
 
 use rodio::{ChannelCount, SampleRate};
 use symphonia::{
     core::{
-        audio::{AudioBufferRef, SampleBuffer, SignalSpec},
-        codecs::{self, CODEC_TYPE_NULL, CodecParameters, CodecRegistry},
+        audio::{AudioSpec, GenericAudioBufferRef},
+        codecs::{self, CodecParameters, audio::CODEC_ID_NULL_AUDIO, registry::CodecRegistry},
         errors::Error,
-        formats::{FormatOptions, FormatReader, SeekMode, SeekTo, Track},
+        formats::{FormatOptions, FormatReader, SeekMode, SeekTo, Track, TrackType, probe::Hint},
         io::MediaSourceStream,
-        meta::{MetadataOptions, MetadataRevision, StandardTagKey, Value},
-        probe::{Hint, ProbeResult, ProbedMetadata},
-        units::TimeBase,
+        meta::{MetadataOptions, MetadataRevision, StandardTag},
+        units::{self, TimeBase},
     },
     default::{get_probe, register_enabled_codecs},
 };
@@ -22,7 +21,11 @@ pub mod buffered_source;
 pub mod read_seek_source;
 
 fn is_codec_null(track: &Track) -> bool {
-    track.codec_params.codec == CODEC_TYPE_NULL
+    let Some(CodecParameters::Audio(audio_codec_params)) = track.codec_params.as_ref() else {
+        return true;
+    };
+
+    audio_codec_params.codec == CODEC_ID_NULL_AUDIO
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -81,20 +84,20 @@ static CODEC_REGISTRY: LazyLock<CodecRegistry> = LazyLock::new(|| {
     let mut registry = CodecRegistry::new();
     register_enabled_codecs(&mut registry);
     #[cfg(feature = "rusty-libopus")]
-    registry.register_all::<symphonia_adapter_libopus::OpusDecoder>();
+    registry.register_audio_decoder::<symphonia_adapter_libopus::OpusDecoder>();
     registry
 });
 
 pub struct Symphonia {
-    decoder: Box<dyn codecs::Decoder>,
+    decoder: Box<dyn codecs::audio::AudioDecoder>,
     current_frame_offset: usize,
-    probed: ProbeResult,
-    buffer: SampleBuffer<SampleType>,
-    spec: SignalSpec,
+    probed: Box<dyn FormatReader>,
+    buffer: OurAudioBuffer,
+    spec: AudioSpec,
     duration: Option<Duration>,
     track_id: u32,
     time_base: Option<TimeBase>,
-    seek_required_ts: Option<NonZeroU64>,
+    seek_required_ts: Option<units::Timestamp>,
 
     media_title_tx: MediaTitleTxWrap,
 }
@@ -105,7 +108,7 @@ impl Symphonia {
     /// The returned `Option<MediaTitleRx>` is always `Some` if parameter `media_title` is `true`.
     #[inline]
     pub fn new(
-        mss: MediaSourceStream,
+        mss: MediaSourceStream<'static>,
         gapless: bool,
         media_title: bool,
     ) -> Result<(Self, Option<MediaTitleRx>), SymphoniaDecoderError> {
@@ -113,45 +116,45 @@ impl Symphonia {
     }
 
     fn init(
-        mss: MediaSourceStream,
+        mss: MediaSourceStream<'static>,
         gapless: bool,
         media_title: bool,
     ) -> Result<(Self, Option<MediaTitleRx>), SymphoniaDecoderError> {
-        let mut probed = get_probe().format(
+        let mut probed = get_probe().probe(
             &Hint::default(),
             mss,
-            &FormatOptions {
-                // prebuild_seek_index: true,
-                // seek_index_fill_rate: 10,
-                enable_gapless: gapless,
-                ..Default::default() // enable_gapless: false,
-            },
-            &MetadataOptions::default(),
+            FormatOptions::default(),
+            MetadataOptions::default(),
         )?;
 
         // see https://github.com/pdeljanov/Symphonia/issues/258
         // TL;DR: "default_track" may choose a video track or a unknown codec, which will fail, this chooses the first non-NULL codec
         // because currently the only way to detect *something* is by comparing the codec_type to NULL
         let track = probed
-            .format
-            .default_track()
+            .default_track(TrackType::Audio)
             .and_then(|v| if is_codec_null(v) { None } else { Some(v) })
-            .or_else(|| probed.format.tracks().iter().find(|v| !is_codec_null(v)))
+            .or_else(|| probed.tracks().iter().find(|v| !is_codec_null(v)))
             .ok_or(SymphoniaDecoderError::NoStreams)?;
+
+        let Some(CodecParameters::Audio(audio_codec_params)) = track.codec_params.as_ref() else {
+            return Err(SymphoniaDecoderError::NoStreams);
+        };
 
         info!(
             "Found supported container with trackid {} and codectype {}",
-            track.id, track.codec_params.codec
+            track.id, audio_codec_params.codec
         );
 
-        let mut decoder = CODEC_REGISTRY.make(
-            &track.codec_params,
-            &codecs::DecoderOptions { verify: true },
+        let mut decoder = CODEC_REGISTRY.make_audio_decoder(
+            audio_codec_params,
+            &codecs::audio::AudioDecoderOptions::default()
+                .verify(true)
+                .gapless(gapless),
         )?;
 
-        let duration = Self::get_duration(&track.codec_params);
+        let duration = Self::get_duration(track);
         let track_id = track.id;
-        let time_base = track.codec_params.time_base;
+        let time_base = track.time_base;
         let mut media_title_tx = MediaTitleTxWrap::new();
 
         let media_title_rx = if media_title {
@@ -161,21 +164,18 @@ impl Symphonia {
         };
 
         // decode the first part, to get the spec and initial buffer
-        let mut buffer = None;
+        let mut buffer = OurAudioBuffer::new();
         let DecodeLoopResult { spec } = decode_loop(
-            &mut *probed.format,
+            &mut *probed,
             &mut *decoder,
-            BufferInputType::New(&mut buffer),
+            &mut buffer,
             track_id,
             time_base,
             &mut media_title_tx,
-            &mut probed.metadata,
+            // &mut probed.metadata,
             &mut None,
         )?
         .ok_or(SymphoniaDecoderError::UnexpectedEOFInit)?;
-
-        // safe to unwrap because "decode_loop" ensures it will be set
-        let buffer = buffer.unwrap();
 
         Ok((
             Self {
@@ -195,38 +195,14 @@ impl Symphonia {
         ))
     }
 
-    fn get_duration(params: &CodecParameters) -> Option<Duration> {
-        params.n_frames.and_then(|n_frames| {
-            params.time_base.map(|tb| {
-                let time = tb.calc_time(n_frames);
-                time.into()
+    fn get_duration(track: &Track) -> Option<Duration> {
+        track.num_frames.map(units::Duration::new).and_then(|dur| {
+            track.time_base.map(|tb| {
+                let ts = units::Timestamp::ZERO.saturating_add(dur);
+                let (secs, nanos) = tb.calc_time_saturating(ts).parts();
+                Duration::new(u64::try_from(secs).unwrap_or(0), nanos)
             })
         })
-    }
-
-    /// Copy passed [`AudioBufferRef`] into a new [`SampleBuffer`]
-    ///
-    /// also see [`Self::maybe_reuse_buffer`]
-    #[inline]
-    fn get_buffer_new(decoded: AudioBufferRef<'_>) -> SampleBuffer<SampleType> {
-        let duration = decoded.capacity() as u64;
-        let mut buffer = SampleBuffer::<SampleType>::new(duration, *decoded.spec());
-        buffer.copy_interleaved_ref(decoded);
-        buffer
-    }
-
-    /// Copy passed [`AudioBufferRef`] into the existing [`SampleBuffer`], if possible, otherwise create a new
-    #[inline]
-    fn maybe_reuse_buffer(buffer: &mut SampleBuffer<SampleType>, decoded: AudioBufferRef<'_>) {
-        // calculate what capacity the SampleBuffer will need (as per SampleBuffer internals)
-        let required_capacity = decoded.frames() * decoded.spec().channels.count();
-        // avoid a allocation if not actually necessary
-        // this also covers the case if the spec changed from the buffer and decoded
-        if required_capacity <= buffer.capacity() {
-            buffer.copy_interleaved_ref(decoded);
-        } else {
-            *buffer = Self::get_buffer_new(decoded);
-        }
     }
 
     /// Run a potential decode, if the buffer is exhausted.
@@ -237,13 +213,12 @@ impl Symphonia {
     pub fn decode_once(&mut self) -> Option<()> {
         if self.exhausted_buffer() {
             let DecodeLoopResult { spec } = decode_loop(
-                &mut *self.probed.format,
+                &mut *self.probed,
                 &mut *self.decoder,
-                BufferInputType::Existing(&mut self.buffer),
+                &mut self.buffer,
                 self.track_id,
                 self.time_base,
                 &mut self.media_title_tx,
-                &mut self.probed.metadata,
                 &mut self.seek_required_ts,
             )
             .inspect_err(|err| warn!("Error while decoding: {err:#?}"))
@@ -259,7 +234,7 @@ impl Symphonia {
 
     /// Get whether the current buffer is used up.
     pub fn exhausted_buffer(&self) -> bool {
-        self.buffer.samples().is_empty() || self.current_frame_offset == self.buffer.len()
+        self.buffer.is_empty() || self.current_frame_offset == self.buffer.len()
     }
 
     /// Increase the offset from which to read the buffer from.
@@ -269,8 +244,8 @@ impl Symphonia {
     }
 
     /// Get the current spec plus frame length.
-    pub fn get_spec(&self) -> (SignalSpec, usize) {
-        (self.spec, self.current_span_len().unwrap())
+    pub fn get_spec(&self) -> (AudioSpec, usize) {
+        (self.spec.clone(), self.current_span_len().unwrap())
     }
 
     /// Get the current buffer interpreted as u8(bytes) in native encoding.
@@ -278,9 +253,9 @@ impl Symphonia {
         #[allow(unsafe_code)]
         unsafe {
             // re-interpret the SampleType slice as a u8 slice with the same byte-length.
-            let len = size_of_val(self.buffer.samples());
+            let len = size_of_val(self.buffer.as_slice());
             std::slice::from_raw_parts(
-                self.buffer.samples()[self.current_frame_offset..]
+                self.buffer.as_slice()[self.current_frame_offset..]
                     .as_ptr()
                     .cast::<u8>(),
                 len,
@@ -290,20 +265,20 @@ impl Symphonia {
 
     /// Get the current buffer, but only the part has not been read yet.
     pub fn get_buffer(&self) -> &[SampleType] {
-        &self.buffer.samples()[self.current_frame_offset..]
+        &self.buffer.as_slice()[self.current_frame_offset..]
     }
 }
 
 impl Source for Symphonia {
     #[inline]
     fn current_span_len(&self) -> Option<usize> {
-        Some(self.buffer.samples().len())
+        Some(self.buffer.frame_len)
     }
 
     #[inline]
     #[allow(clippy::cast_possible_truncation)]
     fn channels(&self) -> ChannelCount {
-        u16::try_from(self.spec.channels.count())
+        u16::try_from(self.spec.channels().count())
             .ok()
             .and_then(|v| v.try_into().ok())
             .expect("Valid non-zero channel count")
@@ -312,7 +287,7 @@ impl Source for Symphonia {
     #[inline]
     fn sample_rate(&self) -> SampleRate {
         self.spec
-            .rate
+            .rate()
             .try_into()
             .expect("Valid non-zero sample rate")
     }
@@ -324,10 +299,15 @@ impl Source for Symphonia {
 
     #[inline]
     fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
-        match self.probed.format.seek(
+        let pos = units::Time::try_new(
+            i64::try_from(pos.as_secs()).unwrap_or(i64::MAX),
+            pos.subsec_nanos(),
+        )
+        .expect("Unexpected nano seconds");
+        match self.probed.seek(
             SeekMode::Coarse,
             SeekTo::Time {
-                time: pos.into(),
+                time: pos,
                 track_id: Some(self.track_id),
             },
         ) {
@@ -338,13 +318,12 @@ impl Source for Symphonia {
 
                 // Coarse seeking may seek (slightly) beyond the requested ts, so it may not actually need to be set
                 if seeked_to.required_ts > seeked_to.actual_ts {
-                    // the unwrap should never fail as "(0 > 0) == false" and "(0 > 1(or higher)) == false"
-                    self.seek_required_ts = Some(NonZeroU64::new(seeked_to.required_ts).unwrap());
+                    self.seek_required_ts = Some(seeked_to.required_ts);
                 }
 
                 // some decoders need to be reset after a seek, but not all can be reset without unexpected behavior (like mka seeking to 0 again)
                 // see https://github.com/pdeljanov/Symphonia/issues/274
-                if self.decoder.codec_params().codec == codecs::CODEC_TYPE_MP3 {
+                if self.decoder.codec_params().codec == codecs::audio::well_known::CODEC_ID_MP3 {
                     self.decoder.reset();
                 }
 
@@ -362,10 +341,64 @@ impl Iterator for Symphonia {
     fn next(&mut self) -> Option<Self::Item> {
         self.decode_once()?;
 
-        let sample = *self.buffer.samples().get(self.current_frame_offset)?;
+        let sample = *self.buffer.get(self.current_frame_offset)?;
         self.advance_offset(1);
 
         Some(sample)
+    }
+}
+
+/// Our implementation of a Sample Buffer, as it does not exist in Symphonia 0.6 anymore.
+#[derive(Debug, Clone, PartialEq)]
+struct OurAudioBuffer {
+    /// The interleaved sample buffer
+    buf: Vec<SampleType>,
+    /// The frame length. How many `samples / channels` there are.
+    frame_len: usize,
+}
+
+impl OurAudioBuffer {
+    fn new() -> Self {
+        Self {
+            buf: Vec::new(),
+            frame_len: 0,
+        }
+    }
+
+    /// Copy passed [`GenericAudioBufferRef`] into our Buffer
+    #[inline]
+    fn copy_buffers(&mut self, decoded: &GenericAudioBufferRef<'_>) {
+        let required_capacity = decoded.byte_len_as::<SampleType>();
+        self.buf.resize(required_capacity, SampleType::default());
+
+        decoded.copy_to_vec_interleaved(&mut self.buf);
+        self.frame_len = decoded.frames();
+    }
+
+    /// Clears the buffer and frame length
+    fn clear(&mut self) {
+        self.buf.clear();
+        self.frame_len = 0;
+    }
+
+    /// Get if the inner buffer is empty
+    fn is_empty(&self) -> bool {
+        self.buf.is_empty()
+    }
+
+    /// Get the length of the buffer
+    fn len(&self) -> usize {
+        self.buf.len()
+    }
+
+    /// Get a value at the index
+    fn get(&self, index: usize) -> Option<&SampleType> {
+        self.buf.get(index)
+    }
+
+    /// Get the whole buffer as a slice
+    fn as_slice(&self) -> &[SampleType] {
+        &self.buf
     }
 }
 
@@ -422,6 +455,7 @@ impl From<symphonia::core::errors::Error> for SymphoniaDecoderError {
             Error::Unsupported(_) => Self::UnrecognizedFormat,
             Error::LimitError(e) => Self::LimitError(e),
             Error::ResetRequired => Self::ResetRequired,
+            _ => unimplemented!("Unimplemented mapping"), // TODO: fix this?
         }
     }
 }
@@ -429,64 +463,24 @@ impl From<symphonia::core::errors::Error> for SymphoniaDecoderError {
 /// Resulting values from the decode loop
 #[derive(Debug)]
 struct DecodeLoopResult {
-    spec: SignalSpec,
-}
-
-// is there maybe a better option for this?
-enum BufferInputType<'a> {
-    /// Allocate a new [`SampleBuffer`] in the specified location (without unsafe)
-    New(&'a mut Option<SampleBuffer<SampleType>>),
-    /// Try to reuse the provided [`SampleBuffer`]
-    Existing(&'a mut SampleBuffer<SampleType>),
-}
-
-impl std::fmt::Debug for BufferInputType<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::New(_) => f.debug_tuple("New").finish(),
-            Self::Existing(_) => f.debug_tuple("Existing").finish(),
-        }
-    }
+    spec: AudioSpec,
 }
 
 #[allow(clippy::too_many_arguments)]
 /// Decode until finding a valid packet and get the samples from it
 ///
-/// If [`BufferInputType::New`] is used, it is guaranteed to be [`Some`] if function result is [`Ok`].
-///
 /// If `Ok(None)` is returned, it means End-of-File (EOF/EOS).
 fn decode_loop(
     format: &mut dyn FormatReader,
-    decoder: &mut dyn codecs::Decoder,
-    buffer: BufferInputType<'_>,
+    decoder: &mut dyn codecs::audio::AudioDecoder,
+    buffer: &mut OurAudioBuffer,
     track_id: u32,
     time_base: Option<TimeBase>,
     media_title_tx: &mut MediaTitleTxWrap,
-    probed: &mut ProbedMetadata,
-    seek_required_ts: &mut Option<NonZeroU64>,
+    seek_required_ts: &mut Option<units::Timestamp>,
 ) -> Result<Option<DecodeLoopResult>, symphonia::core::errors::Error> {
     let (audio_buf, elapsed) = loop {
-        // Note: this matching looks quite messy, but will be cleaned-up with symphonia 0.6
-        let Some(packet) = format.next_packet().map(Some).or_else(|err| {
-            match err {
-                // Before Symphonia 0.6, expected EOF / EOS is badly implemented
-                // the matching to the string is required, as there are other types of actually unexpected EOF's
-                Error::IoError(err)
-                    if err.kind() == ErrorKind::UnexpectedEof
-                        && err.to_string() == "end of stream" =>
-                {
-                    Ok(None)
-                }
-                _ => Err(err),
-            }
-        })?
-        else {
-            // indicated no more packets to decode, also End-Of-Stream
-            match buffer {
-                BufferInputType::New(Some(sample_buffer))
-                | BufferInputType::Existing(sample_buffer) => sample_buffer.clear(),
-                BufferInputType::New(None) => (),
-            }
+        let Some(packet) = format.next_packet()? else {
             return Ok(None);
         };
 
@@ -498,7 +492,7 @@ fn decode_loop(
         // seeking in symphonia can only be done to the nearest packet in the format reader
         // so we need to also seek until the actually required_ts in the decoder
         if let Some(dur) = seek_required_ts {
-            if packet.ts() < dur.get() {
+            if packet.dts() < *dur {
                 continue;
             }
             // else, remove the value as we are now at or beyond that point
@@ -516,8 +510,12 @@ fn decode_loop(
                     continue;
                 }
 
-                let ts = packet.ts();
-                let elapsed = time_base.map(|tb| Duration::from(tb.calc_time(ts)));
+                let elapsed = time_base
+                    .map(|tb| tb.calc_time_saturating(packet.pts()))
+                    .map(|time| {
+                        let (secs, nanos) = time.parts();
+                        Duration::new(u64::try_from(secs).unwrap_or(0), nanos)
+                    });
 
                 break (audio_buf, elapsed);
             }
@@ -534,23 +532,16 @@ fn decode_loop(
         if elapsed.as_ref().is_some_and(Duration::is_zero) {
             trace!("Time is 0, doing container metadata");
             media_title_tx.send_reset();
-            do_container_metdata(media_title_tx, format, probed);
+            do_container_metdata(media_title_tx, format);
         } else if !format.metadata().is_latest() {
             // only execute it once if there is a new metadata iteration
             do_inline_metdata(media_title_tx, format);
         }
     }
 
-    let spec = *audio_buf.spec();
+    let spec = audio_buf.spec().clone();
 
-    match buffer {
-        BufferInputType::New(buffer) => {
-            *buffer = Some(Symphonia::get_buffer_new(audio_buf));
-        }
-        BufferInputType::Existing(buffer) => {
-            Symphonia::maybe_reuse_buffer(buffer, audio_buf);
-        }
-    }
+    buffer.copy_buffers(&audio_buf);
 
     Ok(Some(DecodeLoopResult { spec }))
 }
@@ -559,17 +550,10 @@ fn decode_loop(
 ///
 /// No optimizations for when [`MediaTitleTxWrap`] is [`None`], should be done outside of this function
 #[inline]
-fn do_container_metdata(
-    media_title_tx: &mut MediaTitleTxWrap,
-    format: &mut dyn FormatReader,
-    probed: &mut ProbedMetadata,
-) {
+fn do_container_metdata(media_title_tx: &mut MediaTitleTxWrap, format: &mut dyn FormatReader) {
     // prefer standard container tags over non-standard
     let title = if let Some(metadata_rev) = format.metadata().current() {
         // tags that are from the container standard (like mkv)
-        find_title_metadata(metadata_rev).cloned()
-    } else if let Some(metadata_rev) = probed.get().as_ref().and_then(|m| m.current()) {
-        // tags that are not from the container standard (like mp3)
         find_title_metadata(metadata_rev).cloned()
     } else {
         trace!("Did not find any metadata in either format or probe!");
@@ -597,15 +581,12 @@ fn do_inline_metdata(media_title_tx: &mut MediaTitleTxWrap, format: &mut dyn For
 
 #[inline]
 fn find_title_metadata(metadata: &MetadataRevision) -> Option<&String> {
-    metadata
-        .tags()
-        .iter()
-        .find(|v| v.std_key.is_some_and(|v| v == StandardTagKey::TrackTitle))
-        .and_then(|v| {
-            if let Value::String(ref v) = v.value {
-                Some(v)
-            } else {
-                None
-            }
+    metadata.per_track.iter().find_map(|v| {
+        v.metadata.tags.iter().find_map(|v| {
+            let Some(StandardTag::TrackTitle(title)) = &v.std else {
+                return None;
+            };
+            Some(&**title)
         })
+    })
 }

@@ -86,7 +86,7 @@ shell-words = "1.1.1"
 soundtouch = { version = "0.5.4", features = ["bundled"] }
 souvlaki = { version = "0.8.3", default-features=false, features = ["use_zbus"] }
 stream-download = { version = "0.24.0", features = ["reqwest-rustls"] }
-symphonia = { version = "0.5.5", features = [
+symphonia = { version = "0.6.0-alpha.1", features = [
     "aac",
     "mp3",
     "isomp4",
@@ -96,7 +96,7 @@ symphonia = { version = "0.5.5", features = [
     "wav",
     "aiff"
 ] }
-symphonia-adapter-libopus = { version = "0.2.6", default-features = false }
+symphonia-adapter-libopus = { git = "https://github.com/hasezoey/symphonia-adapters.git", rev = "d0f166718f9bc49ef9407fbbc3dd55e676bdf8e4", default-features = false }
 rodio = { version = "0.22", default-features = false, features = ["playback"]}
 # sysinfo 0.37.0 requires MSRV 1.88
 sysinfo = { version = "^0.38.4", default-features = false, features = ["system"] }

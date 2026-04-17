@@ -14,7 +14,7 @@ use async_ringbuf::{
 };
 use parking_lot::RwLock;
 use rodio::{ChannelCount, SampleRate, Source};
-use symphonia::core::audio::SignalSpec;
+use symphonia::core::audio::AudioSpec;
 use tokio::{
     runtime::Handle,
     sync::{mpsc, oneshot},
@@ -78,7 +78,7 @@ impl AsyncRingSourceProvider {
     #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
     pub async fn new_spec(
         &mut self,
-        spec: SignalSpec,
+        spec: &AudioSpec,
         current_span_len: usize,
     ) -> Result<usize, ()> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
@@ -203,7 +203,7 @@ impl AsyncRingSourceProvider {
     /// and sends the new spec (in case it changed in the seek).
     pub async fn process_seek(
         &mut self,
-        spec: SignalSpec,
+        spec: &AudioSpec,
         current_span_len: usize,
         cb: oneshot::Sender<usize>,
     ) {
@@ -260,7 +260,7 @@ impl AsyncRingSource {
     /// If the given channels in `spec` cannot be converted to a u16 (which should never happen as there are only 26 defined channels)
     #[must_use]
     pub fn new(
-        spec: SignalSpec,
+        spec: &AudioSpec,
         total_duration: Option<Duration>,
         current_span_len: usize,
         size: usize,
@@ -277,10 +277,10 @@ impl AsyncRingSource {
             inner: ConsWrap::new(cons),
             seek_tx: Some(tx),
             // SAFETY: as of symphonia 0.5.4, there can only be at most 26 channels (Channels::all().count())
-            channels: u16::try_from(spec.channels.count())
+            channels: u16::try_from(spec.channels().count())
                 .and_then(TryInto::try_into)
                 .expect("Channel size to be within \">0 <=u16::MAX\""),
-            rate: NonZeroU32::new(spec.rate).expect("Valid non-zero Sample rate"),
+            rate: NonZeroU32::new(spec.rate()).expect("Valid non-zero Sample rate"),
             total_duration,
             current_span_len,
             last_msg: None,
@@ -818,7 +818,7 @@ mod tests {
 
         use async_ringbuf::traits::Observer;
         use parking_lot::Mutex;
-        use symphonia::core::audio::{Channels, SignalSpec};
+        use symphonia::core::audio::{AudioSpec, Position};
 
         use crate::backends::rusty::source::{
             SampleType,
@@ -833,7 +833,7 @@ mod tests {
             let recv = Arc::new(Mutex::new(Vec::new()));
 
             let (mut prod, mut cons) = AsyncRingSource::new(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 None,
                 1024,
                 0,
@@ -859,8 +859,9 @@ mod tests {
             );
             send.extend_from_slice(&first_data);
 
-            let new_spec = SignalSpec::new(48000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT);
-            let written = prod.new_spec(new_spec, 1024).await.unwrap();
+            let new_spec =
+                AudioSpec::new(48000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into());
+            let written = prod.new_spec(&new_spec, 1024).await.unwrap();
             assert_eq!(
                 written,
                 RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)
@@ -903,7 +904,7 @@ mod tests {
             let order = Arc::new(Mutex::new(Vec::new()));
 
             let (mut prod, mut cons) = AsyncRingSource::new(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 None,
                 1024,
                 0,
@@ -981,7 +982,7 @@ mod tests {
             let recv = Arc::new(Mutex::new(Vec::new()));
 
             let (mut prod, mut cons) = AsyncRingSource::new(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 None,
                 1024,
                 0,
@@ -1037,7 +1038,7 @@ mod tests {
             let recv = Arc::new(Mutex::new(Vec::new()));
 
             let (mut prod, mut cons) = AsyncRingSource::new(
-                SignalSpec::new(44000, Channels::FRONT_LEFT | Channels::FRONT_RIGHT),
+                &AudioSpec::new(44000, (Position::FRONT_LEFT | Position::FRONT_RIGHT).into()),
                 None,
                 1024,
                 0,
