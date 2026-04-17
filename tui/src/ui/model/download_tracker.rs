@@ -73,7 +73,7 @@ impl DownloadTracker {
     pub fn message_feed_sync_failed(&self) -> String {
         let len = self.len();
         if len > 0 {
-            format!(" 1 feed sync failed. {len} are still running. ",)
+            format!(" 1 feed sync failed. {len} are still running. ")
         } else {
             " 1 feed sync failed. ".to_string()
         }
@@ -82,7 +82,7 @@ impl DownloadTracker {
     pub fn message_sync_start(&self) -> String {
         let len = self.len();
         if len > 1 {
-            format!(" {len} feeds are being fetching... ",)
+            format!(" {len} feeds are being fetching... ")
         } else {
             " 1 feed is being fetching... ".to_string()
         }
@@ -93,7 +93,7 @@ impl DownloadTracker {
         if len > 1 {
             format!(" {len} items downloading... ")
         } else {
-            format!(" {len} item {title:^.20} downloading...",)
+            format!(" {len} item {title:^.20} downloading...")
         }
     }
 

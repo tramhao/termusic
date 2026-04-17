@@ -270,7 +270,7 @@ impl AddAlbumConfirm {
     pub fn new(config: SharedTuiSettings, criteria: &str) -> Self {
         let component = YNConfirm::new_with_cb(
             config,
-            format!(" Are you sure you want to add EVERYTHING from {criteria}? ",),
+            format!(" Are you sure you want to add EVERYTHING from {criteria}? "),
             |config| YNConfirmStyle {
                 foreground_color: config.settings.theme.important_popup_foreground(),
                 background_color: config.settings.theme.important_popup_background(),

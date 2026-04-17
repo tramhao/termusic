@@ -125,7 +125,7 @@ impl Lyric {
             }
         }
         // we sort the captions by time_stamp. This is to fix some lyrics downloaded are not sorted
-        self.captions.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+        self.captions.sort_by_key(|v| v.timestamp);
     }
 
     /// Format current [`Lyric`] as a LRC file
@@ -271,7 +271,7 @@ impl FromStr for Lyric {
         }
 
         // we sort the captions by Timestamp. This is to fix some lyrics downloaded are not sorted
-        captions.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+        captions.sort_by_key(|v| v.timestamp);
 
         let mut lyric = Self { offset, captions };
 

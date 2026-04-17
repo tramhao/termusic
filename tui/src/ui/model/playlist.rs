@@ -120,9 +120,8 @@ impl TUIPlaylist {
 
             return Ok(());
         }
-        let mut at_index = at_index;
         // insert tracks at position
-        for track_location in tracks.tracks {
+        for (at_index, track_location) in (at_index..).zip(tracks.tracks) {
             let track = match &track_location {
                 PlaylistTrackSource::Path(path) => Self::track_from_path(path)?,
                 PlaylistTrackSource::Url(uri) => Self::track_from_uri(uri),
@@ -130,7 +129,6 @@ impl TUIPlaylist {
             };
 
             self.tracks.insert(at_index, track);
-            at_index += 1;
         }
 
         Ok(())
