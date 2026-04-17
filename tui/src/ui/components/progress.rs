@@ -167,7 +167,7 @@ impl Model {
             progress = 0.0;
             DurationFmtShort::fmt_empty().to_string()
         } else if total_duration.is_zero() {
-            format!("{}", DurationFmtShort(self.playback.current_track_pos()),)
+            format!("{}", DurationFmtShort(self.playback.current_track_pos()))
         } else {
             format!(
                 "{}    -    {}",

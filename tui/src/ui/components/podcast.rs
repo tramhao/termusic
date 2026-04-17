@@ -361,7 +361,7 @@ impl Model {
     pub fn podcast_search_itunes(&self, search_str: &str) {
         let encoded: String = utf8_percent_encode(search_str, NON_ALPHANUMERIC).to_string();
         let url =
-            format!("https://itunes.apple.com/search?media=podcast&entity=podcast&term={encoded}",);
+            format!("https://itunes.apple.com/search?media=podcast&entity=podcast&term={encoded}");
         let agent = ClientBuilder::new()
             .connect_timeout(Duration::from_secs(5))
             .build()

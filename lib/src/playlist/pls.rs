@@ -149,7 +149,7 @@ pub fn decode(content: &str) -> Vec<PLSItem> {
     }
 
     // sort by the numbers (like `File1`) to actually be in playlist order
-    list.sort_by(|a, b| a.0.cmp(&b.0));
+    list.sort_by_key(|v| v.0);
 
     // convert into array without the preserved number as it is now sorted
     list.into_iter().map(|v| v.1).collect()
