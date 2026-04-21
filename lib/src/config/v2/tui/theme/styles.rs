@@ -212,7 +212,7 @@ pub struct StyleProgress {
 impl Default for StyleProgress {
     fn default() -> Self {
         Self {
-            foreground_color: ColorTermusic::LightBlack,
+            foreground_color: ColorTermusic::Foreground,
             background_color: ColorTermusic::Background,
             border_color: ColorTermusic::Blue,
         }
