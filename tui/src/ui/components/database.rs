@@ -342,7 +342,7 @@ impl DBListSearchResult {
                 .rewind(false)
                 .step(4)
                 .scroll(true)
-                .rows([LineStatic::from("Empty")])
+                .rows([LineStatic::from("No Search active")])
         };
 
         Self {
@@ -445,7 +445,7 @@ impl DBListSearchTracks {
                 .rewind(false)
                 .step(4)
                 .scroll(true)
-                .rows([LineStatic::from("Empty")])
+                .rows([LineStatic::from("No Search active")])
         };
 
         Self {
