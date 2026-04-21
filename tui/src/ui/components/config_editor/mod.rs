@@ -84,25 +84,31 @@ pub struct CEFooter {
 
 impl CEFooter {
     pub fn new(config: &TuiOverlay) -> Self {
-        let fg_style = Style::new().fg(config.settings.theme.library_highlight());
+        let style_text = Style::new()
+            .bold()
+            .fg(config.settings.theme.library_foreground());
+        let style_key = Style::new()
+            .bold()
+            .fg(config.settings.theme.library_highlight());
+
         Self {
             component: Span::default()
                 .background(config.settings.theme.library_background())
                 .style(Style::new().bold())
                 .spans([
-                    SpanStatic::from(" Save parameters: "),
+                    SpanStatic::styled(" Save parameters: ", style_text),
                     SpanStatic::styled(
                         format!("<{}>", config.settings.keys.config_keys.save),
-                        fg_style,
+                        style_key,
                     ),
-                    SpanStatic::from(" Exit: "),
-                    SpanStatic::styled(format!("<{}>", config.settings.keys.escape), fg_style),
-                    SpanStatic::from(" Change panel: "),
-                    SpanStatic::styled("<TAB>", fg_style),
-                    SpanStatic::from(" Change field: "),
-                    SpanStatic::styled("<UP/DOWN>", fg_style),
-                    SpanStatic::from(" Select theme/Preview symbol: "),
-                    SpanStatic::styled("<ENTER>", fg_style),
+                    SpanStatic::styled(" Exit: ", style_text),
+                    SpanStatic::styled(format!("<{}>", config.settings.keys.escape), style_key),
+                    SpanStatic::styled(" Change panel: ", style_text),
+                    SpanStatic::styled("<TAB>", style_key),
+                    SpanStatic::styled(" Change field: ", style_text),
+                    SpanStatic::styled("<UP/DOWN>", style_key),
+                    SpanStatic::styled(" Select theme/Preview symbol: ", style_text),
+                    SpanStatic::styled("<ENTER>", style_key),
                 ]),
         }
     }
