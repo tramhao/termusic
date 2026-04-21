@@ -2,10 +2,11 @@ use std::path::PathBuf;
 
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tuirealm::{
-    Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
-    event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, InputType},
+    component::{AppComponent, Component},
+    event::{Event, Key, KeyEvent, KeyModifiers},
+    props::{BorderType, Borders, HorizontalAlignment, InputType, Title},
+    state::{State, StateValue},
 };
 
 use super::{YNConfirm, YNConfirmStyle};
@@ -17,7 +18,7 @@ use crate::ui::msg::{DeleteConfirmMsg, Msg};
 /// Component for a "Are you sure to delete? Y/N" popup
 ///
 /// Also see [`DeleteConfirmInputPopup`].
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct DeleteConfirmRadioPopup {
     component: YNConfirm,
     on_confirm: Msg,
@@ -32,7 +33,7 @@ impl DeleteConfirmRadioPopup {
                     foreground_color: config.settings.theme.important_popup_foreground(),
                     background_color: config.settings.theme.important_popup_background(),
                     border_color: config.settings.theme.important_popup_border(),
-                    title_alignment: Alignment::Left,
+                    title_alignment: HorizontalAlignment::Left,
                 }
             });
 
@@ -44,8 +45,8 @@ impl DeleteConfirmRadioPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for DeleteConfirmRadioPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for DeleteConfirmRadioPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component
             .on(ev, self.on_confirm.clone(), self.on_cancel.clone())
     }
@@ -54,7 +55,7 @@ impl Component<Msg, UserEvent> for DeleteConfirmRadioPopup {
 /// Component for a "Are you sure to delete? Write DELETE" popup
 ///
 /// Also see [`DeleteConfirmRadioPopup`]
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct DeleteConfirmInputPopup {
     component: Input,
     on_confirm: Msg,
@@ -76,8 +77,8 @@ impl DeleteConfirmInputPopup {
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title(
-                    format!(" {title} Type DELETE to confirm: "),
-                    Alignment::Left,
+                    Title::from(format!(" {title} Type DELETE to confirm: "))
+                        .alignment(HorizontalAlignment::Left),
                 ),
             on_confirm,
             on_cancel,
@@ -85,8 +86,8 @@ impl DeleteConfirmInputPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for DeleteConfirmInputPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for DeleteConfirmInputPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -110,23 +111,23 @@ impl Component<Msg, UserEvent> for DeleteConfirmInputPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-            }) => self.perform(Cmd::Type(ch)),
+            }) => self.perform(Cmd::Type(*ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(self.on_cancel.clone());
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
+            CmdResult::Submit(State::Single(StateValue::String(input_string))) => {
                 if input_string == *"DELETE" {
                     return Some(self.on_confirm.clone());
                 }
                 Some(self.on_cancel.clone())
             }
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }

@@ -5,8 +5,8 @@ use futures_util::Stream;
 use termusiclib::player::{PlayerProgress, StreamUpdates, UpdateEvents};
 use tokio_stream::StreamExt;
 use tuirealm::{
-    Event,
-    listener::{ListenerResult, PollAsync},
+    event::Event,
+    listener::{PollAsync, PortResult},
 };
 
 use crate::ui::{model::UserEvent, msg::Msg};
@@ -32,9 +32,10 @@ impl Debug for PortStreamEvents {
 
 #[tuirealm::async_trait]
 impl PollAsync<UserEvent> for PortStreamEvents {
-    async fn poll(&mut self) -> ListenerResult<Option<Event<UserEvent>>> {
+    async fn poll(&mut self) -> PortResult<Option<Event<UserEvent>>> {
         match self.0.next().await {
             Some(ev) => {
+                // TODO: update errors
                 let ev = match ev
                     .map(UpdateEvents::try_from)
                     .context("Conversion from StreamUpdates to UpdateEvents failed!")

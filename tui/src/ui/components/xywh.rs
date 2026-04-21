@@ -320,6 +320,8 @@ impl Model {
         feature = "cover-viuer-sixel"
     ))]
     fn clear_image_viuer_kitty(&mut self) -> Result<()> {
+        use tuirealm::terminal::TerminalAdapter;
+
         write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
         self.terminal.raw_mut().backend_mut().flush()?;
         Ok(())

@@ -1,10 +1,14 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::Table;
+use tui_realm_stdlib::{components::Table, prop_ext::CommonHighlight};
 use tuirealm::{
-    Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
-    event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan},
+    component::{AppComponent, Component},
+    event::{Event, Key, KeyEvent, KeyModifiers},
+    props::{
+        AttrValue, Attribute, BorderType, Borders, HorizontalAlignment, InputType, LineStatic,
+        Style, TableBuilder, Title,
+    },
+    state::{State, StateValue},
 };
 
 use super::{YNConfirm, YNConfirmStyle};
@@ -14,7 +18,7 @@ use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, PCMsg};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PodcastAddPopup {
     component: Input,
 }
@@ -34,15 +38,15 @@ impl PodcastAddPopup {
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title(
-                    " Add or search podcast feed : (Enter to confirm) ",
-                    Alignment::Left,
+                    Title::from(" Add or search podcast feed : (Enter to confirm) ")
+                        .alignment(HorizontalAlignment::Left),
                 ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for PodcastAddPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PodcastAddPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -66,28 +70,28 @@ impl Component<Msg, UserEvent> for PodcastAddPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-            }) => self.perform(Cmd::Type(ch)),
+            }) => self.perform(Cmd::Type(*ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::Podcast(PCMsg::PodcastAddPopupCloseCancel));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => match self.component.state() {
-                State::One(StateValue::String(input_string)) => {
+                State::Single(StateValue::String(input_string)) => {
                     return Some(Msg::Podcast(PCMsg::PodcastAddPopupCloseOk(input_string)));
                 }
-                _ => CmdResult::None,
+                _ => CmdResult::NoChange,
             },
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct FeedDeleteConfirmRadioPopup {
     component: YNConfirm,
 }
@@ -100,7 +104,7 @@ impl FeedDeleteConfirmRadioPopup {
                     foreground_color: config.settings.theme.library_foreground(),
                     background_color: config.settings.theme.library_background(),
                     border_color: config.settings.theme.library_border(),
-                    title_alignment: Alignment::Left,
+                    title_alignment: HorizontalAlignment::Left,
                 }
             });
 
@@ -108,8 +112,8 @@ impl FeedDeleteConfirmRadioPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for FeedDeleteConfirmRadioPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for FeedDeleteConfirmRadioPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::Podcast(PCMsg::FeedDeleteCloseOk),
@@ -118,7 +122,7 @@ impl Component<Msg, UserEvent> for FeedDeleteConfirmRadioPopup {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PodcastSearchTablePopup {
     component: Table,
     config: SharedTuiSettings,
@@ -136,10 +140,14 @@ impl PodcastSearchTablePopup {
                         .color(config.settings.theme.library_border())
                         .modifiers(BorderType::Rounded),
                 )
-                .title(" Enter to add feed: ", Alignment::Left)
+                .title(Title::from(" Enter to add feed: ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
-                .highlighted_color(config.settings.theme.library_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .bg(config.settings.theme.library_highlight()),
+                )
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -148,8 +156,8 @@ impl PodcastSearchTablePopup {
                 .widths(&[40, 60])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("Empty result."))
-                        .add_col(TextSpan::from("Loading..."))
+                        .add_col(LineStatic::from("Empty result."))
+                        .add_col(LineStatic::from("Loading..."))
                         .build(),
                 )
         };
@@ -158,8 +166,8 @@ impl PodcastSearchTablePopup {
     }
 }
 
-impl Component<Msg, UserEvent> for PodcastSearchTablePopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PodcastSearchTablePopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -207,15 +215,15 @@ impl Component<Msg, UserEvent> for PodcastSearchTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::SearchItunesCloseOk(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
@@ -296,14 +304,13 @@ impl Model {
                     .unwrap_or_else(|| "no title found".to_string());
 
                 table
-                    .add_col(TextSpan::new(title).bold())
-                    .add_col(TextSpan::new(record.url.clone()));
-                // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+                    .add_col(LineStatic::styled(title, Style::new().bold()))
+                    .add_col(LineStatic::from(record.url.clone()));
             }
             // if self.player.playlist.is_empty() {
-            //     table.add_col(TextSpan::from("0"));
-            //     table.add_col(TextSpan::from("empty playlist"));
-            //     table.add_col(TextSpan::from(""));
+            //     table.add_col(LineStatic::from("0"));
+            //     table.add_col(LineStatic::from("empty playlist"));
+            //     table.add_col(LineStatic::from(""));
             // }
         }
         let table = table.build();
@@ -311,8 +318,8 @@ impl Model {
         self.app
             .attr(
                 &Id::PodcastSearchTablePopup,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
+                Attribute::Content,
+                AttrValue::Table(table),
             )
             .ok();
     }

@@ -3,19 +3,22 @@ use std::fmt::Write as _;
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::Table;
+use tui_realm_stdlib::components::Table;
+use tui_realm_stdlib::prop_ext::CommonHighlight;
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
+use tuirealm::props::{HorizontalAlignment, LineStatic, Title};
 use tuirealm::{
-    Component, Event, MockComponent,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, Style, TableBuilder, TextSpan},
+    props::{BorderType, Borders, Style, TableBuilder},
 };
 
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{HelpPopupMsg, Msg};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct HelpPopup {
     component: Table,
     config: SharedTuiSettings,
@@ -23,7 +26,7 @@ pub struct HelpPopup {
 
 impl HelpPopup {
     /// Generate a consistent keybinding string from the given keybindings.
-    fn key(config: &TuiOverlay, keys: &[&KeyBinding]) -> TextSpan {
+    fn key(config: &TuiOverlay, keys: &[&KeyBinding]) -> LineStatic {
         let mut text = String::new();
         for (idx, key) in keys.iter().enumerate() {
             if idx > 0 {
@@ -32,22 +35,27 @@ impl HelpPopup {
             let _ = write!(text, "<{key}>");
         }
         // TODO: make this somehow configurable; at least this now uses the actual theme instead of terminal
-        TextSpan::from(text).bold().fg(config
-            .settings
-            .theme
-            .get_color_from_theme(ColorTermusic::Cyan))
+        LineStatic::styled(
+            text,
+            Style::new().bold().fg(config
+                .settings
+                .theme
+                .get_color_from_theme(ColorTermusic::Cyan)),
+        )
     }
 
     /// Generate a consistent key explanation comment.
-    fn comment(text: &str) -> TextSpan {
-        TextSpan::new(text)
+    fn comment<T: Into<LineStatic>>(text: T) -> LineStatic {
+        text.into()
     }
 
     /// Generate a consistent header element
-    fn header(config: &TuiOverlay, text: &str) -> TextSpan {
-        TextSpan::new(text)
-            .bold()
-            .fg(config.settings.theme.library_highlight())
+    fn header<T: Into<LineStatic>>(config: &TuiOverlay, text: T) -> LineStatic {
+        text.into().style(
+            Style::new()
+                .bold()
+                .fg(config.settings.theme.library_highlight()),
+        )
     }
 
     #[allow(clippy::too_many_lines)]
@@ -72,10 +80,17 @@ impl HelpPopup {
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .foreground(config.settings.theme.fallback_foreground())
                 .background(config.settings.theme.fallback_background())
-                .highlighted_color(config.settings.theme.fallback_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .bg(config.settings.theme.fallback_highlight()),
+                )
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .scroll(true)
-                .title(" Help: Esc or Enter to exit ", Alignment::Center)
+                .title(
+                    Title::from(" Help: Esc or Enter to exit ")
+                        .alignment(HorizontalAlignment::Center),
+                )
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -347,8 +362,8 @@ impl HelpPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for HelpPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for HelpPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -404,11 +419,11 @@ impl Component<Msg, UserEvent> for HelpPopup {
                 return Some(Msg::HelpPopup(HelpPopupMsg::Close));
             }
 
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
 
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }

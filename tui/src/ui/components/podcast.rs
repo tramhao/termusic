@@ -8,21 +8,25 @@ use serde_json::Value;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
 use tokio::runtime::Handle;
-use tui_realm_stdlib::List;
+use tui_realm_stdlib::components::List;
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::props::{Alignment, BorderType, Style, TableBuilder, TextSpan};
-use tuirealm::props::{Borders, PropPayload, PropValue};
-use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
-    event::{Key, KeyEvent, KeyModifiers},
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{
+    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, LineStatic, QueryResult,
+    Style, TableBuilder, Title,
 };
+use tuirealm::props::{Borders, PropPayload, PropValue};
+use tuirealm::state::{State, StateValue};
 
 use crate::ui::Model;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg, PCMsg};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct FeedsList {
     component: List,
     on_key_tab: Msg,
@@ -43,18 +47,18 @@ impl FeedsList {
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
-                .title(" Podcast Feeds: ", Alignment::Left)
+                .title(Title::from(" Podcast Feeds: ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
-                .highlighted_color(config.settings.theme.library_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .bg(config.settings.theme.library_highlight()),
+                )
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
                 .scroll(true)
-                .rows(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty"))
-                        .build(),
-                )
+                .rows([LineStatic::from("Empty")])
         };
 
         Self {
@@ -66,9 +70,9 @@ impl FeedsList {
     }
 }
 
-impl Component<Msg, UserEvent> for FeedsList {
+impl AppComponent<Msg, UserEvent> for FeedsList {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -76,8 +80,12 @@ impl Component<Msg, UserEvent> for FeedsList {
                 code: Key::Down,
                 modifiers: KeyModifiers::NONE,
             }) => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content)
-                    && let State::One(StateValue::Usize(index)) = self.state()
+                if let Some(t) = self
+                    .query(Attribute::Content)
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_table)
+                    && let State::Single(StateValue::Usize(index)) = self.state()
                     && index >= t.len() - 1
                 {
                     return Some(self.on_key_tab.clone());
@@ -89,8 +97,12 @@ impl Component<Msg, UserEvent> for FeedsList {
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content)
-                    && let State::One(StateValue::Usize(index)) = self.state()
+                if let Some(t) = self
+                    .query(Attribute::Content)
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_table)
+                    && let State::Single(StateValue::Usize(index)) = self.state()
                     && index >= t.len() - 1
                 {
                     return Some(self.on_key_tab.clone());
@@ -123,17 +135,17 @@ impl Component<Msg, UserEvent> for FeedsList {
                 code: Key::Enter | Key::Right,
                 modifiers: KeyModifiers::NONE,
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::PodcastSelected(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(key) if key == keys.navigation_keys.right.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::PodcastSelected(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
             Event::Keyboard(KeyEvent {
                 code: Key::End,
@@ -155,10 +167,10 @@ impl Component<Msg, UserEvent> for FeedsList {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.podcast_keys.refresh_feed.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::PodcastRefreshOne(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.podcast_keys.refresh_all_feeds.get() => {
@@ -175,16 +187,16 @@ impl Component<Msg, UserEvent> for FeedsList {
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupShowPodcast));
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct EpisodeList {
     component: List,
     on_key_tab: Msg,
@@ -205,18 +217,18 @@ impl EpisodeList {
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
-                .title(" Episodes: ", Alignment::Left)
+                .title(Title::from(" Episodes: ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
-                .highlighted_color(config.settings.theme.library_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .bg(config.settings.theme.library_highlight()),
+                )
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
                 .scroll(true)
-                .rows(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty"))
-                        .build(),
-                )
+                .rows([LineStatic::from("Empty")])
         };
 
         Self {
@@ -228,9 +240,9 @@ impl EpisodeList {
     }
 }
 
-impl Component<Msg, UserEvent> for EpisodeList {
+impl AppComponent<Msg, UserEvent> for EpisodeList {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -245,7 +257,7 @@ impl Component<Msg, UserEvent> for EpisodeList {
                 code: Key::Up,
                 modifiers: KeyModifiers::NONE,
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state()
+                if let State::Single(StateValue::Usize(index)) = self.state()
                     && index == 0
                 {
                     return Some(self.on_key_backtab.clone());
@@ -258,7 +270,7 @@ impl Component<Msg, UserEvent> for EpisodeList {
                 return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
             }
             Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state()
+                if let State::Single(StateValue::Usize(index)) = self.state()
                     && index == 0
                 {
                     return Some(self.on_key_backtab.clone());
@@ -302,24 +314,24 @@ impl Component<Msg, UserEvent> for EpisodeList {
                 code: Key::Enter | Key::Right,
                 modifiers: KeyModifiers::NONE,
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeAdd(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeAdd(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.podcast_keys.mark_played.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeMarkPlayed(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.podcast_keys.mark_all_played.get() => {
@@ -327,27 +339,27 @@ impl Component<Msg, UserEvent> for EpisodeList {
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.podcast_keys.download_episode.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeDownload(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(keyevent)
                 if keyevent == keys.podcast_keys.delete_local_episode.get() =>
             {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeDeleteFile(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupShowEpisode));
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
@@ -457,23 +469,25 @@ impl Model {
             let new = record.num_unplayed();
             let total = record.episodes.len();
             if new > 0 {
-                table.add_col(TextSpan::new(format!("{} ({new}/{total})", record.title)).bold());
+                table.add_col(LineStatic::styled(
+                    format!("{} ({new}/{total})", record.title),
+                    Style::new().bold(),
+                ));
                 continue;
             }
 
-            table.add_col(TextSpan::new(format!("{} ({new}/{total})", record.title)));
+            table.add_col(LineStatic::from(format!(
+                "{} ({new}/{total})",
+                record.title
+            )));
         }
         if self.podcast.podcasts.is_empty() {
-            table.add_col(TextSpan::from("empty feeds list"));
+            table.add_col(LineStatic::from("empty feeds list"));
         }
 
         let table = table.build();
         self.app
-            .attr(
-                &Id::Podcast,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
-            )
+            .attr(&Id::Podcast, Attribute::Content, AttrValue::Table(table))
             .ok();
         if let Err(e) = self.podcast_sync_episodes() {
             self.mount_error_popup(e.context("podcast sync episodes"));
@@ -483,15 +497,11 @@ impl Model {
     pub fn podcast_sync_episodes(&mut self) -> Result<()> {
         if self.podcast.podcasts.is_empty() {
             let mut table: TableBuilder = TableBuilder::default();
-            table.add_col(TextSpan::from("empty episodes list"));
+            table.add_col(LineStatic::from("empty episodes list"));
 
             let table = table.build();
             self.app
-                .attr(
-                    &Id::Episode,
-                    tuirealm::Attribute::Content,
-                    tuirealm::AttrValue::Table(table),
-                )
+                .attr(&Id::Episode, Attribute::Content, AttrValue::Table(table))
                 .ok();
 
             self.lyric_update();
@@ -517,23 +527,19 @@ impl Model {
                 title = format!("[D] {title}");
             }
             if record.played {
-                table.add_col(TextSpan::new(title).strikethrough());
+                table.add_col(LineStatic::styled(title, Style::new().crossed_out()));
                 continue;
             }
 
-            table.add_col(TextSpan::new(title).bold());
+            table.add_col(LineStatic::styled(title, Style::new().bold()));
         }
         if podcast_selected.episodes.is_empty() {
-            table.add_col(TextSpan::from("empty episodes list"));
+            table.add_col(LineStatic::from("empty episodes list"));
         }
 
         let table = table.build();
         self.app
-            .attr(
-                &Id::Episode,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
-            )
+            .attr(&Id::Episode, Attribute::Content, AttrValue::Table(table))
             .ok();
 
         Ok(())
@@ -914,14 +920,14 @@ impl Model {
     }
 
     fn podcast_get_feed_index(&self) -> Result<usize> {
-        if let Ok(State::One(StateValue::Usize(feed_index))) = self.app.state(&Id::Podcast) {
+        if let Ok(State::Single(StateValue::Usize(feed_index))) = self.app.state(&Id::Podcast) {
             return Ok(feed_index);
         }
         Err(anyhow!("cannot get feed index"))
     }
 
     fn podcast_get_episode_index(&self) -> Result<usize> {
-        if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
+        if let Ok(State::Single(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
             return Ok(episode_index);
         }
         Err(anyhow!("cannot get feed index"))
@@ -998,9 +1004,9 @@ impl Model {
         }
 
         if db_tracks.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty tracks in the podcasts db"));
-            table.add_col(TextSpan::from(""));
+            table.add_col(LineStatic::from("0"));
+            table.add_col(LineStatic::from("empty tracks in the podcasts db"));
+            table.add_col(LineStatic::from(""));
         } else {
             for record in db_tracks {
                 if wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase()) {
@@ -1009,9 +1015,9 @@ impl Model {
                     }
                     idx += 1;
                     table
-                        .add_col(TextSpan::new(idx.to_string()))
-                        .add_col(TextSpan::new(record.title).bold())
-                        .add_col(TextSpan::new(format!("{}", record.id)));
+                        .add_col(LineStatic::from(idx.to_string()))
+                        .add_col(LineStatic::styled(record.title, Style::new().bold()))
+                        .add_col(LineStatic::from(format!("{}", record.id)));
                 }
             }
         }
@@ -1028,9 +1034,9 @@ impl Model {
         let db_tracks = &self.podcast.podcasts;
 
         if db_tracks.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty tracks in the podcasts db"));
-            table.add_col(TextSpan::from(""));
+            table.add_col(LineStatic::from("0"));
+            table.add_col(LineStatic::from("empty tracks in the podcasts db"));
+            table.add_col(LineStatic::from(""));
         } else {
             for record in db_tracks {
                 if wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase()) {
@@ -1039,9 +1045,12 @@ impl Model {
                     }
                     idx += 1;
                     table
-                        .add_col(TextSpan::new(idx.to_string()))
-                        .add_col(TextSpan::new(&record.title).bold())
-                        .add_col(TextSpan::new(format!("{}", record.id)));
+                        .add_col(LineStatic::from(idx.to_string()))
+                        .add_col(LineStatic::styled(
+                            record.title.clone(),
+                            Style::new().bold(),
+                        ))
+                        .add_col(LineStatic::from(format!("{}", record.id)));
                 }
             }
         }
@@ -1056,7 +1065,7 @@ impl Model {
                 .attr(
                     &Id::Podcast,
                     Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::Usize(pod_index))),
+                    AttrValue::Payload(PropPayload::Single(PropValue::Usize(pod_index))),
                 )
                 .is_ok()
         );
@@ -1066,7 +1075,7 @@ impl Model {
                 .attr(
                     &Id::Episode,
                     Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::Usize(ep_index))),
+                    AttrValue::Payload(PropPayload::Single(PropValue::Usize(ep_index))),
                 )
                 .is_ok()
         );
@@ -1104,7 +1113,15 @@ impl Model {
         // Set focus to episode list
         let mut need_to_set_focus = true;
 
-        if let Ok(Some(AttrValue::Flag(true))) = self.app.query(&Id::Episode, Attribute::Focus) {
+        if let Some(true) = self
+            .app
+            .query(&Id::Episode, Attribute::Focus)
+            .ok()
+            .flatten()
+            .as_ref()
+            .map(QueryResult::as_ref)
+            .and_then(AttrValueRef::as_flag)
+        {
             need_to_set_focus = false;
         }
         if need_to_set_focus {
@@ -1116,7 +1133,15 @@ impl Model {
         // Set focus to episode list
         let mut need_to_set_focus = true;
 
-        if let Ok(Some(AttrValue::Flag(true))) = self.app.query(&Id::Podcast, Attribute::Focus) {
+        if let Some(true) = self
+            .app
+            .query(&Id::Podcast, Attribute::Focus)
+            .ok()
+            .flatten()
+            .as_ref()
+            .map(QueryResult::as_ref)
+            .and_then(AttrValueRef::as_flag)
+        {
             need_to_set_focus = false;
         }
         if need_to_set_focus {

@@ -4,7 +4,6 @@ use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::sync::mpsc::{self};
 use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
-use tuirealm::{Application, Update};
 
 use crate::CombinedSettings;
 use crate::ui::server_req_actor::ServerRequestActor;
@@ -46,15 +45,9 @@ impl UI {
     }
 
     /// Handle terminal init & finalize and start the UI Loop.
+    // TODO: remove this function?
     pub fn run(&mut self) -> Result<()> {
-        self.model.init_terminal();
-
-        let res = self.run_inner();
-
-        // reset terminal in any case
-        self.model.finalize_terminal();
-
-        res
+        self.run_inner()
     }
 
     /// Main Loop function.
@@ -81,10 +74,7 @@ impl UI {
                     // NOTE: redraw if at least one msg has been processed
                     self.model.redraw = true;
                     for msg in messages {
-                        let mut msg = Some(msg);
-                        while msg.is_some() {
-                            msg = self.model.update(msg);
-                        }
+                        self.model.update(msg);
                     }
                 }
                 _ => {}

@@ -4,13 +4,14 @@ use std::time::Duration;
 use anyhow::Result;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedReceiver;
-use tuirealm::EventListenerCfg;
-use tuirealm::Frame;
-use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
+use tuirealm::application::Application;
+use tuirealm::listener::EventListenerCfg;
+use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, SpanStatic, Style};
+use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
+use tuirealm::terminal::TerminalAdapter;
 
-use crate::ui::Application;
 use crate::ui::components::{
     DBListCriteria, DownloadSpinner, EpisodeList, FeedsList, Footer, GSInputPopup, GSTablePopup,
     Lyric, Playlist, Progress, Source,
@@ -34,7 +35,6 @@ impl Model {
             EventListenerCfg::default()
                 .with_handle(Handle::current())
                 .async_crossterm_input_listener(Duration::ZERO, 10)
-                .poll_timeout(Duration::from_secs(10))
                 .async_tick(true)
                 .tick_interval(Duration::from_secs(1))
                 .add_async_port(Box::new(PortRxMain::new(rx_to_main)), Duration::ZERO, 10)
@@ -124,7 +124,6 @@ impl Model {
 
     fn view_layout_podcast(&mut self) {
         self.terminal
-            .raw_mut()
             .draw(|f| {
                 let [chunks_main, progress, _bottom_help] = Layout::vertical([
                     Constraint::Min(2),
@@ -157,7 +156,6 @@ impl Model {
 
     fn view_layout_database(&mut self) {
         self.terminal
-            .raw_mut()
             .draw(|f| {
                 let [chunks_main, _bottom_help] =
                     Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
@@ -196,7 +194,6 @@ impl Model {
 
     fn view_layout_treeview(&mut self) {
         self.terminal
-            .raw_mut()
             .draw(|f| {
                 let [chunks_main, _bottom_help] =
                     Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
@@ -399,10 +396,13 @@ impl Model {
         timeout: Option<isize>,
     ) {
         let config = self.config_tui.read();
-        let textspan = &[TextSpan::new(active_msg)
-            .fg(foreground.unwrap_or_else(|| config.settings.theme.library_highlight()))
-            .bold()
-            .bg(background.unwrap_or_else(|| config.settings.theme.library_background()))];
+        let textspan = &[SpanStatic::styled(
+            active_msg.into(),
+            Style::new()
+                .fg(foreground.unwrap_or_else(|| config.settings.theme.library_highlight()))
+                .bold()
+                .bg(background.unwrap_or_else(|| config.settings.theme.library_background())),
+        )];
         self.app
             .attr(
                 &Id::Label,

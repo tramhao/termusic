@@ -34,12 +34,16 @@ use termusiclib::config::v2::server::{
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::utils::{get_app_config_path, get_pin_yin};
-use tuirealm::props::{PropPayload, PropValue, Style, TableBuilder, TextSpan};
+use tuirealm::application::Application;
+use tuirealm::props::{
+    AttrValue, Attribute, LineStatic, PropPayload, PropValue, Style, TableBuilder,
+};
+use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::layout::{Constraint, Layout, Rect};
 use tuirealm::ratatui::widgets::Clear;
-use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
+use tuirealm::state::{State, StateValue};
+use tuirealm::terminal::TerminalAdapter;
 
-use crate::ui::Application;
 use crate::ui::components::ConfigSavePopup;
 use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
@@ -102,7 +106,6 @@ macro_rules! app_view {
 impl Model {
     pub fn view_config_editor(&mut self) {
         self.terminal
-            .raw_mut()
             .draw(|f| {
                 // The common style to apply, even in areas that are unused.
                 // To not look out-of-place, we need to get the preview theme style if on that layout, to properly preview.
@@ -269,13 +272,13 @@ impl Model {
         f: &mut Frame<'_>,
         chunk_main: Rect,
     ) {
-        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
+        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::Single`, returns `yes`, otherwise `no`.
         ///
         /// Macro to apply "DRY"(Dont-Repeat-Yourself) to reduce function length.
         macro_rules! is_expanded {
             ($id:expr, $yes:expr, $no:expr) => {
                 match app.state(&Id::ConfigEditor($id)) {
-                    Ok(State::One(_)) => $no,
+                    Ok(State::Single(_)) => $no,
                     _ => $yes,
                 }
             };
@@ -667,7 +670,7 @@ impl Model {
 
         let mut config_server = self.config_server.write();
 
-        if let Ok(State::One(StateValue::String(music_dir))) = self.app.state(&Id::ConfigEditor(
+        if let Ok(State::Single(StateValue::String(music_dir))) = self.app.state(&Id::ConfigEditor(
             IdConfigEditor::General(IdCEGeneral::MusicDir),
         )) {
             let vec = music_dir
@@ -681,13 +684,13 @@ impl Model {
             config_server.settings.player.music_dirs = vec;
         }
 
-        if let Ok(State::One(StateValue::Usize(exit_confirmation))) = self.app.state(
+        if let Ok(State::Single(StateValue::Usize(exit_confirmation))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExitConfirmation)),
         ) {
             config_tui.settings.behavior.confirm_quit = matches!(exit_confirmation, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(display_symbol))) = self.app.state(
+        if let Ok(State::Single(StateValue::Usize(display_symbol))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)),
         ) {
             config_tui
@@ -698,35 +701,35 @@ impl Model {
                 .use_loop_mode_symbol = matches!(display_symbol, 0);
         }
 
-        if let Ok(State::One(StateValue::String(random_track_quantity_str))) = self.app.state(
+        if let Ok(State::Single(StateValue::String(random_track_quantity_str))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)),
         ) && let Ok(quantity) = random_track_quantity_str.parse::<NonZeroU32>()
         {
             config_server.settings.player.random_track_quantity = quantity;
         }
 
-        if let Ok(State::One(StateValue::String(random_album_quantity_str))) = self.app.state(
+        if let Ok(State::Single(StateValue::String(random_album_quantity_str))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)),
         ) && let Ok(quantity) = random_album_quantity_str.parse::<NonZeroU32>()
         {
             config_server.settings.player.random_album_min_quantity = quantity;
         }
 
-        if let Ok(State::One(StateValue::String(podcast_dir))) = self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::General(IdCEGeneral::PodcastDir),
-        )) {
+        if let Ok(State::Single(StateValue::String(podcast_dir))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastDir)),
+        ) {
             let absolute_dir = shellexpand::path::tilde(&podcast_dir);
             if absolute_dir.exists() {
                 config_server.settings.podcast.download_dir = absolute_dir.into_owned();
             }
         }
-        if let Ok(State::One(StateValue::String(podcast_simul_download))) = self.app.state(
+        if let Ok(State::Single(StateValue::String(podcast_simul_download))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)),
         ) && let Ok(quantity) = podcast_simul_download.parse::<NonZeroU8>()
         {
             config_server.settings.podcast.concurrent_downloads_max = quantity;
         }
-        if let Ok(State::One(StateValue::String(podcast_max_retries))) = self.app.state(
+        if let Ok(State::Single(StateValue::String(podcast_max_retries))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)),
         ) && let Ok(quantity) = podcast_max_retries.parse::<u8>()
         {
@@ -736,7 +739,7 @@ impl Model {
                 bail!(" It's not recommended to set max retries to more than 10. ");
             }
         }
-        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+        if let Ok(State::Single(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
             IdConfigEditor::General(IdCEGeneral::AlbumPhotoAlign),
         )) {
             let align = match align {
@@ -748,7 +751,7 @@ impl Model {
             config_tui.settings.coverart.align = align;
         }
 
-        if let Ok(State::One(StateValue::Usize(save_last_position))) = self.app.state(
+        if let Ok(State::Single(StateValue::Usize(save_last_position))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)),
         ) {
             // NOTE: value "0" means to not save the value
@@ -772,7 +775,7 @@ impl Model {
             // config_server.settings.player.remember_position = save_last_position;
         }
 
-        if let Ok(State::One(StateValue::Usize(seek_step))) = self.app.state(&Id::ConfigEditor(
+        if let Ok(State::Single(StateValue::Usize(seek_step))) = self.app.state(&Id::ConfigEditor(
             IdConfigEditor::General(IdCEGeneral::SeekStep),
         )) {
             // NOTE: seek_step is currently unsupported to be set
@@ -787,27 +790,27 @@ impl Model {
             // config_server.settings.player.seek_step = seek_step;
         }
 
-        if let Ok(State::One(StateValue::Usize(kill_daemon))) = self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::General(IdCEGeneral::KillDamon),
-        )) {
+        if let Ok(State::Single(StateValue::Usize(kill_daemon))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)),
+        ) {
             config_tui.settings.behavior.quit_server_on_exit = matches!(kill_daemon, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(player_use_mpris))) = self.app.state(
+        if let Ok(State::Single(StateValue::Usize(player_use_mpris))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)),
         ) {
             config_server.settings.player.use_mediacontrols = matches!(player_use_mpris, 0);
         }
 
-        if let Ok(State::One(StateValue::Usize(player_use_discord))) = self.app.state(
+        if let Ok(State::Single(StateValue::Usize(player_use_discord))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)),
         ) {
             config_server.settings.player.set_discord_status = matches!(player_use_discord, 0);
         }
 
-        if let Ok(State::One(StateValue::String(player_port))) = self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::General(IdCEGeneral::PlayerPort),
-        )) && let Ok(port) = player_port.parse::<u16>()
+        if let Ok(State::Single(StateValue::String(player_port))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)),
+        ) && let Ok(port) = player_port.parse::<u16>()
         {
             if (1024..u16::MAX).contains(&port) {
                 config_server.settings.com.port = port;
@@ -816,14 +819,14 @@ impl Model {
             }
         }
 
-        if let Ok(State::One(StateValue::String(player_port))) = self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::General(IdCEGeneral::PlayerAddress),
-        )) && let Ok(addr) = player_port.parse::<IpAddr>()
+        if let Ok(State::Single(StateValue::String(player_port))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)),
+        ) && let Ok(addr) = player_port.parse::<IpAddr>()
         {
             config_server.settings.com.address = addr;
         }
 
-        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+        if let Ok(State::Single(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
             IdConfigEditor::General(IdCEGeneral::PlayerProtocol),
         )) {
             let protocol = match align {
@@ -841,9 +844,9 @@ impl Model {
             config_server.settings.com.protocol = protocol;
         }
 
-        if let Ok(State::One(StateValue::String(podcast_dir))) = self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::General(IdCEGeneral::PlayerUDSPath),
-        )) {
+        if let Ok(State::Single(StateValue::String(podcast_dir))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)),
+        ) {
             let abs_path = shellexpand::path::tilde(&podcast_dir);
 
             if !abs_path.has_root()
@@ -858,7 +861,7 @@ impl Model {
             config_server.settings.com.socket_path = abs_path.into_owned();
         }
 
-        if let Ok(State::One(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
+        if let Ok(State::Single(StateValue::Usize(align))) = self.app.state(&Id::ConfigEditor(
             IdConfigEditor::General(IdCEGeneral::PlayerBackend),
         )) {
             let backend = match align {
@@ -871,7 +874,7 @@ impl Model {
             config_server.settings.player.backend = backend;
         }
 
-        if let Ok(State::One(StateValue::String(extra_ytdlp_args))) = self.app.state(
+        if let Ok(State::Single(StateValue::String(extra_ytdlp_args))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)),
         ) {
             config_tui.settings.ytdlp.extra_args = extra_ytdlp_args;
@@ -939,20 +942,20 @@ impl Model {
         let mut table: TableBuilder = TableBuilder::default();
 
         table
-            .add_col(TextSpan::new(0.to_string()))
-            .add_col(TextSpan::new("Termusic Default"));
+            .add_col(LineStatic::from(0.to_string()))
+            .add_col(LineStatic::from("Termusic Default"));
         table.add_row();
         table
-            .add_col(TextSpan::new(1.to_string()))
-            .add_col(TextSpan::new("Native"));
+            .add_col(LineStatic::from(1.to_string()))
+            .add_col(LineStatic::from("Native"));
 
         for (idx, record) in self.config_editor.themes.iter().enumerate() {
             table.add_row();
 
             // idx + X as 0 until X entries are termusic default, always existing themes
             table
-                .add_col(TextSpan::new((idx + THEMES_WITHOUT_FILES).to_string()))
-                .add_col(TextSpan::new(record));
+                .add_col(LineStatic::from((idx + THEMES_WITHOUT_FILES).to_string()))
+                .add_col(LineStatic::from(record.clone()));
         }
 
         let table = table.build();
@@ -990,7 +993,7 @@ impl Model {
                 .attr(
                     &Id::ConfigEditor(IdConfigEditor::Theme(IdCETheme::ThemeSelectTable)),
                     Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
+                    AttrValue::Payload(PropPayload::Single(PropValue::Usize(index))),
                 )
                 .is_ok()
         );
@@ -1041,13 +1044,13 @@ impl<'a> KeyDisplay<'a> {
 
     /// Actually draw the elements in the current instance.
     pub fn view(&self, model: &mut Application<Id, Msg, UserEvent>, area: Rect, f: &mut Frame<'_>) {
-        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::One`, returns `yes`, otherwise `no`.
+        /// Gets the state of `Id::ConfigEditor(id)` and if it has a `State::Single`, returns `yes`, otherwise `no`.
         ///
         /// Macro to apply "DRY"(Dont-Repeat-Yourself) to reduce function length.
         macro_rules! is_expanded {
             ($id:expr, $yes:expr, $no:expr) => {
                 match model.state(&Id::ConfigEditor($id)) {
-                    Ok(State::One(_)) => $no,
+                    Ok(State::Single(_)) => $no,
                     _ => $yes,
                 }
             };

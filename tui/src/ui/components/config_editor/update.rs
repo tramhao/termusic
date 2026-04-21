@@ -12,7 +12,7 @@ use crate::ui::components::CEHeader;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::msg::{
     CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, ConfigEditorMsg, GENERAL_FOCUS_ORDER,
-    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg, THEME_FOCUS_ORDER,
+    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, THEME_FOCUS_ORDER,
 };
 use crate::ui::tui_cmd::TuiCmd;
 
@@ -21,7 +21,7 @@ pub const THEMES_WITHOUT_FILES: usize = 2;
 
 impl Model {
     #[allow(clippy::too_many_lines)]
-    pub fn update_config_editor(&mut self, msg: ConfigEditorMsg) -> Option<Msg> {
+    pub fn update_config_editor(&mut self, msg: ConfigEditorMsg) {
         match msg {
             ConfigEditorMsg::Open => {
                 self.config_editor.theme = self.config_tui.read().settings.theme.clone();
@@ -120,7 +120,6 @@ impl Model {
             ConfigEditorMsg::KeyFocusOther(msg) => self.update_key_focus_other(msg),
             ConfigEditorMsg::ChangeLayout(msg) => self.change_layout(msg),
         }
-        None
     }
 
     /// Preview theme at Table index

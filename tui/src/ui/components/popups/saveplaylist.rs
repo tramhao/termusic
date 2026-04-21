@@ -8,13 +8,17 @@ use termusiclib::{
     config::{SharedTuiSettings, TuiOverlay, v2::tui::theme::styles::ColorTermusic},
     utils::get_parent_folder,
 };
-use tui_realm_stdlib::Span;
+use tui_realm_stdlib::components::Span;
 use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue, Sub, SubClause,
-    SubEventClause,
     command::{Cmd, CmdResult, Direction, Position},
-    event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, InputType, PropPayload, PropValue, TextSpan},
+    component::{AppComponent, Component},
+    event::{Event, Key, KeyEvent, KeyModifiers},
+    props::{
+        AttrValue, Attribute, BorderType, Borders, HorizontalAlignment, InputType, PropPayload,
+        PropValue, SpanStatic, Style, Title,
+    },
+    state::{State, StateValue},
+    subscription::{EventClause, Sub, SubClause},
 };
 
 use super::{YNConfirm, YNConfirmStyle};
@@ -23,7 +27,7 @@ use crate::ui::msg::{Msg, SavePlaylistMsg};
 use crate::ui::{components::vendored::tui_realm_stdlib_input::Input, model::TxToMain};
 use crate::ui::{ids::Id, msg::SPUpdateData};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct SavePlaylistPopup {
     component: Input,
     tx_to_main: TxToMain,
@@ -45,15 +49,18 @@ impl SavePlaylistPopup {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title(" Save Playlist as: (Enter to confirm) ", Alignment::Left),
+                .title(
+                    Title::from(" Save Playlist as: (Enter to confirm) ")
+                        .alignment(HorizontalAlignment::Left),
+                ),
             tx_to_main,
             directory,
         }
     }
 }
 
-impl Component<Msg, UserEvent> for SavePlaylistPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for SavePlaylistPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -81,7 +88,7 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => {
-                self.perform(Cmd::Type(ch));
+                self.perform(Cmd::Type(*ch));
                 self.perform(Cmd::Submit)
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
@@ -90,18 +97,18 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => match self.component.state() {
-                State::One(StateValue::String(mut input_string)) => {
+                State::Single(StateValue::String(mut input_string)) => {
                     input_string.push_str(".m3u");
                     let joined = self.directory.join(input_string);
 
                     return Some(Msg::SavePlaylist(SavePlaylistMsg::CloseOk(joined)));
                 }
-                _ => CmdResult::None,
+                _ => CmdResult::NoChange,
             },
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
+            CmdResult::Submit(State::Single(StateValue::String(input_string))) => {
                 // We cannot just pass the message as a return from this, as that will just provide the message to "Model::update"
                 // and not to any component subscriptions, but it *is* when we send it to a port.
                 let _ = self
@@ -112,13 +119,13 @@ impl Component<Msg, UserEvent> for SavePlaylistPopup {
 
                 None
             }
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct SavePlaylistConfirmPopup {
     component: YNConfirm,
     full_path: PathBuf,
@@ -131,7 +138,7 @@ impl SavePlaylistConfirmPopup {
                 foreground_color: config.settings.theme.important_popup_foreground(),
                 background_color: config.settings.theme.important_popup_background(),
                 border_color: config.settings.theme.important_popup_border(),
-                title_alignment: Alignment::Center,
+                title_alignment: HorizontalAlignment::Center,
             }
         });
 
@@ -142,8 +149,8 @@ impl SavePlaylistConfirmPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for SavePlaylistConfirmPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for SavePlaylistConfirmPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::SavePlaylist(SavePlaylistMsg::OverwriteOk(self.full_path.clone())),
@@ -152,7 +159,7 @@ impl Component<Msg, UserEvent> for SavePlaylistConfirmPopup {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct SavePlaylistFullpath {
     // Cannot use "tui_realm_stdlib::Paragraph" as it will draw each span *as a new line*, but we want *a single line*
     component: Span,
@@ -169,23 +176,27 @@ impl SavePlaylistFullpath {
         config: &TuiOverlay,
         directory: &Path,
         filename: &OsStr,
-    ) -> [TextSpan; 4] {
+    ) -> [SpanStatic; 4] {
+        const STYLE_BOLD: Style = Style::new().bold();
+
         let mut path_string = directory.to_string_lossy().to_string();
         // push extra "/" as "Path::to_string()" does not end with a "/"
         path_string.push('/');
 
         [
-            TextSpan::new("Full name: ")
-                .fg(config.settings.theme.fallback_highlight())
-                .bold(),
-            TextSpan::new(path_string).bold(),
-            TextSpan::new(filename.to_string_lossy())
-                .fg(config
+            SpanStatic::styled(
+                "Full name: ",
+                STYLE_BOLD.fg(config.settings.theme.fallback_highlight()),
+            ),
+            SpanStatic::styled(path_string, STYLE_BOLD),
+            SpanStatic::styled(
+                filename.to_string_lossy().to_string(),
+                STYLE_BOLD.fg(config
                     .settings
                     .theme
-                    .get_color_from_theme(ColorTermusic::Cyan))
-                .bold(),
-            TextSpan::new(".m3u").bold(),
+                    .get_color_from_theme(ColorTermusic::Cyan)),
+            ),
+            SpanStatic::styled(".m3u", STYLE_BOLD),
         ]
     }
 
@@ -211,7 +222,7 @@ impl SavePlaylistFullpath {
     /// Get the subscriptions for this component.
     fn subs() -> Vec<Sub<Id, UserEvent>> {
         vec![Sub::new(
-            SubEventClause::User(UserEvent::Forward(Msg::SavePlaylist(
+            EventClause::User(UserEvent::Forward(Msg::SavePlaylist(
                 SavePlaylistMsg::Update(SPUpdateData::default()),
             ))),
             SubClause::Always,
@@ -219,12 +230,12 @@ impl SavePlaylistFullpath {
     }
 }
 
-impl Component<Msg, UserEvent> for SavePlaylistFullpath {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for SavePlaylistFullpath {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         if let Event::User(UserEvent::Forward(Msg::SavePlaylist(SavePlaylistMsg::Update(update)))) =
             ev
         {
-            self.filename = update.path;
+            self.filename.clone_from(&update.path);
 
             let values = Self::get_text_spans(
                 &self.config.read_recursive(),
