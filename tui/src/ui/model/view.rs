@@ -10,6 +10,7 @@ use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, SpanS
 use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
+use tuirealm::subscription::{EventClause, Sub, SubClause};
 use tuirealm::terminal::TerminalAdapter;
 
 use crate::ui::components::{
@@ -87,7 +88,7 @@ impl Model {
         self.app.mount(
             Id::DownloadSpinner,
             Box::new(DownloadSpinner::new(&self.config_tui.read())),
-            Vec::new(),
+            vec![Sub::new(EventClause::Tick, SubClause::Always)],
         )?;
 
         self.mount_label_help();
