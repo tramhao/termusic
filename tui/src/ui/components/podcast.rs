@@ -15,8 +15,8 @@ use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
-    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, LineStatic, QueryResult,
-    Style, TableBuilder, Title,
+    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, LineStatic,
+    PropPayloadRef, QueryResult, Style, TableBuilder, Title,
 };
 use tuirealm::props::{Borders, PropPayload, PropValue};
 use tuirealm::state::{State, StateValue};
@@ -83,10 +83,11 @@ impl AppComponent<Msg, UserEvent> for FeedsList {
                 modifiers: KeyModifiers::NONE,
             }) => {
                 if let Some(t) = self
-                    .query(Attribute::Content)
+                    .query(Attribute::Text)
                     .as_ref()
                     .map(QueryResult::as_ref)
-                    .and_then(AttrValueRef::as_table)
+                    .and_then(AttrValueRef::as_payload)
+                    .and_then(PropPayloadRef::as_vec)
                     && let State::Single(StateValue::Usize(index)) = self.state()
                     && index >= t.len() - 1
                 {
@@ -100,10 +101,11 @@ impl AppComponent<Msg, UserEvent> for FeedsList {
             }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
                 if let Some(t) = self
-                    .query(Attribute::Content)
+                    .query(Attribute::Text)
                     .as_ref()
                     .map(QueryResult::as_ref)
-                    .and_then(AttrValueRef::as_table)
+                    .and_then(AttrValueRef::as_payload)
+                    .and_then(PropPayloadRef::as_vec)
                     && let State::Single(StateValue::Usize(index)) = self.state()
                     && index >= t.len() - 1
                 {
@@ -463,34 +465,34 @@ impl Model {
         );
     }
     pub fn podcast_sync_feeds_and_episodes(&mut self) {
-        let mut table: TableBuilder = TableBuilder::default();
+        let mut lines = Vec::new();
 
-        for (idx, record) in self.podcast.podcasts.iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
+        for record in &self.podcast.podcasts {
             let new = record.num_unplayed();
             let total = record.episodes.len();
             if new > 0 {
-                table.add_col(LineStatic::styled(
+                lines.push(PropValue::TextLine(LineStatic::styled(
                     format!("{} ({new}/{total})", record.title),
                     Style::new().bold(),
-                ));
+                )));
                 continue;
             }
 
-            table.add_col(LineStatic::from(format!(
+            lines.push(PropValue::TextLine(LineStatic::from(format!(
                 "{} ({new}/{total})",
                 record.title
-            )));
+            ))));
         }
         if self.podcast.podcasts.is_empty() {
-            table.add_col(LineStatic::from("empty feeds list"));
+            lines.push(PropValue::TextLine(LineStatic::from("empty feeds list")));
         }
 
-        let table = table.build();
         self.app
-            .attr(&Id::Podcast, Attribute::Content, AttrValue::Table(table))
+            .attr(
+                &Id::Podcast,
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(lines)),
+            )
             .ok();
         if let Err(e) = self.podcast_sync_episodes() {
             self.mount_error_popup(e.context("podcast sync episodes"));
@@ -499,12 +501,14 @@ impl Model {
 
     pub fn podcast_sync_episodes(&mut self) -> Result<()> {
         if self.podcast.podcasts.is_empty() {
-            let mut table: TableBuilder = TableBuilder::default();
-            table.add_col(LineStatic::from("empty episodes list"));
+            let lines = vec![PropValue::TextLine(LineStatic::from("empty episodes list"))];
 
-            let table = table.build();
             self.app
-                .attr(&Id::Episode, Attribute::Content, AttrValue::Table(table))
+                .attr(
+                    &Id::Episode,
+                    Attribute::Text,
+                    AttrValue::Payload(PropPayload::Vec(lines)),
+                )
                 .ok();
 
             self.lyric_update();
@@ -517,32 +521,37 @@ impl Model {
             .get(self.podcast.podcasts_index)
             .ok_or_else(|| anyhow!("get podcast selected failed."))?;
         // let episodes = self.db_podcast.get_episodes(podcast_selected.id, true)?;
-        let mut table: TableBuilder = TableBuilder::default();
+        let mut lines = Vec::new();
 
-        for (idx, record) in podcast_selected.episodes.iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
-
+        for record in &podcast_selected.episodes {
             let mut title = record.title.clone();
             // if let Some(_) = record.path {
             if record.path.is_some() {
                 title = format!("[D] {title}");
             }
             if record.played {
-                table.add_col(LineStatic::styled(title, Style::new().crossed_out()));
+                lines.push(PropValue::TextLine(LineStatic::styled(
+                    title,
+                    Style::new().crossed_out(),
+                )));
                 continue;
             }
 
-            table.add_col(LineStatic::styled(title, Style::new().bold()));
+            lines.push(PropValue::TextLine(LineStatic::styled(
+                title,
+                Style::new().bold(),
+            )));
         }
         if podcast_selected.episodes.is_empty() {
-            table.add_col(LineStatic::from("empty episodes list"));
+            lines.push(PropValue::TextLine(LineStatic::from("empty episodes list")));
         }
 
-        let table = table.build();
         self.app
-            .attr(&Id::Episode, Attribute::Content, AttrValue::Table(table))
+            .attr(
+                &Id::Episode,
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(lines)),
+            )
             .ok();
 
         Ok(())

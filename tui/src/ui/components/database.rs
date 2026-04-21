@@ -18,8 +18,8 @@ use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
-    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, LineStatic, QueryResult,
-    Table, TableBuilder, Title,
+    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, LineStatic, PropPayload,
+    PropPayloadRef, PropValue, QueryResult, Table, TableBuilder, Title,
 };
 use tuirealm::props::{Borders, Style};
 use tuirealm::state::{State, StateValue};
@@ -57,10 +57,11 @@ fn common_list_movement<C: Component + OnKeyDB>(
             modifiers: KeyModifiers::NONE,
         }) => {
             if let Some(t) = comp
-                .query(Attribute::Content)
+                .query(Attribute::Text)
                 .as_ref()
                 .map(QueryResult::as_ref)
-                .and_then(AttrValueRef::as_table)
+                .and_then(AttrValueRef::as_payload)
+                .and_then(PropPayloadRef::as_vec)
                 && let State::Single(StateValue::Usize(index)) = comp.state()
                 && index >= t.len() - 1
             {
@@ -70,10 +71,11 @@ fn common_list_movement<C: Component + OnKeyDB>(
         }
         Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
             if let Some(t) = comp
-                .query(Attribute::Content)
+                .query(Attribute::Text)
                 .as_ref()
                 .map(QueryResult::as_ref)
-                .and_then(AttrValueRef::as_table)
+                .and_then(AttrValueRef::as_payload)
+                .and_then(PropPayloadRef::as_vec)
                 && let State::Single(StateValue::Usize(index)) = comp.state()
                 && index >= t.len() - 1
             {
@@ -611,33 +613,29 @@ impl Matchable for &track_ops::TrackRead {
 impl Model {
     /// Build & Apply the `Tracks` Database component table data.
     pub fn database_sync_tracks_results(&mut self) {
-        let mut table: TableBuilder = TableBuilder::default();
+        // let mut table: TableBuilder = TableBuilder::default();
+        let mut lines = Vec::new();
 
         for (idx, record) in self.dw.search_tracks.iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
-
             let name = record
                 .title
                 .as_ref()
                 .map_or_else(|| record.file_stem.to_string_lossy(), Cow::from);
 
-            table
-                .add_col(LineStatic::from(format!("{}", idx + 1)))
-                .add_col(LineStatic::from(" "))
-                .add_col(LineStatic::from(name.to_string()));
+            lines.push(PropValue::TextLine(LineStatic::from(format!(
+                "{} {name}",
+                idx + 1
+            ))));
         }
         if self.dw.search_results.is_empty() {
-            table.add_col(LineStatic::from("empty results"));
+            lines.push(PropValue::TextLine(LineStatic::from("empty results")));
         }
 
-        let table = table.build();
         self.app
             .attr(
                 &Id::DBListSearchTracks,
-                Attribute::Content,
-                AttrValue::Table(table),
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(lines)),
             )
             .ok();
 
@@ -646,7 +644,7 @@ impl Model {
 
     /// Build & Apply the `Results` Database component table data.
     pub fn database_sync_results(&mut self) {
-        let mut table: TableBuilder = TableBuilder::default();
+        let mut lines = Vec::new();
         for (idx, record) in self.dw.search_results.iter().enumerate() {
             let mut display_name = String::new();
             match self.dw.criteria {
@@ -671,25 +669,22 @@ impl Model {
                 }
             }
             if !display_name.is_empty() {
-                if idx > 0 {
-                    table.add_row();
-                }
-                table
-                    .add_col(LineStatic::from(format!("{}", idx + 1)))
-                    .add_col(LineStatic::from(" "))
-                    .add_col(LineStatic::from(display_name));
+                lines.push(PropValue::TextLine(LineStatic::from(format!(
+                    "{} {display_name}",
+                    idx + 1
+                ))));
             }
         }
         if self.dw.search_results.is_empty() {
-            table.add_col(LineStatic::from("empty results"));
+            lines.push(PropValue::TextLine(LineStatic::from("empty results")));
         }
 
-        let table = table.build();
+        // let table = table.build();
         self.app
             .attr(
                 &Id::DBListSearchResult,
-                Attribute::Content,
-                AttrValue::Table(table),
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(lines)),
             )
             .ok();
 
