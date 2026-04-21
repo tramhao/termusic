@@ -5303,7 +5303,6 @@ dependencies = [
  "base64",
  "bytes",
  "bytesize",
- "cc",
  "chrono",
  "dirs",
  "either",
