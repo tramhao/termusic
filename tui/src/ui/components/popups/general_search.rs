@@ -19,6 +19,7 @@ use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct GSInputPopup {
@@ -161,6 +162,7 @@ fn common_table_comp(config: &TuiOverlay, title: String) -> Table {
                 .style
                 .fg(config.settings.theme.fallback_highlight()),
         )
+        .highlight_style_inactive(STYLE_REMOVE_REVERSE)
         .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
         .rewind(false)
         .step(4)

@@ -41,6 +41,7 @@ use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 const COLOR_LIST: [ColorTermusic; 19] = [
     ColorTermusic::Reset,
@@ -92,6 +93,7 @@ impl CEThemeSelectTable {
                         .style
                         .fg(config.settings.theme.fallback_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(true)
                 .step(4)
@@ -230,6 +232,7 @@ impl CEColorSelect {
                 .rewind(false)
                 .inactive(Style::default().add_modifier(Modifier::BOLD).bg(color))
                 .highlight_style(CommonHighlight::default().style.fg(hg_color))
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(">> ")
                 .choices(choices)
                 .value(init_value),

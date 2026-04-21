@@ -17,6 +17,7 @@ use tuirealm::{
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{HelpPopupMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct HelpPopup {
@@ -85,6 +86,7 @@ impl HelpPopup {
                         .style
                         .fg(config.settings.theme.fallback_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .scroll(true)
                 .title(
