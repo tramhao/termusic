@@ -24,13 +24,13 @@ use termusiclib::config::SharedTuiSettings;
  */
 use anyhow::Result;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
-use tui_realm_stdlib::utils::get_block;
+use tui_realm_stdlib::prop_ext::CommonProps;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
     AttrValue, Attribute, Borders, Color, HorizontalAlignment, PropPayload, PropValue, Props,
-    QueryResult, TextModifiers, Title,
+    QueryResult, Style, TextModifiers, Title,
 };
 use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::layout::Rect;
@@ -39,7 +39,6 @@ use tuirealm::state::{State, StateValue};
 
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
-use crate::ui::utils::get_style;
 
 /// ## Counter
 ///
@@ -47,22 +46,63 @@ use crate::ui::utils::get_style;
 #[derive(Default)]
 struct Counter {
     props: Props,
+    common: CommonProps,
 }
 
 impl Counter {
-    #[allow(dead_code)]
-    pub fn label<S>(mut self, label: S) -> Self
-    where
-        S: AsRef<str>,
-    {
-        self.attr(
-            Attribute::Title,
-            AttrValue::Title(
-                Title::from(label.as_ref().to_string()).alignment(HorizontalAlignment::Center),
-            ),
-        );
+    /// Set the main foreground color. This may get overwritten by individual text styles.
+    pub fn foreground(mut self, fg: Color) -> Self {
+        self.attr(Attribute::Foreground, AttrValue::Color(fg));
         self
     }
+
+    /// Set the main background color. This may get overwritten by individual text styles.
+    pub fn background(mut self, bg: Color) -> Self {
+        self.attr(Attribute::Background, AttrValue::Color(bg));
+        self
+    }
+
+    /// Set the main text modifiers. This may get overwritten by individual text styles.
+    pub fn modifiers(mut self, m: TextModifiers) -> Self {
+        self.attr(Attribute::TextProps, AttrValue::TextModifiers(m));
+        self
+    }
+
+    /// Set the main style. This may get overwritten by individual text styles.
+    ///
+    /// This option will overwrite any previous [`foreground`](Self::foreground), [`background`](Self::background) and [`modifiers`](Self::modifiers)!
+    #[expect(dead_code)]
+    pub fn style(mut self, style: Style) -> Self {
+        self.attr(Attribute::Style, AttrValue::Style(style));
+        self
+    }
+
+    /// Set a custom style for the border when the component is unfocused.
+    #[expect(dead_code)]
+    pub fn inactive(mut self, s: Style) -> Self {
+        self.attr(Attribute::UnfocusedBorderStyle, AttrValue::Style(s));
+        self
+    }
+
+    /// Add a border to the component.
+    pub fn borders(mut self, b: Borders) -> Self {
+        self.attr(Attribute::Borders, AttrValue::Borders(b));
+        self
+    }
+
+    /// Add a title to the component.
+    #[expect(dead_code)]
+    pub fn title<T: Into<Title>>(mut self, title: T) -> Self {
+        self.attr(Attribute::Title, AttrValue::Title(title.into()));
+        self
+    }
+
+    /// Set the text alignment.
+    pub fn alignment(mut self, a: HorizontalAlignment) -> Self {
+        self.attr(Attribute::TextAlign, AttrValue::AlignmentHorizontal(a));
+        self
+    }
+
     #[allow(dead_code)]
     pub fn text<S>(mut self, t: S) -> Self
     where
@@ -84,31 +124,6 @@ impl Counter {
         self
     }
 
-    pub fn alignment(mut self, a: HorizontalAlignment) -> Self {
-        self.attr(Attribute::TextAlign, AttrValue::AlignmentHorizontal(a));
-        self
-    }
-
-    pub fn foreground(mut self, c: Color) -> Self {
-        self.attr(Attribute::Foreground, AttrValue::Color(c));
-        self
-    }
-
-    pub fn background(mut self, c: Color) -> Self {
-        self.attr(Attribute::Background, AttrValue::Color(c));
-        self
-    }
-
-    pub fn modifiers(mut self, m: TextModifiers) -> Self {
-        self.attr(Attribute::TextProps, AttrValue::TextModifiers(m));
-        self
-    }
-
-    pub fn borders(mut self, b: Borders) -> Self {
-        self.attr(Attribute::Borders, AttrValue::Borders(b));
-        self
-    }
-
     pub fn get_state(&self) -> Option<usize> {
         match self
             .props
@@ -123,69 +138,54 @@ impl Counter {
 
 impl Component for Counter {
     fn view(&mut self, frame: &mut Frame<'_>, area: Rect) {
-        // TODO: make use of CommonProps
-        // Check if visible
-        if self
-            .props
-            .get(Attribute::Display)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(true)
-        {
-            // Get properties
-            let value = self.get_state();
-            let text_base = self
-                .props
-                .get(Attribute::Text)
-                .and_then(|v| v.as_string())
-                .map_or("", |v| v.as_str());
-            let text = if let Some(value) = value {
-                format!("{text_base} ({value})")
-            } else {
-                "{text_base} (-)".to_string()
-            };
-
-            let alignment = self
-                .props
-                .get(Attribute::TextAlign)
-                .and_then(AttrValue::as_alignment_horizontal)
-                .unwrap_or(HorizontalAlignment::Left);
-            let style = get_style(&self.props);
-            let title = self
-                .props
-                .get(Attribute::Title)
-                .and_then(AttrValue::as_title);
-            let borders = self
-                .props
-                .get(Attribute::Borders)
-                .and_then(AttrValue::as_borders)
-                .unwrap_or_default();
-            let focus = self
-                .props
-                .get(Attribute::Focus)
-                .and_then(AttrValue::as_flag)
-                .unwrap_or(false);
-
-            let inactive_style = self
-                .props
-                .get(Attribute::UnfocusedBorderStyle)
-                .and_then(AttrValue::as_style)
-                .unwrap_or(style);
-            frame.render_widget(
-                Paragraph::new(text)
-                    .block(get_block(borders, title, focus, Some(inactive_style)))
-                    .style(style)
-                    .alignment(alignment),
-                area,
-            );
+        if !self.common.display {
+            return;
         }
+
+        // Get properties
+        let value = self.get_state();
+        let text_base = self
+            .props
+            .get(Attribute::Text)
+            .and_then(|v| v.as_string())
+            .map_or("", |v| v.as_str());
+        let text = if let Some(value) = value {
+            format!("{text_base} ({value})")
+        } else {
+            "None selected (-)".to_string()
+        };
+
+        let alignment = self
+            .props
+            .get(Attribute::TextAlign)
+            .and_then(AttrValue::as_alignment_horizontal)
+            .unwrap_or(HorizontalAlignment::Left);
+
+        let block = self.common.get_block();
+
+        let mut widget = Paragraph::new(text)
+            .style(self.common.style)
+            .alignment(alignment);
+
+        if let Some(block) = block {
+            widget = widget.block(block);
+        }
+
+        frame.render_widget(widget, area);
     }
 
     fn query(&self, attr: Attribute) -> Option<QueryResult<'_>> {
+        if let Some(value) = self.common.get_for_query(attr) {
+            return Some(value);
+        }
+
         self.props.get_for_query(attr)
     }
 
     fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        self.props.set(attr, value);
+        if let Some(value) = self.common.set(attr, value) {
+            self.props.set(attr, value);
+        }
     }
 
     fn state(&self) -> State {
