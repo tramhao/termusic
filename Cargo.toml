@@ -124,7 +124,7 @@ ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.32"
 alphanumeric-sort = "1.5.5"
 # for less dependencies, keep in sync with the version ratatui uses
-lru = "0.12.5"
+lru = "0.16"
 either = "1.15"
 # transitive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
 cc = "1.2"
