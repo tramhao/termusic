@@ -1,15 +1,15 @@
 use termusiclib::config::SharedTuiSettings;
 use tuirealm::command::{Cmd, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, InputType, Style};
-use tuirealm::{Component, Event, MockComponent};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{BorderType, Borders, HorizontalAlignment, InputType, Style, Title};
 
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
 
 /// Common Field Properties and event handling
-#[derive(MockComponent)]
+#[derive(Component)]
 struct EditField {
     component: Input,
     config: SharedTuiSettings,
@@ -30,7 +30,7 @@ impl EditField {
                         .modifiers(BorderType::Rounded),
                 )
                 .input_type(InputType::Text)
-                .title(title, Alignment::Left)
+                .title(Title::from(title).alignment(HorizontalAlignment::Left))
         };
 
         Self { component, config }
@@ -38,7 +38,7 @@ impl EditField {
 
     /// Basically [`Component::on`] but with custom extra parameters
     #[allow(clippy::needless_pass_by_value)]
-    pub fn on(&mut self, ev: Event<UserEvent>, on_key_down: Msg, on_key_up: Msg) -> Option<Msg> {
+    pub fn on(&mut self, ev: &Event<UserEvent>, on_key_down: Msg, on_key_up: Msg) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         match ev {
@@ -102,7 +102,7 @@ impl EditField {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => {
-                self.perform(Cmd::Type(ch));
+                self.perform(Cmd::Type(*ch));
                 Some(Msg::ForceRedraw)
             }
 
@@ -114,7 +114,7 @@ impl EditField {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TEInputArtist {
     component: EditField,
 }
@@ -127,8 +127,8 @@ impl TEInputArtist {
     }
 }
 
-impl Component<Msg, UserEvent> for TEInputArtist {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TEInputArtist {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::TagEditor(TEMsg::Focus(TFMsg::InputArtistBlurDown)),
@@ -137,7 +137,7 @@ impl Component<Msg, UserEvent> for TEInputArtist {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TEInputTitle {
     component: EditField,
 }
@@ -150,8 +150,8 @@ impl TEInputTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for TEInputTitle {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TEInputTitle {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::TagEditor(TEMsg::Focus(TFMsg::InputTitleBlurDown)),
@@ -160,7 +160,7 @@ impl Component<Msg, UserEvent> for TEInputTitle {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TEInputAlbum {
     component: EditField,
 }
@@ -173,8 +173,8 @@ impl TEInputAlbum {
     }
 }
 
-impl Component<Msg, UserEvent> for TEInputAlbum {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TEInputAlbum {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::TagEditor(TEMsg::Focus(TFMsg::InputAlbumBlurDown)),
@@ -183,7 +183,7 @@ impl Component<Msg, UserEvent> for TEInputAlbum {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TEInputGenre {
     component: EditField,
 }
@@ -196,8 +196,8 @@ impl TEInputGenre {
     }
 }
 
-impl Component<Msg, UserEvent> for TEInputGenre {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TEInputGenre {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::TagEditor(TEMsg::Focus(TFMsg::InputGenreBlurDown)),

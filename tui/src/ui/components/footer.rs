@@ -1,79 +1,67 @@
 use termusiclib::config::TuiOverlay;
-use tuirealm::{Component, Event, MockComponent, props::TextSpan};
+use tuirealm::{
+    component::{AppComponent, Component},
+    event::Event,
+    props::{SpanStatic, Style},
+};
 
 use crate::ui::{components::LabelSpan, model::UserEvent, msg::Msg};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct Footer {
     component: LabelSpan,
 }
 
 impl Footer {
+    #[expect(clippy::similar_names)]
     pub fn new(config: &TuiOverlay) -> Self {
+        let style_fg = Style::new()
+            .bold()
+            .fg(config.settings.theme.fallback_foreground());
+        let style_hg = Style::new()
+            .bold()
+            .fg(config.settings.theme.fallback_highlight());
+
         Self {
             component: (LabelSpan::new(
                 config,
                 &[
-                    TextSpan::new(" Help: ")
-                        .fg(config.settings.theme.fallback_foreground())
-                        .bold(),
-                    TextSpan::new(format!(
-                        "<{}>",
-                        config.settings.keys.select_view_keys.open_help
-                    ))
-                    .fg(config.settings.theme.fallback_highlight())
-                    .bold(),
-                    TextSpan::new(" Config: ")
-                        .fg(config.settings.theme.fallback_foreground())
-                        .bold(),
-                    TextSpan::new(format!(
-                        "<{}>",
-                        config.settings.keys.select_view_keys.open_config
-                    ))
-                    .fg(config.settings.theme.fallback_highlight())
-                    .bold(),
-                    TextSpan::new(" Library: ")
-                        .fg(config.settings.theme.fallback_foreground())
-                        .bold(),
-                    TextSpan::new(format!(
-                        "<{}>",
-                        config.settings.keys.select_view_keys.view_library
-                    ))
-                    .fg(config.settings.theme.fallback_highlight())
-                    .bold(),
-                    TextSpan::new(" Database: ")
-                        .fg(config.settings.theme.fallback_foreground())
-                        .bold(),
-                    TextSpan::new(format!(
-                        "<{}>",
-                        config.settings.keys.select_view_keys.view_database
-                    ))
-                    .fg(config.settings.theme.fallback_highlight())
-                    .bold(),
-                    TextSpan::new(" Podcasts: ")
-                        .fg(config.settings.theme.fallback_foreground())
-                        .bold(),
-                    TextSpan::new(format!(
-                        "<{}>",
-                        config.settings.keys.select_view_keys.view_podcasts
-                    ))
-                    .fg(config.settings.theme.fallback_highlight())
-                    .bold(),
-                    TextSpan::new(" Version: ")
-                        .fg(config.settings.theme.fallback_foreground())
-                        .bold(),
+                    SpanStatic::styled(" Help: ", style_fg),
+                    SpanStatic::styled(
+                        format!("<{}>", config.settings.keys.select_view_keys.open_help),
+                        style_hg,
+                    ),
+                    SpanStatic::styled(" Config: ", style_fg),
+                    SpanStatic::styled(
+                        format!("<{}>", config.settings.keys.select_view_keys.open_config),
+                        style_hg,
+                    ),
+                    SpanStatic::styled(" Library: ", style_fg),
+                    SpanStatic::styled(
+                        format!("<{}>", config.settings.keys.select_view_keys.view_library),
+                        style_hg,
+                    ),
+                    SpanStatic::styled(" Database: ", style_fg),
+                    SpanStatic::styled(
+                        format!("<{}>", config.settings.keys.select_view_keys.view_database),
+                        style_hg,
+                    ),
+                    SpanStatic::styled(" Podcasts: ", style_fg),
+                    SpanStatic::styled(
+                        format!("<{}>", config.settings.keys.select_view_keys.view_podcasts),
+                        style_hg,
+                    ),
+                    SpanStatic::styled(" Version: ", style_fg),
                     // maybe consider moving version into Help or Config or its own popup (like a About)
-                    TextSpan::new(env!("TERMUSIC_VERSION"))
-                        .fg(config.settings.theme.fallback_highlight())
-                        .bold(),
+                    SpanStatic::styled(env!("TERMUSIC_VERSION"), style_hg),
                 ],
             )),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for Footer {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for Footer {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }

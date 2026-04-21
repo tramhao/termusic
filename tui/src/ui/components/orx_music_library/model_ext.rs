@@ -8,8 +8,8 @@ use std::{
 use anyhow::{Context, Result, bail};
 use termusiclib::config::v2::server::{ScanDepth, config_extra::ServerConfigVersionedDefaulted};
 use tuirealm::{
-    Sub, SubClause, SubEventClause,
-    props::{TableBuilder, TextSpan},
+    props::{LineStatic, TableBuilder},
+    subscription::{EventClause, Sub, SubClause},
 };
 
 use crate::ui::{
@@ -26,31 +26,31 @@ use crate::ui::{
 fn library_subs() -> Vec<Sub<Id, UserEvent>> {
     vec![
         Sub::new(
-            SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::Reload(
+            EventClause::User(UserEvent::Forward(Msg::Library(LIMsg::Reload(
                 LIReloadData::default(),
             )))),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::ReloadPath(
+            EventClause::User(UserEvent::Forward(Msg::Library(LIMsg::ReloadPath(
                 LIReloadPathData::default(),
             )))),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReady(
+            EventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReady(
                 LINodeReady::default(),
             )))),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
+            EventClause::User(UserEvent::Forward(Msg::Library(LIMsg::TreeNodeReadySub(
                 LINodeReadySub::default(),
             )))),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::User(UserEvent::Forward(Msg::Library(LIMsg::RequestCurrentPath(
+            EventClause::User(UserEvent::Forward(Msg::Library(LIMsg::RequestCurrentPath(
                 LIReqNode::default(),
             )))),
             SubClause::Always,
@@ -171,8 +171,8 @@ impl Model {
                 }
                 idx += 1;
                 table
-                    .add_col(TextSpan::new(idx.to_string()))
-                    .add_col(TextSpan::new(file_name.to_string_lossy()));
+                    .add_col(LineStatic::from(idx.to_string()))
+                    .add_col(LineStatic::from(file_name.to_string_lossy().to_string()));
             }
         }
         let table = table.build();

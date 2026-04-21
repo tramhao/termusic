@@ -1,6 +1,5 @@
 use tuirealm::{
-    AttrValue, Attribute, Props,
-    props::Style,
+    props::{AttrValue, Attribute, Props, Style},
     ratatui::layout::{Constraint, Layout, Rect},
 };
 
@@ -69,19 +68,19 @@ pub fn get_style(props: &Props) -> Style {
     let mut style = Style::default();
 
     if let Some(fg) = props
-        .get_ref(Attribute::Foreground)
+        .get(Attribute::Foreground)
         .and_then(AttrValue::as_color)
     {
         style = style.fg(fg);
     }
     if let Some(bg) = props
-        .get_ref(Attribute::Background)
+        .get(Attribute::Background)
         .and_then(AttrValue::as_color)
     {
         style = style.bg(bg);
     }
     if let Some(modifiers) = props
-        .get_ref(Attribute::TextProps)
+        .get(Attribute::TextProps)
         .and_then(AttrValue::as_text_modifiers)
     {
         style = style.add_modifier(modifiers);

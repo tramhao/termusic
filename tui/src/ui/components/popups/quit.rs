@@ -22,14 +22,16 @@
  * SOFTWARE.
  */
 use termusiclib::config::SharedTuiSettings;
-use tuirealm::{Component, Event, MockComponent, props::Alignment};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
+use tuirealm::props::HorizontalAlignment;
 
 use super::{YNConfirm, YNConfirmStyle};
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, QuitPopupMsg};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct QuitPopup {
     component: YNConfirm,
 }
@@ -41,7 +43,7 @@ impl QuitPopup {
                 foreground_color: config.settings.theme.important_popup_foreground(),
                 background_color: config.settings.theme.important_popup_background(),
                 border_color: config.settings.theme.important_popup_border(),
-                title_alignment: Alignment::Center,
+                title_alignment: HorizontalAlignment::Center,
             }
         });
 
@@ -49,8 +51,8 @@ impl QuitPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for QuitPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for QuitPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::QuitPopup(QuitPopupMsg::CloseOk),

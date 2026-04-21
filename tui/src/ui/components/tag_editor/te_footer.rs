@@ -1,51 +1,53 @@
 use termusiclib::config::TuiOverlay;
-use tuirealm::{Component, Event, MockComponent, props::TextSpan};
+use tuirealm::{
+    component::{AppComponent, Component},
+    event::Event,
+    props::{SpanStatic, Style},
+};
 
 use crate::ui::{components::LabelSpan, model::UserEvent, msg::Msg};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TEFooter {
     component: LabelSpan,
 }
 
 impl TEFooter {
+    #[expect(clippy::similar_names)]
     pub fn new(config: &TuiOverlay) -> Self {
+        let style_fg = Style::new().fg(config.settings.theme.library_foreground());
+        let style_hg = Style::new()
+            .bold()
+            .fg(config.settings.theme.library_highlight());
+
         Self {
             component: (LabelSpan::new(
                 config,
                 &[
-                    TextSpan::new(" Save tag: ").fg(config.settings.theme.library_foreground()),
-                    TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    TextSpan::new(" Exit: ").fg(config.settings.theme.library_foreground()),
-                    TextSpan::new(format!("<{}>", config.settings.keys.escape))
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    TextSpan::new(" Change field: ").fg(config.settings.theme.library_foreground()),
-                    TextSpan::new("<Tab/ShiftTab>")
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    TextSpan::new(" Search/Embed tag: ")
-                        .fg(config.settings.theme.library_foreground()),
-                    TextSpan::new("<ENTER>")
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    TextSpan::new(" Download: ").fg(config.settings.theme.library_foreground()),
-                    TextSpan::new(format!(
-                        "<{}>",
-                        config.settings.keys.library_keys.youtube_search
-                    ))
-                    .bold()
-                    .fg(config.settings.theme.library_highlight()),
+                    SpanStatic::styled(" Save tag: ", style_fg),
+                    SpanStatic::styled(
+                        format!("<{}>", config.settings.keys.config_keys.save),
+                        style_hg,
+                    ),
+                    SpanStatic::styled(" Exit: ", style_fg),
+                    SpanStatic::styled(format!("<{}>", config.settings.keys.escape), style_hg),
+                    SpanStatic::styled(" Change field: ", style_fg),
+                    SpanStatic::styled("<Tab/ShiftTab>", style_hg),
+                    SpanStatic::styled(" Search/Embed tag: ", style_fg),
+                    SpanStatic::styled("<ENTER>", style_hg),
+                    SpanStatic::styled(" Download: ", style_fg),
+                    SpanStatic::styled(
+                        format!("<{}>", config.settings.keys.library_keys.youtube_search),
+                        style_hg,
+                    ),
                 ],
             )),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for TEFooter {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TEFooter {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }

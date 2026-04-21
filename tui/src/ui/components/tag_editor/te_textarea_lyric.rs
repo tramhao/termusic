@@ -1,14 +1,14 @@
 use termusiclib::config::SharedTuiSettings;
-use tui_realm_stdlib::Textarea;
+use tui_realm_stdlib::components::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, Style, TextSpan};
-use tuirealm::{Component, Event, MockComponent};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{BorderType, Borders, HorizontalAlignment, Style, TextStatic, Title};
 
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TETextareaLyric {
     component: Textarea,
     config: SharedTuiSettings,
@@ -27,18 +27,18 @@ impl TETextareaLyric {
                 .foreground(config.settings.theme.library_foreground())
                 .background(config.settings.theme.library_background())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
-                .title(" Lyrics ", Alignment::Left)
+                .title(Title::from(" Lyrics ").alignment(HorizontalAlignment::Left))
                 .step(4)
-                .highlighted_str("\u{1f3b5}")
-                // .highlighted_str("🎵")
-                .text_rows([TextSpan::from("No lyrics.")])
+                .highlight_str("\u{1f3b5}")
+                // .highlight_str("🎵")
+                .text_rows(TextStatic::from("No lyrics."))
         };
         Self { component, config }
     }
 }
 
-impl Component<Msg, UserEvent> for TETextareaLyric {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TETextareaLyric {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
@@ -94,7 +94,7 @@ impl Component<Msg, UserEvent> for TETextareaLyric {
             }
             _ => return None,
         };
-        // "Textarea::perform" currently always returns "CmdResult::None", so always redraw on event
+        // "Textarea::perform" currently always returns "CmdResult::NoChange", so always redraw on event
         // see https://github.com/veeso/tui-realm-stdlib/issues/27
         Some(Msg::ForceRedraw)
     }

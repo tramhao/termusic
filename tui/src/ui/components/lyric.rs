@@ -8,13 +8,15 @@ use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
 use termusiclib::track::MediaTypes;
 use termusiclib::track::MediaTypesSimple;
-use tui_realm_stdlib::Textarea;
+use tui_realm_stdlib::components::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
-    Alignment, AttrValue, Attribute, BorderType, Borders, PropPayload, PropValue, Style, TextSpan,
+    AttrValue, Attribute, BorderType, Borders, HorizontalAlignment, LineStatic, Style, TextStatic,
+    Title,
 };
-use tuirealm::{Component, Event, MockComponent, State, StateValue};
+use tuirealm::state::{State, StateValue};
 
 use super::TETrack;
 use crate::ui::ids::Id;
@@ -34,7 +36,7 @@ static RE_HTML_TAGS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^<>]*>").
 static RE_MULT_LINE_BREAKS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"((\r\n)|\r|\n){3,}").unwrap());
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct Lyric {
     component: Textarea,
     config: SharedTuiSettings,
@@ -53,19 +55,27 @@ impl Lyric {
                 .background(config.settings.theme.lyric_background())
                 .foreground(config.settings.theme.lyric_foreground())
                 .inactive(Style::new().bg(config.settings.theme.lyric_background()))
-                .title(" Lyrics ", Alignment::Left)
+                .title(Title::from(" Lyrics ").alignment(HorizontalAlignment::Left))
                 // .wrap(true)
                 .step(4)
-                .highlighted_str(&config.settings.theme.style.playlist.highlight_symbol)
-                .text_rows([TextSpan::new(format!("{}.", RunningStatus::Stopped))])
+                .highlight_str(
+                    config
+                        .settings
+                        .theme
+                        .style
+                        .playlist
+                        .highlight_symbol
+                        .clone(),
+                )
+                .text_rows(TextStatic::from(format!("{}.", RunningStatus::Stopped)))
         };
 
         Self { component, config }
     }
 }
 
-impl Component<Msg, UserEvent> for Lyric {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for Lyric {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let _cmd_result = match ev {
@@ -117,7 +127,7 @@ impl Component<Msg, UserEvent> for Lyric {
             }
             _ => return None,
         };
-        // "Textarea::perform" currently always returns "CmdResult::None", so always redraw on event
+        // "Textarea::perform" currently always returns "CmdResult::NoChange", so always redraw on event
         // see https://github.com/veeso/tui-realm-stdlib/issues/27
         Some(Msg::ForceRedraw)
     }
@@ -169,7 +179,7 @@ impl Model {
         if self.podcast.podcasts.is_empty() {
             return Ok(());
         }
-        if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
+        if let Ok(State::Single(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
             let podcast_selected = self
                 .podcast
                 .podcasts
@@ -207,47 +217,43 @@ impl Model {
         let (term_width, _) = viuer::terminal_size();
         let term_width = usize::from(term_width);
         let lyric_width = term_width * 3 / 5;
-        let lines_vec: Vec<_> = no_line_breaks.split('\n').collect();
-        let mut short_string_vec: Vec<_> = Vec::new();
-        for line in lines_vec {
-            let unicode_width = unicode_width::UnicodeWidthStr::width(line);
-            if unicode_width > lyric_width {
-                let mut string_tmp = textwrap::wrap(line, lyric_width);
-                short_string_vec.append(&mut string_tmp);
-            } else {
-                short_string_vec.push(std::borrow::Cow::Borrowed(line));
-            }
-        }
 
-        let lines_textspan_len = short_string_vec.len();
-        let lines_textspan = short_string_vec
-            .into_iter()
-            .map(|l| PropValue::TextSpan(TextSpan::from(l)));
-
-        let mut final_vec: Vec<_> = Vec::with_capacity(7 + lines_textspan_len);
-        final_vec.push(PropValue::TextSpan(TextSpan::from(po_title).bold()));
-        final_vec.push(PropValue::TextSpan(TextSpan::from(&ep.title).bold()));
-        final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
+        let mut final_text = TextStatic::from_iter([
+            LineStatic::styled(po_title.to_string(), Style::new().bold()),
+            LineStatic::styled(ep.title.clone(), Style::new().bold()),
+            LineStatic::from("   "),
+        ]);
 
         if let Some(date) = ep.pubdate {
-            final_vec.push(PropValue::TextSpan(
-                TextSpan::from(format!("Published: {}", date.format("%B %-d, %Y"))).italic(),
+            final_text.push_line(LineStatic::styled(
+                format!("Published: {}", date.format("%B %-d, %Y")),
+                Style::new().italic(),
             ));
         }
 
-        final_vec.push(PropValue::TextSpan(
-            TextSpan::from(format!("Duration: {}", ep.format_duration())).italic(),
+        final_text.push_line(LineStatic::styled(
+            format!("Duration: {}", ep.format_duration()),
+            Style::new().italic(),
         ));
 
-        final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
-        final_vec.push(PropValue::TextSpan(TextSpan::from("Description:").bold()));
-        final_vec.extend(lines_textspan);
+        final_text.push_line(LineStatic::from("   "));
+        final_text.push_line(LineStatic::styled("Description:", Style::new().bold()));
 
-        let _ = self.app.attr(
-            &Id::Lyric,
-            Attribute::Text,
-            AttrValue::Payload(PropPayload::Vec(final_vec)),
-        );
+        for line in no_line_breaks.split('\n') {
+            let unicode_width = unicode_width::UnicodeWidthStr::width(line);
+            if unicode_width > lyric_width {
+                let string_tmp = textwrap::wrap(line, lyric_width);
+                for line in string_tmp {
+                    final_text.push_line(LineStatic::from(line.to_string()));
+                }
+            } else {
+                final_text.push_line(LineStatic::from(line.to_string()));
+            }
+        }
+
+        let _ = self
+            .app
+            .attr(&Id::Lyric, Attribute::Text, AttrValue::Text(final_text));
     }
 
     /// Update lyrics. Needs to be run each time:
@@ -341,16 +347,9 @@ impl Model {
     }
 
     /// Set the given text as the current displayed lyric text.
-    fn lyric_set_lyric<T: Into<String>>(&mut self, text: T) {
-        let text = text.into();
+    fn lyric_set_lyric<T: Into<TextStatic>>(&mut self, text: T) {
         self.app
-            .attr(
-                &Id::Lyric,
-                Attribute::Text,
-                AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
-                    &text,
-                ))])),
-            )
+            .attr(&Id::Lyric, Attribute::Text, AttrValue::Text(text.into()))
             .ok();
     }
 
@@ -432,7 +431,7 @@ impl Model {
             .attr(
                 &Id::Lyric,
                 Attribute::Title,
-                AttrValue::Title((lyric_title, Alignment::Center)),
+                AttrValue::Title(Title::from(lyric_title).alignment(HorizontalAlignment::Center)),
             )
             .ok();
     }

@@ -11,14 +11,18 @@ use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, artist_ops, track_ops};
 use termusiclib::track::{DurationFmtShort, Track};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
-use tui_realm_stdlib::List;
+use tui_realm_stdlib::components::List;
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::props::{Alignment, BorderType, Table, TableBuilder, TextSpan};
-use tuirealm::props::{Borders, Style};
-use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
-    event::{Key, KeyEvent, KeyModifiers},
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{
+    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, LineStatic, QueryResult,
+    Table, TableBuilder, Title,
 };
+use tuirealm::props::{Borders, Style};
+use tuirealm::state::{State, StateValue};
 
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::Model;
@@ -33,7 +37,7 @@ trait OnKeyDB {
 }
 
 /// Common matches for [`List`] component movement and events
-fn common_list_movement<C: MockComponent + OnKeyDB>(
+fn common_list_movement<C: Component + OnKeyDB>(
     comp: &mut C,
     keys: &Keys,
     ev: &Event<UserEvent>,
@@ -43,7 +47,7 @@ fn common_list_movement<C: MockComponent + OnKeyDB>(
             code: Key::Up,
             modifiers: KeyModifiers::NONE,
         }) => comp.perform(Cmd::Move(Direction::Up)),
-        Event::Keyboard(key) if *key == keys.navigation_keys.up.get() => {
+        Event::Keyboard(key) if key == keys.navigation_keys.up.get() => {
             comp.perform(Cmd::Move(Direction::Up))
         }
 
@@ -51,17 +55,25 @@ fn common_list_movement<C: MockComponent + OnKeyDB>(
             code: Key::Down,
             modifiers: KeyModifiers::NONE,
         }) => {
-            if let Some(AttrValue::Table(t)) = comp.query(Attribute::Content)
-                && let State::One(StateValue::Usize(index)) = comp.state()
+            if let Some(t) = comp
+                .query(Attribute::Content)
+                .as_ref()
+                .map(QueryResult::as_ref)
+                .and_then(AttrValueRef::as_table)
+                && let State::Single(StateValue::Usize(index)) = comp.state()
                 && index >= t.len() - 1
             {
                 return Some(Either::Right(comp.on_key_tab()));
             }
             comp.perform(Cmd::Move(Direction::Down))
         }
-        Event::Keyboard(key) if *key == keys.navigation_keys.down.get() => {
-            if let Some(AttrValue::Table(t)) = comp.query(Attribute::Content)
-                && let State::One(StateValue::Usize(index)) = comp.state()
+        Event::Keyboard(key) if key == keys.navigation_keys.down.get() => {
+            if let Some(t) = comp
+                .query(Attribute::Content)
+                .as_ref()
+                .map(QueryResult::as_ref)
+                .and_then(AttrValueRef::as_table)
+                && let State::Single(StateValue::Usize(index)) = comp.state()
                 && index >= t.len() - 1
             {
                 return Some(Either::Right(comp.on_key_tab()));
@@ -82,7 +94,7 @@ fn common_list_movement<C: MockComponent + OnKeyDB>(
             code: Key::Home,
             modifiers: KeyModifiers::NONE,
         }) => comp.perform(Cmd::GoTo(Position::Begin)),
-        Event::Keyboard(key) if *key == keys.navigation_keys.goto_top.get() => {
+        Event::Keyboard(key) if key == keys.navigation_keys.goto_top.get() => {
             comp.perform(Cmd::GoTo(Position::Begin))
         }
 
@@ -90,7 +102,7 @@ fn common_list_movement<C: MockComponent + OnKeyDB>(
             code: Key::End,
             modifiers: KeyModifiers::NONE,
         }) => comp.perform(Cmd::GoTo(Position::End)),
-        Event::Keyboard(key) if *key == keys.navigation_keys.goto_bottom.get() => {
+        Event::Keyboard(key) if key == keys.navigation_keys.goto_bottom.get() => {
             comp.perform(Cmd::GoTo(Position::End))
         }
 
@@ -126,18 +138,14 @@ impl DBCriteria {
     /// Note: keep this in-sync with [`Self::build_table`]
     const NUM_OPTIONS: u16 = 5;
 
-    fn build_table() -> Table {
-        TableBuilder::default()
-            .add_col(TextSpan::from("Artist"))
-            .add_row()
-            .add_col(TextSpan::from("Album"))
-            .add_row()
-            .add_col(TextSpan::from("Genre"))
-            .add_row()
-            .add_col(TextSpan::from("Directory"))
-            .add_row()
-            .add_col(TextSpan::from("Playlists"))
-            .build()
+    fn build_table() -> [LineStatic; 5] {
+        [
+            LineStatic::from("Artist"),
+            LineStatic::from("Album"),
+            LineStatic::from("Genre"),
+            LineStatic::from("Directory"),
+            LineStatic::from("Playlists"),
+        ]
     }
 
     /// Try to map the given table index to a variant, returns [`None`] if index is out of bounds.
@@ -168,7 +176,7 @@ impl From<DBCriteria> for SearchCriteria {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct DBListCriteria {
     component: List,
     on_key_tab: Msg,
@@ -189,10 +197,14 @@ impl DBListCriteria {
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
-                .title(" DataBase ", Alignment::Left)
+                .title(Title::from(" DataBase ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
-                .highlighted_color(config.settings.theme.library_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .bg(config.settings.theme.library_highlight()),
+                )
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
                 .scroll(true)
@@ -224,36 +236,36 @@ impl OnKeyDB for DBListCriteria {
     }
 }
 
-impl Component<Msg, UserEvent> for DBListCriteria {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for DBListCriteria {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
 
-        let cmd_result = common_list_movement(self, keys, &ev).unwrap_or_else(|| {
+        let cmd_result = common_list_movement(self, keys, ev).unwrap_or_else(|| {
             let res = match ev {
                 Event::Keyboard(KeyEvent {
                     code: Key::Enter,
                     modifiers: KeyModifiers::NONE,
                 }) => {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
+                    if let State::Single(StateValue::Usize(index)) = self.state() {
                         let criteria = DBCriteria::from_table_index(index)
                             .expect("All table options to be mapped");
                         return Either::Right(Msg::DataBase(DBMsg::SearchResult(criteria.into())));
                     }
-                    CmdResult::None
+                    CmdResult::NoChange
                 }
 
                 Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
                     return Either::Right(Msg::GeneralSearch(GSMsg::PopupShowDatabase));
                 }
-                _ => CmdResult::None,
+                _ => CmdResult::NoChange,
             };
 
             Either::Left(res)
         });
 
         match cmd_result {
-            Either::Left(CmdResult::None) => None,
+            Either::Left(CmdResult::NoChange) => None,
             Either::Right(msg) => Some(msg),
             Either::Left(_) => Some(Msg::ForceRedraw),
         }
@@ -261,7 +273,7 @@ impl Component<Msg, UserEvent> for DBListCriteria {
 }
 
 /// Component for a "Are you sure you want to add ALL found albums? Y/N" popup
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct AddAlbumConfirm {
     component: YNConfirm,
 }
@@ -275,7 +287,7 @@ impl AddAlbumConfirm {
                 foreground_color: config.settings.theme.important_popup_foreground(),
                 background_color: config.settings.theme.important_popup_background(),
                 border_color: config.settings.theme.important_popup_border(),
-                title_alignment: Alignment::Left,
+                title_alignment: HorizontalAlignment::Left,
             },
         );
 
@@ -283,8 +295,8 @@ impl AddAlbumConfirm {
     }
 }
 
-impl Component<Msg, UserEvent> for AddAlbumConfirm {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for AddAlbumConfirm {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::DataBase(DBMsg::AddAllResultsToPlaylist),
@@ -293,7 +305,7 @@ impl Component<Msg, UserEvent> for AddAlbumConfirm {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct DBListSearchResult {
     component: List,
     on_key_tab: Msg,
@@ -314,18 +326,18 @@ impl DBListSearchResult {
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
-                .title(" Result ", Alignment::Left)
+                .title(Title::from(" Result ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
-                .highlighted_color(config.settings.theme.library_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .bg(config.settings.theme.library_highlight()),
+                )
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
                 .scroll(true)
-                .rows(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty"))
-                        .build(),
-                )
+                .rows([LineStatic::from("Empty")])
         };
 
         Self {
@@ -347,22 +359,22 @@ impl OnKeyDB for DBListSearchResult {
     }
 }
 
-impl Component<Msg, UserEvent> for DBListSearchResult {
+impl AppComponent<Msg, UserEvent> for DBListSearchResult {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
 
-        let cmd_result = common_list_movement(self, keys, &ev).unwrap_or_else(|| {
+        let cmd_result = common_list_movement(self, keys, ev).unwrap_or_else(|| {
             let res = match ev {
                 Event::Keyboard(KeyEvent {
                     code: Key::Enter,
                     modifiers: KeyModifiers::NONE,
                 }) => {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
+                    if let State::Single(StateValue::Usize(index)) = self.state() {
                         return Either::Right(Msg::DataBase(DBMsg::SearchTrack(index)));
                     }
-                    CmdResult::None
+                    CmdResult::NoChange
                 }
 
                 Event::Keyboard(keyevent) if keyevent == keys.library_keys.search.get() => {
@@ -370,32 +382,32 @@ impl Component<Msg, UserEvent> for DBListSearchResult {
                 }
 
                 Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_selected.get() => {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
+                    if let State::Single(StateValue::Usize(index)) = self.state() {
                         // Maybe we should also have a popup if it is anything other that "Album"?
                         // Because things like "Genre" could be *very* big
                         return Either::Right(Msg::DataBase(DBMsg::AddResultToPlaylist(index)));
                     }
-                    CmdResult::None
+                    CmdResult::NoChange
                 }
                 Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_all.get() => {
                     return Either::Right(Msg::DataBase(DBMsg::AddAllResultsConfirmShow));
                 }
 
-                _ => CmdResult::None,
+                _ => CmdResult::NoChange,
             };
 
             Either::Left(res)
         });
 
         match cmd_result {
-            Either::Left(CmdResult::None) => None,
+            Either::Left(CmdResult::NoChange) => None,
             Either::Right(msg) => Some(msg),
             Either::Left(_) => Some(Msg::ForceRedraw),
         }
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct DBListSearchTracks {
     component: List,
     on_key_tab: Msg,
@@ -416,18 +428,18 @@ impl DBListSearchTracks {
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
-                .title(" Tracks ", Alignment::Left)
+                .title(Title::from(" Tracks ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
-                .highlighted_color(config.settings.theme.library_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .bg(config.settings.theme.library_highlight()),
+                )
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
                 .scroll(true)
-                .rows(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty"))
-                        .build(),
-                )
+                .rows([LineStatic::from("Empty")])
         };
 
         Self {
@@ -449,18 +461,18 @@ impl OnKeyDB for DBListSearchTracks {
     }
 }
 
-impl Component<Msg, UserEvent> for DBListSearchTracks {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for DBListSearchTracks {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
 
-        let cmd_result = common_list_movement(self, keys, &ev).unwrap_or_else(|| {
+        let cmd_result = common_list_movement(self, keys, ev).unwrap_or_else(|| {
             let res = match ev {
                 Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_selected.get() => {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
+                    if let State::Single(StateValue::Usize(index)) = self.state() {
                         return Either::Right(Msg::DataBase(DBMsg::AddPlaylist(index)));
                     }
-                    CmdResult::None
+                    CmdResult::NoChange
                 }
                 Event::Keyboard(keyevent) if keyevent == keys.database_keys.add_all.get() => {
                     return Either::Right(Msg::DataBase(DBMsg::AddAllToPlaylist));
@@ -470,14 +482,14 @@ impl Component<Msg, UserEvent> for DBListSearchTracks {
                     return Either::Right(Msg::GeneralSearch(GSMsg::PopupShowDatabase));
                 }
 
-                _ => CmdResult::None,
+                _ => CmdResult::NoChange,
             };
 
             Either::Left(res)
         });
 
         match cmd_result {
-            Either::Left(CmdResult::None) => None,
+            Either::Left(CmdResult::NoChange) => None,
             Either::Right(msg) => Some(msg),
             Either::Left(_) => Some(Msg::ForceRedraw),
         }
@@ -608,20 +620,20 @@ impl Model {
                 .map_or_else(|| record.file_stem.to_string_lossy(), Cow::from);
 
             table
-                .add_col(TextSpan::from(format!("{}", idx + 1)))
-                .add_col(TextSpan::from(" "))
-                .add_col(TextSpan::from(name));
+                .add_col(LineStatic::from(format!("{}", idx + 1)))
+                .add_col(LineStatic::from(" "))
+                .add_col(LineStatic::from(name.to_string()));
         }
         if self.dw.search_results.is_empty() {
-            table.add_col(TextSpan::from("empty results"));
+            table.add_col(LineStatic::from("empty results"));
         }
 
         let table = table.build();
         self.app
             .attr(
                 &Id::DBListSearchTracks,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
+                Attribute::Content,
+                AttrValue::Table(table),
             )
             .ok();
 
@@ -659,21 +671,21 @@ impl Model {
                     table.add_row();
                 }
                 table
-                    .add_col(TextSpan::from(format!("{}", idx + 1)))
-                    .add_col(TextSpan::from(" "))
-                    .add_col(TextSpan::from(display_name));
+                    .add_col(LineStatic::from(format!("{}", idx + 1)))
+                    .add_col(LineStatic::from(" "))
+                    .add_col(LineStatic::from(display_name));
             }
         }
         if self.dw.search_results.is_empty() {
-            table.add_col(TextSpan::from("empty results"));
+            table.add_col(LineStatic::from("empty results"));
         }
 
         let table = table.build();
         self.app
             .attr(
                 &Id::DBListSearchResult,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
+                Attribute::Content,
+                AttrValue::Table(table),
             )
             .ok();
 
@@ -995,9 +1007,9 @@ impl Model {
         let mut peekable_data = data.peekable();
         let mut table: TableBuilder = TableBuilder::default();
         if peekable_data.peek().is_none() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty tracks from db/playlist"));
-            table.add_col(TextSpan::from(""));
+            table.add_col(LineStatic::from("0"));
+            table.add_col(LineStatic::from("empty tracks from db/playlist"));
+            table.add_col(LineStatic::from(""));
             return table.build();
         }
 
@@ -1016,13 +1028,20 @@ impl Model {
             };
 
             table
-                .add_col(TextSpan::new(duration_string))
-                .add_col(
-                    TextSpan::new(record.meta_artist().unwrap_or(UNKNOWN_ARTIST)).fg(artist_color),
-                )
-                .add_col(TextSpan::new(record.meta_title().unwrap_or(UNKNOWN_TITLE)).bold())
-                .add_col(TextSpan::new(
-                    record.meta_file().unwrap_or(Cow::Borrowed(UNKNOWN_FILE)),
+                .add_col(LineStatic::from(duration_string))
+                .add_col(LineStatic::styled(
+                    record.meta_artist().unwrap_or(UNKNOWN_ARTIST).to_string(),
+                    Style::new().fg(artist_color),
+                ))
+                .add_col(LineStatic::styled(
+                    record.meta_title().unwrap_or(UNKNOWN_TITLE).to_string(),
+                    Style::new().bold(),
+                ))
+                .add_col(LineStatic::from(
+                    record
+                        .meta_file()
+                        .unwrap_or(Cow::Borrowed(UNKNOWN_FILE))
+                        .to_string(),
                 ));
         }
         table.build()

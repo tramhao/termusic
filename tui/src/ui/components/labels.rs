@@ -25,17 +25,21 @@ use std::time::Instant;
 
 use crate::ui::msg::Msg;
 use termusiclib::config::TuiOverlay;
-use tui_realm_stdlib::{Label, Span, Spinner};
+use tui_realm_stdlib::components::{Label, Span, Spinner};
 use tuirealm::command::{Cmd, CmdResult};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
 use tuirealm::props::{
-    Alignment, AttrValue, Attribute, PropPayload, PropValue, TextModifiers, TextSpan,
+    AttrValue, Attribute, HorizontalAlignment, PropPayload, PropValue, QueryResult, SpanStatic,
+    TextModifiers,
 };
+use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::layout::Rect;
-use tuirealm::{Component, Event, Frame, MockComponent, State};
+use tuirealm::state::State;
 
 use crate::ui::model::UserEvent;
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct LabelGeneric {
     component: Label,
 }
@@ -45,7 +49,7 @@ impl LabelGeneric {
         Self {
             component: Label::default()
                 .text(text)
-                .alignment(Alignment::Left)
+                .alignment_horizontal(HorizontalAlignment::Left)
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_highlight())
                 .modifiers(TextModifiers::BOLD),
@@ -53,30 +57,30 @@ impl LabelGeneric {
     }
 }
 
-impl Component<Msg, UserEvent> for LabelGeneric {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for LabelGeneric {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
 
 pub struct LabelSpan {
     component: Span,
-    default_span: Vec<TextSpan>,
+    default_span: Vec<SpanStatic>,
     active_message_start_time: Option<Instant>,
     /// Timeout in seconds
     time_out: isize,
 }
 
 impl LabelSpan {
-    pub fn new(config: &TuiOverlay, span: &[TextSpan]) -> Self {
+    pub fn new(config: &TuiOverlay, span: &[SpanStatic]) -> Self {
         let default = span.to_vec();
 
         Self {
-            // dont style the Span itself, style the TextSpan's themself
+            // dont style the Span itself, style the SpanStatic's themself
             component: Span::default()
                 .background(config.settings.theme.library_background())
                 .spans(default.clone())
-                .alignment(Alignment::Left)
+                .alignment_horizontal(HorizontalAlignment::Left)
                 .modifiers(TextModifiers::BOLD),
             default_span: default,
             active_message_start_time: None,
@@ -85,13 +89,13 @@ impl LabelSpan {
     }
 }
 
-impl Component<Msg, UserEvent> for LabelSpan {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for LabelSpan {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
 
-impl MockComponent for LabelSpan {
+impl Component for LabelSpan {
     #[allow(clippy::cast_sign_loss)]
     fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
         if let Some(start_time) = self.active_message_start_time
@@ -114,7 +118,7 @@ impl MockComponent for LabelSpan {
         self.component.view(render, area);
     }
 
-    fn query(&self, attr: Attribute) -> Option<AttrValue> {
+    fn query(&self, attr: Attribute) -> Option<QueryResult<'_>> {
         self.component.query(attr)
     }
 
@@ -131,11 +135,11 @@ impl MockComponent for LabelSpan {
     }
 
     fn perform(&mut self, _cmd: Cmd) -> CmdResult {
-        CmdResult::None
+        CmdResult::NoChange
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct DownloadSpinner {
     component: Spinner,
 }
@@ -153,8 +157,9 @@ impl DownloadSpinner {
     }
 }
 
-impl Component<Msg, UserEvent> for DownloadSpinner {
-    fn on(&mut self, _: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for DownloadSpinner {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
+        // TODO: manual spinner step
         None
     }
 }

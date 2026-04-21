@@ -2,10 +2,13 @@ use std::borrow::Cow;
 use std::path::Path;
 
 use anyhow::Result;
-use tuirealm::State;
-use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, Style, TextSpan};
+use tuirealm::props::{
+    AttrValue, Attribute, HorizontalAlignment, PropPayload, PropValue, SpanStatic, Style, Title,
+};
 use tuirealm::ratatui::layout::{Constraint, Layout};
 use tuirealm::ratatui::widgets::Clear;
+use tuirealm::state::State;
+use tuirealm::terminal::TerminalAdapter;
 
 use super::TETrack;
 use crate::ui::components::tag_editor::te_footer::TEFooter;
@@ -21,11 +24,10 @@ impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn view_tag_editor(&mut self) {
         self.terminal
-            .raw_mut()
             .draw(|f| {
                 let select_lyric_len =
                     match self.app.state(&Id::TagEditor(IdTagEditor::SelectLyric)) {
-                        Ok(State::One(_)) => 3,
+                        Ok(State::Single(_)) => 3,
                         _ => 8,
                     };
                 if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
@@ -349,7 +351,7 @@ impl Model {
         let vec_lyric = vec_lang_selected
             .text
             .lines()
-            .map(|line| PropValue::TextSpan(TextSpan::from(line.trim())))
+            .map(|line| PropValue::TextSpan(SpanStatic::from(line.trim().to_string())))
             .collect();
 
         self.app.attr(
@@ -360,17 +362,23 @@ impl Model {
         self.app.attr(
             &Id::TagEditor(IdTagEditor::CounterDelete),
             Attribute::Value,
-            AttrValue::Payload(PropPayload::One(PropValue::Usize(selected_index_display))),
+            AttrValue::Payload(PropPayload::Single(PropValue::Usize(
+                selected_index_display,
+            ))),
         )?;
         self.app.attr(
             &Id::TagEditor(IdTagEditor::CounterSave),
             Attribute::Value,
-            AttrValue::Payload(PropPayload::One(PropValue::Usize(selected_index_display))),
+            AttrValue::Payload(PropPayload::Single(PropValue::Usize(
+                selected_index_display,
+            ))),
         )?;
         self.app.attr(
             &Id::TagEditor(IdTagEditor::TextareaLyric),
             Attribute::Title,
-            AttrValue::Title((selected_description, Alignment::Left)),
+            AttrValue::Title(
+                Title::from(selected_description).alignment(HorizontalAlignment::Left),
+            ),
         )?;
 
         self.app.attr(
@@ -413,7 +421,9 @@ impl Model {
                 .attr(
                     &Id::TagEditor(IdTagEditor::TextareaLyric),
                     Attribute::Title,
-                    AttrValue::Title(("Empty Lyrics".to_string(), Alignment::Left))
+                    AttrValue::Title(
+                        Title::from("Empty Lyrics").alignment(HorizontalAlignment::Left)
+                    )
                 )
                 .is_ok()
         );
@@ -423,7 +433,7 @@ impl Model {
                     &Id::TagEditor(IdTagEditor::TextareaLyric),
                     Attribute::Text,
                     AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(
-                        TextSpan::from("No Lyrics.")
+                        SpanStatic::from("No Lyrics.")
                     ),]))
                 )
                 .is_ok()

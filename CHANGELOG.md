@@ -23,6 +23,7 @@
 - Feat: add ability to control startup playing state behavior.
 - Feat: add playlist loop mode to only play the playlist once, then stop.
 - Feat(tui): change default theme to be "Native".
+- Feat(tui): update to tuirealm 4.0.0. This fixes a bunch of extra styling issues.
 - Feat(server): change volume scaling from linear to cubic for better perceptual volume consistency.
 
 ### [V0.12.1]

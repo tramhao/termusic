@@ -9,11 +9,12 @@ use std::{
 
 use anyhow::{Context, Result};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay, v2::server::ScanDepth};
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::{
-    Component, Event, MockComponent,
     command::{Cmd, CmdResult, Direction, Position},
-    event::{Key, KeyEvent, KeyModifiers},
-    props::{Alignment, BorderType, Borders, Style},
+    component::{AppComponent, Component},
+    event::{Event, Key, KeyEvent, KeyModifiers},
+    props::{BorderType, Borders, HorizontalAlignment, LineStatic, Style, Title},
     ratatui::{buffer::Buffer, layout::Rect},
 };
 use tuirealm_orx_tree::{
@@ -107,7 +108,14 @@ impl NodeValue for MusicLibData {
     ) {
         if self.is_error {
             // indicator error loading that directory / file
-            Indicator::render(ERROR_SYMBOL, 2, &mut offset, &mut area, buf, Some(style));
+            Indicator::render(
+                &LineStatic::from(ERROR_SYMBOL),
+                2,
+                &mut offset,
+                &mut area,
+                buf,
+                Some(style),
+            );
         } else if !self.is_dir.is_dir() {
             // not a directory
 
@@ -125,7 +133,14 @@ impl NodeValue for MusicLibData {
             );
         } else {
             // directory that is loading
-            Indicator::render(LOADING_SYMBOL, 2, &mut offset, &mut area, buf, Some(style));
+            Indicator::render(
+                &LineStatic::from(LOADING_SYMBOL),
+                2,
+                &mut offset,
+                &mut area,
+                buf,
+                Some(style),
+            );
         }
 
         self.render(buf, area, offset, style);
@@ -134,7 +149,7 @@ impl NodeValue for MusicLibData {
 
 const LOADING_TREE_TEXT: &str = "Loading...";
 
-#[derive(Debug, MockComponent)]
+#[derive(Debug, Component)]
 pub struct OrxMusicLibraryComponent {
     component: TreeView<MusicLibData>,
     config: SharedTuiSettings,
@@ -161,9 +176,13 @@ impl OrxMusicLibraryComponent {
             .highlight_symbol_draw_width(2)
             .highlight_symbol_draw_behavior(HighlightDrawBehavior::Static)
             .scroll_step_horizontal(NonZeroUsize::new(2).unwrap())
-            .title(" Library ", Alignment::Left)
-            .highlight_color(config.settings.theme.library_highlight())
-            .highlight_symbol(&config.settings.theme.style.library.highlight_symbol)
+            .title(Title::from(" Library ").alignment(HorizontalAlignment::Left))
+            .highlight_style(
+                CommonHighlight::default()
+                    .style
+                    .bg(config.settings.theme.library_highlight()),
+            )
+            .highlight_symbol(config.settings.theme.style.library.highlight_symbol.clone())
             .empty_tree_text(LOADING_TREE_TEXT)
     }
 
@@ -421,9 +440,10 @@ impl OrxMusicLibraryComponent {
     /// Handle a full reload / potential change of the current tree root.
     ///
     /// Also changes focus, if requested.
-    fn handle_full_reload(&mut self, data: LIReloadData) -> Option<Msg> {
+    fn handle_full_reload(&mut self, data: &LIReloadData) -> Option<Msg> {
         let Some(path) = data
             .change_root_path
+            .clone()
             .or_else(|| self.get_root_path().map(Path::to_path_buf))
         else {
             debug!("No \"change_root_path\" and no current root, not reloading!");
@@ -431,6 +451,7 @@ impl OrxMusicLibraryComponent {
         };
         let focus_node = data
             .focus_node
+            .as_ref()
             .map(PathBuf::from)
             .or_else(|| self.get_selected_path().map(Path::to_path_buf));
 
@@ -562,11 +583,11 @@ impl OrxMusicLibraryComponent {
     ///
     /// This will always replace the root of the tree.
     #[expect(unsafe_code)]
-    fn handle_ready(&mut self, data: LINodeReady) -> Msg {
-        let vec = data.vec;
-        let initial_node = data.focus_node;
-
-        let initial_node = initial_node
+    fn handle_ready(&mut self, data: &LINodeReady) -> Msg {
+        let vec = data.vec.clone();
+        let initial_node = data
+            .focus_node
+            .as_ref()
             .map(PathBuf::from)
             .or_else(|| self.get_selected_path().map(Path::to_path_buf));
 
@@ -613,7 +634,8 @@ impl OrxMusicLibraryComponent {
     ///
     /// This will replace the root if the given data is starting at the root path.
     #[expect(unsafe_code)]
-    fn handle_ready_sub(&mut self, data: LINodeReadySub) -> Option<Msg> {
+    fn handle_ready_sub(&mut self, data: &LINodeReadySub) -> Option<Msg> {
+        let data = data.clone();
         let vec = data.vec;
 
         // let tree_mut = self.component.tree_mut().root_mut();
@@ -695,18 +717,18 @@ impl OrxMusicLibraryComponent {
     }
 
     /// Handle all custom messages.
-    fn handle_user_events(&mut self, ev: LIMsg) -> Option<Msg> {
+    fn handle_user_events(&mut self, ev: &LIMsg) -> Option<Msg> {
         // handle subscriptions
         match ev {
             LIMsg::Reload(data) => self.handle_full_reload(data),
             LIMsg::ReloadPath(data) => {
-                self.handle_reload_at(data);
+                self.handle_reload_at(data.clone());
                 Some(Msg::ForceRedraw)
             }
             LIMsg::TreeNodeReady(data) => Some(self.handle_ready(data)),
             LIMsg::TreeNodeReadySub(data) => self.handle_ready_sub(data),
             LIMsg::RequestCurrentPath(data) => {
-                self.handle_request_current_node(&data);
+                self.handle_request_current_node(data);
                 None
             }
             _ => None,
@@ -714,9 +736,9 @@ impl OrxMusicLibraryComponent {
     }
 }
 
-impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
+impl AppComponent<Msg, UserEvent> for OrxMusicLibraryComponent {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
             return self.handle_user_events(ev);
         }
@@ -728,13 +750,13 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.left.get() => {
                 match self.handle_left_key() {
                     Some(msg) => return Some(msg),
-                    None => CmdResult::None,
+                    None => CmdResult::NoChange,
                 }
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.right.get() => {
                 match self.handle_right_key(false) {
                     Some(msg) => return Some(msg),
-                    None => CmdResult::None,
+                    None => CmdResult::NoChange,
                 }
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
@@ -748,14 +770,14 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 modifiers: KeyModifiers::NONE,
             }) => match self.handle_left_key() {
                 Some(msg) => return Some(msg),
-                None => CmdResult::None,
+                None => CmdResult::NoChange,
             },
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
             }) => match self.handle_right_key(false) {
                 Some(msg) => return Some(msg),
-                None => CmdResult::None,
+                None => CmdResult::NoChange,
             },
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -797,11 +819,11 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.yank.get() => {
                 self.yank();
-                CmdResult::None
+                CmdResult::NoChange
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.paste.get() => {
                 match self.paste() {
-                    Ok(None) => CmdResult::None,
+                    Ok(None) => CmdResult::NoChange,
                     Ok(Some(msg)) => return Some(Msg::Library(msg)),
                     Err(err) => return Some(Msg::Library(LIMsg::PasteError(err.to_string()))),
                 }
@@ -812,20 +834,20 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 if let Some(path) = self.get_root_path() {
                     return Some(Msg::Library(LIMsg::SwitchRoot(path.to_path_buf())));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.add_root.get() => {
                 if let Some(path) = self.get_root_path() {
                     return Some(Msg::Library(LIMsg::AddRoot(path.to_path_buf())));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.remove_root.get() => {
                 if let Some(path) = self.get_root_path() {
                     return Some(Msg::Library(LIMsg::RemoveRoot(path.to_path_buf())));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             // load more tree
@@ -846,7 +868,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 }
 
                 // there is no special indicator or message; the download_tracker should force a draw once active
-                CmdResult::None
+                CmdResult::NoChange
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
@@ -861,7 +883,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                     return Some(Msg::ForceRedraw);
                 }
 
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             // search
@@ -871,7 +893,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                         path.to_path_buf(),
                     )));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.youtube_search.get() => {
@@ -880,7 +902,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                         path.to_path_buf(),
                     )));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             // load into playlist
@@ -890,7 +912,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 {
                     return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
             Event::Keyboard(keyevent) if keyevent == keys.library_keys.load_track.get() => {
                 if let Some(path) = self.get_selected_path()
@@ -898,7 +920,7 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 {
                     return Some(Msg::Playlist(PLMsg::Add(path.to_path_buf())));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             // other
@@ -918,13 +940,13 @@ impl Component<Msg, UserEvent> for OrxMusicLibraryComponent {
                 {
                     return Some(Msg::TagEditor(TEMsg::Open(path.to_path_buf())));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }

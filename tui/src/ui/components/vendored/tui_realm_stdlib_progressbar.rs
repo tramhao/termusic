@@ -25,7 +25,7 @@ Copyright (c) 2021-2024 Christian Visintin
 
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::props::{
-    Alignment, AttrValue, Attribute, Borders, Color, PropPayload, PropValue, Props, TextModifiers,
+    AttrValue, Attribute, Borders, Color, PropPayload, PropValue, Props, TextModifiers,
 };
 use tuirealm::ratatui::{layout::Rect, widgets::Gauge};
 use tuirealm::{Frame, MockComponent, State};
@@ -78,7 +78,7 @@ impl ProgressBar {
         Self::assert_progress(p);
         self.attr(
             Attribute::Value,
-            AttrValue::Payload(PropPayload::One(PropValue::F64(p))),
+            AttrValue::Payload(PropPayload::Single(PropValue::F64(p))),
         );
         self
     }
@@ -91,7 +91,7 @@ impl ProgressBar {
     }
 }
 
-impl MockComponent for ProgressBar {
+impl Component for ProgressBar {
     fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
         // Make a Span
         if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
@@ -114,7 +114,7 @@ impl MockComponent for ProgressBar {
                 .props
                 .get_or(
                     Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::F64(0.0))),
+                    AttrValue::Payload(PropPayload::Single(PropValue::F64(0.0))),
                 )
                 .unwrap_payload()
                 .unwrap_one()
@@ -134,7 +134,7 @@ impl MockComponent for ProgressBar {
         }
     }
 
-    fn query(&self, attr: Attribute) -> Option<AttrValue> {
+    fn query<'a>(&'a self, attr: Attribute) -> Option<QueryResult<'a>> {
         self.props.get(attr)
     }
 
@@ -152,7 +152,7 @@ impl MockComponent for ProgressBar {
     }
 
     fn perform(&mut self, _cmd: Cmd) -> CmdResult {
-        CmdResult::None
+        CmdResult::NoChange
     }
 }
 
@@ -169,7 +169,7 @@ mod test {
             .background(Color::Red)
             .foreground(Color::White)
             .progress(0.60)
-            .title("Downloading file...", Alignment::Center)
+            .title(Title::from("Downloading file...").alignment(HorizontalAlignment::Center))
             .label("60% - ETA 00:20")
             .borders(Borders::default());
         // Get value
@@ -183,7 +183,7 @@ mod test {
             .background(Color::Red)
             .foreground(Color::White)
             .progress(6.0)
-            .title("Downloading file...", Alignment::Center)
+            .title(Title::from("Downloading file...").alignment(HorizontalAlignment::Center))
             .label("60% - ETA 00:20")
             .borders(Borders::default());
     }

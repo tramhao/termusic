@@ -2,7 +2,6 @@ use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::Stdio;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 use std::{error::Error, path::Path};
@@ -555,9 +554,6 @@ async fn execute_action(action: cli::Action, config: &CombinedSettings) -> Resul
     Ok(())
 }
 
-/// Determines if the CTRL+C Handler may need to clean-up the terminal mode
-static TERMINAL_ALTERNATE_MODE: AtomicBool = AtomicBool::new(false);
-
 /// This might seem useless, but the CTRL+C handler can be invoked when the TUI is not yet or not anymore listening to key events
 /// This can happened for example when viuer is in a loop expecting a response or just before or after the TUI is fully started.
 ///
@@ -581,11 +577,6 @@ fn ctrl_c_handler() -> Result<()> {
         }
 
         error!("Exiting because of CTRL+C!");
-
-        // Reset the terminal mode so that the user does not have to use "reset"
-        if TERMINAL_ALTERNATE_MODE.load(Ordering::SeqCst) {
-            ui::model::Model::hook_reset_terminal();
-        }
 
         std::process::exit(-1);
     })?;

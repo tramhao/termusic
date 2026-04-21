@@ -26,13 +26,16 @@ use anyhow::Result;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, Borders, Color, PropPayload, PropValue, TextModifiers};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{
+    AttrValue, Attribute, Borders, Color, HorizontalAlignment, PropPayload, PropValue, Props,
+    QueryResult, TextModifiers, Title,
+};
+use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::layout::Rect;
 use tuirealm::ratatui::widgets::{BorderType, Paragraph};
-use tuirealm::{
-    AttrValue, Attribute, Component, Event, Frame, MockComponent, Props, State, StateValue,
-};
+use tuirealm::state::{State, StateValue};
 
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
@@ -54,7 +57,9 @@ impl Counter {
     {
         self.attr(
             Attribute::Title,
-            AttrValue::Title((label.as_ref().to_string(), Alignment::Center)),
+            AttrValue::Title(
+                Title::from(label.as_ref().to_string()).alignment(HorizontalAlignment::Center),
+            ),
         );
         self
     }
@@ -71,7 +76,7 @@ impl Counter {
         if let Some(n) = n {
             self.attr(
                 Attribute::Value,
-                AttrValue::Payload(PropPayload::One(PropValue::Usize(n))),
+                AttrValue::Payload(PropPayload::Single(PropValue::Usize(n))),
             );
         } else {
             self.attr(Attribute::Value, AttrValue::Payload(PropPayload::None));
@@ -79,8 +84,8 @@ impl Counter {
         self
     }
 
-    pub fn alignment(mut self, a: Alignment) -> Self {
-        self.attr(Attribute::TextAlign, AttrValue::Alignment(a));
+    pub fn alignment(mut self, a: HorizontalAlignment) -> Self {
+        self.attr(Attribute::TextAlign, AttrValue::AlignmentHorizontal(a));
         self
     }
 
@@ -107,21 +112,22 @@ impl Counter {
     pub fn get_state(&self) -> Option<usize> {
         match self
             .props
-            .get_ref(Attribute::Value)
+            .get(Attribute::Value)
             .and_then(AttrValue::as_payload)?
         {
-            PropPayload::One(PropValue::Usize(v)) => Some(*v),
+            PropPayload::Single(PropValue::Usize(v)) => Some(*v),
             _ => None,
         }
     }
 }
 
-impl MockComponent for Counter {
+impl Component for Counter {
     fn view(&mut self, frame: &mut Frame<'_>, area: Rect) {
+        // TODO: make use of CommonProps
         // Check if visible
         if self
             .props
-            .get_ref(Attribute::Display)
+            .get(Attribute::Display)
             .and_then(AttrValue::as_flag)
             .unwrap_or(true)
         {
@@ -129,7 +135,7 @@ impl MockComponent for Counter {
             let value = self.get_state();
             let text_base = self
                 .props
-                .get_ref(Attribute::Text)
+                .get(Attribute::Text)
                 .and_then(|v| v.as_string())
                 .map_or("", |v| v.as_str());
             let text = if let Some(value) = value {
@@ -140,41 +146,33 @@ impl MockComponent for Counter {
 
             let alignment = self
                 .props
-                .get_ref(Attribute::TextAlign)
-                .and_then(AttrValue::as_alignment)
-                .unwrap_or(Alignment::Left);
+                .get(Attribute::TextAlign)
+                .and_then(AttrValue::as_alignment_horizontal)
+                .unwrap_or(HorizontalAlignment::Left);
             let style = get_style(&self.props);
             let title = self
                 .props
-                .get_ref(Attribute::Title)
-                .and_then(AttrValue::as_title)
-                // NOTE: clone should not be necessary anymore with tui-realm-stdlib next version
-                .map_or((String::new(), Alignment::Center), Clone::clone);
+                .get(Attribute::Title)
+                .and_then(AttrValue::as_title);
             let borders = self
                 .props
-                .get_ref(Attribute::Borders)
+                .get(Attribute::Borders)
                 .and_then(AttrValue::as_borders)
-                // Note: Borders should be copy-able
-                .map_or(Borders::default(), Clone::clone);
+                .unwrap_or_default();
             let focus = self
                 .props
-                .get_ref(Attribute::Focus)
+                .get(Attribute::Focus)
                 .and_then(AttrValue::as_flag)
                 .unwrap_or(false);
 
             let inactive_style = self
                 .props
-                .get_ref(Attribute::FocusStyle)
+                .get(Attribute::UnfocusedBorderStyle)
                 .and_then(AttrValue::as_style)
                 .unwrap_or(style);
             frame.render_widget(
                 Paragraph::new(text)
-                    .block(get_block(
-                        borders,
-                        Some(&title),
-                        focus,
-                        Some(inactive_style),
-                    ))
+                    .block(get_block(borders, title, focus, Some(inactive_style)))
                     .style(style)
                     .alignment(alignment),
                 area,
@@ -182,8 +180,8 @@ impl MockComponent for Counter {
         }
     }
 
-    fn query(&self, attr: Attribute) -> Option<AttrValue> {
-        self.props.get(attr)
+    fn query(&self, attr: Attribute) -> Option<QueryResult<'_>> {
+        self.props.get_for_query(attr)
     }
 
     fn attr(&mut self, attr: Attribute, value: AttrValue) {
@@ -195,7 +193,7 @@ impl MockComponent for Counter {
             return State::None;
         };
 
-        State::One(StateValue::Usize(state))
+        State::Single(StateValue::Usize(state))
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
@@ -204,14 +202,14 @@ impl MockComponent for Counter {
                 // self.states.incr();
                 CmdResult::Changed(self.state())
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         }
     }
 }
 
 // -- Counter components
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TECounterDelete {
     component: Counter,
     config: SharedTuiSettings,
@@ -222,7 +220,7 @@ impl TECounterDelete {
         let component = {
             let config = config.read();
             Counter::default()
-                .alignment(Alignment::Center)
+                .alignment(HorizontalAlignment::Center)
                 .background(config.settings.theme.library_background())
                 .borders(
                     Borders::default()
@@ -248,8 +246,8 @@ impl TECounterDelete {
     }
 }
 
-impl Component<Msg, UserEvent> for TECounterDelete {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TECounterDelete {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let keys = &self.config.read().settings.keys;
         // Get command
         let _cmd = match ev {
@@ -293,7 +291,7 @@ impl Component<Msg, UserEvent> for TECounterDelete {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TECounterSave {
     component: Counter,
     config: SharedTuiSettings,
@@ -304,7 +302,7 @@ impl TECounterSave {
         let component = {
             let config = config.read();
             Counter::default()
-                .alignment(Alignment::Center)
+                .alignment(HorizontalAlignment::Center)
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
                 .borders(
@@ -321,8 +319,8 @@ impl TECounterSave {
     }
 }
 
-impl Component<Msg, UserEvent> for TECounterSave {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TECounterSave {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let keys = &self.config.read().settings.keys;
         // Get command
         let _cmd = match ev {
