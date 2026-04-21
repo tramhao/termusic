@@ -44,17 +44,8 @@ impl UI {
         Ok(Self { model })
     }
 
-    /// Handle terminal init & finalize and start the UI Loop.
-    // TODO: remove this function?
-    pub fn run(&mut self) -> Result<()> {
-        self.run_inner()
-    }
-
     /// Main Loop function.
-    ///
-    /// This function does NOT handle initializing and finializing the terminal.
-    #[allow(clippy::unnecessary_wraps)] // to easily change if it ever becomes required again
-    fn run_inner(&mut self) -> Result<()> {
+    pub fn run(&mut self) -> Result<()> {
         // load the initial playlist
         let _ = self
             .model
