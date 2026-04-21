@@ -42,7 +42,7 @@ impl TETableLyricOptions {
                 .highlight_style(
                     CommonHighlight::default()
                         .style
-                        .bg(config.settings.theme.library_highlight()),
+                        .fg(config.settings.theme.library_highlight()),
                 )
                 .highlight_str("\u{1f680}")
                 // .highlight_str("🚀")

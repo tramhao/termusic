@@ -180,7 +180,7 @@ impl OrxMusicLibraryComponent {
             .highlight_style(
                 CommonHighlight::default()
                     .style
-                    .bg(config.settings.theme.library_highlight()),
+                    .fg(config.settings.theme.library_highlight()),
             )
             .highlight_symbol(config.settings.theme.style.library.highlight_symbol.clone())
             .empty_tree_text(LOADING_TREE_TEXT)

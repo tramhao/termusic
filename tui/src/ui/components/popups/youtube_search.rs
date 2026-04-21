@@ -143,7 +143,7 @@ impl YSTablePopup {
                 .highlight_style(
                     CommonHighlight::default()
                         .style
-                        .bg(config.settings.theme.fallback_highlight()),
+                        .fg(config.settings.theme.fallback_highlight()),
                 )
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 // .highlight_str("🚀")

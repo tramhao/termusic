@@ -889,7 +889,7 @@ impl KEModifierSelect {
             .highlight_style(
                 CommonHighlight::default()
                     .style
-                    .bg(config_r.settings.theme.fallback_highlight()),
+                    .fg(config_r.settings.theme.fallback_highlight()),
             )
             .highlight_str(">> ")
             .choices(choices)

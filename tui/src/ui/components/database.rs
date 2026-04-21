@@ -202,7 +202,7 @@ impl DBListCriteria {
                 .highlight_style(
                     CommonHighlight::default()
                         .style
-                        .bg(config.settings.theme.library_highlight()),
+                        .fg(config.settings.theme.library_highlight()),
                 )
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
@@ -331,7 +331,7 @@ impl DBListSearchResult {
                 .highlight_style(
                     CommonHighlight::default()
                         .style
-                        .bg(config.settings.theme.library_highlight()),
+                        .fg(config.settings.theme.library_highlight()),
                 )
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
@@ -433,7 +433,7 @@ impl DBListSearchTracks {
                 .highlight_style(
                     CommonHighlight::default()
                         .style
-                        .bg(config.settings.theme.library_highlight()),
+                        .fg(config.settings.theme.library_highlight()),
                 )
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
