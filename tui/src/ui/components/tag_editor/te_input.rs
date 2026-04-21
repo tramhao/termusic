@@ -23,7 +23,7 @@ impl EditField {
             Input::default()
                 .foreground(config.settings.theme.library_foreground())
                 .background(config.settings.theme.library_background())
-                .inactive(Style::new().bg(config.settings.theme.library_background()))
+                .inactive(Style::new().fg(config.settings.theme.library_foreground()))
                 .borders(
                     Borders::default()
                         .color(config.settings.theme.library_border())
