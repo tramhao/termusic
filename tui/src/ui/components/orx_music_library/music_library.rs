@@ -34,6 +34,7 @@ use crate::ui::{
         DeleteConfirmMsg, GSMsg, IsDir, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
         LIReloadPathData, LIReqNode, Msg, PLMsg, TEMsg, YSMsg,
     },
+    utils::STYLE_REMOVE_REVERSE,
 };
 
 /// Data stored in a node in the [`NewMusicLibraryComponent`]'s tree.
@@ -182,6 +183,7 @@ impl OrxMusicLibraryComponent {
                     .style
                     .fg(config.settings.theme.library_highlight()),
             )
+            .highlight_style_inactive(STYLE_REMOVE_REVERSE)
             .highlight_symbol(config.settings.theme.style.library.highlight_symbol.clone())
             .empty_tree_text(LOADING_TREE_TEXT)
     }

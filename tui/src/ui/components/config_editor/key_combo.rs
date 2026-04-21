@@ -49,6 +49,7 @@ use tuirealm::state::{State, StateValue};
 use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
@@ -300,6 +301,12 @@ impl KeyCombo {
         self
     }
 
+    /// Set a custom highlight style that is patched on-top of the highlight style when unfocused.
+    pub fn highlight_style_inactive(mut self, s: Style) -> Self {
+        self.attr(Attribute::HighlightStyleUnfocused, AttrValue::Style(s));
+        self
+    }
+
     #[allow(dead_code)]
     pub fn input_len(mut self, ilen: usize) -> Self {
         self.attr(Attribute::InputLength, AttrValue::Length(ilen));
@@ -504,7 +511,10 @@ impl KeyCombo {
         let mut list = List::new(choices)
             .direction(ListDirection::TopToBottom)
             .style(self.common.style)
-            .highlight_style(self.common_hg.get_style(self.common.style));
+            .highlight_style(
+                self.common_hg
+                    .get_style_focus(self.common.style, self.common.is_active()),
+            );
 
         // Set highlight symbol, if any
         let hg_str = self.common_hg.get_symbol();
@@ -891,6 +901,7 @@ impl KEModifierSelect {
                     .style
                     .fg(config_r.settings.theme.fallback_highlight()),
             )
+            .highlight_style_inactive(STYLE_REMOVE_REVERSE)
             .highlight_str(">> ")
             .choices(choices)
             .placeholder(LineStatic::styled(

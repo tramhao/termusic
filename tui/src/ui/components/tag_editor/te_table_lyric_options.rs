@@ -18,6 +18,7 @@ use crate::ui::components::TETrack;
 use crate::ui::ids::{Id, IdTagEditor};
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct TETableLyricOptions {
@@ -44,6 +45,7 @@ impl TETableLyricOptions {
                         .style
                         .fg(config.settings.theme.library_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str("\u{1f680}")
                 // .highlight_str("🚀")
                 .rewind(false)

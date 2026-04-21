@@ -29,6 +29,7 @@ use crate::ui::Model;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{DBMsg, GSMsg, Msg, SearchCriteria};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 /// Helper trait to accomedate mutable access to `self` while also allowing access to other `self` properties for [`common_list_movement`].
 trait OnKeyDB {
@@ -204,6 +205,7 @@ impl DBListCriteria {
                         .style
                         .fg(config.settings.theme.library_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
@@ -333,6 +335,7 @@ impl DBListSearchResult {
                         .style
                         .fg(config.settings.theme.library_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
@@ -435,6 +438,7 @@ impl DBListSearchTracks {
                         .style
                         .fg(config.settings.theme.library_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)

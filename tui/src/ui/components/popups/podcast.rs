@@ -12,11 +12,11 @@ use tuirealm::{
 };
 
 use super::{YNConfirm, YNConfirmStyle};
-use crate::ui::components::popups::DeleteConfirmInputPopup;
 use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, PCMsg};
+use crate::ui::{components::popups::DeleteConfirmInputPopup, utils::STYLE_REMOVE_REVERSE};
 
 #[derive(Component)]
 pub struct PodcastAddPopup {
@@ -147,6 +147,7 @@ impl PodcastSearchTablePopup {
                         .style
                         .fg(config.settings.theme.library_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)

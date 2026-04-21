@@ -9,6 +9,7 @@ use tuirealm::state::{State, StateValue};
 
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct TESelectLyric {
@@ -36,6 +37,7 @@ impl TESelectLyric {
                         .style
                         .fg(config.settings.theme.library_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .choices(["No Lyric"])
         };

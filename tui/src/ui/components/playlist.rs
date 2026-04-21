@@ -42,6 +42,7 @@ use crate::ui::ids::Id;
 use crate::ui::model::{TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct Playlist {
@@ -69,6 +70,7 @@ impl Playlist {
                         .style
                         .fg(config.settings.theme.playlist_highlight()),
                 )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(
                     config
                         .settings
