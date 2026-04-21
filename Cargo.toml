@@ -114,8 +114,8 @@ tuirealm = { git = "https://github.com/hasezoey/tui-realm.git", rev = "9c3f325ef
 tui-realm-stdlib = { git = "https://github.com/hasezoey/tui-realm.git", rev = "9c3f325efac7cb0e1dd9c1db3cd91e4dfaa8dbec" }
 tuirealm-orx-tree = { git = "https://github.com/hasezoey/tuirealm-orx-tree.git", rev = "340e05b2564d78ef139261d0d2896517142169ec" }
 unicode-segmentation = "1.12"
-# ratatui is locked to "=0.2.0"
-unicode-width = "^0.2.0"
+# ratatui is very specific with its versions
+unicode-width = "^0.2.2"
 urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.4"
