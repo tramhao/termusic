@@ -13,10 +13,11 @@ pub struct TEFooter {
 }
 
 impl TEFooter {
-    #[expect(clippy::similar_names)]
     pub fn new(config: &TuiOverlay) -> Self {
-        let style_fg = Style::new().fg(config.settings.theme.library_foreground());
-        let style_hg = Style::new()
+        let style_text = Style::new()
+            .bold()
+            .fg(config.settings.theme.library_foreground());
+        let style_key = Style::new()
             .bold()
             .fg(config.settings.theme.library_highlight());
 
@@ -24,21 +25,21 @@ impl TEFooter {
             component: (LabelSpan::new(
                 config,
                 &[
-                    SpanStatic::styled(" Save tag: ", style_fg),
+                    SpanStatic::styled(" Save tag: ", style_text),
                     SpanStatic::styled(
                         format!("<{}>", config.settings.keys.config_keys.save),
-                        style_hg,
+                        style_key,
                     ),
-                    SpanStatic::styled(" Exit: ", style_fg),
-                    SpanStatic::styled(format!("<{}>", config.settings.keys.escape), style_hg),
-                    SpanStatic::styled(" Change field: ", style_fg),
-                    SpanStatic::styled("<Tab/ShiftTab>", style_hg),
-                    SpanStatic::styled(" Search/Embed tag: ", style_fg),
-                    SpanStatic::styled("<ENTER>", style_hg),
-                    SpanStatic::styled(" Download: ", style_fg),
+                    SpanStatic::styled(" Exit: ", style_text),
+                    SpanStatic::styled(format!("<{}>", config.settings.keys.escape), style_key),
+                    SpanStatic::styled(" Change field: ", style_text),
+                    SpanStatic::styled("<Tab/ShiftTab>", style_key),
+                    SpanStatic::styled(" Search/Embed tag: ", style_text),
+                    SpanStatic::styled("<ENTER>", style_key),
+                    SpanStatic::styled(" Download: ", style_text),
                     SpanStatic::styled(
                         format!("<{}>", config.settings.keys.library_keys.youtube_search),
-                        style_hg,
+                        style_key,
                     ),
                 ],
             )),

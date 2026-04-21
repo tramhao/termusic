@@ -13,12 +13,11 @@ pub struct Footer {
 }
 
 impl Footer {
-    #[expect(clippy::similar_names)]
     pub fn new(config: &TuiOverlay) -> Self {
-        let style_fg = Style::new()
+        let style_text = Style::new()
             .bold()
             .fg(config.settings.theme.fallback_foreground());
-        let style_hg = Style::new()
+        let style_key = Style::new()
             .bold()
             .fg(config.settings.theme.fallback_highlight());
 
@@ -26,34 +25,34 @@ impl Footer {
             component: (LabelSpan::new(
                 config,
                 &[
-                    SpanStatic::styled(" Help: ", style_fg),
+                    SpanStatic::styled(" Help: ", style_text),
                     SpanStatic::styled(
                         format!("<{}>", config.settings.keys.select_view_keys.open_help),
-                        style_hg,
+                        style_key,
                     ),
-                    SpanStatic::styled(" Config: ", style_fg),
+                    SpanStatic::styled(" Config: ", style_text),
                     SpanStatic::styled(
                         format!("<{}>", config.settings.keys.select_view_keys.open_config),
-                        style_hg,
+                        style_key,
                     ),
-                    SpanStatic::styled(" Library: ", style_fg),
+                    SpanStatic::styled(" Library: ", style_text),
                     SpanStatic::styled(
                         format!("<{}>", config.settings.keys.select_view_keys.view_library),
-                        style_hg,
+                        style_key,
                     ),
-                    SpanStatic::styled(" Database: ", style_fg),
+                    SpanStatic::styled(" Database: ", style_text),
                     SpanStatic::styled(
                         format!("<{}>", config.settings.keys.select_view_keys.view_database),
-                        style_hg,
+                        style_key,
                     ),
-                    SpanStatic::styled(" Podcasts: ", style_fg),
+                    SpanStatic::styled(" Podcasts: ", style_text),
                     SpanStatic::styled(
                         format!("<{}>", config.settings.keys.select_view_keys.view_podcasts),
-                        style_hg,
+                        style_key,
                     ),
-                    SpanStatic::styled(" Version: ", style_fg),
+                    SpanStatic::styled(" Version: ", style_text),
                     // maybe consider moving version into Help or Config or its own popup (like a About)
-                    SpanStatic::styled(env!("TERMUSIC_VERSION"), style_hg),
+                    SpanStatic::styled(env!("TERMUSIC_VERSION"), style_key),
                 ],
             )),
         }
