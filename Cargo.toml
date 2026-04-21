@@ -114,8 +114,8 @@ tuirealm = { version = "~4.1.0", features = ["async-ports"] }
 tui-realm-stdlib = "~4.1"
 tuirealm-orx-tree = "0.4.0"
 unicode-segmentation = "1.12"
-# ratatui is locked to "=0.2.0"
-unicode-width = "^0.2.0"
+# ratatui is very specific with its versions
+unicode-width = "^0.2.2"
 urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.4"
