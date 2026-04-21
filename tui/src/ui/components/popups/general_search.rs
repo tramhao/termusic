@@ -159,7 +159,7 @@ fn common_table_comp(config: &TuiOverlay, title: String) -> Table {
         .highlight_style(
             CommonHighlight::default()
                 .style
-                .bg(config.settings.theme.fallback_highlight()),
+                .fg(config.settings.theme.fallback_highlight()),
         )
         .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
         .rewind(false)

@@ -90,7 +90,7 @@ impl CEThemeSelectTable {
                 .highlight_style(
                     CommonHighlight::default()
                         .style
-                        .bg(config.settings.theme.fallback_highlight()),
+                        .fg(config.settings.theme.fallback_highlight()),
                 )
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(true)
@@ -229,7 +229,7 @@ impl CEColorSelect {
                 .title(name.into().alignment(HorizontalAlignment::Left))
                 .rewind(false)
                 .inactive(Style::default().add_modifier(Modifier::BOLD).bg(color))
-                .highlight_style(CommonHighlight::default().style.bg(hg_color))
+                .highlight_style(CommonHighlight::default().style.fg(hg_color))
                 .highlight_str(">> ")
                 .choices(choices)
                 .value(init_value),

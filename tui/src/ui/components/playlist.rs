@@ -67,7 +67,7 @@ impl Playlist {
                 .highlight_style(
                     CommonHighlight::default()
                         .style
-                        .bg(config.settings.theme.playlist_highlight()),
+                        .fg(config.settings.theme.playlist_highlight()),
                 )
                 .highlight_str(
                     config
