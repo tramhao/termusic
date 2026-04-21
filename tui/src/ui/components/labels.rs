@@ -152,14 +152,19 @@ impl DownloadSpinner {
                 .background(config.settings.theme.library_background())
                 // .sequence("⣾⣽⣻⢿⡿⣟⣯⣷"),
                 // .sequence("▉▊▋▌▍▎▏▎▍▌▋▊▉"),
-                .sequence("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
+                .sequence("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+                .manual_step(),
         }
     }
 }
 
 impl AppComponent<Msg, UserEvent> for DownloadSpinner {
-    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
-        // TODO: manual spinner step
-        None
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
+        if matches!(ev, Event::Tick) {
+            self.component.states.step();
+            Some(Msg::ForceRedraw)
+        } else {
+            None
+        }
     }
 }
