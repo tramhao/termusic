@@ -54,7 +54,7 @@ fn common_input_comp<T: Into<Title>>(config: &TuiOverlay, title: T) -> Input {
         )
         .foreground(config.settings.theme.library_foreground())
         .background(config.settings.theme.library_background())
-        .inactive(Style::new().bg(config.settings.theme.library_background()))
+        .inactive(Style::new().fg(config.settings.theme.library_foreground()))
         .invalid_style(
             Style::default().fg(config
                 .settings
