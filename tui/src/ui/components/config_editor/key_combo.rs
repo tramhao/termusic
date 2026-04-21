@@ -3,7 +3,7 @@ use std::fmt::Display;
 /**
  * MIT License
  *
- * tuifeed - Copyright (c) 2021 Christian Visintin
+ * tuifeed - Copyright (c) 2026 Christian Visintin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,20 +28,21 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use tui_realm_stdlib::components::states::InputStates;
+use tui_realm_stdlib::prop_ext::{CommonHighlight, CommonProps};
 use tui_realm_stdlib::utils::{borrow_clone_line, calc_utf8_cursor_position};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
-    AttrValue, Attribute, BorderSides, BorderType, Borders, Color, HorizontalAlignment, LineStatic,
-    PropPayload, PropValue, Props, QueryResult, Style, TextModifiers, Title,
+    AttrValue, Attribute, BorderType, Borders, Color, HorizontalAlignment, LineStatic, PropPayload,
+    PropValue, Props, QueryResult, Style, TextModifiers, Title,
 };
 use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::widgets::ListDirection;
 use tuirealm::ratatui::{
     layout::{Constraint, Layout, Rect},
     text::Span,
-    widgets::{Block, List, ListItem, ListState, Paragraph},
+    widgets::{List, ListItem, ListState, Paragraph},
 };
 use tuirealm::state::{State, StateValue};
 
@@ -51,7 +52,6 @@ use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
 
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
-pub const INPUT_PLACEHOLDER_STYLE: &str = "placeholder-style";
 pub const CMD_BACKSPACE: &str = "Backspace";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -231,6 +231,8 @@ impl SelectStates {
 #[derive(Default)]
 pub struct KeyCombo {
     props: Props,
+    common: CommonProps,
+    common_hg: CommonHighlight,
     pub states: SelectStates,
     pub states_input: InputStates,
 }
@@ -238,6 +240,66 @@ pub struct KeyCombo {
 // TODO: refactor the draw code to be less duplicated across functions
 // TODO: refactor to be in-line with tuirealm Input 4.0
 impl KeyCombo {
+    /// Set the main foreground color. This may get overwritten by individual text styles.
+    pub fn foreground(mut self, fg: Color) -> Self {
+        self.attr(Attribute::Foreground, AttrValue::Color(fg));
+        self
+    }
+
+    /// Set the main background color. This may get overwritten by individual text styles.
+    pub fn background(mut self, bg: Color) -> Self {
+        self.attr(Attribute::Background, AttrValue::Color(bg));
+        self
+    }
+
+    /// Set the main text modifiers. This may get overwritten by individual text styles.
+    #[expect(dead_code)]
+    pub fn modifiers(mut self, m: TextModifiers) -> Self {
+        self.attr(Attribute::TextProps, AttrValue::TextModifiers(m));
+        self
+    }
+
+    /// Set the main style. This may get overwritten by individual text styles.
+    ///
+    /// This option will overwrite any previous [`foreground`](Self::foreground), [`background`](Self::background) and [`modifiers`](Self::modifiers)!
+    #[expect(dead_code)]
+    pub fn style(mut self, style: Style) -> Self {
+        self.attr(Attribute::Style, AttrValue::Style(style));
+        self
+    }
+
+    /// Set a custom style for the border when the component is unfocused.
+    pub fn inactive(mut self, s: Style) -> Self {
+        self.attr(Attribute::UnfocusedBorderStyle, AttrValue::Style(s));
+        self
+    }
+
+    /// Add a border to the component.
+    pub fn borders(mut self, b: Borders) -> Self {
+        self.attr(Attribute::Borders, AttrValue::Borders(b));
+        self
+    }
+
+    /// Add a title to the component.
+    pub fn title<T: Into<Title>>(mut self, title: T) -> Self {
+        self.attr(Attribute::Title, AttrValue::Title(title.into()));
+        self
+    }
+
+    /// Set the Symbol and Style for the indicator of the current line.
+    pub fn highlight_str<S: Into<LineStatic>>(mut self, s: S) -> Self {
+        self.attr(Attribute::HighlightedStr, AttrValue::TextLine(s.into()));
+        self
+    }
+
+    /// Set a custom highlight style that is patched ontop of the normal style.
+    ///
+    /// By default the highlight style is just `Style::new().add_modifier(Modifier::REVERSED)`.
+    pub fn highlight_style(mut self, s: Style) -> Self {
+        self.attr(Attribute::HighlightStyle, AttrValue::Style(s));
+        self
+    }
+
     #[allow(dead_code)]
     pub fn input_len(mut self, ilen: usize) -> Self {
         self.attr(Attribute::InputLength, AttrValue::Length(ilen));
@@ -268,50 +330,6 @@ impl KeyCombo {
     fn is_valid(&self) -> bool {
         let value = self.states_input.get_value();
         KeyBinding::try_from_str(&value).is_ok()
-    }
-
-    /// Set the main foreground color. This may get overwritten by individual text styles.
-    pub fn foreground(mut self, fg: Color) -> Self {
-        self.attr(Attribute::Foreground, AttrValue::Color(fg));
-        self
-    }
-
-    /// Set the main background color. This may get overwritten by individual text styles.
-    pub fn background(mut self, bg: Color) -> Self {
-        self.attr(Attribute::Background, AttrValue::Color(bg));
-        self
-    }
-
-    /// Set a custom style for the border when the component is unfocused.
-    #[expect(dead_code)]
-    pub fn inactive(mut self, s: Style) -> Self {
-        self.attr(Attribute::UnfocusedBorderStyle, AttrValue::Style(s));
-        self
-    }
-
-    /// Add a border to the component.
-    pub fn borders(mut self, b: Borders) -> Self {
-        self.attr(Attribute::Borders, AttrValue::Borders(b));
-        self
-    }
-
-    /// Add a title to the component.
-    pub fn title<T: Into<Title>>(mut self, title: T) -> Self {
-        self.attr(Attribute::Title, AttrValue::Title(title.into()));
-        self
-    }
-
-    pub fn highlight_str<S: AsRef<str>>(mut self, s: S) -> Self {
-        self.attr(
-            Attribute::HighlightedStr,
-            AttrValue::String(s.as_ref().to_string()),
-        );
-        self
-    }
-
-    pub fn highlighted_color(mut self, c: Color) -> Self {
-        self.attr(Attribute::HighlightStyle, AttrValue::Color(c));
-        self
     }
 
     pub fn rewind(mut self, r: bool) -> Self {
@@ -377,59 +395,18 @@ impl KeyCombo {
         }
     }
 
-    /// Get the style for the closed normal, focused, non-invalid color
-    fn get_normal_style(&self) -> Style {
-        let mut style = Style::default();
-
-        if let Some(fg) = self
-            .props
-            .get(Attribute::Foreground)
-            .and_then(AttrValue::as_color)
-        {
-            style = style.fg(fg);
-        }
-        if let Some(bg) = self
-            .props
-            .get(Attribute::Background)
-            .and_then(AttrValue::as_color)
-        {
-            style = style.bg(bg);
-        }
-
-        style
-    }
-
     /// Draw the Input field for the keybinding.
     fn draw_input(&mut self, frame: &mut Frame<'_>, area: Rect) {
-        let mut style = self.get_normal_style();
+        let mut style = self.common.style;
 
-        let modifiers = self
-            .props
-            .get(Attribute::TextProps)
-            .and_then(AttrValue::as_text_modifiers)
-            .unwrap_or(TextModifiers::empty());
-
-        let focus = self
-            .props
-            .get(Attribute::Focus)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(false);
-        let inactive_style = self
-            .props
-            .get(Attribute::UnfocusedBorderStyle)
-            .and_then(AttrValue::as_style);
         // Apply invalid style
-        if focus
-            && !self.is_valid()
+        if !self.is_valid()
             && let Some(style_invalid) = self
                 .props
                 .get(Attribute::Custom(INPUT_INVALID_STYLE))
                 .and_then(AttrValue::as_style)
         {
-            // unwraps are safe as "get_normal_style" already ensures it is set
-            let foreground = style_invalid.fg.unwrap_or(style.fg.unwrap());
-            let background = style_invalid.bg.unwrap_or(style.bg.unwrap());
-            style = style.fg(foreground).bg(background);
+            style = style.patch(style_invalid);
         }
 
         let block_inner_area = area;
@@ -439,9 +416,8 @@ impl KeyCombo {
         let text_to_display = self
             .states_input
             .render_value_offset(&tuirealm::props::InputType::Text);
-        let show_placeholder = text_to_display.is_empty();
         // Choose whether to show placeholder; if placeholder is unset, show nothing
-        let text_to_display = if show_placeholder {
+        let text_to_display = if text_to_display.is_empty() {
             self.props
                 .get(Attribute::Custom(INPUT_PLACEHOLDER))
                 .and_then(AttrValue::as_textline)
@@ -450,25 +426,11 @@ impl KeyCombo {
         } else {
             LineStatic::from(text_to_display)
         };
-        // Choose paragraph style based on whether is valid or not and if has focus and if should show placeholder
-        let paragraph_style = if focus {
-            style.add_modifier(modifiers)
-        } else {
-            inactive_style.unwrap_or_default()
-        };
-        let paragraph_style = if show_placeholder && focus {
-            self.props
-                .get(Attribute::Custom(INPUT_PLACEHOLDER_STYLE))
-                .and_then(AttrValue::as_style)
-                .unwrap_or(paragraph_style)
-        } else {
-            paragraph_style
-        };
         // Create widget
-        let p: Paragraph<'_> = Paragraph::new(text_to_display).style(paragraph_style);
+        let p = Paragraph::new(text_to_display).style(style);
         frame.render_widget(p, block_inner_area);
         // Set cursor, if focus
-        if focus {
+        if self.common.is_active() {
             let x: u16 = block_inner_area.x
                 + calc_utf8_cursor_position(
                     &self
@@ -489,65 +451,18 @@ impl KeyCombo {
 
     /// Draw all components once, sharing some lookups.
     fn view_common(&mut self, frame: &mut Frame<'_>, area: Rect) {
-        let normal_style = self.get_normal_style();
-        // get style to use
-        let inactive_style = self
-            .props
-            .get(Attribute::UnfocusedBorderStyle)
-            .and_then(AttrValue::as_style)
-            .unwrap_or(normal_style);
-        let focus = self
-            .props
-            .get(Attribute::Focus)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(false);
-        let style_valid = if focus { normal_style } else { inactive_style };
-        let mut style = style_valid;
-        let is_valid = self.is_valid();
-
-        // Apply invalid style
-        if !is_valid
-            && let Some(style_invalid) = self
-                .props
-                .get(Attribute::Custom(INPUT_INVALID_STYLE))
-                .and_then(AttrValue::as_style)
-        {
-            style = style_invalid;
-        }
-
         // setup the whole block
-        let borders = self
-            .props
-            .get(Attribute::Borders)
-            .and_then(AttrValue::as_borders)
-            .unwrap_or_default();
-
-        let borders_style = if focus && is_valid {
-            borders.style()
-        } else {
-            style
-        };
-        let block: Block<'_> = Block::default()
-            .borders(BorderSides::ALL)
-            .border_type(borders.modifiers)
-            .border_style(borders_style)
-            .style(style);
-        let title = self
-            .props
-            .get(Attribute::Title)
-            .and_then(AttrValue::as_title);
-
-        let block = match title {
-            Some(title) => block
-                .title(borrow_clone_line(&title.content))
-                .title_position(title.position)
-                .title_style(style_valid),
-            None => block,
-        };
+        let block = self.common.get_block();
 
         // draw the block
-        let block_inner_area = block.inner(area);
-        frame.render_widget(block, area);
+        let block_inner_area = if let Some(block) = block {
+            let inner_area = block.inner(area);
+            frame.render_widget(block, area);
+
+            inner_area
+        } else {
+            area
+        };
 
         // get the draw areas
         let [upper_area, lower_area] = if self.states.is_tab_open() {
@@ -564,26 +479,20 @@ impl KeyCombo {
             None => "",
             Some(s) => s.as_str(),
         };
-        let selected_mod: Paragraph<'_> = Paragraph::new(selected_text).style(style_valid);
+        let selected_mod = Paragraph::new(selected_text).style(self.common.style);
         frame.render_widget(selected_mod, select_mod_area);
 
         // draw the input field
         self.draw_input(frame, input_area);
         // draw the list, if open
         if self.states.is_tab_open() {
-            self.view_open_tab(frame, lower_area, style_valid);
+            self.view_open_tab(frame, lower_area);
         }
     }
 
     /// Draw the select list.
-    fn view_open_tab(&mut self, frame: &mut Frame<'_>, area: Rect, style: Style) {
+    fn view_open_tab(&mut self, frame: &mut Frame<'_>, area: Rect) {
         // get all styles
-        let hg: Color = self
-            .props
-            .get(Attribute::HighlightStyle)
-            .and_then(AttrValue::as_color)
-            .unwrap_or(style.fg.unwrap());
-
         // create the list component and its items
         let choices: Vec<ListItem<'_>> = self
             .states
@@ -594,20 +503,13 @@ impl KeyCombo {
 
         let mut list = List::new(choices)
             .direction(ListDirection::TopToBottom)
-            .style(style)
-            .highlight_style(
-                Style::default()
-                    .fg(hg)
-                    .add_modifier(TextModifiers::REVERSED),
-            );
+            .style(self.common.style)
+            .highlight_style(self.common_hg.get_style(self.common.style));
 
         // Set highlight symbol, if any
-        let hg_str = self
-            .props
-            .get(Attribute::HighlightedStr)
-            .and_then(AttrValue::as_string);
+        let hg_str = self.common_hg.get_symbol();
         if let Some(hg_str) = hg_str {
-            list = list.highlight_symbol(hg_str.clone());
+            list = list.highlight_symbol(hg_str);
         }
 
         // draw the list
@@ -626,45 +528,56 @@ impl KeyCombo {
 
 impl Component for KeyCombo {
     fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
-        // TODO: make use of CommonProps
-        if self
-            .props
-            .get(Attribute::Display)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(true)
-        {
-            self.view_common(render, area);
+        if !self.common.display {
+            return;
         }
+
+        self.view_common(render, area);
     }
 
     fn query(&self, attr: Attribute) -> Option<QueryResult<'_>> {
+        if let Some(value) = self
+            .common
+            .get_for_query(attr)
+            .or_else(|| self.common_hg.get_for_query(attr))
+        {
+            return Some(value);
+        }
+
         self.props.get_for_query(attr)
     }
 
     fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        match attr {
-            Attribute::Content => {
-                // Reset choices
-                let choices: Vec<String> = value
-                    .unwrap_payload()
-                    .unwrap_vec()
-                    .into_iter()
-                    .map(PropValue::unwrap_str)
-                    .collect();
-                self.states.set_choices(choices);
-            }
-            Attribute::Value => {
-                self.states
-                    .select(value.unwrap_payload().unwrap_single().unwrap_usize());
-            }
-            Attribute::Focus if self.states.is_tab_open() => {
-                if let AttrValue::Flag(false) = value {
-                    self.states.cancel_tab();
+        if self.states.is_tab_open()
+            && matches!(attr, Attribute::Focus)
+            && matches!(value, AttrValue::Flag(false))
+        {
+            self.states.cancel_tab();
+        }
+
+        if let Some(value) = self
+            .common
+            .set(attr, value)
+            .and_then(|value| self.common_hg.set(attr, value))
+        {
+            match attr {
+                Attribute::Content => {
+                    // Reset choices
+                    let choices: Vec<String> = value
+                        .unwrap_payload()
+                        .unwrap_vec()
+                        .into_iter()
+                        .map(PropValue::unwrap_str)
+                        .collect();
+                    self.states.set_choices(choices);
                 }
-                self.props.set(attr, value);
-            }
-            attr => {
-                self.props.set(attr, value);
+                Attribute::Value => {
+                    self.states
+                        .select(value.unwrap_payload().unwrap_single().unwrap_usize());
+                }
+                attr => {
+                    self.props.set(attr, value);
+                }
             }
         }
     }
@@ -866,7 +779,7 @@ mod test {
             .foreground(Color::Red)
             .background(Color::Black)
             .borders(Borders::default())
-            .highlighted_color(Color::Red)
+            .highlight_style(CommonHighlight::default().style.bg(Color::Red))
             .highlight_str(">>")
             .title(
                 Title::from(" C'est oui ou bien c'est non? ")
@@ -970,9 +883,14 @@ impl KEModifierSelect {
             )
             .foreground(config_r.settings.theme.fallback_foreground())
             .background(config_r.settings.theme.fallback_background())
+            .inactive(Style::new().fg(config_r.settings.theme.fallback_foreground()))
             .title(title.into().alignment(HorizontalAlignment::Left))
             .rewind(false)
-            .highlighted_color(config_r.settings.theme.fallback_highlight())
+            .highlight_style(
+                CommonHighlight::default()
+                    .style
+                    .bg(config_r.settings.theme.fallback_highlight()),
+            )
             .highlight_str(">> ")
             .choices(choices)
             .placeholder(LineStatic::styled(
