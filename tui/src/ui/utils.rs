@@ -1,7 +1,4 @@
-use tuirealm::{
-    props::{AttrValue, Attribute, Props, Style},
-    ratatui::layout::{Constraint, Layout, Rect},
-};
+use tuirealm::ratatui::layout::{Constraint, Layout, Rect};
 
 // /// Get block
 // pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
@@ -61,32 +58,6 @@ pub fn draw_area_top_right_absolute(parent: Rect, width: u16, height: u16) -> Re
         Constraint::Length(1),
     ])
     .split(new_area[1])[1]
-}
-
-// Get the style assembled
-pub fn get_style(props: &Props) -> Style {
-    let mut style = Style::default();
-
-    if let Some(fg) = props
-        .get(Attribute::Foreground)
-        .and_then(AttrValue::as_color)
-    {
-        style = style.fg(fg);
-    }
-    if let Some(bg) = props
-        .get(Attribute::Background)
-        .and_then(AttrValue::as_color)
-    {
-        style = style.bg(bg);
-    }
-    if let Some(modifiers) = props
-        .get(Attribute::TextProps)
-        .and_then(AttrValue::as_text_modifiers)
-    {
-        style = style.add_modifier(modifiers);
-    }
-
-    style
 }
 
 #[cfg(test)]
