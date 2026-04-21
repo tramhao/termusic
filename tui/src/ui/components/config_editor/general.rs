@@ -27,6 +27,7 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::components::Radio;
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::props::{
@@ -42,6 +43,7 @@ use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 /// Get a [`Input`] component with the common style applied.
 #[inline]
@@ -76,6 +78,12 @@ fn common_radio_comp<T: Into<Title>>(config: &TuiOverlay, title: T) -> Radio {
         .foreground(config.settings.theme.library_foreground())
         .background(config.settings.theme.library_background())
         .inactive(Style::new().bg(config.settings.theme.library_background()))
+        .highlight_style(
+            CommonHighlight::default()
+                .style
+                .fg(config.settings.theme.playlist_highlight()),
+        )
+        .highlight_style_inactive(STYLE_REMOVE_REVERSE)
         .title(title.into().alignment(HorizontalAlignment::Left))
 }
 
