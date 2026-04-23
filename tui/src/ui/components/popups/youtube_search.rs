@@ -24,7 +24,7 @@
 use std::path::PathBuf;
 
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::components::Table;
+use tui_realm_stdlib::components::{Input, Table};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
@@ -34,7 +34,6 @@ use tuirealm::props::{
 };
 use tuirealm::state::{State, StateValue};
 
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, YSMsg};

@@ -1,10 +1,10 @@
 use termusiclib::config::SharedTuiSettings;
+use tui_realm_stdlib::components::Input;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{BorderType, Borders, HorizontalAlignment, InputType, Style, Title};
 
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
 
