@@ -1,8 +1,10 @@
 use tuirealm::{
-    AttrValue, Attribute, Props,
-    props::Style,
+    props::{Style, TextModifiers},
     ratatui::layout::{Constraint, Layout, Rect},
 };
+
+/// Save a few characters and lines by having a alias.
+pub const STYLE_REMOVE_REVERSE: Style = Style::new().remove_modifier(TextModifiers::REVERSED);
 
 // /// Get block
 // pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
@@ -62,32 +64,6 @@ pub fn draw_area_top_right_absolute(parent: Rect, width: u16, height: u16) -> Re
         Constraint::Length(1),
     ])
     .split(new_area[1])[1]
-}
-
-// Get the style assembled
-pub fn get_style(props: &Props) -> Style {
-    let mut style = Style::default();
-
-    if let Some(fg) = props
-        .get_ref(Attribute::Foreground)
-        .and_then(AttrValue::as_color)
-    {
-        style = style.fg(fg);
-    }
-    if let Some(bg) = props
-        .get_ref(Attribute::Background)
-        .and_then(AttrValue::as_color)
-    {
-        style = style.bg(bg);
-    }
-    if let Some(modifiers) = props
-        .get_ref(Attribute::TextProps)
-        .and_then(AttrValue::as_text_modifiers)
-    {
-        style = style.add_modifier(modifiers);
-    }
-
-    style
 }
 
 #[cfg(test)]

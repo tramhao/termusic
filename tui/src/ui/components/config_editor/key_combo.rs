@@ -3,7 +3,7 @@ use std::fmt::Display;
 /**
  * MIT License
  *
- * tuifeed - Copyright (c) 2021 Christian Visintin
+ * tuifeed - Copyright (c) 2026 Christian Visintin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,29 +27,32 @@ use anyhow::{Result, bail};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::{KeyBinding, Keys};
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
-use tui_realm_stdlib::utils::calc_utf8_cursor_position;
+use tui_realm_stdlib::components::states::InputStates;
+use tui_realm_stdlib::prop_ext::{CommonHighlight, CommonProps};
+use tui_realm_stdlib::utils::{borrow_clone_line, calc_utf8_cursor_position};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
-    Alignment, AttrValue, Attribute, BorderSides, BorderType, Borders, Color, PropPayload,
-    PropValue, Props, Style, TextModifiers,
+    AttrValue, Attribute, BorderType, Borders, Color, HorizontalAlignment, LineStatic, PropPayload,
+    PropValue, Props, QueryResult, Style, TextModifiers, Title,
 };
+use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::widgets::ListDirection;
 use tuirealm::ratatui::{
     layout::{Constraint, Layout, Rect},
     text::Span,
-    widgets::{Block, List, ListItem, ListState, Paragraph},
+    widgets::{List, ListItem, ListState, Paragraph},
 };
-use tuirealm::{Component, Event, Frame, MockComponent, State, StateValue};
+use tuirealm::state::{State, StateValue};
 
-use crate::ui::components::vendored::tui_realm_stdlib_input::InputStates;
 use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
-pub const INPUT_PLACEHOLDER_STYLE: &str = "placeholder-style";
 pub const CMD_BACKSPACE: &str = "Backspace";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -229,12 +232,81 @@ impl SelectStates {
 #[derive(Default)]
 pub struct KeyCombo {
     props: Props,
+    common: CommonProps,
+    common_hg: CommonHighlight,
     pub states: SelectStates,
     pub states_input: InputStates,
 }
 
 // TODO: refactor the draw code to be less duplicated across functions
+// TODO: refactor to be in-line with tuirealm Input 4.0
 impl KeyCombo {
+    /// Set the main foreground color. This may get overwritten by individual text styles.
+    pub fn foreground(mut self, fg: Color) -> Self {
+        self.attr(Attribute::Foreground, AttrValue::Color(fg));
+        self
+    }
+
+    /// Set the main background color. This may get overwritten by individual text styles.
+    pub fn background(mut self, bg: Color) -> Self {
+        self.attr(Attribute::Background, AttrValue::Color(bg));
+        self
+    }
+
+    /// Set the main text modifiers. This may get overwritten by individual text styles.
+    #[expect(dead_code)]
+    pub fn modifiers(mut self, m: TextModifiers) -> Self {
+        self.attr(Attribute::TextProps, AttrValue::TextModifiers(m));
+        self
+    }
+
+    /// Set the main style. This may get overwritten by individual text styles.
+    ///
+    /// This option will overwrite any previous [`foreground`](Self::foreground), [`background`](Self::background) and [`modifiers`](Self::modifiers)!
+    #[expect(dead_code)]
+    pub fn style(mut self, style: Style) -> Self {
+        self.attr(Attribute::Style, AttrValue::Style(style));
+        self
+    }
+
+    /// Set a custom style for the border when the component is unfocused.
+    pub fn inactive(mut self, s: Style) -> Self {
+        self.attr(Attribute::UnfocusedBorderStyle, AttrValue::Style(s));
+        self
+    }
+
+    /// Add a border to the component.
+    pub fn borders(mut self, b: Borders) -> Self {
+        self.attr(Attribute::Borders, AttrValue::Borders(b));
+        self
+    }
+
+    /// Add a title to the component.
+    pub fn title<T: Into<Title>>(mut self, title: T) -> Self {
+        self.attr(Attribute::Title, AttrValue::Title(title.into()));
+        self
+    }
+
+    /// Set the Symbol and Style for the indicator of the current line.
+    pub fn highlight_str<S: Into<LineStatic>>(mut self, s: S) -> Self {
+        self.attr(Attribute::HighlightedStr, AttrValue::TextLine(s.into()));
+        self
+    }
+
+    /// Set a custom highlight style that is patched ontop of the normal style.
+    ///
+    /// By default the highlight style is just `Style::new().add_modifier(Modifier::REVERSED)`.
+    pub fn highlight_style(mut self, s: Style) -> Self {
+        self.attr(Attribute::HighlightStyle, AttrValue::Style(s));
+        self
+    }
+
+    /// Set a custom highlight style that is patched on-top of the highlight style when unfocused.
+    pub fn highlight_style_inactive(mut self, s: Style) -> Self {
+        self.attr(Attribute::HighlightStyleUnfocused, AttrValue::Style(s));
+        self
+    }
+
     #[allow(dead_code)]
     pub fn input_len(mut self, ilen: usize) -> Self {
         self.attr(Attribute::InputLength, AttrValue::Length(ilen));
@@ -246,21 +318,18 @@ impl KeyCombo {
         self
     }
 
-    pub fn placeholder<S: AsRef<str>>(mut self, placeholder: S, style: Style) -> Self {
+    /// Set a placeholder text for when the Input is empty.
+    pub fn placeholder<S: Into<LineStatic>>(mut self, placeholder: S) -> Self {
         self.attr(
             Attribute::Custom(INPUT_PLACEHOLDER),
-            AttrValue::String(placeholder.as_ref().to_string()),
-        );
-        self.attr(
-            Attribute::Custom(INPUT_PLACEHOLDER_STYLE),
-            AttrValue::Style(style),
+            AttrValue::TextLine(placeholder.into()),
         );
         self
     }
 
     fn get_input_len(&self) -> Option<usize> {
         self.props
-            .get_ref(Attribute::InputLength)
+            .get(Attribute::InputLength)
             .and_then(AttrValue::as_length)
     }
 
@@ -268,49 +337,6 @@ impl KeyCombo {
     fn is_valid(&self) -> bool {
         let value = self.states_input.get_value();
         KeyBinding::try_from_str(&value).is_ok()
-    }
-
-    pub fn foreground(mut self, fg: Color) -> Self {
-        self.attr(Attribute::Foreground, AttrValue::Color(fg));
-        self
-    }
-
-    #[allow(dead_code)]
-    pub fn background(mut self, bg: Color) -> Self {
-        self.attr(Attribute::Background, AttrValue::Color(bg));
-        self
-    }
-
-    pub fn borders(mut self, b: Borders) -> Self {
-        self.attr(Attribute::Borders, AttrValue::Borders(b));
-        self
-    }
-
-    pub fn title<S: AsRef<str>>(mut self, t: S, a: Alignment) -> Self {
-        self.attr(
-            Attribute::Title,
-            AttrValue::Title((t.as_ref().to_string(), a)),
-        );
-        self
-    }
-
-    pub fn highlighted_str<S: AsRef<str>>(mut self, s: S) -> Self {
-        self.attr(
-            Attribute::HighlightedStr,
-            AttrValue::String(s.as_ref().to_string()),
-        );
-        self
-    }
-
-    pub fn highlighted_color(mut self, c: Color) -> Self {
-        self.attr(Attribute::HighlightedColor, AttrValue::Color(c));
-        self
-    }
-
-    #[allow(dead_code)]
-    pub fn inactive(mut self, s: Style) -> Self {
-        self.attr(Attribute::FocusStyle, AttrValue::Style(s));
-        self
     }
 
     pub fn rewind(mut self, r: bool) -> Self {
@@ -341,7 +367,7 @@ impl KeyCombo {
 
         self.attr(
             Attribute::Value,
-            AttrValue::Payload(PropPayload::One(PropValue::Usize(i))),
+            AttrValue::Payload(PropPayload::Single(PropValue::Usize(i))),
         );
 
         // we want to show them at the beginning
@@ -376,59 +402,18 @@ impl KeyCombo {
         }
     }
 
-    /// Get the style for the closed normal, focused, non-invalid color
-    fn get_normal_style(&self) -> Style {
-        let mut style = Style::default();
-
-        if let Some(fg) = self
-            .props
-            .get_ref(Attribute::Foreground)
-            .and_then(AttrValue::as_color)
-        {
-            style = style.fg(fg);
-        }
-        if let Some(bg) = self
-            .props
-            .get_ref(Attribute::Background)
-            .and_then(AttrValue::as_color)
-        {
-            style = style.bg(bg);
-        }
-
-        style
-    }
-
     /// Draw the Input field for the keybinding.
     fn draw_input(&mut self, frame: &mut Frame<'_>, area: Rect) {
-        let mut style = self.get_normal_style();
+        let mut style = self.common.style;
 
-        let modifiers = self
-            .props
-            .get_ref(Attribute::TextProps)
-            .and_then(AttrValue::as_text_modifiers)
-            .unwrap_or(TextModifiers::empty());
-
-        let focus = self
-            .props
-            .get_ref(Attribute::Focus)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(false);
-        let inactive_style = self
-            .props
-            .get_ref(Attribute::FocusStyle)
-            .and_then(AttrValue::as_style);
         // Apply invalid style
-        if focus
-            && !self.is_valid()
+        if !self.is_valid()
             && let Some(style_invalid) = self
                 .props
-                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
+                .get(Attribute::Custom(INPUT_INVALID_STYLE))
                 .and_then(AttrValue::as_style)
         {
-            // unwraps are safe as "get_normal_style" already ensures it is set
-            let foreground = style_invalid.fg.unwrap_or(style.fg.unwrap());
-            let background = style_invalid.bg.unwrap_or(style.bg.unwrap());
-            style = style.fg(foreground).bg(background);
+            style = style.patch(style_invalid);
         }
 
         let block_inner_area = area;
@@ -437,41 +422,27 @@ impl KeyCombo {
 
         let text_to_display = self
             .states_input
-            .render_value_offset(tuirealm::props::InputType::Text);
-        let show_placeholder = text_to_display.is_empty();
+            .render_value_offset(&tuirealm::props::InputType::Text);
         // Choose whether to show placeholder; if placeholder is unset, show nothing
-        let text_to_display: &str = if show_placeholder {
+        let text_to_display = if text_to_display.is_empty() {
             self.props
-                .get_ref(Attribute::Custom(INPUT_PLACEHOLDER))
-                .and_then(AttrValue::as_string)
-                .map_or("", |v| v.as_str())
+                .get(Attribute::Custom(INPUT_PLACEHOLDER))
+                .and_then(AttrValue::as_textline)
+                .map(borrow_clone_line)
+                .unwrap_or_default()
         } else {
-            &text_to_display
-        };
-        // Choose paragraph style based on whether is valid or not and if has focus and if should show placeholder
-        let paragraph_style = if focus {
-            style.add_modifier(modifiers)
-        } else {
-            inactive_style.unwrap_or_default()
-        };
-        let paragraph_style = if show_placeholder && focus {
-            self.props
-                .get_ref(Attribute::Custom(INPUT_PLACEHOLDER_STYLE))
-                .and_then(AttrValue::as_style)
-                .unwrap_or(paragraph_style)
-        } else {
-            paragraph_style
+            LineStatic::from(text_to_display)
         };
         // Create widget
-        let p: Paragraph<'_> = Paragraph::new(text_to_display).style(paragraph_style);
+        let p = Paragraph::new(text_to_display).style(style);
         frame.render_widget(p, block_inner_area);
         // Set cursor, if focus
-        if focus {
+        if self.common.is_active() {
             let x: u16 = block_inner_area.x
                 + calc_utf8_cursor_position(
                     &self
                         .states_input
-                        .render_value_chars(tuirealm::props::InputType::Text)
+                        .render_value_chars(&tuirealm::props::InputType::Text)
                         [0..self.states_input.cursor],
                 )
                 .saturating_sub(
@@ -487,65 +458,18 @@ impl KeyCombo {
 
     /// Draw all components once, sharing some lookups.
     fn view_common(&mut self, frame: &mut Frame<'_>, area: Rect) {
-        let normal_style = self.get_normal_style();
-        // get style to use
-        let inactive_style = self
-            .props
-            .get_ref(Attribute::FocusStyle)
-            .and_then(AttrValue::as_style)
-            .unwrap_or(normal_style);
-        let focus = self
-            .props
-            .get_ref(Attribute::Focus)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(false);
-        let style_valid = if focus { normal_style } else { inactive_style };
-        let mut style = style_valid;
-        let is_valid = self.is_valid();
-
-        // Apply invalid style
-        if !is_valid
-            && let Some(style_invalid) = self
-                .props
-                .get_ref(Attribute::Custom(INPUT_INVALID_STYLE))
-                .and_then(AttrValue::as_style)
-        {
-            style = style_invalid;
-        }
-
         // setup the whole block
-        let borders = self
-            .props
-            .get_ref(Attribute::Borders)
-            .and_then(AttrValue::as_borders)
-            .map_or(Borders::default(), |v| *v);
-
-        let borders_style = if focus && is_valid {
-            borders.style()
-        } else {
-            style
-        };
-        let block: Block<'_> = Block::default()
-            .borders(BorderSides::ALL)
-            .border_type(borders.modifiers)
-            .border_style(borders_style)
-            .style(style);
-        let title = self
-            .props
-            .get_ref(Attribute::Title)
-            .and_then(AttrValue::as_title);
-
-        let block = match title {
-            Some((text, alignment)) => block
-                .title(text.as_str())
-                .title_alignment(*alignment)
-                .title_style(style_valid),
-            None => block,
-        };
+        let block = self.common.get_block();
 
         // draw the block
-        let block_inner_area = block.inner(area);
-        frame.render_widget(block, area);
+        let block_inner_area = if let Some(block) = block {
+            let inner_area = block.inner(area);
+            frame.render_widget(block, area);
+
+            inner_area
+        } else {
+            area
+        };
 
         // get the draw areas
         let [upper_area, lower_area] = if self.states.is_tab_open() {
@@ -562,26 +486,20 @@ impl KeyCombo {
             None => "",
             Some(s) => s.as_str(),
         };
-        let selected_mod: Paragraph<'_> = Paragraph::new(selected_text).style(style_valid);
+        let selected_mod = Paragraph::new(selected_text).style(self.common.style);
         frame.render_widget(selected_mod, select_mod_area);
 
         // draw the input field
         self.draw_input(frame, input_area);
         // draw the list, if open
         if self.states.is_tab_open() {
-            self.view_open_tab(frame, lower_area, style_valid);
+            self.view_open_tab(frame, lower_area);
         }
     }
 
     /// Draw the select list.
-    fn view_open_tab(&mut self, frame: &mut Frame<'_>, area: Rect, style: Style) {
+    fn view_open_tab(&mut self, frame: &mut Frame<'_>, area: Rect) {
         // get all styles
-        let hg: Color = self
-            .props
-            .get_ref(Attribute::HighlightedColor)
-            .and_then(AttrValue::as_color)
-            .unwrap_or(style.fg.unwrap());
-
         // create the list component and its items
         let choices: Vec<ListItem<'_>> = self
             .states
@@ -592,18 +510,14 @@ impl KeyCombo {
 
         let mut list = List::new(choices)
             .direction(ListDirection::TopToBottom)
-            .style(style)
+            .style(self.common.style)
             .highlight_style(
-                Style::default()
-                    .fg(hg)
-                    .add_modifier(TextModifiers::REVERSED),
+                self.common_hg
+                    .get_style_focus(self.common.style, self.common.is_active()),
             );
 
         // Set highlight symbol, if any
-        let hg_str = self
-            .props
-            .get_ref(Attribute::HighlightedStr)
-            .and_then(AttrValue::as_string);
+        let hg_str = self.common_hg.get_symbol();
         if let Some(hg_str) = hg_str {
             list = list.highlight_symbol(hg_str);
         }
@@ -616,52 +530,64 @@ impl KeyCombo {
 
     fn rewindable(&self) -> bool {
         self.props
-            .get_ref(Attribute::Rewind)
+            .get(Attribute::Rewind)
             .and_then(AttrValue::as_flag)
             .unwrap_or(false)
     }
 }
 
-impl MockComponent for KeyCombo {
+impl Component for KeyCombo {
     fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
-        if self
-            .props
-            .get_ref(Attribute::Display)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(true)
-        {
-            self.view_common(render, area);
+        if !self.common.display {
+            return;
         }
+
+        self.view_common(render, area);
     }
 
-    fn query(&self, attr: Attribute) -> Option<AttrValue> {
-        self.props.get(attr)
+    fn query(&self, attr: Attribute) -> Option<QueryResult<'_>> {
+        if let Some(value) = self
+            .common
+            .get_for_query(attr)
+            .or_else(|| self.common_hg.get_for_query(attr))
+        {
+            return Some(value);
+        }
+
+        self.props.get_for_query(attr)
     }
 
     fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        match attr {
-            Attribute::Content => {
-                // Reset choices
-                let choices: Vec<String> = value
-                    .unwrap_payload()
-                    .unwrap_vec()
-                    .into_iter()
-                    .map(PropValue::unwrap_str)
-                    .collect();
-                self.states.set_choices(choices);
-            }
-            Attribute::Value => {
-                self.states
-                    .select(value.unwrap_payload().unwrap_one().unwrap_usize());
-            }
-            Attribute::Focus if self.states.is_tab_open() => {
-                if let AttrValue::Flag(false) = value {
-                    self.states.cancel_tab();
+        if self.states.is_tab_open()
+            && matches!(attr, Attribute::Focus)
+            && matches!(value, AttrValue::Flag(false))
+        {
+            self.states.cancel_tab();
+        }
+
+        if let Some(value) = self
+            .common
+            .set(attr, value)
+            .and_then(|value| self.common_hg.set(attr, value))
+        {
+            match attr {
+                Attribute::Content => {
+                    // Reset choices
+                    let choices: Vec<String> = value
+                        .unwrap_payload()
+                        .unwrap_vec()
+                        .into_iter()
+                        .map(PropValue::unwrap_str)
+                        .collect();
+                    self.states.set_choices(choices);
                 }
-                self.props.set(attr, value);
-            }
-            attr => {
-                self.props.set(attr, value);
+                Attribute::Value => {
+                    self.states
+                        .select(value.unwrap_payload().unwrap_single().unwrap_usize());
+                }
+                attr => {
+                    self.props.set(attr, value);
+                }
             }
         }
     }
@@ -670,7 +596,7 @@ impl MockComponent for KeyCombo {
         if self.states.is_tab_open() {
             State::None
         } else {
-            State::One(StateValue::Usize(self.states.selected))
+            State::Single(StateValue::Usize(self.states.selected))
         }
     }
 
@@ -681,9 +607,9 @@ impl MockComponent for KeyCombo {
                 self.states.next_choice(self.rewindable());
                 // Return CmdResult On Change or None if tab is closed
                 if self.states.is_tab_open() {
-                    CmdResult::Changed(State::One(StateValue::Usize(self.states.selected)))
+                    CmdResult::Changed(State::Single(StateValue::Usize(self.states.selected)))
                 } else {
-                    CmdResult::None
+                    CmdResult::NoChange
                 }
             }
             Cmd::Move(Direction::Up) => {
@@ -691,16 +617,16 @@ impl MockComponent for KeyCombo {
                 self.states.prev_choice(self.rewindable());
                 // Return CmdResult On Change or None if tab is closed
                 if self.states.is_tab_open() {
-                    CmdResult::Changed(State::One(StateValue::Usize(self.states.selected)))
+                    CmdResult::Changed(State::Single(StateValue::Usize(self.states.selected)))
                 } else {
-                    CmdResult::None
+                    CmdResult::NoChange
                 }
             }
             Cmd::Custom(CMD_BACKSPACE) => {
                 let prev_len = self.states_input.input.len();
                 self.states_input.delete();
                 if prev_len == self.states_input.input.len() {
-                    CmdResult::None
+                    CmdResult::NoChange
                 } else {
                     CmdResult::Changed(self.state())
                 }
@@ -725,7 +651,7 @@ impl MockComponent for KeyCombo {
                 let prev_len = self.states_input.input.len();
                 self.states_input.backspace();
                 if prev_len == self.states_input.input.len() {
-                    CmdResult::None
+                    CmdResult::NoChange
                 } else {
                     CmdResult::Changed(self.state())
                 }
@@ -756,13 +682,13 @@ impl MockComponent for KeyCombo {
                 );
                 // Message on change
                 if prev_len == self.states_input.input.len() {
-                    CmdResult::None
+                    CmdResult::NoChange
                 } else {
                     CmdResult::Changed(self.state())
                 }
             }
 
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         }
     }
 }
@@ -774,7 +700,7 @@ mod test {
 
     use pretty_assertions::assert_eq;
 
-    use tuirealm::props::{PropPayload, PropValue};
+    use tuirealm::props::{HorizontalAlignment, PropPayload, PropValue, Title};
 
     #[test]
     fn test_components_select_states() {
@@ -863,9 +789,12 @@ mod test {
             .foreground(Color::Red)
             .background(Color::Black)
             .borders(Borders::default())
-            .highlighted_color(Color::Red)
-            .highlighted_str(">>")
-            .title(" C'est oui ou bien c'est non? ", Alignment::Center)
+            .highlight_style(CommonHighlight::default().style.bg(Color::Red))
+            .highlight_str(">>")
+            .title(
+                Title::from(" C'est oui ou bien c'est non? ")
+                    .alignment(HorizontalAlignment::Center),
+            )
             .choices(["Oui!", "Non", "Peut-être"])
             .value(1, "")
             .rewind(false);
@@ -877,45 +806,45 @@ mod test {
         // Update
         component.attr(
             Attribute::Value,
-            AttrValue::Payload(PropPayload::One(PropValue::Usize(2))),
+            AttrValue::Payload(PropPayload::Single(PropValue::Usize(2))),
         );
         // Get value
-        assert_eq!(component.state(), State::One(StateValue::Usize(2)));
+        assert_eq!(component.state(), State::Single(StateValue::Usize(2)));
         // Open tab
         component.states.open_tab();
         // Events
         // Move cursor
         assert_eq!(
             component.perform(Cmd::Move(Direction::Up)),
-            CmdResult::Changed(State::One(StateValue::Usize(1))),
+            CmdResult::Changed(State::Single(StateValue::Usize(1))),
         );
         assert_eq!(
             component.perform(Cmd::Move(Direction::Up)),
-            CmdResult::Changed(State::One(StateValue::Usize(0))),
+            CmdResult::Changed(State::Single(StateValue::Usize(0))),
         );
         // Upper boundary
         assert_eq!(
             component.perform(Cmd::Move(Direction::Up)),
-            CmdResult::Changed(State::One(StateValue::Usize(0))),
+            CmdResult::Changed(State::Single(StateValue::Usize(0))),
         );
         // Move down
         assert_eq!(
             component.perform(Cmd::Move(Direction::Down)),
-            CmdResult::Changed(State::One(StateValue::Usize(1))),
+            CmdResult::Changed(State::Single(StateValue::Usize(1))),
         );
         assert_eq!(
             component.perform(Cmd::Move(Direction::Down)),
-            CmdResult::Changed(State::One(StateValue::Usize(2))),
+            CmdResult::Changed(State::Single(StateValue::Usize(2))),
         );
         // Lower boundary
         assert_eq!(
             component.perform(Cmd::Move(Direction::Down)),
-            CmdResult::Changed(State::One(StateValue::Usize(2))),
+            CmdResult::Changed(State::Single(StateValue::Usize(2))),
         );
         // Press enter
         assert_eq!(
             component.perform(Cmd::Submit),
-            CmdResult::Submit(State::One(StateValue::Usize(2))),
+            CmdResult::Submit(State::Single(StateValue::Usize(2))),
         );
         // Tab should be closed
         assert_eq!(component.states.is_tab_open(), false);
@@ -928,18 +857,21 @@ mod test {
         // Move arrows
         assert_eq!(
             component.perform(Cmd::Submit),
-            CmdResult::Submit(State::One(StateValue::Usize(2))),
+            CmdResult::Submit(State::Single(StateValue::Usize(2))),
         );
         assert_eq!(component.states.is_tab_open(), false);
         assert_eq!(
             component.perform(Cmd::Move(Direction::Down)),
-            CmdResult::None
+            CmdResult::NoChange
         );
-        assert_eq!(component.perform(Cmd::Move(Direction::Up)), CmdResult::None);
+        assert_eq!(
+            component.perform(Cmd::Move(Direction::Up)),
+            CmdResult::NoChange
+        );
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 struct KEModifierSelect {
     component: KeyCombo,
     id: IdKey,
@@ -947,7 +879,7 @@ struct KEModifierSelect {
 }
 
 impl KEModifierSelect {
-    pub fn new(name: &str, id: IdKey, config: SharedTuiSettings) -> Self {
+    pub fn new<T: Into<Title>>(title: T, id: IdKey, config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         let (init_select, init_key) = Self::init_modifier_select(id, &config_r.settings.keys);
 
@@ -961,18 +893,24 @@ impl KEModifierSelect {
             )
             .foreground(config_r.settings.theme.fallback_foreground())
             .background(config_r.settings.theme.fallback_background())
-            .title(name, Alignment::Left)
+            .inactive(Style::new().fg(config_r.settings.theme.fallback_foreground()))
+            .title(title.into().alignment(HorizontalAlignment::Left))
             .rewind(false)
-            .highlighted_color(config_r.settings.theme.fallback_highlight())
-            .highlighted_str(">> ")
+            .highlight_style(
+                CommonHighlight::default()
+                    .style
+                    .fg(config_r.settings.theme.fallback_highlight()),
+            )
+            .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+            .highlight_str(">> ")
             .choices(choices)
-            .placeholder(
+            .placeholder(LineStatic::styled(
                 "a/b/c",
                 Style::default().fg(config_r
                     .settings
                     .theme
                     .get_color_from_theme(ColorTermusic::LightBlack)),
-            )
+            ))
             .invalid_style(
                 Style::default().fg(
                     // TODO: make this configurable
@@ -1179,9 +1117,9 @@ impl KEModifierSelect {
     }
 }
 
-impl Component<Msg, UserEvent> for KEModifierSelect {
+impl AppComponent<Msg, UserEvent> for KEModifierSelect {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -1192,11 +1130,11 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => match self.state() {
-                State::One(_) => return Some(self.msg_next()),
+                State::Single(_) => return Some(self.msg_next()),
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
-                State::One(_) => return Some(self.msg_previous()),
+                State::Single(_) => return Some(self.msg_previous()),
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
@@ -1213,12 +1151,12 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
             }
             // Local Hotkey
             Event::Keyboard(keyevent) if keyevent == keys.escape.get() => match self.state() {
-                State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+                State::Single(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                 _ => self.perform(Cmd::Cancel),
             },
 
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => match self.state() {
-                State::One(_) => {
+                State::Single(_) => {
                     if let Key::Char(ch) = keyevent.code {
                         self.perform(Cmd::Type(ch));
                         if let Ok(binding) = self.key_event() {
@@ -1227,7 +1165,7 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
                             )));
                         }
                     }
-                    CmdResult::None
+                    CmdResult::NoChange
                 }
 
                 _ => self.perform(Cmd::Cancel),
@@ -1235,7 +1173,7 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
 
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.up.get() => {
                 match self.state() {
-                    State::One(_) => {
+                    State::Single(_) => {
                         if let Key::Char(ch) = keyevent.code {
                             self.perform(Cmd::Type(ch));
 
@@ -1245,7 +1183,7 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
                                 )));
                             }
                         }
-                        CmdResult::None
+                        CmdResult::NoChange
                     }
 
                     _ => self.perform(Cmd::Move(Direction::Up)),
@@ -1253,7 +1191,7 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
             }
             Event::Keyboard(keyevent) if keyevent == keys.navigation_keys.down.get() => {
                 match self.state() {
-                    State::One(_) => {
+                    State::Single(_) => {
                         if let Key::Char(ch) = keyevent.code {
                             self.perform(Cmd::Type(ch));
 
@@ -1263,7 +1201,7 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
                                 )));
                             }
                         }
-                        CmdResult::None
+                        CmdResult::NoChange
                     }
                     _ => self.perform(Cmd::Move(Direction::Down)),
                 }
@@ -1302,8 +1240,8 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
                 code: Key::Char(ch),
                 ..
             }) => {
-                let cmd_res = self.perform(Cmd::Type(ch));
-                if let State::One(_) = self.state()
+                let cmd_res = self.perform(Cmd::Type(*ch));
+                if let State::Single(_) = self.state()
                     && let Ok(binding) = self.key_event()
                 {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
@@ -1313,10 +1251,10 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
                 cmd_res
             }
 
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
+            CmdResult::Submit(State::Single(StateValue::Usize(_index))) => {
                 if let Ok(binding) = self.key_event() {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
                         self.id, binding,
@@ -1324,7 +1262,7 @@ impl Component<Msg, UserEvent> for KEModifierSelect {
                 }
                 Some(Msg::ForceRedraw)
             }
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }

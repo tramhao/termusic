@@ -24,19 +24,21 @@ use termusiclib::config::SharedTuiSettings;
  */
 use anyhow::Result;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
-use tui_realm_stdlib::utils::get_block;
+use tui_realm_stdlib::prop_ext::CommonProps;
 use tuirealm::command::{Cmd, CmdResult};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, Borders, Color, PropPayload, PropValue, TextModifiers};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{
+    AttrValue, Attribute, Borders, Color, HorizontalAlignment, PropPayload, PropValue, Props,
+    QueryResult, Style, TextModifiers, Title,
+};
+use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::layout::Rect;
 use tuirealm::ratatui::widgets::{BorderType, Paragraph};
-use tuirealm::{
-    AttrValue, Attribute, Component, Event, Frame, MockComponent, Props, State, StateValue,
-};
+use tuirealm::state::{State, StateValue};
 
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
-use crate::ui::utils::get_style;
 
 /// ## Counter
 ///
@@ -44,20 +46,63 @@ use crate::ui::utils::get_style;
 #[derive(Default)]
 struct Counter {
     props: Props,
+    common: CommonProps,
 }
 
 impl Counter {
-    #[allow(dead_code)]
-    pub fn label<S>(mut self, label: S) -> Self
-    where
-        S: AsRef<str>,
-    {
-        self.attr(
-            Attribute::Title,
-            AttrValue::Title((label.as_ref().to_string(), Alignment::Center)),
-        );
+    /// Set the main foreground color. This may get overwritten by individual text styles.
+    pub fn foreground(mut self, fg: Color) -> Self {
+        self.attr(Attribute::Foreground, AttrValue::Color(fg));
         self
     }
+
+    /// Set the main background color. This may get overwritten by individual text styles.
+    pub fn background(mut self, bg: Color) -> Self {
+        self.attr(Attribute::Background, AttrValue::Color(bg));
+        self
+    }
+
+    /// Set the main text modifiers. This may get overwritten by individual text styles.
+    pub fn modifiers(mut self, m: TextModifiers) -> Self {
+        self.attr(Attribute::TextProps, AttrValue::TextModifiers(m));
+        self
+    }
+
+    /// Set the main style. This may get overwritten by individual text styles.
+    ///
+    /// This option will overwrite any previous [`foreground`](Self::foreground), [`background`](Self::background) and [`modifiers`](Self::modifiers)!
+    #[expect(dead_code)]
+    pub fn style(mut self, style: Style) -> Self {
+        self.attr(Attribute::Style, AttrValue::Style(style));
+        self
+    }
+
+    /// Set a custom style for the border when the component is unfocused.
+    #[expect(dead_code)]
+    pub fn inactive(mut self, s: Style) -> Self {
+        self.attr(Attribute::UnfocusedBorderStyle, AttrValue::Style(s));
+        self
+    }
+
+    /// Add a border to the component.
+    pub fn borders(mut self, b: Borders) -> Self {
+        self.attr(Attribute::Borders, AttrValue::Borders(b));
+        self
+    }
+
+    /// Add a title to the component.
+    #[expect(dead_code)]
+    pub fn title<T: Into<Title>>(mut self, title: T) -> Self {
+        self.attr(Attribute::Title, AttrValue::Title(title.into()));
+        self
+    }
+
+    /// Set the text alignment.
+    pub fn alignment(mut self, a: HorizontalAlignment) -> Self {
+        self.attr(Attribute::TextAlign, AttrValue::AlignmentHorizontal(a));
+        self
+    }
+
     #[allow(dead_code)]
     pub fn text<S>(mut self, t: S) -> Self
     where
@@ -71,7 +116,7 @@ impl Counter {
         if let Some(n) = n {
             self.attr(
                 Attribute::Value,
-                AttrValue::Payload(PropPayload::One(PropValue::Usize(n))),
+                AttrValue::Payload(PropPayload::Single(PropValue::Usize(n))),
             );
         } else {
             self.attr(Attribute::Value, AttrValue::Payload(PropPayload::None));
@@ -79,115 +124,68 @@ impl Counter {
         self
     }
 
-    pub fn alignment(mut self, a: Alignment) -> Self {
-        self.attr(Attribute::TextAlign, AttrValue::Alignment(a));
-        self
-    }
-
-    pub fn foreground(mut self, c: Color) -> Self {
-        self.attr(Attribute::Foreground, AttrValue::Color(c));
-        self
-    }
-
-    pub fn background(mut self, c: Color) -> Self {
-        self.attr(Attribute::Background, AttrValue::Color(c));
-        self
-    }
-
-    pub fn modifiers(mut self, m: TextModifiers) -> Self {
-        self.attr(Attribute::TextProps, AttrValue::TextModifiers(m));
-        self
-    }
-
-    pub fn borders(mut self, b: Borders) -> Self {
-        self.attr(Attribute::Borders, AttrValue::Borders(b));
-        self
-    }
-
     pub fn get_state(&self) -> Option<usize> {
         match self
             .props
-            .get_ref(Attribute::Value)
+            .get(Attribute::Value)
             .and_then(AttrValue::as_payload)?
         {
-            PropPayload::One(PropValue::Usize(v)) => Some(*v),
+            PropPayload::Single(PropValue::Usize(v)) => Some(*v),
             _ => None,
         }
     }
 }
 
-impl MockComponent for Counter {
+impl Component for Counter {
     fn view(&mut self, frame: &mut Frame<'_>, area: Rect) {
-        // Check if visible
-        if self
-            .props
-            .get_ref(Attribute::Display)
-            .and_then(AttrValue::as_flag)
-            .unwrap_or(true)
-        {
-            // Get properties
-            let value = self.get_state();
-            let text_base = self
-                .props
-                .get_ref(Attribute::Text)
-                .and_then(|v| v.as_string())
-                .map_or("", |v| v.as_str());
-            let text = if let Some(value) = value {
-                format!("{text_base} ({value})")
-            } else {
-                "{text_base} (-)".to_string()
-            };
-
-            let alignment = self
-                .props
-                .get_ref(Attribute::TextAlign)
-                .and_then(AttrValue::as_alignment)
-                .unwrap_or(Alignment::Left);
-            let style = get_style(&self.props);
-            let title = self
-                .props
-                .get_ref(Attribute::Title)
-                .and_then(AttrValue::as_title)
-                // NOTE: clone should not be necessary anymore with tui-realm-stdlib next version
-                .map_or((String::new(), Alignment::Center), Clone::clone);
-            let borders = self
-                .props
-                .get_ref(Attribute::Borders)
-                .and_then(AttrValue::as_borders)
-                // Note: Borders should be copy-able
-                .map_or(Borders::default(), Clone::clone);
-            let focus = self
-                .props
-                .get_ref(Attribute::Focus)
-                .and_then(AttrValue::as_flag)
-                .unwrap_or(false);
-
-            let inactive_style = self
-                .props
-                .get_ref(Attribute::FocusStyle)
-                .and_then(AttrValue::as_style)
-                .unwrap_or(style);
-            frame.render_widget(
-                Paragraph::new(text)
-                    .block(get_block(
-                        borders,
-                        Some(&title),
-                        focus,
-                        Some(inactive_style),
-                    ))
-                    .style(style)
-                    .alignment(alignment),
-                area,
-            );
+        if !self.common.display {
+            return;
         }
+
+        // Get properties
+        let value = self.get_state();
+        let text_base = self
+            .props
+            .get(Attribute::Text)
+            .and_then(|v| v.as_string())
+            .map_or("", |v| v.as_str());
+        let text = if let Some(value) = value {
+            format!("{text_base} ({value})")
+        } else {
+            "None selected (-)".to_string()
+        };
+
+        let alignment = self
+            .props
+            .get(Attribute::TextAlign)
+            .and_then(AttrValue::as_alignment_horizontal)
+            .unwrap_or(HorizontalAlignment::Left);
+
+        let block = self.common.get_block();
+
+        let mut widget = Paragraph::new(text)
+            .style(self.common.style)
+            .alignment(alignment);
+
+        if let Some(block) = block {
+            widget = widget.block(block);
+        }
+
+        frame.render_widget(widget, area);
     }
 
-    fn query(&self, attr: Attribute) -> Option<AttrValue> {
-        self.props.get(attr)
+    fn query(&self, attr: Attribute) -> Option<QueryResult<'_>> {
+        if let Some(value) = self.common.get_for_query(attr) {
+            return Some(value);
+        }
+
+        self.props.get_for_query(attr)
     }
 
     fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        self.props.set(attr, value);
+        if let Some(value) = self.common.set(attr, value) {
+            self.props.set(attr, value);
+        }
     }
 
     fn state(&self) -> State {
@@ -195,7 +193,7 @@ impl MockComponent for Counter {
             return State::None;
         };
 
-        State::One(StateValue::Usize(state))
+        State::Single(StateValue::Usize(state))
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
@@ -204,14 +202,14 @@ impl MockComponent for Counter {
                 // self.states.incr();
                 CmdResult::Changed(self.state())
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         }
     }
 }
 
 // -- Counter components
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TECounterDelete {
     component: Counter,
     config: SharedTuiSettings,
@@ -222,7 +220,7 @@ impl TECounterDelete {
         let component = {
             let config = config.read();
             Counter::default()
-                .alignment(Alignment::Center)
+                .alignment(HorizontalAlignment::Center)
                 .background(config.settings.theme.library_background())
                 .borders(
                     Borders::default()
@@ -248,8 +246,8 @@ impl TECounterDelete {
     }
 }
 
-impl Component<Msg, UserEvent> for TECounterDelete {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TECounterDelete {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let keys = &self.config.read().settings.keys;
         // Get command
         let _cmd = match ev {
@@ -293,7 +291,7 @@ impl Component<Msg, UserEvent> for TECounterDelete {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TECounterSave {
     component: Counter,
     config: SharedTuiSettings,
@@ -304,7 +302,7 @@ impl TECounterSave {
         let component = {
             let config = config.read();
             Counter::default()
-                .alignment(Alignment::Center)
+                .alignment(HorizontalAlignment::Center)
                 .background(config.settings.theme.library_background())
                 .foreground(config.settings.theme.library_foreground())
                 .borders(
@@ -321,8 +319,8 @@ impl TECounterSave {
     }
 }
 
-impl Component<Msg, UserEvent> for TECounterSave {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TECounterSave {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let keys = &self.config.read().settings.keys;
         // Get command
         let _cmd = match ev {

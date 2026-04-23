@@ -4,7 +4,6 @@ use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::sync::mpsc::{self};
 use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
-use tuirealm::{Application, Update};
 
 use crate::CombinedSettings;
 use crate::ui::server_req_actor::ServerRequestActor;
@@ -45,23 +44,8 @@ impl UI {
         Ok(Self { model })
     }
 
-    /// Handle terminal init & finalize and start the UI Loop.
-    pub fn run(&mut self) -> Result<()> {
-        self.model.init_terminal();
-
-        let res = self.run_inner();
-
-        // reset terminal in any case
-        self.model.finalize_terminal();
-
-        res
-    }
-
     /// Main Loop function.
-    ///
-    /// This function does NOT handle initializing and finializing the terminal.
-    #[allow(clippy::unnecessary_wraps)] // to easily change if it ever becomes required again
-    fn run_inner(&mut self) -> Result<()> {
+    pub fn run(&mut self) -> Result<()> {
         // load the initial playlist
         let _ = self
             .model
@@ -81,10 +65,7 @@ impl UI {
                     // NOTE: redraw if at least one msg has been processed
                     self.model.redraw = true;
                     for msg in messages {
-                        let mut msg = Some(msg);
-                        while msg.is_some() {
-                            msg = self.model.update(msg);
-                        }
+                        self.model.update(msg);
                     }
                 }
                 _ => {}

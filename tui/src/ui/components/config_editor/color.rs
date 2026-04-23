@@ -25,19 +25,22 @@ use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
-use tui_realm_stdlib::{Label, Select, Table};
+use tui_realm_stdlib::components::{Input, Label, Select, Table};
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
-    Alignment, BorderType, Borders, Color, InputType, Style, TableBuilder, TextModifiers, TextSpan,
+    AttrValue, Attribute, BorderType, Borders, Color, HorizontalAlignment, InputType, LineStatic,
+    Style, TableBuilder, TextModifiers, Title,
 };
 use tuirealm::ratatui::style::Modifier;
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+use tuirealm::state::{State, StateValue};
 
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 const COLOR_LIST: [ColorTermusic; 19] = [
     ColorTermusic::Reset,
@@ -61,7 +64,7 @@ const COLOR_LIST: [ColorTermusic; 19] = [
     ColorTermusic::LightWhite,
 ];
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct CEThemeSelectTable {
     component: Table,
     config: SharedTuiSettings,
@@ -79,10 +82,18 @@ impl CEThemeSelectTable {
                 )
                 .foreground(config.settings.theme.fallback_foreground())
                 .background(config.settings.theme.fallback_background())
-                .title(" Themes: <Enter> to preview ", Alignment::Left)
+                .title(
+                    Title::from(" Themes: <Enter> to preview ")
+                        .alignment(HorizontalAlignment::Left),
+                )
                 .scroll(true)
-                .highlighted_color(config.settings.theme.fallback_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .fg(config.settings.theme.fallback_highlight()),
+                )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(true)
                 .step(4)
                 .row_height(1)
@@ -91,9 +102,9 @@ impl CEThemeSelectTable {
                 .widths(&[18, 82])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("Empty"))
-                        .add_col(TextSpan::from("Empty Queue"))
-                        .add_col(TextSpan::from("Empty"))
+                        .add_col(LineStatic::from("Empty"))
+                        .add_col(LineStatic::from("Empty Queue"))
+                        .add_col(LineStatic::from("Empty"))
                         .build(),
                 )
         };
@@ -102,8 +113,8 @@ impl CEThemeSelectTable {
     }
 }
 
-impl Component<Msg, UserEvent> for CEThemeSelectTable {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for CEThemeSelectTable {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -166,22 +177,22 @@ impl Component<Msg, UserEvent> for CEThemeSelectTable {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeSelectLoad(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct CEColorSelect {
     component: Select,
     id: IdCETheme,
@@ -194,7 +205,12 @@ impl CEColorSelect {
     /// # Panics
     ///
     /// The only IDs expected are color IDs, everything else(like `*Symbol` or `*Label`) will panic.
-    pub fn new(name: &str, id: IdCETheme, color: Color, config: SharedTuiSettings) -> Self {
+    pub fn new<T: Into<Title>>(
+        name: T,
+        id: IdCETheme,
+        color: Color,
+        config: SharedTuiSettings,
+    ) -> Self {
         let config_read = config.read_recursive();
         let init_value = Self::init_color_select(id, &config_read.settings.theme);
         let hg_color = config_read.settings.theme.library_highlight();
@@ -211,11 +227,12 @@ impl CEColorSelect {
                 )
                 // .foreground(color)
                 .background(color)
-                .title(name, Alignment::Left)
+                .title(name.into().alignment(HorizontalAlignment::Left))
                 .rewind(false)
                 .inactive(Style::default().add_modifier(Modifier::BOLD).bg(color))
-                .highlighted_color(hg_color)
-                .highlighted_str(">> ")
+                .highlight_style(CommonHighlight::default().style.fg(hg_color))
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_str(">> ")
                 .choices(choices)
                 .value(init_value),
             id,
@@ -293,7 +310,7 @@ impl CEColorSelect {
             ),
         );
         self.attr(
-            Attribute::FocusStyle,
+            Attribute::UnfocusedBorderStyle,
             AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(color)),
         );
         Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(
@@ -303,8 +320,8 @@ impl CEColorSelect {
     }
 }
 
-impl Component<Msg, UserEvent> for CEColorSelect {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for CEColorSelect {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -324,30 +341,30 @@ impl Component<Msg, UserEvent> for CEColorSelect {
             }
 
             Event::Keyboard(key) if key == keys.escape.get() => match self.state() {
-                State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+                State::Single(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                 _ => self.perform(Cmd::Cancel),
             },
             Event::Keyboard(keyevent) if keyevent == keys.quit.get() => match self.state() {
-                State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+                State::Single(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                 _ => self.perform(Cmd::Cancel),
             },
 
             Event::Keyboard(key) if key == keys.navigation_keys.up.get() => match self.state() {
-                State::One(_) => {
+                State::Single(_) => {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
                 }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
 
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => match self.state() {
-                State::One(_) => {
+                State::Single(_) => {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
                 }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
-                State::One(_) => {
+                State::Single(_) => {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
                 }
                 _ => self.perform(Cmd::Move(Direction::Up)),
@@ -356,7 +373,7 @@ impl Component<Msg, UserEvent> for CEColorSelect {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => match self.state() {
-                State::One(_) => {
+                State::Single(_) => {
                     return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
                 }
                 _ => self.perform(Cmd::Move(Direction::Down)),
@@ -368,23 +385,23 @@ impl Component<Msg, UserEvent> for CEColorSelect {
                 // "Select" returns "None" as a result for "Submit" when transitioning from "closed" to "open" state.
                 // But does return something when transitioning from "open" to "closed" state.
                 match self.perform(Cmd::Submit) {
-                    CmdResult::None => return Some(Msg::ForceRedraw),
+                    CmdResult::NoChange => return Some(Msg::ForceRedraw),
                     v => v,
                 }
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+            CmdResult::Submit(State::Single(StateValue::Usize(index))) => {
                 Some(self.update_color(index))
             }
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct CEStyleTitle {
     component: Label,
 }
@@ -403,13 +420,13 @@ impl CEStyleTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CEStyleTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for CEStyleTitle {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct ConfigInputHighlight {
     component: Input,
     id: IdConfigEditor,
@@ -417,7 +434,7 @@ pub struct ConfigInputHighlight {
 }
 
 impl ConfigInputHighlight {
-    pub fn new(name: &str, id: IdConfigEditor, config: SharedTuiSettings) -> Self {
+    pub fn new<T: Into<Title>>(name: T, id: IdConfigEditor, config: SharedTuiSettings) -> Self {
         let config_r = config.read();
         // TODO: this should likely not be here, because it is a runtime error if it is unhandled
         let highlight_str = match id {
@@ -442,14 +459,14 @@ impl ConfigInputHighlight {
             .background(config_r.settings.theme.library_background())
             .inactive(Style::new().bg(config_r.settings.theme.library_background()))
             .input_type(InputType::Text)
-            .placeholder(
+            .placeholder(LineStatic::styled(
                 "1f984/1f680/1f8a5",
                 Style::default().fg(config_r
                     .settings
                     .theme
                     .get_color_from_theme(ColorTermusic::LightBlack)),
-            )
-            .title(name, Alignment::Left)
+            ))
+            .title(name.into().alignment(HorizontalAlignment::Left))
             .value(highlight_str);
 
         drop(config_r);
@@ -460,7 +477,7 @@ impl ConfigInputHighlight {
         }
     }
     fn update_symbol(&mut self, result: CmdResult) -> Msg {
-        if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
+        if let CmdResult::Changed(State::Single(StateValue::String(symbol))) = result.clone() {
             if symbol.is_empty() {
                 let color = self.config.read_recursive().settings.theme.library_border();
                 self.update_symbol_after(color);
@@ -480,7 +497,7 @@ impl ConfigInputHighlight {
         }
 
         // press enter to see preview
-        if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result
+        if let CmdResult::Submit(State::Single(StateValue::String(symbol))) = result
             && let Some(s) = Self::string_to_unicode_char(&symbol)
         {
             self.attr(Attribute::Value, AttrValue::String(s.to_string()));
@@ -512,8 +529,8 @@ impl ConfigInputHighlight {
     }
 }
 
-impl Component<Msg, UserEvent> for ConfigInputHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for ConfigInputHighlight {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         match ev {
@@ -570,7 +587,7 @@ impl Component<Msg, UserEvent> for ConfigInputHighlight {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::NONE | KeyModifiers::SHIFT,
             }) => {
-                let result = self.perform(Cmd::Type(ch));
+                let result = self.perform(Cmd::Type(*ch));
                 Some(self.update_symbol(result))
             }
             Event::Keyboard(KeyEvent {

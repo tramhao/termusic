@@ -1,21 +1,29 @@
 use termusiclib::config::{SharedTuiSettings, v2::tui::theme::styles::ColorTermusic};
-use tui_realm_stdlib::Paragraph;
+use tui_realm_stdlib::components::Paragraph;
 use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent,
-    props::{Alignment, BorderType, Borders, PropPayload, TextModifiers, TextSpan},
+    component::{AppComponent, Component},
+    event::Event,
+    props::{
+        AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment, PropPayloadRef,
+        QueryResult, TextModifiers, TextStatic, Title,
+    },
 };
 
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::Msg;
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct MessagePopup {
     component: Paragraph,
 }
 
 impl MessagePopup {
-    pub fn new<S: Into<String>>(config: &SharedTuiSettings, title: S, msg: S) -> Self {
+    pub fn new<T: Into<Title>, V: Into<TextStatic>>(
+        config: &SharedTuiSettings,
+        title: T,
+        msg: V,
+    ) -> Self {
         let config_tui = config.read_recursive();
         Self {
             component: Paragraph::default()
@@ -37,21 +45,21 @@ impl MessagePopup {
                 )
                 .background(config_tui.settings.theme.library_background())
                 .modifiers(TextModifiers::BOLD)
-                .alignment(Alignment::Center)
-                .title(title.into(), Alignment::Center)
-                .text(vec![TextSpan::from(msg)]),
+                .alignment_horizontal(HorizontalAlignment::Center)
+                .title(title.into().alignment(HorizontalAlignment::Center))
+                .text(msg.into()),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for MessagePopup {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for MessagePopup {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
 
 impl Model {
-    pub fn mount_message(&mut self, title: &str, text: &str) {
+    pub fn mount_message<T: Into<Title>, V: Into<TextStatic>>(&mut self, title: T, text: V) {
         assert!(
             self.app
                 .remount(
@@ -67,12 +75,19 @@ impl Model {
     ///
     /// Umount error message
     pub fn umount_message(&mut self, _title: &str, text: &str) {
-        if let Ok(Some(AttrValue::Payload(PropPayload::Vec(spans)))) =
-            self.app.query(&Id::MessagePopup, Attribute::Text)
-            && let Some(display_text) = spans.into_iter().next()
+        if let Some(spans) = self
+            .app
+            .query(&Id::MessagePopup, Attribute::Text)
+            .ok()
+            .flatten()
+            .as_ref()
+            .map(QueryResult::as_ref)
+            .and_then(AttrValueRef::as_payload)
+            .and_then(PropPayloadRef::as_vec)
+            && let Some(display_text) = spans.iter().next()
         {
-            let d = display_text.unwrap_text_span().content;
-            if text.eq(&d) {
+            let d = &display_text.as_textspan().unwrap().content;
+            if text.eq(d) {
                 self.app.umount(&Id::MessagePopup).ok();
             }
         }

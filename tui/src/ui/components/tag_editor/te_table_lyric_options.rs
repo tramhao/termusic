@@ -2,19 +2,25 @@ use anyhow::{Context, Result, anyhow};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::songtag::{SongTag, SongtagSearchResult, search};
 use tokio::runtime::Handle;
-use tui_realm_stdlib::Table;
+use tui_realm_stdlib::components::Table;
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
-use tuirealm::{Component, Event, MockComponent, State, StateValue};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{
+    AttrValue, Attribute, BorderType, Borders, HorizontalAlignment, LineStatic, Style,
+    TableBuilder, Title,
+};
+use tuirealm::state::{State, StateValue};
 
 use crate::ui::Model;
 use crate::ui::components::TETrack;
 use crate::ui::ids::{Id, IdTagEditor};
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct TETableLyricOptions {
     component: Table,
     config: SharedTuiSettings,
@@ -32,11 +38,16 @@ impl TETableLyricOptions {
                 )
                 .foreground(config.settings.theme.library_foreground())
                 .background(config.settings.theme.library_background())
-                .title(" Search Results ", Alignment::Left)
+                .title(Title::from(" Search Results ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
-                .highlighted_color(config.settings.theme.library_highlight())
-                .highlighted_str("\u{1f680}")
-                // .highlighted_str("🚀")
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .fg(config.settings.theme.library_highlight()),
+                )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_str("\u{1f680}")
+                // .highlight_str("🚀")
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -45,9 +56,9 @@ impl TETableLyricOptions {
                 .widths(&[20, 20, 20, 10, 30])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("0"))
-                        .add_col(TextSpan::from(" "))
-                        .add_col(TextSpan::from("No Results."))
+                        .add_col(LineStatic::from("0"))
+                        .add_col(LineStatic::from(" "))
+                        .add_col(LineStatic::from("No Results."))
                         .build(),
                 )
         };
@@ -56,8 +67,8 @@ impl TETableLyricOptions {
     }
 }
 
-impl Component<Msg, UserEvent> for TETableLyricOptions {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for TETableLyricOptions {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -117,24 +128,24 @@ impl Component<Msg, UserEvent> for TETableLyricOptions {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(k) if k == keys.library_keys.youtube_search.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::TagEditor(TEMsg::Download(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::TagEditor(TEMsg::Embed(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
@@ -185,11 +196,14 @@ impl Model {
             };
 
             table
-                .add_col(TextSpan::new(artist).fg(artist_color))
-                .add_col(TextSpan::new(title).bold())
-                .add_col(TextSpan::new(album))
-                .add_col(TextSpan::new(api))
-                .add_col(TextSpan::new(url));
+                .add_col(LineStatic::styled(
+                    artist.to_string(),
+                    Style::new().fg(artist_color),
+                ))
+                .add_col(LineStatic::styled(title.to_string(), Style::new().bold()))
+                .add_col(LineStatic::from(album.to_string()))
+                .add_col(LineStatic::from(api))
+                .add_col(LineStatic::from(url.to_string()));
         }
         let table = table.build();
         self.te_set_results(table).unwrap();
@@ -199,8 +213,8 @@ impl Model {
     fn te_set_results(&mut self, table: tuirealm::props::Table) -> Result<()> {
         self.app.attr(
             &Id::TagEditor(IdTagEditor::TableLyricOptions),
-            tuirealm::Attribute::Content,
-            tuirealm::AttrValue::Table(table),
+            Attribute::Content,
+            AttrValue::Table(table),
         )?;
 
         Ok(())
@@ -209,9 +223,9 @@ impl Model {
     /// Set TagEditor "Search Results" to "Loading"
     fn te_set_loading_results(&mut self) {
         let table = TableBuilder::default()
-            .add_col(TextSpan::from("0"))
-            .add_col(TextSpan::from(" "))
-            .add_col(TextSpan::from("Loading..."))
+            .add_col(LineStatic::from("0"))
+            .add_col(LineStatic::from(" "))
+            .add_col(LineStatic::from("Loading..."))
             .build();
 
         self.te_set_results(table).unwrap();
@@ -219,13 +233,13 @@ impl Model {
 
     pub fn te_songtag_search(&mut self) {
         let mut search_str = String::new();
-        if let Ok(State::One(StateValue::String(artist))) =
+        if let Ok(State::Single(StateValue::String(artist))) =
             self.app.state(&Id::TagEditor(IdTagEditor::InputArtist))
         {
             search_str.push_str(&artist);
         }
         search_str.push(' ');
-        if let Ok(State::One(StateValue::String(title))) =
+        if let Ok(State::Single(StateValue::String(title))) =
             self.app.state(&Id::TagEditor(IdTagEditor::InputTitle))
         {
             search_str.push_str(&title);
@@ -302,23 +316,23 @@ impl Model {
     }
     pub fn te_rename_song_by_tag(&mut self) -> Result<()> {
         if let Some(mut song) = self.tageditor_song.clone() {
-            if let Ok(State::One(StateValue::String(artist))) =
+            if let Ok(State::Single(StateValue::String(artist))) =
                 self.app.state(&Id::TagEditor(IdTagEditor::InputArtist))
             {
                 song.set_artist(&artist);
             }
-            if let Ok(State::One(StateValue::String(title))) =
+            if let Ok(State::Single(StateValue::String(title))) =
                 self.app.state(&Id::TagEditor(IdTagEditor::InputTitle))
             {
                 song.set_title(&title);
             }
 
-            if let Ok(State::One(StateValue::String(album))) =
+            if let Ok(State::Single(StateValue::String(album))) =
                 self.app.state(&Id::TagEditor(IdTagEditor::InputAlbum))
             {
                 song.set_album(&album);
             }
-            if let Ok(State::One(StateValue::String(genre))) =
+            if let Ok(State::Single(StateValue::String(genre))) =
                 self.app.state(&Id::TagEditor(IdTagEditor::InputGenre))
             {
                 song.set_genre(&genre);

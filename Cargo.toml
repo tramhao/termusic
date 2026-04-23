@@ -110,12 +110,12 @@ prost = "0.14.3"
 tonic = "0.14.5"
 tonic-prost = "0.14.5"
 tonic-prost-build = "0.14.5"
-tuirealm = { version = "~3.3.0", features = ["async-ports"] }
-tui-realm-stdlib = "~3.1"
-tuirealm-orx-tree = "0.3.0"
+tuirealm = { git = "https://github.com/hasezoey/tui-realm.git", rev = "9c3f325efac7cb0e1dd9c1db3cd91e4dfaa8dbec", features = ["async-ports"] }
+tui-realm-stdlib = { git = "https://github.com/hasezoey/tui-realm.git", rev = "9c3f325efac7cb0e1dd9c1db3cd91e4dfaa8dbec" }
+tuirealm-orx-tree = { git = "https://github.com/hasezoey/tuirealm-orx-tree.git", rev = "340e05b2564d78ef139261d0d2896517142169ec" }
 unicode-segmentation = "1.12"
-# ratatui is locked to "=0.2.0"
-unicode-width = "^0.2.0"
+# ratatui is very specific with its versions
+unicode-width = "^0.2.2"
 urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.4"
@@ -124,10 +124,12 @@ ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.32"
 alphanumeric-sort = "1.5.5"
 # for less dependencies, keep in sync with the version ratatui uses
-lru = "0.12.5"
+lru = "0.16"
 either = "1.15"
-# transitive dependency for some packages (like libsqlite), manually specified to upgrade the version, see https://github.com/rusqlite/rusqlite/issues/1543
-cc = "1.2"
+
+# HACK: temporary for tuirealm 4.0.0 upgrade and dependencies directly depending on 4.0.0 instead of git
+[patch.crates-io]
+tuirealm = { git = "https://github.com/hasezoey/tui-realm.git", rev = "9c3f325efac7cb0e1dd9c1db3cd91e4dfaa8dbec" }
 
 [profile.release]
 lto = true

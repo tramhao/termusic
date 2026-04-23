@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::atomic::Ordering;
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -22,12 +21,12 @@ use termusiclib::track::{LyricData, MediaTypesSimple, Track};
 use termusiclib::utils::get_app_config_path;
 use termusiclib::xywh;
 use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
-use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
+use tuirealm::application::Application;
+use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalAdapter, TerminalResult};
 
 use super::components::TETrack;
 use super::tui_cmd::TuiCmd;
 use crate::CombinedSettings;
-use crate::ui::Application;
 use crate::ui::ids::Id;
 use crate::ui::model::ports::stream_events::{PortStreamEvents, WrappedStreamEvents};
 use crate::ui::model::youtube_options::YoutubeOptions;
@@ -274,7 +273,7 @@ pub struct Model {
     pub redraw: bool,
     pub app: Application<Id, Msg, UserEvent>,
     /// Used to draw to terminal
-    pub terminal: TerminalBridge<CrosstermTerminalAdapter>,
+    pub terminal: CrosstermTerminalAdapter,
     pub tx_to_main: TxToMain,
     /// Sender for Player Commands
     pub cmd_to_server_tx: UnboundedSender<TuiCmd>,
@@ -374,7 +373,7 @@ impl Model {
 
         let db = Database::new_default_path().expect("Open Library Database");
         let db_criteria = SearchCriteria::Artist;
-        let terminal = TerminalBridge::new_crossterm().expect("Could not initialize terminal");
+        let terminal = Self::init_adapter().expect("Could not initialize terminal");
 
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 
@@ -457,6 +456,15 @@ impl Model {
         model
     }
 
+    /// Initialize the Terminal modes.
+    fn init_adapter() -> TerminalResult<CrosstermTerminalAdapter> {
+        let mut adapter = CrosstermTerminalAdapter::new()?;
+        adapter.enable_raw_mode()?;
+        adapter.enter_alternate_screen()?;
+
+        Ok(adapter)
+    }
+
     #[inline]
     pub fn get_combined_settings(&self) -> CombinedSettings {
         CombinedSettings {
@@ -503,37 +511,6 @@ impl Model {
                 );
             }
         }
-    }
-
-    /// Initialize terminal
-    pub fn init_terminal(&mut self) {
-        let original_hook = std::panic::take_hook();
-        std::panic::set_hook(Box::new(move |panic| {
-            Self::hook_reset_terminal();
-            original_hook(panic);
-        }));
-        let _drop = self.terminal.enable_raw_mode();
-        let _drop = self.terminal.enter_alternate_screen();
-        // required as "enter_alternate_screen" always enabled mouse-capture
-        let _drop = self.terminal.disable_mouse_capture();
-        let _drop = self.terminal.clear_screen();
-        crate::TERMINAL_ALTERNATE_MODE.store(true, Ordering::SeqCst);
-    }
-
-    /// Finalize terminal for hooks like panic or CTRL+C
-    pub fn hook_reset_terminal() {
-        let mut terminal_clone =
-            TerminalBridge::new_crossterm().expect("Could not initialize terminal");
-        let _drop = terminal_clone.disable_raw_mode();
-        let _drop = terminal_clone.leave_alternate_screen();
-        crate::TERMINAL_ALTERNATE_MODE.store(false, Ordering::SeqCst);
-    }
-
-    /// Finalize terminal
-    pub fn finalize_terminal(&mut self) {
-        let _drop = self.terminal.disable_raw_mode();
-        let _drop = self.terminal.leave_alternate_screen();
-        crate::TERMINAL_ALTERNATE_MODE.store(false, Ordering::SeqCst);
     }
 
     /// Force a redraw of the entire model

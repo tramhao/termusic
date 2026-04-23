@@ -9,8 +9,7 @@ use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
 use tokio::runtime::Handle;
 use tokio::time::sleep;
-use tuirealm::Update;
-use tuirealm::props::{AttrValue, Attribute};
+use tuirealm::props::{AttrValueRef, Attribute, QueryResult};
 
 use crate::ui::ids::Id;
 use crate::ui::model::youtube_options::YTDLMsg;
@@ -22,10 +21,9 @@ use crate::ui::msg::{
 use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::{Model, model::TermusicLayout};
 
-impl Update<Msg> for Model {
+impl Model {
     #[allow(clippy::too_many_lines)]
-    fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
-        let msg = msg?;
+    pub fn update(&mut self, msg: Msg) {
         // Set redraw
         self.redraw = true;
         // Match message
@@ -40,15 +38,12 @@ impl Update<Msg> for Model {
 
             Msg::Library(msg) => {
                 self.update_library(msg);
-                None
             }
             Msg::GeneralSearch(msg) => {
                 self.update_general_search(&msg);
-                None
             }
             Msg::Playlist(msg) => {
                 self.update_playlist(&msg);
-                None
             }
 
             Msg::Player(msg) => self.update_player(msg),
@@ -56,17 +51,14 @@ impl Update<Msg> for Model {
             Msg::HelpPopup(msg) => self.update_help_popup_msg(&msg),
             Msg::YoutubeSearch(msg) => {
                 self.update_youtube_search(msg);
-                None
             }
             Msg::TagEditor(msg) => {
                 self.update_tageditor(msg);
-                None
             }
             Msg::UpdatePhoto => {
                 if let Err(e) = self.update_photo() {
                     self.mount_error_popup(e.context("update_photo"));
                 }
-                None
             }
             Msg::Layout(msg) => self.update_layout(msg),
 
@@ -79,7 +71,7 @@ impl Update<Msg> for Model {
             Msg::ServerReqResponse(msg) => self.update_server_resp_msg(msg),
             Msg::StreamUpdate(msg) => self.update_events_msg(msg),
 
-            Msg::ForceRedraw => None,
+            Msg::ForceRedraw => (),
         }
     }
 }
@@ -95,7 +87,7 @@ impl Model {
     }
 
     /// Handle all [`ErrorPopupMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_error_popup_msg(&mut self, msg: &ErrorPopupMsg) -> Option<Msg> {
+    fn update_error_popup_msg(&mut self, msg: &ErrorPopupMsg) {
         match msg {
             ErrorPopupMsg::Close => {
                 if self.app.mounted(&Id::ErrorPopup) {
@@ -103,12 +95,10 @@ impl Model {
                 }
             }
         }
-
-        None
     }
 
     /// Handle all [`HelpPopupMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_help_popup_msg(&mut self, msg: &HelpPopupMsg) -> Option<Msg> {
+    fn update_help_popup_msg(&mut self, msg: &HelpPopupMsg) {
         match msg {
             HelpPopupMsg::Show => {
                 self.mount_help_popup();
@@ -120,12 +110,10 @@ impl Model {
                 self.update_photo().ok();
             }
         }
-
-        None
     }
 
     /// Handle all [`QuitPopupMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_quit_popup_msg(&mut self, msg: &QuitPopupMsg) -> Option<Msg> {
+    fn update_quit_popup_msg(&mut self, msg: &QuitPopupMsg) {
         match msg {
             QuitPopupMsg::Show => {
                 if self.config_tui.read().settings.behavior.confirm_quit {
@@ -141,12 +129,10 @@ impl Model {
                 self.quit = true;
             }
         }
-
-        None
     }
 
     /// Handle all [`XYWHMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_xywh_msg(&mut self, msg: XYWHMsg) -> Option<Msg> {
+    fn update_xywh_msg(&mut self, msg: XYWHMsg) {
         match msg {
             XYWHMsg::MoveLeft => self.xywh_move_left(),
             XYWHMsg::MoveRight => self.xywh_move_right(),
@@ -166,47 +152,45 @@ impl Model {
                 }
             },
         }
-        None
     }
 
     /// Handle all [`LyricMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_lyric_msg(&mut self, msg: LyricMsg) -> Option<Msg> {
+    fn update_lyric_msg(&mut self, msg: LyricMsg) {
         match msg {
             LyricMsg::Cycle => {
                 self.lyric_cycle();
-                None
             }
             LyricMsg::AdjustDelay(offset) => {
                 self.lyric_adjust_delay(offset);
-                None
             }
-            LyricMsg::TextAreaBlurUp => self.app.active(&Id::Playlist).ok(),
-            LyricMsg::TextAreaBlurDown => match self.layout {
-                TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
-                TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
-                TermusicLayout::Podcast => self.app.active(&Id::Podcast).ok(),
-            },
-        };
-        None
+            LyricMsg::TextAreaBlurUp => {
+                self.app.active(&Id::Playlist).ok();
+            }
+            LyricMsg::TextAreaBlurDown => {
+                match self.layout {
+                    TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
+                    TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
+                    TermusicLayout::Podcast => self.app.active(&Id::Podcast).ok(),
+                };
+            }
+        }
     }
 
     /// Handle all [`NotificationMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_notification_msg(&mut self, msg: NotificationMsg) -> Option<Msg> {
+    fn update_notification_msg(&mut self, msg: NotificationMsg) {
         match msg {
             NotificationMsg::MessageShow((title, text)) => {
-                self.mount_message(&title, &text);
+                self.mount_message(title, text);
             }
             NotificationMsg::MessageHide((title, text)) => {
                 self.umount_message(&title, &text);
             }
         }
-
-        None
     }
 
     /// Handle all [`PCMsg`] messages. Sub-function for [`update`](Self::update).
     #[allow(clippy::too_many_lines)]
-    fn update_podcast(&mut self, msg: PCMsg) -> Option<Msg> {
+    fn update_podcast(&mut self, msg: PCMsg) {
         match msg {
             PCMsg::PodcastBlurDown => {
                 self.app.active(&Id::Episode).ok();
@@ -310,7 +294,6 @@ impl Model {
             }
             PCMsg::SearchError(e) => self.mount_error_popup(anyhow!(e)),
         }
-        None
     }
 
     /// Handle all cases for [`PodcastSyncResult`].
@@ -423,7 +406,7 @@ impl Model {
     }
 
     /// Handle Player related messages & events
-    fn update_player(&mut self, msg: PlayerMsg) -> Option<Msg> {
+    fn update_player(&mut self, msg: PlayerMsg) {
         match msg {
             PlayerMsg::TogglePause => {
                 self.player_toggle_pause();
@@ -436,7 +419,7 @@ impl Model {
                         None,
                         None,
                     );
-                    return None;
+                    return;
                 }
                 self.command(TuiCmd::SeekForward);
             }
@@ -448,7 +431,7 @@ impl Model {
                         None,
                         None,
                     );
-                    return None;
+                    return;
                 }
                 self.command(TuiCmd::SeekBackward);
             }
@@ -468,34 +451,58 @@ impl Model {
                 self.command(TuiCmd::ToggleGapless);
             }
         }
-
-        None
     }
 
     /// Switch the main view / layout.
-    fn update_layout(&mut self, msg: MainLayoutMsg) -> Option<Msg> {
+    #[expect(clippy::too_many_lines)]
+    fn update_layout(&mut self, msg: MainLayoutMsg) {
         match msg {
             MainLayoutMsg::DataBase => {
                 let mut need_to_set_focus = true;
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::DBListCriteria, Attribute::Focus)
+                // TODO: deduplicate the focus checking
+                if let Some(true) = self
+                    .app
+                    .query(&Id::DBListCriteria, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
 
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::DBListSearchResult, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::DBListSearchResult, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::DBListSearchTracks, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::DBListSearchTracks, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
 
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::Playlist, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Playlist, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
@@ -510,14 +517,26 @@ impl Model {
             }
             MainLayoutMsg::TreeView => {
                 let mut need_to_set_focus = true;
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::Playlist, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Playlist, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
 
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::Library, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Library, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
@@ -533,25 +552,49 @@ impl Model {
             }
             MainLayoutMsg::Podcast => {
                 let mut need_to_set_focus = true;
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::Podcast, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Podcast, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
 
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::Episode, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Episode, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::Playlist, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Playlist, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
 
-                if let Ok(Some(AttrValue::Flag(true))) =
-                    self.app.query(&Id::Lyric, Attribute::Focus)
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Lyric, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
                 {
                     need_to_set_focus = false;
                 }
@@ -567,12 +610,10 @@ impl Model {
                 self.lyric_update();
             }
         }
-
-        None
     }
 
     /// Handle all [`DBMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_database_list(&mut self, msg: DBMsg) -> Option<Msg> {
+    fn update_database_list(&mut self, msg: DBMsg) {
         match msg {
             DBMsg::CriteriaBlurDown | DBMsg::SearchTracksBlurUp => {
                 self.app.active(&Id::DBListSearchResult).ok();
@@ -630,7 +671,6 @@ impl Model {
                 self.umount_results_add_confirm_database();
             }
         }
-        None
     }
 
     /// Handle all [`LIMsg`] messages. Sub-function for [`update`](Self::update).
@@ -884,7 +924,7 @@ impl Model {
     }
 
     /// Handle all [`DeleteConfirmMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_delete_confirmation(&mut self, msg: DeleteConfirmMsg) -> Option<Msg> {
+    fn update_delete_confirmation(&mut self, msg: DeleteConfirmMsg) {
         match msg {
             DeleteConfirmMsg::Show(path, focus_node) => {
                 self.new_library_show_delete_confirm(path, focus_node);
@@ -909,7 +949,6 @@ impl Model {
                 }
             }
         }
-        None
     }
 
     /// Handle all [`PLMsg`] messages. Sub-function for [`update`](Self::update).
@@ -1030,7 +1069,7 @@ impl Model {
     }
 
     /// Handle & update [`SavePlaylistMsg`] related components.
-    fn update_save_playlist(&mut self, msg: SavePlaylistMsg) -> Option<Msg> {
+    fn update_save_playlist(&mut self, msg: SavePlaylistMsg) {
         match msg {
             SavePlaylistMsg::Show(path) => {
                 if let Err(e) = self.mount_save_playlist(&path) {
@@ -1063,12 +1102,10 @@ impl Model {
             // handled by the component
             SavePlaylistMsg::Update(_filename) => (),
         }
-
-        None
     }
 
     /// Handle all [`ServerReqResponse`].
-    fn update_server_resp_msg(&mut self, msg: ServerReqResponse) -> Option<Msg> {
+    fn update_server_resp_msg(&mut self, msg: ServerReqResponse) {
         match msg {
             ServerReqResponse::GetProgress(response) => {
                 let pprogress: PlayerProgress = response.progress.unwrap_or_default().into();
@@ -1104,14 +1141,12 @@ impl Model {
                 );
             }
         }
-
-        None
     }
 
     /// Handle Stream updates [`UpdateEvents`].
     ///
     /// In case of lag, sends a [`TuiCmd::GetProgress`].
-    fn update_events_msg(&mut self, msg: UpdateEvents) -> Option<Msg> {
+    fn update_events_msg(&mut self, msg: UpdateEvents) {
         match msg {
             UpdateEvents::MissedEvents { amount } => {
                 warn!("Stream Lagged, missed events: {amount}");
@@ -1179,8 +1214,6 @@ impl Model {
                 }
             }
         }
-
-        None
     }
 
     /// Handle Playlist Update Events [`UpdatePlaylistEvents`].

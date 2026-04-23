@@ -26,23 +26,27 @@ use termusiclib::config::v2::server::{Backend, ComProtocol, default_uds_socket_p
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::Radio;
-use tuirealm::props::{Alignment, BorderType, Borders, InputType, Style};
+use tui_realm_stdlib::components::{Input, Radio};
+use tui_realm_stdlib::prop_ext::CommonHighlight;
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
+use tuirealm::props::{
+    BorderType, Borders, HorizontalAlignment, InputType, LineStatic, Style, Title,
+};
 use tuirealm::{
-    Component, Event, MockComponent,
     command::{Cmd, Direction, Position},
     event::{Key, KeyEvent},
 };
 
 use crate::CombinedSettings;
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 /// Get a [`Input`] component with the common style applied.
 #[inline]
-fn common_input_comp(config: &TuiOverlay, title: &str) -> Input {
+fn common_input_comp<T: Into<Title>>(config: &TuiOverlay, title: T) -> Input {
     Input::default()
         .borders(
             Borders::default()
@@ -51,19 +55,19 @@ fn common_input_comp(config: &TuiOverlay, title: &str) -> Input {
         )
         .foreground(config.settings.theme.library_foreground())
         .background(config.settings.theme.library_background())
-        .inactive(Style::new().bg(config.settings.theme.library_background()))
+        .inactive(Style::new().fg(config.settings.theme.library_foreground()))
         .invalid_style(
             Style::default().fg(config
                 .settings
                 .theme
                 .get_color_from_theme(ColorTermusic::Red)),
         )
-        .title(title, Alignment::Left)
+        .title(title.into().alignment(HorizontalAlignment::Left))
 }
 
 /// Get a [`Radio`] component with the common style applied.
 #[inline]
-fn common_radio_comp(config: &TuiOverlay, title: &str) -> Radio {
+fn common_radio_comp<T: Into<Title>>(config: &TuiOverlay, title: T) -> Radio {
     Radio::default()
         .borders(
             Borders::default()
@@ -73,10 +77,16 @@ fn common_radio_comp(config: &TuiOverlay, title: &str) -> Radio {
         .foreground(config.settings.theme.library_foreground())
         .background(config.settings.theme.library_background())
         .inactive(Style::new().bg(config.settings.theme.library_background()))
-        .title(title, Alignment::Left)
+        .highlight_style(
+            CommonHighlight::default()
+                .style
+                .fg(config.settings.theme.playlist_highlight()),
+        )
+        .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+        .title(title.into().alignment(HorizontalAlignment::Left))
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct MusicDir {
     component: Input,
     config: SharedTuiSettings,
@@ -97,13 +107,13 @@ impl MusicDir {
         let component =
             common_input_comp(&config_tui, " Root Music Directory:(use ; to separate) ")
                 .input_type(InputType::Text)
-                .placeholder(
+                .placeholder(LineStatic::styled(
                     "~/Music",
                     Style::default().fg(config_tui
                         .settings
                         .theme
                         .get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                ))
                 .value(music_dir_input);
 
         drop(config_tui);
@@ -114,8 +124,8 @@ impl MusicDir {
     }
 }
 
-impl Component<Msg, UserEvent> for MusicDir {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for MusicDir {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -128,8 +138,8 @@ impl Component<Msg, UserEvent> for MusicDir {
 
 #[allow(clippy::needless_pass_by_value)]
 fn handle_input_ev(
-    component: &mut dyn MockComponent,
-    ev: Event<UserEvent>,
+    component: &mut dyn Component,
+    ev: &Event<UserEvent>,
     keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
@@ -196,7 +206,7 @@ fn handle_input_ev(
             code: Key::Char(ch),
             ..
         }) => {
-            component.perform(Cmd::Type(ch));
+            component.perform(Cmd::Type(*ch));
             Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigChanged))
         }
 
@@ -204,7 +214,7 @@ fn handle_input_ev(
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct ExitConfirmation {
     component: Radio,
     config: SharedTuiSettings,
@@ -224,8 +234,8 @@ impl ExitConfirmation {
     }
 }
 
-impl Component<Msg, UserEvent> for ExitConfirmation {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for ExitConfirmation {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -238,8 +248,8 @@ impl Component<Msg, UserEvent> for ExitConfirmation {
 
 #[allow(clippy::needless_pass_by_value)]
 fn handle_radio_ev(
-    component: &mut dyn MockComponent,
-    ev: Event<UserEvent>,
+    component: &mut dyn Component,
+    ev: &Event<UserEvent>,
     keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
@@ -290,7 +300,7 @@ fn handle_radio_ev(
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlaylistDisplaySymbol {
     component: Radio,
     config: SharedTuiSettings,
@@ -310,8 +320,8 @@ impl PlaylistDisplaySymbol {
     }
 }
 
-impl Component<Msg, UserEvent> for PlaylistDisplaySymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlaylistDisplaySymbol {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -322,7 +332,7 @@ impl Component<Msg, UserEvent> for PlaylistDisplaySymbol {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlaylistRandomTrack {
     component: Input,
     config: SharedTuiSettings,
@@ -334,13 +344,13 @@ impl PlaylistRandomTrack {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Playlist Select Random Track Quantity: ")
                 .input_type(InputType::UnsignedInteger)
-                .placeholder(
+                .placeholder(LineStatic::styled(
                     "20",
                     Style::default().fg(config_tui
                         .settings
                         .theme
                         .get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                ))
                 .value(
                     config
                         .server
@@ -359,8 +369,8 @@ impl PlaylistRandomTrack {
     }
 }
 
-impl Component<Msg, UserEvent> for PlaylistRandomTrack {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlaylistRandomTrack {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -371,7 +381,7 @@ impl Component<Msg, UserEvent> for PlaylistRandomTrack {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlaylistRandomAlbum {
     component: Input,
     config: SharedTuiSettings,
@@ -386,13 +396,13 @@ impl PlaylistRandomAlbum {
                 " Playlist Select Random Album with tracks no less than: ",
             )
             .input_type(InputType::UnsignedInteger)
-            .placeholder(
+            .placeholder(LineStatic::styled(
                 "1",
                 Style::default().fg(config_tui
                     .settings
                     .theme
                     .get_color_from_theme(ColorTermusic::LightBlack)),
-            )
+            ))
             .value(
                 config
                     .server
@@ -411,8 +421,8 @@ impl PlaylistRandomAlbum {
     }
 }
 
-impl Component<Msg, UserEvent> for PlaylistRandomAlbum {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlaylistRandomAlbum {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -423,7 +433,7 @@ impl Component<Msg, UserEvent> for PlaylistRandomAlbum {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PodcastDir {
     component: Input,
     config: SharedTuiSettings,
@@ -435,13 +445,13 @@ impl PodcastDir {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Podcast Download Directory: ")
                 .input_type(InputType::Text)
-                .placeholder(
+                .placeholder(LineStatic::styled(
                     "~/Music/podcast",
                     Style::default().fg(config_tui
                         .settings
                         .theme
                         .get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                ))
                 .value(
                     config
                         .server
@@ -460,8 +470,8 @@ impl PodcastDir {
     }
 }
 
-impl Component<Msg, UserEvent> for PodcastDir {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PodcastDir {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -472,7 +482,7 @@ impl Component<Msg, UserEvent> for PodcastDir {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PodcastSimulDownload {
     component: Input,
     config: SharedTuiSettings,
@@ -484,13 +494,13 @@ impl PodcastSimulDownload {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Podcast Simultaneous Download: ")
                 .input_type(InputType::UnsignedInteger)
-                .placeholder(
+                .placeholder(LineStatic::styled(
                     "between 1 ~ 5 suggested",
                     Style::default().fg(config_tui
                         .settings
                         .theme
                         .get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                ))
                 .value(
                     config
                         .server
@@ -509,8 +519,8 @@ impl PodcastSimulDownload {
     }
 }
 
-impl Component<Msg, UserEvent> for PodcastSimulDownload {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PodcastSimulDownload {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -521,7 +531,7 @@ impl Component<Msg, UserEvent> for PodcastSimulDownload {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PodcastMaxRetries {
     component: Input,
     config: SharedTuiSettings,
@@ -533,13 +543,13 @@ impl PodcastMaxRetries {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Podcast Download Max Retries: ")
                 .input_type(InputType::UnsignedInteger)
-                .placeholder(
+                .placeholder(LineStatic::styled(
                     "between 1 ~ 5 suggested",
                     Style::default().fg(config_tui
                         .settings
                         .theme
                         .get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                ))
                 .value(
                     config
                         .server
@@ -558,8 +568,8 @@ impl PodcastMaxRetries {
     }
 }
 
-impl Component<Msg, UserEvent> for PodcastMaxRetries {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PodcastMaxRetries {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -570,7 +580,7 @@ impl Component<Msg, UserEvent> for PodcastMaxRetries {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct AlbumPhotoAlign {
     component: Radio,
     config: SharedTuiSettings,
@@ -595,8 +605,8 @@ impl AlbumPhotoAlign {
     }
 }
 
-impl Component<Msg, UserEvent> for AlbumPhotoAlign {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for AlbumPhotoAlign {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -607,7 +617,7 @@ impl Component<Msg, UserEvent> for AlbumPhotoAlign {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct SaveLastPosition {
     component: Radio,
     config: SharedTuiSettings,
@@ -642,8 +652,8 @@ impl SaveLastPosition {
     }
 }
 
-impl Component<Msg, UserEvent> for SaveLastPosition {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for SaveLastPosition {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -653,7 +663,7 @@ impl Component<Msg, UserEvent> for SaveLastPosition {
         )
     }
 }
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct ConfigSeekStep {
     component: Radio,
     config: SharedTuiSettings,
@@ -681,8 +691,8 @@ impl ConfigSeekStep {
     }
 }
 
-impl Component<Msg, UserEvent> for ConfigSeekStep {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for ConfigSeekStep {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -693,7 +703,7 @@ impl Component<Msg, UserEvent> for ConfigSeekStep {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct KillDaemon {
     component: Radio,
     config: SharedTuiSettings,
@@ -713,8 +723,8 @@ impl KillDaemon {
     }
 }
 
-impl Component<Msg, UserEvent> for KillDaemon {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for KillDaemon {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -725,7 +735,7 @@ impl Component<Msg, UserEvent> for KillDaemon {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlayerUseMpris {
     component: Radio,
     config: SharedTuiSettings,
@@ -748,8 +758,8 @@ impl PlayerUseMpris {
     }
 }
 
-impl Component<Msg, UserEvent> for PlayerUseMpris {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlayerUseMpris {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -760,7 +770,7 @@ impl Component<Msg, UserEvent> for PlayerUseMpris {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlayerUseDiscord {
     component: Radio,
     config: SharedTuiSettings,
@@ -783,8 +793,8 @@ impl PlayerUseDiscord {
     }
 }
 
-impl Component<Msg, UserEvent> for PlayerUseDiscord {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlayerUseDiscord {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -795,7 +805,7 @@ impl Component<Msg, UserEvent> for PlayerUseDiscord {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlayerPort {
     component: Input,
     config: SharedTuiSettings,
@@ -808,13 +818,13 @@ impl PlayerPort {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Player Port: ")
                 .input_type(InputType::UnsignedInteger)
-                .placeholder(
+                .placeholder(LineStatic::styled(
                     "between 1000 ~ 60000 suggested",
                     Style::default().fg(config_tui
                         .settings
                         .theme
                         .get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                ))
                 .value(config.server.read().settings.com.port.to_string())
         };
 
@@ -825,8 +835,8 @@ impl PlayerPort {
     }
 }
 
-impl Component<Msg, UserEvent> for PlayerPort {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlayerPort {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -837,7 +847,7 @@ impl Component<Msg, UserEvent> for PlayerPort {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlayerAddress {
     component: Input,
     config: SharedTuiSettings,
@@ -850,13 +860,13 @@ impl PlayerAddress {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Player Address: ")
                 .input_type(InputType::Text) // we likely could make a custom matcher
-                .placeholder(
+                .placeholder(LineStatic::styled(
                     "::1 or 127.0.0.1 recommended",
                     Style::default().fg(config_tui
                         .settings
                         .theme
                         .get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                ))
                 .value(config.server.read().settings.com.address.to_string())
         };
 
@@ -867,8 +877,8 @@ impl PlayerAddress {
     }
 }
 
-impl Component<Msg, UserEvent> for PlayerAddress {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlayerAddress {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -879,7 +889,7 @@ impl Component<Msg, UserEvent> for PlayerAddress {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlayerProtocol {
     component: Radio,
     config: SharedTuiSettings,
@@ -905,8 +915,8 @@ impl PlayerProtocol {
     }
 }
 
-impl Component<Msg, UserEvent> for PlayerProtocol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlayerProtocol {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -917,7 +927,7 @@ impl Component<Msg, UserEvent> for PlayerProtocol {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlayerUDSPath {
     component: Input,
     config: SharedTuiSettings,
@@ -929,13 +939,13 @@ impl PlayerUDSPath {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Player UDS Socket Path: ")
                 .input_type(InputType::Text)
-                .placeholder(
+                .placeholder(LineStatic::styled(
                     default_uds_socket_path().display().to_string(),
                     Style::default().fg(config_tui
                         .settings
                         .theme
                         .get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                ))
                 .value(
                     config
                         .server
@@ -954,8 +964,8 @@ impl PlayerUDSPath {
     }
 }
 
-impl Component<Msg, UserEvent> for PlayerUDSPath {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlayerUDSPath {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,
@@ -966,7 +976,7 @@ impl Component<Msg, UserEvent> for PlayerUDSPath {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct PlayerBackend {
     component: Radio,
     config: SharedTuiSettings,
@@ -993,8 +1003,8 @@ impl PlayerBackend {
     }
 }
 
-impl Component<Msg, UserEvent> for PlayerBackend {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for PlayerBackend {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_radio_ev(
             &mut self.component,
             ev,
@@ -1005,7 +1015,7 @@ impl Component<Msg, UserEvent> for PlayerBackend {
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct ExtraYtdlpArgs {
     component: Input,
     config: SharedTuiSettings,
@@ -1017,10 +1027,7 @@ impl ExtraYtdlpArgs {
             let config_tui = config.tui.read();
             common_input_comp(&config_tui, " Extra Args for yt-dlp: ")
                 .input_type(InputType::Text)
-                .placeholder(
-                    r#"--cookies-from-browser brave+gnomekeyring or --cookies "d:\src\cookies.txt""#,
-                    Style::default().fg(config_tui.settings.theme.get_color_from_theme(ColorTermusic::LightBlack)),
-                )
+                .placeholder(LineStatic::styled(r#"--cookies-from-browser brave+gnomekeyring or --cookies "d:\src\cookies.txt""#, Style::default().fg(config_tui.settings.theme.get_color_from_theme(ColorTermusic::LightBlack))))
                 .value(&config_tui.settings.ytdlp.extra_args)
         };
 
@@ -1031,8 +1038,8 @@ impl ExtraYtdlpArgs {
     }
 }
 
-impl Component<Msg, UserEvent> for ExtraYtdlpArgs {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for ExtraYtdlpArgs {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,
             ev,

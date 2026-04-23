@@ -24,18 +24,22 @@
 use std::path::PathBuf;
 
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::Table;
+use tui_realm_stdlib::components::{Input, Table};
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, InputType, TableBuilder, TextSpan};
-use tuirealm::{Component, Event, MockComponent, State, StateValue};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{
+    BorderType, Borders, HorizontalAlignment, InputType, LineStatic, TableBuilder, Title,
+};
+use tuirealm::state::{State, StateValue};
 
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, YSMsg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct YSInputPopup {
     component: Input,
     current_node: PathBuf,
@@ -55,14 +59,16 @@ impl YSInputPopup {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title(" Download url or search: ", Alignment::Left),
+                .title(
+                    Title::from(" Download url or search: ").alignment(HorizontalAlignment::Left),
+                ),
             current_node,
         }
     }
 }
 
-impl Component<Msg, UserEvent> for YSInputPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for YSInputPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -86,30 +92,30 @@ impl Component<Msg, UserEvent> for YSInputPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-            }) => self.perform(Cmd::Type(ch)),
+            }) => self.perform(Cmd::Type(*ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::YoutubeSearch(YSMsg::InputPopupCloseCancel));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
+            CmdResult::Submit(State::Single(StateValue::String(input_string))) => {
                 Some(Msg::YoutubeSearch(YSMsg::InputPopupCloseOk(
                     input_string,
                     self.current_node.clone(),
                 )))
             }
 
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct YSTablePopup {
     component: Table,
     config: SharedTuiSettings,
@@ -130,13 +136,18 @@ impl YSTablePopup {
                 )
                 // .foreground(Color::Yellow)
                 .title(
-                    " Tab/Shift+Tab for next and previous page ",
-                    Alignment::Left,
+                    Title::from(" Tab/Shift+Tab for next and previous page ")
+                        .alignment(HorizontalAlignment::Left),
                 )
                 .scroll(true)
-                .highlighted_color(config.settings.theme.fallback_highlight())
-                .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
-                // .highlighted_str("🚀")
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .fg(config.settings.theme.fallback_highlight()),
+                )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
+                // .highlight_str("🚀")
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -145,8 +156,8 @@ impl YSTablePopup {
                 .widths(&[20, 80])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("Empty result."))
-                        .add_col(TextSpan::from("Loading..."))
+                        .add_col(LineStatic::from("Empty result."))
+                        .add_col(LineStatic::from("Loading..."))
                         .build(),
                 )
         };
@@ -159,8 +170,8 @@ impl YSTablePopup {
     }
 }
 
-impl Component<Msg, UserEvent> for YSTablePopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for YSTablePopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -214,18 +225,18 @@ impl Component<Msg, UserEvent> for YSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseOk(
                         index,
                         self.current_node.clone(),
                     )));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }

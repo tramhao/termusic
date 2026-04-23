@@ -5,25 +5,32 @@ use termusiclib::config::TuiOverlay;
 use termusiclib::player::RunningStatus;
 use termusiclib::track::DurationFmtShort;
 use termusiclib::track::MediaTypesSimple;
-use tuirealm::props::{Alignment, BorderType, Borders, PropPayload, PropValue};
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
+use tui_realm_stdlib::components::Gauge;
+use tuirealm::component::AppComponent;
+use tuirealm::component::Component;
+use tuirealm::event::Event;
+use tuirealm::props::AttrValue;
+use tuirealm::props::Attribute;
+use tuirealm::props::HorizontalAlignment;
+use tuirealm::props::Style;
+use tuirealm::props::Title;
+use tuirealm::props::{BorderType, Borders, PropPayload, PropValue};
 
 use crate::ui::Model;
-use crate::ui::components::vendored::tui_realm_stdlib_progressbar::ProgressBar;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::Msg;
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct Progress {
-    component: ProgressBar,
+    component: Gauge,
 }
 
 impl Progress {
     #[allow(clippy::cast_precision_loss)]
     pub fn new(config: &TuiOverlay) -> Self {
         Self {
-            component: ProgressBar::default()
+            component: Gauge::default()
                 .borders(
                     Borders::default()
                         .color(config.settings.theme.progress_border())
@@ -31,18 +38,19 @@ impl Progress {
                 )
                 .background(config.settings.theme.progress_background())
                 .foreground(config.settings.theme.progress_foreground())
+                .inactive(Style::new().fg(config.settings.theme.progress_foreground()))
                 .label("Progress")
                 .title(
-                    " Status: Stopped | Volume: ?? | Speed: ??.? ",
-                    Alignment::Center,
+                    Title::from(" Status: Stopped | Volume: ?? | Speed: ??.? ")
+                        .alignment(HorizontalAlignment::Center),
                 )
                 .progress(0.0),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for Progress {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for Progress {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -134,7 +142,7 @@ impl Model {
         let _ = self.app.attr(
             &Id::Progress,
             Attribute::Title,
-            AttrValue::Title((progress_title, Alignment::Center)),
+            AttrValue::Title(Title::from(progress_title).alignment(HorizontalAlignment::Center)),
         );
 
         self.force_redraw();
@@ -179,7 +187,7 @@ impl Model {
         let _ = self.app.attr(
             &Id::Progress,
             Attribute::Value,
-            AttrValue::Payload(PropPayload::One(PropValue::F64(progress))),
+            AttrValue::Payload(PropPayload::Single(PropValue::F64(progress))),
         );
         let _ = self
             .app
