@@ -8,7 +8,7 @@ use termusiclib::{
     config::{SharedTuiSettings, TuiOverlay, v2::tui::theme::styles::ColorTermusic},
     utils::get_parent_folder,
 };
-use tui_realm_stdlib::components::Span;
+use tui_realm_stdlib::components::{Input, Span};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     component::{AppComponent, Component},
@@ -22,9 +22,9 @@ use tuirealm::{
 };
 
 use super::{YNConfirm, YNConfirmStyle};
+use crate::ui::model::TxToMain;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, SavePlaylistMsg};
-use crate::ui::{components::vendored::tui_realm_stdlib_input::Input, model::TxToMain};
 use crate::ui::{ids::Id, msg::SPUpdateData};
 
 #[derive(Component)]

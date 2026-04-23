@@ -26,7 +26,7 @@ use termusiclib::config::v2::server::{Backend, ComProtocol, default_uds_socket_p
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::components::Radio;
+use tui_realm_stdlib::components::{Input, Radio};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
@@ -39,7 +39,6 @@ use tuirealm::{
 };
 
 use crate::CombinedSettings;
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};

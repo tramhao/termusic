@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
+use tui_realm_stdlib::components::Input;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     component::{AppComponent, Component},
@@ -10,7 +11,6 @@ use tuirealm::{
 };
 
 use super::{YNConfirm, YNConfirmStyle};
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{DeleteConfirmMsg, Msg};

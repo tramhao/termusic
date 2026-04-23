@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Result, anyhow, bail};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::track::MediaTypes;
-use tui_realm_stdlib::components::Table;
+use tui_realm_stdlib::components::{Input, Table};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
@@ -15,7 +15,6 @@ use tuirealm::props::{
 use tuirealm::state::{State, StateValue};
 
 use crate::ui::Model;
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg};

@@ -1,6 +1,3 @@
-// pub mod tui_realm_stdlib_input;
-// pub mod tui_realm_stdlib_progressbar;
-
-pub mod tui_realm_stdlib_input {
-    pub use tui_realm_stdlib::components::Input;
-}
+//! Module containing vendored Components from some upstream library like `tui-realm-stdlib`.
+//!
+//! Currently there are no vendored components anymore.
