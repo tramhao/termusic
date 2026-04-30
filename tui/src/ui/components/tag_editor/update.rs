@@ -24,7 +24,7 @@ impl Model {
                 self.te_delete_lyric();
             }
             TEMsg::CounterSaveOk => {
-                if let Err(e) = self.te_save_lyric() {
+                if let Err(e) = self.te_export_lyric() {
                     self.mount_error_popup(e.context("save lrc selected"));
                 }
             }
@@ -55,7 +55,7 @@ impl Model {
                 self.mount_error_popup(anyhow!(err));
             }
             TEMsg::Save => {
-                if let Err(e) = self.te_rename_song_by_tag() {
+                if let Err(e) = self.te_save_tag() {
                     self.mount_error_popup(e.context("rename song by tag"));
                 }
             }

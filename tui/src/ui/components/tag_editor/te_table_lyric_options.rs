@@ -304,7 +304,7 @@ impl Model {
     }
 
     /// Save the current tag editor state to the track.
-    pub fn te_rename_song_by_tag(&mut self) -> Result<()> {
+    pub fn te_save_tag(&mut self) -> Result<()> {
         if let Some(mut song) = self.tageditor_song.clone() {
             if let Ok(State::One(StateValue::String(artist))) =
                 self.app.state(&Id::TagEditor(IdTagEditor::InputArtist))

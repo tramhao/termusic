@@ -398,9 +398,9 @@ impl Model {
     }
 
     /// Save the currently selected Lyric text as a LRC file.
-    pub fn te_save_lyric(&mut self) -> Result<()> {
+    pub fn te_export_lyric(&mut self) -> Result<()> {
         if let Some(track) = self.tageditor_song.as_mut() {
-            track.save_lrc_selected()?;
+            track.export_lrc_selected()?;
         }
         Ok(())
     }
