@@ -305,8 +305,7 @@ impl Model {
         let lyric_frames = s.lyric_frames();
 
         if lyric_frames.is_empty() {
-            self.init_by_song_no_lyric();
-            return Ok(());
+            return self.init_by_song_no_lyric();
         }
 
         let vec_lang: Vec<PropValue> = lyric_frames
@@ -331,8 +330,7 @@ impl Model {
             (s.lyric_selected(), vec_lang.get(selected_index))
         else {
             // this should not happen as if it is Some above, there should be at least one entry in the vec.
-            self.init_by_song_no_lyric();
-            return Ok(());
+            return self.init_by_song_no_lyric();
         };
         let selected_desc = selected_desc
             .as_str()
@@ -377,50 +375,36 @@ impl Model {
     }
 
     /// Set the Lyric section of the tag-editor to "No Lyrics" (ie clear state)
-    fn init_by_song_no_lyric(&mut self) {
-        assert!(
-            self.app
-                .attr(
-                    &Id::TagEditor(IdTagEditor::SelectLyric),
-                    Attribute::Content,
-                    AttrValue::Payload(PropPayload::Vec(
-                        ["Empty"]
-                            .iter()
-                            .map(|x| PropValue::Str((*x).to_string()))
-                            .collect(),
-                    )),
-                )
-                .is_ok()
-        );
-        assert!(
-            self.app
-                .attr(
-                    &Id::TagEditor(IdTagEditor::CounterDelete),
-                    Attribute::Value,
-                    AttrValue::Payload(PropPayload::None),
-                )
-                .is_ok()
-        );
+    fn init_by_song_no_lyric(&mut self) -> Result<()> {
+        self.app.attr(
+            &Id::TagEditor(IdTagEditor::SelectLyric),
+            Attribute::Content,
+            AttrValue::Payload(PropPayload::Vec(
+                ["Empty"]
+                    .iter()
+                    .map(|x| PropValue::Str((*x).to_string()))
+                    .collect(),
+            )),
+        )?;
+        self.app.attr(
+            &Id::TagEditor(IdTagEditor::CounterDelete),
+            Attribute::Value,
+            AttrValue::Payload(PropPayload::None),
+        )?;
 
-        assert!(
-            self.app
-                .attr(
-                    &Id::TagEditor(IdTagEditor::TextareaLyric),
-                    Attribute::Title,
-                    AttrValue::Title(("Empty Lyrics".to_string(), Alignment::Left))
-                )
-                .is_ok()
-        );
-        assert!(
-            self.app
-                .attr(
-                    &Id::TagEditor(IdTagEditor::TextareaLyric),
-                    Attribute::Text,
-                    AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(
-                        TextSpan::from("No Lyrics.")
-                    ),]))
-                )
-                .is_ok()
-        );
+        self.app.attr(
+            &Id::TagEditor(IdTagEditor::TextareaLyric),
+            Attribute::Title,
+            AttrValue::Title(("Empty Lyrics".to_string(), Alignment::Left)),
+        )?;
+        self.app.attr(
+            &Id::TagEditor(IdTagEditor::TextareaLyric),
+            Attribute::Text,
+            AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
+                "No Lyrics.",
+            ))])),
+        )?;
+
+        Ok(())
     }
 }
