@@ -18,6 +18,7 @@ use crate::ui::model::Model;
 use crate::ui::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 
 impl Model {
+    /// Draw the Tag Editor.
     #[allow(clippy::too_many_lines)]
     pub fn view_tag_editor(&mut self) {
         self.terminal
@@ -140,7 +141,7 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
-    /// Mount / Remount the Tag Editor
+    /// Mount / Remount the Tag Editor.
     fn remount_tageditor(&mut self) -> Result<()> {
         self.app.remount(
             Id::Label,
@@ -243,7 +244,7 @@ impl Model {
         }
     }
 
-    /// Unmount the Tag Editor
+    /// Unmount the Tag Editor Components.
     fn umount_tageditor_inner(&mut self) -> Result<()> {
         self.app.umount(&Id::TagEditor(IdTagEditor::LabelHint))?;
         self.app.umount(&Id::TagEditor(IdTagEditor::InputArtist))?;
@@ -262,6 +263,7 @@ impl Model {
         Ok(())
     }
 
+    /// Unmount all tag editor components.
     pub fn umount_tageditor(&mut self) {
         self.mount_label_help();
         self.umount_tageditor_inner().unwrap();

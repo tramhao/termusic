@@ -366,6 +366,8 @@ impl Component<Msg, UserEvent> for TECounterSave {
     }
 }
 impl Model {
+    /// Delete the currently selected lyric index and save the track.
+    // TODO: this should likely only delete it in-memory, and wait for a `Save` event to actually save.
     pub fn te_delete_lyric(&mut self) {
         if let Some(song) = self.tageditor_song.as_mut() {
             if song.lyric_frames().is_empty() {
@@ -395,6 +397,7 @@ impl Model {
         }
     }
 
+    /// Save the currently selected Lyric text as a LRC file.
     pub fn te_save_lyric(&mut self) -> Result<()> {
         if let Some(track) = self.tageditor_song.as_mut() {
             track.save_lrc_selected()?;

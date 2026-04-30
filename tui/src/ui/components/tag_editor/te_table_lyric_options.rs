@@ -217,6 +217,7 @@ impl Model {
         self.te_set_results(table).unwrap();
     }
 
+    /// Run a search with the current data.
     pub fn te_songtag_search(&mut self) {
         let mut search_str = String::new();
         if let Ok(State::One(StateValue::String(artist))) =
@@ -264,6 +265,7 @@ impl Model {
         }
     }
 
+    /// Download the given index from the list.
     pub fn te_songtag_download(&mut self, index: usize) -> Result<()> {
         let song_tag = self
             .songtag_options
@@ -300,6 +302,8 @@ impl Model {
         }
         Ok(())
     }
+
+    /// Save the current tag editor state to the track.
     pub fn te_rename_song_by_tag(&mut self) -> Result<()> {
         if let Some(mut song) = self.tageditor_song.clone() {
             if let Ok(State::One(StateValue::String(artist))) =
