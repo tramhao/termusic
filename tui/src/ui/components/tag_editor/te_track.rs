@@ -232,8 +232,8 @@ impl TETrack {
     }
 
     /// Save selected lyric to lrc file in the same directory
-    ///  of track, with same name but different extension
-    pub fn save_lrc_selected(&mut self) -> Result<()> {
+    ///  of track, with same name but different extension.
+    pub fn export_lrc_selected(&mut self) -> Result<()> {
         if self.lyric_frames.is_empty() {
             return Ok(());
         }
