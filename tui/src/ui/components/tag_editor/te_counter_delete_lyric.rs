@@ -366,8 +366,9 @@ impl Component<Msg, UserEvent> for TECounterSave {
     }
 }
 impl Model {
-    /// Delete the currently selected lyric index and save the track.
-    // TODO: this should likely only delete it in-memory, and wait for a `Save` event to actually save.
+    /// Delete the currently selected lyric index.
+    ///
+    /// This function only modifies the in-memory date and does *not* save the changed data.
     pub fn te_delete_lyric(&mut self) {
         if let Some(song) = self.tageditor_song.as_mut() {
             if song.lyric_frames().is_empty() {
@@ -380,19 +381,13 @@ impl Model {
             {
                 song.set_lyric_selected_index(song.lyric_selected_index() - 1);
             }
-            match song.save_tag() {
-                Ok(()) => {
-                    // the unwrap should never happen as we are in a branch where we had a reference to it
-                    let song = self.tageditor_song.take().unwrap();
-                    // the unwrap should also never happen as all components should be properly mounted
-                    match self.init_by_song(song) {
-                        Ok(()) => {}
-                        Err(e) => self.mount_error_popup(e),
-                    }
-                }
-                Err(e) => {
-                    self.mount_error_popup(e);
-                }
+
+            // The unwrap should never fail as we literally just had a exclusive reference to it.
+            let song = self.tageditor_song.take().unwrap();
+            // The unwrap should also never happen as all components should be properly mounted
+            match self.init_by_song(song) {
+                Ok(()) => {}
+                Err(e) => self.mount_error_popup(e),
             }
         }
     }

@@ -18,6 +18,7 @@
 - Fix(tui): fix yt-dlp download error caused by orx treeview.
 - Fix(tui): fix netease lyric download error.
 - Fix(tui): fix migu search/lyric download error.
+- Fix(tui): in tag editor, dont save the track on lyric delete (now only on "Save" action is the change actually persistet).
 - Fix(server): on rusty backend with `soundtouch`, fix a issue causing seemingly long delay between tempo changes.
 - Fix(server): on rusty backend with `soundtouch`, fix not being able to build on "eager" linkers (ex windows-msvc and windows-gnu)
 - Feat: add ability to control startup playing state behavior.
