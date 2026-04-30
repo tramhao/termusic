@@ -135,7 +135,7 @@ impl MockComponent for Counter {
             let text = if let Some(value) = value {
                 format!("{text_base} ({value})")
             } else {
-                "{text_base} (-)".to_string()
+                "None selected (-)".to_string()
             };
 
             let alignment = self
