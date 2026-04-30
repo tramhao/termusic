@@ -268,8 +268,13 @@ impl ExtraLyricData {
 /// All data specific to the Tag Editor.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TagEditor {
+    /// The current track open in the tag editor.
     pub song: Option<TETrack>,
+    /// Stores the result of the songtag fetching.
     pub songtag_results: Vec<SongTag>,
+    /// Track whether the Tag Editor modified the current track or not.
+    /// Used to force reload of metadata (currently only lyrics)
+    pub has_changed: bool,
 }
 
 pub type TxToMain = UnboundedSender<Msg>;

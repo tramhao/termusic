@@ -329,6 +329,7 @@ impl Model {
                 song.set_genre(&genre);
             }
             song.save_tag()?;
+            self.tageditor.has_changed = true;
             // the unwrap should also never happen as all components should be properly mounted
             self.init_by_song(song).unwrap();
             self.playlist_update_library_delete();
@@ -397,6 +398,7 @@ impl Model {
     /// Followup function to [`te_load_lyric_and_photo`](Self::te_load_lyric_and_photo)
     /// that executes the remaining operations on `Done` message which require access to `Model` again.
     pub fn te_load_lyric_and_photo_done(&mut self, song: Box<TETrack>) {
+        self.tageditor.has_changed = true;
         let song = *song;
         // the unwrap should also never happen as all components should be properly mounted
         self.init_by_song(song).unwrap();

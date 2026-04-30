@@ -15,6 +15,18 @@ impl Model {
             }
             TEMsg::Close => {
                 if let Some(s) = self.tageditor.song.take() {
+                    // force a reload of lyrics if the tag editor changed the track, and the loaded lyrics are for this path
+                    if self.tageditor.has_changed
+                        && self
+                            .current_track_lyric
+                            .as_ref()
+                            .is_some_and(|v| v.for_track == s.path())
+                    {
+                        self.lyric_reload_from_file();
+                    }
+                    // reset value for next time tag editor gets opened
+                    self.tageditor.has_changed = false;
+
                     self.new_library_reload_and_focus(s.into_path());
                 }
                 self.umount_tageditor();
