@@ -188,20 +188,12 @@ impl Model {
         )?;
         self.app.remount(
             Id::TagEditor(IdTagEditor::CounterDelete),
-            Box::new(TECounterDelete::new(
-                None,
-                "Delete Selected",
-                self.config_tui.clone(),
-            )),
+            Box::new(TECounterDelete::new(None, self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(
             Id::TagEditor(IdTagEditor::CounterSave),
-            Box::new(TECounterSave::new(
-                None,
-                "Save LRC",
-                self.config_tui.clone(),
-            )),
+            Box::new(TECounterSave::new(None, self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(

@@ -218,7 +218,7 @@ pub struct TECounterDelete {
 }
 
 impl TECounterDelete {
-    pub fn new(initial_value: Option<usize>, text: &str, config: SharedTuiSettings) -> Self {
+    pub fn new(initial_value: Option<usize>, config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Counter::default()
@@ -240,7 +240,7 @@ impl TECounterDelete {
                         .get_color_from_theme(ColorTermusic::Red),
                 )
                 .modifiers(TextModifiers::BOLD)
-                .text(text)
+                .text("Delete Selected")
                 .value(initial_value)
         };
 
@@ -300,7 +300,7 @@ pub struct TECounterSave {
 }
 
 impl TECounterSave {
-    pub fn new(initial_value: Option<usize>, text: &str, config: SharedTuiSettings) -> Self {
+    pub fn new(initial_value: Option<usize>, config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Counter::default()
@@ -313,7 +313,7 @@ impl TECounterSave {
                         .modifiers(BorderType::Rounded),
                 )
                 .modifiers(TextModifiers::BOLD)
-                .text(text)
+                .text("Export LRC")
                 .value(initial_value)
         };
 
