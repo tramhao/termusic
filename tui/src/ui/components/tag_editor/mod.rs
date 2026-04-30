@@ -11,7 +11,7 @@ mod view;
 
 // -- exports
 pub use te_counter_delete_lyric::{TECounterDelete, TECounterSave};
-pub use te_input::*;
+pub use te_input::{TEInputAlbum, TEInputArtist, TEInputGenre, TEInputTitle};
 pub use te_select_lyric::TESelectLyric;
 pub use te_table_lyric_options::TETableLyricOptions;
 pub use te_textarea_lyric::TETextareaLyric;
