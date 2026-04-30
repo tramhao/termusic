@@ -265,12 +265,23 @@ impl Model {
     }
 
     /// Set the Lyric section of the tag-editor to the Lyrics based on the provided Track
-    #[allow(clippy::too_many_lines)]
-    pub fn init_by_song(&mut self, s: TETrack) -> Result<()> {
-        self.tageditor_song = Some(s);
-        // Unwrap safe as we literally just assigned it
-        let s = self.tageditor_song.as_ref().unwrap();
-        if let Some(artist) = s.artist() {
+    pub fn init_by_song(&mut self, track: TETrack) -> Result<()> {
+        self.tageditor_song = Some(track);
+
+        self.init_metadata()?;
+
+        self.init_lyric_data()
+    }
+
+    /// Read the metadata from the current track and set it to the Tag Editor fields.
+    ///
+    /// Expects a current `tageditor_song` to be set.
+    fn init_metadata(&mut self) -> Result<()> {
+        let Some(track) = self.tageditor_song.as_ref() else {
+            // No Metadata to change.
+            return Ok(());
+        };
+        if let Some(artist) = track.artist() {
             self.app.attr(
                 &Id::TagEditor(IdTagEditor::InputArtist),
                 Attribute::Value,
@@ -278,7 +289,7 @@ impl Model {
             )?;
         }
 
-        if let Some(title) = s.title() {
+        if let Some(title) = track.title() {
             self.app.attr(
                 &Id::TagEditor(IdTagEditor::InputTitle),
                 Attribute::Value,
@@ -286,7 +297,7 @@ impl Model {
             )?;
         }
 
-        if let Some(album) = s.album() {
+        if let Some(album) = track.album() {
             self.app.attr(
                 &Id::TagEditor(IdTagEditor::InputAlbum),
                 Attribute::Value,
@@ -294,7 +305,7 @@ impl Model {
             )?;
         }
 
-        if let Some(genre) = s.genre() {
+        if let Some(genre) = track.genre() {
             self.app.attr(
                 &Id::TagEditor(IdTagEditor::InputGenre),
                 Attribute::Value,
@@ -302,10 +313,16 @@ impl Model {
             )?;
         }
 
-        let lyric_frames = s.lyric_frames();
+        Ok(())
+    }
+
+    /// Extract the lyric data from the current track and set it in the Tag Editor fields.
+    fn init_lyric_data(&mut self) -> Result<()> {
+        let track = self.tageditor_song.as_ref().unwrap();
+        let lyric_frames = track.lyric_frames();
 
         if lyric_frames.is_empty() {
-            return self.init_by_song_no_lyric();
+            return self.init_lyric_data_empty();
         }
 
         let vec_lang: Vec<PropValue> = lyric_frames
@@ -324,13 +341,13 @@ impl Model {
             .map(PropValue::Str)
             .collect();
 
-        let selected_index = s.lyric_selected_index();
+        let selected_index = track.lyric_selected_index();
         // get access to "Lyric" instance for text and modified description for display
         let (Some(vec_lang_selected), Some(selected_desc)) =
-            (s.lyric_selected(), vec_lang.get(selected_index))
+            (track.lyric_selected(), vec_lang.get(selected_index))
         else {
             // this should not happen as if it is Some above, there should be at least one entry in the vec.
-            return self.init_by_song_no_lyric();
+            return self.init_lyric_data_empty();
         };
         let selected_desc = selected_desc
             .as_str()
@@ -375,16 +392,11 @@ impl Model {
     }
 
     /// Set the Lyric section of the tag-editor to "No Lyrics" (ie clear state)
-    fn init_by_song_no_lyric(&mut self) -> Result<()> {
+    fn init_lyric_data_empty(&mut self) -> Result<()> {
         self.app.attr(
             &Id::TagEditor(IdTagEditor::SelectLyric),
             Attribute::Content,
-            AttrValue::Payload(PropPayload::Vec(
-                ["Empty"]
-                    .iter()
-                    .map(|x| PropValue::Str((*x).to_string()))
-                    .collect(),
-            )),
+            AttrValue::Payload(PropPayload::Vec(vec![PropValue::Str("Empty".to_string())])),
         )?;
         self.app.attr(
             &Id::TagEditor(IdTagEditor::CounterDelete),
