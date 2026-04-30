@@ -14,7 +14,7 @@ impl Model {
                 self.mount_tageditor(&path);
             }
             TEMsg::Close => {
-                if let Some(s) = self.tageditor_song.clone() {
+                if let Some(s) = self.tageditor.song.take() {
                     self.new_library_reload_and_focus(s.into_path());
                 }
                 self.umount_tageditor();
@@ -29,7 +29,7 @@ impl Model {
                 }
             }
             TEMsg::SelectLyricOk(index) => {
-                if let Some(mut song) = self.tageditor_song.take() {
+                if let Some(mut song) = self.tageditor.song.take() {
                     song.set_lyric_selected_index(index);
                     // the unwrap should also never happen as all components should be properly mounted
                     self.init_by_song(song).unwrap();

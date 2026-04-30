@@ -266,7 +266,7 @@ impl Model {
 
     /// Set the Lyric section of the tag-editor to the Lyrics based on the provided Track
     pub fn init_by_song(&mut self, track: TETrack) -> Result<()> {
-        self.tageditor_song = Some(track);
+        self.tageditor.song = Some(track);
 
         self.init_metadata()?;
 
@@ -277,7 +277,7 @@ impl Model {
     ///
     /// Expects a current `tageditor_song` to be set.
     fn init_metadata(&mut self) -> Result<()> {
-        let Some(track) = self.tageditor_song.as_ref() else {
+        let Some(track) = self.tageditor.song.as_ref() else {
             // No Metadata to change.
             return Ok(());
         };
@@ -318,7 +318,7 @@ impl Model {
 
     /// Extract the lyric data from the current track and set it in the Tag Editor fields.
     fn init_lyric_data(&mut self) -> Result<()> {
-        let track = self.tageditor_song.as_ref().unwrap();
+        let track = self.tageditor.song.as_ref().unwrap();
         let lyric_frames = track.lyric_frames();
 
         if lyric_frames.is_empty() {

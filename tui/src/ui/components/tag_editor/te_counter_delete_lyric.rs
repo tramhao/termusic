@@ -370,7 +370,7 @@ impl Model {
     ///
     /// This function only modifies the in-memory date and does *not* save the changed data.
     pub fn te_delete_lyric(&mut self) {
-        if let Some(song) = self.tageditor_song.as_mut() {
+        if let Some(song) = self.tageditor.song.as_mut() {
             if song.lyric_frames().is_empty() {
                 song.set_parsed_lyrics(None);
                 return;
@@ -383,7 +383,7 @@ impl Model {
             }
 
             // The unwrap should never fail as we literally just had a exclusive reference to it.
-            let song = self.tageditor_song.take().unwrap();
+            let song = self.tageditor.song.take().unwrap();
             // The unwrap should also never happen as all components should be properly mounted
             match self.init_by_song(song) {
                 Ok(()) => {}
@@ -394,7 +394,7 @@ impl Model {
 
     /// Save the currently selected Lyric text as a LRC file.
     pub fn te_export_lyric(&mut self) -> Result<()> {
-        if let Some(track) = self.tageditor_song.as_mut() {
+        if let Some(track) = self.tageditor.song.as_mut() {
             track.export_lrc_selected()?;
         }
         Ok(())
