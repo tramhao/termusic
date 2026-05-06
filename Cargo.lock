@@ -5197,7 +5197,7 @@ dependencies = [
 
 [[package]]
 name = "termusic"
-version = "0.13.0"
+version = "0.13.2"
 dependencies = [
  "alphanumeric-sort",
  "anyhow",
@@ -5247,7 +5247,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-lib"
-version = "0.13.0"
+version = "0.13.2"
 dependencies = [
  "ahash",
  "alphanumeric-sort",
@@ -5311,7 +5311,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-playback"
-version = "0.13.0"
+version = "0.13.2"
 dependencies = [
  "anyhow",
  "async-ringbuf",
@@ -5341,7 +5341,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-server"
-version = "0.13.0"
+version = "0.13.2"
 dependencies = [
  "anyhow",
  "clap",
