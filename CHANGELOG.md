@@ -1,7 +1,7 @@
 ## ChangeLog
 
-### next
-
+### [V0.13.0]
+- Released on: May 6, 2026.
 - Change: updated MSRV to 1.88.
 - Change: enable feature `rusty-soundtouch` for linux, macos & windows CI builds
 - Change: enable feature `rusty-simd` on macos CI builds
