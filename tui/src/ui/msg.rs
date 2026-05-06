@@ -719,27 +719,40 @@ pub enum YSMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TEMsg {
+    /// Open the Tag Editor with the given path.
     Open(PathBuf),
+    /// Close the Tag Editor without saving.
+    /// Also reload's the Music Library and focuses the current Tag Editor's path.
     Close,
+    /// Lyric Delete button has been pressed.
     CounterDeleteOk,
+    /// Lyric Save button has been pressed.
     CounterSaveOk,
-    Download(usize),
-    /// Request to embed the data from `param1` into the current track.
+    /// Embed the data from the given index from the search list into the current track.
     Embed(usize),
     /// Embedding has finished.
     // Box to not increase the size of this enum when not necessary.
     EmbedDone(Box<TETrack>),
-    /// Indicates that the embedding has failed.
+    /// Embedding has failed.
     ///
     /// `(ErrorAsString)`
     EmbedErr(String),
 
+    /// Focus change.
     Focus(TFMsg),
+    /// Save the current data into the current track.
     Save,
-    Search,
+    /// Change the selected lyric data index.
     SelectLyricOk(usize),
 
+    /// Run a search with the current data.
+    Search,
+    /// Search has finished.
     SearchLyricResult(SongtagSearchResult),
+
+    /// Download the given index from the search lsit.
+    Download(usize),
+    /// Track download messages.
     TrackDownloadResult(TrackDLMsg),
     /// Indicates that the preparation for the track download have failed
     ///

@@ -135,7 +135,7 @@ impl MockComponent for Counter {
             let text = if let Some(value) = value {
                 format!("{text_base} ({value})")
             } else {
-                "{text_base} (-)".to_string()
+                "None selected (-)".to_string()
             };
 
             let alignment = self
@@ -218,7 +218,7 @@ pub struct TECounterDelete {
 }
 
 impl TECounterDelete {
-    pub fn new(initial_value: Option<usize>, text: &str, config: SharedTuiSettings) -> Self {
+    pub fn new(initial_value: Option<usize>, config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Counter::default()
@@ -240,7 +240,7 @@ impl TECounterDelete {
                         .get_color_from_theme(ColorTermusic::Red),
                 )
                 .modifiers(TextModifiers::BOLD)
-                .text(text)
+                .text("Delete Selected")
                 .value(initial_value)
         };
 
@@ -300,7 +300,7 @@ pub struct TECounterSave {
 }
 
 impl TECounterSave {
-    pub fn new(initial_value: Option<usize>, text: &str, config: SharedTuiSettings) -> Self {
+    pub fn new(initial_value: Option<usize>, config: SharedTuiSettings) -> Self {
         let component = {
             let config = config.read();
             Counter::default()
@@ -313,7 +313,7 @@ impl TECounterSave {
                         .modifiers(BorderType::Rounded),
                 )
                 .modifiers(TextModifiers::BOLD)
-                .text(text)
+                .text("Export LRC")
                 .value(initial_value)
         };
 
@@ -366,8 +366,11 @@ impl Component<Msg, UserEvent> for TECounterSave {
     }
 }
 impl Model {
+    /// Delete the currently selected lyric index.
+    ///
+    /// This function only modifies the in-memory date and does *not* save the changed data.
     pub fn te_delete_lyric(&mut self) {
-        if let Some(song) = self.tageditor_song.as_mut() {
+        if let Some(song) = self.tageditor.song.as_mut() {
             if song.lyric_frames().is_empty() {
                 song.set_parsed_lyrics(None);
                 return;
@@ -378,26 +381,21 @@ impl Model {
             {
                 song.set_lyric_selected_index(song.lyric_selected_index() - 1);
             }
-            match song.save_tag() {
-                Ok(()) => {
-                    // the unwrap should never happen as we are in a branch where we had a reference to it
-                    let song = self.tageditor_song.take().unwrap();
-                    // the unwrap should also never happen as all components should be properly mounted
-                    match self.init_by_song(song) {
-                        Ok(()) => {}
-                        Err(e) => self.mount_error_popup(e),
-                    }
-                }
-                Err(e) => {
-                    self.mount_error_popup(e);
-                }
+
+            // The unwrap should never fail as we literally just had a exclusive reference to it.
+            let song = self.tageditor.song.take().unwrap();
+            // The unwrap should also never happen as all components should be properly mounted
+            match self.init_by_song(song) {
+                Ok(()) => {}
+                Err(e) => self.mount_error_popup(e),
             }
         }
     }
 
-    pub fn te_save_lyric(&mut self) -> Result<()> {
-        if let Some(track) = self.tageditor_song.as_mut() {
-            track.save_lrc_selected()?;
+    /// Save the currently selected Lyric text as a LRC file.
+    pub fn te_export_lyric(&mut self) -> Result<()> {
+        if let Some(track) = self.tageditor.song.as_mut() {
+            track.export_lrc_selected()?;
         }
         Ok(())
     }

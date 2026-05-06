@@ -14,7 +14,19 @@ impl Model {
                 self.mount_tageditor(&path);
             }
             TEMsg::Close => {
-                if let Some(s) = self.tageditor_song.clone() {
+                if let Some(s) = self.tageditor.song.take() {
+                    // force a reload of lyrics if the tag editor changed the track, and the loaded lyrics are for this path
+                    if self.tageditor.has_changed
+                        && self
+                            .current_track_lyric
+                            .as_ref()
+                            .is_some_and(|v| v.for_track == s.path())
+                    {
+                        self.lyric_reload_from_file();
+                    }
+                    // reset value for next time tag editor gets opened
+                    self.tageditor.has_changed = false;
+
                     self.new_library_reload_and_focus(s.into_path());
                 }
                 self.umount_tageditor();
@@ -24,12 +36,12 @@ impl Model {
                 self.te_delete_lyric();
             }
             TEMsg::CounterSaveOk => {
-                if let Err(e) = self.te_save_lyric() {
+                if let Err(e) = self.te_export_lyric() {
                     self.mount_error_popup(e.context("save lrc selected"));
                 }
             }
             TEMsg::SelectLyricOk(index) => {
-                if let Some(mut song) = self.tageditor_song.take() {
+                if let Some(mut song) = self.tageditor.song.take() {
                     song.set_lyric_selected_index(index);
                     // the unwrap should also never happen as all components should be properly mounted
                     self.init_by_song(song).unwrap();
@@ -55,7 +67,7 @@ impl Model {
                 self.mount_error_popup(anyhow!(err));
             }
             TEMsg::Save => {
-                if let Err(e) = self.te_rename_song_by_tag() {
+                if let Err(e) = self.te_save_tag() {
                     self.mount_error_popup(e.context("rename song by tag"));
                 }
             }

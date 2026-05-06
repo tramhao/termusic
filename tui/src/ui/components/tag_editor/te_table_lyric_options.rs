@@ -150,7 +150,7 @@ impl Model {
         {
             return;
         }
-        self.songtag_options = items;
+        self.tageditor.songtag_results = items;
         self.te_sync_songtag_options();
         assert!(
             self.app
@@ -169,7 +169,7 @@ impl Model {
             .theme
             .library_highlight();
 
-        for (idx, record) in self.songtag_options.iter().enumerate() {
+        for (idx, record) in self.tageditor.songtag_results.iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -217,6 +217,7 @@ impl Model {
         self.te_set_results(table).unwrap();
     }
 
+    /// Run a search with the current data.
     pub fn te_songtag_search(&mut self) {
         let mut search_str = String::new();
         if let Ok(State::One(StateValue::String(artist))) =
@@ -232,7 +233,7 @@ impl Model {
         }
 
         if search_str.len() < 4
-            && let Some(song) = &self.tageditor_song
+            && let Some(song) = &self.tageditor.song
             && let Some(stem) = song.path().file_stem()
         {
             search_str = stem.to_string_lossy().to_string();
@@ -264,13 +265,15 @@ impl Model {
         }
     }
 
+    /// Download the given index from the list.
     pub fn te_songtag_download(&mut self, index: usize) -> Result<()> {
         let song_tag = self
-            .songtag_options
+            .tageditor
+            .songtag_results
             .get(index)
             .cloned()
             .with_context(|| format!("no song_tag with index {index} found"))?;
-        if let Some(current_track) = &self.tageditor_song {
+        if let Some(current_track) = &self.tageditor.song {
             let file = current_track.path().to_path_buf();
             // this needs to be wrapped as this is not running another thread but some main-runtime thread and so needs to inform the runtime to hand-off other tasks
             // though i am not fully sure if that is 100% the case, this avoid the panic though
@@ -300,8 +303,10 @@ impl Model {
         }
         Ok(())
     }
-    pub fn te_rename_song_by_tag(&mut self) -> Result<()> {
-        if let Some(mut song) = self.tageditor_song.clone() {
+
+    /// Save the current tag editor state to the track.
+    pub fn te_save_tag(&mut self) -> Result<()> {
+        if let Some(mut song) = self.tageditor.song.clone() {
             if let Ok(State::One(StateValue::String(artist))) =
                 self.app.state(&Id::TagEditor(IdTagEditor::InputArtist))
             {
@@ -324,6 +329,7 @@ impl Model {
                 song.set_genre(&genre);
             }
             song.save_tag()?;
+            self.tageditor.has_changed = true;
             // the unwrap should also never happen as all components should be properly mounted
             self.init_by_song(song).unwrap();
             self.playlist_update_library_delete();
@@ -335,12 +341,13 @@ impl Model {
     ///
     /// Will send a message once its done.
     pub fn te_load_lyric_and_photo(&mut self, index: usize) -> Result<()> {
-        if self.songtag_options.is_empty() {
+        if self.tageditor.songtag_results.is_empty() {
             return Ok(());
         }
-        if let Some(mut song) = self.tageditor_song.clone() {
+        if let Some(mut song) = self.tageditor.song.clone() {
             let song_tag = self
-                .songtag_options
+                .tageditor
+                .songtag_results
                 .get(index)
                 .cloned()
                 .ok_or_else(|| anyhow!("cannot get songtag"))?;
@@ -391,6 +398,7 @@ impl Model {
     /// Followup function to [`te_load_lyric_and_photo`](Self::te_load_lyric_and_photo)
     /// that executes the remaining operations on `Done` message which require access to `Model` again.
     pub fn te_load_lyric_and_photo_done(&mut self, song: Box<TETrack>) {
+        self.tageditor.has_changed = true;
         let song = *song;
         // the unwrap should also never happen as all components should be properly mounted
         self.init_by_song(song).unwrap();

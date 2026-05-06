@@ -6,8 +6,8 @@ use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
-use termusiclib::track::MediaTypes;
 use termusiclib::track::MediaTypesSimple;
+use termusiclib::track::{MediaTypes, Track};
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -124,6 +124,7 @@ impl Component<Msg, UserEvent> for Lyric {
 }
 
 impl Model {
+    /// Remount and reload the lyrics from the current track.
     pub fn lyric_reload(&mut self) {
         assert!(
             self.app
@@ -136,6 +137,20 @@ impl Model {
         );
         self.lyric_update_title();
         self.lyric_update();
+    }
+
+    /// Force reload lyrics from file. For example after a Tag Editor exit.
+    ///
+    /// If the current track type is [`Track`], then also unset the Lyric cache for the current track's path.
+    pub fn lyric_reload_from_file(&mut self) {
+        info!("Forcing reload of lyrics");
+        self.current_track_lyric.take();
+
+        if let Some(track) = self.playback.current_track().and_then(|v| v.as_track()) {
+            Track::unset_cache_for_path(track.path());
+        }
+
+        self.lyric_reload();
     }
 
     pub fn lyric_update_for_podcast_by_current_track(&mut self) {

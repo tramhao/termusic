@@ -501,6 +501,15 @@ impl Track {
             Err(Some(err)) => Err(err),
         }
     }
+
+    /// Remove the given path from the Lyric parse cache, forcing a reload upon next access.
+    ///
+    /// If the key does not exist, it will not fail.
+    pub fn unset_cache_for_path(path: &Path) {
+        LYRIC_CACHE.with_borrow_mut(|cache| {
+            cache.pop(path);
+        });
+    }
 }
 
 impl PartialEq<PlaylistTrackSource> for &Track {

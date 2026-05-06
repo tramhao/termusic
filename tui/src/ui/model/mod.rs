@@ -265,6 +265,18 @@ impl ExtraLyricData {
     }
 }
 
+/// All data specific to the Tag Editor.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TagEditor {
+    /// The current track open in the tag editor.
+    pub song: Option<TETrack>,
+    /// Stores the result of the songtag fetching.
+    pub songtag_results: Vec<SongTag>,
+    /// Track whether the Tag Editor modified the current track or not.
+    /// Used to force reload of metadata (currently only lyrics)
+    pub has_changed: bool,
+}
+
 pub type TxToMain = UnboundedSender<Msg>;
 
 pub struct Model {
@@ -287,8 +299,8 @@ pub struct Model {
     pub dw: DatabaseWidgetData,
     pub podcast: PodcastWidgetData,
     pub config_editor: ConfigEditorData,
+    pub tageditor: TagEditor,
 
-    pub tageditor_song: Option<TETrack>,
     pub current_track_lyric: Option<ExtraLyricData>,
     pub playback: Playback,
 
@@ -298,7 +310,6 @@ pub struct Model {
     pub xywh: xywh::Xywh,
 
     youtube_options: YoutubeOptions,
-    pub songtag_options: Vec<SongTag>,
     pub download_tracker: DownloadTracker,
     /// Taskpool to limit number of active network requests
     ///
@@ -412,12 +423,11 @@ impl Model {
             terminal,
             config_server,
             config_tui,
-            tageditor_song: None,
 
+            tageditor: TagEditor::default(),
             youtube_options: YoutubeOptions::default(),
             #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
             ueberzug_instance,
-            songtag_options: vec![],
             viuer_supported,
             db,
             layout: TermusicLayout::TreeView,
