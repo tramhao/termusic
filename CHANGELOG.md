@@ -1,6 +1,6 @@
 ## ChangeLog
 
-### [V0.13.0]
+### [V0.13.2]
 - Released on: May 6, 2026.
 - Change: updated MSRV to 1.88.
 - Change: enable feature `rusty-soundtouch` for linux, macos & windows CI builds
@@ -26,6 +26,12 @@
 - Feat: add playlist loop mode to only play the playlist once, then stop.
 - Feat(tui): change default theme to be "Native".
 - Feat(server): change volume scaling from linear to cubic for better perceptual volume consistency.
+
+### [v0.13.1]
+- Yanked due to mistake during publish.
+
+### [v0.13.0]
+- Yanked due to mistake during publish.
 
 ### [V0.12.1]
 - Released on: December 11, 2025.
