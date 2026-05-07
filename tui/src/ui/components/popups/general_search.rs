@@ -3,19 +3,24 @@ use std::path::{Path, PathBuf};
 use anyhow::{Result, anyhow, bail};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::track::MediaTypes;
-use tui_realm_stdlib::Table;
+use tui_realm_stdlib::components::{Input, Table};
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, InputType, Style, TableBuilder, TextSpan};
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{
+    AttrValue, AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment, InputType,
+    LineStatic, QueryResult, Style, TableBuilder, Title,
+};
+use tuirealm::state::{State, StateValue};
 
 use crate::ui::Model;
-use crate::ui::components::vendored::tui_realm_stdlib_input::Input;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct GSInputPopup {
     component: Input,
     source: Source,
@@ -23,7 +28,7 @@ pub struct GSInputPopup {
 
 /// Get a [`Input`] component with the common style applied.
 #[inline]
-fn common_input_comp(config: &TuiOverlay, title: &str) -> Input {
+fn common_input_comp<T: Into<Title>>(config: &TuiOverlay, title: T) -> Input {
     Input::default()
         .foreground(config.settings.theme.fallback_foreground())
         .background(config.settings.theme.fallback_background())
@@ -33,7 +38,7 @@ fn common_input_comp(config: &TuiOverlay, title: &str) -> Input {
                 .color(config.settings.theme.fallback_border())
                 .modifiers(BorderType::Rounded),
         )
-        .title(title, Alignment::Left)
+        .title(title.into().alignment(HorizontalAlignment::Left))
 }
 
 impl GSInputPopup {
@@ -56,8 +61,8 @@ impl GSInputPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for GSInputPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for GSInputPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -81,7 +86,7 @@ impl Component<Msg, UserEvent> for GSInputPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-            }) => self.perform(Cmd::Type(ch)),
+            }) => self.perform(Cmd::Type(*ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel));
             }
@@ -91,10 +96,10 @@ impl Component<Msg, UserEvent> for GSInputPopup {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::InputBlur));
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::Changed(State::One(StateValue::String(input_string))) => {
+            CmdResult::Changed(State::Single(StateValue::String(input_string))) => {
                 match &self.source {
                     Source::Library(path) => Some(Msg::GeneralSearch(GSMsg::PopupUpdateLibrary(
                         input_string,
@@ -116,13 +121,13 @@ impl Component<Msg, UserEvent> for GSInputPopup {
             }
             CmdResult::Submit(_) => Some(Msg::GeneralSearch(GSMsg::InputBlur)),
 
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct GSTablePopup {
     component: Table,
     source: Source,
@@ -149,18 +154,23 @@ fn common_table_comp(config: &TuiOverlay, title: String) -> Table {
         .foreground(config.settings.theme.fallback_foreground())
         .background(config.settings.theme.fallback_background())
         .inactive(Style::new().bg(config.settings.theme.fallback_background()))
-        .title(title, Alignment::Left)
+        .title(Title::from(title).alignment(HorizontalAlignment::Left))
         .scroll(true)
-        .highlighted_color(config.settings.theme.fallback_highlight())
-        .highlighted_str(&config.settings.theme.style.library.highlight_symbol)
+        .highlight_style(
+            CommonHighlight::default()
+                .style
+                .fg(config.settings.theme.fallback_highlight()),
+        )
+        .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+        .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
         .rewind(false)
         .step(4)
         .row_height(1)
         .column_spacing(3)
         .table(
             TableBuilder::default()
-                .add_col(TextSpan::from("Empty result."))
-                .add_col(TextSpan::from("Loading..."))
+                .add_col(LineStatic::from("Empty result."))
+                .add_col(LineStatic::from("Loading..."))
                 .build(),
         )
 }
@@ -215,8 +225,8 @@ impl GSTablePopup {
     }
 }
 
-impl Component<Msg, UserEvent> for GSTablePopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for GSTablePopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -300,47 +310,59 @@ impl Component<Msg, UserEvent> for GSTablePopup {
                     return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPodcastLocate));
                 }
             },
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
 }
 
 impl Model {
-    pub fn general_search_update_show(&mut self, table: Vec<Vec<TextSpan>>) {
+    pub fn general_search_update_show(&mut self, table: tuirealm::props::Table) {
         self.app
             .attr(
                 &Id::GeneralSearchTable,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
+                Attribute::Content,
+                AttrValue::Table(table),
             )
             .ok();
     }
 
     pub fn general_search_after_library_select(&mut self) {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
-            && let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+        if let Ok(State::Single(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
+            && let Some(table) = self
+                .app
+                .query(&Id::GeneralSearchTable, Attribute::Content)
+                .ok()
+                .flatten()
+                .as_ref()
+                .map(QueryResult::as_ref)
+                .and_then(AttrValueRef::as_table)
             && let Some(line) = table.get(index)
             && let Some(text_span) = line.get(1)
         {
-            let node = text_span.content.clone();
+            let node = text_span.to_string();
             self.new_library_scan_dir(PathBuf::from(&node), Some(node));
         }
     }
 
     pub fn general_search_after_library_add_playlist(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
-            && let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+        if let Ok(State::Single(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
+            && let Some(table) = self
+                .app
+                .query(&Id::GeneralSearchTable, Attribute::Content)
+                .ok()
+                .flatten()
+                .as_ref()
+                .map(QueryResult::as_ref)
+                .and_then(AttrValueRef::as_table)
             && let Some(line) = table.get(index)
             && let Some(text_span) = line.get(1)
         {
-            let text = &text_span.content;
-            let path = Path::new(text);
+            let text = text_span.to_string();
+            let path = Path::new(&text);
             self.playlist_add(path)?;
         }
         Ok(())
@@ -349,14 +371,20 @@ impl Model {
     pub fn general_search_after_playlist_select(&mut self) {
         let mut index = 0;
         let mut matched = false;
-        if let Ok(State::One(StateValue::Usize(result_index))) =
+        if let Ok(State::Single(StateValue::Usize(result_index))) =
             self.app.state(&Id::GeneralSearchTable)
-            && let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            && let Some(table) = self
+                .app
+                .query(&Id::GeneralSearchTable, Attribute::Content)
+                .ok()
+                .flatten()
+                .as_ref()
+                .map(QueryResult::as_ref)
+                .and_then(AttrValueRef::as_table)
             && let Some(line) = table.get(result_index)
             && let Some(file_name_text_span) = line.get(3)
         {
-            let file_name = &file_name_text_span.content;
+            let file_name = file_name_text_span.to_string();
             for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
                 // NOTE: i dont know if this should apply to anything other than "track_data"
                 let lower_matched = match item.inner() {
@@ -383,14 +411,20 @@ impl Model {
     pub fn general_search_after_playlist_play_selected(&mut self) {
         let mut index = 0;
         let mut matched = false;
-        if let Ok(State::One(StateValue::Usize(result_index))) =
+        if let Ok(State::Single(StateValue::Usize(result_index))) =
             self.app.state(&Id::GeneralSearchTable)
-            && let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            && let Some(table) = self
+                .app
+                .query(&Id::GeneralSearchTable, Attribute::Content)
+                .ok()
+                .flatten()
+                .as_ref()
+                .map(QueryResult::as_ref)
+                .and_then(AttrValueRef::as_table)
             && let Some(line) = table.get(result_index)
             && let Some(file_name_text_span) = line.get(3)
         {
-            let file_name = &file_name_text_span.content;
+            let file_name = file_name_text_span.to_string();
             for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
                 // NOTE: i dont know if this should apply to anything other than "track_data"
                 let lower_matched = match item.inner() {
@@ -447,9 +481,15 @@ impl Model {
     }
 
     pub fn general_search_get_info(&mut self, column: usize) -> Result<String> {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
-            && let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+        if let Ok(State::Single(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable)
+            && let Some(table) = self
+                .app
+                .query(&Id::GeneralSearchTable, Attribute::Content)
+                .ok()
+                .flatten()
+                .as_ref()
+                .map(QueryResult::as_ref)
+                .and_then(AttrValueRef::as_table)
         {
             let line = table
                 .get(index)
@@ -457,7 +497,7 @@ impl Model {
             let text_span = line
                 .get(column)
                 .ok_or_else(|| anyhow!("error getting text span"))?;
-            return Ok(text_span.content.clone());
+            return Ok(text_span.to_string());
         }
         bail!("column cannot find in general search")
     }

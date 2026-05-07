@@ -5,8 +5,10 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::keys::Keys;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc;
-use tui_realm_stdlib::Phantom;
-use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
+use tui_realm_stdlib::components::Phantom;
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
+use tuirealm::subscription::{EventClause, Sub, SubClause};
 
 use crate::ui::Model;
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
@@ -16,7 +18,7 @@ use crate::ui::msg::{
     PlayerMsg, QuitPopupMsg, SavePlaylistMsg, XYWHMsg,
 };
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct GlobalListener {
     component: Phantom,
     config: SharedTuiSettings,
@@ -33,9 +35,9 @@ impl GlobalListener {
     }
 }
 
-impl Component<Msg, UserEvent> for GlobalListener {
+impl AppComponent<Msg, UserEvent> for GlobalListener {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let keys = &self.config.read().settings.keys;
         match ev {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
@@ -159,7 +161,7 @@ impl Component<Msg, UserEvent> for GlobalListener {
             }
 
             // just forward the message to "Update" as there is no way to bypass this component forwarding
-            Event::User(UserEvent::Forward(msg)) => Some(msg),
+            Event::User(UserEvent::Forward(msg)) => Some(msg.clone()),
 
             _ => None,
         }
@@ -190,129 +192,129 @@ fn global_listener_subscriptions(keys: &Keys) -> Vec<Sub<Id, UserEvent>> {
 
     vec![
         // Sub::new(
-        //     SubEventClause::Keyboard(keys.escape.get()),
+        //     EventClause::Keyboard(keys.escape.get_owned()),
         //     no_popup_clause.clone(),
         // ),
         Sub::new(
-            SubEventClause::Keyboard(keys.quit.get()),
+            EventClause::Keyboard(keys.quit.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.toggle_pause.get()),
+            EventClause::Keyboard(keys.player_keys.toggle_pause.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.next_track.get()),
+            EventClause::Keyboard(keys.player_keys.next_track.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.previous_track.get()),
+            EventClause::Keyboard(keys.player_keys.previous_track.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.speed_up.get()),
+            EventClause::Keyboard(keys.player_keys.speed_up.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.speed_down.get()),
+            EventClause::Keyboard(keys.player_keys.speed_down.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.volume_down.get()),
+            EventClause::Keyboard(keys.player_keys.volume_down.get_owned()),
             no_popup_clause.clone(),
         ),
         // Sub::new(
-        //     SubEventClause::Keyboard(keys.player_keys.volume_minus_2.get()),
+        //     EventClause::Keyboard(keys.player_keys.volume_minus_2.get_owned()),
         //     no_popup_clause.clone(),
         // ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.volume_up.get()),
+            EventClause::Keyboard(keys.player_keys.volume_up.get_owned()),
             no_popup_clause.clone(),
         ),
         // Sub::new(
-        //     SubEventClause::Keyboard(keys.player_keys.volume_plus_2.get()),
+        //     EventClause::Keyboard(keys.player_keys.volume_plus_2.get_owned()),
         //     no_popup_clause.clone(),
         // ),
         Sub::new(
-            SubEventClause::Keyboard(keys.select_view_keys.open_help.get()),
+            EventClause::Keyboard(keys.select_view_keys.open_help.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.seek_forward.get()),
+            EventClause::Keyboard(keys.player_keys.seek_forward.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.seek_backward.get()),
+            EventClause::Keyboard(keys.player_keys.seek_backward.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.lyric_keys.adjust_offset_forwards.get()),
+            EventClause::Keyboard(keys.lyric_keys.adjust_offset_forwards.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.lyric_keys.adjust_offset_backwards.get()),
+            EventClause::Keyboard(keys.lyric_keys.adjust_offset_backwards.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.lyric_keys.cycle_frames.get()),
+            EventClause::Keyboard(keys.lyric_keys.cycle_frames.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.select_view_keys.view_library.get()),
+            EventClause::Keyboard(keys.select_view_keys.view_library.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.select_view_keys.view_database.get()),
+            EventClause::Keyboard(keys.select_view_keys.view_database.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.toggle_prefetch.get()),
+            EventClause::Keyboard(keys.player_keys.toggle_prefetch.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.select_view_keys.open_config.get()),
+            EventClause::Keyboard(keys.select_view_keys.open_config.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.player_keys.save_playlist.get()),
+            EventClause::Keyboard(keys.player_keys.save_playlist.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.select_view_keys.view_podcasts.get()),
+            EventClause::Keyboard(keys.select_view_keys.view_podcasts.get_owned()),
             no_popup_clause,
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.move_cover_art_keys.move_left.get()),
+            EventClause::Keyboard(keys.move_cover_art_keys.move_left.get_owned()),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.move_cover_art_keys.move_right.get()),
+            EventClause::Keyboard(keys.move_cover_art_keys.move_right.get_owned()),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.move_cover_art_keys.move_up.get()),
+            EventClause::Keyboard(keys.move_cover_art_keys.move_up.get_owned()),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.move_cover_art_keys.move_down.get()),
+            EventClause::Keyboard(keys.move_cover_art_keys.move_down.get_owned()),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.move_cover_art_keys.increase_size.get()),
+            EventClause::Keyboard(keys.move_cover_art_keys.increase_size.get_owned()),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.move_cover_art_keys.decrease_size.get()),
+            EventClause::Keyboard(keys.move_cover_art_keys.decrease_size.get_owned()),
             SubClause::Always,
         ),
         Sub::new(
-            SubEventClause::Keyboard(keys.move_cover_art_keys.toggle_hide.get()),
+            EventClause::Keyboard(keys.move_cover_art_keys.toggle_hide.get_owned()),
             SubClause::Always,
         ),
-        Sub::new(SubEventClause::WindowResize, SubClause::Always),
+        Sub::new(EventClause::WindowResize, SubClause::Always),
         Sub::new(
             // note that it does not matter what actual message is inside this "Forward" as "Discriminat" only compares "UserEvent" enum discriminants, not values
-            SubEventClause::Discriminant(UserEvent::Forward(Msg::ForceRedraw)),
+            EventClause::Discriminant(UserEvent::Forward(Msg::ForceRedraw)),
             SubClause::Always,
         ),
     ]

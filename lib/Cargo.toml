@@ -77,7 +77,6 @@ lru.workspace = true
 either.workspace = true
 
 [build-dependencies]
-cc.workspace = true
 tonic-prost-build.workspace = true
 
 

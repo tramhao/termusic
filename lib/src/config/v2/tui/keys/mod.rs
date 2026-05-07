@@ -1432,10 +1432,17 @@ impl KeyBinding {
         })
     }
 
-    /// Get the inner key
+    /// Get the inner key as a reference.
     #[inline]
     #[must_use]
-    pub fn get(&self) -> tuievents::KeyEvent {
+    pub fn get(&self) -> &tuievents::KeyEvent {
+        &self.key_event
+    }
+
+    /// Get the inner key as owned.
+    #[inline]
+    #[must_use]
+    pub fn get_owned(&self) -> tuievents::KeyEvent {
         self.key_event
     }
 

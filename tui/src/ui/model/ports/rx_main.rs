@@ -1,7 +1,7 @@
 use tokio::sync::mpsc::UnboundedReceiver;
 use tuirealm::{
-    Event,
-    listener::{ListenerResult, PollAsync},
+    event::Event,
+    listener::{PollAsync, PortResult},
 };
 
 use crate::ui::{model::UserEvent, msg::Msg};
@@ -18,7 +18,7 @@ impl PortRxMain {
 
 #[tuirealm::async_trait]
 impl PollAsync<UserEvent> for PortRxMain {
-    async fn poll(&mut self) -> ListenerResult<Option<Event<UserEvent>>> {
+    async fn poll(&mut self) -> PortResult<Option<Event<UserEvent>>> {
         match self.0.recv().await {
             Some(ev) => Ok(Some(Event::User(UserEvent::Forward(ev)))),
             None => Ok(None),

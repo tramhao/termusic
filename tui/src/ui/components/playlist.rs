@@ -20,13 +20,17 @@ use termusiclib::player::{
 use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::utils::{filetype_supported, is_playlist, playlist_get_vec};
-use tui_realm_stdlib::Table;
-use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
-use tuirealm::props::{Borders, Style};
-use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
-    event::{Key, KeyEvent},
+use tui_realm_stdlib::components::Table;
+use tui_realm_stdlib::prop_ext::CommonHighlight;
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
+use tuirealm::event::{Key, KeyEvent};
+use tuirealm::props::{
+    AttrValue, Attribute, BorderType, HorizontalAlignment, LineStatic, PropPayload, PropValue,
+    TableBuilder, Title,
 };
+use tuirealm::props::{Borders, Style};
+use tuirealm::state::{State, StateValue};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::KeyModifiers,
@@ -38,8 +42,9 @@ use crate::ui::ids::Id;
 use crate::ui::model::{TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct Playlist {
     component: Table,
     config: SharedTuiSettings,
@@ -58,10 +63,23 @@ impl Playlist {
                 .background(config.settings.theme.playlist_background())
                 .foreground(config.settings.theme.playlist_foreground())
                 .inactive(Style::new().bg(config.settings.theme.playlist_background()))
-                .title(" Playlist ", Alignment::Left)
+                .title(Title::from(" Playlist ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
-                .highlighted_color(config.settings.theme.playlist_highlight())
-                .highlighted_str(&config.settings.theme.style.playlist.highlight_symbol)
+                .highlight_style(
+                    CommonHighlight::default()
+                        .style
+                        .fg(config.settings.theme.playlist_highlight()),
+                )
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_str(
+                    config
+                        .settings
+                        .theme
+                        .style
+                        .playlist
+                        .highlight_symbol
+                        .clone(),
+                )
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -70,9 +88,9 @@ impl Playlist {
                 .widths(&[12, 20, 25, 43])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("Empty"))
-                        .add_col(TextSpan::from("Empty Queue"))
-                        .add_col(TextSpan::from("Empty"))
+                        .add_col(LineStatic::from("Empty"))
+                        .add_col(LineStatic::from("Empty Queue"))
+                        .add_col(LineStatic::from("Empty"))
                         .build(),
                 )
         };
@@ -81,9 +99,9 @@ impl Playlist {
     }
 }
 
-impl Component<Msg, UserEvent> for Playlist {
+impl AppComponent<Msg, UserEvent> for Playlist {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -133,10 +151,10 @@ impl Component<Msg, UserEvent> for Playlist {
             }) => return Some(Msg::Playlist(PLMsg::PlaylistTableBlurUp)),
             Event::Keyboard(key) if key == keys.playlist_keys.delete.get() => {
                 match self.component.state() {
-                    State::One(StateValue::Usize(index_selected)) => {
+                    State::Single(StateValue::Usize(index_selected)) => {
                         return Some(Msg::Playlist(PLMsg::Delete(index_selected)));
                     }
-                    _ => CmdResult::None,
+                    _ => CmdResult::NoChange,
                 }
             }
             Event::Keyboard(key) if key == keys.playlist_keys.delete_all.get() => {
@@ -149,40 +167,40 @@ impl Component<Msg, UserEvent> for Playlist {
                 return Some(Msg::Playlist(PLMsg::LoopModeCycle));
             }
             Event::Keyboard(key) if key == keys.playlist_keys.play_selected.get() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Playlist(PLMsg::PlaySelected(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
             }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
+                if let State::Single(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Playlist(PLMsg::PlaySelected(index)));
                 }
-                CmdResult::None
+                CmdResult::NoChange
             }
             Event::Keyboard(key) if key == keys.playlist_keys.search.get() => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist));
             }
             Event::Keyboard(key) if key == keys.playlist_keys.swap_down.get() => {
                 match self.component.state() {
-                    State::One(StateValue::Usize(index_selected)) => {
+                    State::Single(StateValue::Usize(index_selected)) => {
                         self.perform(Cmd::Move(Direction::Down));
                         return Some(Msg::Playlist(PLMsg::SwapDown(index_selected)));
                     }
-                    _ => CmdResult::None,
+                    _ => CmdResult::NoChange,
                 }
             }
             Event::Keyboard(key) if key == keys.playlist_keys.swap_up.get() => {
                 match self.component.state() {
-                    State::One(StateValue::Usize(index_selected)) => {
+                    State::Single(StateValue::Usize(index_selected)) => {
                         self.perform(Cmd::Move(Direction::Up));
                         return Some(Msg::Playlist(PLMsg::SwapUp(index_selected)));
                     }
-                    _ => CmdResult::None,
+                    _ => CmdResult::NoChange,
                 }
             }
             Event::Keyboard(key) if key == keys.playlist_keys.add_random_album.get() => {
@@ -191,10 +209,10 @@ impl Component<Msg, UserEvent> for Playlist {
             Event::Keyboard(key) if key == keys.playlist_keys.add_random_songs.get() => {
                 return Some(Msg::Playlist(PLMsg::AddRandomTracks));
             }
-            _ => CmdResult::None,
+            _ => CmdResult::NoChange,
         };
         match cmd_result {
-            CmdResult::None => None,
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
@@ -585,21 +603,17 @@ impl Model {
                 );
             }
             table
-                .add_col(TextSpan::new(duration_str.as_str()))
-                .add_col(TextSpan::new(title).bold());
+                .add_col(LineStatic::from(duration_str))
+                .add_col(LineStatic::styled(title, Style::new().bold()));
         }
         if self.playback.playlist.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty playlist"));
+            table.add_col(LineStatic::from("0"));
+            table.add_col(LineStatic::from("empty playlist"));
         }
 
         let table = table.build();
         self.app
-            .attr(
-                &Id::Playlist,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
-            )
+            .attr(&Id::Playlist, Attribute::Content, AttrValue::Table(table))
             .ok();
 
         self.playlist_update_title();
@@ -654,25 +668,24 @@ impl Model {
             }
 
             table
-                .add_col(TextSpan::new(duration_str.as_str()))
-                .add_col(TextSpan::new(artist).fg(artist_color))
-                .add_col(TextSpan::new(title).bold())
-                .add_col(TextSpan::new(album));
+                .add_col(LineStatic::from(duration_str))
+                .add_col(LineStatic::styled(
+                    artist.to_string(),
+                    Style::new().fg(artist_color),
+                ))
+                .add_col(LineStatic::styled(title.to_string(), Style::new().bold()))
+                .add_col(LineStatic::from(album.to_string()));
         }
         if self.playback.playlist.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty playlist"));
-            table.add_col(TextSpan::from(""));
-            table.add_col(TextSpan::from(""));
+            table.add_col(LineStatic::from("0"));
+            table.add_col(LineStatic::from("empty playlist"));
+            table.add_col(LineStatic::from(""));
+            table.add_col(LineStatic::from(""));
         }
 
         let table = table.build();
         self.app
-            .attr(
-                &Id::Playlist,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
-            )
+            .attr(&Id::Playlist, Attribute::Content, AttrValue::Table(table))
             .ok();
 
         self.playlist_update_title();
@@ -781,8 +794,8 @@ impl Model {
         self.app
             .attr(
                 &Id::Playlist,
-                tuirealm::Attribute::Title,
-                tuirealm::AttrValue::Title((title, Alignment::Left)),
+                Attribute::Title,
+                AttrValue::Title(Title::from(title).alignment(HorizontalAlignment::Left)),
             )
             .ok();
     }
@@ -816,7 +829,7 @@ impl Model {
                 .attr(
                     &Id::Playlist,
                     Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
+                    AttrValue::Payload(PropPayload::Single(PropValue::Usize(index))),
                 )
                 .is_ok()
         );
@@ -824,9 +837,9 @@ impl Model {
 
     /// Get the current selected index in the playlist list component
     pub fn playlist_get_selected_index(&self) -> Option<usize> {
-        // the index on a "Table" can be set via "AttrValue::Payload(PropPayload::One(PropValue::Usize(val)))", but reading that is stale
+        // the index on a "Table" can be set via "AttrValue::Payload(PropPayload::Single(PropValue::Usize(val)))", but reading that is stale
         // as that value is only read in the "Table", not removed or updated, but "state" is
-        let Ok(State::One(StateValue::Usize(val))) = self.app.state(&Id::Playlist) else {
+        let Ok(State::Single(StateValue::Usize(val))) = self.app.state(&Id::Playlist) else {
             return None;
         };
 

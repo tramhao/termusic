@@ -23,9 +23,12 @@
  */
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::{Radio, Span};
-use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, TextSpan};
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
+use tui_realm_stdlib::components::{Radio, Span};
+use tuirealm::component::{AppComponent, Component};
+use tuirealm::event::Event;
+use tuirealm::props::{
+    AttrValue, Attribute, BorderSides, BorderType, Borders, HorizontalAlignment, SpanStatic, Style,
+};
 
 use super::popups::{YNConfirm, YNConfirmStyle};
 use crate::ui::ids::{Id, IdConfigEditor};
@@ -38,7 +41,7 @@ mod key_combo;
 mod update;
 mod view;
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct CEHeader {
     component: Radio,
 }
@@ -68,55 +71,56 @@ impl CEHeader {
     }
 }
 
-impl Component<Msg, UserEvent> for CEHeader {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for CEHeader {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct CEFooter {
     component: Span,
 }
 
 impl CEFooter {
     pub fn new(config: &TuiOverlay) -> Self {
+        let style_text = Style::new()
+            .bold()
+            .fg(config.settings.theme.library_foreground());
+        let style_key = Style::new()
+            .bold()
+            .fg(config.settings.theme.library_highlight());
+
         Self {
             component: Span::default()
                 .background(config.settings.theme.library_background())
+                .style(Style::new().bold())
                 .spans([
-                    TextSpan::new(" Save parameters: ").bold(),
-                    TextSpan::new(format!("<{}>", config.settings.keys.config_keys.save))
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    TextSpan::new(" Exit: ").bold(),
-                    TextSpan::new(format!("<{}>", config.settings.keys.escape))
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    TextSpan::new(" Change panel: ").bold(),
-                    TextSpan::new("<TAB>")
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    TextSpan::new(" Change field: ").bold(),
-                    TextSpan::new("<UP/DOWN>")
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
-                    TextSpan::new(" Select theme/Preview symbol: ").bold(),
-                    TextSpan::new("<ENTER>")
-                        .bold()
-                        .fg(config.settings.theme.library_highlight()),
+                    SpanStatic::styled(" Save parameters: ", style_text),
+                    SpanStatic::styled(
+                        format!("<{}>", config.settings.keys.config_keys.save),
+                        style_key,
+                    ),
+                    SpanStatic::styled(" Exit: ", style_text),
+                    SpanStatic::styled(format!("<{}>", config.settings.keys.escape), style_key),
+                    SpanStatic::styled(" Change panel: ", style_text),
+                    SpanStatic::styled("<TAB>", style_key),
+                    SpanStatic::styled(" Change field: ", style_text),
+                    SpanStatic::styled("<UP/DOWN>", style_key),
+                    SpanStatic::styled(" Select theme/Preview symbol: ", style_text),
+                    SpanStatic::styled("<ENTER>", style_key),
                 ]),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CEFooter {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for CEFooter {
+    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
         None
     }
 }
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct ConfigSavePopup {
     component: YNConfirm,
 }
@@ -129,15 +133,15 @@ impl ConfigSavePopup {
                     foreground_color: config.settings.theme.important_popup_foreground(),
                     background_color: config.settings.theme.important_popup_background(),
                     border_color: config.settings.theme.important_popup_border(),
-                    title_alignment: Alignment::Center,
+                    title_alignment: HorizontalAlignment::Center,
                 }
             });
         Self { component }
     }
 }
 
-impl Component<Msg, UserEvent> for ConfigSavePopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for ConfigSavePopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         self.component.on(
             ev,
             Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveOk),

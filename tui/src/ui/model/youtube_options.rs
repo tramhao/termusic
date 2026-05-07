@@ -11,7 +11,9 @@ use shell_words;
 use termusiclib::invidious::{Instance, YoutubeVideo};
 use termusiclib::track::DurationFmtShort;
 use termusiclib::utils::get_parent_folder;
-use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
+use tuirealm::props::{
+    AttrValue, Attribute, HorizontalAlignment, LineStatic, Style, TableBuilder, Title,
+};
 use ytd_rs::{Arg, YoutubeDL};
 
 use super::Model;
@@ -187,8 +189,8 @@ impl Model {
     pub fn sync_youtube_options(&mut self) {
         if self.youtube_options.is_empty() {
             let table = TableBuilder::default()
-                .add_col(TextSpan::from("No results."))
-                .add_col(TextSpan::from(
+                .add_col(LineStatic::from("No results."))
+                .add_col(LineStatic::from(
                     "Nothing was found in 10 seconds, connection issue encountered.",
                 ))
                 .build();
@@ -210,11 +212,12 @@ impl Model {
             let duration = DurationFmtShort(Duration::from_secs(record.length_seconds));
             let duration_string = format!("[{duration:^10.10}]");
 
-            let title = record.title.as_str();
-
             table
-                .add_col(TextSpan::new(duration_string))
-                .add_col(TextSpan::new(title).bold());
+                .add_col(LineStatic::from(duration_string))
+                .add_col(LineStatic::styled(
+                    record.title.clone(),
+                    Style::new().bold(),
+                ));
         }
         let table = table.build();
         self.app
@@ -236,7 +239,7 @@ impl Model {
                 .attr(
                     &Id::YoutubeSearchTablePopup,
                     Attribute::Title,
-                    AttrValue::Title((title, Alignment::Left)),
+                    AttrValue::Title(Title::from(title).alignment(HorizontalAlignment::Left)),
                 )
                 .ok();
         }

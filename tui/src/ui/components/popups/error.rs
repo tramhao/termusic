@@ -22,18 +22,18 @@
  * SOFTWARE.
  */
 use termusiclib::config::{SharedTuiSettings, v2::tui::theme::styles::ColorTermusic};
-use tui_realm_stdlib::Paragraph;
+use tui_realm_stdlib::components::Paragraph;
 use tuirealm::{
-    Component, Event, MockComponent,
-    event::{Key, KeyEvent},
-    props::{Alignment, BorderType, Borders, TextModifiers, TextSpan},
+    component::{AppComponent, Component},
+    event::{Event, Key, KeyEvent},
+    props::{BorderType, Borders, HorizontalAlignment, TextModifiers, TextStatic, Title},
 };
 
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ErrorPopupMsg, Msg};
 
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct ErrorPopup {
     component: Paragraph,
     config: SharedTuiSettings,
@@ -57,12 +57,12 @@ impl ErrorPopup {
                     .color(color)
                     .modifiers(BorderType::Rounded),
             )
-            .title(" Error ", Alignment::Center)
+            .title(Title::from(" Error ").alignment(HorizontalAlignment::Center))
             .foreground(color)
             .background(config_r.settings.theme.fallback_background())
             .modifiers(TextModifiers::BOLD)
-            .alignment(Alignment::Center)
-            .text([TextSpan::from(msg)]/* &msg.lines().map(|v| TextSpan::from(v)).collect::<Vec<_>>() */)
+            .alignment_horizontal(HorizontalAlignment::Center)
+            .text(TextStatic::from(msg)/* &msg.lines().map(|v| TextSpan::from(v)).collect::<Vec<_>>() */)
         };
         drop(config_r);
 
@@ -70,8 +70,8 @@ impl ErrorPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for ErrorPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl AppComponent<Msg, UserEvent> for ErrorPopup {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         match ev {

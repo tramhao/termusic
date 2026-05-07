@@ -1,10 +1,14 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::Radio;
+use tui_realm_stdlib::components::Radio;
 use tuirealm::{
-    AttrValue, Attribute, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult, Direction},
-    event::{Key, KeyEvent},
-    props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue},
+    component::Component,
+    event::{Event, Key, KeyEvent},
+    props::{
+        AttrValue, Attribute, BorderType, Borders, Color, HorizontalAlignment, PropPayload,
+        PropValue, Title,
+    },
+    state::{State, StateValue},
 };
 
 use crate::ui::model::UserEvent;
@@ -13,14 +17,15 @@ use crate::ui::msg::Msg;
 /// Struct for the Style of the [`YNConfirm`]
 #[derive(Debug, Clone, PartialEq)]
 pub struct YNConfirmStyle {
+    // TODO: switch this with just "Title"?
     pub foreground_color: Color,
     pub background_color: Color,
     pub border_color: Color,
-    pub title_alignment: Alignment,
+    pub title_alignment: HorizontalAlignment,
 }
 
 /// A Common [`MockComponent`] for `No/Yes` Popups
-#[derive(MockComponent)]
+#[derive(Component)]
 pub struct YNConfirm {
     component: Radio,
     config: SharedTuiSettings,
@@ -28,7 +33,7 @@ pub struct YNConfirm {
 
 impl YNConfirm {
     /// Create a new instance with custom colors
-    pub fn new_with_cb<F: FnOnce(&TuiOverlay) -> YNConfirmStyle, T: Into<String>>(
+    pub fn new_with_cb<F: FnOnce(&TuiOverlay) -> YNConfirmStyle, T: Into<Title>>(
         config: SharedTuiSettings,
         title: T,
         cb: F,
@@ -44,7 +49,7 @@ impl YNConfirm {
                         .color(style.border_color)
                         .modifiers(BorderType::Rounded),
                 )
-                .title(title, style.title_alignment)
+                .title(title.into().alignment(style.title_alignment))
                 .rewind(true)
                 .choices(["No", "Yes"])
                 .value(0)
@@ -57,7 +62,7 @@ impl YNConfirm {
     ///
     /// `on_y` corresponds to pressing `Yes` and `on_n` to pressing `No`
     #[allow(clippy::needless_pass_by_value)]
-    pub fn on(&mut self, ev: Event<UserEvent>, on_y: Msg, on_n: Msg) -> Option<Msg> {
+    pub fn on(&mut self, ev: &Event<UserEvent>, on_y: Msg, on_n: Msg) -> Option<Msg> {
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -90,7 +95,7 @@ impl YNConfirm {
                 // ordering is 0 = No, 1 = Yes
                 self.component.attr(
                     Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::Usize(1))),
+                    AttrValue::Payload(PropPayload::Single(PropValue::Usize(1))),
                 );
                 self.perform(Cmd::Submit)
             }
@@ -101,7 +106,7 @@ impl YNConfirm {
                 // ordering is 0 = No, 1 = Yes
                 self.component.attr(
                     Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::Usize(0))),
+                    AttrValue::Payload(PropPayload::Single(PropValue::Usize(0))),
                 );
                 self.perform(Cmd::Submit)
             }
@@ -113,9 +118,9 @@ impl YNConfirm {
         };
 
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::Usize(0))) => Some(on_n),
-            CmdResult::Submit(State::One(StateValue::Usize(1))) => Some(on_y),
-            CmdResult::None => None,
+            CmdResult::Submit(State::Single(StateValue::Usize(0))) => Some(on_n),
+            CmdResult::Submit(State::Single(StateValue::Usize(1))) => Some(on_y),
+            CmdResult::NoChange => None,
             _ => Some(Msg::ForceRedraw),
         }
     }
