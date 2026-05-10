@@ -384,6 +384,7 @@ fn player_loop(
                 player.playlist.write().reload_tracks().ok();
             }
             PlayerCmd::SeekBackward => {
+                // TODO: do seek callback for faster progress updates?
                 player.seek_relative(false);
             }
             PlayerCmd::SeekForward => {
@@ -443,11 +444,8 @@ fn player_loop(
 
                     playlist = player.playlist.read();
                 }
-                if player.current_track_updated {
-                    p_tick.current_track_index =
-                        u64::try_from(playlist.get_current_track_index()).unwrap();
-                    player.current_track_updated = false;
-                }
+                p_tick.current_track_index =
+                    u64::try_from(playlist.get_current_track_index()).unwrap();
                 if let Some(track) = playlist.current_track() {
                     update_metadata_changed(&mut p_tick, &player, track);
                 }

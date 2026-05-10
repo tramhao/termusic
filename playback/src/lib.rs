@@ -166,8 +166,6 @@ pub struct GeneralPlayer {
     pub playlist: SharedPlaylist,
     /// A reference to the server config.
     pub config: SharedServerSettings,
-    /// Simple flag to check in a tick to update some extra information.
-    pub current_track_updated: bool,
 
     /// Media Control (mpris) instance.
     pub mpris: Option<mpris::Mpris>,
@@ -239,7 +237,6 @@ impl GeneralPlayer {
             db_podcast,
             cmd_tx,
             stream_tx,
-            current_track_updated: false,
 
             errors_since_last_progress: 0,
         })
@@ -362,7 +359,6 @@ impl GeneralPlayer {
             if playlist.has_next_track() {
                 playlist.set_next_track(None);
                 drop(playlist);
-                self.current_track_updated = true;
                 info!("gapless next track played");
                 self.add_and_play_mpris_discord();
 
@@ -372,7 +368,6 @@ impl GeneralPlayer {
             }
             drop(playlist);
 
-            self.current_track_updated = true;
             let wait = async {
                 self.add_and_play(&track).await;
             };
@@ -395,7 +390,6 @@ impl GeneralPlayer {
         self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
             current_track_index: u64::try_from(self.playlist.read().get_current_track_index())
                 .unwrap(),
-            current_track_updated: self.current_track_updated,
             title: self.media_info().media_title,
             progress: self.get_progress(),
         }));
