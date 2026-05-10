@@ -74,6 +74,16 @@ impl TUIPlaylist {
 
         self.tracks.remove(index);
 
+        // Update the current playing track index.
+        // TODO: maybe this can be improved somehow? Maybe by providing the current track idx in each message?
+        if self.current_track_idx.is_some_and(|v| v == index) {
+            let _ = self.current_track_idx.take();
+        } else if let Some(old_current_idx) = self.current_track_idx
+            && index < old_current_idx
+        {
+            self.current_track_idx = Some(old_current_idx.saturating_sub(1));
+        }
+
         Ok(())
     }
 
