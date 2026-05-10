@@ -369,7 +369,6 @@ fn player_loop(
                     had_enqueue_error = true;
                 }
             }
-            PlayerCmd::GetProgress => {}
             PlayerCmd::SkipPrevious => {
                 player.reset_errors();
                 info!("skip to previous track");

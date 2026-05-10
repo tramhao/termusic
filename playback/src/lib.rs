@@ -120,7 +120,6 @@ pub enum PlayerCmd {
 
     // Mainly called from outside sources (client, mpris)
     CycleLoop,
-    GetProgress,
     SkipPrevious,
     Pause,
     Play,
