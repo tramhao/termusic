@@ -16,7 +16,7 @@ use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Volume, VolumeSigned,
+    PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
     quit_sources,
 };
 use tokio::runtime::Handle;
@@ -49,7 +49,6 @@ const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
 struct PlayerStats {
     pub progress: PlayerProgress,
     pub current_track_index: u64,
-    pub volume: u16,
     pub speed: i32,
     pub gapless: bool,
     pub radio_title: String,
@@ -63,22 +62,25 @@ impl PlayerStats {
                 total_duration: None,
             },
             current_track_index: 0,
-            volume: 0,
             speed: 10,
             gapless: true,
             radio_title: String::new(),
         }
     }
 
-    pub fn as_getprogress_response(&self, status: RunningStatus) -> GetProgressResponse {
+    pub fn as_getprogress_response(
+        &self,
+        status: RunningStatus,
+        config: &ServerOverlay,
+    ) -> GetProgressResponse {
         GetProgressResponse {
             progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
             status: status.as_u32(),
-            volume: u32::from(self.volume),
             speed: self.speed,
             gapless: self.gapless,
             radio_title: self.radio_title.clone(),
+            volume: u32::from(config.settings.player.volume),
         }
     }
 
@@ -479,19 +481,19 @@ fn player_loop(
             PlayerCmd::VolumeDown => {
                 info!("before volumedown: {}", player.volume());
                 let new_volume = player.add_volume(-VOLUME_STEP);
-                set_volume(&player, &playerstats, new_volume);
+                player.config.write().settings.player.volume = new_volume;
                 info!("after volumedown: {new_volume}");
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
                 let new_volume = player.add_volume(VOLUME_STEP);
-                set_volume(&player, &playerstats, new_volume);
+                player.config.write().settings.player.volume = new_volume;
                 info!("after volumeup: {new_volume}");
             }
             PlayerCmd::VolumeSet(volume) => {
                 info!("before volumeset: {}", player.volume());
                 let new_volume = player.set_volume(volume);
-                set_volume(&player, &playerstats, new_volume);
+                player.config.write().settings.player.volume = new_volume;
                 info!("after volumeset: {new_volume}");
             }
             PlayerCmd::Pause => {
@@ -703,11 +705,4 @@ async fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<(
     };
 
     Ok(())
-}
-
-/// Set the volume for the Config and the playerstats.
-fn set_volume(player: &GeneralPlayer, playerstats: &Arc<Mutex<PlayerStats>>, new_volume: Volume) {
-    player.config.write().settings.player.volume = new_volume;
-    let mut p_tick = playerstats.lock();
-    p_tick.volume = new_volume;
 }
