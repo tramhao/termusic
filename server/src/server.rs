@@ -318,7 +318,7 @@ fn player_loop(
                 info!("about to finish signal received");
                 let playlist = player.playlist.read();
                 if !playlist.is_empty()
-                    && !playlist.has_next_track()
+                    && playlist.get_next_track().is_none()
                     && player.config.read().settings.player.gapless
                 {
                     drop(playlist);
@@ -495,7 +495,7 @@ fn player_loop(
                     info.track_index, info.id
                 );
                 player.player_save_last_position();
-                if let Err(err) = player.playlist.write().play_specific(&info) {
+                if let Err(err) = player.playlist.write().set_play_specific(&info) {
                     error!("Error setting specific track to play: {err}");
                 }
                 player.next();
@@ -604,7 +604,7 @@ fn player_eos(player: &mut GeneralPlayer, use_skip: bool) {
     if use_skip {
         player.next();
     } else {
-        player.start_play();
+        player.start_play(true);
     }
     debug!(
         "playing index is: {}",

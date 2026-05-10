@@ -171,6 +171,10 @@ pub struct RunInfo {
     ///
     /// This may or may not be present in any playlist.
     current_track: Option<Track>,
+    /// The track that has been enqueued.
+    ///
+    /// This is used to know whether something had been enqueued and if something changed in-between.
+    enqueued: Option<Track>,
 }
 
 impl Default for RunInfo {
@@ -178,6 +182,7 @@ impl Default for RunInfo {
         Self {
             status: RunningStatus::Stopped,
             current_track: None,
+            enqueued: None,
         }
     }
 }
@@ -251,6 +256,16 @@ impl RunInfo {
         let _ = self.current_track.take();
     }
 
+    /// Set the track that has been enqueued for seamless playback
+    pub fn set_enqueued(&mut self, track: Track) {
+        self.enqueued = Some(track);
+    }
+
+    /// Get the current enqueued Track value and reset it.
+    pub fn take_enqueued(&mut self) -> Option<Track> {
+        self.enqueued.take()
+    }
+
     /// Send stream events with consistent error handling.
     fn send_stream_ev(ev: UpdateEvents, tx: &StreamTX) {
         // there is only one error case: no receivers
@@ -289,6 +304,8 @@ pub struct GeneralPlayer {
 
     /// Keep track of continues backend errors (like `NotFound`) to not keep trying infinitely.
     pub errors_since_last_progress: usize,
+    /// Track whether the current track is being skipped.
+    pub in_skip: bool, // TODO: evaluate if this option can be omitted somehow
 }
 
 impl GeneralPlayer {
@@ -350,6 +367,7 @@ impl GeneralPlayer {
             stream_tx,
 
             errors_since_last_progress: 0,
+            in_skip: false,
         })
     }
 
@@ -429,48 +447,67 @@ impl GeneralPlayer {
     /// # Panics
     ///
     /// if `current_track_index` in playlist is above u32
-    pub fn start_play(&mut self) {
-        let mut run_info_w = self.run_info.write();
-        let original_state = run_info_w.status();
-        if run_info_w.is_stopped() | run_info_w.is_paused() {
-            run_info_w.play(&self.stream_tx);
+    pub fn start_play(&mut self, from_eos: bool) {
+        let mut run_info = self.run_info.write();
+        if run_info.is_stopped() | run_info.is_paused() {
+            run_info.play(&self.stream_tx);
         }
-        drop(run_info_w);
 
         let mut playlist = self.playlist.write();
 
-        if playlist.proceed(original_state) {
-            drop(playlist);
-            info!("Stopping playback due to \"proceed\" saying so");
-            self.stop();
-            return;
-        }
+        let next_track = if self.in_skip || !from_eos {
+            // When in-skip or not from EOS, get the current track, as "next" or "previous" has already set it (in_skip), or we want to play the current one as we just loaded the playlist
+            self.in_skip = false;
+            playlist.get_current_track()
+        } else {
+            // When from EOS, we want to respect the LoopMode decision, so no force here.
+            // Force should only be done in Skip / Next.
+            playlist.next(false)
+        };
 
-        if let Some(track) = playlist.get_current_track().cloned() {
-            info!("Starting Track {track:#?}");
-            self.run_info.write().set_current_track(track.clone());
-
-            if playlist.has_next_track() {
-                playlist.set_next_track(None);
+        if let Some(enqueued_track) = run_info.take_enqueued() {
+            let Some(track) = next_track else {
+                error!("Desync: enqueue flag set, but playlist did not have a next anymore!");
                 drop(playlist);
-                info!("gapless next track played");
+                drop(run_info);
+                self.stop();
+                return;
+            };
+            if enqueued_track.as_track_source() == track.as_track_source() {
+                info!("Starting seamless Track {track:#?}");
+                run_info.set_current_track(track.clone());
+                drop(playlist);
+                drop(run_info);
                 self.set_track_mpris_discord();
 
                 self.send_track_changed();
 
                 return;
             }
+
+            info!("Enqueued Track did not match next track from playlist, skipping enqueued!");
+        }
+
+        if let Some(track) = next_track.cloned() {
             drop(playlist);
+            drop(run_info);
+            info!("Starting Track {track:#?}");
 
             let wait = async {
                 self.add_and_play(&track).await;
             };
             Handle::current().block_on(wait);
+            self.run_info.write().set_current_track(track);
 
             self.set_track_mpris_discord();
             self.player_restore_last_position();
 
             self.send_track_changed();
+        } else {
+            info!("Stopping due to not having a next track");
+            drop(playlist);
+            drop(run_info);
+            self.stop();
         }
     }
 
@@ -505,28 +542,25 @@ impl GeneralPlayer {
     /// Try to enqueue the next track to play, so that it can be seamlessly played.
     pub fn enqueue_next_from_playlist(&mut self) {
         let mut playlist = self.playlist.write();
-        if playlist.has_next_track() {
-            return;
-        }
-
-        let Some(track) = playlist.fetch_next_track().cloned() else {
+        let Some(next_track) = playlist.fetch_next().cloned() else {
+            debug!("No next track, not enqueuing!");
             return;
         };
         drop(playlist);
 
-        self.enqueue_next(&track);
+        self.enqueue_next(&next_track);
 
-        info!("Next track enqueued: {track:#?}");
+        info!("Next track enqueued: {next_track:#?}");
     }
 
     /// Skip to the next track, if there is one
     pub fn next(&mut self) {
-        if self.playlist.read().get_current_track().is_some() {
-            debug!("next: playlist.current_track is some");
-            self.playlist.write().set_next_track(None);
+        let has_next = self.playlist.write().next(true).is_some();
+        debug!("next: has_next: {has_next:#?}");
+
+        if has_next {
             self.skip_one();
         } else {
-            info!("next: playlist is empty, stopping");
             self.stop();
         }
     }
@@ -534,10 +568,15 @@ impl GeneralPlayer {
     /// Switch & Play the previous track in the playlist
     pub fn previous(&mut self) {
         let mut playlist = self.playlist.write();
-        playlist.previous();
-        playlist.proceed_false();
+        let has_previous = playlist.previous().is_some();
         drop(playlist);
-        self.next();
+        debug!("previous: has_previous: {has_previous:#?}");
+
+        if has_previous {
+            self.skip_one();
+        } else {
+            self.stop();
+        }
     }
 
     /// Resume playback if paused, pause playback if running.
@@ -606,17 +645,11 @@ impl GeneralPlayer {
                 }
 
                 drop(playlist_read);
-                let mut playlist_write = self.playlist.write();
                 self.run_info.write().stop(&self.stream_tx);
-                playlist_write.proceed_false();
 
-                info!(
-                    "Resuming from stopped status. Next track: {:#?}",
-                    playlist_write.get_current_track()
-                );
-                drop(playlist_write);
+                info!("Resuming from stopped status");
 
-                self.start_play();
+                self.start_play(false);
             }
         }
     }
@@ -850,8 +883,8 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn stop(&mut self) {
+        self.in_skip = false;
         self.run_info.write().stop(&self.stream_tx);
-        self.playlist.write().stop();
         self.get_player_mut().stop();
     }
 
@@ -869,6 +902,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn skip_one(&mut self) {
+        self.in_skip = true;
         self.get_player_mut().skip_one();
     }
 
@@ -877,6 +911,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn enqueue_next(&mut self, track: &Track) {
+        self.run_info.write().set_enqueued(track.clone());
         self.get_player_mut().enqueue_next(track);
     }
 
