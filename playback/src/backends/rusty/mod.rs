@@ -627,6 +627,9 @@ async fn player_thread(mut args: PlayerThreadArgs) {
         let builder = DeviceSinkBuilder::from_default_device().unwrap();
         builder
             .with_sample_rate(args.output_sample_rate)
+            .with_error_callback(|err| {
+                error!("CPAL Audio Error: {err:#?}");
+            })
             .open_sink_or_fallback()
             .unwrap()
     };
