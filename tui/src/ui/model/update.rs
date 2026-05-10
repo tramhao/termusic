@@ -1183,17 +1183,10 @@ impl Model {
                     );
                 }
 
-                let as_usize =
-                    usize::try_from(track_changed_info.current_track_index).unwrap_or(usize::MAX);
-
-                if Some(as_usize) != self.playback.playlist.current_track_index()
-                    || self.playback.current_track().is_none()
-                {
-                    self.handle_current_track_index(
-                        usize::try_from(track_changed_info.current_track_index).unwrap(),
-                        false,
-                    );
-                }
+                self.handle_current_track_index(
+                    usize::try_from(track_changed_info.current_track_index).unwrap(),
+                    false,
+                );
 
                 if let Some(title) = track_changed_info.title {
                     self.lyric_update_for_radio(title);
