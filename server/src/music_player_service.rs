@@ -37,7 +37,6 @@ impl MusicPlayerService {
         let mut player_stats = PlayerStats::new();
         let config_read = config.read();
         player_stats.gapless = config_read.settings.player.gapless;
-        player_stats.speed = config_read.settings.player.speed;
         drop(config_read);
 
         let player_stats = Arc::new(Mutex::new(player_stats));
@@ -163,8 +162,9 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::SpeedDown)?;
         // wait until the event was processed
         let _ = rx.await;
-        let s = self.player_stats.lock();
-        let reply = SpeedReply { speed: s.speed };
+        let reply = SpeedReply {
+            speed: self.config.read().settings.player.speed,
+        };
 
         Ok(Response::new(reply))
     }
@@ -173,8 +173,9 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::SpeedUp)?;
         // wait until the event was processed
         let _ = rx.await;
-        let s = self.player_stats.lock();
-        let reply = SpeedReply { speed: s.speed };
+        let reply = SpeedReply {
+            speed: self.config.read().settings.player.speed,
+        };
 
         Ok(Response::new(reply))
     }

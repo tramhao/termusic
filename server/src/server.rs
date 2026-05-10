@@ -49,7 +49,6 @@ const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
 struct PlayerStats {
     pub progress: PlayerProgress,
     pub current_track_index: u64,
-    pub speed: i32,
     pub gapless: bool,
     pub radio_title: String,
 }
@@ -62,7 +61,6 @@ impl PlayerStats {
                 total_duration: None,
             },
             current_track_index: 0,
-            speed: 10,
             gapless: true,
             radio_title: String::new(),
         }
@@ -77,10 +75,10 @@ impl PlayerStats {
             progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
             status: status.as_u32(),
-            speed: self.speed,
             gapless: self.gapless,
             radio_title: self.radio_title.clone(),
             volume: u32::from(config.settings.player.volume),
+            speed: config.settings.player.speed,
         }
     }
 
@@ -412,16 +410,12 @@ fn player_loop(
                 let new_speed = player.add_speed(-SPEED_STEP);
                 info!("after speed down: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
-                let mut p_tick = playerstats.lock();
-                p_tick.speed = new_speed;
             }
 
             PlayerCmd::SpeedUp => {
                 let new_speed = player.add_speed(SPEED_STEP);
                 info!("after speed up: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
-                let mut p_tick = playerstats.lock();
-                p_tick.speed = new_speed;
             }
             PlayerCmd::Tick => {
                 // Quit once there are no more connections active and having had at least one connection.
