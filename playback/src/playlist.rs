@@ -41,8 +41,6 @@ pub struct Playlist {
     ///
     /// Practically only used for pre-enqueue / pre-fetch / gapless.
     next_track_index: Option<usize>,
-    /// The currently playing [`Track`]. Does not need to be in `tracks`
-    current_track: Option<Track>,
     /// The loop-/play-mode for the playlist
     loop_mode: LoopMode,
     /// Indexes into `tracks` that have been previously been played (for `previous`)
@@ -60,13 +58,11 @@ impl Playlist {
     pub fn new(config: &SharedServerSettings, stream_tx: StreamTX) -> Self {
         // TODO: shouldn't "loop_mode" be combined with the config ones?
         let loop_mode = config.read().settings.player.loop_mode;
-        let current_track = None;
 
         Self {
             tracks: Vec::new(),
             loop_mode,
             current_track_index: 0,
-            current_track,
             played_index: Vec::new(),
             next_track_index: None,
             need_proceed_to_next: false,
@@ -334,7 +330,6 @@ impl Playlist {
         }
 
         let Some(next_track_idx) = self.get_next_track_index(from_state) else {
-            self.clear_current_track();
             self.stop();
             return true;
         };
@@ -542,9 +537,9 @@ impl Playlist {
     /// Get the current track's Path/Url.
     // TODO: refactor this function to likely return either a consistent URI format or a enum
     // TODO: refactor to return a reference if possible
-    pub fn get_current_track(&mut self) -> Option<String> {
+    pub fn get_current_track_str(&mut self) -> Option<String> {
         let mut result = None;
-        if let Some(track) = self.current_track() {
+        if let Some(track) = self.get_current_track() {
             match track.inner() {
                 MediaTypes::Track(track_data) => {
                     result = Some(track_data.path().to_string_lossy().to_string());
@@ -994,7 +989,7 @@ impl Playlist {
     ///
     /// see [`as_grpc_playlist_tracks#Errors`](Self::as_grpc_playlist_tracks)
     pub fn shuffle(&mut self) {
-        let current_track_file = self.get_current_track();
+        let current_track_file = self.get_current_track_str();
 
         self.tracks.shuffle(&mut rand::rng());
 
@@ -1079,7 +1074,7 @@ impl Playlist {
     ///
     /// if usize cannot be converted to u64
     pub fn remove_deleted_items(&mut self) {
-        if let Some(current_track_file) = self.get_current_track() {
+        if let Some(current_track_file) = self.get_current_track_str() {
             let len = self.tracks.len();
             let old_tracks = std::mem::replace(&mut self.tracks, Vec::with_capacity(len));
 
@@ -1122,23 +1117,15 @@ impl Playlist {
     /// and finally, stop the currently playing track.
     pub fn stop(&mut self) {
         self.set_next_track(None);
-        self.clear_current_track();
     }
 
     #[must_use]
-    pub fn current_track(&self) -> Option<&Track> {
-        if self.current_track.is_some() {
-            return self.current_track.as_ref();
-        }
+    pub fn get_current_track(&self) -> Option<&Track> {
         self.tracks.get(self.current_track_index)
     }
 
     pub fn current_track_as_mut(&mut self) -> Option<&mut Track> {
         self.tracks.get_mut(self.current_track_index)
-    }
-
-    pub fn clear_current_track(&mut self) {
-        self.current_track = None;
     }
 
     #[must_use]

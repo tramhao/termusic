@@ -164,12 +164,20 @@ pub type SharedRunInfo = Arc<RwLock<RunInfo>>;
 pub struct RunInfo {
     /// The current running status that we are targeting, not fully representing what the backend is actually doing.
     status: RunningStatus,
+
+    /// The currently playing [`Track`], if there is one.
+    ///
+    /// This should only be UNSET if `status == RunningStatus::Stopped`.
+    ///
+    /// This may or may not be present in any playlist.
+    current_track: Option<Track>,
 }
 
 impl Default for RunInfo {
     fn default() -> Self {
         Self {
             status: RunningStatus::Stopped,
+            current_track: None,
         }
     }
 }
@@ -200,6 +208,7 @@ impl RunInfo {
     /// and finally, stop the currently playing track.
     pub fn stop(&mut self, tx: &StreamTX) {
         self.set_status(RunningStatus::Stopped, tx);
+        self.clear_current_track();
     }
 
     /// Get the current running status.
@@ -224,6 +233,22 @@ impl RunInfo {
     #[must_use]
     pub fn is_stopped(&self) -> bool {
         self.status == RunningStatus::Stopped
+    }
+
+    /// Set a new currently playing track.
+    pub fn set_current_track(&mut self, track: Track) {
+        self.current_track = Some(track);
+    }
+
+    /// Get the current track, if there is one.
+    #[must_use]
+    pub fn current_track(&self) -> Option<&Track> {
+        self.current_track.as_ref()
+    }
+
+    /// Clear the currently playing track.
+    fn clear_current_track(&mut self) {
+        let _ = self.current_track.take();
     }
 
     /// Send stream events with consistent error handling.
@@ -353,8 +378,8 @@ impl GeneralPlayer {
             // start mpris if new config has it enabled, but is not active yet
             let mut mpris = mpris::Mpris::new(self.cmd_tx.clone());
             // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
-            if let Some(track) = self.playlist.read().current_track() {
-                mpris.add_and_play(track);
+            if let Some(track) = self.run_info.read().current_track() {
+                mpris.set_track(track);
             }
             // the same for volume
             mpris.update_volume(self.volume());
@@ -369,8 +394,8 @@ impl GeneralPlayer {
             let discord = discord::Rpc::default();
 
             // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
-            if let Some(track) = self.playlist.read().current_track() {
-                discord.update(track);
+            if let Some(track) = self.run_info.read().current_track() {
+                discord.set_track(track);
             }
 
             self.discord.replace(discord);
@@ -421,14 +446,15 @@ impl GeneralPlayer {
             return;
         }
 
-        if let Some(track) = playlist.current_track().cloned() {
+        if let Some(track) = playlist.get_current_track().cloned() {
             info!("Starting Track {track:#?}");
+            self.run_info.write().set_current_track(track.clone());
 
             if playlist.has_next_track() {
                 playlist.set_next_track(None);
                 drop(playlist);
                 info!("gapless next track played");
-                self.add_and_play_mpris_discord();
+                self.set_track_mpris_discord();
 
                 self.send_track_changed();
 
@@ -441,7 +467,7 @@ impl GeneralPlayer {
             };
             Handle::current().block_on(wait);
 
-            self.add_and_play_mpris_discord();
+            self.set_track_mpris_discord();
             self.player_restore_last_position();
 
             self.send_track_changed();
@@ -463,17 +489,20 @@ impl GeneralPlayer {
         }));
     }
 
-    fn add_and_play_mpris_discord(&mut self) {
-        if let Some(track) = self.playlist.read().current_track() {
+    /// Set the current track for extra services like Media Control or discord.
+    fn set_track_mpris_discord(&mut self) {
+        if let Some(track) = self.run_info.read().current_track() {
             if let Some(ref mut mpris) = self.mpris {
-                mpris.add_and_play(track);
+                mpris.set_track(track);
             }
 
             if let Some(ref discord) = self.discord {
-                discord.update(track);
+                discord.set_track(track);
             }
         }
     }
+
+    /// Try to enqueue the next track to play, so that it can be seamlessly played.
     pub fn enqueue_next_from_playlist(&mut self) {
         let mut playlist = self.playlist.write();
         if playlist.has_next_track() {
@@ -492,8 +521,8 @@ impl GeneralPlayer {
 
     /// Skip to the next track, if there is one
     pub fn next(&mut self) {
-        if self.playlist.read().current_track().is_some() {
-            debug!("next: current_track is some");
+        if self.playlist.read().get_current_track().is_some() {
+            debug!("next: playlist.current_track is some");
             self.playlist.write().set_next_track(None);
             self.skip_one();
         } else {
@@ -583,7 +612,7 @@ impl GeneralPlayer {
 
                 info!(
                     "Resuming from stopped status. Next track: {:#?}",
-                    playlist_write.current_track()
+                    playlist_write.get_current_track()
                 );
                 drop(playlist_write);
 
@@ -598,7 +627,7 @@ impl GeneralPlayer {
     pub fn seek_relative(&mut self, forward: bool) {
         // fallback to 5 instead of not seeking at all
         let track_len = self
-            .playlist
+            .run_info
             .read()
             .current_track()
             .and_then(Track::duration)
@@ -638,10 +667,11 @@ impl GeneralPlayer {
         Ok(())
     }
 
+    /// Save the current track position to the database.
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
-        let playlist = self.playlist.read();
-        let Some(track) = playlist.current_track() else {
+        let run_info = self.run_info.read();
+        let Some(track) = run_info.current_track() else {
             info!("Not saving Last position as there is no current track");
             return;
         };
@@ -674,13 +704,14 @@ impl GeneralPlayer {
         }
     }
 
+    /// Restore the last known track position for the current track.
     pub fn player_restore_last_position(&mut self) {
-        let playlist = self.playlist.read();
-        let Some(track) = playlist.current_track().cloned() else {
+        let run_info = self.run_info.read();
+        let Some(track) = run_info.current_track().cloned() else {
             info!("Not restoring Last position as there is no current track");
             return;
         };
-        drop(playlist);
+        drop(run_info);
 
         let mut restored = false;
 

@@ -451,7 +451,7 @@ fn player_loop(
                 }
                 p_tick.current_track_index =
                     u64::try_from(playlist.get_current_track_index()).unwrap();
-                if let Some(track) = playlist.current_track() {
+                if let Some(track) = player.run_info.read().current_track() {
                     update_metadata_changed(&mut p_tick, &player, track);
                 }
             }
@@ -535,7 +535,7 @@ fn player_loop(
             }
             PlayerCmd::MetadataChanged => {
                 trace!("Metadata changed");
-                if let Some(track) = player.playlist.read().current_track() {
+                if let Some(track) = player.run_info.read().current_track() {
                     let mut p_tick = playerstats.lock();
                     update_metadata_changed(&mut p_tick, &player, track);
                 }
@@ -579,7 +579,7 @@ fn update_metadata_changed(p_tick: &mut PlayerStats, player: &GeneralPlayer, tra
 ///
 /// Use `use_skip` to skip the next track instead of trying to play it.
 fn player_eos(player: &mut GeneralPlayer, use_skip: bool) {
-    let mut playlist = player.playlist.write();
+    let playlist = player.playlist.read();
     if playlist.is_empty() {
         drop(playlist);
         player.stop();
@@ -599,7 +599,6 @@ fn player_eos(player: &mut GeneralPlayer, use_skip: bool) {
         "current track index: {:?}",
         playlist.get_current_track_index()
     );
-    playlist.clear_current_track();
     drop(playlist);
     // skip the next one as it had already errored via enqueuement, no need to try again
     if use_skip {
