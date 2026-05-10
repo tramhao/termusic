@@ -505,6 +505,14 @@ impl Playlist {
 
         self.tracks.swap(index_a, index_b);
 
+        // Update current track index too if it is the currently playing track, so that we dont continue somewhere else.
+        // TODO: also update `played_index`vec after swapping
+        if self.current_track_index == index_a {
+            self.current_track_index = index_b;
+        } else if self.current_track_index == index_b {
+            self.current_track_index = index_a;
+        }
+
         let index_a = u64::try_from(index_a).unwrap();
         let index_b = u64::try_from(index_b).unwrap();
 
