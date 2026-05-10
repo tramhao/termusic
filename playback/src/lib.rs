@@ -161,15 +161,28 @@ pub type SharedPlaylist = Arc<RwLock<Playlist>>;
 
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
+    /// The backend in use where audio will be output to.
     pub backend: Backend,
+    /// The playlist (currently handles current track info too).
     pub playlist: SharedPlaylist,
+    /// A reference to the server config.
     pub config: SharedServerSettings,
+    /// Simple flag to check in a tick to update some extra information.
     pub current_track_updated: bool,
+
+    /// Media Control (mpris) instance.
     pub mpris: Option<mpris::Mpris>,
+    /// Discord status display RPC.
     pub discord: Option<discord::Rpc>,
+
+    /// Track database.
     pub db: Database,
+    /// Podcast database.
     pub db_podcast: DBPod,
+
+    /// Sender for Player commands.
     pub cmd_tx: PlayerCmdSender,
+    /// Sender for the Streaming Updates.
     pub stream_tx: StreamTX,
 
     /// Keep track of continues backend errors (like `NotFound`) to not keep trying infinitely.
