@@ -157,15 +157,95 @@ pub mod quit_sources {
 
 pub type StreamTX = broadcast::Sender<UpdateEvents>;
 pub type SharedPlaylist = Arc<RwLock<Playlist>>;
+pub type SharedRunInfo = Arc<RwLock<RunInfo>>;
+
+/// Contains all the status for the current playback, which is not backend dependent.
+#[derive(Debug)]
+pub struct RunInfo {
+    /// The current running status that we are targeting, not fully representing what the backend is actually doing.
+    status: RunningStatus,
+}
+
+impl Default for RunInfo {
+    fn default() -> Self {
+        Self {
+            status: RunningStatus::Stopped,
+        }
+    }
+}
+
+impl RunInfo {
+    /// Set the [`RunningStatus`] of the playlist, also sends a stream event.
+    fn set_status(&mut self, status: RunningStatus, tx: &StreamTX) {
+        self.status = status;
+        Self::send_stream_ev(
+            UpdateEvents::PlayStateChanged {
+                playing: status.as_u32(),
+            },
+            tx,
+        );
+    }
+
+    /// Start playing, if not already.
+    pub fn play(&mut self, tx: &StreamTX) {
+        self.set_status(RunningStatus::Running, tx);
+    }
+
+    /// Pause playback.
+    pub fn pause(&mut self, tx: &StreamTX) {
+        self.set_status(RunningStatus::Paused, tx);
+    }
+
+    /// Stop the current playback by setting [`RunningStatus::Stopped`], preventing going to the next track
+    /// and finally, stop the currently playing track.
+    pub fn stop(&mut self, tx: &StreamTX) {
+        self.set_status(RunningStatus::Stopped, tx);
+    }
+
+    /// Get the current running status.
+    #[must_use]
+    pub fn status(&self) -> RunningStatus {
+        self.status
+    }
+
+    /// Get whether the current running status is playing or not.
+    #[must_use]
+    pub fn is_playing(&self) -> bool {
+        self.status == RunningStatus::Running
+    }
+
+    /// Get whether the current running status is paused or not.
+    #[must_use]
+    pub fn is_paused(&self) -> bool {
+        self.status == RunningStatus::Paused
+    }
+
+    /// Get wether the current running status is stopped or not.
+    #[must_use]
+    pub fn is_stopped(&self) -> bool {
+        self.status == RunningStatus::Stopped
+    }
+
+    /// Send stream events with consistent error handling.
+    fn send_stream_ev(ev: UpdateEvents, tx: &StreamTX) {
+        // there is only one error case: no receivers
+        if tx.send(ev).is_err() {
+            debug!("Stream Event not send: No Receivers");
+        }
+    }
+}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     /// The backend in use where audio will be output to.
     pub backend: Backend,
-    /// The playlist (currently handles current track info too).
-    pub playlist: SharedPlaylist,
     /// A reference to the server config.
     pub config: SharedServerSettings,
+
+    /// The playlist.
+    pub playlist: SharedPlaylist,
+    /// The information for the current playback.
+    pub run_info: SharedRunInfo,
 
     /// Media Control (mpris) instance.
     pub mpris: Option<mpris::Mpris>,
@@ -199,6 +279,7 @@ impl GeneralPlayer {
         cmd_tx: PlayerCmdSender,
         stream_tx: StreamTX,
         playlist: SharedPlaylist,
+        run_info: SharedRunInfo,
     ) -> Result<Self> {
         let backend = Backend::new_select(backend, config.clone(), cmd_tx.clone());
 
@@ -229,12 +310,17 @@ impl GeneralPlayer {
 
         Ok(Self {
             backend,
-            playlist,
             config,
+
+            playlist,
+            run_info,
+
             mpris,
             discord,
+
             db,
             db_podcast,
+
             cmd_tx,
             stream_tx,
 
@@ -250,27 +336,6 @@ impl GeneralPlayer {
     /// Reset errors that happened back to 0
     pub fn reset_errors(&mut self) {
         self.errors_since_last_progress = 0;
-    }
-
-    /// Create a new [`GeneralPlayer`], with the default Backend ([`BackendSelect::Rusty`])
-    ///
-    /// # Errors
-    ///
-    /// - if connecting to the database fails
-    /// - if config path creation fails
-    pub fn new(
-        config: SharedServerSettings,
-        cmd_tx: PlayerCmdSender,
-        stream_tx: StreamTX,
-        playlist: SharedPlaylist,
-    ) -> Result<Self> {
-        Self::new_backend(
-            BackendSelect::default(),
-            config,
-            cmd_tx,
-            stream_tx,
-            playlist,
-        )
     }
 
     /// Reload the config from file, on fail continue to use the old
@@ -340,11 +405,14 @@ impl GeneralPlayer {
     ///
     /// if `current_track_index` in playlist is above u32
     pub fn start_play(&mut self) {
-        let mut playlist = self.playlist.write();
-        let original_state = playlist.status();
-        if playlist.is_stopped() | playlist.is_paused() {
-            playlist.set_status(RunningStatus::Running);
+        let mut run_info_w = self.run_info.write();
+        let original_state = run_info_w.status();
+        if run_info_w.is_stopped() | run_info_w.is_paused() {
+            run_info_w.play(&self.stream_tx);
         }
+        drop(run_info_w);
+
+        let mut playlist = self.playlist.write();
 
         if playlist.proceed(original_state) {
             drop(playlist);
@@ -449,7 +517,7 @@ impl GeneralPlayer {
     pub fn toggle_pause(&mut self) {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
-        let status = self.playlist.read().status();
+        let status = self.run_info.read().status();
         match status {
             RunningStatus::Running => {
                 <Self as PlayerTrait>::pause(self);
@@ -467,7 +535,7 @@ impl GeneralPlayer {
     pub fn pause(&mut self) {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
-        let status = self.playlist.read().status();
+        let status = self.run_info.read().status();
         match status {
             RunningStatus::Running => {
                 <Self as PlayerTrait>::pause(self);
@@ -480,7 +548,7 @@ impl GeneralPlayer {
     pub fn play(&mut self) {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
-        let status = self.playlist.read().status();
+        let status = self.run_info.read().status();
         match status {
             RunningStatus::Running => {}
             RunningStatus::Stopped => {
@@ -499,7 +567,7 @@ impl GeneralPlayer {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
         let playlist_read = self.playlist.read();
-        let status = playlist_read.status();
+        let status = self.run_info.read().status();
         match status {
             RunningStatus::Running | RunningStatus::Paused => {}
             RunningStatus::Stopped => {
@@ -510,7 +578,7 @@ impl GeneralPlayer {
 
                 drop(playlist_read);
                 let mut playlist_write = self.playlist.write();
-                playlist_write.clear_current_track();
+                self.run_info.write().stop(&self.stream_tx);
                 playlist_write.proceed_false();
 
                 info!(
@@ -701,7 +769,7 @@ impl PlayerTrait for GeneralPlayer {
     }
     /// This function should not be used directly, use `GeneralPlayer::pause`
     fn pause(&mut self) {
-        self.playlist.write().set_status(RunningStatus::Paused);
+        self.run_info.write().pause(&self.stream_tx);
         self.get_player_mut().pause();
         if let Some(ref mut mpris) = self.mpris {
             mpris.pause();
@@ -712,7 +780,7 @@ impl PlayerTrait for GeneralPlayer {
     }
     /// This function should not be used directly, use `GeneralPlayer::play`
     fn resume(&mut self) {
-        self.playlist.write().set_status(RunningStatus::Running);
+        self.run_info.write().play(&self.stream_tx);
         self.get_player_mut().resume();
         if let Some(ref mut mpris) = self.mpris {
             mpris.resume();
@@ -751,6 +819,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn stop(&mut self) {
+        self.run_info.write().stop(&self.stream_tx);
         self.playlist.write().stop();
         self.get_player_mut().stop();
     }

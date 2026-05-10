@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
@@ -16,8 +16,8 @@ use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, VolumeSigned,
-    quit_sources,
+    PlayerErrorType, PlayerTrait, Playlist, RunInfo, SharedPlaylist, SharedRunInfo, SpeedSigned,
+    VolumeSigned, quit_sources,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -139,11 +139,14 @@ async fn actual_main() -> Result<()> {
     let playlist =
         Playlist::new_shared(&config, stream_tx.clone()).context("Failed to load playlist")?;
 
+    let run_info = Arc::new(RwLock::new(RunInfo::default()));
+
     let music_player_service: MusicPlayerService = MusicPlayerService::new(
         cmd_tx.clone(),
         stream_tx.clone(),
         config.clone(),
         playlist.clone(),
+        run_info.clone(),
     );
     let playerstats = music_player_service.player_stats.clone();
 
@@ -181,6 +184,7 @@ async fn actual_main() -> Result<()> {
                 playerstats,
                 stream_tx,
                 playlist,
+                run_info,
                 active_connections_data,
             );
             let _ = player_handle_os_tx.send(res);
@@ -293,9 +297,11 @@ fn player_loop(
     playerstats: Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
     playlist: SharedPlaylist,
+    run_info: SharedRunInfo,
     active_connections_data: ActiveConnections,
 ) -> Result<()> {
-    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
+    let mut player =
+        GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist, run_info)?;
 
     let mut had_enqueue_error = false;
     let mut should_quit = false;
@@ -426,7 +432,6 @@ fn player_loop(
                 let mut playlist = player.playlist.read();
 
                 if let Some(progress) = player.get_progress() {
-                    let pl_status = playlist.status();
                     p_tick.progress = progress;
 
                     // the following function is "mut", which does not like having the immutable borrow to "playlist"
@@ -435,7 +440,7 @@ fn player_loop(
                     player.update_progress(&p_tick.progress);
 
                     // only reset errors if position is either above 0 or total duration is available and is above 0
-                    if pl_status == RunningStatus::Running
+                    if player.run_info.read().is_playing()
                         && (progress.total_duration.is_some_and(|v| v > Duration::ZERO)
                             || progress.position.is_some_and(|v| v > Duration::ZERO))
                     {

@@ -43,8 +43,6 @@ pub struct Playlist {
     next_track_index: Option<usize>,
     /// The currently playing [`Track`]. Does not need to be in `tracks`
     current_track: Option<Track>,
-    /// The current playing running status of the playlist
-    status: RunningStatus,
     /// The loop-/play-mode for the playlist
     loop_mode: LoopMode,
     /// Indexes into `tracks` that have been previously been played (for `previous`)
@@ -66,7 +64,6 @@ impl Playlist {
 
         Self {
             tracks: Vec::new(),
-            status: RunningStatus::Stopped,
             loop_mode,
             current_track_index: 0,
             current_track,
@@ -568,29 +565,6 @@ impl Playlist {
         let next_index = self.get_next_track_index(RunningStatus::Running)?;
         self.next_track_index = Some(next_index);
         self.tracks.get(next_index)
-    }
-
-    /// Set the [`RunningStatus`] of the playlist, also sends a stream event.
-    pub fn set_status(&mut self, status: RunningStatus) {
-        self.status = status;
-        self.send_stream_ev(UpdateEvents::PlayStateChanged {
-            playing: status.as_u32(),
-        });
-    }
-
-    #[must_use]
-    pub fn is_stopped(&self) -> bool {
-        self.status == RunningStatus::Stopped
-    }
-
-    #[must_use]
-    pub fn is_paused(&self) -> bool {
-        self.status == RunningStatus::Paused
-    }
-
-    #[must_use]
-    pub fn status(&self) -> RunningStatus {
-        self.status
     }
 
     /// Cycle through the loop modes and return the new mode.
@@ -1147,7 +1121,6 @@ impl Playlist {
     /// Stop the current playlist by setting [`RunningStatus::Stopped`], preventing going to the next track
     /// and finally, stop the currently playing track.
     pub fn stop(&mut self) {
-        self.set_status(RunningStatus::Stopped);
         self.set_next_track(None);
         self.clear_current_track();
     }
@@ -1200,14 +1173,6 @@ impl Playlist {
             .send(UpdateEvents::PlaylistChanged(ev))
             .is_err()
         {
-            debug!("Stream Event not send: No Receivers");
-        }
-    }
-
-    /// Send stream events with consistent error handling
-    fn send_stream_ev(&self, ev: UpdateEvents) {
-        // there is only one error case: no receivers
-        if self.stream_tx.send(ev).is_err() {
             debug!("Stream Event not send: No Receivers");
         }
     }

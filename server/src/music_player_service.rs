@@ -10,7 +10,9 @@ use termusiclib::player::{
     PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply,
     StreamUpdates, UpdateMissedEvents, VolumeReply, stream_updates,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, StreamTX};
+use termusicplayback::{
+    PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, SharedRunInfo, StreamTX,
+};
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use tokio_stream::{Stream, StreamExt};
@@ -24,6 +26,7 @@ pub struct MusicPlayerService {
     stream_tx: StreamTX,
     config: SharedServerSettings,
     playlist: SharedPlaylist,
+    run_info: SharedRunInfo,
     pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
@@ -33,6 +36,7 @@ impl MusicPlayerService {
         stream_tx: StreamTX,
         config: SharedServerSettings,
         playlist: SharedPlaylist,
+        run_info: SharedRunInfo,
     ) -> Self {
         let player_stats = PlayerStats::new();
         let config_read = config.read();
@@ -46,6 +50,7 @@ impl MusicPlayerService {
             stream_tx,
             playlist,
             config,
+            run_info,
         }
     }
 }
@@ -90,7 +95,7 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<GetProgressResponse>, Status> {
         let stats = self.player_stats.lock();
         let reply =
-            stats.as_getprogress_response(self.playlist.read().status(), &self.config.read());
+            stats.as_getprogress_response(self.run_info.read().status(), &self.config.read());
 
         Ok(Response::new(reply))
     }
@@ -198,7 +203,7 @@ impl MusicPlayer for MusicPlayerService {
         // wait until the event was processed
         let _ = rx.await;
         let reply = PlayState {
-            status: self.playlist.read().status().as_u32(),
+            status: self.run_info.read().status().as_u32(),
         };
 
         Ok(Response::new(reply))
