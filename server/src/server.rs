@@ -49,7 +49,6 @@ const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
 struct PlayerStats {
     pub progress: PlayerProgress,
     pub current_track_index: u64,
-    pub gapless: bool,
     pub radio_title: String,
 }
 
@@ -61,7 +60,6 @@ impl PlayerStats {
                 total_duration: None,
             },
             current_track_index: 0,
-            gapless: true,
             radio_title: String::new(),
         }
     }
@@ -75,10 +73,10 @@ impl PlayerStats {
             progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
             status: status.as_u32(),
-            gapless: self.gapless,
             radio_title: self.radio_title.clone(),
             volume: u32::from(config.settings.player.volume),
             speed: config.settings.player.speed,
+            gapless: config.settings.player.gapless,
         }
     }
 
@@ -465,8 +463,7 @@ fn player_loop(
             }
             PlayerCmd::ToggleGapless => {
                 let new_gapless = player.toggle_gapless();
-                let mut p_tick = playerstats.lock();
-                p_tick.gapless = new_gapless;
+                info!("after toggle gapless: {new_gapless}");
             }
             PlayerCmd::TogglePause => {
                 info!("player toggled pause");

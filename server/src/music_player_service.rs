@@ -34,9 +34,8 @@ impl MusicPlayerService {
         config: SharedServerSettings,
         playlist: SharedPlaylist,
     ) -> Self {
-        let mut player_stats = PlayerStats::new();
+        let player_stats = PlayerStats::new();
         let config_read = config.read();
-        player_stats.gapless = config_read.settings.player.gapless;
         drop(config_read);
 
         let player_stats = Arc::new(Mutex::new(player_stats));
@@ -187,8 +186,9 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::ToggleGapless)?;
         // wait until the event was processed
         let _ = rx.await;
-        let r = self.player_stats.lock();
-        let reply = GaplessState { gapless: r.gapless };
+        let reply = GaplessState {
+            gapless: self.config.read().settings.player.gapless,
+        };
 
         Ok(Response::new(reply))
     }
