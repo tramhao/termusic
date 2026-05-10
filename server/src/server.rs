@@ -386,17 +386,9 @@ fn player_loop(
             }
             PlayerCmd::SeekBackward => {
                 player.seek_relative(false);
-                let mut p_tick = playerstats.lock();
-                if let Some(progress) = player.get_progress() {
-                    p_tick.progress = progress
-                }
             }
             PlayerCmd::SeekForward => {
                 player.seek_relative(true);
-                let mut p_tick = playerstats.lock();
-                if let Some(progress) = player.get_progress() {
-                    p_tick.progress = progress
-                }
             }
             PlayerCmd::SkipNext => {
                 player.reset_errors();
