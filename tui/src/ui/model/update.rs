@@ -1168,12 +1168,12 @@ impl Model {
                 // handle "no more tracks / stopped" in this
                 if self.playback.is_stopped() {
                     self.playback.clear_current_track();
-                    self.lyric_update_title();
                     self.lyric_update();
                     self.progress_update(Some(Duration::ZERO), Duration::ZERO);
                 }
 
                 self.progress_update_title();
+                self.lyric_update_title();
             }
             UpdateEvents::TrackChanged(track_changed_info) => {
                 if let Some(progress) = track_changed_info.progress {
@@ -1183,12 +1183,10 @@ impl Model {
                     );
                 }
 
-                if track_changed_info.current_track_updated {
-                    self.handle_current_track_index(
-                        usize::try_from(track_changed_info.current_track_index).unwrap(),
-                        false,
-                    );
-                }
+                self.handle_current_track_index(
+                    usize::try_from(track_changed_info.current_track_index).unwrap(),
+                    false,
+                );
 
                 if let Some(title) = track_changed_info.title {
                     self.lyric_update_for_radio(title);

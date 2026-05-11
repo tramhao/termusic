@@ -12,6 +12,7 @@ use rand::RngExt;
 use rand::seq::SliceRandom;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
+use termusiclib::player;
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistShuffledInfo;
 use termusiclib::player::PlaylistSwapInfo;
@@ -22,7 +23,6 @@ use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
-use termusiclib::player::{self, RunningStatus};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::{MediaTypes, Track, TrackData};
@@ -41,16 +41,11 @@ pub struct Playlist {
     ///
     /// Practically only used for pre-enqueue / pre-fetch / gapless.
     next_track_index: Option<usize>,
-    /// The currently playing [`Track`]. Does not need to be in `tracks`
-    current_track: Option<Track>,
-    /// The current playing running status of the playlist
-    status: RunningStatus,
     /// The loop-/play-mode for the playlist
     loop_mode: LoopMode,
     /// Indexes into `tracks` that have been previously been played (for `previous`)
     played_index: Vec<usize>,
-    /// Indicator if the playlist should advance the `current_*` and `next_*` values
-    need_proceed_to_next: bool,
+    /// Sender for the Streaming Updates.
     stream_tx: StreamTX,
 
     /// Indicator if we need to save the playlist for interval saving
@@ -60,19 +55,14 @@ pub struct Playlist {
 impl Playlist {
     /// Create a new playlist instance with 0 tracks
     pub fn new(config: &SharedServerSettings, stream_tx: StreamTX) -> Self {
-        // TODO: shouldn't "loop_mode" be combined with the config ones?
         let loop_mode = config.read().settings.player.loop_mode;
-        let current_track = None;
 
         Self {
             tracks: Vec::new(),
-            status: RunningStatus::Stopped,
             loop_mode,
             current_track_index: 0,
-            current_track,
             played_index: Vec::new(),
             next_track_index: None,
-            need_proceed_to_next: false,
             stream_tx,
             is_modified: false,
         }
@@ -93,23 +83,97 @@ impl Playlist {
         Ok(Arc::new(RwLock::new(playlist)))
     }
 
-    /// Advance the playlist to the next track.
+    /// Get the current track to play in this playlist.
     ///
-    /// Returns whether playback should be stopped.
-    pub fn proceed(&mut self, from_state: RunningStatus) -> bool {
-        debug!("need to proceed to next: {}", self.need_proceed_to_next);
-        self.is_modified = true;
-        if self.need_proceed_to_next {
-            self.next(from_state)
-        } else {
-            self.need_proceed_to_next = true;
-            false
-        }
+    /// Does not modify the playlist.
+    #[must_use]
+    pub fn get_current_track(&self) -> Option<&Track> {
+        self.tracks.get(self.current_track_index)
     }
 
-    /// Set `need_proceed_to_next` to `false`
-    pub fn proceed_false(&mut self) {
-        self.need_proceed_to_next = false;
+    /// Get the current track index to play in this playlist.
+    #[must_use]
+    pub fn get_current_track_index(&self) -> usize {
+        self.current_track_index
+    }
+
+    /// Set the state so that the next track is the current track.
+    ///
+    /// If [`None`] is returned, this playlist is done playing.
+    pub fn next(&mut self, force_next: bool) -> Option<&Track> {
+        debug!("Playlist next");
+        self.played_index.push(self.current_track_index);
+
+        // use next idx if present
+        if let Some(next_idx) = self.next_track_index.take() {
+            self.current_track_index = next_idx;
+            self.is_modified = true;
+
+            return self.get_current_track();
+        }
+        // otherwise, try to generate a new idx
+        self.current_track_index = self.next_index_loopmode(force_next)?;
+        self.is_modified = true;
+
+        self.get_current_track()
+    }
+
+    /// Try to fetch the next track for enqueuing.
+    pub fn fetch_next(&mut self) -> Option<&Track> {
+        if self.next_track_index.is_some() {
+            return self.get_next_track();
+        }
+
+        self.next_track_index = self.next_index_loopmode(false);
+
+        self.get_next_track()
+    }
+
+    /// Set the state so that the previous track is the current track.
+    ///
+    /// Uses `played_index` vec before generating a previous value.
+    pub fn previous(&mut self) -> Option<&Track> {
+        debug!("Playlist previous");
+
+        let previous = match self.played_index.pop() {
+            Some(v) => v,
+            None => self.previous_index_loopmode(),
+        };
+
+        self.current_track_index = previous;
+        self.is_modified = true;
+
+        self.get_current_track()
+    }
+
+    /// Skip to a specific track in the playlist.
+    ///
+    /// # Errors
+    ///
+    /// - if converting u64 to usize fails
+    /// - if the given info's tracks mismatch with the actual playlist
+    pub fn set_play_specific(&mut self, info: &PlaylistPlaySpecific) -> Result<Option<&Track>> {
+        debug!("Playlist specific");
+        let new_index =
+            usize::try_from(info.track_index).context("convert track_index(u64) to usize")?;
+
+        let Some(track_at_idx) = self.tracks.get(new_index) else {
+            bail!("Index {new_index} is out of bound {}", self.tracks.len())
+        };
+
+        Self::check_same_source(&info.id, track_at_idx.inner(), new_index)?;
+
+        self.next_track_index = Some(new_index);
+
+        Ok(self.next(true))
+    }
+
+    /// Get the next track to play in this playlist.
+    ///
+    /// Does not modify the playlist.
+    #[must_use]
+    pub fn get_next_track(&self) -> Option<&Track> {
+        self.next_track_index.and_then(|v| self.tracks.get(v))
     }
 
     /// Load the playlist from the file.
@@ -324,28 +388,6 @@ impl Playlist {
         Ok(false)
     }
 
-    /// Change to the next track.
-    ///
-    /// Returns whether playback should stop
-    pub fn next(&mut self, from_state: RunningStatus) -> bool {
-        self.played_index.push(self.current_track_index);
-        // Note: the next index is *not* taken here, as ".proceed/next" is called first,
-        // then "has_next_track" is later used to check if enqueuing has used.
-        if let Some(index) = self.next_track_index {
-            self.current_track_index = index;
-            return false;
-        }
-
-        let Some(next_track_idx) = self.get_next_track_index(from_state) else {
-            self.clear_current_track();
-            self.stop();
-            return true;
-        };
-        self.current_track_index = next_track_idx;
-
-        false
-    }
-
     /// Check that the given `info` track source matches the given `track_inner` types.
     ///
     /// # Errors
@@ -392,34 +434,8 @@ impl Playlist {
         Ok(())
     }
 
-    /// Skip to a specific track in the playlist
-    ///
-    /// # Errors
-    ///
-    /// - if converting u64 to usize fails
-    /// - if the given info's tracks mismatch with the actual playlist
-    pub fn play_specific(&mut self, info: &PlaylistPlaySpecific) -> Result<()> {
-        let new_index =
-            usize::try_from(info.track_index).context("convert track_index(u64) to usize")?;
-
-        let Some(track_at_idx) = self.tracks.get(new_index) else {
-            bail!("Index {new_index} is out of bound {}", self.tracks.len())
-        };
-
-        Self::check_same_source(&info.id, track_at_idx.inner(), new_index)?;
-
-        self.played_index.push(self.current_track_index);
-        self.set_next_track(None);
-        self.set_current_track_index(new_index);
-        self.proceed_false();
-        self.is_modified = true;
-
-        Ok(())
-    }
-
     /// Get the next track index based on the [`LoopMode`] used.
-    // TODO: i dont quite like having to rely on RunningStatus for this; maybe once playlist is refactored a better option would be available to indicate change reason (like user next, or last track EOS)
-    fn get_next_track_index(&self, from_state: RunningStatus) -> Option<usize> {
+    fn next_index_loopmode(&self, force_next: bool) -> Option<usize> {
         let mut next_track_index = self.current_track_index;
         match self.loop_mode {
             LoopMode::Track => {}
@@ -432,7 +448,7 @@ impl Playlist {
             LoopMode::PlaylistOnce => {
                 next_track_index += 1;
                 if next_track_index >= self.len() {
-                    if from_state == RunningStatus::Stopped {
+                    if force_next {
                         next_track_index = 0;
                     } else {
                         return None;
@@ -446,33 +462,20 @@ impl Playlist {
         Some(next_track_index)
     }
 
-    /// Change to the previous track played.
-    ///
-    /// This uses `played_index` vec, if available, otherwise uses [`LoopMode`].
-    pub fn previous(&mut self) {
-        // unset next track as we now want a previous track instead of the next enqueued
-        self.set_next_track(None);
-
-        if let Some(index) = self.played_index.pop() {
-            self.current_track_index = index;
-            self.is_modified = true;
-            return;
-        }
+    /// Get the previous track index based on the [`LoopMode`].
+    fn previous_index_loopmode(&self) -> usize {
         match self.loop_mode {
-            LoopMode::Track => {}
+            LoopMode::Track => self.current_track_index,
             // doing both with one impl is fine as long as we dont have a "reverse play" option
             LoopMode::Playlist | LoopMode::PlaylistOnce => {
                 if self.current_track_index == 0 {
-                    self.current_track_index = self.len() - 1;
+                    self.len() - 1
                 } else {
-                    self.current_track_index -= 1;
+                    self.current_track_index - 1
                 }
             }
-            LoopMode::Random => {
-                self.current_track_index = self.get_random_index();
-            }
+            LoopMode::Random => self.get_random_index(),
         }
-        self.is_modified = true;
     }
 
     #[must_use]
@@ -483,34 +486,6 @@ impl Playlist {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.tracks.is_empty()
-    }
-
-    /// Swap the `index` with the one below(+1) it, if there is one.
-    pub fn swap_down(&mut self, index: usize) {
-        if index < self.len().saturating_sub(1) {
-            self.tracks.swap(index, index + 1);
-            // handle index
-            if index == self.current_track_index {
-                self.current_track_index += 1;
-            } else if index == self.current_track_index - 1 {
-                self.current_track_index -= 1;
-            }
-            self.is_modified = true;
-        }
-    }
-
-    /// Swap the `index` with the one above(-1) it, if there is one.
-    pub fn swap_up(&mut self, index: usize) {
-        if index > 0 {
-            self.tracks.swap(index, index - 1);
-            // handle index
-            if index == self.current_track_index {
-                self.current_track_index -= 1;
-            } else if index == self.current_track_index + 1 {
-                self.current_track_index += 1;
-            }
-            self.is_modified = true;
-        }
     }
 
     /// Swap specific indexes, sends swap event.
@@ -530,6 +505,14 @@ impl Playlist {
 
         self.tracks.swap(index_a, index_b);
 
+        // Update current track index too if it is the currently playing track, so that we dont continue somewhere else.
+        // TODO: also update `played_index`vec after swapping
+        if self.current_track_index == index_a {
+            self.current_track_index = index_b;
+        } else if self.current_track_index == index_b {
+            self.current_track_index = index_a;
+        }
+
         let index_a = u64::try_from(index_a).unwrap();
         let index_b = u64::try_from(index_b).unwrap();
 
@@ -545,9 +528,9 @@ impl Playlist {
     /// Get the current track's Path/Url.
     // TODO: refactor this function to likely return either a consistent URI format or a enum
     // TODO: refactor to return a reference if possible
-    pub fn get_current_track(&mut self) -> Option<String> {
+    fn get_current_track_internal(&mut self) -> Option<String> {
         let mut result = None;
-        if let Some(track) = self.current_track() {
+        if let Some(track) = self.get_current_track() {
             match track.inner() {
                 MediaTypes::Track(track_data) => {
                     result = Some(track_data.path().to_string_lossy().to_string());
@@ -561,36 +544,6 @@ impl Playlist {
             }
         }
         result
-    }
-
-    /// Get the next track index and return a reference to it.
-    pub fn fetch_next_track(&mut self) -> Option<&Track> {
-        let next_index = self.get_next_track_index(RunningStatus::Running)?;
-        self.next_track_index = Some(next_index);
-        self.tracks.get(next_index)
-    }
-
-    /// Set the [`RunningStatus`] of the playlist, also sends a stream event.
-    pub fn set_status(&mut self, status: RunningStatus) {
-        self.status = status;
-        self.send_stream_ev(UpdateEvents::PlayStateChanged {
-            playing: status.as_u32(),
-        });
-    }
-
-    #[must_use]
-    pub fn is_stopped(&self) -> bool {
-        self.status == RunningStatus::Stopped
-    }
-
-    #[must_use]
-    pub fn is_paused(&self) -> bool {
-        self.status == RunningStatus::Paused
-    }
-
-    #[must_use]
-    pub fn status(&self) -> RunningStatus {
-        self.status
     }
 
     /// Cycle through the loop modes and return the new mode.
@@ -1009,7 +962,6 @@ impl Playlist {
         self.played_index.clear();
         self.next_track_index.take();
         self.current_track_index = 0;
-        self.need_proceed_to_next = false;
 
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistCleared);
     }
@@ -1020,7 +972,7 @@ impl Playlist {
     ///
     /// see [`as_grpc_playlist_tracks#Errors`](Self::as_grpc_playlist_tracks)
     pub fn shuffle(&mut self) {
-        let current_track_file = self.get_current_track();
+        let current_track_file = self.get_current_track_internal();
 
         self.tracks.shuffle(&mut rand::rng());
 
@@ -1062,7 +1014,7 @@ impl Playlist {
             .collect::<Result<_>>()?;
 
         Ok(PlaylistTracks {
-            current_track_index: u64::try_from(self.get_current_track_index())
+            current_track_index: u64::try_from(self.current_track_index)
                 .context("current_track_index(usize) to u64")?,
             tracks,
         })
@@ -1105,7 +1057,7 @@ impl Playlist {
     ///
     /// if usize cannot be converted to u64
     pub fn remove_deleted_items(&mut self) {
-        if let Some(current_track_file) = self.get_current_track() {
+        if let Some(current_track_file) = self.get_current_track_internal() {
             let len = self.tracks.len();
             let old_tracks = std::mem::replace(&mut self.tracks, Vec::with_capacity(len));
 
@@ -1144,54 +1096,6 @@ impl Playlist {
         }
     }
 
-    /// Stop the current playlist by setting [`RunningStatus::Stopped`], preventing going to the next track
-    /// and finally, stop the currently playing track.
-    pub fn stop(&mut self) {
-        self.set_status(RunningStatus::Stopped);
-        self.set_next_track(None);
-        self.clear_current_track();
-    }
-
-    #[must_use]
-    pub fn current_track(&self) -> Option<&Track> {
-        if self.current_track.is_some() {
-            return self.current_track.as_ref();
-        }
-        self.tracks.get(self.current_track_index)
-    }
-
-    pub fn current_track_as_mut(&mut self) -> Option<&mut Track> {
-        self.tracks.get_mut(self.current_track_index)
-    }
-
-    pub fn clear_current_track(&mut self) {
-        self.current_track = None;
-    }
-
-    #[must_use]
-    pub fn get_current_track_index(&self) -> usize {
-        self.current_track_index
-    }
-
-    pub fn set_current_track_index(&mut self, index: usize) {
-        self.current_track_index = index;
-    }
-
-    #[must_use]
-    pub fn next_track(&self) -> Option<&Track> {
-        let index = self.next_track_index?;
-        self.tracks.get(index)
-    }
-
-    pub fn set_next_track(&mut self, track_idx: Option<usize>) {
-        self.next_track_index = track_idx;
-    }
-
-    #[must_use]
-    pub fn has_next_track(&self) -> bool {
-        self.next_track_index.is_some()
-    }
-
     /// Send Playlist stream events with consistent error handling
     fn send_stream_ev_pl(&self, ev: UpdatePlaylistEvents) {
         // there is only one error case: no receivers
@@ -1200,14 +1104,6 @@ impl Playlist {
             .send(UpdateEvents::PlaylistChanged(ev))
             .is_err()
         {
-            debug!("Stream Event not send: No Receivers");
-        }
-    }
-
-    /// Send stream events with consistent error handling
-    fn send_stream_ev(&self, ev: UpdateEvents) {
-        // there is only one error case: no receivers
-        if self.stream_tx.send(ev).is_err() {
             debug!("Stream Event not send: No Receivers");
         }
     }

@@ -120,7 +120,6 @@ pub enum PlayerCmd {
 
     // Mainly called from outside sources (client, mpris)
     CycleLoop,
-    GetProgress,
     SkipPrevious,
     Pause,
     Play,
@@ -158,22 +157,155 @@ pub mod quit_sources {
 
 pub type StreamTX = broadcast::Sender<UpdateEvents>;
 pub type SharedPlaylist = Arc<RwLock<Playlist>>;
+pub type SharedRunInfo = Arc<RwLock<RunInfo>>;
+
+/// Contains all the status for the current playback, which is not backend dependent.
+#[derive(Debug)]
+pub struct RunInfo {
+    /// The current running status that we are targeting, not fully representing what the backend is actually doing.
+    status: RunningStatus,
+
+    /// The currently playing [`Track`], if there is one.
+    ///
+    /// This should only be UNSET if `status == RunningStatus::Stopped`.
+    ///
+    /// This may or may not be present in any playlist.
+    current_track: Option<Track>,
+    /// The track that has been enqueued.
+    ///
+    /// This is used to know whether something had been enqueued and if something changed in-between.
+    enqueued: Option<Track>,
+}
+
+impl Default for RunInfo {
+    fn default() -> Self {
+        Self {
+            status: RunningStatus::Stopped,
+            current_track: None,
+            enqueued: None,
+        }
+    }
+}
+
+impl RunInfo {
+    /// Set the [`RunningStatus`] of the playlist, also sends a stream event.
+    fn set_status(&mut self, status: RunningStatus, tx: &StreamTX) {
+        self.status = status;
+        Self::send_stream_ev(
+            UpdateEvents::PlayStateChanged {
+                playing: status.as_u32(),
+            },
+            tx,
+        );
+    }
+
+    /// Start playing, if not already.
+    pub fn play(&mut self, tx: &StreamTX) {
+        self.set_status(RunningStatus::Running, tx);
+    }
+
+    /// Pause playback.
+    pub fn pause(&mut self, tx: &StreamTX) {
+        self.set_status(RunningStatus::Paused, tx);
+    }
+
+    /// Stop the current playback by setting [`RunningStatus::Stopped`], preventing going to the next track
+    /// and finally, stop the currently playing track.
+    pub fn stop(&mut self, tx: &StreamTX) {
+        self.set_status(RunningStatus::Stopped, tx);
+        self.clear_current_track();
+    }
+
+    /// Get the current running status.
+    #[must_use]
+    pub fn status(&self) -> RunningStatus {
+        self.status
+    }
+
+    /// Get whether the current running status is playing or not.
+    #[must_use]
+    pub fn is_playing(&self) -> bool {
+        self.status == RunningStatus::Running
+    }
+
+    /// Get whether the current running status is paused or not.
+    #[must_use]
+    pub fn is_paused(&self) -> bool {
+        self.status == RunningStatus::Paused
+    }
+
+    /// Get wether the current running status is stopped or not.
+    #[must_use]
+    pub fn is_stopped(&self) -> bool {
+        self.status == RunningStatus::Stopped
+    }
+
+    /// Set a new currently playing track.
+    pub fn set_current_track(&mut self, track: Track) {
+        self.current_track = Some(track);
+    }
+
+    /// Get the current track, if there is one.
+    #[must_use]
+    pub fn current_track(&self) -> Option<&Track> {
+        self.current_track.as_ref()
+    }
+
+    /// Clear the currently playing track.
+    fn clear_current_track(&mut self) {
+        let _ = self.current_track.take();
+    }
+
+    /// Set the track that has been enqueued for seamless playback
+    pub fn set_enqueued(&mut self, track: Track) {
+        self.enqueued = Some(track);
+    }
+
+    /// Get the current enqueued Track value and reset it.
+    pub fn take_enqueued(&mut self) -> Option<Track> {
+        self.enqueued.take()
+    }
+
+    /// Send stream events with consistent error handling.
+    fn send_stream_ev(ev: UpdateEvents, tx: &StreamTX) {
+        // there is only one error case: no receivers
+        if tx.send(ev).is_err() {
+            debug!("Stream Event not send: No Receivers");
+        }
+    }
+}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
+    /// The backend in use where audio will be output to.
     pub backend: Backend,
-    pub playlist: SharedPlaylist,
+    /// A reference to the server config.
     pub config: SharedServerSettings,
-    pub current_track_updated: bool,
+
+    /// The playlist.
+    pub playlist: SharedPlaylist,
+    /// The information for the current playback.
+    pub run_info: SharedRunInfo,
+
+    /// Media Control (mpris) instance.
     pub mpris: Option<mpris::Mpris>,
+    /// Discord status display RPC.
     pub discord: Option<discord::Rpc>,
+
+    /// Track database.
     pub db: Database,
+    /// Podcast database.
     pub db_podcast: DBPod,
+
+    /// Sender for Player commands.
     pub cmd_tx: PlayerCmdSender,
+    /// Sender for the Streaming Updates.
     pub stream_tx: StreamTX,
 
     /// Keep track of continues backend errors (like `NotFound`) to not keep trying infinitely.
     pub errors_since_last_progress: usize,
+    /// Track whether the current track is being skipped.
+    pub in_skip: bool, // TODO: evaluate if this option can be omitted somehow
 }
 
 impl GeneralPlayer {
@@ -189,6 +321,7 @@ impl GeneralPlayer {
         cmd_tx: PlayerCmdSender,
         stream_tx: StreamTX,
         playlist: SharedPlaylist,
+        run_info: SharedRunInfo,
     ) -> Result<Self> {
         let backend = Backend::new_select(backend, config.clone(), cmd_tx.clone());
 
@@ -219,17 +352,22 @@ impl GeneralPlayer {
 
         Ok(Self {
             backend,
-            playlist,
             config,
+
+            playlist,
+            run_info,
+
             mpris,
             discord,
+
             db,
             db_podcast,
+
             cmd_tx,
             stream_tx,
-            current_track_updated: false,
 
             errors_since_last_progress: 0,
+            in_skip: false,
         })
     }
 
@@ -241,27 +379,6 @@ impl GeneralPlayer {
     /// Reset errors that happened back to 0
     pub fn reset_errors(&mut self) {
         self.errors_since_last_progress = 0;
-    }
-
-    /// Create a new [`GeneralPlayer`], with the default Backend ([`BackendSelect::Rusty`])
-    ///
-    /// # Errors
-    ///
-    /// - if connecting to the database fails
-    /// - if config path creation fails
-    pub fn new(
-        config: SharedServerSettings,
-        cmd_tx: PlayerCmdSender,
-        stream_tx: StreamTX,
-        playlist: SharedPlaylist,
-    ) -> Result<Self> {
-        Self::new_backend(
-            BackendSelect::default(),
-            config,
-            cmd_tx,
-            stream_tx,
-            playlist,
-        )
     }
 
     /// Reload the config from file, on fail continue to use the old
@@ -279,8 +396,8 @@ impl GeneralPlayer {
             // start mpris if new config has it enabled, but is not active yet
             let mut mpris = mpris::Mpris::new(self.cmd_tx.clone());
             // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
-            if let Some(track) = self.playlist.read().current_track() {
-                mpris.add_and_play(track);
+            if let Some(track) = self.run_info.read().current_track() {
+                mpris.set_track(track);
             }
             // the same for volume
             mpris.update_volume(self.volume());
@@ -295,8 +412,8 @@ impl GeneralPlayer {
             let discord = discord::Rpc::default();
 
             // actually set the metadata of the currently playing track, otherwise the controls will work but no title or coverart will be set until next track
-            if let Some(track) = self.playlist.read().current_track() {
-                discord.update(track);
+            if let Some(track) = self.run_info.read().current_track() {
+                discord.set_track(track);
             }
 
             self.discord.replace(discord);
@@ -330,46 +447,67 @@ impl GeneralPlayer {
     /// # Panics
     ///
     /// if `current_track_index` in playlist is above u32
-    pub fn start_play(&mut self) {
+    pub fn start_play(&mut self, from_eos: bool) {
+        let mut run_info = self.run_info.write();
+        if run_info.is_stopped() | run_info.is_paused() {
+            run_info.play(&self.stream_tx);
+        }
+
         let mut playlist = self.playlist.write();
-        let original_state = playlist.status();
-        if playlist.is_stopped() | playlist.is_paused() {
-            playlist.set_status(RunningStatus::Running);
-        }
 
-        if playlist.proceed(original_state) {
-            drop(playlist);
-            info!("Stopping playback due to \"proceed\" saying so");
-            self.stop();
-            return;
-        }
+        let next_track = if self.in_skip || !from_eos {
+            // When in-skip or not from EOS, get the current track, as "next" or "previous" has already set it (in_skip), or we want to play the current one as we just loaded the playlist
+            self.in_skip = false;
+            playlist.get_current_track()
+        } else {
+            // When from EOS, we want to respect the LoopMode decision, so no force here.
+            // Force should only be done in Skip / Next.
+            playlist.next(false)
+        };
 
-        if let Some(track) = playlist.current_track().cloned() {
-            info!("Starting Track {track:#?}");
-
-            if playlist.has_next_track() {
-                playlist.set_next_track(None);
+        if let Some(enqueued_track) = run_info.take_enqueued() {
+            let Some(track) = next_track else {
+                error!("Desync: enqueue flag set, but playlist did not have a next anymore!");
                 drop(playlist);
-                self.current_track_updated = true;
-                info!("gapless next track played");
-                self.add_and_play_mpris_discord();
+                drop(run_info);
+                self.stop();
+                return;
+            };
+            if enqueued_track.as_track_source() == track.as_track_source() {
+                info!("Starting seamless Track {track:#?}");
+                run_info.set_current_track(track.clone());
+                drop(playlist);
+                drop(run_info);
+                self.set_track_mpris_discord();
 
                 self.send_track_changed();
 
                 return;
             }
-            drop(playlist);
 
-            self.current_track_updated = true;
+            info!("Enqueued Track did not match next track from playlist, skipping enqueued!");
+        }
+
+        if let Some(track) = next_track.cloned() {
+            drop(playlist);
+            drop(run_info);
+            info!("Starting Track {track:#?}");
+
             let wait = async {
                 self.add_and_play(&track).await;
             };
             Handle::current().block_on(wait);
+            self.run_info.write().set_current_track(track);
 
-            self.add_and_play_mpris_discord();
+            self.set_track_mpris_discord();
             self.player_restore_last_position();
 
             self.send_track_changed();
+        } else {
+            info!("Stopping due to not having a next track");
+            drop(playlist);
+            drop(run_info);
+            self.stop();
         }
     }
 
@@ -383,47 +521,46 @@ impl GeneralPlayer {
         self.send_stream_ev(UpdateEvents::TrackChanged(TrackChangedInfo {
             current_track_index: u64::try_from(self.playlist.read().get_current_track_index())
                 .unwrap(),
-            current_track_updated: self.current_track_updated,
             title: self.media_info().media_title,
             progress: self.get_progress(),
         }));
     }
 
-    fn add_and_play_mpris_discord(&mut self) {
-        if let Some(track) = self.playlist.read().current_track() {
+    /// Set the current track for extra services like Media Control or discord.
+    fn set_track_mpris_discord(&mut self) {
+        if let Some(track) = self.run_info.read().current_track() {
             if let Some(ref mut mpris) = self.mpris {
-                mpris.add_and_play(track);
+                mpris.set_track(track);
             }
 
             if let Some(ref discord) = self.discord {
-                discord.update(track);
+                discord.set_track(track);
             }
         }
     }
+
+    /// Try to enqueue the next track to play, so that it can be seamlessly played.
     pub fn enqueue_next_from_playlist(&mut self) {
         let mut playlist = self.playlist.write();
-        if playlist.has_next_track() {
-            return;
-        }
-
-        let Some(track) = playlist.fetch_next_track().cloned() else {
+        let Some(next_track) = playlist.fetch_next().cloned() else {
+            debug!("No next track, not enqueuing!");
             return;
         };
         drop(playlist);
 
-        self.enqueue_next(&track);
+        self.enqueue_next(&next_track);
 
-        info!("Next track enqueued: {track:#?}");
+        info!("Next track enqueued: {next_track:#?}");
     }
 
     /// Skip to the next track, if there is one
     pub fn next(&mut self) {
-        if self.playlist.read().current_track().is_some() {
-            debug!("next: current_track is some");
-            self.playlist.write().set_next_track(None);
+        let has_next = self.playlist.write().next(true).is_some();
+        debug!("next: has_next: {has_next:#?}");
+
+        if has_next {
             self.skip_one();
         } else {
-            info!("next: playlist is empty, stopping");
             self.stop();
         }
     }
@@ -431,10 +568,15 @@ impl GeneralPlayer {
     /// Switch & Play the previous track in the playlist
     pub fn previous(&mut self) {
         let mut playlist = self.playlist.write();
-        playlist.previous();
-        playlist.proceed_false();
+        let has_previous = playlist.previous().is_some();
         drop(playlist);
-        self.next();
+        debug!("previous: has_previous: {has_previous:#?}");
+
+        if has_previous {
+            self.skip_one();
+        } else {
+            self.stop();
+        }
     }
 
     /// Resume playback if paused, pause playback if running.
@@ -443,7 +585,7 @@ impl GeneralPlayer {
     pub fn toggle_pause(&mut self) {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
-        let status = self.playlist.read().status();
+        let status = self.run_info.read().status();
         match status {
             RunningStatus::Running => {
                 <Self as PlayerTrait>::pause(self);
@@ -461,7 +603,7 @@ impl GeneralPlayer {
     pub fn pause(&mut self) {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
-        let status = self.playlist.read().status();
+        let status = self.run_info.read().status();
         match status {
             RunningStatus::Running => {
                 <Self as PlayerTrait>::pause(self);
@@ -474,7 +616,7 @@ impl GeneralPlayer {
     pub fn play(&mut self) {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
-        let status = self.playlist.read().status();
+        let status = self.run_info.read().status();
         match status {
             RunningStatus::Running => {}
             RunningStatus::Stopped => {
@@ -493,7 +635,7 @@ impl GeneralPlayer {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
         let playlist_read = self.playlist.read();
-        let status = playlist_read.status();
+        let status = self.run_info.read().status();
         match status {
             RunningStatus::Running | RunningStatus::Paused => {}
             RunningStatus::Stopped => {
@@ -503,17 +645,11 @@ impl GeneralPlayer {
                 }
 
                 drop(playlist_read);
-                let mut playlist_write = self.playlist.write();
-                playlist_write.clear_current_track();
-                playlist_write.proceed_false();
+                self.run_info.write().stop(&self.stream_tx);
 
-                info!(
-                    "Resuming from stopped status. Next track: {:#?}",
-                    playlist_write.current_track()
-                );
-                drop(playlist_write);
+                info!("Resuming from stopped status");
 
-                self.start_play();
+                self.start_play(false);
             }
         }
     }
@@ -524,7 +660,7 @@ impl GeneralPlayer {
     pub fn seek_relative(&mut self, forward: bool) {
         // fallback to 5 instead of not seeking at all
         let track_len = self
-            .playlist
+            .run_info
             .read()
             .current_track()
             .and_then(Track::duration)
@@ -564,10 +700,11 @@ impl GeneralPlayer {
         Ok(())
     }
 
+    /// Save the current track position to the database.
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
-        let playlist = self.playlist.read();
-        let Some(track) = playlist.current_track() else {
+        let run_info = self.run_info.read();
+        let Some(track) = run_info.current_track() else {
             info!("Not saving Last position as there is no current track");
             return;
         };
@@ -600,13 +737,14 @@ impl GeneralPlayer {
         }
     }
 
+    /// Restore the last known track position for the current track.
     pub fn player_restore_last_position(&mut self) {
-        let playlist = self.playlist.read();
-        let Some(track) = playlist.current_track().cloned() else {
+        let run_info = self.run_info.read();
+        let Some(track) = run_info.current_track().cloned() else {
             info!("Not restoring Last position as there is no current track");
             return;
         };
-        drop(playlist);
+        drop(run_info);
 
         let mut restored = false;
 
@@ -695,7 +833,7 @@ impl PlayerTrait for GeneralPlayer {
     }
     /// This function should not be used directly, use `GeneralPlayer::pause`
     fn pause(&mut self) {
-        self.playlist.write().set_status(RunningStatus::Paused);
+        self.run_info.write().pause(&self.stream_tx);
         self.get_player_mut().pause();
         if let Some(ref mut mpris) = self.mpris {
             mpris.pause();
@@ -706,7 +844,7 @@ impl PlayerTrait for GeneralPlayer {
     }
     /// This function should not be used directly, use `GeneralPlayer::play`
     fn resume(&mut self) {
-        self.playlist.write().set_status(RunningStatus::Running);
+        self.run_info.write().play(&self.stream_tx);
         self.get_player_mut().resume();
         if let Some(ref mut mpris) = self.mpris {
             mpris.resume();
@@ -745,7 +883,8 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn stop(&mut self) {
-        self.playlist.write().stop();
+        self.in_skip = false;
+        self.run_info.write().stop(&self.stream_tx);
         self.get_player_mut().stop();
     }
 
@@ -763,6 +902,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn skip_one(&mut self) {
+        self.in_skip = true;
         self.get_player_mut().skip_one();
     }
 
@@ -771,6 +911,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn enqueue_next(&mut self, track: &Track) {
+        self.run_info.write().set_enqueued(track.clone());
         self.get_player_mut().enqueue_next(track);
     }
 

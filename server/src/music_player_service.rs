@@ -10,7 +10,9 @@ use termusiclib::player::{
     PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply,
     StreamUpdates, UpdateMissedEvents, VolumeReply, stream_updates,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, StreamTX};
+use termusicplayback::{
+    PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, SharedRunInfo, StreamTX,
+};
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use tokio_stream::{Stream, StreamExt};
@@ -24,6 +26,7 @@ pub struct MusicPlayerService {
     stream_tx: StreamTX,
     config: SharedServerSettings,
     playlist: SharedPlaylist,
+    run_info: SharedRunInfo,
     pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
@@ -33,12 +36,10 @@ impl MusicPlayerService {
         stream_tx: StreamTX,
         config: SharedServerSettings,
         playlist: SharedPlaylist,
+        run_info: SharedRunInfo,
     ) -> Self {
-        let mut player_stats = PlayerStats::new();
+        let player_stats = PlayerStats::new();
         let config_read = config.read();
-        player_stats.volume = config_read.settings.player.volume;
-        player_stats.gapless = config_read.settings.player.gapless;
-        player_stats.speed = config_read.settings.player.speed;
         drop(config_read);
 
         let player_stats = Arc::new(Mutex::new(player_stats));
@@ -49,6 +50,7 @@ impl MusicPlayerService {
             stream_tx,
             playlist,
             config,
+            run_info,
         }
     }
 }
@@ -91,8 +93,9 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<Empty>,
     ) -> Result<Response<GetProgressResponse>, Status> {
-        let r = self.player_stats.lock();
-        let reply = r.as_getprogress_response(self.playlist.read().status());
+        let stats = self.player_stats.lock();
+        let reply =
+            stats.as_getprogress_response(self.run_info.read().status(), &self.config.read());
 
         Ok(Response::new(reply))
     }
@@ -163,8 +166,9 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::SpeedDown)?;
         // wait until the event was processed
         let _ = rx.await;
-        let s = self.player_stats.lock();
-        let reply = SpeedReply { speed: s.speed };
+        let reply = SpeedReply {
+            speed: self.config.read().settings.player.speed,
+        };
 
         Ok(Response::new(reply))
     }
@@ -173,8 +177,9 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::SpeedUp)?;
         // wait until the event was processed
         let _ = rx.await;
-        let s = self.player_stats.lock();
-        let reply = SpeedReply { speed: s.speed };
+        let reply = SpeedReply {
+            speed: self.config.read().settings.player.speed,
+        };
 
         Ok(Response::new(reply))
     }
@@ -186,8 +191,9 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::ToggleGapless)?;
         // wait until the event was processed
         let _ = rx.await;
-        let r = self.player_stats.lock();
-        let reply = GaplessState { gapless: r.gapless };
+        let reply = GaplessState {
+            gapless: self.config.read().settings.player.gapless,
+        };
 
         Ok(Response::new(reply))
     }
@@ -197,7 +203,7 @@ impl MusicPlayer for MusicPlayerService {
         // wait until the event was processed
         let _ = rx.await;
         let reply = PlayState {
-            status: self.playlist.read().status().as_u32(),
+            status: self.run_info.read().status().as_u32(),
         };
 
         Ok(Response::new(reply))
@@ -207,9 +213,8 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::VolumeDown)?;
         // wait until the event was processed
         let _ = rx.await;
-        let r = self.player_stats.lock();
         let reply = VolumeReply {
-            volume: u32::from(r.volume),
+            volume: u32::from(self.config.read().settings.player.volume),
         };
 
         Ok(Response::new(reply))
@@ -219,9 +224,8 @@ impl MusicPlayer for MusicPlayerService {
         let rx = self.command_cb(PlayerCmd::VolumeUp)?;
         // wait until the event was processed
         let _ = rx.await;
-        let r = self.player_stats.lock();
         let reply = VolumeReply {
-            volume: u32::from(r.volume),
+            volume: u32::from(self.config.read().settings.player.volume),
         };
 
         Ok(Response::new(reply))

@@ -52,7 +52,7 @@ impl Mpris {
 }
 
 impl Mpris {
-    pub fn add_and_play(&mut self, track: &Track) {
+    pub fn set_track(&mut self, track: &Track) {
         // This is to fix a bug that the first track is not updated
         std::thread::sleep(std::time::Duration::from_millis(100));
         self.controls
@@ -247,7 +247,7 @@ impl GeneralPlayer {
     #[inline]
     pub fn mpris_update_progress(&mut self, progress: &PlayerProgress) {
         if let Some(ref mut mpris) = self.mpris {
-            mpris.update_progress(progress.position, self.playlist.read_recursive().status());
+            mpris.update_progress(progress.position, self.run_info.read().status());
         }
     }
 

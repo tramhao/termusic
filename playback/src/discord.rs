@@ -38,7 +38,7 @@ impl Default for Rpc {
 
 impl Rpc {
     /// Update the discord status track information
-    pub fn update(&self, track: &Track) {
+    pub fn set_track(&self, track: &Track) {
         let artist = track.artist().unwrap_or(UNKNOWN_ARTIST).to_string();
         let title = track.title().unwrap_or(UNKNOWN_TITLE).to_string();
         self.tx.send(RpcCommand::Update(artist, title)).ok();

@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
@@ -16,8 +16,8 @@ use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
     Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerErrorType, PlayerTrait, Playlist, SharedPlaylist, SpeedSigned, Volume, VolumeSigned,
-    quit_sources,
+    PlayerErrorType, PlayerTrait, Playlist, RunInfo, SharedPlaylist, SharedRunInfo, SpeedSigned,
+    VolumeSigned, quit_sources,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -49,9 +49,6 @@ const BACKEND_ERROR_LIMIT: NonZeroUsize = NonZeroUsize::new(5).unwrap();
 struct PlayerStats {
     pub progress: PlayerProgress,
     pub current_track_index: u64,
-    pub volume: u16,
-    pub speed: i32,
-    pub gapless: bool,
     pub radio_title: String,
 }
 
@@ -63,22 +60,23 @@ impl PlayerStats {
                 total_duration: None,
             },
             current_track_index: 0,
-            volume: 0,
-            speed: 10,
-            gapless: true,
             radio_title: String::new(),
         }
     }
 
-    pub fn as_getprogress_response(&self, status: RunningStatus) -> GetProgressResponse {
+    pub fn as_getprogress_response(
+        &self,
+        status: RunningStatus,
+        config: &ServerOverlay,
+    ) -> GetProgressResponse {
         GetProgressResponse {
             progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
             status: status.as_u32(),
-            volume: u32::from(self.volume),
-            speed: self.speed,
-            gapless: self.gapless,
             radio_title: self.radio_title.clone(),
+            volume: u32::from(config.settings.player.volume),
+            speed: config.settings.player.speed,
+            gapless: config.settings.player.gapless,
         }
     }
 
@@ -141,11 +139,14 @@ async fn actual_main() -> Result<()> {
     let playlist =
         Playlist::new_shared(&config, stream_tx.clone()).context("Failed to load playlist")?;
 
+    let run_info = Arc::new(RwLock::new(RunInfo::default()));
+
     let music_player_service: MusicPlayerService = MusicPlayerService::new(
         cmd_tx.clone(),
         stream_tx.clone(),
         config.clone(),
         playlist.clone(),
+        run_info.clone(),
     );
     let playerstats = music_player_service.player_stats.clone();
 
@@ -183,6 +184,7 @@ async fn actual_main() -> Result<()> {
                 playerstats,
                 stream_tx,
                 playlist,
+                run_info,
                 active_connections_data,
             );
             let _ = player_handle_os_tx.send(res);
@@ -295,9 +297,11 @@ fn player_loop(
     playerstats: Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
     playlist: SharedPlaylist,
+    run_info: SharedRunInfo,
     active_connections_data: ActiveConnections,
 ) -> Result<()> {
-    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist)?;
+    let mut player =
+        GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist, run_info)?;
 
     let mut had_enqueue_error = false;
     let mut should_quit = false;
@@ -314,7 +318,7 @@ fn player_loop(
                 info!("about to finish signal received");
                 let playlist = player.playlist.read();
                 if !playlist.is_empty()
-                    && !playlist.has_next_track()
+                    && playlist.get_next_track().is_none()
                     && player.config.read().settings.player.gapless
                 {
                     drop(playlist);
@@ -371,7 +375,6 @@ fn player_loop(
                     had_enqueue_error = true;
                 }
             }
-            PlayerCmd::GetProgress => {}
             PlayerCmd::SkipPrevious => {
                 player.reset_errors();
                 info!("skip to previous track");
@@ -387,18 +390,11 @@ fn player_loop(
                 player.playlist.write().reload_tracks().ok();
             }
             PlayerCmd::SeekBackward => {
+                // TODO: do seek callback for faster progress updates?
                 player.seek_relative(false);
-                let mut p_tick = playerstats.lock();
-                if let Some(progress) = player.get_progress() {
-                    p_tick.progress = progress
-                }
             }
             PlayerCmd::SeekForward => {
                 player.seek_relative(true);
-                let mut p_tick = playerstats.lock();
-                if let Some(progress) = player.get_progress() {
-                    p_tick.progress = progress
-                }
             }
             PlayerCmd::SkipNext => {
                 player.reset_errors();
@@ -410,16 +406,12 @@ fn player_loop(
                 let new_speed = player.add_speed(-SPEED_STEP);
                 info!("after speed down: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
-                let mut p_tick = playerstats.lock();
-                p_tick.speed = new_speed;
             }
 
             PlayerCmd::SpeedUp => {
                 let new_speed = player.add_speed(SPEED_STEP);
                 info!("after speed up: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
-                let mut p_tick = playerstats.lock();
-                p_tick.speed = new_speed;
             }
             PlayerCmd::Tick => {
                 // Quit once there are no more connections active and having had at least one connection.
@@ -440,7 +432,6 @@ fn player_loop(
                 let mut playlist = player.playlist.read();
 
                 if let Some(progress) = player.get_progress() {
-                    let pl_status = playlist.status();
                     p_tick.progress = progress;
 
                     // the following function is "mut", which does not like having the immutable borrow to "playlist"
@@ -449,7 +440,7 @@ fn player_loop(
                     player.update_progress(&p_tick.progress);
 
                     // only reset errors if position is either above 0 or total duration is available and is above 0
-                    if pl_status == RunningStatus::Running
+                    if player.run_info.read().is_playing()
                         && (progress.total_duration.is_some_and(|v| v > Duration::ZERO)
                             || progress.position.is_some_and(|v| v > Duration::ZERO))
                     {
@@ -458,19 +449,15 @@ fn player_loop(
 
                     playlist = player.playlist.read();
                 }
-                if player.current_track_updated {
-                    p_tick.current_track_index =
-                        u64::try_from(playlist.get_current_track_index()).unwrap();
-                    player.current_track_updated = false;
-                }
-                if let Some(track) = playlist.current_track() {
+                p_tick.current_track_index =
+                    u64::try_from(playlist.get_current_track_index()).unwrap();
+                if let Some(track) = player.run_info.read().current_track() {
                     update_metadata_changed(&mut p_tick, &player, track);
                 }
             }
             PlayerCmd::ToggleGapless => {
                 let new_gapless = player.toggle_gapless();
-                let mut p_tick = playerstats.lock();
-                p_tick.gapless = new_gapless;
+                info!("after toggle gapless: {new_gapless}");
             }
             PlayerCmd::TogglePause => {
                 info!("player toggled pause");
@@ -479,19 +466,19 @@ fn player_loop(
             PlayerCmd::VolumeDown => {
                 info!("before volumedown: {}", player.volume());
                 let new_volume = player.add_volume(-VOLUME_STEP);
-                set_volume(&player, &playerstats, new_volume);
+                player.config.write().settings.player.volume = new_volume;
                 info!("after volumedown: {new_volume}");
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
                 let new_volume = player.add_volume(VOLUME_STEP);
-                set_volume(&player, &playerstats, new_volume);
+                player.config.write().settings.player.volume = new_volume;
                 info!("after volumeup: {new_volume}");
             }
             PlayerCmd::VolumeSet(volume) => {
                 info!("before volumeset: {}", player.volume());
                 let new_volume = player.set_volume(volume);
-                set_volume(&player, &playerstats, new_volume);
+                player.config.write().settings.player.volume = new_volume;
                 info!("after volumeset: {new_volume}");
             }
             PlayerCmd::Pause => {
@@ -508,7 +495,7 @@ fn player_loop(
                     info.track_index, info.id
                 );
                 player.player_save_last_position();
-                if let Err(err) = player.playlist.write().play_specific(&info) {
+                if let Err(err) = player.playlist.write().set_play_specific(&info) {
                     error!("Error setting specific track to play: {err}");
                 }
                 player.next();
@@ -548,7 +535,7 @@ fn player_loop(
             }
             PlayerCmd::MetadataChanged => {
                 trace!("Metadata changed");
-                if let Some(track) = player.playlist.read().current_track() {
+                if let Some(track) = player.run_info.read().current_track() {
                     let mut p_tick = playerstats.lock();
                     update_metadata_changed(&mut p_tick, &player, track);
                 }
@@ -592,7 +579,7 @@ fn update_metadata_changed(p_tick: &mut PlayerStats, player: &GeneralPlayer, tra
 ///
 /// Use `use_skip` to skip the next track instead of trying to play it.
 fn player_eos(player: &mut GeneralPlayer, use_skip: bool) {
-    let mut playlist = player.playlist.write();
+    let playlist = player.playlist.read();
     if playlist.is_empty() {
         drop(playlist);
         player.stop();
@@ -612,13 +599,12 @@ fn player_eos(player: &mut GeneralPlayer, use_skip: bool) {
         "current track index: {:?}",
         playlist.get_current_track_index()
     );
-    playlist.clear_current_track();
     drop(playlist);
     // skip the next one as it had already errored via enqueuement, no need to try again
     if use_skip {
         player.next();
     } else {
-        player.start_play();
+        player.start_play(true);
     }
     debug!(
         "playing index is: {}",
@@ -703,11 +689,4 @@ async fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<(
     };
 
     Ok(())
-}
-
-/// Set the volume for the Config and the playerstats.
-fn set_volume(player: &GeneralPlayer, playerstats: &Arc<Mutex<PlayerStats>>, new_volume: Volume) {
-    player.config.write().settings.player.volume = new_volume;
-    let mut p_tick = playerstats.lock();
-    p_tick.volume = new_volume;
 }

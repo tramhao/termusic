@@ -118,8 +118,6 @@ impl From<PlayerProgress> for protobuf::UpdateProgress {
 pub struct TrackChangedInfo {
     /// Current track index in the playlist
     pub current_track_index: u64,
-    /// Indicate if the track changed to another track
-    pub current_track_updated: bool,
     /// Title of the current track / radio
     pub title: Option<String>,
     /// Current progress of the track
@@ -167,7 +165,6 @@ impl From<UpdateEvents> for protobuf::StreamUpdates {
             }
             UpdateEvents::TrackChanged(info) => StreamTypes::TrackChanged(UpdateTrackChanged {
                 current_track_index: info.current_track_index,
-                current_track_updated: info.current_track_updated,
                 optional_title: info
                     .title
                     .map(protobuf::update_track_changed::OptionalTitle::Title),
@@ -208,7 +205,6 @@ impl TryFrom<protobuf::StreamUpdates> for UpdateEvents {
             StreamTypes::MissedEvents(ev) => Self::MissedEvents { amount: ev.amount },
             StreamTypes::TrackChanged(ev) => Self::TrackChanged(TrackChangedInfo {
                 current_track_index: ev.current_track_index,
-                current_track_updated: ev.current_track_updated,
                 title: ev.optional_title.map(|v| {
                     let protobuf::update_track_changed::OptionalTitle::Title(v) = v;
                     v

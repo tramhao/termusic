@@ -141,8 +141,6 @@ message UpdateGaplessChanged {
 message UpdateTrackChanged {
   // The index into the playlist of which track changed.
   uint64 current_track_index = 1;
-  // Indicates if this update is a change to a new track (not just metadata change)
-  bool current_track_updated = 2;
 
   // all values below should be moved into their own "Track" message at some point
   // instead of having the TUI fetch everything from the file itself
