@@ -553,6 +553,25 @@ impl GeneralPlayer {
         info!("Next track enqueued: {next_track:#?}");
     }
 
+    /// Skip to a specific track, if there is one
+    ///
+    /// # Errors
+    ///
+    /// - if converting u64 to usize fails
+    /// - if the given info's tracks mismatch with the actual playlist
+    pub fn play_specific(&mut self, info: &PlaylistPlaySpecific) -> Result<()> {
+        let has_next = self.playlist.write().set_play_specific(info)?.is_some();
+        debug!("play_specific: has_next: {has_next:#?}");
+
+        if has_next {
+            self.skip_one();
+        } else {
+            self.stop();
+        }
+
+        Ok(())
+    }
+
     /// Skip to the next track, if there is one
     pub fn next(&mut self) {
         let has_next = self.playlist.write().next(true).is_some();
