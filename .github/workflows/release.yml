@@ -46,13 +46,13 @@ jobs:
           - archive: x86_64-macos
             os: macos-latest
             target: x86_64-apple-darwin
-            features: rusty-soundtouch,rusty-simd
+            features: rusty-soundtouch
 
           # mac arm64
           - archive: aarch64-macos
             os: macos-latest
             target: aarch64-apple-darwin
-            features: rusty-soundtouch,rusty-simd
+            features: rusty-soundtouch
 
           # windows x86
           - archive: x86_64-windows
