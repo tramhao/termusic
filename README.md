@@ -138,7 +138,6 @@ Note that they are not enabled by default and potentially increase non-rust depe
 
 |      Feature       | Backend |                            Description                            | Extra Dependencies |   MSRV   |
 | :----------------: | :-----: | :---------------------------------------------------------------: | :----------------: | :------: |
-|    `rusty-simd`    | `rusty` |                     Enable SIMD instructions                      |                    |          |
 | `rusty-soundtouch` | `rusty` | Enable `soundtouch` compilation and use as default speed-modifier |                    |          |
 |  `rusty-libopus`   | `rusty` |         Enable `libopus` support to support `opus` files          |     `libopus`      | `1.89.0` |
 

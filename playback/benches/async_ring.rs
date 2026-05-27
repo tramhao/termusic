@@ -1,22 +1,22 @@
 use std::time::Duration;
 
 use criterion::{Criterion, Throughput, criterion_group, criterion_main};
-use symphonia::core::audio::Channels;
+use symphonia::core::audio::Position;
 use termusicplayback::__bench::async_ring::AsyncRingSource;
 use tokio::runtime::Builder;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let runtime = Builder::new_current_thread().build().unwrap();
 
-    let spec = symphonia::core::audio::SignalSpec {
-        rate: 48000,
-        channels: Channels::FRONT_LEFT | Channels::FRONT_RIGHT,
-    };
+    let spec = symphonia::core::audio::AudioSpec::new(
+        48_000,
+        (Position::FRONT_LEFT | Position::FRONT_RIGHT).into(),
+    );
     let total_duration = Some(Duration::from_secs(0));
     let current_frame_len = 0;
 
     let (mut prod, mut cons) = AsyncRingSource::new(
-        spec,
+        &spec,
         total_duration,
         current_frame_len,
         0,

@@ -495,10 +495,9 @@ fn player_loop(
                     info.track_index, info.id
                 );
                 player.player_save_last_position();
-                if let Err(err) = player.playlist.write().set_play_specific(&info) {
+                if let Err(err) = player.play_specific(&info) {
                     error!("Error setting specific track to play: {err}");
                 }
-                player.next();
             }
             PlayerCmd::PlaylistAddTrack(info) => {
                 let mut playlist_write = player.playlist.write();
