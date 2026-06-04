@@ -136,7 +136,7 @@ async fn actual_main() -> Result<()> {
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
     let cmd_tx = PlayerCmdSender::new(cmd_tx);
     // Note that the channel size might quickly become too low if there is a massive delete (like removing the non-existent tracks from the playlist)
-    let (stream_tx, _) = broadcast::channel(10);
+    let (stream_tx, _) = broadcast::channel(64); // at current, this should use about 64 * 64 = 4096 (bytes), or 4kb for short
 
     let playlist =
         Playlist::new_shared(&config, stream_tx.clone()).context("Failed to load playlist")?;
