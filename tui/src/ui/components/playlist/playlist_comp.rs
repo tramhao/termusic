@@ -513,6 +513,8 @@ impl Model {
         let vec = library_dir_tree(path, ScanDepth::Limited(1));
         vec.children
             .into_iter()
+            // dont try to send directories to add as that is not supported
+            .filter(|v| !v.is_dir.is_dir())
             .map(|v| v.path.to_string_lossy().to_string())
             .collect()
     }
