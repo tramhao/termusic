@@ -4279,9 +4279,9 @@ dependencies = [
 
 [[package]]
 name = "rfc822_sanitizer"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c3c9b5ea12ee4fa013c8c4464f109c9e2a4e2e624a960ae6042821704ebdf4f"
+checksum = "1a99c962b5ffb9900f3dfc2b46813e1794f2507b1e9320e2ac6817eb8076a3e3"
 dependencies = [
  "chrono",
  "lazy_static",
