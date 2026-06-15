@@ -33,7 +33,7 @@ base64 = "0.22"
 bytes = "1.11"
 bytesize = { version = "2.3", features = ["serde"] }
 chrono = "0.4.41"
-clap = { version = "4.5.60", features = ["derive", "env"] }
+clap = { version = "4.6.1", features = ["derive", "env"] }
 ctrlc = { version = "3.5.2", features = ["termination"] }
 criterion = "0.8"
 dirs = "6.0"
