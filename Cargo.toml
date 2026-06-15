@@ -32,7 +32,7 @@ async-trait = "0.1.89"
 base64 = "0.22"
 bytes = "1.11"
 bytesize = { version = "2.4", features = ["serde"] }
-chrono = "0.4.41"
+chrono = "0.4.45"
 clap = { version = "4.6.1", features = ["derive", "env"] }
 ctrlc = { version = "3.5.2", features = ["termination"] }
 criterion = "0.8"
