@@ -117,7 +117,7 @@ unicode-segmentation = "1.13"
 unicode-width = "^0.2.2"
 urlencoding = "2.1"
 walkdir = "2.5"
-wildmatch = "2.4"
+wildmatch = "2.6"
 windows = { default-features = false, version = "0.62" }
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.32"
