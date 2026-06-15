@@ -100,7 +100,7 @@ symphonia-adapter-libopus = { version = "0.3.0", default-features = false }
 rodio = { version = "0.22", default-features = false, features = ["playback"]}
 sysinfo = { version = "^0.38.4", default-features = false, features = ["system"] }
 textwrap = "0.16.2"
-tokio = { version = "1.50", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot", "process"] }
+tokio = { version = "1.52", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot", "process"] }
 tokio-util = "0.7.18"
 tokio-stream = { version = "0.1.18", features = ["sync"] }
 toml = "1.1.2"
