@@ -124,7 +124,7 @@ futures-util = "0.3.32"
 alphanumeric-sort = "1.5.7"
 # for less dependencies, keep in sync with the version ratatui uses
 lru = "0.16"
-either = "1.15"
+either = "1.16"
 
 [profile.release]
 lto = true
