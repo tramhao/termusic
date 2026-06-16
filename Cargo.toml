@@ -17,7 +17,7 @@ categories = [
 ]
 readme = "./README.md"
 version = "0.13.2"
-rust-version = "1.88"
+rust-version = "1.90"
 
 [workspace.dependencies]
 # "version" key is required, as per https://github.com/rust-lang/cargo/issues/11133
@@ -26,14 +26,14 @@ termusic-lib = { path = "lib/", version = "0.13.2" }
 termusic-playback = { path = "playback/", version = "0.13.2", default-features = false }
 ahash = "^0.8.12"
 anyhow = { version = "1.0.102", features = ["backtrace"] }
-async-ringbuf = "0.3.5"
+async-ringbuf = "0.3.6"
 thiserror = "2.0.18"
 async-trait = "0.1.89"
 base64 = "0.22"
 bytes = "1.11"
-bytesize = { version = "2.3", features = ["serde"] }
-chrono = "0.4.41"
-clap = { version = "4.5.60", features = ["derive", "env"] }
+bytesize = { version = "2.4", features = ["serde"] }
+chrono = "0.4.45"
+clap = { version = "4.6.1", features = ["derive", "env"] }
 ctrlc = { version = "3.5.2", features = ["termination"] }
 criterion = "0.8"
 dirs = "6.0"
@@ -42,17 +42,17 @@ escaper = "0.1.1"
 glib = { version = "0.21.1" }
 gstreamer = { version = "0.24.1" }
 hex = "0.4"
-id3 = "1.16.4"
+id3 = "1.17.0"
 indoc = "2.0.7"
 # image must be upgraded together with viuer
-image = "0.25.9"
+image = "0.25.10"
 viuer = "0.10.0"
 include_dir = "0.7"
 libaes = "0.7"
 libmpv-sirno = "2.0.2-fork.1"
-lofty = "0.23.2"
-log = "0.4.29"
-flexi_logger = "0.31.8"
+lofty = "0.24.0"
+log = "0.4.32"
+flexi_logger = "0.31.9"
 colored = "3.1"
 md5 = "0.8"
 num-bigint = "0.4"
@@ -62,30 +62,30 @@ pathdiff = { version = "0.2.3", features = ["camino"] }
 percent-encoding = "2.3.2"
 pinyin = "0.11"
 pretty_assertions = "1.4.1"
-quick-xml = "0.39.2"
-rand = "0.10.0"
-regex = "^1.11.2"
-reqwest = { version = "0.13.2", features = [
+quick-xml = "0.40.1"
+rand = "0.10.1"
+regex = "^1.12.4"
+reqwest = { version = "0.13.4", features = [
     "cookies",
     "gzip",
     "json",
     "stream",
     "query"
 ] }
-rfc822_sanitizer = "0.3.7"
-rss = { version = "2.0.12", default-features = false }
-rusqlite = { version = "0.38", features = ["bundled"] }
+rfc822_sanitizer = "0.3.8"
+rss = { version = "2.0.13", default-features = false }
+rusqlite = { version = "0.39", features = ["bundled"] }
 sanitize-filename = "0.6"
-semver = "1.0.27"
+semver = "1.0.28"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_content_ref = "0.1"
-serde_json = "1.0.149"
+serde_json = "1.0.150"
 serde_yaml = "0.9"
 shellexpand = { version = "3.1.1", features = ["path"] }
 shell-words = "1.1.1"
 soundtouch = { version = "0.5.4", features = ["bundled"] }
 souvlaki = { version = "0.8.3", default-features=false, features = ["use_zbus"] }
-stream-download = { version = "0.24.0", features = ["reqwest-rustls"] }
+stream-download = { version = "0.24.1", features = ["reqwest-rustls"] }
 symphonia = { version = "0.6.0", features = [
     "aac",
     "mp3",
@@ -98,34 +98,33 @@ symphonia = { version = "0.6.0", features = [
 ] }
 symphonia-adapter-libopus = { version = "0.3.0", default-features = false }
 rodio = { version = "0.22", default-features = false, features = ["playback"]}
-# sysinfo 0.37.0 requires MSRV 1.88
 sysinfo = { version = "^0.38.4", default-features = false, features = ["system"] }
 textwrap = "0.16.2"
-tokio = { version = "1.50", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot", "process"] }
+tokio = { version = "1.52", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot", "process"] }
 tokio-util = "0.7.18"
 tokio-stream = { version = "0.1.18", features = ["sync"] }
 toml = "1.1.2"
 # only update prost and tonic major versions together
-prost = "0.14.3"
-tonic = "0.14.5"
-tonic-prost = "0.14.5"
-tonic-prost-build = "0.14.5"
+prost = "0.14.4"
+tonic = "0.14.6"
+tonic-prost = "0.14.6"
+tonic-prost-build = "0.14.6"
 tuirealm = { version = "~4.1.0", features = ["async-ports"] }
 tui-realm-stdlib = "~4.1"
 tuirealm-orx-tree = "0.4.0"
-unicode-segmentation = "1.12"
+unicode-segmentation = "1.13"
 # ratatui is very specific with its versions
 unicode-width = "^0.2.2"
 urlencoding = "2.1"
 walkdir = "2.5"
-wildmatch = "2.4"
+wildmatch = "2.6"
 windows = { default-features = false, version = "0.62" }
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.32"
-alphanumeric-sort = "1.5.5"
+alphanumeric-sort = "1.5.7"
 # for less dependencies, keep in sync with the version ratatui uses
 lru = "0.16"
-either = "1.15"
+either = "1.16"
 
 [profile.release]
 lto = true
