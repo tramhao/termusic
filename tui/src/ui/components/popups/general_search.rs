@@ -385,7 +385,7 @@ impl Model {
             && let Some(file_name_text_span) = line.get(3)
         {
             let file_name = file_name_text_span.to_string();
-            for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
+            for (idx, item) in self.playback.playlist.read().tracks().iter().enumerate() {
                 // NOTE: i dont know if this should apply to anything other than "track_data"
                 let lower_matched = match item.inner() {
                     MediaTypes::Track(track_data) => {
@@ -425,7 +425,7 @@ impl Model {
             && let Some(file_name_text_span) = line.get(3)
         {
             let file_name = file_name_text_span.to_string();
-            for (idx, item) in self.playback.playlist.tracks().iter().enumerate() {
+            for (idx, item) in self.playback.playlist.read().tracks().iter().enumerate() {
                 // NOTE: i dont know if this should apply to anything other than "track_data"
                 let lower_matched = match item.inner() {
                     MediaTypes::Track(track_data) => {

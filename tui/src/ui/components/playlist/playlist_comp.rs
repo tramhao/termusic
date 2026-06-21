@@ -307,11 +307,9 @@ impl Model {
             })
             .collect();
 
+        let playlist_len = self.playback.playlist.read().len();
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-            PlaylistAddTrack::new_vec(
-                u64::try_from(self.playback.playlist.len()).unwrap(),
-                sources,
-            ),
+            PlaylistAddTrack::new_vec(u64::try_from(playlist_len).unwrap(), sources),
         )));
 
         Ok(())
@@ -333,11 +331,9 @@ impl Model {
             .ok_or_else(|| anyhow!("get episode selected failed."))?;
 
         let source = PlaylistTrackSource::PodcastUrl(episode_selected.url.clone());
+        let playlist_len = self.playback.playlist.read().len();
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-            PlaylistAddTrack::new_single(
-                u64::try_from(self.playback.playlist.len()).unwrap(),
-                source,
-            ),
+            PlaylistAddTrack::new_single(u64::try_from(playlist_len).unwrap(), source),
         )));
 
         Ok(())
@@ -367,11 +363,9 @@ impl Model {
                 .map(PlaylistTrackSource::Path)
                 .collect();
 
+            let playlist_len = self.playback.playlist.read().len();
             self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-                PlaylistAddTrack::new_vec(
-                    u64::try_from(self.playback.playlist.len()).unwrap(),
-                    sources,
-                ),
+                PlaylistAddTrack::new_vec(u64::try_from(playlist_len).unwrap(), sources),
             )));
 
             return Ok(());
@@ -393,11 +387,9 @@ impl Model {
             PlaylistTrackSource::Path(path.to_string_lossy().to_string())
         };
 
+        let playlist_len = self.playback.playlist.read().len();
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-            PlaylistAddTrack::new_single(
-                u64::try_from(self.playback.playlist.len()).unwrap(),
-                source,
-            ),
+            PlaylistAddTrack::new_single(u64::try_from(playlist_len).unwrap(), source),
         )));
 
         Ok(())
@@ -410,11 +402,9 @@ impl Model {
             .map(|f| PlaylistTrackSource::Path(f.as_pathbuf().to_string_lossy().to_string()))
             .collect();
 
+        let playlist_len = self.playback.playlist.read().len();
         self.command(TuiCmd::Playlist(PlaylistCmd::AddTrack(
-            PlaylistAddTrack::new_vec(
-                u64::try_from(self.playback.playlist.len()).unwrap(),
-                sources,
-            ),
+            PlaylistAddTrack::new_vec(u64::try_from(playlist_len).unwrap(), sources),
         )));
     }
 
@@ -447,7 +437,7 @@ impl Model {
     /// Handle when a playlist has added a track
     pub fn handle_playlist_add(&mut self, items: PlaylistAddTrackInfo) -> Result<()> {
         // piggyback off-of the server side implementation for now by re-parsing everything.
-        self.playback.playlist.add_tracks(
+        self.playback.playlist.write().add_tracks(
             PlaylistAddTrack {
                 at_index: items.at_index,
                 tracks: vec![items.trackid],
@@ -462,7 +452,7 @@ impl Model {
 
     /// Handle when a playlist has removed a track
     pub fn handle_playlist_remove(&mut self, items: &PlaylistRemoveTrackInfo) -> Result<()> {
-        self.playback.playlist.handle_grpc_remove(items)?;
+        self.playback.playlist.write().handle_grpc_remove(items)?;
 
         self.playlist_sync();
 
@@ -471,7 +461,7 @@ impl Model {
 
     /// Handle when a playlist was cleared
     pub fn handle_playlist_clear(&mut self) {
-        self.playback.playlist.clear();
+        self.playback.playlist.write().clear();
 
         self.playlist_sync();
     }
@@ -481,7 +471,7 @@ impl Model {
         let as_u8 = u8::try_from(loop_mode.mode).context("Failed to convert u32 to u8")?;
         let loop_mode =
             LoopMode::tryfrom_discriminant(as_u8).context("Failed to get LoopMode from u8")?;
-        self.playback.playlist.set_loop_mode(loop_mode);
+        self.playback.playlist.write().set_loop_mode(loop_mode);
         self.config_server.write().settings.player.loop_mode = loop_mode;
         self.playlist_update_title();
         // Force a redraw as stream updates are not part of the "tick" event and so cant send "Msg"
@@ -498,7 +488,7 @@ impl Model {
         let index_b = usize::try_from(swapped_tracks.index_b)
             .context("Failed to convert index_b to usize")?;
 
-        self.playback.playlist.swap(index_a, index_b)?;
+        self.playback.playlist.write().swap(index_a, index_b)?;
 
         self.playlist_sync();
 
@@ -508,24 +498,27 @@ impl Model {
     /// Handle when the playlist has been shuffled and so has new order of tracks
     pub fn handle_playlist_shuffled(&mut self, shuffled: PlaylistShuffledInfo) -> Result<()> {
         let playlist_comp_selected_index = self.playlist_get_selected_index();
+        let playlist = self.playback.playlist.read();
         // this might be fragile if there are multiple of the same track in the playlist as there is no unique identifier currently
         let playlist_track_at_old_file = playlist_comp_selected_index
-            .and_then(|idx| self.playback.playlist.tracks().get(idx))
+            .and_then(|idx| playlist.tracks().get(idx))
             .map(Track::as_track_source);
+        drop(playlist);
 
         self.playback
             .load_from_grpc(shuffled.tracks, &self.podcast.db_podcast)?;
         self.playlist_sync();
 
         if let Some(old_id) = playlist_track_at_old_file {
-            let found_new_index = self
-                .playback
-                .playlist
+            let playlist = self.playback.playlist.read();
+            let found_new_index = playlist
                 .tracks()
                 .iter()
                 .enumerate()
-                .find(|(_, track)| *track == old_id);
-            if let Some((new_index, _)) = found_new_index {
+                .find(|(_, track)| *track == old_id)
+                .map(|(idx, _)| idx);
+            drop(playlist);
+            if let Some(new_index) = found_new_index {
                 self.playlist_locate(new_index);
             }
         }
@@ -535,15 +528,14 @@ impl Model {
 
     /// Handle setting the current track index in the TUI playlist and selecting the proper list item
     pub fn handle_current_track_index(&mut self, current_track_index: usize, force_relocate: bool) {
-        let tui_old_current_index = self.playback.playlist.current_track_index();
+        let mut playlist = self.playback.playlist.write();
+        let tui_old_current_index = playlist.current_track_index();
         info!(
             "index from player is: {current_track_index:?}, index in tui is: {tui_old_current_index:?}"
         );
+        let _ = playlist.set_current_track_index(current_track_index);
+        drop(playlist);
         self.playback.clear_current_track();
-        let _ = self
-            .playback
-            .playlist
-            .set_current_track_index(current_track_index);
         self.playback.set_current_track_from_playlist();
 
         let playlist_comp_selected_index = self.playlist_get_selected_index();
@@ -570,7 +562,8 @@ impl Model {
     fn playlist_sync_podcasts(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, track) in self.playback.playlist.tracks().iter().enumerate() {
+        let playlist = self.playback.playlist.read();
+        for (idx, track) in playlist.tracks().iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -588,7 +581,7 @@ impl Model {
             {
                 title = format!("[D] {title}");
             }
-            if Some(idx) == self.playback.playlist.current_track_index() {
+            if Some(idx) == playlist.current_track_index() {
                 title = format!(
                     "{}{title}",
                     self.config_tui
@@ -604,10 +597,11 @@ impl Model {
                 .add_col(LineStatic::from(duration_str))
                 .add_col(LineStatic::styled(title, Style::new().bold()));
         }
-        if self.playback.playlist.is_empty() {
+        if playlist.is_empty() {
             table.add_col(LineStatic::from("0"));
             table.add_col(LineStatic::from("empty playlist"));
         }
+        drop(playlist);
 
         let table = table.build();
         self.app
@@ -631,7 +625,8 @@ impl Model {
             .theme
             .library_highlight();
 
-        for (idx, track) in self.playback.playlist.tracks().iter().enumerate() {
+        let playlist = self.playback.playlist.read();
+        for (idx, track) in playlist.tracks().iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -651,7 +646,7 @@ impl Model {
                 .unwrap_or(UNKNOWN_ALBUM);
 
             // TODO: is there maybe a better option to do this on-demand instead of the whole playlist; like on draw-time?
-            if Some(idx) == self.playback.playlist.current_track_index() {
+            if Some(idx) == playlist.current_track_index() {
                 title = format!(
                     "{}{title}",
                     self.config_tui
@@ -674,12 +669,13 @@ impl Model {
                 .add_col(LineStatic::styled(title.to_string(), Style::new().bold()))
                 .add_col(LineStatic::from(album.to_string()));
         }
-        if self.playback.playlist.is_empty() {
+        if playlist.is_empty() {
             table.add_col(LineStatic::from("0"));
             table.add_col(LineStatic::from("empty playlist"));
             table.add_col(LineStatic::from(""));
             table.add_col(LineStatic::from(""));
         }
+        drop(playlist);
 
         let table = table.build();
         self.app
@@ -691,15 +687,17 @@ impl Model {
 
     /// Delete a track at `index` from the playlist
     pub fn playlist_delete_item(&mut self, index: usize) {
-        if self.playback.playlist.is_empty() || index >= self.playback.playlist.len() {
+        let playlist = self.playback.playlist.read();
+        if playlist.is_empty() || index >= playlist.len() {
             return;
         }
 
-        let Some(track) = self.playback.playlist.tracks().get(index) else {
+        let Some(track) = playlist.tracks().get(index) else {
             return;
         };
 
         let track_source = track.as_track_source();
+        drop(playlist);
 
         self.command(TuiCmd::Playlist(PlaylistCmd::RemoveTrack(
             PlaylistRemoveTrackIndexed::new_single(u64::try_from(index).unwrap(), track_source),
@@ -708,7 +706,7 @@ impl Model {
 
     /// Clear a entire playlist
     pub fn playlist_clear(&mut self) {
-        if self.playback.playlist.is_empty() {
+        if self.playback.playlist.read().is_empty() {
             return;
         }
 
@@ -726,7 +724,7 @@ impl Model {
     ///
     /// if `usize` cannot be converted to `u64`
     fn playlist_swap(&mut self, index_a: usize, index_b: usize) {
-        let len = self.playback.playlist.tracks().len();
+        let len = self.playback.playlist.read().tracks().len();
         if index_a.max(index_b) >= len {
             error!(
                 "Index out-of-bounds, not executing swap: {}",
@@ -755,7 +753,7 @@ impl Model {
 
     /// Swap the given index downwards, does nothing if out-of-bounds.
     pub fn playlist_swap_down(&mut self, index: usize) {
-        if index >= self.playback.playlist.len().saturating_sub(1) {
+        if index >= self.playback.playlist.read().len().saturating_sub(1) {
             return;
         }
 
@@ -767,13 +765,8 @@ impl Model {
     }
 
     pub fn playlist_update_title(&mut self) {
-        let duration = self
-            .playback
-            .playlist
-            .tracks()
-            .iter()
-            .filter_map(Track::duration)
-            .sum();
+        let playlist = self.playback.playlist.read();
+        let duration = playlist.tracks().iter().filter_map(Track::duration).sum();
         let display_symbol = self
             .config_tui
             .read()
@@ -785,10 +778,11 @@ impl Model {
         let loop_mode = self.config_server.read().settings.player.loop_mode;
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} \u{251c}\u{2500}",
-            self.playback.playlist.len(),
+            playlist.len(),
             DurationFmtShort(duration),
             loop_mode.display(display_symbol),
         );
+        drop(playlist);
         self.app
             .attr(
                 &Id::Playlist,
@@ -800,12 +794,14 @@ impl Model {
 
     /// Play the currently selected item in the playlist list
     pub fn playlist_play_selected(&mut self, index: usize) {
-        let Some(track) = self.playback.playlist.tracks().get(index) else {
+        let playlist = self.playback.playlist.read();
+        let Some(track) = playlist.tracks().get(index) else {
             error!("Track {index} not in playlist!");
             return;
         };
 
         let track_source = track.as_track_source();
+        drop(playlist);
 
         self.command(TuiCmd::Playlist(PlaylistCmd::PlaySpecific(
             PlaylistPlaySpecific {
@@ -816,8 +812,11 @@ impl Model {
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {
-        let filtered_music = Model::update_search(self.playback.playlist.tracks(), input);
-        self.general_search_update_show(Model::build_table(filtered_music, &self.config_tui));
+        let playlist = self.playback.playlist.read();
+        let filtered_music = Model::update_search(playlist.tracks(), input);
+        let table = Model::build_table(filtered_music, &self.config_tui);
+        drop(playlist);
+        self.general_search_update_show(table);
     }
 
     /// Select the given index in the playlist list component
@@ -908,7 +907,7 @@ impl Model {
     /// Save the current playlist as m3u in the given full path.
     pub fn playlist_save_m3u(&mut self, path: PathBuf) -> Result<()> {
         // TODO: move this to server?
-        self.playback.playlist.save_m3u(&path)?;
+        self.playback.playlist.read().save_m3u(&path)?;
 
         self.new_library_reload_and_focus(path);
 
