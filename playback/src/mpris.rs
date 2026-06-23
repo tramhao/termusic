@@ -1,4 +1,7 @@
-use std::sync::mpsc::{self, Receiver};
+use std::{
+    sync::mpsc::{self, Receiver},
+    time::Duration,
+};
 
 use base64::Engine;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
@@ -95,9 +98,11 @@ impl Mpris {
     }
 
     /// Set the MPRIS metadata to display that playback is playing.
-    pub fn resume(&mut self) {
+    pub fn resume(&mut self, position: Option<Duration>) {
         self.controls
-            .set_playback(MediaPlayback::Playing { progress: None })
+            .set_playback(MediaPlayback::Playing {
+                progress: position.map(souvlaki::MediaPosition),
+            })
             .ok();
     }
 
