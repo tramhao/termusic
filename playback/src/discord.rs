@@ -18,8 +18,9 @@ pub struct Rpc {
 
 enum RpcCommand {
     Update(String, String),
-    Pause,
     Resume(i64),
+    Pause,
+    Stop,
 }
 
 impl Default for Rpc {
@@ -37,19 +38,19 @@ impl Default for Rpc {
 }
 
 impl Rpc {
-    /// Update the discord status track information
+    /// Update the discord status track information.
     pub fn set_track(&self, track: &Track) {
         let artist = track.artist().unwrap_or(UNKNOWN_ARTIST).to_string();
         let title = track.title().unwrap_or(UNKNOWN_TITLE).to_string();
         self.tx.send(RpcCommand::Update(artist, title)).ok();
     }
 
-    /// Update the discord status to show that it is paused
+    /// Update the discord status to show that it is paused.
     pub fn pause(&self) {
         self.tx.send(RpcCommand::Pause).ok();
     }
 
-    /// Update the discord status to show that it is playing
+    /// Update the discord status to show that it is playing.
     pub fn resume(&self, time_pos: Option<PlayerTimeUnit>) {
         // ignore clippy here, this should not be a problem, maybe rich presence will support duration in the future
         #[allow(clippy::cast_possible_wrap)]
@@ -60,8 +61,13 @@ impl Rpc {
         }
     }
 
+    /// Update the discord status to show that it is stopped.
+    pub fn stop(&self) {
+        self.tx.send(RpcCommand::Stop).ok();
+    }
+
     /// This function actually communicates with the discord client and is meant to run in its own thread.
-    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::needless_pass_by_value, clippy::too_many_lines)]
     fn thread_fn(mut client: DiscordIpcClient, rx: Receiver<RpcCommand>) {
         let mut artist = String::new();
         let mut title = String::new();
@@ -158,6 +164,23 @@ impl Rpc {
                                 .timestamps(timestamp)
                                 .state(&artist)
                                 .details(&title),
+                        )
+                        .ok();
+                }
+                RpcCommand::Stop => {
+                    title.clear();
+                    artist.clear();
+
+                    let assets = activity::Assets::new()
+                        .large_image("termusic")
+                        .large_text("terminal music player written in Rust");
+
+                    client
+                        .set_activity(
+                            activity::Activity::new()
+                                .assets(assets)
+                                .state(&artist)
+                                .details("Stopped"),
                         )
                         .ok();
                 }

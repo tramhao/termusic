@@ -108,6 +108,11 @@ impl Mpris {
             .ok();
     }
 
+    /// Set the MPRIS metadata to display that playback is stopped.
+    pub fn stop(&mut self) {
+        self.controls.set_playback(MediaPlayback::Stopped).ok();
+    }
+
     /// Update Track position / progress, requires `playlist_status` because [`MediaControls`] only allows `set_playback`, not `set_position` or `get_playback`
     pub fn update_progress(
         &mut self,
@@ -122,12 +127,13 @@ impl Mpris {
                         progress: Some(souvlaki::MediaPosition(position)),
                     })
                     .ok(),
-                RunningStatus::Paused | RunningStatus::Stopped => self
+                RunningStatus::Paused => self
                     .controls
                     .set_playback(MediaPlayback::Paused {
                         progress: Some(souvlaki::MediaPosition(position)),
                     })
                     .ok(),
+                RunningStatus::Stopped => self.controls.set_playback(MediaPlayback::Stopped).ok(),
             };
         }
     }

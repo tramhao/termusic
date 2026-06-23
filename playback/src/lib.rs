@@ -907,6 +907,13 @@ impl PlayerTrait for GeneralPlayer {
         self.in_skip = false;
         self.run_info.write().stop(&self.stream_tx);
         self.get_player_mut().stop();
+
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.stop();
+        }
+        if let Some(ref discord) = self.discord {
+            discord.stop();
+        }
     }
 
     fn get_progress(&self) -> Option<PlayerProgress> {
