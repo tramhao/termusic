@@ -52,13 +52,8 @@ impl Mpris {
 }
 
 impl Mpris {
+    /// Set Mpris metadata based on the given track.
     pub fn set_track(&mut self, track: &Track) {
-        // This is to fix a bug that the first track is not updated
-        std::thread::sleep(std::time::Duration::from_millis(100));
-        self.controls
-            .set_playback(MediaPlayback::Playing { progress: None })
-            .ok();
-
         let cover_art = match track.get_picture() {
             Ok(v) => v.map(|v| {
                 format!(
@@ -81,22 +76,25 @@ impl Mpris {
 
         let album = track.as_track().and_then(|v| v.album());
 
-        self.controls
-            .set_metadata(MediaMetadata {
-                title: Some(track.title().unwrap_or(UNKNOWN_TITLE)),
-                artist: Some(track.artist().unwrap_or(UNKNOWN_ARTIST)),
-                album: Some(album.unwrap_or("")),
-                cover_url: cover_art.as_deref(),
-                duration: track.duration(),
-            })
-            .ok();
+        if let Err(err) = self.controls.set_metadata(MediaMetadata {
+            title: Some(track.title().unwrap_or(UNKNOWN_TITLE)),
+            artist: Some(track.artist().unwrap_or(UNKNOWN_ARTIST)),
+            album: Some(album.unwrap_or("")),
+            cover_url: cover_art.as_deref(),
+            duration: track.duration(),
+        }) {
+            error!("Error setting MPRIS metadata: {err}");
+        }
     }
 
+    /// Set the MPRIS metadata to display that playback is paused.
     pub fn pause(&mut self) {
         self.controls
             .set_playback(MediaPlayback::Paused { progress: None })
             .ok();
     }
+
+    /// Set the MPRIS metadata to display that playback is playing.
     pub fn resume(&mut self) {
         self.controls
             .set_playback(MediaPlayback::Playing { progress: None })
