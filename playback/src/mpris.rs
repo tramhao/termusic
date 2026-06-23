@@ -102,6 +102,9 @@ impl Mpris {
             .set_playback(MediaPlayback::Playing { progress: None })
             .ok();
     }
+    pub fn stop(&mut self) {
+        self.controls.set_playback(MediaPlayback::Stopped).ok();
+    }
 
     /// Update Track position / progress, requires `playlist_status` because [`MediaControls`] only allows `set_playback`, not `set_position` or `get_playback`
     pub fn update_progress(

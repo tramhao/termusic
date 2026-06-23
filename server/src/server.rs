@@ -309,6 +309,13 @@ fn player_loop(
     // Start the playback, if wanted on startup
     if player.config.read().settings.player.startup_state == StartupState::Playing {
         player.resume_from_stopped();
+    } else {
+        // Publish the loaded playlist's current track to MPRIS (and Discord) as
+        // Stopped, so MPRIS clients see real now-playing metadata at startup
+        // instead of an empty default snapshot. See
+        // `publish_current_track_stopped_to_mpris` for why this must stay Stopped
+        // (not Paused).
+        player.publish_current_track_stopped_to_mpris();
     }
 
     while let Some((cmd, cb)) = cmd_rx.blocking_recv() {

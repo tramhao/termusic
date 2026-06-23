@@ -539,6 +539,41 @@ impl GeneralPlayer {
         }
     }
 
+    /// Publish the playlist's current track to MPRIS (and Discord) as Stopped,
+    /// without starting actual playback or loading the backend.
+    ///
+    /// Used when the server starts with `startup_state != Playing` so that MPRIS
+    /// clients (e.g. noctalia, KDE-style media widgets) see real now-playing
+    /// metadata immediately, instead of an empty default snapshot. Some shells
+    /// (noctalia v5) evict players whose first metadata snapshot is empty and
+    /// never re-introspect, so without this they stay broken until the user
+    /// manually plays once.
+    ///
+    /// Crucially, this leaves `RunningStatus` as `Stopped`. That way when a
+    /// client sends MPRIS `Play`, [`Self::play`] dispatches to
+    /// [`Self::resume_from_stopped`] (which loads the file and starts the
+    /// backend), instead of [`PlayerTrait::resume`] (which would only un-pause
+    /// an already-loaded backend, producing silent "playback").
+    pub fn publish_current_track_stopped_to_mpris(&mut self) {
+        let Some(track) = self.playlist.read().get_current_track().cloned() else {
+            return; // empty playlist; nothing to publish
+        };
+
+        // Record the current track for run_info readers (set_track_mpris_discord,
+        // send_track_changed), but DO NOT call set_status — leave it as
+        // RunningStatus::Stopped.
+        self.run_info.write().set_current_track(track);
+        self.set_track_mpris_discord();
+
+        // `Mpris::set_track` hard-codes PlaybackStatus=Playing; correct it to
+        // Stopped because no backend is actually loaded yet.
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.stop();
+        }
+
+        self.send_track_changed();
+    }
+
     /// Try to enqueue the next track to play, so that it can be seamlessly played.
     pub fn enqueue_next_from_playlist(&mut self) {
         let mut playlist = self.playlist.write();
