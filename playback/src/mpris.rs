@@ -91,9 +91,11 @@ impl Mpris {
     }
 
     /// Set the MPRIS metadata to display that playback is paused.
-    pub fn pause(&mut self) {
+    pub fn pause(&mut self, position: Option<Duration>) {
         self.controls
-            .set_playback(MediaPlayback::Paused { progress: None })
+            .set_playback(MediaPlayback::Paused {
+                progress: position.map(souvlaki::MediaPosition),
+            })
             .ok();
     }
 

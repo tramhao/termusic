@@ -854,8 +854,9 @@ impl PlayerTrait for GeneralPlayer {
     fn pause(&mut self) {
         self.run_info.write().pause(&self.stream_tx);
         self.get_player_mut().pause();
+        let time_pos = self.get_player().position();
         if let Some(ref mut mpris) = self.mpris {
-            mpris.pause();
+            mpris.pause(time_pos);
         }
         if let Some(ref discord) = self.discord {
             discord.pause();
