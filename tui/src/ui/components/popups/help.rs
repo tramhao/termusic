@@ -122,6 +122,9 @@ impl HelpPopup {
                         ))
                         .add_col(Self::comment("Move cursor(vim style by default)"))
                         .add_row()
+                        .add_col(Self::key(&config, &[&keys.player_keys.restart_track]))
+                        .add_col(Self::comment("Restart current track"))
+                        .add_row()
                         .add_col(Self::key(
                             &config,
                             &[
