@@ -14,6 +14,7 @@ service MusicPlayer {
   rpc SpeedDown(Empty) returns (SpeedReply);
   // Toggle the gapless mdoe, returns the new state.
   rpc ToggleGapless(Empty) returns (GaplessState);
+  rpc RestartTrack(Empty) returns (PlayerTime);
   rpc SeekForward(Empty) returns (PlayerTime);
   rpc SeekBackward(Empty) returns (PlayerTime);
 

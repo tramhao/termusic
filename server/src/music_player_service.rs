@@ -138,6 +138,20 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
+    async fn restart_track(
+        &self,
+        _request: Request<Empty>,
+    ) -> Result<Response<PlayerTime>, Status> {
+        let rx = self.command_cb(PlayerCmd::RestartTrack)?;
+        // wait until the event was processed
+        let _ = rx.await;
+        let s = self.player_stats.lock();
+
+        let reply = s.as_playertime();
+
+        Ok(Response::new(reply))
+    }
+
     async fn seek_forward(&self, _request: Request<Empty>) -> Result<Response<PlayerTime>, Status> {
         let rx = self.command_cb(PlayerCmd::SeekForward)?;
         // wait until the event was processed

@@ -393,6 +393,9 @@ fn player_loop(
                 // TODO: do seek callback for faster progress updates?
                 player.seek_relative(false);
             }
+            PlayerCmd::RestartTrack => {
+                player.restart_track();
+            }
             PlayerCmd::SeekForward => {
                 player.seek_relative(true);
             }
