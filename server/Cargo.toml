@@ -33,6 +33,7 @@ tokio-stream.workspace = true
 tokio-util.workspace = true
 tonic.workspace = true
 clap.workspace = true
+sanitize-filename.workspace = true
 
 
 # archive is named "termusic-v..." not "termusic-server-v..."
@@ -68,3 +69,8 @@ mpv = ["termusic-playback/mpv"]
 rusty-soundtouch = ["termusic-playback/rusty-soundtouch"]
 rusty-libopus = ["termusic-playback/rusty-libopus"]
 all-backends = ["gst", "mpv", "rusty-soundtouch"]
+
+[dev-dependencies]
+tempfile.workspace = true
+chrono.workspace = true
+wiremock.workspace = true

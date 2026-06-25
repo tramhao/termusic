@@ -75,6 +75,7 @@ prost.workspace = true
 alphanumeric-sort.workspace = true
 lru.workspace = true
 either.workspace = true
+humantime-serde.workspace = true
 
 [build-dependencies]
 tonic-prost-build.workspace = true

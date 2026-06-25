@@ -125,6 +125,9 @@ alphanumeric-sort = "1.5.7"
 # for less dependencies, keep in sync with the version ratatui uses
 lru = "0.16"
 either = "1.16"
+humantime-serde = "1.1"
+tempfile = "3"
+wiremock = "0.6"
 
 [profile.release]
 lto = true

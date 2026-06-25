@@ -33,6 +33,15 @@ mod cli;
 mod connection;
 mod logger;
 mod music_player_service;
+mod podcast_sync;
+#[cfg(test)]
+mod podcast_sync_track_source_tests;
+#[cfg(test)]
+mod podcast_sync_concurrency_tests;
+#[cfg(test)]
+mod podcast_sync_phase4_tests;
+#[cfg(test)]
+mod podcast_sync_phase5_tests;
 
 #[macro_use]
 extern crate log;
@@ -170,6 +179,20 @@ async fn actual_main() -> Result<()> {
     let cancel_token = service_cancel_token.clone();
     let playlist_c = playlist.clone();
     start_playlist_save_interval(tokio_handle.clone(), cancel_token, playlist_c);
+
+    // Spawn the periodic podcast sync task if enabled (AC-02, AC-11, SCENARIO-005, SCENARIO-020)
+    if config.read().settings.synchronization.enable {
+        let config_dir = utils::get_app_config_path().context("sync task: config path")?;
+        podcast_sync::start_podcast_sync_task(
+            tokio_handle.clone(),
+            service_cancel_token.clone(),
+            config.clone(),
+            cmd_tx.clone(),
+            config_dir,
+        );
+    } else {
+        info!("Podcast synchronization disabled");
+    }
 
     let (player_handle_os_tx, player_handle_os_rx) = oneshot::channel();
     let player_handle = std::thread::Builder::new()
