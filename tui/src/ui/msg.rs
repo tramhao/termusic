@@ -71,6 +71,7 @@ pub enum PlayerMsg {
     VolumeDown,
     SpeedUp,
     SpeedDown,
+    RestartTrack,
     SeekForward,
     SeekBackward,
 }

@@ -54,6 +54,10 @@ impl ServerRequestActor {
                 // result will be populated back via UpdateStream
                 let _ = self.client_handle.toggle_pause().await?;
             }
+            TuiCmd::RestartTrack => {
+                // result will be populated back via UpdateStream
+                let _ = self.client_handle.restart_track().await?;
+            }
             TuiCmd::SeekForward => {
                 // result will be populated back via UpdateStream
                 let _ = self.client_handle.seek_forward().await?;
