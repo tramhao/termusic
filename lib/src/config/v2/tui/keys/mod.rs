@@ -340,6 +340,9 @@ pub struct KeysPlayer {
     ///
     /// Will only apply in specific widgets (like the Playlist, but not in Config)
     pub volume_down: KeyBinding,
+    /// Key to restart track
+    ///
+    pub restart_track: KeyBinding,
     /// Key to seek forwards (by a set amount)
     ///
     /// Will only apply in specific widgets (like the Playlist, but not in Config)
@@ -378,6 +381,7 @@ impl Default for KeysPlayer {
             .into(),
             volume_up: tuievents::Key::Char('+').into(),
             volume_down: tuievents::Key::Char('-').into(),
+            restart_track: tuievents::Key::Char('0').into(),
             seek_forward: tuievents::Key::Char('f').into(),
             seek_backward: tuievents::Key::Char('b').into(),
             speed_up: tuievents::KeyEvent::new(
@@ -1894,6 +1898,9 @@ mod v1_interop {
                 }
             };
 
+            // defining default key for restart track without relying on v1 legacy keybindings.
+            let player_restart_track_key = KeysPlayer::default().restart_track;
+
             Self {
                 escape: value.global_esc.into(),
                 quit: value.global_quit.into(),
@@ -1918,6 +1925,7 @@ mod v1_interop {
                     previous_track: value.global_player_previous.into(),
                     volume_up: value.global_player_volume_plus_2.into(),
                     volume_down: player_volume_down_key,
+                    restart_track: player_restart_track_key,
                     seek_forward: value.global_player_seek_forward.into(),
                     seek_backward: value.global_player_seek_backward.into(),
                     speed_up: value.global_player_speed_up.into(),
@@ -2050,6 +2058,7 @@ mod v1_interop {
                     tuievents::KeyModifiers::NONE,
                 )
                 .into(),
+                restart_track: tuievents::Key::Char('0').into(),
                 seek_forward: tuievents::Key::Char('f').into(),
                 seek_backward: tuievents::Key::Char('b').into(),
                 speed_up: tuievents::KeyEvent::new(
@@ -2287,6 +2296,7 @@ mod v1_interop {
                     tuievents::KeyModifiers::NONE,
                 )
                 .into(),
+                restart_track: tuievents::Key::Char('0').into(),
                 seek_forward: tuievents::Key::Char('f').into(),
                 seek_backward: tuievents::Key::Char('b').into(),
                 speed_up: tuievents::KeyEvent::new(
