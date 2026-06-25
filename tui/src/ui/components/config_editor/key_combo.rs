@@ -967,6 +967,9 @@ impl KEModifierSelect {
             }
             IdKey::Global(IdKeyGlobal::PlayerNext) => keys.player_keys.next_track.mod_key(),
             IdKey::Global(IdKeyGlobal::PlayerPrevious) => keys.player_keys.previous_track.mod_key(),
+            IdKey::Global(IdKeyGlobal::PlayerRestartTrack) => {
+                keys.player_keys.restart_track.mod_key()
+            }
             IdKey::Global(IdKeyGlobal::PlayerSeekForward) => {
                 keys.player_keys.seek_forward.mod_key()
             }
@@ -1404,6 +1407,15 @@ fn key_global_player_volume_down(config: SharedTuiSettings) -> KEModifierSelect 
     KEModifierSelect::new(
         " Decrease Volume ",
         IdKey::Global(IdKeyGlobal::PlayerVolumeDown),
+        config,
+    )
+}
+
+#[inline]
+fn key_global_player_restart_track(config: SharedTuiSettings) -> KEModifierSelect {
+    KEModifierSelect::new(
+        " Restart Track ",
+        IdKey::Global(IdKeyGlobal::PlayerRestartTrack),
         config,
     )
 }
@@ -1910,6 +1922,11 @@ impl Model {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerVolumeDown)),
             Box::new(key_global_player_volume_down(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::PlayerRestartTrack)),
+            Box::new(key_global_player_restart_track(self.config_tui.clone())),
             Vec::new(),
         )?;
         self.app.remount(

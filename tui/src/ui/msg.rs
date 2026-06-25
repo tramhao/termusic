@@ -464,6 +464,7 @@ pub const KFGLOBAL_FOCUS_ORDER: &[IdKey] = &[
     IdKey::Global(IdKeyGlobal::PlayerTogglePause),
     IdKey::Global(IdKeyGlobal::PlayerNext),
     IdKey::Global(IdKeyGlobal::PlayerPrevious),
+    IdKey::Global(IdKeyGlobal::PlayerRestartTrack),
     IdKey::Global(IdKeyGlobal::PlayerSeekForward),
     IdKey::Global(IdKeyGlobal::PlayerSeekBackward),
     IdKey::Global(IdKeyGlobal::PlayerSpeedUp),

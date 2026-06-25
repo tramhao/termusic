@@ -179,6 +179,7 @@ pub enum IdKeyGlobal {
     PlayerTogglePause,
     PlayerNext,
     PlayerPrevious,
+    PlayerRestartTrack,
     PlayerSeekForward,
     PlayerSeekBackward,
     PlayerSpeedUp,
