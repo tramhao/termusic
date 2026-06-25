@@ -854,8 +854,9 @@ impl PlayerTrait for GeneralPlayer {
     fn pause(&mut self) {
         self.run_info.write().pause(&self.stream_tx);
         self.get_player_mut().pause();
+        let time_pos = self.get_player().position();
         if let Some(ref mut mpris) = self.mpris {
-            mpris.pause();
+            mpris.pause(time_pos);
         }
         if let Some(ref discord) = self.discord {
             discord.pause();
@@ -865,10 +866,11 @@ impl PlayerTrait for GeneralPlayer {
     fn resume(&mut self) {
         self.run_info.write().play(&self.stream_tx);
         self.get_player_mut().resume();
-        if let Some(ref mut mpris) = self.mpris {
-            mpris.resume();
-        }
+
         let time_pos = self.get_player().position();
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.resume(time_pos);
+        }
         if let Some(ref discord) = self.discord {
             discord.resume(time_pos);
         }
@@ -905,6 +907,13 @@ impl PlayerTrait for GeneralPlayer {
         self.in_skip = false;
         self.run_info.write().stop(&self.stream_tx);
         self.get_player_mut().stop();
+
+        if let Some(ref mut mpris) = self.mpris {
+            mpris.stop();
+        }
+        if let Some(ref discord) = self.discord {
+            discord.stop();
+        }
     }
 
     fn get_progress(&self) -> Option<PlayerProgress> {
