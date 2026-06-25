@@ -64,6 +64,9 @@ impl AppComponent<Msg, UserEvent> for GlobalListener {
             Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.open_help.get() => {
                 Some(Msg::HelpPopup(HelpPopupMsg::Show))
             }
+            Event::Keyboard(keyevent) if keyevent == keys.player_keys.restart_track.get() => {
+                Some(Msg::Player(PlayerMsg::RestartTrack))
+            }
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.seek_forward.get() => {
                 Some(Msg::Player(PlayerMsg::SeekForward))
             }
@@ -237,6 +240,10 @@ fn global_listener_subscriptions(keys: &Keys) -> Vec<Sub<Id, UserEvent>> {
         // ),
         Sub::new(
             EventClause::Keyboard(keys.select_view_keys.open_help.get_owned()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            EventClause::Keyboard(keys.player_keys.restart_track.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
