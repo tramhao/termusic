@@ -10,6 +10,7 @@ pub enum TuiCmd {
     TogglePause,
     // Play,
     // Pause,
+    RestartTrack,
     SeekForward,
     SeekBackward,
     VolumeUp,

@@ -127,6 +127,7 @@ pub enum PlayerCmd {
     Quit(&'static str),
     ReloadConfig,
     ReloadPlaylist,
+    RestartTrack,
     SeekBackward,
     SeekForward,
     SkipNext,
@@ -671,6 +672,12 @@ impl GeneralPlayer {
                 self.start_play(false);
             }
         }
+    }
+
+    ///
+    /// Sets Player Position to 0
+    pub fn restart_track(&mut self) {
+        self.seek_to(Duration::from_secs(0));
     }
 
     /// # Panics

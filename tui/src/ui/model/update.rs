@@ -411,6 +411,18 @@ impl Model {
             PlayerMsg::TogglePause => {
                 self.player_toggle_pause();
             }
+            PlayerMsg::RestartTrack => {
+                if self.is_radio() {
+                    self.show_message_timeout_label_help(
+                        "seek is not available for live radio",
+                        None,
+                        None,
+                        None,
+                    );
+                    return;
+                }
+                self.command(TuiCmd::RestartTrack);
+            }
             PlayerMsg::SeekForward => {
                 if self.is_radio() {
                     self.show_message_timeout_label_help(
