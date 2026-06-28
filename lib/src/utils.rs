@@ -49,6 +49,7 @@ pub fn filetype_supported(path: &Path) -> bool {
             | "aifc"
             | "flac"
             | "m4a"
+            | "mp4"
             | "aac"
             | "opus"
             | "ogg"
@@ -455,5 +456,22 @@ mod tests {
         assert_eq!(iter.next(), Some("hello there"));
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn filetype_supported_extensions() {
+        // mp4 (AAC-in-mp4 audio) is handled by the backend, so the extension
+        // allow-list should accept it. See issue #701.
+        assert!(filetype_supported(Path::new("song.mp4")));
+
+        // existing supported extensions still pass
+        assert!(filetype_supported(Path::new("song.mp3")));
+        assert!(filetype_supported(Path::new("song.m4a")));
+        assert!(filetype_supported(Path::new("song.aac")));
+        assert!(filetype_supported(Path::new("song.flac")));
+
+        // unsupported and extension-less paths are rejected
+        assert!(!filetype_supported(Path::new("notes.txt")));
+        assert!(!filetype_supported(Path::new("noextension")));
     }
 }
