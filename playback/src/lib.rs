@@ -674,8 +674,11 @@ impl GeneralPlayer {
         }
     }
 
+    /// Seeks to 0 seconds, thereby practically restarting the current track.
     ///
-    /// Sets Player Position to 0
+    /// # Panics
+    ///
+    /// if the underlying "seek" returns a error (which current never happens)
     pub fn restart_track(&mut self) {
         self.seek_to(Duration::from_secs(0));
     }
