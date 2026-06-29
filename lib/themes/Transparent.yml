@@ -1,0 +1,26 @@
+colors:
+  name: Transparent
+  primary:
+    background: "transparent"
+    foreground: "native"
+  cursor:
+    text: "native"
+    cursor: "native"
+  normal:
+    black: "native"
+    red: "native"
+    green: "native"
+    yellow: "native"
+    blue: "native"
+    magenta: "native"
+    cyan: "native"
+    white: "native"
+  bright:
+    black: "native"
+    red: "native"
+    green: "native"
+    yellow: "native"
+    blue: "native"
+    magenta: "native"
+    cyan: "native"
+    white: "native"

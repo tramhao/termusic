@@ -203,6 +203,8 @@ pub enum ThemeColor {
     Native,
     /// Set explicit RGB colors
     Hex(ThemeColorHex),
+    /// Transparent background
+    Transparent,
 }
 
 impl ThemeColor {
@@ -220,10 +222,20 @@ impl ThemeColor {
         Self::Native
     }
 
+    /// Create a new instance for transparent
+    #[must_use]
+    pub const fn new_transparent() -> Self {
+        Self::Transparent
+    }
+
     /// Try to parse a hex or "native" string.
     fn from_string(val: &str) -> Result<Self, ThemeColorParseError> {
         if val == "native" {
             return Ok(Self::Native);
+        }
+
+        if val == "transparent" {
+            return Ok(Self::Transparent);
         }
 
         let res = match ThemeColorHex::try_from(val) {
@@ -248,18 +260,18 @@ impl ThemeColor {
         match self {
             ThemeColor::Native => "native".to_string(),
             ThemeColor::Hex(theme_color_hex) => theme_color_hex.to_hex(),
+            ThemeColor::Transparent => "transparent".to_string(),
         }
     }
 
     /// Resolve the current instance to either native coloring (requires `style`) or a rgb color.
     #[must_use]
     pub fn resolve_color(&self, style: ColorTermusic) -> Color {
-        let hex = match self {
-            ThemeColor::Native => return style.into(),
-            ThemeColor::Hex(theme_color_hex) => theme_color_hex,
-        };
-
-        (*hex).into()
+        match self {
+            ThemeColor::Native => style.into(),
+            ThemeColor::Hex(theme_color_hex) => (*theme_color_hex).into(),
+            ThemeColor::Transparent => Color::Reset,
+        }
     }
 }
 
@@ -797,6 +809,8 @@ mod tests {
     use super::ThemeColors;
 
     mod theme_color {
+        use super::super::Color;
+        use super::super::ColorTermusic;
         use super::super::ThemeColor;
 
         #[test]
@@ -823,6 +837,26 @@ mod tests {
         fn should_serialize() {
             assert_eq!(ThemeColor::new_hex(1, 2, 3).to_string(), "#010203");
             assert_eq!(ThemeColor::new_native().to_string(), "native");
+        }
+
+        #[test]
+        fn should_parse_transparent() {
+            assert_eq!(
+                ThemeColor::new_transparent(),
+                ThemeColor::try_from("transparent").unwrap()
+            );
+        }
+
+        #[test]
+        fn should_serialize_transparent() {
+            assert_eq!(ThemeColor::new_transparent().to_string(), "transparent");
+        }
+
+        #[test]
+        fn should_resolve_transparent_to_reset() {
+            let transparent = ThemeColor::new_transparent();
+            let color = transparent.resolve_color(ColorTermusic::Foreground);
+            assert_eq!(color, Color::Reset);
         }
     }
 
