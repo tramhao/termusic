@@ -1,7 +1,7 @@
 use std::{
     fmt::Display,
     net::{IpAddr, SocketAddr},
-    num::{NonZeroU8, NonZeroU32},
+    num::{NonZeroU32, NonZeroU8},
     path::PathBuf,
 };
 
@@ -10,11 +10,20 @@ use serde::{Deserialize, Serialize};
 use crate::track::MediaTypesSimple;
 use backends::BackendSettings;
 use metadata::MetadataSettings;
+use synchronization::SynchronizationSettings;
 
 pub mod backends;
 /// Extra things necessary for a config file, like wrappers for versioning
 pub mod config_extra;
 pub mod metadata;
+pub mod synchronization;
+
+#[cfg(test)]
+mod synchronization_phase3_tests;
+#[cfg(test)]
+mod synchronization_phase5_tests;
+#[cfg(test)]
+mod synchronization_tests;
 
 pub type MusicDirsOwned = Vec<PathBuf>;
 
@@ -27,6 +36,8 @@ pub struct ServerSettings {
     pub podcast: PodcastSettings,
     pub backends: BackendSettings,
     pub metadata: MetadataSettings,
+    /// Podcast synchronization settings (automatic feed refresh and download).
+    pub synchronization: SynchronizationSettings,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -518,13 +529,13 @@ mod v1_interop {
     use std::num::TryFromIntError;
 
     use super::{
-        Backend, ComSettings, LoopMode, NonZeroU8, NonZeroU32, PlayerSettings, PodcastSettings,
-        PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
-        ServerSettings, backends::BackendSettings,
+        backends::BackendSettings, Backend, ComSettings, LoopMode, NonZeroU32, NonZeroU8,
+        PlayerSettings, PodcastSettings, PositionYesNo, PositionYesNoLower, RememberLastPosition,
+        ScanDepth, SeekStep, ServerSettings,
     };
     use crate::config::{
         v1,
-        v2::server::{StartupState, metadata::MetadataSettings},
+        v2::server::{metadata::MetadataSettings, StartupState},
     };
 
     impl From<v1::Loop> for LoopMode {
@@ -649,6 +660,7 @@ mod v1_interop {
                 podcast: podcast_settings,
                 backends: BackendSettings::default(),
                 metadata: MetadataSettings::default(),
+                synchronization: super::SynchronizationSettings::default(),
             })
         }
     }

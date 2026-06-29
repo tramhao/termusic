@@ -3,7 +3,7 @@ use std::ffi::OsStr;
 use std::iter::FusedIterator;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use pinyin::ToPinyin;
 use rand::RngExt;
 use unicode_segmentation::UnicodeSegmentation;
@@ -108,13 +108,29 @@ fn get_podcast_save_path(config: &ServerOverlay) -> Result<PathBuf> {
     Ok(full_path.into_owned())
 }
 
-/// Get the download directory for the provided `pod_title` and create it if not existing
-pub fn create_podcast_dir(config: &ServerOverlay, pod_title: String) -> Result<PathBuf> {
-    let mut download_path = get_podcast_save_path(config).context("get podcast directory")?;
-    download_path.push(pod_title);
-    std::fs::create_dir_all(&download_path).context("creating podcast download directory")?;
+/// Create or ensure existence of a podcast download directory with sanitized title.
+///
+/// Uses `sanitize_filename` with truncation and Windows-safe options to produce
+/// a filesystem-safe directory name from the raw podcast title (AC-10, SCENARIO-014).
+pub fn ensure_podcast_dir(download_dir: &Path, pod_title: &str) -> Result<PathBuf> {
+    let dir_name = sanitize_filename::sanitize_with_options(
+        pod_title,
+        sanitize_filename::Options {
+            truncate: true,
+            windows: true,
+            replacement: "",
+        },
+    );
+    let path = download_dir.join(dir_name);
+    std::fs::create_dir_all(&path).context("creating podcast download directory")?;
+    Ok(path)
+}
 
-    Ok(download_path)
+/// Get the download directory for the provided `pod_title` and create it if not existing
+#[allow(clippy::needless_pass_by_value)] // public API signature preserved for backward compatibility
+pub fn create_podcast_dir(config: &ServerOverlay, pod_title: String) -> Result<PathBuf> {
+    let download_path = get_podcast_save_path(config).context("get podcast directory")?;
+    ensure_podcast_dir(&download_path, &pod_title)
 }
 
 /// Parse the playlist at `current_node`(from the tui tree) and return the media paths

@@ -28,6 +28,12 @@ pub static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
 extern crate log;
 
 #[cfg(test)]
+mod player_playlist_add_track_tests;
+
+#[cfg(test)]
+mod utils_phase3_tests;
+
+#[cfg(test)]
 mod tests {
     use std::{ffi::OsStr, path::PathBuf};
 

@@ -1,5 +1,5 @@
 #![allow(clippy::module_name_repetitions)]
-use anyhow::{Context, anyhow, bail};
+use anyhow::{anyhow, bail, Context};
 
 // using lower mod to restrict clippy
 #[allow(clippy::pedantic)]
@@ -393,7 +393,7 @@ pub fn clamp_u16(val: u32) -> u16 {
 pub mod playlist_helpers {
     use anyhow::Context;
 
-    use super::{PlaylistTracksToRemoveClear, protobuf, unwrap_msg};
+    use super::{protobuf, unwrap_msg, PlaylistTracksToRemoveClear};
 
     /// A Id / Source for a given Track
     #[derive(Debug, Clone, PartialEq)]
@@ -449,6 +449,10 @@ pub mod playlist_helpers {
     }
 
     impl PlaylistAddTrack {
+        /// Sentinel value indicating tracks should be appended at the end of the playlist.
+        /// Any `at_index >= playlist.len()` triggers end-append behavior in `Playlist::add_tracks`.
+        pub const AT_END: u64 = u64::MAX;
+
         #[must_use]
         pub fn new_single(at_index: u64, track: PlaylistTrackSource) -> Self {
             Self {
@@ -460,6 +464,18 @@ pub mod playlist_helpers {
         #[must_use]
         pub fn new_vec(at_index: u64, tracks: Vec<PlaylistTrackSource>) -> Self {
             Self { at_index, tracks }
+        }
+
+        /// Create a request to append a single track at the end of the playlist.
+        #[must_use]
+        pub fn new_append_single(track: PlaylistTrackSource) -> Self {
+            Self::new_single(Self::AT_END, track)
+        }
+
+        /// Create a request to append multiple tracks at the end of the playlist.
+        #[must_use]
+        pub fn new_append_vec(tracks: Vec<PlaylistTrackSource>) -> Self {
+            Self::new_vec(Self::AT_END, tracks)
         }
     }
 
