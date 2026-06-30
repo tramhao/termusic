@@ -389,6 +389,9 @@ impl Model {
         }
     }
 
+    /// Apply the given color from the given component ID to their matching theme style preview for later saving.
+    ///
+    /// Note that actual live-preview of the style is already handled in the respetcive component itself, this is only saving that value to the config.
     fn update_config_editor_color_changed(
         &mut self,
         id: IdConfigEditor,
@@ -397,51 +400,84 @@ impl Model {
         // alias to reduce line length
         let style = &mut self.config_editor.theme.style;
 
+        let IdConfigEditor::Theme(id) = id else {
+            unimplemented!("Called color change update on non-theme component!");
+        };
+
+        // explicitly handle all cases
         match id {
-            IdConfigEditor::Theme(IdCETheme::LibraryForeground) => {
+            IdCETheme::LibraryForeground => {
                 style.library.foreground_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::LibraryBackground) => {
+            IdCETheme::LibraryBackground => {
                 style.library.background_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::LibraryBorder) => {
+            IdCETheme::LibraryBorder => {
                 style.library.border_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::LibraryHighlight) => {
+            IdCETheme::LibraryHighlight => {
                 style.library.highlight_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::PlaylistForeground) => {
+            IdCETheme::PlaylistForeground => {
                 style.playlist.foreground_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::PlaylistBackground) => {
+            IdCETheme::PlaylistBackground => {
                 style.playlist.background_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::PlaylistBorder) => {
+            IdCETheme::PlaylistBorder => {
                 style.playlist.border_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::PlaylistHighlight) => {
+            IdCETheme::PlaylistHighlight => {
                 style.playlist.highlight_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::ProgressForeground) => {
+            IdCETheme::ProgressForeground => {
                 style.progress.foreground_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::ProgressBackground) => {
+            IdCETheme::ProgressBackground => {
                 style.progress.background_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::ProgressBorder) => {
+            IdCETheme::ProgressBorder => {
                 style.progress.border_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::LyricForeground) => {
+            IdCETheme::LyricForeground => {
                 style.lyric.foreground_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::LyricBackground) => {
+            IdCETheme::LyricBackground => {
                 style.lyric.background_color = color_config;
             }
-            IdConfigEditor::Theme(IdCETheme::LyricBorder) => {
+            IdCETheme::LyricBorder => {
                 style.lyric.border_color = color_config;
             }
+            IdCETheme::ImportantPopupBackground => {
+                style.important_popup.background_color = color_config;
+            },
+            IdCETheme::ImportantPopupBorder => {
+                style.important_popup.border_color = color_config;
+            },
+            IdCETheme::ImportantPopupForeground => {
+                style.important_popup.foreground_color = color_config;
+            },
+            IdCETheme::FallbackBackground => {
+                style.fallback.background_color = color_config;
+            },
+            IdCETheme::FallbackBorder => {
+                style.fallback.border_color = color_config;
+            },
+            IdCETheme::FallbackForeground => {
+                style.fallback.foreground_color = color_config;
+            },
+            IdCETheme::FallbackHighlight => {
+                style.fallback.highlight_color = color_config;
+            },
 
-            _ => {}
+            // Everything below does not have anything to modify the theme style:
+
+            // Symbols dont have any style to live-apply
+            IdCETheme::LibraryHighlightSymbol | IdCETheme::PlaylistHighlightSymbol | IdCETheme::CurrentlyPlayingTrackSymbol |
+            // Labels(Titles) also dont have anything to live-apply
+            IdCETheme::LibraryLabel | IdCETheme::PlaylistLabel | IdCETheme::ImportantPopupLabel | IdCETheme::FallbackLabel | IdCETheme::LyricLabel | IdCETheme::ProgressLabel |
+            // Other
+            IdCETheme::ThemeSelectTable => {}
         }
     }
 }

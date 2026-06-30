@@ -50,12 +50,16 @@ fn common_input_comp<T: Into<Title>>(config: &TuiOverlay, title: T) -> Input {
     Input::default()
         .borders(
             Borders::default()
-                .color(config.settings.theme.library_border())
+                .color(config.settings.theme.fallback_border())
                 .modifiers(BorderType::Rounded),
         )
-        .foreground(config.settings.theme.library_foreground())
-        .background(config.settings.theme.library_background())
-        .inactive(Style::new().fg(config.settings.theme.library_foreground()))
+        .foreground(config.settings.theme.fallback_foreground())
+        .background(config.settings.theme.fallback_background())
+        .inactive(
+            Style::new()
+                .bg(config.settings.theme.fallback_background())
+                .fg(config.settings.theme.fallback_foreground()),
+        )
         .invalid_style(
             Style::default().fg(config
                 .settings
@@ -71,12 +75,12 @@ fn common_radio_comp<T: Into<Title>>(config: &TuiOverlay, title: T) -> Radio {
     Radio::default()
         .borders(
             Borders::default()
-                .color(config.settings.theme.library_border())
+                .color(config.settings.theme.fallback_border())
                 .modifiers(BorderType::Rounded),
         )
-        .foreground(config.settings.theme.library_foreground())
-        .background(config.settings.theme.library_background())
-        .inactive(Style::new().bg(config.settings.theme.library_background()))
+        .foreground(config.settings.theme.fallback_foreground())
+        .background(config.settings.theme.fallback_background())
+        .inactive(Style::new().bg(config.settings.theme.fallback_background()))
         .highlight_style(
             CommonHighlight::default()
                 .style
