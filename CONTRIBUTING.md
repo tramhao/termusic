@@ -22,7 +22,6 @@ For a commit, we expect the code:
 
 - Builds should not fail with the default features. (or the features this code touches)
 - Properly formatted code. (via `cargo +nightly fmt`)
-- No Clippy warnings. (via `cargo clippy`)
 - To follow the general coding style of surrounding code.
 - To not add code which would have a conflicting License.
 
@@ -75,4 +74,5 @@ Note that for simple changes, squash merging may be used and the commit message 
 Pull requests are expected to:
 
 - target the default (`master`) branch, unless specified otherwise.
+- no Clippy warnings. (via `cargo clippy`)
 - pass *all* github CI actions, which indlues all things from [Commits](#commits) and passing of all tests.
