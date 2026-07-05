@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs)]
+
 use std::{
     sync::mpsc::{self, Receiver},
     time::Duration,
@@ -374,24 +376,51 @@ mod windows {
     //         }
     //     }
     // }
+}
 
-    // The following does not seem to be necessary, hence disabled
-    // /// Blockingly handle the windows event queue.
-    // ///
-    // /// This should be spawned on a extra thread
-    // pub fn pump_event_queue() {
-    //     use windows::Win32::UI::WindowsAndMessaging::{MSG, WM_QUIT, GetMessageW, TranslateMessage, DispatchMessageW};
+///
+/// This module provides two functions:
+/// - [`init_macos_main_thread`]: Call once at startup to initialize `NSApplication`
+///   and set the activation policy to `.accessory` (no Dock icon).
+/// - [`pump_run_loop`]: Pump the main run loop so AppKit can dispatch event
+///   callbacks. Designed to be called from the main thread while a background
+///   thread runs the Tokio runtime.
+#[cfg(target_os = "macos")]
+#[allow(unsafe_code)]
+pub mod macos {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::time::Duration;
 
-    //     let mut msg = MSG::default();
+    /// Initialize the macOS AppKit application on the main thread.
+    ///
+    /// Must be called from the main thread before any souvlaki `MediaControls`
+    /// are attached. Sets the activation policy to `.accessory`, meaning the
+    /// app appears as a background process (no Dock icon) but can still receive
+    /// media key events via `MPRemoteCommandCenter`.
+    const NS_APPLICATION_ACTIVATION_POLICY_ACCESSORY: i64 = 1;
 
-    //     info!("Windows Event Queue Pump Starting");
-    //     unsafe {
-    //         while GetMessageW(&mut msg, None, 0, 0).as_bool() && msg.message != WM_QUIT {
-    //             debug!("Windows Message: {:#?}", msg);
-    //             let _ = TranslateMessage(&msg);
-    //             DispatchMessage(&msg);
-    //         }
-    //     }
-    //     info!("Windows Event Queue Pump Ending");
-    // }
+    pub fn init_macos_main_thread() {
+        unsafe {
+            let app: *mut objc::runtime::Object = msg_send![class!(NSApplication), sharedApplication];
+            let () = msg_send![app, setActivationPolicy: NS_APPLICATION_ACTIVATION_POLICY_ACCESSORY];
+        }
+    }
+
+    /// Pump the main CFRunLoop until `done` becomes `true`.
+    ///
+    /// Each iteration processes any pending events via `runUntilDate:` with
+    /// `distantPast` (non-blocking), then sleeps for 50 ms. This loop is
+    /// intended to run on the main thread while the Tokio runtime executes on a
+    /// background thread. `done` is set to `true` when the background runtime
+    /// finishes, causing this function to return.
+    pub fn pump_run_loop(done: &AtomicBool) {
+        while !done.load(Ordering::SeqCst) {
+            unsafe {
+                let rl: *mut objc::runtime::Object = msg_send![class!(NSRunLoop), mainRunLoop];
+                let distant_past: *mut objc::runtime::Object = msg_send![class!(NSDate), distantPast];
+                let () = msg_send![rl, runUntilDate: distant_past];
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+    }
 }

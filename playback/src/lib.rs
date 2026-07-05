@@ -1,3 +1,8 @@
+#![allow(unexpected_cfgs)]
+// The `objc` crate (v0.2, last updated 2020) uses `cfg(cargo-clippy)` internally
+// without declaring it, which triggers `unexpected_cfgs` on Rust >= 1.80.
+// All upstream objc calls are behind `#[cfg(target_os = "macos")]`.
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -26,10 +31,17 @@ pub use backends::{Backend, BackendSelect};
 
 mod discord;
 mod mpris;
+#[cfg(target_os = "macos")]
+pub use mpris::macos;
 pub mod playlist;
 
 #[macro_use]
 extern crate log;
+
+#[cfg(target_os = "macos")]
+#[allow(unexpected_cfgs)]
+#[macro_use]
+extern crate objc;
 
 mod backends;
 

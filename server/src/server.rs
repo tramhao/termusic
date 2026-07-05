@@ -86,11 +86,41 @@ impl PlayerStats {
 }
 
 fn main() -> Result<()> {
-    let res = actual_main();
+    run_server()
+}
 
+#[cfg(target_os = "macos")]
+fn run_server() -> Result<()> {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use termusicplayback::macos;
+
+    macos::init_macos_main_thread();
+
+    let done = Arc::new(AtomicBool::new(false));
+    let done_clone = done.clone();
+
+    let handle = std::thread::Builder::new()
+        .name("termusic-tokio".into())
+        .spawn(move || {
+            let rt = tokio::runtime::Runtime::new()?;
+            let result = rt.block_on(actual_main());
+            done_clone.store(true, Ordering::SeqCst);
+            result
+        })?;
+
+    macos::pump_run_loop(&done);
+    let result = handle.join().unwrap();
+    trace!("Tokio Exited");
+    result
+}
+
+#[cfg(not(target_os = "macos"))]
+fn run_server() -> Result<()> {
+    let rt = tokio::runtime::Runtime::new()?;
+    let res = rt.block_on(actual_main());
     trace!("Tokio Exited");
 
-    // print error to the log and then throw it
     if let Err(err) = res {
         error!("Error: {err:?}");
         return Err(err);
@@ -99,7 +129,6 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[tokio::main]
 async fn actual_main() -> Result<()> {
     let args = cli::Args::parse();
     let _ = logger::setup(&args);
