@@ -1,15 +1,14 @@
 use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::components::Select;
-use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{BorderType, Borders, HorizontalAlignment, Style, Title};
+use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
-use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct TESelectLyric {
@@ -33,11 +32,11 @@ impl TESelectLyric {
                 .title(Title::from(" Select a lyric ").alignment(HorizontalAlignment::Center))
                 .rewind(true)
                 .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_style_inactive(Style::default())
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .choices(["No Lyric"])
         };

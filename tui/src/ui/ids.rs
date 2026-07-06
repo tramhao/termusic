@@ -162,6 +162,7 @@ pub enum IdKeyGlobal {
     LayoutTreeview,
     LayoutDatabase,
     LayoutPodcast,
+    LayoutPlaylist,
 
     Quit,
     Config,

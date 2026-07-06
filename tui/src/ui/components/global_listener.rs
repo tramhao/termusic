@@ -106,6 +106,10 @@ impl AppComponent<Msg, UserEvent> for GlobalListener {
                 Some(Msg::Layout(MainLayoutMsg::Podcast))
             }
 
+            Event::Keyboard(keyevent) if keyevent == keys.select_view_keys.view_playlist.get() => {
+                Some(Msg::Layout(MainLayoutMsg::Playlist))
+            }
+
             Event::Keyboard(keyevent) if keyevent == keys.player_keys.toggle_prefetch.get() => {
                 Some(Msg::Player(PlayerMsg::ToggleGapless))
             }
@@ -284,6 +288,10 @@ fn global_listener_subscriptions(keys: &Keys) -> Vec<Sub<Id, UserEvent>> {
         ),
         Sub::new(
             EventClause::Keyboard(keys.player_keys.save_playlist.get_owned()),
+            no_popup_clause.clone(),
+        ),
+        Sub::new(
+            EventClause::Keyboard(keys.select_view_keys.view_playlist.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(

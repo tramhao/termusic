@@ -237,6 +237,8 @@ pub struct KeysSelectView {
     pub view_database: KeyBinding,
     /// Key to switch to the Podcast view
     pub view_podcasts: KeyBinding,
+    /// Key to switch to the Playlist view
+    pub view_playlist: KeyBinding,
 
     /// Key to open the Config view
     pub open_config: KeyBinding,
@@ -250,6 +252,7 @@ impl Default for KeysSelectView {
             view_library: tuievents::Key::Char('1').into(),
             view_database: tuievents::Key::Char('2').into(),
             view_podcasts: tuievents::Key::Char('3').into(),
+            view_playlist: tuievents::Key::Char('4').into(),
             open_config: tuievents::KeyEvent::new(
                 tuievents::Key::Char('C'),
                 tuievents::KeyModifiers::SHIFT,
@@ -270,6 +273,7 @@ impl CheckConflict for KeysSelectView {
             (&self.view_library, "view_library"),
             (&self.view_database, "view_database"),
             (&self.view_podcasts, "view_podcasts"),
+            (&self.view_playlist, "view_playlist"),
 
             (&self.open_config, "open_config"),
             (&self.open_help, "open_help")
@@ -1908,6 +1912,7 @@ mod v1_interop {
                     view_library: value.global_layout_treeview.into(),
                     view_database: value.global_layout_database.into(),
                     view_podcasts: value.global_layout_podcast.into(),
+                    view_playlist: tuievents::Key::Char('4').into(),
                     open_config: value.global_config_open.into(),
                     open_help: value.global_help.into(),
                 },
@@ -2012,6 +2017,7 @@ mod v1_interop {
                 view_library: tuievents::Key::Char('1').into(),
                 view_database: tuievents::Key::Char('2').into(),
                 view_podcasts: tuievents::Key::Char('3').into(),
+                view_playlist: tuievents::Key::Char('4').into(),
                 open_config: tuievents::KeyEvent::new(
                     tuievents::Key::Char('C'),
                     tuievents::KeyModifiers::SHIFT,

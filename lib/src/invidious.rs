@@ -1,8 +1,6 @@
 use anyhow::{Result, anyhow, bail};
 use rand::seq::SliceRandom;
 use serde_json::Value;
-// left for debug
-// use std::io::Write;
 use reqwest::{Client, ClientBuilder, StatusCode};
 use std::time::Duration;
 
@@ -10,23 +8,9 @@ const INVIDIOUS_INSTANCE_LIST: [&str; 5] = [
     "https://inv.nadeko.net",
     "https://invidious.nerdvpn.de",
     "https://yewtu.be",
-    // "https://inv.riverside.rocks",
-    // "https://invidious.osi.kr",
-    // "https://youtube.076.ne.jp",
     "https://y.com.sb",
     "https://yt.artemislena.eu",
-    // "https://invidious.tiekoetter.com",
-    // Below lines are left for testing
-    // "https://www.google.com",
-    // "https://www.google.com",
-    // "https://www.google.com",
-    // "https://www.google.com",
-    // "https://www.google.com",
-    // "https://www.google.com",
-    // "https://www.google.com",
 ];
-
-const INVIDIOUS_DOMAINS: &str = "https://api.invidious.io/instances.json?sort_by=type,users";
 
 #[derive(Clone, Debug)]
 pub struct Instance {
@@ -67,56 +51,37 @@ impl Default for Instance {
 impl Instance {
     pub async fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
         let client = ClientBuilder::new()
-            .timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(5))
             .build()?;
 
-        let mut domain = String::new();
-        let mut domains = vec![];
+        let mut instances: Vec<&str> = INVIDIOUS_INSTANCE_LIST.to_vec();
+        instances.shuffle(&mut rand::rng());
 
-        // prefor fetch invidious instance from website, but will provide 7 backups
-        if let Ok(domain_list) = Self::get_invidious_instance_list(&client).await {
-            domains = domain_list;
-        } else {
-            for item in &INVIDIOUS_INSTANCE_LIST {
-                domains.push((*item).to_string());
-            }
-        }
-
-        domains.shuffle(&mut rand::rng());
-
-        let mut video_result: Vec<YoutubeVideo> = Vec::new();
-        for v in domains {
+        for v in instances {
             let url = format!("{v}/api/v1/search");
-
             let query_vec = vec![
                 ("q", query),
                 ("page", "1"),
                 ("type", "video"),
                 ("sort_by", "relevance"),
             ];
+
             if let Ok(result) = client.get(&url).query(&query_vec).send().await
                 && result.status() == 200
                 && let Ok(text) = result.text().await
                 && let Some(vr) = Self::parse_youtube_options(&text)
             {
-                video_result = vr;
-                domain = v;
-                break;
+                let domain = Some(v.to_string());
+                let instance = Self {
+                    domain,
+                    client,
+                    query: Some(query.to_string()),
+                };
+                return Ok((instance, vr));
             }
         }
-        if domain.len() < 2 {
-            bail!("Something is wrong with your connection or all 7 invidious servers are down.");
-        }
 
-        let domain = Some(domain);
-        Ok((
-            Self {
-                domain,
-                client,
-                query: Some(query.to_string()),
-            },
-            video_result,
-        ))
+        bail!("All invidious servers are down. Try again later.")
     }
 
     // GetSearchQuery fetches query result from an Invidious instance.
@@ -218,54 +183,5 @@ impl Instance {
         let video_id = value.get("videoId")?.as_str()?.to_owned();
         let length_seconds = value.get("lengthSeconds")?.as_u64()?;
         Some((title, video_id, length_seconds))
-    }
-
-    async fn get_invidious_instance_list(client: &Client) -> Result<Vec<String>> {
-        let result = client.get(INVIDIOUS_DOMAINS).send().await?.text().await?;
-        // Left here for debug
-        // let mut file = std::fs::File::create("data.txt").expect("create failed");
-        // file.write_all(result.as_bytes()).expect("write failed");
-        if let Some(vec) = Self::parse_invidious_instance_list(&result) {
-            return Ok(vec);
-        }
-        bail!("no instance list fetched")
-    }
-
-    fn parse_invidious_instance_list(data: &str) -> Option<Vec<String>> {
-        if let Ok(value) = serde_json::from_str::<Value>(data) {
-            let mut vec = Vec::new();
-            if let Some(array) = value.as_array() {
-                for inner_value in array {
-                    if let Some((uri, health)) = Self::parse_instance(inner_value)
-                        && health > 95.0
-                    {
-                        vec.push(uri);
-                    }
-                }
-            }
-            if !vec.is_empty() {
-                return Some(vec);
-            }
-        }
-        None
-    }
-
-    fn parse_instance(value: &Value) -> Option<(String, f64)> {
-        let obj = value.get(1)?.as_object()?;
-        if obj.get("api")?.as_bool()? {
-            let uri = obj.get("uri")?.as_str()?.to_owned();
-            let health = obj
-                .get("monitor")?
-                .as_object()?
-                .get("30dRatio")?
-                .get("ratio")?
-                .as_str()?
-                .to_owned()
-                .parse::<f64>()
-                .ok();
-            health.map(|health| (uri, health))
-        } else {
-            None
-        }
     }
 }

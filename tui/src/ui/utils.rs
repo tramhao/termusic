@@ -1,10 +1,4 @@
-use tuirealm::{
-    props::{Style, TextModifiers},
-    ratatui::layout::{Constraint, Layout, Rect},
-};
-
-/// Save a few characters and lines by having a alias.
-pub const STYLE_REMOVE_REVERSE: Style = Style::new().remove_modifier(TextModifiers::REVERSED);
+use tuirealm::ratatui::layout::{Constraint, Layout, Rect};
 
 // /// Get block
 // pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {

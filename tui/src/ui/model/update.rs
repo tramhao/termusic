@@ -171,6 +171,7 @@ impl Model {
                     TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
                     TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
                     TermusicLayout::Podcast => self.app.active(&Id::Podcast).ok(),
+                    TermusicLayout::Playlist => self.app.active(&Id::Playlist).ok(),
                 };
             }
         }
@@ -621,6 +622,46 @@ impl Model {
                 self.lyric_update_title();
                 self.lyric_update();
             }
+            MainLayoutMsg::Playlist => {
+                let mut need_to_set_focus = true;
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Playlist, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
+                {
+                    need_to_set_focus = false;
+                }
+
+                if let Some(true) = self
+                    .app
+                    .query(&Id::Library, Attribute::Focus)
+                    .ok()
+                    .flatten()
+                    .as_ref()
+                    .map(QueryResult::as_ref)
+                    .and_then(AttrValueRef::as_flag)
+                {
+                    need_to_set_focus = false;
+                }
+
+                if need_to_set_focus {
+                    self.app.active(&Id::Playlist).ok();
+                }
+
+                self.xywh.set_layout_cover();
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(e.context("update_photo"));
+                }
+
+                self.layout = TermusicLayout::Playlist;
+                self.playlist_switch_layout();
+                self.lyric_update_title();
+                self.lyric_update();
+            }
         }
     }
 
@@ -990,6 +1031,7 @@ impl Model {
                 TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
+                TermusicLayout::Playlist => assert!(self.app.active(&Id::Library).is_ok()),
             },
             PLMsg::NextSong => {
                 self.command(TuiCmd::SkipNext);
@@ -1016,6 +1058,7 @@ impl Model {
                     assert!(self.app.active(&Id::DBListSearchTracks).is_ok());
                 }
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
+                TermusicLayout::Playlist => assert!(self.app.active(&Id::Library).is_ok()),
             },
         }
     }
@@ -1071,7 +1114,7 @@ impl Model {
                     self.update_layout(MainLayoutMsg::Podcast);
                 }
                 MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => match self.layout {
-                    TermusicLayout::TreeView | TermusicLayout::DataBase => {}
+                    TermusicLayout::TreeView | TermusicLayout::DataBase | TermusicLayout::Playlist => {}
                     TermusicLayout::Podcast => {
                         self.update_layout(MainLayoutMsg::TreeView);
                     }

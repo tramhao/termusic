@@ -12,7 +12,6 @@ use termusiclib::new_database::{album_ops, artist_ops, track_ops};
 use termusiclib::track::{DurationFmtShort, Track};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::components::List;
-use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
@@ -22,6 +21,7 @@ use tuirealm::props::{
     PropPayloadRef, PropValue, QueryResult, Table, TableBuilder, Title,
 };
 use tuirealm::props::{Borders, Style};
+use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 
 use super::popups::{YNConfirm, YNConfirmStyle};
@@ -29,7 +29,6 @@ use crate::ui::Model;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{DBMsg, GSMsg, Msg, SearchCriteria};
-use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 /// Helper trait to accomedate mutable access to `self` while also allowing access to other `self` properties for [`common_list_movement`].
 trait OnKeyDB {
@@ -203,21 +202,22 @@ impl DBListCriteria {
                 .title(Title::from(" DataBase ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
                 .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_style_inactive(Style::default())
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
                 .scroll(true)
-                .rows(DBCriteria::build_table())
+                .rows([LineStatic::from("No Search active")])
         };
 
         Self {
             component,
             on_key_tab,
+
             on_key_backtab,
             config,
         }
@@ -333,11 +333,11 @@ impl DBListSearchResult {
                 .title(Title::from(" Result ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
                 .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_style_inactive(Style::default())
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
@@ -436,11 +436,11 @@ impl DBListSearchTracks {
                 .title(Title::from(" Tracks ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
                 .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_style_inactive(Style::default())
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)

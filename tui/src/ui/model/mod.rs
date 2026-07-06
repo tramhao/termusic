@@ -49,6 +49,7 @@ pub enum TermusicLayout {
     TreeView,
     DataBase,
     Podcast,
+    Playlist,
 }
 
 /// All data specific to the Database Widget / View
@@ -503,6 +504,12 @@ impl Model {
     pub fn init(&mut self) {
         if let Err(e) = Self::theme_extract_all() {
             self.mount_error_popup(e.context("theme save"));
+        }
+        if self.layout == TermusicLayout::Playlist {
+            self.xywh.set_layout_cover();
+            if let Err(e) = self.update_photo() {
+                self.mount_error_popup(e.context("update_photo"));
+            }
         }
         self.scan_all_music_roots();
         self.playlist_sync();

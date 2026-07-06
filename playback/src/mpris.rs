@@ -162,7 +162,15 @@ impl GeneralPlayer {
                 self.next();
             }
             MediaControlEvent::Previous => {
-                self.previous();
+                if let Some(pos) = self.position() {
+                    if pos > Duration::from_secs(5) {
+                        self.seek_to(Duration::from_secs(0));
+                    } else {
+                        self.previous();
+                    }
+                } else {
+                    self.previous();
+                }
             }
             MediaControlEvent::Pause => {
                 self.pause();

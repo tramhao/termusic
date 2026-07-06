@@ -58,9 +58,7 @@ pkg-fmt = "zip"
 
 [features]
 # NOTE: this package fails to compile if not one of the backends (rusty, gst, mpv) are compiled in!
-default = []
-# # left for debug
-# default = ["mpv"]
+default = ["mpv"]
 # default = ["gst"]
 gst = ["termusic-playback/gst"]
 mpv = ["termusic-playback/mpv"]

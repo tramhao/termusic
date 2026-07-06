@@ -344,6 +344,9 @@ impl Model {
             IdKey::Global(IdKeyGlobal::LayoutPodcast) => {
                 keys.select_view_keys.view_podcasts = binding;
             }
+            IdKey::Global(IdKeyGlobal::LayoutPlaylist) => {
+                keys.select_view_keys.view_playlist = binding;
+            }
             IdKey::Global(IdKeyGlobal::XywhMoveLeft) => {
                 keys.move_cover_art_keys.move_left = binding;
             }

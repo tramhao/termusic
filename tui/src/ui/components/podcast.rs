@@ -9,7 +9,6 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::components::List;
-use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
@@ -19,13 +18,13 @@ use tuirealm::props::{
     PropPayloadRef, QueryResult, Style, TableBuilder, Title,
 };
 use tuirealm::props::{Borders, PropPayload, PropValue};
+use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 
 use crate::ui::Model;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg, PCMsg};
-use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct FeedsList {
@@ -51,11 +50,11 @@ impl FeedsList {
                 .title(Title::from(" Podcast Feeds: ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
                 .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_style_inactive(Style::default())
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)
@@ -224,11 +223,11 @@ impl EpisodeList {
                 .title(Title::from(" Episodes: ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
                 .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_style_inactive(Style::default())
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)

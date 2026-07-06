@@ -21,7 +21,6 @@ use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::utils::{filetype_supported, is_playlist, playlist_get_vec};
 use tui_realm_stdlib::components::Table;
-use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::event::{Key, KeyEvent};
@@ -30,6 +29,7 @@ use tuirealm::props::{
     TableBuilder, Title,
 };
 use tuirealm::props::{Borders, Style};
+use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
@@ -42,7 +42,6 @@ use crate::ui::ids::Id;
 use crate::ui::model::{TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
-use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct Playlist {
@@ -66,11 +65,11 @@ impl Playlist {
                 .title(Title::from(" Playlist ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
                 .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.playlist_highlight()),
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.playlist_highlight()),
                 )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+                .highlight_style_inactive(Style::default())
                 .highlight_str(
                     config
                         .settings

@@ -384,10 +384,10 @@ impl LoopMode {
     pub fn display(self, display_symbol: bool) -> &'static str {
         if display_symbol {
             match self {
-                Self::Track => "🔂",
-                Self::Playlist => "🔁",
-                Self::Random => "🔀",
-                Self::PlaylistOnce => "⮕",
+                Self::Track => "󰲡",
+                Self::Playlist => "󰑖",
+                Self::Random => "",
+                Self::PlaylistOnce => "",
             }
         } else {
             match self {

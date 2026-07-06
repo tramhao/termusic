@@ -49,8 +49,6 @@ use tuirealm::state::{State, StateValue};
 use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
-use crate::ui::utils::STYLE_REMOVE_REVERSE;
-
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
 pub const CMD_BACKSPACE: &str = "Backspace";
@@ -897,11 +895,11 @@ impl KEModifierSelect {
             .title(title.into().alignment(HorizontalAlignment::Left))
             .rewind(false)
             .highlight_style(
-                CommonHighlight::default()
-                    .style
-                    .fg(config_r.settings.theme.fallback_highlight()),
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(config_r.settings.theme.fallback_highlight()),
             )
-            .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+            .highlight_style_inactive(Style::default())
             .highlight_str(">> ")
             .choices(choices)
             .placeholder(LineStatic::styled(
@@ -1018,6 +1016,9 @@ impl KEModifierSelect {
             IdKey::Other(IdKeyOther::LibraryRemoveRoot) => keys.library_keys.remove_root.mod_key(),
             IdKey::Global(IdKeyGlobal::LayoutPodcast) => {
                 keys.select_view_keys.view_podcasts.mod_key()
+            }
+            IdKey::Global(IdKeyGlobal::LayoutPlaylist) => {
+                keys.select_view_keys.view_playlist.mod_key()
             }
             IdKey::Global(IdKeyGlobal::XywhMoveLeft) => {
                 keys.move_cover_art_keys.move_left.mod_key()
@@ -1306,6 +1307,15 @@ fn key_global_layout_podcast(config: SharedTuiSettings) -> KEModifierSelect {
     KEModifierSelect::new(
         " Layout Podcast ",
         IdKey::Global(IdKeyGlobal::LayoutPodcast),
+        config,
+    )
+}
+
+#[inline]
+fn key_global_layout_playlist(config: SharedTuiSettings) -> KEModifierSelect {
+    KEModifierSelect::new(
+        " Layout Playlist ",
+        IdKey::Global(IdKeyGlobal::LayoutPlaylist),
         config,
     )
 }
@@ -2003,6 +2013,12 @@ impl Model {
         )?;
 
         self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::LayoutPlaylist)),
+            Box::new(key_global_layout_playlist(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
             Id::ConfigEditor(IdConfigEditor::KeyGlobal(IdKeyGlobal::XywhMoveLeft)),
             Box::new(key_global_xywh_move_left(self.config_tui.clone())),
             Vec::new(),
@@ -2347,6 +2363,10 @@ impl Model {
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
                 IdKeyGlobal::LayoutPodcast,
+            )))?;
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KeyGlobal(
+                IdKeyGlobal::LayoutPlaylist,
             )))?;
 
         self.app

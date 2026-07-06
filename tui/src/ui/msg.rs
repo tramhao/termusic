@@ -60,6 +60,8 @@ pub enum MainLayoutMsg {
     DataBase,
     /// Switch to the Podcast view
     Podcast,
+    /// Switch to the Playlist view
+    Playlist,
 }
 
 /// Player relates messages
@@ -447,6 +449,7 @@ pub const KFGLOBAL_FOCUS_ORDER: &[IdKey] = &[
     IdKey::Global(IdKeyGlobal::LayoutTreeview),
     IdKey::Global(IdKeyGlobal::LayoutDatabase),
     IdKey::Global(IdKeyGlobal::LayoutPodcast),
+    IdKey::Global(IdKeyGlobal::LayoutPlaylist),
     // general global keys
     IdKey::Global(IdKeyGlobal::Quit),
     IdKey::Global(IdKeyGlobal::Config),
