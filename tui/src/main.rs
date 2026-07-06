@@ -531,10 +531,13 @@ async fn execute_action(action: cli::Action, config: &CombinedSettings) -> Resul
         cli::Action::ChangeMode => {
             let pid = find_active_server_process()
                 .context("No running termusic-server found. Start the server first.")?;
-            let (mut client, _addr) = wait_till_connected(config, pid.into()).await?;
-            let mode = client.cycle_loop().await?;
-            let mode_str = mode.display(false);
-            println!("{mode_str}");
+            let (mut client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
+            let response = client.cycle_loop(tonic::Request::new(Default::default())).await?;
+            let inner = response.into_inner();
+            let as_u8 = u8::try_from(inner.mode).context("Failed to convert u32 to u8")?;
+            let mode = LoopMode::tryfrom_discriminant(as_u8)
+                .context("Failed to get LoopMode from u8")?;
+            println!("{}", mode.display(false));
         }
         cli::Action::Import { file } => {
             println!("need to import from file {}", file.display());
