@@ -12,7 +12,7 @@ use flexi_logger::LogSpecification;
 use parking_lot::Mutex;
 use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
-use termusiclib::config::v2::server::{ComProtocol, ScanDepth};
+use termusiclib::config::v2::server::{ComProtocol, LoopMode, ScanDepth};
 use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::{
     ServerOverlay, SharedServerSettings, SharedTuiSettings, TuiOverlay, new_shared_server_settings,
@@ -528,6 +528,14 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
 
 async fn execute_action(action: cli::Action, config: &CombinedSettings) -> Result<()> {
     match action {
+        cli::Action::ChangeMode => {
+            let pid = find_active_server_process()
+                .context("No running termusic-server found. Start the server first.")?;
+            let (mut client, _addr) = wait_till_connected(config, pid.into()).await?;
+            let mode = client.cycle_loop().await?;
+            let mode_str = mode.display(false);
+            println!("{mode_str}");
+        }
         cli::Action::Import { file } => {
             println!("need to import from file {}", file.display());
 

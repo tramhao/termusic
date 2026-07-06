@@ -76,6 +76,8 @@ pub enum Action {
         #[arg(value_name = "FILE")]
         file: PathBuf,
     },
+    /// Cycle the playback loop mode (Track, Playlist, PlaylistOnce, Random) and print the new mode.
+    ChangeMode,
 }
 
 const DEFAULT_LOGFILE_FILENAME: &str = "termusic-tui.log";
