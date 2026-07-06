@@ -125,6 +125,8 @@ alphanumeric-sort = "1.5.7"
 # for less dependencies, keep in sync with the version ratatui uses
 lru = "0.16"
 either = "1.16"
+# for filter audio files in explorer
+mime_guess = "2.0.5"
 
 [profile.release]
 lto = true

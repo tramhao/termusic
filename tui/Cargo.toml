@@ -63,6 +63,7 @@ alphanumeric-sort.workspace = true
 pathdiff.workspace = true
 either.workspace = true
 lru.workspace = true
+mime_guess.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 # required for setting "DETACHED_PROCESS" for spawning the server
