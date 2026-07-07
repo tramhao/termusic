@@ -86,10 +86,10 @@ pub enum Action {
     #[command(aliases = &["t", "play-pause"])]
     TogglePause,
     /// Increase volume
-    #[command(aliases = &["v-up"])]
+    #[command(aliases = &["v-up", "volumeup"])]
     VolumeUp,
     /// Decrease volume
-    #[command(aliases = &["v-down"])]
+    #[command(aliases = &["v-down", "volumedown"])]
     VolumeDown,
     /// Increase playback speed
     SpeedUp,
