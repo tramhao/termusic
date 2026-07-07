@@ -82,6 +82,12 @@ pub enum Action {
     /// Skip to previous track
     #[command(aliases = &["p", "prev"])]
     Previous,
+    /// Resume playback
+    #[command(aliases = &["unpause", "resume"])]
+    Play,
+    /// Pause playback
+    #[command(aliases = &["stop"])]
+    Pause,
     /// Toggle play/pause
     #[command(aliases = &["t", "play-pause"])]
     TogglePause,
@@ -98,7 +104,6 @@ pub enum Action {
     /// Toggle gapless playback
     ToggleGapless,
     /// Restart current track
-    #[command(aliases = &["restart"])]
     RestartTrack,
     /// Seek forward
     SeekForward,
@@ -106,7 +111,7 @@ pub enum Action {
     SeekBackward,
     /// Cycle loop mode (list → track → one → list)
     CycleLoop,
-    /// Shuffle playlist
+    /// Shuffle the current playlist
     Shuffle,
     /// Quit the server
     Quit,

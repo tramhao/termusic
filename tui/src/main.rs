@@ -19,7 +19,6 @@ use termusiclib::config::{
     new_shared_tui_settings,
 };
 use termusiclib::player::music_player_client::MusicPlayerClient;
-use termusiclib::player::Empty;
 use termusiclib::{podcast, utils};
 use tokio::io::AsyncReadExt;
 use tokio::process::{Child, Command};
@@ -30,6 +29,7 @@ use tokio_util::sync::CancellationToken;
 use ui::UI;
 
 mod cli;
+use cli::Action;
 mod logger;
 mod ui;
 
@@ -556,87 +556,88 @@ async fn execute_action(action: cli::Action, config: &CombinedSettings) -> Resul
     Ok(())
 }
 
-async fn execute_media_control(action: cli::Action, config: &CombinedSettings) -> Result<()> {
-    let _pid = find_active_server_process()
-        .context("No active server process found. Start the TUI first.")?;
+/// Execute a media control [`Action`] by sending the corresponding gRPC
+/// command to the running server.
+async fn execute_media_control(action: Action, config: &CombinedSettings) -> Result<()> {
+    let pid = find_active_server_process()
+        .context("No active server process found. Start the Server first.")?;
 
-    let addr = {
-        let config_read = config.tui.read();
-        let com = config_read
-            .settings
-            .get_com()
-            .ok_or(anyhow::anyhow!("Expected tui-com settings to be resolved"))?;
-        match com.protocol {
-            ComProtocol::HTTP => {
-                let sock_addr = SocketAddr::from(com);
-                format!("http://{sock_addr}")
-            }
-            ComProtocol::UDS => {
-                let path = &com.socket_path;
-                format!("unix://{}", path.display())
-            }
-        }
-    };
-
-    let mut client = MusicPlayerClient::connect(addr.clone())
-        .await
-        .with_context(|| format!("Could not connect to server at {addr}"))?;
+    let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
+    let mut playback = ui::Playback::new(raw_client);
 
     match action {
-        cli::Action::Next => {
-            client.skip_next(Empty {}).await?;
+        Action::Next => {
+            playback.skip_next().await?;
             println!("Next track");
         }
-        cli::Action::Previous => {
-            client.skip_previous(Empty {}).await?;
+        Action::Previous => {
+            playback.skip_previous().await?;
             println!("Previous track");
         }
-        cli::Action::TogglePause => {
-            client.toggle_pause(Empty {}).await?;
+        Action::Play => {
+            let status = playback.get_progress().await?.status;
+            if status != 1 {
+                playback.toggle_pause().await?;
+                println!("Playing");
+            } else {
+                println!("Already playing");
+            }
+        }
+        Action::Pause => {
+            let status = playback.get_progress().await?.status;
+            if status == 1 {
+                playback.toggle_pause().await?;
+                println!("Paused");
+            } else {
+                println!("Already paused");
+            }
+        }
+        Action::TogglePause => {
+            playback.toggle_pause().await?;
             println!("Toggled play/pause");
         }
-        cli::Action::VolumeUp => {
-            client.volume_up(Empty {}).await?;
+        Action::VolumeUp => {
+            playback.volume_up().await?;
             println!("Volume up");
         }
-        cli::Action::VolumeDown => {
-            client.volume_down(Empty {}).await?;
+        Action::VolumeDown => {
+            playback.volume_down().await?;
             println!("Volume down");
         }
-        cli::Action::SpeedUp => {
-            client.speed_up(Empty {}).await?;
+        Action::SpeedUp => {
+            playback.speed_up().await?;
             println!("Speed up");
         }
-        cli::Action::SpeedDown => {
-            client.speed_down(Empty {}).await?;
+        Action::SpeedDown => {
+            playback.speed_down().await?;
             println!("Speed down");
         }
-        cli::Action::ToggleGapless => {
-            client.toggle_gapless(Empty {}).await?;
+        Action::ToggleGapless => {
+            playback.toggle_gapless().await?;
             println!("Toggled gapless");
         }
-        cli::Action::RestartTrack => {
-            client.restart_track(Empty {}).await?;
+        Action::RestartTrack => {
+            playback.restart_track().await?;
             println!("Restarted track");
         }
-        cli::Action::SeekForward => {
-            client.seek_forward(Empty {}).await?;
+        Action::SeekForward => {
+            playback.seek_forward().await?;
             println!("Seeked forward");
         }
-        cli::Action::SeekBackward => {
-            client.seek_backward(Empty {}).await?;
+        Action::SeekBackward => {
+            playback.seek_backward().await?;
             println!("Seeked backward");
         }
-        cli::Action::CycleLoop => {
-            client.cycle_loop(Empty {}).await?;
+        Action::CycleLoop => {
+            playback.cycle_loop().await?;
             println!("Cycled loop mode");
         }
-        cli::Action::Shuffle => {
-            client.shuffle_playlist(Empty {}).await?;
+        Action::Shuffle => {
+            playback.shuffle_playlist().await?;
             println!("Shuffled playlist");
         }
-        cli::Action::Quit => {
-            client.quit_server(Empty {}).await?;
+        Action::Quit => {
+            playback.quit_server().await?;
             println!("Quit server");
         }
         _ => unreachable!(),

@@ -8,7 +8,7 @@ use tuirealm::application::PollStrategy;
 use crate::CombinedSettings;
 use crate::ui::server_req_actor::ServerRequestActor;
 use model::Model;
-use music_player_client::Playback;
+pub use music_player_client::Playback;
 use tui_cmd::PlaylistCmd;
 use tui_cmd::TuiCmd;
 
