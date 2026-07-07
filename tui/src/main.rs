@@ -576,11 +576,11 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
         }
         Action::Play => {
             let status = playback.get_progress().await?.status;
-            if status != 1 {
+            if status == 1 {
+                println!("Already playing");
+            } else {
                 playback.toggle_pause().await?;
                 println!("Playing");
-            } else {
-                println!("Already playing");
             }
         }
         Action::Pause => {
