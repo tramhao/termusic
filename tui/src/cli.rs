@@ -86,7 +86,6 @@ pub enum Action {
     #[command(aliases = &["unpause", "resume"])]
     Play,
     /// Pause playback
-    #[command(aliases = &["stop"])]
     Pause,
     /// Toggle play/pause
     #[command(aliases = &["t", "play-pause"])]
@@ -101,8 +100,6 @@ pub enum Action {
     SpeedUp,
     /// Decrease playback speed
     SpeedDown,
-    /// Toggle gapless playback
-    ToggleGapless,
     /// Restart current track
     RestartTrack,
     /// Seek forward

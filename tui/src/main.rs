@@ -18,6 +18,7 @@ use termusiclib::config::{
     ServerOverlay, SharedServerSettings, SharedTuiSettings, TuiOverlay, new_shared_server_settings,
     new_shared_tui_settings,
 };
+use termusiclib::player::RunningStatus;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::{podcast, utils};
 use tokio::io::AsyncReadExt;
@@ -576,7 +577,7 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
         }
         Action::Play => {
             let status = playback.get_progress().await?.status;
-            if status == 1 {
+            if RunningStatus::from_u32(status) == RunningStatus::Running {
                 println!("Already playing");
             } else {
                 playback.toggle_pause().await?;
@@ -585,7 +586,7 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
         }
         Action::Pause => {
             let status = playback.get_progress().await?.status;
-            if status == 1 {
+            if RunningStatus::from_u32(status) == RunningStatus::Running {
                 playback.toggle_pause().await?;
                 println!("Paused");
             } else {
@@ -593,28 +594,24 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
             }
         }
         Action::TogglePause => {
-            playback.toggle_pause().await?;
-            println!("Toggled play/pause");
+            let status = playback.toggle_pause().await?;
+            println!("{status}");
         }
         Action::VolumeUp => {
-            playback.volume_up().await?;
-            println!("Volume up");
+            let volume = playback.volume_up().await?;
+            println!("Volume: {volume}");
         }
         Action::VolumeDown => {
-            playback.volume_down().await?;
-            println!("Volume down");
+            let volume = playback.volume_down().await?;
+            println!("Volume: {volume}");
         }
         Action::SpeedUp => {
-            playback.speed_up().await?;
-            println!("Speed up");
+            let speed = playback.speed_up().await?;
+            println!("Speed: {speed}x");
         }
         Action::SpeedDown => {
-            playback.speed_down().await?;
-            println!("Speed down");
-        }
-        Action::ToggleGapless => {
-            playback.toggle_gapless().await?;
-            println!("Toggled gapless");
+            let speed = playback.speed_down().await?;
+            println!("Speed: {speed}x");
         }
         Action::RestartTrack => {
             playback.restart_track().await?;
@@ -629,8 +626,8 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
             println!("Seeked backward");
         }
         Action::CycleLoop => {
-            playback.cycle_loop().await?;
-            println!("Cycled loop mode");
+            let mode = playback.cycle_loop().await?;
+            println!("Loop: {}", mode.display(false));
         }
         Action::Shuffle => {
             playback.shuffle_playlist().await?;
