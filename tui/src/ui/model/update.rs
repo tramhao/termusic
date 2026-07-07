@@ -9,10 +9,10 @@ use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
 use tokio::runtime::Handle;
 use tokio::time::sleep;
-use tuirealm::props::{AttrValueRef, Attribute, QueryResult};
+use tuirealm::props::{AttrValue, AttrValueRef, Attribute, HorizontalAlignment, LineStatic, QueryResult, TableBuilder, Title};
 
 use crate::ui::ids::Id;
-use crate::ui::model::youtube_options::YTDLMsg;
+use crate::ui::model::youtube_options::{YTDLMsg, YoutubeOptions};
 use crate::ui::msg::{
     CoverDLResult, DBMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg,
     MainLayoutMsg, Msg, NotificationMsg, PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg,
@@ -523,6 +523,12 @@ impl Model {
                     self.app.active(&Id::DBListCriteria).ok();
                 }
 
+                if self.layout == TermusicLayout::Playlist {
+                    if let Some(saved) = self.xywh_saved.take() {
+                        self.xywh = saved;
+                        let _ = self.update_photo();
+                    }
+                }
                 self.layout = TermusicLayout::DataBase;
                 self.playlist_switch_layout();
                 self.lyric_update_title();
@@ -558,6 +564,12 @@ impl Model {
                     self.app.active(&Id::Library).ok();
                 }
 
+                if self.layout == TermusicLayout::Playlist {
+                    if let Some(saved) = self.xywh_saved.take() {
+                        self.xywh = saved;
+                        let _ = self.update_photo();
+                    }
+                }
                 self.layout = TermusicLayout::TreeView;
                 self.playlist_switch_layout();
                 self.lyric_update_title();
@@ -616,6 +628,12 @@ impl Model {
                     self.app.active(&Id::Podcast).ok();
                 }
 
+                if self.layout == TermusicLayout::Playlist {
+                    if let Some(saved) = self.xywh_saved.take() {
+                        self.xywh = saved;
+                        let _ = self.update_photo();
+                    }
+                }
                 self.layout = TermusicLayout::Podcast;
                 self.podcast_sync_feeds_and_episodes();
                 self.playlist_switch_layout();
@@ -652,6 +670,7 @@ impl Model {
                     self.app.active(&Id::Playlist).ok();
                 }
 
+                self.xywh_saved = Some(self.xywh.clone());
                 self.xywh.set_layout_cover();
                 if let Err(e) = self.update_photo() {
                     self.mount_error_popup(e.context("update_photo"));
@@ -784,6 +803,39 @@ impl Model {
             }
             YSMsg::TablePopupCloseCancel => {
                 self.umount_youtube_search_table_popup();
+            }
+            YSMsg::SearchStarted => {
+                self.youtube_options = YoutubeOptions::default();
+                let table = TableBuilder::default()
+                    .add_col(LineStatic::from("Searching..."))
+                    .add_col(LineStatic::from(""))
+                    .build();
+                self.app
+                    .attr(
+                        &Id::YoutubeSearchTablePopup,
+                        Attribute::Content,
+                        AttrValue::Table(table),
+                    )
+                    .ok();
+                self.redraw = true;
+            }
+            YSMsg::SearchStatus(msg) => {
+                let title = format!(
+                    "\u{2500}\u{2500}\u{2500} {msg} \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}"
+                );
+                self.app
+                    .attr(
+                        &Id::YoutubeSearchTablePopup,
+                        Attribute::Title,
+                        AttrValue::Title(Title::from(title).alignment(HorizontalAlignment::Left)),
+                    )
+                    .ok();
+                self.redraw = true;
+            }
+            YSMsg::YoutubeItem(item) => {
+                self.youtube_options.data.items.push(item.clone());
+                self.sync_youtube_options();
+                self.redraw = true;
             }
             YSMsg::ReqNextPage => {
                 self.youtube_options_next_page();
@@ -1249,6 +1301,10 @@ impl Model {
                     // fallback in case no title is immediately available on radio start.
                     // matching that the current track is actually radio, is in the function itself.
                     self.lyric_update_for_radio("");
+                }
+
+                if let Err(e) = self.update_photo() {
+                    error!("update_photo on TrackChanged failed: {e}");
                 }
             }
             UpdateEvents::GaplessChanged { gapless } => {

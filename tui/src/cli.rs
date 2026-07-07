@@ -15,6 +15,9 @@ pub struct Args {
     /// Not showing album cover. default is showing.
     #[arg(short = 'c', long)]
     pub hide_cover: bool,
+    /// Start with Layout 4 (playlist + cover).
+    #[arg(long)]
+    pub layout_4: bool,
     /// Disable cover support, even if compiled-in.
     #[arg(long)]
     pub disable_cover: bool,

@@ -92,7 +92,7 @@ impl NodeValue for MusicLibData {
         // The *only* possible way to currently get this panic is when using the default instance (which shouldnt be used).
         let res = self
             .as_str
-            .get_or_init(|| self.path.file_name().unwrap().to_string_lossy().to_string());
+            .get_or_init(|| format!(" {}", self.path.file_name().unwrap().to_string_lossy()));
 
         NodeValue::render(res, buf, area, offset, style);
     }

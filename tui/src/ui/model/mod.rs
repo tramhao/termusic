@@ -308,6 +308,7 @@ pub struct Model {
     pub ueberzug_instance: Option<UeInstance>,
     pub viuer_supported: ViuerSupported,
     pub xywh: xywh::Xywh,
+    xywh_saved: Option<xywh::Xywh>,
 
     youtube_options: YoutubeOptions,
     pub download_tracker: DownloadTracker,
@@ -354,6 +355,7 @@ impl Model {
         config: CombinedSettings,
         cmd_to_server_tx: UnboundedSender<TuiCmd>,
         stream_updates: WrappedStreamEvents,
+        layout_4: bool,
     ) -> Self {
         let CombinedSettings {
             server: config_server,
@@ -430,7 +432,7 @@ impl Model {
             ueberzug_instance,
             viuer_supported,
             db,
-            layout: TermusicLayout::TreeView,
+            layout: if layout_4 { TermusicLayout::Playlist } else { TermusicLayout::TreeView },
             dw: DatabaseWidgetData {
                 criteria: db_criteria,
                 search_results: Vec::new(),
@@ -456,6 +458,7 @@ impl Model {
             playback: Playback::new(),
             cmd_to_server_tx,
             xywh,
+            xywh_saved: None,
         };
 
         model.new_library_scan_dir(path, None);

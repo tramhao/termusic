@@ -575,9 +575,9 @@ impl Model {
             }
 
             let duration_str = if let Some(dur) = track.duration_str_short() {
-                format!("[{dur:^7.7}]")
+                format!(" [{dur:^7.7}]")
             } else {
-                "[--:--]".to_string()
+                " [--:--]".to_string()
             };
 
             let mut title = track.title().unwrap_or("Unknown Title").to_string();
@@ -636,9 +636,9 @@ impl Model {
             }
 
             let duration_str = if let Some(dur) = track.duration_str_short() {
-                format!("[{dur:^7.7}]")
+                format!(" [{dur:^7.7}]")
             } else {
-                "[--:--]".to_string()
+                " [--:--]".to_string()
             };
 
             let mut title: Cow<'_, str> = track.title().map_or_else(|| track.id_str(), Into::into);

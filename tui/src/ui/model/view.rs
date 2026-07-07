@@ -233,7 +233,7 @@ impl Model {
                     Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
                         .areas(chunks_main);
                 let [_right_space, right_library, right_progress] =
-                    Layout::vertical([Constraint::Fill(1), Constraint::Length(8), Constraint::Length(3)])
+                    Layout::vertical([Constraint::Fill(1), Constraint::Length(14), Constraint::Length(3)])
                         .areas(right);
 
                 self.app.view(&Id::Playlist, f, left_playlist);

@@ -8,7 +8,7 @@ use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
 use shell_words;
-use termusiclib::invidious::{Instance, YoutubeVideo};
+use termusiclib::invidious::{ytdlp_search, Instance, YoutubeVideo};
 use termusiclib::track::DurationFmtShort;
 use termusiclib::utils::get_parent_folder;
 use tuirealm::props::{
@@ -123,24 +123,72 @@ impl Model {
     /// This function requires to be run in a tokio Runtime context
     pub fn youtube_options_search(&mut self, keyword: String) {
         let tx = self.tx_to_main.clone();
+
+        // Show loading state immediately
+        tx.send(Msg::YoutubeSearch(YSMsg::SearchStarted))
+            .ok();
+
+        let kw = keyword.clone();
+        // Reduce Invidious timeout — try fast, don't waste time if servers are down
+        let invidious = async move {
+            Instance::new(&kw).await
+        };
+
+        let kw2 = keyword.clone();
+        let ytdlp = async move {
+            let handle = tokio::task::spawn_blocking(move || ytdlp_search(&kw2, 20)).await;
+            let result: Vec<YoutubeVideo> = handle
+                .map_err(|e| anyhow!("yt-dlp join error: {e}"))?
+                .map_err(|e| anyhow!("yt-dlp search error: {e}"))?;
+            let mut instance = Instance::default();
+            instance.domain = Some("yt-dlp".to_string());
+            anyhow::Ok((instance, result))
+        };
+
         tokio::spawn(async move {
-            match Instance::new(&keyword).await {
-                Ok((instance, result)) => {
-                    let youtube_options = YoutubeOptions {
-                        data: YoutubeData {
-                            items: result,
-                            page: 1,
-                        },
-                        invidious_instance: instance,
-                    };
-                    tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchSuccess(
-                        youtube_options,
-                    )))
-                    .ok();
+            // Race: first source to return results wins
+            tokio::select! {
+                inv_result = invidious => {
+                    match inv_result {
+                        Ok((instance, result)) => {
+                            if let Some(ref domain) = instance.domain {
+                                tx.send(Msg::YoutubeSearch(YSMsg::SearchStatus(
+                                    format!("{domain}"),
+                                ))).ok();
+                            }
+                            for item in &result {
+                                tx.send(Msg::YoutubeSearch(YSMsg::YoutubeItem(item.clone()))).ok();
+                            }
+                            let youtube_options = YoutubeOptions {
+                                data: YoutubeData { items: result, page: 1 },
+                                invidious_instance: instance,
+                            };
+                            tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchSuccess(youtube_options))).ok();
+                        }
+                        Err(_) => {
+                            tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchFail("No search source succeeded".into()))).ok();
+                        }
+                    }
                 }
-                Err(e) => {
-                    tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchFail(e.to_string())))
-                        .ok();
+                ytdlp_result = ytdlp => {
+                    match ytdlp_result {
+                        Ok((instance, result)) => {
+                            tx.send(Msg::YoutubeSearch(YSMsg::SearchStatus(
+                                "yt-dlp (fastest)".to_string(),
+                            ))).ok();
+                            for item in &result {
+                                tx.send(Msg::YoutubeSearch(YSMsg::YoutubeItem(item.clone()))).ok();
+                            }
+                            let youtube_options = YoutubeOptions {
+                                data: YoutubeData { items: result, page: 1 },
+                                invidious_instance: instance,
+                            };
+                            tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchSuccess(youtube_options))).ok();
+                        }
+                        Err(e) => {
+                            tx.send(Msg::YoutubeSearch(YSMsg::YoutubeSearchFail(format!("yt-dlp failed: {e}")))).ok();
+                        }
+                    }
                 }
             }
         });
@@ -210,7 +258,7 @@ impl Model {
                 table.add_row();
             }
             let duration = DurationFmtShort(Duration::from_secs(record.length_seconds));
-            let duration_string = format!("[{duration:^10.10}]");
+            let duration_string = format!(" [{duration:^10.10}]");
 
             table
                 .add_col(LineStatic::from(duration_string))

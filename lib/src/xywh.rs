@@ -160,8 +160,8 @@ impl Xywh {
 
     pub fn set_layout_cover(&mut self) {
         self.x_between_1_100 = 55;
-        self.y_between_1_100 = 15;
-        self.width_between_1_100 = 44;
+        self.y_between_1_100 = 13;
+        self.width_between_1_100 = 42;
         self.align = AlignmentWrap(Alignment::TopLeft);
     }
 }

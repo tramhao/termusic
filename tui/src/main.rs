@@ -138,7 +138,7 @@ async fn actual_main() -> Result<()> {
         server_output.cancel_token.cancel();
     }
 
-    let mut ui = UI::new(config, client).await?;
+    let mut ui = UI::new(config, client, args.layout_4).await?;
     ui.run()?;
 
     info!("Bye");

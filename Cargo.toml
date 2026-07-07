@@ -127,6 +127,7 @@ lru = "0.16"
 either = "1.16"
 
 [profile.release]
+# Set to true for final release; false for fast iteration
 lto = true
 # panic = 'abort'
 # opt-level = 'z'

@@ -387,6 +387,11 @@ fn player_loop(
             PlayerCmd::CycleLoop => {
                 player.config.write().settings.player.loop_mode =
                     player.playlist.write().cycle_loop_mode();
+                if let Err(e) = ServerConfigVersionedDefaulted::save_config_path(
+                    &player.config.read().settings,
+                ) {
+                    error!("error when saving config: {e}");
+                };
             }
             PlayerCmd::Eos => {
                 info!("Eos received");

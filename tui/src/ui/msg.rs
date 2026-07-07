@@ -701,6 +701,12 @@ pub enum YSMsg {
     InputPopupCloseCancel,
     InputPopupCloseOk(String, PathBuf),
 
+    SearchStarted,
+    /// Status update during search (e.g. which server is being tried).
+    SearchStatus(String),
+    /// A single video result from the search, sent one-by-one for progressive display.
+    YoutubeItem(termusiclib::invidious::YoutubeVideo),
+
     ReqNextPage,
     ReqPreviousPage,
     PageLoaded(YoutubeData),

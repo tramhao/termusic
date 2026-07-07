@@ -1026,7 +1026,7 @@ impl Model {
                     }
                     idx += 1;
                     table
-                        .add_col(LineStatic::from(idx.to_string()))
+                        .add_col(LineStatic::from(format!(" {idx}")))
                         .add_col(LineStatic::styled(record.title, Style::new().bold()))
                         .add_col(LineStatic::from(format!("{}", record.id)));
                 }
@@ -1056,7 +1056,7 @@ impl Model {
                     }
                     idx += 1;
                     table
-                        .add_col(LineStatic::from(idx.to_string()))
+                        .add_col(LineStatic::from(format!(" {idx}")))
                         .add_col(LineStatic::styled(
                             record.title.clone(),
                             Style::new().bold(),

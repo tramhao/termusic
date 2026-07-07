@@ -140,6 +140,7 @@ impl DBCriteria {
     /// Note: keep this in-sync with [`Self::build_table`]
     const NUM_OPTIONS: u16 = 5;
 
+    #[allow(dead_code)]
     fn build_table() -> [LineStatic; 5] {
         [
             LineStatic::from("Artist"),
@@ -1021,7 +1022,7 @@ impl Model {
 
             let duration_string = if let Some(dur) = record.meta_duration() {
                 let duration = DurationFmtShort(dur);
-                format!("[{duration:^6.6}]")
+                format!(" [{duration:^6.6}]")
             } else {
                 "[--:--]".to_string()
             };

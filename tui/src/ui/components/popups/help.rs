@@ -194,6 +194,9 @@ impl HelpPopup {
                         .add_col(Self::key(&config, &[&keys.select_view_keys.view_podcasts]))
                         .add_col(Self::comment("Switch layout to podcast"))
                         .add_row()
+                        .add_col(Self::key(&config, &[&keys.select_view_keys.view_playlist]))
+                        .add_col(Self::comment("Switch layout to playlist"))
+                        .add_row()
                         .add_col(Self::key(
                             &config,
                             &[

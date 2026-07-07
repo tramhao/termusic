@@ -30,13 +30,13 @@ pub struct UI {
 
 impl UI {
     /// Create a new [`UI`] instance
-    pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>) -> Result<Self> {
+    pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>, layout_4: bool) -> Result<Self> {
         let mut playback = Playback::new(client);
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let stream_updates = playback.subscribe_to_stream_updates().await?;
 
-        let mut model = Model::new(config, cmd_tx, stream_updates.boxed());
+        let mut model = Model::new(config, cmd_tx, stream_updates.boxed(), layout_4);
         model.init();
 
         ServerRequestActor::start_actor(playback, cmd_rx, model.tx_to_main.clone());

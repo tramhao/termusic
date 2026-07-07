@@ -1,14 +1,16 @@
 use anyhow::{Result, anyhow, bail};
-use rand::seq::SliceRandom;
 use serde_json::Value;
 use reqwest::{Client, ClientBuilder, StatusCode};
 use std::time::Duration;
+use tokio::task::JoinSet;
 
-const INVIDIOUS_INSTANCE_LIST: [&str; 5] = [
+const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
+    "https://inv.bp.projectsegfau.lt",
+    "https://invidious.projectsegfau.lt",
+    "https://y.com.sb",
     "https://inv.nadeko.net",
     "https://invidious.nerdvpn.de",
     "https://yewtu.be",
-    "https://y.com.sb",
     "https://yt.artemislena.eu",
 ];
 
@@ -54,34 +56,54 @@ impl Instance {
             .timeout(Duration::from_secs(5))
             .build()?;
 
-        let mut instances: Vec<&str> = INVIDIOUS_INSTANCE_LIST.to_vec();
-        instances.shuffle(&mut rand::rng());
+        let instances: Vec<&str> = INVIDIOUS_INSTANCE_LIST.to_vec();
+        let query_owned = query.to_string();
 
+        // Try all instances concurrently — first to respond wins
+        let mut set = JoinSet::new();
         for v in instances {
             let url = format!("{v}/api/v1/search");
-            let query_vec = vec![
-                ("q", query),
-                ("page", "1"),
-                ("type", "video"),
-                ("sort_by", "relevance"),
-            ];
+            let domain = v.to_string();
+            let client = client.clone();
+            let q = query_owned.clone();
+            set.spawn(async move {
+                let query_vec = vec![
+                    ("q", q.as_str()),
+                    ("page", "1"),
+                    ("type", "video"),
+                    ("sort_by", "relevance"),
+                ];
+                if let Ok(result) = client.get(&url).query(&query_vec).send().await
+                    && result.status() == 200
+                    && let Ok(text) = result.text().await
+                    && let Some(vr) = Instance::parse_youtube_options(&text)
+                {
+                    return Some((domain, vr));
+                }
+                None::<(String, Vec<YoutubeVideo>)>
+            });
+        }
 
-            if let Ok(result) = client.get(&url).query(&query_vec).send().await
-                && result.status() == 200
-                && let Ok(text) = result.text().await
-                && let Some(vr) = Self::parse_youtube_options(&text)
-            {
-                let domain = Some(v.to_string());
-                let instance = Self {
-                    domain,
-                    client,
-                    query: Some(query.to_string()),
-                };
-                return Ok((instance, vr));
+        let mut domain = String::new();
+        let mut video_result: Vec<YoutubeVideo> = Vec::new();
+        while let Some(res) = set.join_next().await {
+            if let Ok(Some((d, vr))) = res {
+                domain = d;
+                video_result = vr;
+                break;
             }
         }
 
-        bail!("All invidious servers are down. Try again later.")
+        if video_result.is_empty() {
+            bail!("All invidious servers are down. Try again later.")
+        }
+
+        let instance = Self {
+            domain: Some(domain),
+            client,
+            query: Some(query.to_string()),
+        };
+        Ok((instance, video_result))
     }
 
     // GetSearchQuery fetches query result from an Invidious instance.
@@ -155,8 +177,62 @@ impl Instance {
             _ => bail!("Error during search"),
         }
     }
+}
 
-    fn parse_youtube_options(data: &str) -> Option<Vec<YoutubeVideo>> {
+/// Search YouTube using yt-dlp directly. Falls back to this when Invidious servers are down.
+/// Spawns `yt-dlp --dump-json --flat-playlist "ytsearch{N}:{query}"` and parses JSON lines.
+pub fn ytdlp_search(query: &str, limit: u32) -> Result<Vec<YoutubeVideo>> {
+    let search_str = format!("ytsearch{limit}:{query}");
+    let output = std::process::Command::new("yt-dlp")
+        .arg("--dump-json")
+        .arg("--flat-playlist")
+        .arg(&search_str)
+        .output()
+        .map_err(|e| anyhow!("Failed to run yt-dlp: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        bail!("yt-dlp search failed: {stderr}");
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut results = Vec::new();
+
+    for line in stdout.lines() {
+        if line.is_empty() {
+            continue;
+        }
+        if let Ok(value) = serde_json::from_str::<Value>(line) {
+            let video_id = match value.get("id").and_then(|v| v.as_str()) {
+                Some(id) => id.to_owned(),
+                None => continue,
+            };
+            let title = match value.get("title").and_then(|v| v.as_str()) {
+                Some(t) => t.to_owned(),
+                None => continue,
+            };
+            let length_seconds = value
+                .get("duration")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0) as u64;
+
+            results.push(YoutubeVideo {
+                title,
+                length_seconds,
+                video_id,
+            });
+        }
+    }
+
+    if results.is_empty() {
+        bail!("yt-dlp returned no results for query: {query}");
+    }
+
+    Ok(results)
+}
+
+impl Instance {
+fn parse_youtube_options(data: &str) -> Option<Vec<YoutubeVideo>> {
         if let Ok(value) = serde_json::from_str::<Value>(data) {
             let mut vec: Vec<YoutubeVideo> = Vec::new();
             // below two lines are left for debug purpose
