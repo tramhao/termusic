@@ -384,6 +384,7 @@ pub enum ConfigEditorMsg {
     KeyFocusOther(KFMsg),
     General(KFMsg),
     Theme(KFMsg),
+    ThemeColorItem(KFMsg),
 
     ThemeSelectLoad(usize),
 }
