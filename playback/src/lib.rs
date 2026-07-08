@@ -26,6 +26,8 @@ pub use backends::{Backend, BackendSelect};
 
 mod discord;
 mod mpris;
+#[cfg(target_os = "macos")]
+pub use mpris::macos;
 pub mod playlist;
 
 #[macro_use]
