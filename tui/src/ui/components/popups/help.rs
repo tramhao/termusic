@@ -8,6 +8,7 @@ use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::props::{HorizontalAlignment, LineStatic, Title};
 use tuirealm::ratatui::style::Color;
+use tuirealm::ratatui::text::Span;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
@@ -27,7 +28,7 @@ pub struct HelpPopup {
 impl HelpPopup {
     /// Generate a consistent keybinding string from the given keybindings.
     fn key(config: &TuiOverlay, keys: &[&KeyBinding]) -> LineStatic {
-        let mut text = String::new();
+        let mut text = String::from(" ");
         for (idx, key) in keys.iter().enumerate() {
             if idx > 0 {
                 text.push_str(", ");
@@ -46,12 +47,18 @@ impl HelpPopup {
 
     /// Generate a consistent key explanation comment.
     fn comment<T: Into<LineStatic>>(text: T) -> LineStatic {
-        text.into()
+        let line: LineStatic = text.into();
+        let mut spans = vec![Span::raw(" ")];
+        spans.extend(line.spans);
+        LineStatic::from(spans)
     }
 
     /// Generate a consistent header element
     fn header<T: Into<LineStatic>>(config: &TuiOverlay, text: T) -> LineStatic {
-        text.into().style(
+        let line: LineStatic = text.into();
+        let mut spans = vec![Span::raw(" ")];
+        spans.extend(line.spans);
+        LineStatic::from(spans).style(
             Style::new()
                 .bold()
                 .fg(config.settings.theme.library_highlight()),
@@ -95,7 +102,7 @@ impl HelpPopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(["Key", "Function"])
+                .headers([" Key", " Function"])
                 .column_spacing(3)
                 .widths(&[40, 60])
                 .table(

@@ -807,7 +807,7 @@ impl Model {
             YSMsg::SearchStarted => {
                 self.youtube_options = YoutubeOptions::default();
                 let table = TableBuilder::default()
-                    .add_col(LineStatic::from("Searching..."))
+                    .add_col(LineStatic::from(" Searching..."))
                     .add_col(LineStatic::from(""))
                     .build();
                 self.app

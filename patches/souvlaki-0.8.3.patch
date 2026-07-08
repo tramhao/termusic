@@ -1,0 +1,12 @@
+--- /tmp/souvlaki-original/souvlaki-0.8.3/src/platform/macos/mod.rs	2006-07-24 04:21:28
++++ /Users/raphael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/souvlaki-0.8.3/src/platform/macos/mod.rs	2026-07-07 12:18:14
+@@ -321,6 +321,9 @@
+     let url = ns_url(url);
+     let image: id = msg_send!(class!(NSImage), alloc);
+     let image: id = msg_send!(image, initWithContentsOfURL: url);
++    if image == nil {
++        return (nil, CGSize::new(0.0, 0.0));
++    }
+     let size: CGSize = msg_send!(image, size);
+     (image, CGSize::new(size.width, size.height))
+ }
