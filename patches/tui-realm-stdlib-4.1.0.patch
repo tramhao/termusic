@@ -16,8 +16,18 @@
      }
  }
 --- src/components/table.rs	2006-07-24 04:21:28
-+++ src/components/table.rs	2026-07-08 23:17:20
-@@ -390,6 +390,29 @@
++++ src/components/table.rs	2026-07-08 23:34:14
+@@ -379,7 +379,8 @@
+                     .collect()
+             })
+             .unwrap_or_default();
+-        if !headers.is_empty() {
++        let has_header = !headers.is_empty();
++        if has_header {
+             widget = widget.header(
+                 Row::new(headers)
+                     .style(self.common.style)
+@@ -390,6 +391,29 @@
              let mut state: TableState = TableState::default();
              state.select(Some(self.states.list_index));
              render.render_stateful_widget(widget, area, &mut state);
@@ -25,10 +35,10 @@
 +            if self.common.is_active() {
 +                if let Some(fill_bg) = self.common_hg.style.bg {
 +                    if let Some(selected) = state.selected() {
-+                        let header_count = if headers.is_empty() { 0 } else { 1 };
++                        let header_count = if has_header { 1 } else { 0 };
 +                        let offset = state.offset();
 +                        let visual_row = selected.saturating_sub(offset);
-+                        let row_y = area.y() + header_count as u16 + visual_row as u16 * row_height;
++                        let row_y = area.y + header_count as u16 + visual_row as u16 * row_height;
 +                        if row_y < area.bottom() {
 +                            let fill_fg = self.common_hg.style.fg.unwrap_or(Color::Reset);
 +                            let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
@@ -48,7 +58,7 @@
              render.render_widget(widget, area);
          }
 --- src/components/list.rs	2006-07-24 04:21:28
-+++ src/components/list.rs	2026-07-08 23:17:30
++++ src/components/list.rs	2026-07-08 23:34:47
 @@ -280,6 +280,28 @@
              let mut state: ListState = ListState::default();
              state.select(Some(self.states.list_index));
@@ -59,7 +69,7 @@
 +                    if let Some(selected) = state.selected() {
 +                        let offset = state.offset();
 +                        let visual_row = selected.saturating_sub(offset);
-+                        let row_y = area.y() + visual_row as u16;
++                        let row_y = area.y + visual_row as u16;
 +                        if row_y < area.bottom() {
 +                            let fill_fg = self.common_hg.style.fg.unwrap_or(Color::Reset);
 +                            let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
