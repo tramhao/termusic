@@ -1,5 +1,5 @@
---- tui-realm-stdlib-4.1.0/src/prop_ext.rs	2006-07-24 04:21:28
-+++ tui-realm-stdlib-4.1.0/src/prop_ext.rs	2026-07-06 09:53:58
+--- src/prop_ext.rs	2006-07-24 04:21:28
++++ src/prop_ext.rs	2026-07-06 09:53:58
 @@ -219,12 +219,10 @@
      /// Get the patched highlight style with focused or unfocused style.
      #[inline]
