@@ -3,3 +3,6 @@ PKG_CONFIG_PATH = "/opt/homebrew/lib/pkgconfig"
 
 [target.aarch64-apple-darwin]
 rustflags = ["-C", "link-arg=-L/opt/homebrew/lib", "-C", "link-arg=-Wl,-rpath,/opt/homebrew/lib"]
+
+[alias]
+b = "build --release"
