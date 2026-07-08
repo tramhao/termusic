@@ -1,5 +1,5 @@
 --- src/prop_ext.rs	2006-07-24 04:21:28
-+++ src/prop_ext.rs	2026-07-06 09:53:58
++++ src/prop_ext.rs	2026-07-08 22:27:40
 @@ -219,12 +219,10 @@
      /// Get the patched highlight style with focused or unfocused style.
      #[inline]
@@ -15,3 +15,66 @@
          }
      }
  }
+--- src/components/table.rs	2006-07-24 04:21:28
++++ src/components/table.rs	2026-07-08 23:17:20
+@@ -390,6 +390,29 @@
+             let mut state: TableState = TableState::default();
+             state.select(Some(self.states.list_index));
+             render.render_stateful_widget(widget, area, &mut state);
++
++            if self.common.is_active() {
++                if let Some(fill_bg) = self.common_hg.style.bg {
++                    if let Some(selected) = state.selected() {
++                        let header_count = if headers.is_empty() { 0 } else { 1 };
++                        let offset = state.offset();
++                        let visual_row = selected.saturating_sub(offset);
++                        let row_y = area.y() + header_count as u16 + visual_row as u16 * row_height;
++                        if row_y < area.bottom() {
++                            let fill_fg = self.common_hg.style.fg.unwrap_or(Color::Reset);
++                            let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
++                            let full_row = Rect::new(area.x, row_y, area.width, 1);
++                            let buf = render.buffer_mut();
++                            buf.set_style(full_row, fill_style);
++                            let right_edge = area.right().saturating_sub(1);
++                            if right_edge > area.x {
++                                buf[(area.x, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
++                                buf[(right_edge, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
++                            }
++                        }
++                    }
++                }
++            }
+         } else {
+             render.render_widget(widget, area);
+         }
+--- src/components/list.rs	2006-07-24 04:21:28
++++ src/components/list.rs	2026-07-08 23:17:30
+@@ -280,6 +280,28 @@
+             let mut state: ListState = ListState::default();
+             state.select(Some(self.states.list_index));
+             render.render_stateful_widget(widget, area, &mut state);
++
++            if self.common.is_active() {
++                if let Some(fill_bg) = self.common_hg.style.bg {
++                    if let Some(selected) = state.selected() {
++                        let offset = state.offset();
++                        let visual_row = selected.saturating_sub(offset);
++                        let row_y = area.y() + visual_row as u16;
++                        if row_y < area.bottom() {
++                            let fill_fg = self.common_hg.style.fg.unwrap_or(Color::Reset);
++                            let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
++                            let full_row = Rect::new(area.x, row_y, area.width, 1);
++                            let buf = render.buffer_mut();
++                            buf.set_style(full_row, fill_style);
++                            let right_edge = area.right().saturating_sub(1);
++                            if right_edge > area.x {
++                                buf[(area.x, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
++                                buf[(right_edge, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
++                            }
++                        }
++                    }
++                }
++            }
+         } else {
+             render.render_widget(widget, area);
+         }

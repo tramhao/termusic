@@ -1,5 +1,5 @@
 --- src/widget.rs	2006-07-24 04:21:28
-+++ src/widget.rs	2026-07-06 09:41:24
++++ src/widget.rs	2026-07-08 23:11:36
 @@ -11,6 +11,7 @@
  	ratatui::{
  		buffer::Buffer,
@@ -23,28 +23,26 @@
  			let mut display_offset_horiz = remaining_offset.get_horizontal();
  
  			let is_selected = state.is_selected(&node.idx());
-@@ -272,6 +275,28 @@
+@@ -272,6 +275,26 @@
  					return state.is_opened(node.idx());
  				});
  
-+			if is_selected {
++			if is_selected && display_offset_horiz == 0 {
 +				let right_edge = area.right().saturating_sub(1);
 +				if let Some(fill_bg) = self.hg_style.bg {
-+					if display_offset_horiz == 0 {
-+						let fill_fg = self.hg_style.fg.unwrap_or(Color::Reset);
-+						let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
-+						let full_row = Rect::new(area.x, line_area.y, area.width, 1);
-+						buf.set_style(full_row, fill_style);
-+						if right_edge > full_row_x {
-+							buf[(full_row_x, line_area.y)]
-+								.set_symbol("")
-+								.set_fg(fill_bg)
-+								.set_bg(Color::Reset);
-+							buf[(right_edge, line_area.y)]
-+								.set_symbol("")
-+								.set_fg(fill_bg)
-+								.set_bg(Color::Reset);
-+						}
++					let fill_fg = self.hg_style.fg.unwrap_or(Color::Reset);
++					let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
++					let full_row = Rect::new(area.x, line_area.y, area.width, 1);
++					buf.set_style(full_row, fill_style);
++					if right_edge > full_row_x {
++						buf[(full_row_x, line_area.y)]
++							.set_symbol("")
++							.set_fg(fill_bg)
++							.set_bg(Color::Reset);
++						buf[(right_edge, line_area.y)]
++							.set_symbol("")
++							.set_fg(fill_bg)
++							.set_bg(Color::Reset);
 +					}
 +				}
 +			}
