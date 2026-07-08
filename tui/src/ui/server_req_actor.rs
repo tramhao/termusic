@@ -1,6 +1,6 @@
 use anyhow::Result;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
-use tokio::sync::mpsc::UnboundedReceiver;
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 use crate::ui::{
     model::TxToMain,
@@ -26,16 +26,14 @@ impl ServerRequestActor {
         client_handle: Playback,
         rx_cmd: UnboundedReceiver<TuiCmd>,
         tx_main: TxToMain,
-    ) {
+    ) -> JoinHandle<()> {
         let obj = Self {
             client_handle,
             rx_cmd,
             tx_main,
         };
 
-        // clippy suggests manually dropping instead of "let _ =" on a future, which "JoinHandle" is
-        let jh = tokio::spawn(Self::run(obj));
-        drop(jh);
+        tokio::spawn(Self::run(obj))
     }
 
     /// The actor loop.
