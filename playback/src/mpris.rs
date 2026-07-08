@@ -3,7 +3,6 @@ use std::{
     time::Duration,
 };
 
-use base64::Engine;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use termusiclib::{
     common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE},
@@ -58,18 +57,18 @@ impl Mpris {
     /// Set Mpris metadata based on the given track.
     pub fn set_track(&mut self, track: &Track) {
         let cover_art = match track.get_picture() {
-            Ok(v) => v.map(|v| {
-                format!(
-                    "data:{};base64,{}",
-                    v.mime_type().map_or_else(
-                        || {
-                            error!("Unknown mimetype for picture of track {track:#?}");
-                            "application/octet-stream"
-                        },
-                        |v| v.as_str()
-                    ),
-                    base64::engine::general_purpose::STANDARD_NO_PAD.encode(v.data())
-                )
+            Ok(v) => v.and_then(|v| {
+                let mut path = std::env::temp_dir();
+                path.push("termusic-cover");
+                if let Some(mime) = v.mime_type()
+                    && let Some(ext) = mime.ext()
+                {
+                    path.set_extension(ext);
+                }
+                std::fs::write(&path, v.data())
+                    .inspect_err(|e| error!("Saving cover to file failed: {e}"))
+                    .ok()?;
+                Some(format!("file://{}", path.display()))
             }),
             Err(err) => {
                 error!("Fetching the cover failed: {err:#?}");
@@ -374,26 +373,6 @@ mod windows {
     //         }
     //     }
     // }
-
-    // The following does not seem to be necessary, hence disabled
-    // /// Blockingly handle the windows event queue.
-    // ///
-    // /// This should be spawned on a extra thread
-    // pub fn pump_event_queue() {
-    //     use windows::Win32::UI::WindowsAndMessaging::{MSG, WM_QUIT, GetMessageW, TranslateMessage, DispatchMessageW};
-
-    //     let mut msg = MSG::default();
-
-    //     info!("Windows Event Queue Pump Starting");
-    //     unsafe {
-    //         while GetMessageW(&mut msg, None, 0, 0).as_bool() && msg.message != WM_QUIT {
-    //             debug!("Windows Message: {:#?}", msg);
-    //             let _ = TranslateMessage(&msg);
-    //             DispatchMessage(&msg);
-    //         }
-    //     }
-    //     info!("Windows Event Queue Pump Ending");
-    // }
 }
 
 #[cfg(target_os = "macos")]
@@ -521,4 +500,3 @@ pub mod macos {
         handle.join().expect("termusic-tokio thread panicked")
     }
 }
-
