@@ -81,7 +81,6 @@ walkdir = "2.5"
 windows = { default-features = false, version = "0.62" }
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.32"
-alphanumeric-sort = "1.5.7"
 either = "1.16"
 # for less dependencies, keep in sync with the version ratatui uses
 lru = "0.16"
@@ -144,6 +143,7 @@ textwrap = "0.16.2"
 # ratatui is very specific with its versions
 unicode-width = "^0.2.2"
 wildmatch = "2.6"
+alphanumeric-sort = "1.5.7"
 
 # --- Dev Dependencies ---
 criterion = "0.8"

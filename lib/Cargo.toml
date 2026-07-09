@@ -67,7 +67,6 @@ tokio-util = { workspace = true, features = ["rt"] }
 tonic.workspace = true
 tonic-prost.workspace = true
 prost.workspace = true
-alphanumeric-sort.workspace = true
 lru.workspace = true
 either.workspace = true
 

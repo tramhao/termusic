@@ -5323,7 +5323,6 @@ name = "termusic-lib"
 version = "0.13.2"
 dependencies = [
  "ahash",
- "alphanumeric-sort",
  "anyhow",
  "base64",
  "bytes",
