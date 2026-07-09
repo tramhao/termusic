@@ -76,8 +76,6 @@ tokio-util = "0.7.18"
 tokio-stream = { version = "0.1.18", features = ["sync"] }
 toml = "1.1.2"
 unicode-segmentation = "1.13"
-# ratatui is very specific with its versions
-unicode-width = "^0.2.2"
 urlencoding = "2.1"
 walkdir = "2.5"
 wildmatch = "2.6"
@@ -144,6 +142,8 @@ mime_guess = "2.0.5"
 pinyin = "0.11"
 escaper = "0.1.1"
 textwrap = "0.16.2"
+# ratatui is very specific with its versions
+unicode-width = "^0.2.2"
 
 # --- Dev Dependencies ---
 criterion = "0.8"

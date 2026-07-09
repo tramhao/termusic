@@ -5370,7 +5370,6 @@ dependencies = [
  "tonic-prost-build",
  "tuirealm",
  "unicode-segmentation",
- "unicode-width",
  "urlencoding",
  "viuer",
  "walkdir",
