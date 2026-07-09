@@ -52,7 +52,6 @@ num-bigint = "0.4"
 opml = "1.1"
 parking_lot = "^0.12.5"
 pathdiff = { version = "0.2.3", features = ["camino"] }
-pinyin = "0.11"
 quick-xml = "0.40.1"
 rand = "0.10.1"
 regex = "^1.12.4"
@@ -144,6 +143,7 @@ shell-words = "1.1.1"
 sysinfo = { version = "^0.38.4", default-features = false, features = ["system"] }
 # for filter audio files in explorer
 mime_guess = "2.0.5"
+pinyin = "0.11"
 
 # --- Dev Dependencies ---
 criterion = "0.8"

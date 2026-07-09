@@ -34,7 +34,7 @@ use termusiclib::config::v2::server::{
 };
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::config::v2::tui::theme::ThemeColors;
-use termusiclib::utils::{get_app_config_path, get_pin_yin};
+use termusiclib::utils::get_app_config_path;
 use tuirealm::application::Application;
 use tuirealm::props::{
     AttrValue, Attribute, LineStatic, PropPayload, PropValue, Style, TableBuilder,
@@ -54,7 +54,7 @@ use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{
     ConfigEditorLayout, GENERAL_FOCUS_ORDER, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg,
 };
-use crate::ui::utils::draw_area_in_absolute;
+use crate::ui::utils::{draw_area_in_absolute, get_pin_yin};
 
 // NOTE: the macros either have to be in a different file OR be defined *before* they are used, otherwise they are not in scope
 
