@@ -29,10 +29,10 @@ discord-rich-presence.workspace = true
 glib = { workspace = true, optional = true }
 gstreamer = { workspace = true, optional = true}
 libmpv-sirno = { workspace = true, optional = true }
-log.workspace = true # = "0.4"
+log.workspace = true
 parking_lot.workspace = true
-pathdiff.workspace = true #  = { version = "0.2", features = ["camino"] }
-rand.workspace = true #  = "0.8"
+pathdiff.workspace = true
+rand.workspace = true
 reqwest.workspace = true
 soundtouch = { workspace = true, optional = true }
 souvlaki.workspace = true

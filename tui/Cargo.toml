@@ -27,31 +27,31 @@ bytes.workspace = true
 clap.workspace = true
 ctrlc.workspace = true
 dirs.workspace = true
-id3.workspace = true # = "1"
-image.workspace = true # = "0.24"
-include_dir.workspace = true # = "0.7"
-log.workspace = true # = "0.4"
+id3.workspace = true
+image.workspace = true
+include_dir.workspace = true
+log.workspace = true
 flexi_logger.workspace = true
 colored.workspace = true
-lofty.workspace = true #  = "0.12"
-rand.workspace = true #  = "0.8"
-regex.workspace = true #  = "^1.5.5"
-serde_json.workspace = true #  = "1.0"
-shellexpand.workspace = true #  = "3"
+lofty.workspace = true
+rand.workspace = true
+regex.workspace = true
+serde_json.workspace = true
+shellexpand.workspace = true
 shell-words.workspace = true
 sysinfo.workspace = true
-tuirealm.workspace = true #   = { version = "1", features = ["serialize"] }
-tui-realm-stdlib.workspace = true #   = "1"
+tuirealm.workspace = true
+tui-realm-stdlib.workspace = true
 tuirealm-orx-tree.workspace = true
-unicode-width.workspace = true #   = "^0.1.8"
+unicode-width.workspace = true
 viuer.workspace = true
-ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
-walkdir.workspace = true #   = "2"
-wildmatch.workspace = true #   = "2"
-escaper.workspace = true #   = "0.1.1"
-textwrap.workspace = true #   = "0.16"
-sanitize-filename.workspace = true #   = "0.4"
-percent-encoding.workspace = true #   = "2.2"
+ytd-rs.workspace = true
+walkdir.workspace = true
+wildmatch.workspace = true
+escaper.workspace = true
+textwrap.workspace = true
+sanitize-filename.workspace = true
+percent-encoding.workspace = true
 tonic.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
@@ -104,11 +104,7 @@ bin-dir = "{ name }-v{ version }-x86_64-windows/{ bin }{ binary-ext }"
 pkg-fmt = "zip"
 
 [dev-dependencies]
-pretty_assertions.workspace = true # = "1"
-# anyhow = "1"
-# hound = "3.4"
-# ringbuf = "0.3"
-# clap = { version = "3.1", default-features = false, features = ["std"] }
+pretty_assertions.workspace = true
 
 [lints]
 workspace = true

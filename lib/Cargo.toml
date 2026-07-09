@@ -20,51 +20,51 @@ doctest = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-ahash.workspace = true #   = "^0.8"
+ahash.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
 base64.workspace = true
-bytes.workspace = true #   = "1"
+bytes.workspace = true
 bytesize.workspace = true
-chrono.workspace = true #   = "^0.4.23"
+chrono.workspace = true
 dirs.workspace = true
-escaper.workspace = true #   = "0.1.1"
-hex.workspace = true # = "0.4"
-id3.workspace = true # = "1"
+escaper.workspace = true
+hex.workspace = true
+id3.workspace = true
 indoc.workspace = true
-image.workspace = true # = "0.24"
-include_dir.workspace = true # = "0.7"
-libaes.workspace = true # = "0.6"
-log.workspace = true # = "0.4"
-lofty.workspace = true #  = "0.12"
-md5.workspace = true #  = "0.7"
-num-bigint.workspace = true #  = "0.4"
-opml.workspace = true #   = "1"
+image.workspace = true
+include_dir.workspace = true
+libaes.workspace = true
+log.workspace = true
+lofty.workspace = true
+md5.workspace = true
+num-bigint.workspace = true
+opml.workspace = true
 parking_lot.workspace = true
-quick-xml.workspace = true #  = "0.28"
-rand.workspace = true #  = "0.8"
-regex.workspace = true #  = "^1.5.5"
+quick-xml.workspace = true
+rand.workspace = true
+regex.workspace = true
 reqwest.workspace = true
-rfc822_sanitizer.workspace = true #   = "0.3" 
-rss.workspace = true #   = "2"
-rusqlite.workspace = true #  = { version = "0.29", features = ["bundled"]}
-sanitize-filename.workspace = true #   = "0.4"
-semver.workspace = true #   = "^1"
-serde.workspace = true #  = { version = "1.0", features = ["derive"] }
+rfc822_sanitizer.workspace = true
+rss.workspace = true
+rusqlite.workspace = true
+sanitize-filename.workspace = true
+semver.workspace = true
+serde.workspace = true
 serde_content_ref.workspace = true
-serde_json.workspace = true #  = "1.0"
+serde_json.workspace = true
 serde_yaml.workspace = true
-shellexpand.workspace = true #  = "3"
-textwrap.workspace = true #   = "0.16"
-toml.workspace = true #  = "0.7"
-tuirealm.workspace = true #   = { version = "1", features = ["serialize"] }
-unicode-segmentation.workspace = true #   = "1.10"
-unicode-width.workspace = true #   = "^0.1.8"
-urlencoding.workspace = true #   = "2"
-viuer.workspace = true #   = "0.6"
-walkdir.workspace = true #   = "2"
-wildmatch.workspace = true #   = "2"
-ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
+shellexpand.workspace = true
+textwrap.workspace = true
+toml.workspace = true
+tuirealm.workspace = true
+unicode-segmentation.workspace = true
+unicode-width.workspace = true
+urlencoding.workspace = true
+viuer.workspace = true
+walkdir.workspace = true
+wildmatch.workspace = true
+ytd-rs.workspace = true
 futures-util.workspace = true
 tokio.workspace = true
 tokio-util = { workspace = true, features = ["rt"] }
