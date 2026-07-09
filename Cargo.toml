@@ -71,7 +71,6 @@ serde_content_ref = "0.1"
 serde_json = "1.0.150"
 serde_yaml = "0.9"
 shellexpand = { version = "3.1.1", features = ["path"] }
-textwrap = "0.16.2"
 tokio = { version = "1.52", features = ["sync", "macros", "rt", "rt-multi-thread", "parking_lot", "process"] }
 tokio-util = "0.7.18"
 tokio-stream = { version = "0.1.18", features = ["sync"] }
@@ -144,6 +143,7 @@ sysinfo = { version = "^0.38.4", default-features = false, features = ["system"]
 mime_guess = "2.0.5"
 pinyin = "0.11"
 escaper = "0.1.1"
+textwrap = "0.16.2"
 
 # --- Dev Dependencies ---
 criterion = "0.8"
