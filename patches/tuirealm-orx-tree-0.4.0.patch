@@ -1,0 +1,45 @@
+--- src/widget.rs	2006-07-24 04:21:28
++++ src/widget.rs	2026-07-09 17:52:40
+@@ -11,6 +11,7 @@
+ 	ratatui::{
+ 		buffer::Buffer,
+ 		layout::Rect,
++		style::Color,
+ 		text::Line,
+ 		widgets::{
+ 			Block,
+@@ -239,6 +240,7 @@
+ 			// so it must have at least one width and one height.
+ 			// This setting may not be necessary as we are currently rendering lines, but it is more correct to do this anyway.
+ 			line_area.height = 1;
++			let full_row_x = line_area.x;
+ 			let mut display_offset_horiz = remaining_offset.get_horizontal();
+ 
+ 			let is_selected = state.is_selected(&node.idx());
+@@ -271,6 +273,26 @@
+ 				.render_with_indicators(buf, line_area, display_offset_horiz, use_style, node.is_leaf(), || {
+ 					return state.is_opened(node.idx());
+ 				});
++
++			if is_selected && display_offset_horiz == 0 {
++				let right_edge = area.right().saturating_sub(1);
++				if let Some(fill_bg) = self.hg_style.bg {
++					let fill_fg = self.hg_style.fg.unwrap_or(Color::Reset);
++					let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
++					let full_row = Rect::new(area.x, line_area.y, area.width, 1);
++					buf.set_style(full_row, fill_style);
++					if right_edge > full_row_x {
++						buf[(full_row_x, line_area.y)]
++							.set_symbol("")
++							.set_fg(fill_bg)
++							.set_bg(Color::Reset);
++						buf[(right_edge, line_area.y)]
++							.set_symbol("")
++							.set_fg(fill_bg)
++							.set_bg(Color::Reset);
++					}
++				}
++			}
+ 
+ 			remaining_area.height = remaining_area.height.saturating_sub(1);
+ 			remaining_area.y += 1;

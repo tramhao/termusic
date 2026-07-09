@@ -1,5 +1,5 @@
 --- src/platform/macos/mod.rs	2006-07-24 04:21:28
-+++ src/platform/macos/mod.rs	2026-07-07 12:18:14
++++ src/platform/macos/mod.rs	2026-07-09 11:18:46
 @@ -321,6 +321,9 @@
      let url = ns_url(url);
      let image: id = msg_send!(class!(NSImage), alloc);

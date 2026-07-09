@@ -39,9 +39,8 @@ impl Progress {
                 .background(config.settings.theme.progress_background())
                 .foreground(config.settings.theme.progress_foreground())
                 .inactive(Style::new().fg(config.settings.theme.progress_foreground()))
-                .label("Progress")
                 .title(
-                    Title::from(" Status: Stopped | Volume: ?? | Speed: ??.? ")
+                    Title::from(" 󰣿 - 󰕾 ?? - 󰓅 ?.? ")
                         .alignment(HorizontalAlignment::Center),
                 )
                 .progress(0.0),
@@ -55,32 +54,32 @@ impl AppComponent<Msg, UserEvent> for Progress {
     }
 }
 
+#[allow(clippy::cast_precision_loss)]
+fn status_icon(status: RunningStatus) -> &'static str {
+    match status {
+        RunningStatus::Running => "󰣿",
+        RunningStatus::Paused => "󰏤",
+        RunningStatus::Stopped => "󰓛",
+    }
+}
+
 #[allow(clippy::cast_precision_loss)] // speed is never realisitcally expected to be above i16::MAX
 fn title_format(
     status: RunningStatus,
     title: Option<&str>,
     volume: u16,
     speed: i32,
-    gapless: bool,
 ) -> String {
-    let gapless = if gapless { "True" } else { "False" };
-
+    let icon = status_icon(status);
     if let Some(title) = title {
         format!(
-            " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-            status,
-            title,
-            volume,
+            " {icon} {title:^.20} - 󰕾 {volume} - 󰓅 {:^.1} ",
             speed as f32 / 10.0,
-            gapless,
         )
     } else {
         format!(
-            " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-            status,
-            volume,
+            " {icon} - 󰕾 {volume} - 󰓅 {:^.1} ",
             speed as f32 / 10.0,
-            gapless,
         )
     }
 }
@@ -118,14 +117,12 @@ impl Model {
                     None,
                     player.volume,
                     player.speed,
-                    player.gapless,
                 ),
                 MediaTypesSimple::Podcast => title_format(
                     self.playback.status(),
                     Some(track.title().unwrap_or("Unknown title")),
                     player.volume,
                     player.speed,
-                    player.gapless,
                 ),
             }
         } else {
@@ -134,7 +131,6 @@ impl Model {
                 None,
                 player.volume,
                 player.speed,
-                player.gapless,
             )
         };
 
@@ -169,7 +165,7 @@ impl Model {
         self.lyric_update();
     }
 
-    /// Set the progress bar text.
+    /// Set the progress bar value.
     fn progress_set(&mut self, mut progress: f64, total_duration: Duration) {
         let text = if self.playback.is_stopped() {
             progress = 0.0;
@@ -178,7 +174,7 @@ impl Model {
             format!("{}", DurationFmtShort(self.playback.current_track_pos()))
         } else {
             format!(
-                "{}    -    {}",
+                "{}   -   {}",
                 DurationFmtShort(self.playback.current_track_pos()),
                 DurationFmtShort(total_duration),
             )

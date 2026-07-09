@@ -1,5 +1,5 @@
 --- src/prop_ext.rs	2006-07-24 04:21:28
-+++ src/prop_ext.rs	2026-07-09 11:01:22
++++ src/prop_ext.rs	2026-07-09 17:52:40
 @@ -219,12 +219,10 @@
      /// Get the patched highlight style with focused or unfocused style.
      #[inline]
@@ -15,8 +15,120 @@
          }
      }
  }
+--- src/components/gauge.rs	2006-07-24 04:21:28
++++ src/components/gauge.rs	2026-07-09 19:05:14
+@@ -6,9 +6,9 @@
+     AttrValue, Attribute, Borders, Color, PropPayload, PropValue, Props, QueryResult, Style,
+     TextModifiers, Title,
+ };
++use tuirealm::ratatui::layout::{Alignment, Rect};
++use tuirealm::ratatui::text::Line;
+ use tuirealm::ratatui::Frame;
+-use tuirealm::ratatui::layout::Rect;
+-use tuirealm::ratatui::widgets::Gauge as TuiGauge;
+ use tuirealm::state::State;
+ 
+ use crate::prop_ext::CommonProps;
+@@ -98,16 +98,12 @@
+ }
+ 
+ impl Component for Gauge {
++
+     fn view(&mut self, render: &mut Frame, area: Rect) {
+         if !self.common.display {
+             return;
+         }
+ 
+-        // Text
+-        let label = self
+-            .props
+-            .get(Attribute::Text)
+-            .and_then(AttrValue::as_string);
+         // Get percentage
+         let percentage = self
+             .props
+@@ -117,22 +113,67 @@
+             .and_then(PropValue::as_f64)
+             .unwrap_or_default();
+ 
+-        // Make progress bar
+-        let mut widget = TuiGauge::default()
+-            .style(self.common.style)
+-            .gauge_style(self.common.style)
+-            .ratio(percentage)
+-            .use_unicode(true);
++        // Get bottom title text
++        let bottom_text = self
++            .props
++            .get(Attribute::Text)
++            .and_then(AttrValue::as_string);
+ 
+-        if let Some(label) = label {
+-            widget = widget.label(label.as_str());
+-        }
++        // Build block with bottom title
++        let content_area = if let Some(block) = self.common.get_block() {
++            let block = if let Some(ref text) = bottom_text {
++                block.title_bottom(
++                    Line::from(format!(" {} ", text.as_str())).alignment(Alignment::Center),
++                )
++            } else {
++                block
++            };
++            let inner = block.inner(area);
++            render.render_widget(block, area);
++            inner
++        } else {
++            area
++        };
+ 
+-        if let Some(block) = self.common.get_block() {
+-            widget = widget.block(block);
++        if content_area.width < 2 {
++            return;
+         }
+ 
+-        render.render_widget(widget, area);
++        let ratio = percentage.clamp(0.0, 1.0);
++        let buf = render.buffer_mut();
++        let fill_fg = self.common.style.fg.unwrap_or(Color::Reset);
++        let fill_bg = self.common.style.bg.unwrap_or(Color::Reset);
++        let right_edge = content_area.right().saturating_sub(1);
++
++        // Overall gauge background
++        buf.set_style(content_area, Style::default().bg(fill_bg));
++
++        let max_fill = content_area.width.saturating_sub(2);
++        let filled = (max_fill as f64 * ratio).round() as u16;
++        let filled = filled.clamp(0, max_fill);
++
++        let left_pill_x = content_area.x;
++        let right_pill_x = (left_pill_x + 1 + filled).clamp(left_pill_x + 1, right_edge);
++
++        // Left pill
++        buf[(left_pill_x, content_area.y)]
++            .set_symbol("")
++            .set_fg(fill_fg)
++            .set_bg(fill_bg);
++
++        // Right pill
++        buf[(right_pill_x, content_area.y)]
++            .set_symbol("")
++            .set_fg(fill_fg)
++            .set_bg(fill_bg);
++
++        // Fill between pills
++        for x in left_pill_x + 1..right_pill_x {
++            buf[(x, content_area.y)]
++                .set_symbol("█")
++                .set_fg(fill_fg)
++                .set_bg(fill_fg);
++        }
+     }
+ 
+     fn query<'a>(&'a self, attr: Attribute) -> Option<QueryResult<'a>> {
 --- src/components/table.rs	2006-07-24 04:21:28
-+++ src/components/table.rs	2026-07-09 11:08:06
++++ src/components/table.rs	2026-07-09 17:52:40
 @@ -350,7 +350,9 @@
                      .get_style_focus(self.common.style, self.common.is_active()),
              );
@@ -66,7 +178,7 @@
              render.render_widget(widget, area);
          }
 --- src/components/list.rs	2006-07-24 04:21:28
-+++ src/components/list.rs	2026-07-09 11:08:11
++++ src/components/list.rs	2026-07-09 17:52:40
 @@ -267,7 +267,9 @@
                      .get_style_focus(self.common.style, self.common.is_active()),
              );

@@ -131,7 +131,7 @@ impl Model {
     fn view_layout_podcast(&mut self) {
         self.terminal
             .draw(|f| {
-                let [chunks_main, progress, _bottom_help] = Layout::vertical([
+                                                let [chunks_main, progress, _bottom_help] = Layout::vertical([
                     Constraint::Min(2),
                     Constraint::Length(3),
                     Constraint::Length(1),
@@ -178,12 +178,10 @@ impl Model {
                 .areas(chunks_main_left);
                 let [right_playlist, right_progress, right_lyric] = Layout::vertical([
                     Constraint::Min(2),
-                    Constraint::Length(3),
+                    Constraint::Length(5),
                     Constraint::Length(4),
                 ])
-                .areas(chunks_main_right);
-
-                self.app.view(&Id::DBListCriteria, f, left_criteria);
+                .areas(chunks_main_right);                self.app.view(&Id::DBListCriteria, f, left_criteria);
                 self.app
                     .view(&Id::DBListSearchResult, f, left_search_result);
                 self.app
@@ -212,9 +210,7 @@ impl Model {
                     Constraint::Length(4),
                 ])
                 .areas(right);
-
                 self.app.view(&Id::Library, f, left_library);
-
                 self.app.view(&Id::Playlist, f, right_playlist);
                 self.app.view(&Id::Progress, f, right_progress);
                 self.app.view(&Id::Lyric, f, right_lyric);
