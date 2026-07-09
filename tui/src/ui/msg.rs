@@ -414,6 +414,8 @@ pub const GENERAL_FOCUS_ORDER: &[IdCEGeneral] = &[
 ];
 
 /// This array defines the order the IDs listed are displayed and which gains next / previous focus.
+/// Focus handlers may use a subslice when cycling inside one pane, so some entries
+/// may be skipped; for example, the color-item pane skips `ThemeSelectTable`.
 pub const THEME_FOCUS_ORDER: &[IdCETheme] = &[
     IdCETheme::ThemeSelectTable,
     IdCETheme::LibraryForeground,
