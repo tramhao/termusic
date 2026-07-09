@@ -187,6 +187,7 @@ Files:
 | :-------------------: | :-------------: |
 | `termusic-server.log` | The server logs |
 |  `termusic-tui.log`   |  The TUI logs   |
+| `termusic-cover`     |   MPRIS cover   |
 
 The default log level is `WARNING` (can be changed via [`RUST_LOG`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging)).
 

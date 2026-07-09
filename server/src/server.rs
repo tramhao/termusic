@@ -86,11 +86,13 @@ impl PlayerStats {
 }
 
 fn main() -> Result<()> {
+    #[cfg(target_os = "macos")]
+    let res = termusicplayback::macos::run_with_run_loop(actual_main);
+    #[cfg(not(target_os = "macos"))]
     let res = actual_main();
 
     trace!("Tokio Exited");
 
-    // print error to the log and then throw it
     if let Err(err) = res {
         error!("Error: {err:?}");
         return Err(err);

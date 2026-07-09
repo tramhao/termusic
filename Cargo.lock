@@ -5383,6 +5383,7 @@ dependencies = [
  "gstreamer",
  "libmpv-sirno",
  "log",
+ "objc2",
  "parking_lot",
  "pathdiff",
  "pretty_assertions",
