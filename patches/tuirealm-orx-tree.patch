@@ -1,5 +1,5 @@
 --- src/widget.rs	2006-07-24 04:21:28
-+++ src/widget.rs	2026-07-08 23:11:36
++++ src/widget.rs	2026-07-09 11:01:22
 @@ -11,6 +11,7 @@
  	ratatui::{
  		buffer::Buffer,
@@ -8,25 +8,19 @@
  		text::Line,
  		widgets::{
  			Block,
-@@ -234,11 +235,13 @@
- 				indent += usize::from(self.hg_width);
- 			}
- 
--			let mut line_area = remaining_area;
-+				let mut line_area = remaining_area;
- 			// This can be done without clamping, as we at this point know that the area is not empty,
+@@ -239,6 +240,7 @@
  			// so it must have at least one width and one height.
  			// This setting may not be necessary as we are currently rendering lines, but it is more correct to do this anyway.
  			line_area.height = 1;
 +			let full_row_x = line_area.x;
-+
  			let mut display_offset_horiz = remaining_offset.get_horizontal();
  
  			let is_selected = state.is_selected(&node.idx());
-@@ -272,6 +275,26 @@
+@@ -271,6 +273,26 @@
+ 				.render_with_indicators(buf, line_area, display_offset_horiz, use_style, node.is_leaf(), || {
  					return state.is_opened(node.idx());
  				});
- 
++
 +			if is_selected && display_offset_horiz == 0 {
 +				let right_edge = area.right().saturating_sub(1);
 +				if let Some(fill_bg) = self.hg_style.bg {
@@ -46,7 +40,6 @@
 +					}
 +				}
 +			}
-+
+ 
  			remaining_area.height = remaining_area.height.saturating_sub(1);
  			remaining_area.y += 1;
- 		}

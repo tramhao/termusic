@@ -13,13 +13,13 @@ REGISTRY_CACHE="$HOME/.cargo/registry/cache"
 # Find the registry hash dir (stable across cargo updates on same index URL)
 HASH_DIR=""
 for d in "$REGISTRY_SRC"/index.crates.io-*; do
-  if [ -d "$d" ]; then
-    HASH_DIR="$(basename "$d")"
-    break
-  fi
+    if [ -d "$d" ]; then
+        HASH_DIR="$(basename "$d")"
+        break
+    fi
 done
 if [ -z "$HASH_DIR" ]; then
-  HASH_DIR="index.crates.io-1949cf8c6b5b557f"
+    HASH_DIR="index.crates.io-1949cf8c6b5b557f"
 fi
 
 REGISTRY_DIR="$REGISTRY_SRC/$HASH_DIR"
@@ -33,27 +33,27 @@ cargo fetch
 
 # 2. Extract patched crates to source dir if not already extracted
 extract_if_missing() {
-  local crate="$1"
-  local version="$2"
-  local target="$REGISTRY_DIR/$crate-$version"
-  local cache_file="$CACHE_DIR/$crate-$version.crate"
+    local crate="$1"
+    local version="$2"
+    local target="$REGISTRY_DIR/$crate-$version"
+    local cache_file="$CACHE_DIR/$crate-$version.crate"
 
-  if [ -d "$target" ]; then
-    echo "  ✓ $crate-$version already extracted"
-    return
-  fi
+    if [ -d "$target" ]; then
+        echo "  ✓ $crate-$version already extracted"
+        return
+    fi
 
-  echo "  → Extracting $crate-$version..."
-  if [ ! -f "$cache_file" ]; then
-    echo "  ✗ $cache_file not found. Try running 'cargo fetch' again."
-    exit 1
-  fi
+    echo "  → Extracting $crate-$version..."
+    if [ ! -f "$cache_file" ]; then
+        echo "  ✗ $cache_file not found. Try running 'cargo fetch' again."
+        exit 1
+    fi
 
-  mkdir -p "$target"
-  tar xzf "$cache_file" -C "$target" 2>/dev/null
-  # Cargo checks for this marker to confirm clean extraction
-  echo '{"v":1}' > "$target/.cargo-ok"
-  echo "  ✓ Extracted $crate-$version"
+    mkdir -p "$target"
+    tar xzf "$cache_file" -C "$target" 2>/dev/null
+    # Cargo checks for this marker to confirm clean extraction
+    echo '{"v":1}' >"$target/.cargo-ok"
+    echo "  ✓ Extracted $crate-$version"
 }
 
 extract_if_missing "tuirealm-orx-tree" "0.4.0"
@@ -62,17 +62,17 @@ extract_if_missing "souvlaki" "0.8.3"
 
 # 3. Apply patches
 apply_patch() {
-  local crate_version="$1"
-  local patch_file="$2"
-  local target="$REGISTRY_DIR/$crate_version"
+    local crate_version="$1"
+    local patch_file="$2"
+    local target="$REGISTRY_DIR/$crate_version"
 
-  if [ ! -f "$patch_file" ]; then
-    echo "  ✗ Patch file not found: $patch_file"
-    exit 1
-  fi
+    if [ ! -f "$patch_file" ]; then
+        echo "  ✗ Patch file not found: $patch_file"
+        exit 1
+    fi
 
-  patch -d "$target" -p0 --batch --forward -r - < "$patch_file" 2>/dev/null || true
-  echo "  ✓ Patched $crate_version"
+    patch -d "$target" -p0 --batch --forward -r - <"$patch_file" 2>/dev/null || true
+    echo "  ✓ Patched $crate_version"
 }
 
 echo "→ Applying patches..."

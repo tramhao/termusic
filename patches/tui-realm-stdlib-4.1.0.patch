@@ -1,5 +1,5 @@
 --- src/prop_ext.rs	2006-07-24 04:21:28
-+++ src/prop_ext.rs	2026-07-08 22:27:40
++++ src/prop_ext.rs	2026-07-09 11:01:22
 @@ -219,12 +219,10 @@
      /// Get the patched highlight style with focused or unfocused style.
      #[inline]
@@ -16,8 +16,19 @@
      }
  }
 --- src/components/table.rs	2006-07-24 04:21:28
-+++ src/components/table.rs	2026-07-08 23:34:14
-@@ -379,7 +379,8 @@
++++ src/components/table.rs	2026-07-09 11:08:06
+@@ -350,7 +350,9 @@
+                     .get_style_focus(self.common.style, self.common.is_active()),
+             );
+ 
+-        if let Some(block) = self.common.get_block() {
++        let block = self.common.get_block();
++        let content_area = block.as_ref().map_or(area, |b| b.inner(area));
++        if let Some(block) = block {
+             widget = widget.block(block);
+         }
+ 
+@@ -379,7 +381,8 @@
                      .collect()
              })
              .unwrap_or_default();
@@ -27,7 +38,7 @@
              widget = widget.header(
                  Row::new(headers)
                      .style(self.common.style)
-@@ -390,6 +391,29 @@
+@@ -390,6 +393,26 @@
              let mut state: TableState = TableState::default();
              state.select(Some(self.states.list_index));
              render.render_stateful_widget(widget, area, &mut state);
@@ -38,16 +49,13 @@
 +                        let header_count = if has_header { 1 } else { 0 };
 +                        let offset = state.offset();
 +                        let visual_row = selected.saturating_sub(offset);
-+                        let row_y = area.y + header_count as u16 + visual_row as u16 * row_height;
-+                        if row_y < area.bottom() {
-+                            let fill_fg = self.common_hg.style.fg.unwrap_or(Color::Reset);
-+                            let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
-+                            let full_row = Rect::new(area.x, row_y, area.width, 1);
++                        let row_y = content_area.y + header_count as u16 + visual_row as u16 * row_height;
++                        if row_y < content_area.bottom() {
 +                            let buf = render.buffer_mut();
-+                            buf.set_style(full_row, fill_style);
-+                            let right_edge = area.right().saturating_sub(1);
-+                            if right_edge > area.x {
-+                                buf[(area.x, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
++                            let left_edge = content_area.x;
++                            let right_edge = content_area.right().saturating_sub(1);
++                            if right_edge > left_edge {
++                                buf[(left_edge, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
 +                                buf[(right_edge, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
 +                            }
 +                        }
@@ -58,8 +66,19 @@
              render.render_widget(widget, area);
          }
 --- src/components/list.rs	2006-07-24 04:21:28
-+++ src/components/list.rs	2026-07-08 23:34:47
-@@ -280,6 +280,28 @@
++++ src/components/list.rs	2026-07-09 11:08:11
+@@ -267,7 +267,9 @@
+                     .get_style_focus(self.common.style, self.common.is_active()),
+             );
+ 
+-        if let Some(block) = self.common.get_block() {
++        let block = self.common.get_block();
++        let content_area = block.as_ref().map_or(area, |b| b.inner(area));
++        if let Some(block) = block {
+             widget = widget.block(block);
+         }
+ 
+@@ -280,6 +282,25 @@
              let mut state: ListState = ListState::default();
              state.select(Some(self.states.list_index));
              render.render_stateful_widget(widget, area, &mut state);
@@ -69,16 +88,13 @@
 +                    if let Some(selected) = state.selected() {
 +                        let offset = state.offset();
 +                        let visual_row = selected.saturating_sub(offset);
-+                        let row_y = area.y + visual_row as u16;
-+                        if row_y < area.bottom() {
-+                            let fill_fg = self.common_hg.style.fg.unwrap_or(Color::Reset);
-+                            let fill_style = Style::default().fg(fill_fg).bg(fill_bg);
-+                            let full_row = Rect::new(area.x, row_y, area.width, 1);
++                        let row_y = content_area.y + visual_row as u16;
++                        if row_y < content_area.bottom() {
 +                            let buf = render.buffer_mut();
-+                            buf.set_style(full_row, fill_style);
-+                            let right_edge = area.right().saturating_sub(1);
-+                            if right_edge > area.x {
-+                                buf[(area.x, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
++                            let left_edge = content_area.x;
++                            let right_edge = content_area.right().saturating_sub(1);
++                            if right_edge > left_edge {
++                                buf[(left_edge, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
 +                                buf[(right_edge, row_y)].set_symbol("").set_fg(fill_bg).set_bg(Color::Reset);
 +                            }
 +                        }
