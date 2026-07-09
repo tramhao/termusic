@@ -44,7 +44,7 @@ tokio.workspace = true
 # soundtouch= { git = 'https://github.com/Drewol/soundtouch-rs.git' }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.6"
+objc2.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { workspace = true, features = [
