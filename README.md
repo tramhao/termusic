@@ -73,36 +73,36 @@ Note that using non-default features might increase the MSRV.
 
 ##### Linux
 
-| Package name (ubuntu) | Package name (arch) | Required | Build-time-only |       Feature       |                      Description                      |   MSRV   |
-| :-------------------: | :-----------------: | :------: | :-------------: | :-----------------: | :---------------------------------------------------: | :------: |
-|         `git`         |        `git`        |    X     |        X        |                     |                    version control                    |          |
-|        `clang`        |       `clang`       |    X     |        X        |                     |       General Build tools (and sqlite compile)        |          |
-|  `protobuf-compiler`  |     `protobuf`      |    X     |        X        |                     | communication protocol between server and client(tui) |          |
-|    `libdbus-1-dev`    |       `dbus`        |    X     |     unknown     |                     |                  MPRIS media control                  |          |
-|   `libasound2-dev`    |     `alsa-lib`      |    X     |     unknown     |                     |                     ALSA headers                      |          |
-|       `yt-dlp`        |      `yt-dlp`       |          |                 |                     |                 Download some tracks                  |          |
-|       `ffmpeg`        |      `ffmpeg`       |          |                 |                     |             Post-Processing for `yt-dlp`              |          |
-|         `mpv`         |        `mpv`        |          |                 |        `mpv`        |                      MPV Backend                      |          |
-|      `gstreamer`      |     `gstreamer`     |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
-|       `libopus`       |      `libopus`      |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
-|     `ueberzugpp`      |    `ueberzugpp`     |          |                 |  `cover-ueberzug`   |               Ueberzug protocol support               |          |
-|     `libstdc++6`      |     `gcc-libs`      |          |                 | `rusty-soundtouch`  |       Soundtouch requires linking to libstdc++        |          |
+| Package name (ubuntu) | Package name (arch) | Required | Build-time-only |      Feature       |                      Description                      |   MSRV   |
+| :-------------------: | :-----------------: | :------: | :-------------: | :----------------: | :---------------------------------------------------: | :------: |
+|         `git`         |        `git`        |    X     |        X        |                    |                    version control                    |          |
+|        `clang`        |       `clang`       |    X     |        X        |                    |       General Build tools (and sqlite compile)        |          |
+|  `protobuf-compiler`  |     `protobuf`      |    X     |        X        |                    | communication protocol between server and client(tui) |          |
+|    `libdbus-1-dev`    |       `dbus`        |    X     |     unknown     |                    |                  MPRIS media control                  |          |
+|   `libasound2-dev`    |     `alsa-lib`      |    X     |     unknown     |                    |                     ALSA headers                      |          |
+|       `yt-dlp`        |      `yt-dlp`       |          |                 |                    |                 Download some tracks                  |          |
+|       `ffmpeg`        |      `ffmpeg`       |          |                 |                    |             Post-Processing for `yt-dlp`              |          |
+|         `mpv`         |        `mpv`        |          |                 |       `mpv`        |                      MPV Backend                      |          |
+|      `gstreamer`      |     `gstreamer`     |          |                 |       `gst`        |                   Gstreamer Backend                   |          |
+|       `libopus`       |      `libopus`      |    X     |                 |  `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
+|     `ueberzugpp`      |    `ueberzugpp`     |          |                 |  `cover-ueberzug`  |               Ueberzug protocol support               |          |
+|     `libstdc++6`      |     `gcc-libs`      |          |                 | `rusty-soundtouch` |       Soundtouch requires linking to libstdc++        |          |
 
 #### Windows
 
 All the packages here can be installed via various sources, for ease of install the `winget` package name is listed.
 
-|        Package name (winget)        |            Alternative Source             | Required | Build-time-only |       Feature       |                      Description                      |   MSRV   |
-| :---------------------------------: | :---------------------------------------: | :------: | :-------------: | :-----------------: | :---------------------------------------------------: | :------: |
-|              `Git.Git`              |                                           |    X     |        X        |                     |                    version control                    |          |
-| `Microsoft.VisualStudio.BuildTools` |                                           |    X     |        X        |                     |           General Windows (C++) build tools           |          |
-|          `Google.Protobuf`          |                                           |    X     |        X        |                     | communication protocol between server and client(tui) |          |
-|              `yt-dlp`               |                                           |          |                 |                     |                 Download some tracks                  |          |
-|              `ffmpeg`               |                                           |          |                 |                     |             Post-Processing for `yt-dlp`              |          |
-|               unknown               |                                           |          |                 |        `mpv`        |                      MPV Backend                      |          |
-|               unknown               |                                           |          |                 |        `gst`        |                   Gstreamer Backend                   |          |
-|             unavailable             | [libopus official site][libopus-download] |    X     |                 |   `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
-|               *see list below*               |                                    |          |         X        | `rusty-soundtouch`  |       Soundtouch requires linking to libstdc++        |          |
+|        Package name (winget)        |            Alternative Source             | Required | Build-time-only |      Feature       |                      Description                      |   MSRV   |
+| :---------------------------------: | :---------------------------------------: | :------: | :-------------: | :----------------: | :---------------------------------------------------: | :------: |
+|              `Git.Git`              |                                           |    X     |        X        |                    |                    version control                    |          |
+| `Microsoft.VisualStudio.BuildTools` |                                           |    X     |        X        |                    |           General Windows (C++) build tools           |          |
+|          `Google.Protobuf`          |                                           |    X     |        X        |                    | communication protocol between server and client(tui) |          |
+|              `yt-dlp`               |                                           |          |                 |                    |                 Download some tracks                  |          |
+|              `ffmpeg`               |                                           |          |                 |                    |             Post-Processing for `yt-dlp`              |          |
+|               unknown               |                                           |          |                 |       `mpv`        |                      MPV Backend                      |          |
+|               unknown               |                                           |          |                 |       `gst`        |                   Gstreamer Backend                   |          |
+|             unavailable             | [libopus official site][libopus-download] |    X     |                 |  `rusty-libopus`   |          Opus codec support in rusty backend          | `1.89.0` |
+|          *see list below*           |                                           |          |        X        | `rusty-soundtouch` |       Soundtouch requires linking to libstdc++        |          |
 
 - See [MSVC Prerequisites: only the required components](https://rust-lang.github.io/rustup/installation/windows-msvc.html#installing-only-the-required-components-optional) for a minimal install
 
@@ -187,7 +187,7 @@ Files:
 | :-------------------: | :-------------: |
 | `termusic-server.log` | The server logs |
 |  `termusic-tui.log`   |  The TUI logs   |
-| `termusic-cover`     |   MPRIS cover   |
+| `termusic-cover.EXT`  |   MPRIS cover   |
 
 The default log level is `WARNING` (can be changed via [`RUST_LOG`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging)).
 

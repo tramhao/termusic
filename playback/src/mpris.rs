@@ -404,6 +404,7 @@ pub mod macos {
     //! - [`run_with_run_loop`]: Convenience: spawn a closure on a background thread
     //!   while pumping the run loop on the main thread.
 
+    use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
     use std::time::Duration;
 
     use objc2::msg_send;
@@ -450,13 +451,13 @@ pub mod macos {
     ///
     /// Panics if the `NSRunLoop` or `NSDate` class is not available at runtime
     /// (should never happen on a real macOS system).
-    pub fn pump_run_loop(done: &std::sync::mpsc::Receiver<()>) {
+    pub fn pump_run_loop(done: &Receiver<()>) {
         let rl_cls = AnyClass::get(c"NSRunLoop").expect("NSRunLoop class not found on macOS");
         let date_cls = AnyClass::get(c"NSDate").expect("NSDate class not found on macOS");
         loop {
             match done.recv_timeout(Duration::from_millis(50)) {
-                Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
-                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                Ok(()) | Err(RecvTimeoutError::Disconnected) => break,
+                Err(RecvTimeoutError::Timeout) => {}
             }
             unsafe {
                 let rl: *mut AnyObject = msg_send![rl_cls, mainRunLoop];
@@ -485,7 +486,7 @@ pub mod macos {
     {
         init_macos_main_thread();
 
-        let (tx, rx) = std::sync::mpsc::channel::<()>();
+        let (tx, rx) = mpsc::channel::<()>();
 
         let handle = std::thread::Builder::new()
             .name("termusic-tokio".into())
