@@ -132,7 +132,7 @@ impl Symphonia {
         // because currently the only way to detect *something* is by comparing the codec_type to NULL
         let track = probed
             .default_track(TrackType::Audio)
-            .and_then(|v| if is_codec_null(v) { None } else { Some(v) })
+            .filter(|&v| !is_codec_null(v))
             .or_else(|| probed.tracks().iter().find(|v| !is_codec_null(v)))
             .ok_or(SymphoniaDecoderError::NoStreams)?;
 
