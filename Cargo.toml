@@ -40,7 +40,6 @@ bytesize = { version = "2.4", features = ["serde"] }
 chrono = "0.4.45"
 lofty = "0.24.0"
 dirs = "6.0"
-escaper = "0.1.1"
 hex = "0.4"
 id3 = "1.17.0"
 indoc = "2.0.7"
@@ -144,6 +143,7 @@ sysinfo = { version = "^0.38.4", default-features = false, features = ["system"]
 # for filter audio files in explorer
 mime_guess = "2.0.5"
 pinyin = "0.11"
+escaper = "0.1.1"
 
 # --- Dev Dependencies ---
 criterion = "0.8"

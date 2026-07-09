@@ -28,7 +28,6 @@ bytes.workspace = true
 bytesize.workspace = true
 chrono.workspace = true
 dirs.workspace = true
-escaper.workspace = true
 hex.workspace = true
 id3.workspace = true
 indoc.workspace = true

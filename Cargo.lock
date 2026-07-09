@@ -5331,7 +5331,6 @@ dependencies = [
  "chrono",
  "dirs",
  "either",
- "escaper",
  "futures-util",
  "hex",
  "id3",
