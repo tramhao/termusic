@@ -87,6 +87,7 @@ lru = "0.16"
 
 # image must be upgraded together with viuer
 image = "0.25.10"
+# This shouldnt be in this section, but for visibility for the "image" version it is still here
 viuer = "0.10.0"
 
 # only update prost and tonic major versions together
