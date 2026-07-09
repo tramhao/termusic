@@ -5373,7 +5373,6 @@ dependencies = [
  "urlencoding",
  "viuer",
  "walkdir",
- "wildmatch",
  "ytd-rs",
 ]
 

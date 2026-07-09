@@ -60,7 +60,6 @@ unicode-segmentation.workspace = true
 urlencoding.workspace = true
 viuer.workspace = true
 walkdir.workspace = true
-wildmatch.workspace = true
 ytd-rs.workspace = true
 futures-util.workspace = true
 tokio.workspace = true

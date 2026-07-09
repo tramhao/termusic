@@ -78,7 +78,6 @@ toml = "1.1.2"
 unicode-segmentation = "1.13"
 urlencoding = "2.1"
 walkdir = "2.5"
-wildmatch = "2.6"
 windows = { default-features = false, version = "0.62" }
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 futures-util = "0.3.32"
@@ -144,6 +143,7 @@ escaper = "0.1.1"
 textwrap = "0.16.2"
 # ratatui is very specific with its versions
 unicode-width = "^0.2.2"
+wildmatch = "2.6"
 
 # --- Dev Dependencies ---
 criterion = "0.8"
