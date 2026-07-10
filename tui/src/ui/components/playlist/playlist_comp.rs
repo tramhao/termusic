@@ -8,6 +8,7 @@ use rand::seq::IndexedRandom;
 use termusiclib::common::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::{LoopMode, ScanDepth};
+use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, track_ops};
 use termusiclib::player::playlist_helpers::{
@@ -60,12 +61,31 @@ impl ListValue for PlaylistData {
         &self,
         buf: &mut tuirealm::ratatui::prelude::Buffer,
         ctx: &super::playlist_mock::PlaylistTableContext<'_>,
-        style: Style,
+        mut style: Style,
     ) -> ListValueRenderReturn {
         let playlist = self.list.read();
         let Some(track) = playlist.tracks().get(ctx.item_offset) else {
             return ListValueRenderReturn::EMPTY;
         };
+
+        // When in specific loop modes, change all previous entries to be grey (default color), to make it more obvious where it currently
+        // is and what has been played.
+        // If more modes like reverse play or other LoopModes are implemented, this should be updated too.
+        if playlist
+            .current_track_index()
+            .is_some_and(|v| ctx.item_offset < v)
+            && matches!(
+                playlist.loop_mode(),
+                LoopMode::Playlist | LoopMode::PlaylistOnce
+            )
+        {
+            style = style.fg(self
+                .config
+                .read()
+                .settings
+                .theme
+                .get_color_from_theme(ColorTermusic::LightBlack));
+        }
 
         let duration_str = if let Some(dur) = track.duration_str_short() {
             format!("[{dur:^7.7}]")
