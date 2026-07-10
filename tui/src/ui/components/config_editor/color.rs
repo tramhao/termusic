@@ -351,21 +351,27 @@ impl AppComponent<Msg, UserEvent> for CEColorSelect {
 
             Event::Keyboard(key) if key == keys.navigation_keys.up.get() => match self.state() {
                 State::Single(_) => {
-                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                        KFMsg::Previous,
+                    )));
                 }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
 
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => match self.state() {
                 State::Single(_) => {
-                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                        KFMsg::Next,
+                    )));
                 }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
                 State::Single(_) => {
-                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                        KFMsg::Previous,
+                    )));
                 }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
@@ -374,7 +380,9 @@ impl AppComponent<Msg, UserEvent> for CEColorSelect {
                 code: Key::Down, ..
             }) => match self.state() {
                 State::Single(_) => {
-                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                        KFMsg::Next,
+                    )));
                 }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
@@ -592,10 +600,12 @@ impl AppComponent<Msg, UserEvent> for ConfigInputHighlight {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next))),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)))
-            }
+            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                KFMsg::Next,
+            ))),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(Msg::ConfigEditor(
+                ConfigEditorMsg::ThemeColorItem(KFMsg::Previous),
+            )),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..

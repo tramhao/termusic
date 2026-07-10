@@ -384,6 +384,7 @@ pub enum ConfigEditorMsg {
     KeyFocusOther(KFMsg),
     General(KFMsg),
     Theme(KFMsg),
+    ThemeColorItem(KFMsg),
 
     ThemeSelectLoad(usize),
 }
@@ -413,6 +414,8 @@ pub const GENERAL_FOCUS_ORDER: &[IdCEGeneral] = &[
 ];
 
 /// This array defines the order the IDs listed are displayed and which gains next / previous focus.
+/// Focus handlers may use a subslice when cycling inside one pane, so some entries
+/// may be skipped; for example, the color-item pane skips `ThemeSelectTable`.
 pub const THEME_FOCUS_ORDER: &[IdCETheme] = &[
     IdCETheme::ThemeSelectTable,
     IdCETheme::LibraryForeground,
@@ -440,6 +443,11 @@ pub const THEME_FOCUS_ORDER: &[IdCETheme] = &[
     IdCETheme::FallbackBorder,
     IdCETheme::FallbackHighlight,
 ];
+
+/// First [`THEME_FOCUS_ORDER`] index used by the color-item pane.
+///
+/// Cycling that pane starts after `ThemeSelectTable`, so the theme table is skipped.
+pub const THEME_COLOR_ITEM_FOCUS_ORDER_START: usize = 1;
 
 /// This array defines the order the IDs listed are displayed and which gains next / previous focus.
 pub const KFGLOBAL_FOCUS_ORDER: &[IdKey] = &[
