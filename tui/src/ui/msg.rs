@@ -444,6 +444,11 @@ pub const THEME_FOCUS_ORDER: &[IdCETheme] = &[
     IdCETheme::FallbackHighlight,
 ];
 
+/// First [`THEME_FOCUS_ORDER`] index used by the color-item pane.
+///
+/// Cycling that pane starts after `ThemeSelectTable`, so the theme table is skipped.
+pub const THEME_COLOR_ITEM_FOCUS_ORDER_START: usize = 1;
+
 /// This array defines the order the IDs listed are displayed and which gains next / previous focus.
 pub const KFGLOBAL_FOCUS_ORDER: &[IdKey] = &[
     // main layouts

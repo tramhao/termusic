@@ -12,7 +12,8 @@ use crate::ui::components::CEHeader;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::msg::{
     CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, ConfigEditorMsg, GENERAL_FOCUS_ORDER,
-    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, THEME_FOCUS_ORDER,
+    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, THEME_COLOR_ITEM_FOCUS_ORDER_START,
+    THEME_FOCUS_ORDER,
 };
 use crate::ui::tui_cmd::TuiCmd;
 
@@ -221,13 +222,18 @@ impl Model {
 
     /// Handle focus inside the "Theme" tab's color-item pane
     fn update_theme_color_item(&mut self, msg: KFMsg) {
-        set_next_in_focus_array(self, msg, &THEME_FOCUS_ORDER[1..], |id| {
-            if let IdConfigEditor::Theme(id) = id {
-                Some(id)
-            } else {
-                None
-            }
-        });
+        set_next_in_focus_array(
+            self,
+            msg,
+            &THEME_FOCUS_ORDER[THEME_COLOR_ITEM_FOCUS_ORDER_START..],
+            |id| {
+                if let IdConfigEditor::Theme(id) = id {
+                    Some(id)
+                } else {
+                    None
+                }
+            },
+        );
     }
 
     /// Handle focus of the "Key Global" tab
@@ -495,6 +501,10 @@ where
     Some(id)
 }
 
+/// Return the next focus target within `array`.
+///
+/// Callers may pass a subslice to keep focus cycling inside one pane. If focus
+/// is absent or outside that slice, the first item in the slice is selected.
 fn next_in_focus_array<T>(msg: KFMsg, array: &[T], focus_elem: Option<T>) -> Option<T>
 where
     T: Copy + PartialEq,
@@ -526,12 +536,12 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::ui::ids::IdCETheme;
-    use crate::ui::msg::{KFMsg, THEME_FOCUS_ORDER};
+    use crate::ui::msg::{KFMsg, THEME_COLOR_ITEM_FOCUS_ORDER_START, THEME_FOCUS_ORDER};
 
     use super::next_in_focus_array;
 
     fn theme_color_item_focus_order() -> &'static [IdCETheme] {
-        &THEME_FOCUS_ORDER[1..]
+        &THEME_FOCUS_ORDER[THEME_COLOR_ITEM_FOCUS_ORDER_START..]
     }
 
     #[test]
