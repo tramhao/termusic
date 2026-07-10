@@ -52,7 +52,10 @@ impl Model {
 
         self.app.mount(
             Id::Playlist,
-            Box::new(Playlist::new(self.config_tui.clone())),
+            Box::new(Playlist::new(
+                self.config_tui.clone(),
+                self.playback.playlist.clone(),
+            )),
             Vec::new(),
         )?;
         self.app.mount(
