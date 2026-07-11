@@ -431,7 +431,7 @@ pub mod macos {
         unsafe {
             let cls = AnyClass::get(c"NSApplication").expect("NSApplication class not found");
             let app: *mut AnyObject = msg_send![cls, sharedApplication];
-            let _: () =
+            let _: bool =
                 msg_send![app, setActivationPolicy: NS_APPLICATION_ACTIVATION_POLICY_ACCESSORY];
         }
     }

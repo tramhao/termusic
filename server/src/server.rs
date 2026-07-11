@@ -380,7 +380,6 @@ fn player_loop(
             PlayerCmd::SkipPrevious => {
                 player.reset_errors();
                 info!("skip to previous track");
-                player.player_save_last_position();
                 player.previous();
             }
             PlayerCmd::ReloadConfig => {

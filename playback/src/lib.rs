@@ -587,8 +587,21 @@ impl GeneralPlayer {
         }
     }
 
-    /// Switch & Play the previous track in the playlist
+    /// Switch & Play the previous track in the playlist.
+    ///
+    /// If the current track position is past the configured `previous_track_threshold`,
+    /// the current track is restarted instead of switching to the previous track.
+    /// Set `previous_track_threshold` to 0 in the config to disable this behavior,
+    /// which will then always go to the previous track.
     pub fn previous(&mut self) {
+        let threshold = self.config.read().settings.player.previous_track_threshold;
+        if threshold.is_enabled() && self.position().is_some_and(|pos| pos.as_secs() > threshold.get())
+        {
+            info!("restarting current track (position > {}s threshold)", threshold.get());
+            self.restart_track();
+            return;
+        }
+        self.player_save_last_position();
         let mut playlist = self.playlist.write();
         let has_previous = playlist.previous().is_some();
         drop(playlist);
