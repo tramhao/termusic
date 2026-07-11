@@ -4,3 +4,4 @@
 # ignore custom cargo configuration, like changing linker
 # VSCode relation configuration
 .vscode
+.worktrees
