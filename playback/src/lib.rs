@@ -595,9 +595,15 @@ impl GeneralPlayer {
     /// which will then always go to the previous track.
     pub fn previous(&mut self) {
         let threshold = self.config.read().settings.player.previous_track_threshold;
-        if threshold.is_enabled() && self.position().is_some_and(|pos| pos.as_secs() > threshold.get())
+        if threshold.is_enabled()
+            && self
+                .position()
+                .is_some_and(|pos| pos.as_secs() > threshold.get())
         {
-            info!("restarting current track (position > {}s threshold)", threshold.get());
+            info!(
+                "restarting current track (position > {}s threshold)",
+                threshold.get()
+            );
             self.restart_track();
             return;
         }

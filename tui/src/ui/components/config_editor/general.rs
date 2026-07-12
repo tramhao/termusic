@@ -1057,26 +1057,29 @@ impl ConfigPreviousTrackThreshold {
     pub fn new(config: CombinedSettings) -> Self {
         let component = {
             let config_tui = config.tui.read();
-            common_input_comp(&config_tui, " Previous Track Threshold (0-10s, 0=disabled): ")
-                .input_type(InputType::Custom(threshold_valid, threshold_char_valid))
-                .input_len(2)
-                .placeholder(LineStatic::styled(
-                    "0-10s, 0=disabled",
-                    Style::default().fg(config_tui
-                        .settings
-                        .theme
-                        .get_color_from_theme(ColorTermusic::LightBlack)),
-                ))
-                .value(
-                    config
-                        .server
-                        .read()
-                        .settings
-                        .player
-                        .previous_track_threshold
-                        .get()
-                        .to_string(),
-                )
+            common_input_comp(
+                &config_tui,
+                " Previous Track Threshold (0-10s, 0=disabled): ",
+            )
+            .input_type(InputType::Custom(threshold_valid, threshold_char_valid))
+            .input_len(2)
+            .placeholder(LineStatic::styled(
+                "0-10s, 0=disabled",
+                Style::default().fg(config_tui
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::LightBlack)),
+            ))
+            .value(
+                config
+                    .server
+                    .read()
+                    .settings
+                    .player
+                    .previous_track_threshold
+                    .get()
+                    .to_string(),
+            )
         };
 
         Self {
@@ -1206,7 +1209,9 @@ impl Model {
 
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)),
-            Box::new(ConfigPreviousTrackThreshold::new(self.get_combined_settings())),
+            Box::new(ConfigPreviousTrackThreshold::new(
+                self.get_combined_settings(),
+            )),
             Vec::new(),
         )?;
 
