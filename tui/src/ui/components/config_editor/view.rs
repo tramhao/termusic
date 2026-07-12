@@ -51,7 +51,9 @@ use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
 use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{Model, UserEvent};
-use crate::ui::msg::{ConfigEditorLayout, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg};
+use crate::ui::msg::{
+    ConfigEditorLayout, GENERAL_FOCUS_ORDER, KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER, Msg,
+};
 use crate::ui::utils::draw_area_in_absolute;
 
 // NOTE: the macros either have to be in a different file OR be defined *before* they are used, otherwise they are not in scope
@@ -183,73 +185,34 @@ impl Model {
                     None
                 }
             })
-            .and_then(|v| {
-                if let IdConfigEditor::General(v) = v {
-                    Some(match v {
-                        IdCEGeneral::MusicDir => 0,
-                        IdCEGeneral::ExitConfirmation => 1,
-                        IdCEGeneral::PlaylistDisplaySymbol => 2,
-                        IdCEGeneral::PlaylistRandomTrack => 3,
-                        IdCEGeneral::PlaylistRandomAlbum => 4,
-                        IdCEGeneral::PodcastDir => 5,
-                        IdCEGeneral::PodcastSimulDownload => 6,
-                        IdCEGeneral::PodcastMaxRetries => 7,
-                        IdCEGeneral::AlbumPhotoAlign => 8,
-                        IdCEGeneral::SaveLastPosition => 9,
-                        IdCEGeneral::SeekStep => 10,
-                        IdCEGeneral::PreviousTrackThreshold => 11,
-                        IdCEGeneral::KillDamon => 12,
-                        IdCEGeneral::PlayerUseMpris => 13,
-                        IdCEGeneral::PlayerUseDiscord => 14,
-                        IdCEGeneral::PlayerPort => 15,
-                        IdCEGeneral::PlayerAddress => 16,
-                        IdCEGeneral::PlayerProtocol => 17,
-                        IdCEGeneral::PlayerUDSPath => 18,
-                        IdCEGeneral::PlayerBackend => 19,
-                        IdCEGeneral::ExtraYtdlpArgs => 20,
-                    })
+            .and_then(|id| {
+                if let IdConfigEditor::General(id) = id {
+                    Some(
+                        GENERAL_FOCUS_ORDER
+                            .iter()
+                            .position(|v| *v == id)
+                            .expect("Expected all Ids to be present in the list"),
+                    )
                 } else {
                     None
                 }
             });
 
-        let cells = UniformDynamicGrid::new(21, 3, 56 + 2)
+        let cells = UniformDynamicGrid::new(GENERAL_FOCUS_ORDER.len(), 3, 56 + 2)
             .draw_row_low_space()
             .distribute_row_space()
             .focus_node(focus_elem)
             .split(chunk_main);
 
-        app_view! {
-            app, f,
+        debug_assert_eq!(cells.len(), GENERAL_FOCUS_ORDER.len());
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::MusicDir)) => cells[0],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExitConfirmation)) => cells[1],
-
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)) => cells[2],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomTrack)) => cells[3],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistRandomAlbum)) => cells[4],
-
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastDir)) => cells[5],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastSimulDownload)) => cells[6],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PodcastMaxRetries)) => cells[7],
-
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::AlbumPhotoAlign)) => cells[8],
-
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)) => cells[9],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SeekStep)) => cells[10],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)) => cells[11],
-
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)) => cells[12],
-
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)) => cells[13],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[14],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[15],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[16],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[17],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)) => cells[18],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)) => cells[19],
-
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[20],
+        for (idx, id) in GENERAL_FOCUS_ORDER.iter().enumerate() {
+            // indexing into "cells" is guranteed to be matching "GENERAL_FOCUS_ORDER"
+            app.view(
+                &Id::ConfigEditor(IdConfigEditor::General(*id)),
+                f,
+                cells[idx],
+            );
         }
     }
 
@@ -798,8 +761,9 @@ impl Model {
         ) && let Ok(threshold) = threshold_str.parse::<u8>()
         {
             config_server.settings.player.previous_track_threshold =
-                PreviousTrackThreshold::try_from(threshold)
-                    .map_err(|_| anyhow::anyhow!("Previous track threshold must be between 0 and 10"))?;
+                PreviousTrackThreshold::try_from(threshold).map_err(|_| {
+                    anyhow::anyhow!("Previous track threshold must be between 0 and 10")
+                })?;
         }
 
         if let Ok(State::Single(StateValue::Usize(kill_daemon))) = self.app.state(
