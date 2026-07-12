@@ -125,6 +125,7 @@ pub enum IdCEGeneral {
     ExtraYtdlpArgs,
     SaveLastPosition,
     SeekStep,
+    PreviousTrackThreshold,
 
     PlayerPort,
     PlayerAddress,

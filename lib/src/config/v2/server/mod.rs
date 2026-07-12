@@ -77,6 +77,61 @@ pub enum ScanDepth {
 /// What determines a long track length in seconds, 10 minutes
 const LONG_TRACK_TIME: u64 = 600; // 60 * 10
 
+/// How many seconds into a track before Command "Previous Track" restarts the current track vs going to the previous track.
+/// Range: 0-10, where 0 disables the feature (always goes to previous track).
+/// Default: 5 seconds.
+///
+/// If the current track position is past this threshold, pressing "Previous Track" will restart the current track.
+/// If before the threshold, it goes to the previous track.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "u8", into = "u8")]
+pub struct PreviousTrackThreshold(u8);
+
+impl PreviousTrackThreshold {
+    /// Create a new `PreviousTrackThreshold`, clamping the value to 0-10.
+    #[must_use]
+    pub fn new(v: u8) -> Self {
+        Self(v.clamp(0, 10))
+    }
+
+    #[must_use]
+    pub fn get(&self) -> u64 {
+        u64::from(self.0)
+    }
+
+    /// Returns `true` if the threshold feature is enabled (value > 0).
+    #[must_use]
+    pub fn is_enabled(&self) -> bool {
+        self.0 > 0
+    }
+}
+
+impl Default for PreviousTrackThreshold {
+    fn default() -> Self {
+        Self(0)
+    }
+}
+
+impl TryFrom<u8> for PreviousTrackThreshold {
+    type Error = String;
+
+    fn try_from(v: u8) -> Result<Self, Self::Error> {
+        if v > 10 {
+            Err(format!(
+                "previous_track_threshold must be between 0 and 10, got {v}"
+            ))
+        } else {
+            Ok(Self(v))
+        }
+    }
+}
+
+impl From<PreviousTrackThreshold> for u8 {
+    fn from(v: PreviousTrackThreshold) -> Self {
+        v.0
+    }
+}
+
 /// Seek amount maybe depending on track length
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
@@ -283,6 +338,11 @@ pub struct PlayerSettings {
     pub gapless: bool,
     /// How much to seek on a seek event
     pub seek_step: SeekStep,
+    /// Threshold for Previous Track behavior, in seconds (0-10).
+    ///
+    /// If the current track position is past this threshold, pressing "Previous Track" restarts the current track.
+    /// If before the threshold, it goes to the previous track. Set to 0 to disable (always goes to previous track).
+    pub previous_track_threshold: PreviousTrackThreshold,
 
     /// Controls if support via Media-Controls (like mpris on linux) is enabled
     pub use_mediacontrols: bool,
@@ -321,6 +381,7 @@ impl Default for PlayerSettings {
             speed: 10,
             gapless: true,
             seek_step: SeekStep::default(),
+            previous_track_threshold: PreviousTrackThreshold::default(),
 
             use_mediacontrols: true,
             set_discord_status: true,
@@ -519,8 +580,8 @@ mod v1_interop {
 
     use super::{
         Backend, ComSettings, LoopMode, NonZeroU8, NonZeroU32, PlayerSettings, PodcastSettings,
-        PositionYesNo, PositionYesNoLower, RememberLastPosition, ScanDepth, SeekStep,
-        ServerSettings, backends::BackendSettings,
+        PositionYesNo, PositionYesNoLower, PreviousTrackThreshold, RememberLastPosition, ScanDepth,
+        SeekStep, ServerSettings, backends::BackendSettings,
     };
     use crate::config::{
         v1,
@@ -618,6 +679,7 @@ mod v1_interop {
                 speed: value.player_speed,
                 gapless: value.player_gapless,
                 seek_step: value.player_seek_step.into(),
+                previous_track_threshold: PreviousTrackThreshold::default(),
 
                 use_mediacontrols: value.player_use_mpris,
                 set_discord_status: value.player_use_discord,
@@ -718,6 +780,7 @@ mod v1_interop {
                         short_tracks: NonZeroU32::new(5).unwrap(),
                         long_tracks: NonZeroU32::new(30).unwrap(),
                     },
+                    previous_track_threshold: PreviousTrackThreshold::default(),
                     use_mediacontrols: true,
                     set_discord_status: true,
                     random_track_quantity: NonZeroU32::new(20).unwrap(),

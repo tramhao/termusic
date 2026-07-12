@@ -402,6 +402,7 @@ pub const GENERAL_FOCUS_ORDER: &[IdCEGeneral] = &[
     IdCEGeneral::AlbumPhotoAlign,
     IdCEGeneral::SaveLastPosition,
     IdCEGeneral::SeekStep,
+    IdCEGeneral::PreviousTrackThreshold,
     IdCEGeneral::KillDamon,
     IdCEGeneral::PlayerUseMpris,
     IdCEGeneral::PlayerUseDiscord,

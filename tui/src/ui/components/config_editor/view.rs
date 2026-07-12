@@ -29,7 +29,8 @@ use anyhow::{Result, bail};
 use include_dir::DirEntry;
 use termusiclib::THEME_DIR;
 use termusiclib::config::v2::server::{
-    Backend, ComProtocol, PositionYesNo, PositionYesNoLower, RememberLastPosition,
+    Backend, ComProtocol, PositionYesNo, PositionYesNoLower, PreviousTrackThreshold,
+    RememberLastPosition,
 };
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::config::v2::tui::theme::ThemeColors;
@@ -196,22 +197,23 @@ impl Model {
                         IdCEGeneral::AlbumPhotoAlign => 8,
                         IdCEGeneral::SaveLastPosition => 9,
                         IdCEGeneral::SeekStep => 10,
-                        IdCEGeneral::KillDamon => 11,
-                        IdCEGeneral::PlayerUseMpris => 12,
-                        IdCEGeneral::PlayerUseDiscord => 13,
-                        IdCEGeneral::PlayerPort => 14,
-                        IdCEGeneral::PlayerAddress => 15,
-                        IdCEGeneral::PlayerProtocol => 16,
-                        IdCEGeneral::PlayerUDSPath => 17,
-                        IdCEGeneral::PlayerBackend => 18,
-                        IdCEGeneral::ExtraYtdlpArgs => 19,
+                        IdCEGeneral::PreviousTrackThreshold => 11,
+                        IdCEGeneral::KillDamon => 12,
+                        IdCEGeneral::PlayerUseMpris => 13,
+                        IdCEGeneral::PlayerUseDiscord => 14,
+                        IdCEGeneral::PlayerPort => 15,
+                        IdCEGeneral::PlayerAddress => 16,
+                        IdCEGeneral::PlayerProtocol => 17,
+                        IdCEGeneral::PlayerUDSPath => 18,
+                        IdCEGeneral::PlayerBackend => 19,
+                        IdCEGeneral::ExtraYtdlpArgs => 20,
                     })
                 } else {
                     None
                 }
             });
 
-        let cells = UniformDynamicGrid::new(20, 3, 56 + 2)
+        let cells = UniformDynamicGrid::new(21, 3, 56 + 2)
             .draw_row_low_space()
             .distribute_row_space()
             .focus_node(focus_elem)
@@ -235,18 +237,19 @@ impl Model {
 
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)) => cells[9],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SeekStep)) => cells[10],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)) => cells[11],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)) => cells[11],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)) => cells[12],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)) => cells[12],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[13],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[14],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[15],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[16],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)) => cells[17],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)) => cells[18],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)) => cells[13],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[14],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[15],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[16],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[17],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)) => cells[18],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)) => cells[19],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[19],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[20],
         }
     }
 
@@ -788,6 +791,15 @@ impl Model {
             //     _ => bail!(" Unknown player step length provided."),
             // };
             // config_server.settings.player.seek_step = seek_step;
+        }
+
+        if let Ok(State::Single(StateValue::String(threshold_str))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)),
+        ) && let Ok(threshold) = threshold_str.parse::<u8>()
+        {
+            config_server.settings.player.previous_track_threshold =
+                PreviousTrackThreshold::try_from(threshold)
+                    .map_err(|_| anyhow::anyhow!("Previous track threshold must be between 0 and 10"))?;
         }
 
         if let Ok(State::Single(StateValue::Usize(kill_daemon))) = self.app.state(

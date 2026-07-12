@@ -1019,6 +1019,85 @@ impl AppComponent<Msg, UserEvent> for PlayerBackend {
     }
 }
 
+/// Validates the full `previous_track_threshold` input (must be 0–10).
+fn threshold_valid(s: &str) -> bool {
+    if let Ok(v) = s.parse::<u8>() {
+        v <= 10
+    } else {
+        false
+    }
+}
+
+/// Validates each character typed into the `previous_track_threshold` input.
+///
+/// The allowed sequences are:
+/// - empty → any digit (0–9) to start typing
+/// - `"0"` → nothing further (prevents `"00"`, `"01"`, etc.)
+/// - `"1"` → only `'0'` allowed (to reach `"10"`)
+/// - anything else → blocked
+fn threshold_char_valid(s: &str, c: char) -> bool {
+    if s.is_empty() {
+        c.is_ascii_digit()
+    } else if s == "0" {
+        false
+    } else if s.len() == 1 && s == "1" {
+        c == '0'
+    } else {
+        false
+    }
+}
+
+#[derive(Component)]
+pub struct ConfigPreviousTrackThreshold {
+    component: Input,
+    config: SharedTuiSettings,
+}
+
+impl ConfigPreviousTrackThreshold {
+    pub fn new(config: CombinedSettings) -> Self {
+        let component = {
+            let config_tui = config.tui.read();
+            common_input_comp(&config_tui, " Previous Track Threshold (0-10s, 0=disabled): ")
+                .input_type(InputType::Custom(threshold_valid, threshold_char_valid))
+                .input_len(2)
+                .placeholder(LineStatic::styled(
+                    "0-10s, 0=disabled",
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
+                ))
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .player
+                        .previous_track_threshold
+                        .get()
+                        .to_string(),
+                )
+        };
+
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl AppComponent<Msg, UserEvent> for ConfigPreviousTrackThreshold {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
+        handle_input_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
 #[derive(Component)]
 pub struct ExtraYtdlpArgs {
     component: Input,
@@ -1126,6 +1205,12 @@ impl Model {
         )?;
 
         self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)),
+            Box::new(ConfigPreviousTrackThreshold::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
             Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)),
             Box::new(KillDaemon::new(self.config_tui.clone())),
             Vec::new(),
@@ -1222,6 +1307,10 @@ impl Model {
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
             IdCEGeneral::SeekStep,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PreviousTrackThreshold,
         )))?;
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
