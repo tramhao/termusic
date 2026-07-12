@@ -32,13 +32,15 @@ jobs:
         # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
         # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev gstreamer-player-1
       - uses: Swatinem/rust-cache@v2
+        id: cache
 
       - name: Run cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-      # run formatting after clippy, so that the CI does not exit early when formatting has issues (but still would compile)
       - name: Run cargo fmt
         run: cargo fmt --all --check
+        # Always run both "clippy" and "fmt", even if clippy fails, but not if any of the previous steps fail.
+        if: ${{ !cancelled() && steps.cache.conclusion == 'success' }}
 
   test_linux:
     name: Test Linux
