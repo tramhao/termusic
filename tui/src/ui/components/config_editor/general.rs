@@ -1053,6 +1053,82 @@ impl AppComponent<Msg, UserEvent> for ExtraYtdlpArgs {
     }
 }
 
+fn threshold_valid(s: &str) -> bool {
+    if let Ok(v) = s.parse::<u8>() {
+        v <= 10
+    } else {
+        false
+    }
+}
+
+fn threshold_char_valid(s: &str, c: char) -> bool {
+    if s.is_empty() {
+        c.is_ascii_digit()
+    } else if s == "0" {
+        false
+    } else if s.len() == 1 && s == "1" {
+        c == '0'
+    } else {
+        false
+    }
+}
+
+#[derive(Component)]
+pub struct ConfigPreviousTrackThreshold {
+    component: Input,
+    config: SharedTuiSettings,
+}
+
+impl ConfigPreviousTrackThreshold {
+    pub fn new(config: CombinedSettings) -> Self {
+        let component = {
+            let config_tui = config.tui.read();
+            common_input_comp(
+                &config_tui,
+                " Previous Track Threshold (0-10s, 0=disabled): ",
+            )
+            .input_type(InputType::Custom(threshold_valid, threshold_char_valid))
+            .input_len(2)
+            .placeholder(LineStatic::styled(
+                "0-10s, 0=disabled",
+                Style::default().fg(
+                    config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack),
+                ),
+            ))
+            .value(
+                config
+                    .server
+                    .read()
+                    .settings
+                    .player
+                    .previous_track_threshold
+                    .get()
+                    .to_string(),
+            )
+        };
+
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl AppComponent<Msg, UserEvent> for ConfigPreviousTrackThreshold {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
+        handle_input_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
 impl Model {
     /// Mount / Remount the Config-Editor's First Page, the General Options
     #[allow(clippy::too_many_lines)]
@@ -1121,6 +1197,12 @@ impl Model {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SeekStep)),
             Box::new(ConfigSeekStep::new(self.get_combined_settings())),
+            Vec::new(),
+        )?;
+
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)),
+            Box::new(ConfigPreviousTrackThreshold::new(self.get_combined_settings())),
             Vec::new(),
         )?;
 
@@ -1221,6 +1303,10 @@ impl Model {
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
             IdCEGeneral::SeekStep,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(
+            IdCEGeneral::PreviousTrackThreshold,
         )))?;
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::General(

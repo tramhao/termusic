@@ -29,7 +29,8 @@ use anyhow::{Result, bail};
 use include_dir::DirEntry;
 use termusiclib::THEME_DIR;
 use termusiclib::config::v2::server::{
-    Backend, ComProtocol, PositionYesNo, PositionYesNoLower, RememberLastPosition,
+    Backend, ComProtocol, PositionYesNo, PositionYesNoLower, PreviousTrackThreshold,
+    RememberLastPosition,
 };
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::config::v2::tui::theme::ThemeColors;
@@ -205,13 +206,14 @@ impl Model {
                         IdCEGeneral::PlayerUDSPath => 17,
                         IdCEGeneral::PlayerBackend => 18,
                         IdCEGeneral::ExtraYtdlpArgs => 19,
+                        IdCEGeneral::PreviousTrackThreshold => 20,
                     })
                 } else {
                     None
                 }
             });
 
-        let cells = UniformDynamicGrid::new(20, 3, 56 + 2)
+        let cells = UniformDynamicGrid::new(21, 3, 56 + 2)
             .draw_row_low_space()
             .distribute_row_space()
             .focus_node(focus_elem)
@@ -247,6 +249,8 @@ impl Model {
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)) => cells[18],
 
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[19],
+
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)) => cells[20],
         }
     }
 
@@ -788,6 +792,15 @@ impl Model {
             //     _ => bail!(" Unknown player step length provided."),
             // };
             // config_server.settings.player.seek_step = seek_step;
+        }
+
+        if let Ok(State::Single(StateValue::String(threshold_str))) = self.app.state(
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)),
+        ) && let Ok(threshold) = threshold_str.parse::<u8>()
+        {
+            config_server.settings.player.previous_track_threshold =
+                PreviousTrackThreshold::try_from(threshold)
+                    .map_err(|_| anyhow::anyhow!("Previous track threshold must be between 0 and 10"))?;
         }
 
         if let Ok(State::Single(StateValue::Usize(kill_daemon))) = self.app.state(

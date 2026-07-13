@@ -386,6 +386,7 @@ pub enum ConfigEditorMsg {
     KeyFocusOther(KFMsg),
     General(KFMsg),
     Theme(KFMsg),
+    ThemeColorItem(KFMsg),
 
     ThemeSelectLoad(usize),
 }
@@ -412,6 +413,7 @@ pub const GENERAL_FOCUS_ORDER: &[IdCEGeneral] = &[
     IdCEGeneral::PlayerUDSPath,
     IdCEGeneral::PlayerBackend,
     IdCEGeneral::ExtraYtdlpArgs,
+    IdCEGeneral::PreviousTrackThreshold,
 ];
 
 /// This array defines the order the IDs listed are displayed and which gains next / previous focus.

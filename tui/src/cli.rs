@@ -79,8 +79,6 @@ pub enum Action {
         #[arg(value_name = "FILE")]
         file: PathBuf,
     },
-    /// Cycle the playback loop mode (Track, Playlist, PlaylistOnce, Random) and print the new mode.
-    ChangeMode,
     /// Skip to next track
     #[command(aliases = &["n"])]
     Next,

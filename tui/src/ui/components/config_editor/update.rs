@@ -116,6 +116,7 @@ impl Model {
             // Focus handling
             ConfigEditorMsg::General(msg) => self.update_general(msg),
             ConfigEditorMsg::Theme(msg) => self.update_theme(msg),
+            ConfigEditorMsg::ThemeColorItem(msg) => self.update_theme_color_item(msg),
             ConfigEditorMsg::KeyFocusGlobal(msg) => self.update_key_focus_global(msg),
             ConfigEditorMsg::KeyFocusOther(msg) => self.update_key_focus_other(msg),
             ConfigEditorMsg::ChangeLayout(msg) => self.change_layout(msg),
@@ -208,6 +209,17 @@ impl Model {
     }
 
     /// Handle focus of the "Theme" tab
+    fn update_theme_color_item(&mut self, msg: KFMsg) {
+        set_next_in_focus_array(self, msg, THEME_FOCUS_ORDER, |id| {
+            if let IdConfigEditor::Theme(id) = id {
+                Some(id)
+            } else {
+                None
+            }
+        });
+    }
+
+    /// Handle focus of the theme select table
     fn update_theme(&mut self, msg: KFMsg) {
         set_next_in_focus_array(self, msg, THEME_FOCUS_ORDER, |id| {
             if let IdConfigEditor::Theme(id) = id {

@@ -26,6 +26,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use tui_realm_stdlib::components::{Input, Label, Select, Table};
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
@@ -39,6 +40,7 @@ use tuirealm::state::{State, StateValue};
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 const COLOR_LIST: [ColorTermusic; 19] = [
     ColorTermusic::Reset,
@@ -86,11 +88,11 @@ impl CEThemeSelectTable {
                 )
                 .scroll(true)
                 .highlight_style(
-                    Style::default()
-                        .fg(Color::Black)
-                        .bg(config.settings.theme.fallback_highlight()),
+                    CommonHighlight::default()
+                        .style
+                        .fg(config.settings.theme.fallback_highlight()),
                 )
-                .highlight_style_inactive(Style::default())
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(true)
                 .step(4)
@@ -228,8 +230,8 @@ impl CEColorSelect {
                 .title(name.into().alignment(HorizontalAlignment::Left))
                 .rewind(false)
                 .inactive(Style::default().add_modifier(Modifier::BOLD).bg(color))
-                .highlight_style(Style::default().fg(Color::Black).bg(hg_color))
-                .highlight_style_inactive(Style::default())
+                .highlight_style(CommonHighlight::default().style.fg(hg_color))
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(">> ")
                 .choices(choices)
                 .value(init_value),
@@ -349,21 +351,27 @@ impl AppComponent<Msg, UserEvent> for CEColorSelect {
 
             Event::Keyboard(key) if key == keys.navigation_keys.up.get() => match self.state() {
                 State::Single(_) => {
-                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                        KFMsg::Previous,
+                    )));
                 }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
 
             Event::Keyboard(key) if key == keys.navigation_keys.down.get() => match self.state() {
                 State::Single(_) => {
-                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                        KFMsg::Next,
+                    )));
                 }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
                 State::Single(_) => {
-                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                        KFMsg::Previous,
+                    )));
                 }
                 _ => self.perform(Cmd::Move(Direction::Up)),
             },
@@ -372,7 +380,9 @@ impl AppComponent<Msg, UserEvent> for CEColorSelect {
                 code: Key::Down, ..
             }) => match self.state() {
                 State::Single(_) => {
-                    return Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                        KFMsg::Next,
+                    )));
                 }
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
@@ -590,10 +600,12 @@ impl AppComponent<Msg, UserEvent> for ConfigInputHighlight {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Next))),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::Theme(KFMsg::Previous)))
-            }
+            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeColorItem(
+                KFMsg::Next,
+            ))),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(Msg::ConfigEditor(
+                ConfigEditorMsg::ThemeColorItem(KFMsg::Previous),
+            )),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..

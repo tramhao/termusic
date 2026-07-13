@@ -1,11 +1,8 @@
-#![allow(unexpected_cfgs)]
-
 use std::{
     sync::mpsc::{self, Receiver},
     time::Duration,
 };
 
-use base64::Engine;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use termusiclib::{
     common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE},
@@ -60,18 +57,18 @@ impl Mpris {
     /// Set Mpris metadata based on the given track.
     pub fn set_track(&mut self, track: &Track) {
         let cover_art = match track.get_picture() {
-            Ok(v) => v.map(|v| {
-                format!(
-                    "data:{};base64,{}",
-                    v.mime_type().map_or_else(
-                        || {
-                            error!("Unknown mimetype for picture of track {track:#?}");
-                            "application/octet-stream"
-                        },
-                        |v| v.as_str()
-                    ),
-                    base64::engine::general_purpose::STANDARD_NO_PAD.encode(v.data())
-                )
+            Ok(v) => v.and_then(|v| {
+                let mut path = std::env::temp_dir();
+                path.push("termusic-cover");
+                if let Some(mime) = v.mime_type()
+                    && let Some(ext) = mime.ext()
+                {
+                    path.set_extension(ext);
+                }
+                std::fs::write(&path, v.data())
+                    .inspect_err(|e| error!("Saving cover to file failed: {e}"))
+                    .ok()?;
+                Some(format!("file://{}", path.display()))
             }),
             Err(err) => {
                 error!("Fetching the cover failed: {err:#?}");
@@ -162,15 +159,7 @@ impl GeneralPlayer {
                 self.next();
             }
             MediaControlEvent::Previous => {
-                if let Some(pos) = self.position() {
-                    if pos > Duration::from_secs(5) {
-                        self.seek_to(Duration::from_secs(0));
-                    } else {
-                        self.previous();
-                    }
-                } else {
-                    self.previous();
-                }
+                self.previous();
             }
             MediaControlEvent::Pause => {
                 self.pause();
@@ -386,49 +375,128 @@ mod windows {
     // }
 }
 
-///
-/// This module provides two functions:
-/// - [`init_macos_main_thread`]: Call once at startup to initialize `NSApplication`
-///   and set the activation policy to `.accessory` (no Dock icon).
-/// - [`pump_run_loop`]: Pump the main run loop so AppKit can dispatch event
-///   callbacks. Designed to be called from the main thread while a background
-///   thread runs the Tokio runtime.
 #[cfg(target_os = "macos")]
 #[allow(unsafe_code)]
 pub mod macos {
-    use std::sync::atomic::{AtomicBool, Ordering};
+    //! macOS `AppKit` integration for media key support.
+    //!
+    //! `souvlaki`'s macOS backend registers `MPRemoteCommandCenter` handlers for
+    //! media key events, but macOS delivers those events through `AppKit`'s main run
+    //! loop. Rust CLI binaries don't initialize an `NSApplication` run loop by
+    //! default, so the registered handlers never receive events.
+    //!
+    //! Both [`init_macos_main_thread`] and [`pump_run_loop`] must be called from
+    //! the main thread. Apple's [`NSApplicationMain(_:_:)`] documentation
+    //! explicitly states: *"You must call this function from the main thread of
+    //! your application."* The Thread Safety Summary also notes that the main
+    //! thread is *"the one blocked in the `run` method of `NSApplication`"* and
+    //! that `NSRunLoop` is not thread-safe ([Thread Safety Summary]). In
+    //! practice, `MPRemoteCommandCenter` dispatches callbacks via GCD's main
+    //! queue which executes on the main thread, so event delivery breaks without
+    //! the main thread pumping the run loop.
+    //!
+    //! [`NSApplicationMain(_:_:)`]: https://developer.apple.com/documentation/appkit/nsapplicationmain(_:_:)/
+    //! [Thread Safety Summary]: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html#//apple_ref/doc/uid/10000057i-CH12-SW1
+    //!
+    //! This module provides:
+    //! - [`init_macos_main_thread`]: Initialize `NSApplication` (no Dock icon).
+    //! - [`pump_run_loop`]: Pump the main run loop so `AppKit` can dispatch events.
+    //! - [`run_with_run_loop`]: Convenience: spawn a closure on a background thread
+    //!   while pumping the run loop on the main thread.
+
     use std::time::Duration;
 
-    /// Initialize the macOS AppKit application on the main thread.
-    ///
-    /// Must be called from the main thread before any souvlaki `MediaControls`
-    /// are attached. Sets the activation policy to `.accessory`, meaning the
-    /// app appears as a background process (no Dock icon) but can still receive
-    /// media key events via `MPRemoteCommandCenter`.
+    use objc2::msg_send;
+    use objc2::runtime::{AnyClass, AnyObject};
+
+    /// `NSApplicationActivationPolicy.accessory` — run as a background process
+    /// with no Dock icon, but still able to receive media key events.
     const NS_APPLICATION_ACTIVATION_POLICY_ACCESSORY: i64 = 1;
 
+    /// Initialize the macOS `AppKit` application on the main thread.
+    ///
+    /// Must be called from the main thread (the only thread that can run
+    /// `AppKit` per Apple's [Thread Safety Summary](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html))
+    /// before any `souvlaki`
+    /// `MediaControls` are attached. Sets the activation policy to
+    /// `.accessory`, meaning the app appears as a background process (no Dock
+    /// icon) but can still receive media key events via
+    /// `MPRemoteCommandCenter`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `NSApplication` class is not available at runtime (should
+    /// never happen on a real macOS system).
     pub fn init_macos_main_thread() {
         unsafe {
-            let app: *mut objc::runtime::Object = msg_send![class!(NSApplication), sharedApplication];
-            let () = msg_send![app, setActivationPolicy: NS_APPLICATION_ACTIVATION_POLICY_ACCESSORY];
+            let cls = AnyClass::get(c"NSApplication").expect("NSApplication class not found");
+            let app: *mut AnyObject = msg_send![cls, sharedApplication];
+            let _: bool =
+                msg_send![app, setActivationPolicy: NS_APPLICATION_ACTIVATION_POLICY_ACCESSORY];
         }
     }
 
-    /// Pump the main CFRunLoop until `done` becomes `true`.
+    /// Pump the main `CFRunLoop` until the sender is dropped or a message is
+    /// received (i.e. the background thread finished).
     ///
     /// Each iteration processes any pending events via `runUntilDate:` with
     /// `distantPast` (non-blocking), then sleeps for 50 ms. This loop is
     /// intended to run on the main thread while the Tokio runtime executes on a
-    /// background thread. `done` is set to `true` when the background runtime
-    /// finishes, causing this function to return.
-    pub fn pump_run_loop(done: &AtomicBool) {
-        while !done.load(Ordering::SeqCst) {
-            unsafe {
-                let rl: *mut objc::runtime::Object = msg_send![class!(NSRunLoop), mainRunLoop];
-                let distant_past: *mut objc::runtime::Object = msg_send![class!(NSDate), distantPast];
-                let () = msg_send![rl, runUntilDate: distant_past];
+    /// background thread. When the background thread completes (or panics), the
+    /// sender is dropped and `recv_timeout` returns `Err`, causing this function
+    /// to return.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `NSRunLoop` or `NSDate` class is not available at runtime
+    /// (should never happen on a real macOS system).
+    pub fn pump_run_loop(done: &std::sync::mpsc::Receiver<()>) {
+        let rl_cls = AnyClass::get(c"NSRunLoop").expect("NSRunLoop class not found on macOS");
+        let date_cls = AnyClass::get(c"NSDate").expect("NSDate class not found on macOS");
+        loop {
+            match done.recv_timeout(Duration::from_millis(50)) {
+                Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
             }
-            std::thread::sleep(Duration::from_millis(50));
+            unsafe {
+                let rl: *mut AnyObject = msg_send![rl_cls, mainRunLoop];
+                let distant_past: *mut AnyObject = msg_send![date_cls, distantPast];
+                let _: () = msg_send![rl, runUntilDate: distant_past];
+            }
         }
+    }
+
+    /// Run a closure on a background thread while pumping the `AppKit` run loop
+    /// on the main thread.
+    ///
+    /// This is the simplest way to use the macOS media key support: call this
+    /// from `main()`, passing a closure that sets up and runs the Tokio runtime.
+    /// The closure runs on a background thread named "termusic-tokio", and the
+    /// main thread pumps `CFRunLoop` until the closure returns. `AppKit` and
+    /// `CFRunLoop` must run on the main thread per Apple's
+    /// [Thread Safety Summary](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the background thread cannot be spawned or panics.
+    pub fn run_with_run_loop<T>(f: impl FnOnce() -> T + Send + 'static) -> T
+    where
+        T: Send + 'static,
+    {
+        init_macos_main_thread();
+
+        let (tx, rx) = std::sync::mpsc::channel::<()>();
+
+        let handle = std::thread::Builder::new()
+            .name("termusic-tokio".into())
+            .spawn(move || {
+                let result = f();
+                let _ = tx.send(());
+                result
+            })
+            .expect("failed to spawn termusic-tokio thread");
+
+        pump_run_loop(&rx);
+        handle.join().expect("termusic-tokio thread panicked")
     }
 }

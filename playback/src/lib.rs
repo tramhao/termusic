@@ -1,8 +1,3 @@
-#![allow(unexpected_cfgs)]
-// The `objc` crate (v0.2, last updated 2020) uses `cfg(cargo-clippy)` internally
-// without declaring it, which triggers `unexpected_cfgs` on Rust >= 1.80.
-// All upstream objc calls are behind `#[cfg(target_os = "macos")]`.
-
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -37,11 +32,6 @@ pub mod playlist;
 
 #[macro_use]
 extern crate log;
-
-#[cfg(target_os = "macos")]
-#[allow(unexpected_cfgs)]
-#[macro_use]
-extern crate objc;
 
 mod backends;
 
@@ -597,8 +587,21 @@ impl GeneralPlayer {
         }
     }
 
-    /// Switch & Play the previous track in the playlist
+    /// Switch & Play the previous track in the playlist.
+    ///
+    /// If the current track position is past the configured `previous_track_threshold`,
+    /// the current track is restarted instead of switching to the previous track.
+    /// Set `previous_track_threshold` to 0 in the config to disable this behavior,
+    /// which will then always go to the previous track.
     pub fn previous(&mut self) {
+        let threshold = self.config.read().settings.player.previous_track_threshold;
+        if threshold.is_enabled() && self.position().is_some_and(|pos| pos.as_secs() > threshold.get())
+        {
+            info!("restarting current track (position > {}s threshold)", threshold.get());
+            self.restart_track();
+            return;
+        }
+        self.player_save_last_position();
         let mut playlist = self.playlist.write();
         let has_previous = playlist.previous().is_some();
         drop(playlist);
