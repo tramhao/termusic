@@ -33,6 +33,9 @@ jobs:
         # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev gstreamer-player-1
       - uses: Swatinem/rust-cache@v2
 
+      - name: Validate Cargo manifest
+        run: cargo metadata --format-version 1 --no-deps > /dev/null
+
       - name: Run cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
