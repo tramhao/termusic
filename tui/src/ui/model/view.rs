@@ -131,7 +131,7 @@ impl Model {
     fn view_layout_podcast(&mut self) {
         self.terminal
             .draw(|f| {
-                                                let [chunks_main, progress, _bottom_help] = Layout::vertical([
+                let [chunks_main, progress, _bottom_help] = Layout::vertical([
                     Constraint::Min(2),
                     Constraint::Length(3),
                     Constraint::Length(1),
@@ -160,6 +160,27 @@ impl Model {
             .expect("Expected to draw without error");
     }
 
+    fn view_layout_playlist(&mut self) {
+        self.terminal
+            .draw(|f| {
+                let [chunks_main, _bottom_help] =
+                    Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
+                let [left_playlist, right] =
+                    Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+                        .areas(chunks_main);
+                let [_right_space, right_library, right_progress] =
+                    Layout::vertical([Constraint::Fill(1), Constraint::Length(14), Constraint::Length(3)])
+                        .areas(right);
+
+                self.app.view(&Id::Playlist, f, left_playlist);
+                self.app.view(&Id::Library, f, right_library);
+                self.app.view(&Id::Progress, f, right_progress);
+
+                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
+            })
+            .expect("Expected to draw without error");
+    }
+
     fn view_layout_database(&mut self) {
         self.terminal
             .draw(|f| {
@@ -178,10 +199,12 @@ impl Model {
                 .areas(chunks_main_left);
                 let [right_playlist, right_progress, right_lyric] = Layout::vertical([
                     Constraint::Min(2),
-                    Constraint::Length(5),
+                    Constraint::Length(3),
                     Constraint::Length(4),
                 ])
-                .areas(chunks_main_right);                self.app.view(&Id::DBListCriteria, f, left_criteria);
+                .areas(chunks_main_right);
+
+                self.app.view(&Id::DBListCriteria, f, left_criteria);
                 self.app
                     .view(&Id::DBListSearchResult, f, left_search_result);
                 self.app
@@ -210,31 +233,12 @@ impl Model {
                     Constraint::Length(4),
                 ])
                 .areas(right);
+
                 self.app.view(&Id::Library, f, left_library);
+
                 self.app.view(&Id::Playlist, f, right_playlist);
                 self.app.view(&Id::Progress, f, right_progress);
                 self.app.view(&Id::Lyric, f, right_lyric);
-
-                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
-            })
-            .expect("Expected to draw without error");
-    }
-
-    fn view_layout_playlist(&mut self) {
-        self.terminal
-            .draw(|f| {
-                let [chunks_main, _bottom_help] =
-                    Layout::vertical([Constraint::Min(2), Constraint::Length(1)]).areas(f.area());
-                let [left_playlist, right] =
-                    Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
-                        .areas(chunks_main);
-                let [_right_space, right_library, right_progress] =
-                    Layout::vertical([Constraint::Fill(1), Constraint::Length(14), Constraint::Length(3)])
-                        .areas(right);
-
-                self.app.view(&Id::Playlist, f, left_playlist);
-                self.app.view(&Id::Library, f, right_library);
-                self.app.view(&Id::Progress, f, right_progress);
 
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })

@@ -12,7 +12,8 @@ use crate::ui::components::CEHeader;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::msg::{
     CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, ConfigEditorMsg, GENERAL_FOCUS_ORDER,
-    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, THEME_FOCUS_ORDER,
+    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, THEME_COLOR_ITEM_FOCUS_ORDER_START,
+    THEME_FOCUS_ORDER,
 };
 use crate::ui::tui_cmd::TuiCmd;
 
@@ -209,7 +210,7 @@ impl Model {
     }
 
     /// Handle focus of the "Theme" tab
-    fn update_theme_color_item(&mut self, msg: KFMsg) {
+    fn update_theme(&mut self, msg: KFMsg) {
         set_next_in_focus_array(self, msg, THEME_FOCUS_ORDER, |id| {
             if let IdConfigEditor::Theme(id) = id {
                 Some(id)
@@ -219,15 +220,20 @@ impl Model {
         });
     }
 
-    /// Handle focus of the theme select table
-    fn update_theme(&mut self, msg: KFMsg) {
-        set_next_in_focus_array(self, msg, THEME_FOCUS_ORDER, |id| {
-            if let IdConfigEditor::Theme(id) = id {
-                Some(id)
-            } else {
-                None
-            }
-        });
+    /// Handle focus inside the "Theme" tab's color-item pane
+    fn update_theme_color_item(&mut self, msg: KFMsg) {
+        set_next_in_focus_array(
+            self,
+            msg,
+            &THEME_FOCUS_ORDER[THEME_COLOR_ITEM_FOCUS_ORDER_START..],
+            |id| {
+                if let IdConfigEditor::Theme(id) = id {
+                    Some(id)
+                } else {
+                    None
+                }
+            },
+        );
     }
 
     /// Handle focus of the "Key Global" tab
@@ -526,29 +532,130 @@ where
         }
     });
 
-    // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
-    let Some(focus_elem) = focus_elem else {
-        let id = array[0].into();
-        let _ = model.app.active(&Id::ConfigEditor(id));
-        return Some(id);
-    };
+    let focus = next_in_focus_array(msg, array, focus_elem)?;
 
-    let focus = match msg {
-        KFMsg::Next => array
-            .iter()
-            .skip_while(|v| **v != focus_elem)
-            .nth(1)
-            .unwrap_or(&array[0]),
-        KFMsg::Previous => array
-            .iter()
-            .rev()
-            .skip_while(|v| **v != focus_elem)
-            .nth(1)
-            .unwrap_or(array.last().unwrap()),
-    };
-
-    let id = (*focus).into();
+    let id = focus.into();
     let _ = model.app.active(&Id::ConfigEditor(id));
 
     Some(id)
+}
+
+/// Return the next focus target within `array`.
+///
+/// Callers may pass a subslice to keep focus cycling inside one pane. If focus
+/// is absent or outside that slice, the first item in the slice is selected.
+fn next_in_focus_array<T>(msg: KFMsg, array: &[T], focus_elem: Option<T>) -> Option<T>
+where
+    T: Copy + PartialEq,
+{
+    // simple protection as the code below assumes at least 1 element in the array
+    if array.is_empty() {
+        return None;
+    }
+
+    // fallback in case somehow the focus gets lost or is on a weird element, reset it to the first element
+    let Some(focus_elem) = focus_elem else {
+        return Some(array[0]);
+    };
+
+    let Some(position) = array.iter().position(|v| *v == focus_elem) else {
+        return Some(array[0]);
+    };
+
+    let position = match msg {
+        KFMsg::Next => (position + 1) % array.len(),
+        KFMsg::Previous => position.checked_sub(1).unwrap_or(array.len() - 1),
+    };
+
+    Some(array[position])
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+
+    use crate::ui::ids::IdCETheme;
+    use crate::ui::msg::{KFMsg, THEME_COLOR_ITEM_FOCUS_ORDER_START, THEME_FOCUS_ORDER};
+
+    use super::next_in_focus_array;
+
+    fn theme_color_item_focus_order() -> &'static [IdCETheme] {
+        &THEME_FOCUS_ORDER[THEME_COLOR_ITEM_FOCUS_ORDER_START..]
+    }
+
+    #[test]
+    fn theme_color_items_next_wraps_to_first_item() {
+        assert_eq!(
+            next_in_focus_array(
+                KFMsg::Next,
+                theme_color_item_focus_order(),
+                Some(IdCETheme::FallbackHighlight)
+            ),
+            Some(IdCETheme::LibraryForeground)
+        );
+    }
+
+    #[test]
+    fn theme_color_items_previous_wraps_to_last_item() {
+        assert_eq!(
+            next_in_focus_array(
+                KFMsg::Previous,
+                theme_color_item_focus_order(),
+                Some(IdCETheme::LibraryForeground)
+            ),
+            Some(IdCETheme::FallbackHighlight)
+        );
+    }
+
+    #[test]
+    fn theme_full_order_still_crosses_table_boundary() {
+        assert_eq!(
+            next_in_focus_array(
+                KFMsg::Next,
+                THEME_FOCUS_ORDER,
+                Some(IdCETheme::ThemeSelectTable)
+            ),
+            Some(IdCETheme::LibraryForeground)
+        );
+        assert_eq!(
+            next_in_focus_array(
+                KFMsg::Previous,
+                THEME_FOCUS_ORDER,
+                Some(IdCETheme::LibraryForeground)
+            ),
+            Some(IdCETheme::ThemeSelectTable)
+        );
+    }
+
+    #[test]
+    fn theme_color_items_reset_to_first_item_when_focus_is_outside_slice() {
+        assert_eq!(
+            next_in_focus_array(
+                KFMsg::Previous,
+                theme_color_item_focus_order(),
+                Some(IdCETheme::ThemeSelectTable)
+            ),
+            Some(IdCETheme::LibraryForeground)
+        );
+    }
+
+    #[test]
+    fn theme_color_items_reset_to_first_item_when_focus_is_lost() {
+        assert_eq!(
+            next_in_focus_array(KFMsg::Next, theme_color_item_focus_order(), None),
+            Some(IdCETheme::LibraryForeground)
+        );
+    }
+
+    #[test]
+    fn empty_focus_order_returns_none() {
+        assert_eq!(
+            next_in_focus_array(
+                KFMsg::Next,
+                &[] as &[IdCETheme],
+                Some(IdCETheme::LibraryForeground)
+            ),
+            None
+        );
+    }
 }

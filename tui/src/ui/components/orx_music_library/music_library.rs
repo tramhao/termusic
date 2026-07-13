@@ -9,13 +9,13 @@ use std::{
 
 use anyhow::{Context, Result};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay, v2::server::ScanDepth};
-
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     component::{AppComponent, Component},
     event::{Event, Key, KeyEvent, KeyModifiers},
     props::{BorderType, Borders, HorizontalAlignment, LineStatic, Style, Title},
-    ratatui::{buffer::Buffer, layout::Rect, style::Color},
+    ratatui::{buffer::Buffer, layout::Rect},
 };
 use tuirealm_orx_tree::{
     NodeRef,
@@ -34,6 +34,7 @@ use crate::ui::{
         DeleteConfirmMsg, GSMsg, IsDir, LIMsg, LINodeReady, LINodeReadySub, LIReloadData,
         LIReloadPathData, LIReqNode, Msg, PLMsg, TEMsg, YSMsg,
     },
+    utils::STYLE_REMOVE_REVERSE,
 };
 
 /// Data stored in a node in the [`NewMusicLibraryComponent`]'s tree.
@@ -92,7 +93,7 @@ impl NodeValue for MusicLibData {
         // The *only* possible way to currently get this panic is when using the default instance (which shouldnt be used).
         let res = self
             .as_str
-            .get_or_init(|| format!(" {}", self.path.file_name().unwrap().to_string_lossy()));
+            .get_or_init(|| self.path.file_name().unwrap().to_string_lossy().to_string());
 
         NodeValue::render(res, buf, area, offset, style);
     }
@@ -178,11 +179,11 @@ impl OrxMusicLibraryComponent {
             .scroll_step_horizontal(NonZeroUsize::new(2).unwrap())
             .title(Title::from(" Library ").alignment(HorizontalAlignment::Left))
             .highlight_style(
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(config.settings.theme.library_highlight()),
+                CommonHighlight::default()
+                    .style
+                    .fg(config.settings.theme.library_highlight()),
             )
-            .highlight_style_inactive(Style::default())
+            .highlight_style_inactive(STYLE_REMOVE_REVERSE)
             .highlight_symbol(config.settings.theme.style.library.highlight_symbol.clone())
             .empty_tree_text(LOADING_TREE_TEXT)
     }

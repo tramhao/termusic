@@ -2,6 +2,7 @@ use anyhow::Result;
 use futures_util::StreamExt;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::sync::mpsc::{self};
+use tokio::task::JoinHandle;
 use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
 
@@ -26,11 +27,17 @@ pub mod utils;
 /// The main TUI struct which handles message passing and the main-loop.
 pub struct UI {
     model: Model,
+
+    server_req_actor: JoinHandle<()>,
 }
 
 impl UI {
     /// Create a new [`UI`] instance
-    pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>, layout_4: bool) -> Result<Self> {
+    pub async fn new(
+        config: CombinedSettings,
+        client: MusicPlayerClient<Channel>,
+        layout_4: bool,
+    ) -> Result<Self> {
         let mut playback = Playback::new(client);
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
@@ -39,9 +46,12 @@ impl UI {
         let mut model = Model::new(config, cmd_tx, stream_updates.boxed(), layout_4);
         model.init();
 
-        ServerRequestActor::start_actor(playback, cmd_rx, model.tx_to_main.clone());
+        let jh = ServerRequestActor::start_actor(playback, cmd_rx, model.tx_to_main.clone());
 
-        Ok(Self { model })
+        Ok(Self {
+            model,
+            server_req_actor: jh,
+        })
     }
 
     /// Main Loop function.
@@ -88,5 +98,18 @@ impl UI {
         }
 
         Ok(())
+    }
+
+    /// Wait until all events are handled.
+    ///
+    /// Currently this only waits until the [`ServerRequestActor`] is done sending events.
+    pub async fn wait_until_done(self) {
+        // Explicitly drop first as Model stores a ServerRequestActor channel Tx
+        // and the ServerRequestActor only closes once the channel is closed and all events are handled.
+        drop(self.model);
+
+        if let Err(err) = self.server_req_actor.await {
+            error!("Server Request Actor exited with a error: {err:#?}");
+        }
     }
 }

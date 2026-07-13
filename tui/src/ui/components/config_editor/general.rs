@@ -27,12 +27,12 @@ use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::components::{Input, Radio};
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::props::{
     BorderType, Borders, HorizontalAlignment, InputType, LineStatic, Style, Title,
 };
-use tuirealm::ratatui::style::Color;
 use tuirealm::{
     command::{Cmd, Direction, Position},
     event::{Key, KeyEvent},
@@ -42,6 +42,7 @@ use crate::CombinedSettings;
 use crate::ui::ids::{Id, IdCEGeneral, IdConfigEditor};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 /// Get a [`Input`] component with the common style applied.
 #[inline]
@@ -81,11 +82,11 @@ fn common_radio_comp<T: Into<Title>>(config: &TuiOverlay, title: T) -> Radio {
         .background(config.settings.theme.fallback_background())
         .inactive(Style::new().bg(config.settings.theme.fallback_background()))
         .highlight_style(
-            Style::default()
-                .fg(Color::Black)
-                .bg(config.settings.theme.playlist_highlight()),
+            CommonHighlight::default()
+                .style
+                .fg(config.settings.theme.playlist_highlight()),
         )
-        .highlight_style_inactive(Style::default())
+        .highlight_style_inactive(STYLE_REMOVE_REVERSE)
         .title(title.into().alignment(HorizontalAlignment::Left))
 }
 
@@ -1018,6 +1019,85 @@ impl AppComponent<Msg, UserEvent> for PlayerBackend {
     }
 }
 
+/// Validates the full `previous_track_threshold` input (must be 0–10).
+fn threshold_valid(s: &str) -> bool {
+    if let Ok(v) = s.parse::<u8>() {
+        v <= 10
+    } else {
+        false
+    }
+}
+
+/// Validates each character typed into the `previous_track_threshold` input.
+///
+/// The allowed sequences are:
+/// - empty → any digit (0–9) to start typing
+/// - `"0"` → nothing further (prevents `"00"`, `"01"`, etc.)
+/// - `"1"` → only `'0'` allowed (to reach `"10"`)
+/// - anything else → blocked
+fn threshold_char_valid(s: &str, c: char) -> bool {
+    if s.is_empty() {
+        c.is_ascii_digit()
+    } else if s == "0" {
+        false
+    } else if s.len() == 1 && s == "1" {
+        c == '0'
+    } else {
+        false
+    }
+}
+
+#[derive(Component)]
+pub struct ConfigPreviousTrackThreshold {
+    component: Input,
+    config: SharedTuiSettings,
+}
+
+impl ConfigPreviousTrackThreshold {
+    pub fn new(config: CombinedSettings) -> Self {
+        let component = {
+            let config_tui = config.tui.read();
+            common_input_comp(&config_tui, " Previous Track Threshold (0-10s, 0=disabled): ")
+                .input_type(InputType::Custom(threshold_valid, threshold_char_valid))
+                .input_len(2)
+                .placeholder(LineStatic::styled(
+                    "0-10s, 0=disabled",
+                    Style::default().fg(config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::LightBlack)),
+                ))
+                .value(
+                    config
+                        .server
+                        .read()
+                        .settings
+                        .player
+                        .previous_track_threshold
+                        .get()
+                        .to_string(),
+                )
+        };
+
+        Self {
+            component,
+            config: config.tui,
+        }
+    }
+}
+
+impl AppComponent<Msg, UserEvent> for ConfigPreviousTrackThreshold {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
+        handle_input_ev(
+            &mut self.component,
+            ev,
+            &self.config.read().settings.keys,
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
+            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
+        )
+    }
+}
+
 #[derive(Component)]
 pub struct ExtraYtdlpArgs {
     component: Input,
@@ -1042,82 +1122,6 @@ impl ExtraYtdlpArgs {
 }
 
 impl AppComponent<Msg, UserEvent> for ExtraYtdlpArgs {
-    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
-        handle_input_ev(
-            &mut self.component,
-            ev,
-            &self.config.read().settings.keys,
-            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Next)),
-            Msg::ConfigEditor(ConfigEditorMsg::General(KFMsg::Previous)),
-        )
-    }
-}
-
-fn threshold_valid(s: &str) -> bool {
-    if let Ok(v) = s.parse::<u8>() {
-        v <= 10
-    } else {
-        false
-    }
-}
-
-fn threshold_char_valid(s: &str, c: char) -> bool {
-    if s.is_empty() {
-        c.is_ascii_digit()
-    } else if s == "0" {
-        false
-    } else if s.len() == 1 && s == "1" {
-        c == '0'
-    } else {
-        false
-    }
-}
-
-#[derive(Component)]
-pub struct ConfigPreviousTrackThreshold {
-    component: Input,
-    config: SharedTuiSettings,
-}
-
-impl ConfigPreviousTrackThreshold {
-    pub fn new(config: CombinedSettings) -> Self {
-        let component = {
-            let config_tui = config.tui.read();
-            common_input_comp(
-                &config_tui,
-                " Previous Track Threshold (0-10s, 0=disabled): ",
-            )
-            .input_type(InputType::Custom(threshold_valid, threshold_char_valid))
-            .input_len(2)
-            .placeholder(LineStatic::styled(
-                "0-10s, 0=disabled",
-                Style::default().fg(
-                    config_tui
-                        .settings
-                        .theme
-                        .get_color_from_theme(ColorTermusic::LightBlack),
-                ),
-            ))
-            .value(
-                config
-                    .server
-                    .read()
-                    .settings
-                    .player
-                    .previous_track_threshold
-                    .get()
-                    .to_string(),
-            )
-        };
-
-        Self {
-            component,
-            config: config.tui,
-        }
-    }
-}
-
-impl AppComponent<Msg, UserEvent> for ConfigPreviousTrackThreshold {
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         handle_input_ev(
             &mut self.component,

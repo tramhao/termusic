@@ -1,0 +1,27 @@
+colors:
+  name: Mikazuki
+  author: ""
+  primary:
+    background: "#000000"
+    foreground: "#ffffff"
+  cursor:
+    text: "#000000"
+    cursor: "#ffffff"
+  normal:
+    black: "#2a1d17"
+    red: "#da1657"
+    green: "#3ea250"
+    yellow: "#e3d33d"
+    blue: "#3ea290"
+    magenta: "#ff850d"
+    cyan: "#8c16da"
+    white: "#e9e9e9"
+  bright:
+    black: "#4f362b"
+    red: "#da4375"
+    green: "#6cb87a"
+    yellow: "#e3da84"
+    blue: "#8ca8a3"
+    magenta: "#ffa64f"
+    cyan: "#a167c7"
+    white: "#fdfdfd"

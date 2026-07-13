@@ -1,5 +1,8 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use tui_realm_stdlib::components::{Input, Table};
+use tui_realm_stdlib::{
+    components::{Input, Table},
+    prop_ext::CommonHighlight,
+};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     component::{AppComponent, Component},
@@ -8,7 +11,6 @@ use tuirealm::{
         AttrValue, Attribute, BorderType, Borders, HorizontalAlignment, InputType, LineStatic,
         Style, TableBuilder, Title,
     },
-    ratatui::style::Color,
     state::{State, StateValue},
 };
 
@@ -16,7 +18,7 @@ use super::{YNConfirm, YNConfirmStyle};
 use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{Msg, PCMsg};
-use crate::ui::components::popups::DeleteConfirmInputPopup;
+use crate::ui::{components::popups::DeleteConfirmInputPopup, utils::STYLE_REMOVE_REVERSE};
 
 #[derive(Component)]
 pub struct PodcastAddPopup {
@@ -143,11 +145,11 @@ impl PodcastSearchTablePopup {
                 .title(Title::from(" Enter to add feed: ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
                 .highlight_style(
-                    Style::default()
-                        .fg(Color::Black)
-                        .bg(config.settings.theme.library_highlight()),
+                    CommonHighlight::default()
+                        .style
+                        .fg(config.settings.theme.library_highlight()),
                 )
-                .highlight_style_inactive(Style::default())
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
                 .rewind(false)
                 .step(4)

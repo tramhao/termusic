@@ -1,0 +1,27 @@
+colors:
+  name: Shapeshifter (light)
+  author: Chris Kempson
+  primary:
+    background: "#f9f9f9"
+    foreground: "#102015"
+  cursor:
+    text: "#f9f9f9"
+    cursor: "#102015"
+  normal:
+    black: "#000000"
+    red: "#e92f2f"
+    green: "#0ed839"
+    yellow: "#dddd13"
+    blue: "#3b48e3"
+    magenta: "#f996e2"
+    cyan: "#23edda"
+    white: "#ababab"
+  bright:
+    black: "#343434"
+    red: "#e92f2f"
+    green: "#0ed839"
+    yellow: "#dddd13"
+    blue: "#3b48e3"
+    magenta: "#f996e2"
+    cyan: "#23edda"
+    white: "#f9f9f9"

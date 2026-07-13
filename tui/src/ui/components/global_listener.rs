@@ -291,12 +291,12 @@ fn global_listener_subscriptions(keys: &Keys) -> Vec<Sub<Id, UserEvent>> {
             no_popup_clause.clone(),
         ),
         Sub::new(
-            EventClause::Keyboard(keys.select_view_keys.view_playlist.get_owned()),
+            EventClause::Keyboard(keys.select_view_keys.view_podcasts.get_owned()),
             no_popup_clause.clone(),
         ),
         Sub::new(
-            EventClause::Keyboard(keys.select_view_keys.view_podcasts.get_owned()),
-            no_popup_clause,
+            EventClause::Keyboard(keys.select_view_keys.view_playlist.get_owned()),
+            no_popup_clause.clone(),
         ),
         Sub::new(
             EventClause::Keyboard(keys.move_cover_art_keys.move_left.get_owned()),

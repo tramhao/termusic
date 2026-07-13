@@ -1,0 +1,144 @@
+name: Test Suites
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '00 01 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Install developer package dependencies
+        run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev libmpv-dev
+        # extra packages for gst (last updated for 22.04): libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev
+        # extra packages for mpv: libmpv-dev
+        # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
+        # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev gstreamer-player-1
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # run formatting after clippy, so that the CI does not exit early when formatting has issues (but still would compile)
+      - name: Run cargo fmt
+        run: cargo fmt --all --check
+
+  test_linux:
+    name: Test Linux
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+        rust: [stable, "1.90"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Install developer package dependencies
+        run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev libmpv-dev
+        # extra packages for gst (last updated for 22.04): libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev
+        # extra packages for mpv: libmpv-dev
+        # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
+        # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev gstreamer-player-1
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo check
+        run: cargo check --workspace --features cover,all-backends,rusty-soundtouch
+
+      - name: Run cargo test
+        run: cargo test --workspace --features cover,all-backends,rusty-soundtouch
+
+  test_macos:
+    name: Test Mac
+    strategy:
+      matrix:
+        os: [macos-latest]
+        rust: [stable]
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+
+      - name: Install developer package dependencies
+        run: | 
+            brew update
+            brew install protobuf
+            # brew install gstreamer
+            # brew install mpv
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Run cargo check
+        run: cargo check --target ${{ matrix.target }} --workspace --features rusty-soundtouch
+        # run: cargo check --workspace --features cover,all-backends
+
+      - name: Run cargo test
+        run: cargo test --target ${{ matrix.target }} --workspace --features rusty-soundtouch
+        # run: cargo test --workspace --features cover,all-backends
+
+  test-win:
+    name: Test Win
+    strategy:
+      matrix:
+        os: [windows-latest]
+        rust: [stable]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Install dependencies
+        run: choco install protoc
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo check
+        run: cargo check --workspace --features rusty-soundtouch
+
+      - name: Run cargo test
+        run: cargo test --workspace --features rusty-soundtouch

@@ -1,0 +1,27 @@
+colors:
+  name: Tangoesque
+  author: ""
+  primary:
+    background: "#000000"
+    foreground: "#aaaaaa"
+  cursor:
+    text: "#000000"
+    cursor: "#aaaaaa"
+  normal:
+    black: "#202020"
+    red: "#ff6565"
+    green: "#93d44f"
+    yellow: "#eab93d"
+    blue: "#204a87"
+    magenta: "#ce5c00"
+    cyan: "#89b6e2"
+    white: "#cccccc"
+  bright:
+    black: "#606060"
+    red: "#ff8d8d"
+    green: "#c8e7a8"
+    yellow: "#ffc123"
+    blue: "#3465a4"
+    magenta: "#f57900"
+    cyan: "#46a4ff"
+    white: "#ffffff"

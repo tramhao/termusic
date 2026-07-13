@@ -143,6 +143,8 @@ async fn actual_main() -> Result<()> {
     let mut ui = UI::new(config, client, args.layout_4).await?;
     ui.run()?;
 
+    ui.wait_until_done().await;
+
     info!("Bye");
 
     Ok(())

@@ -1,0 +1,29 @@
+# scorcerer colors
+colors:
+  primary:
+    background: '#222222'
+    foreground: '#c2c2b0'
+
+  cursor:
+    text:   '#c2c2b0'
+    cursor: '#c2c2b0'
+
+  normal:
+    black:   '#111111'
+    red:     '#aa4450'
+    green:   '#719611'
+    yellow:  '#cc8800'
+    blue:    '#6688aa'
+    magenta: '#8f6f8f'
+    cyan:    '#528b8b'
+    white:   '#d3d3d3'
+
+  bright:
+    black:   '#181818'
+    red:     '#ff6a6a'
+    green:   '#b1d631'
+    yellow:  '#ff9800'
+    blue:    '#90b0d1'
+    magenta: '#8181a6'
+    cyan:    '#87ceeb'
+    white:   '#c1cdc1'

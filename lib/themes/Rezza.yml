@@ -1,0 +1,27 @@
+colors:
+  name: Rezza
+  author: ""
+  primary:
+    background: "#222222"
+    foreground: "#dddddd"
+  cursor:
+    text: "#222222"
+    cursor: "#dddddd"
+  normal:
+    black: "#191919"
+    red: "#803232"
+    green: "#5b762f"
+    yellow: "#aa9943"
+    blue: "#324c80"
+    magenta: "#706c9a"
+    cyan: "#92b19e"
+    white: "#ffffff"
+  bright:
+    black: "#252525"
+    red: "#982b2b"
+    green: "#89b83f"
+    yellow: "#efef60"
+    blue: "#2b4f98"
+    magenta: "#826ab1"
+    cyan: "#a1cdcd"
+    white: "#dddddd"

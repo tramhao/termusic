@@ -197,16 +197,16 @@ impl Model {
                         IdCEGeneral::AlbumPhotoAlign => 8,
                         IdCEGeneral::SaveLastPosition => 9,
                         IdCEGeneral::SeekStep => 10,
-                        IdCEGeneral::KillDamon => 11,
-                        IdCEGeneral::PlayerUseMpris => 12,
-                        IdCEGeneral::PlayerUseDiscord => 13,
-                        IdCEGeneral::PlayerPort => 14,
-                        IdCEGeneral::PlayerAddress => 15,
-                        IdCEGeneral::PlayerProtocol => 16,
-                        IdCEGeneral::PlayerUDSPath => 17,
-                        IdCEGeneral::PlayerBackend => 18,
-                        IdCEGeneral::ExtraYtdlpArgs => 19,
-                        IdCEGeneral::PreviousTrackThreshold => 20,
+                        IdCEGeneral::PreviousTrackThreshold => 11,
+                        IdCEGeneral::KillDamon => 12,
+                        IdCEGeneral::PlayerUseMpris => 13,
+                        IdCEGeneral::PlayerUseDiscord => 14,
+                        IdCEGeneral::PlayerPort => 15,
+                        IdCEGeneral::PlayerAddress => 16,
+                        IdCEGeneral::PlayerProtocol => 17,
+                        IdCEGeneral::PlayerUDSPath => 18,
+                        IdCEGeneral::PlayerBackend => 19,
+                        IdCEGeneral::ExtraYtdlpArgs => 20,
                     })
                 } else {
                     None
@@ -237,20 +237,19 @@ impl Model {
 
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SaveLastPosition)) => cells[9],
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::SeekStep)) => cells[10],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)) => cells[11],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)) => cells[11],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::KillDamon)) => cells[12],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)) => cells[12],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[13],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[14],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[15],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[16],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)) => cells[17],
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)) => cells[18],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseMpris)) => cells[13],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUseDiscord)) => cells[14],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerPort)) => cells[15],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerAddress)) => cells[16],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerProtocol)) => cells[17],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerUDSPath)) => cells[18],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlayerBackend)) => cells[19],
 
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[19],
-
-            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PreviousTrackThreshold)) => cells[20],
+            &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::ExtraYtdlpArgs)) => cells[20],
         }
     }
 

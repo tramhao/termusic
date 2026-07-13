@@ -1,0 +1,27 @@
+colors:
+  name: Bleh-1
+  author: ""
+  primary:
+    background: "#000000"
+    foreground: "#ffffff"
+  cursor:
+    text: "#000000"
+    cursor: "#ffffff"
+  normal:
+    black: "#666666"
+    red: "#996578"
+    green: "#889965"
+    yellow: "#998565"
+    blue: "#657a99"
+    magenta: "#8b6599"
+    cyan: "#65998d"
+    white: "#a5a5a4"
+  bright:
+    black: "#8c847f"
+    red: "#bd4b76"
+    green: "#95b548"
+    yellow: "#bd814b"
+    blue: "#4c83bf"
+    magenta: "#a04bbd"
+    cyan: "#4dbda8"
+    white: "#848484"

@@ -3,6 +3,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::songtag::{SongTag, SongtagSearchResult, search};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::components::Table;
+use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
@@ -10,7 +11,6 @@ use tuirealm::props::{
     AttrValue, Attribute, BorderType, Borders, HorizontalAlignment, LineStatic, Style,
     TableBuilder, Title,
 };
-use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 
 use crate::ui::Model;
@@ -18,6 +18,7 @@ use crate::ui::components::TETrack;
 use crate::ui::ids::{Id, IdTagEditor};
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{Msg, TEMsg, TFMsg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
 pub struct TETableLyricOptions {
@@ -40,11 +41,11 @@ impl TETableLyricOptions {
                 .title(Title::from(" Search Results ").alignment(HorizontalAlignment::Left))
                 .scroll(true)
                 .highlight_style(
-                    Style::default()
-                        .fg(Color::Black)
-                        .bg(config.settings.theme.library_highlight()),
+                    CommonHighlight::default()
+                        .style
+                        .fg(config.settings.theme.library_highlight()),
                 )
-                .highlight_style_inactive(Style::default())
+                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str("\u{1f680}")
                 // .highlight_str("🚀")
                 .rewind(false)

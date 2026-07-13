@@ -1,9 +1,10 @@
-use tuirealm::ratatui::style::{Modifier, Style};
-use tuirealm::ratatui::layout::{Constraint, Layout, Rect};
+use tuirealm::{
+    props::{Style, TextModifiers},
+    ratatui::layout::{Constraint, Layout, Rect},
+};
 
-/// Style that removes the `REVERSED` modifier, used to neutralize the default
-/// highlight inversion in some widgets.
-pub const STYLE_REMOVE_REVERSE: Style = Style::new().remove_modifier(Modifier::REVERSED);
+/// Save a few characters and lines by having a alias.
+pub const STYLE_REMOVE_REVERSE: Style = Style::new().remove_modifier(TextModifiers::REVERSED);
 
 // /// Get block
 // pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {

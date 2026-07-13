@@ -1,0 +1,27 @@
+colors:
+  name: Simple Rainbow
+  author: ""
+  primary:
+    background: "#575757"
+    foreground: "#dcdccc"
+  cursor:
+    text: "#575757"
+    cursor: "#dcdccc"
+  normal:
+    black: "#666666"
+    red: "#ff8278"
+    green: "#bde077"
+    yellow: "#eadc84"
+    blue: "#77bee0"
+    magenta: "#dd91f3"
+    cyan: "#ffc178"
+    white: "#dddddd"
+  bright:
+    black: "#888888"
+    red: "#ff8278"
+    green: "#bde077"
+    yellow: "#eadc84"
+    blue: "#77bee0"
+    magenta: "#dd91f3"
+    cyan: "#ffc178"
+    white: "#cccccc"

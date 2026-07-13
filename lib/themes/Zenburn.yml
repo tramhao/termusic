@@ -1,0 +1,27 @@
+colors:
+  name: zenburn
+  author: ""
+  primary:
+    background: "#000000"
+    foreground: "#ffffff"
+  cursor:
+    text: "#000000"
+    cursor: "#ffffff"
+  normal:
+    black: "#1e2320"
+    red: "#705050"
+    green: "#60b48a"
+    yellow: "#dfaf8f"
+    blue: "#506070"
+    magenta: "#dc8cc3"
+    cyan: "#8cd0d3"
+    white: "#dcdccc"
+  bright:
+    black: "#709080"
+    red: "#dca3a3"
+    green: "#c3bf9f"
+    yellow: "#f0dfaf"
+    blue: "#94bff3"
+    magenta: "#ec93d3"
+    cyan: "#93e0e3"
+    white: "#ffffff"

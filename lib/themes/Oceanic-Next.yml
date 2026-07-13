@@ -1,0 +1,33 @@
+# Colors (Oceanic Next)
+colors:
+  # Default colors
+  primary:
+    background: '#1b2b34'
+    foreground: '#d8dee9'
+
+  # Colors the cursor will use if `custom_cursor_colors` is true
+  cursor:
+    text: '#1b2b34'
+    cursor: '#ffffff'
+
+  # Normal colors
+  normal:
+    black:   '#343d46'
+    red:     '#EC5f67'
+    green:   '#99C794'
+    yellow:  '#FAC863'
+    blue:    '#6699cc'
+    magenta: '#c594c5'
+    cyan:    '#5fb3b3'
+    white:   '#d8dee9'
+
+  # Bright colors
+  bright:
+    black:   '#343d46'
+    red:     '#EC5f67'
+    green:   '#99C794'
+    yellow:  '#FAC863'
+    blue:    '#6699cc'
+    magenta: '#c594c5'
+    cyan:    '#5fb3b3'
+    white:   '#d8dee9'

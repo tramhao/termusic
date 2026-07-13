@@ -82,7 +82,7 @@ fn git_version() -> Option<String> {
             String::from_utf8(v.stdout).ok()
         })
         // ignore output if the string gotten is empty
-        .and_then(|v| if v.is_empty() { None } else { Some(v) })
+        .filter(|v| !v.is_empty())
         // add a indicator for git version
         .map(|v| format!("{}[g]", v.trim()))
 }

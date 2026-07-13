@@ -49,6 +49,8 @@ use tuirealm::state::{State, StateValue};
 use crate::ui::ids::{Id, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::{ConfigEditorMsg, KFMsg, Msg};
+use crate::ui::utils::STYLE_REMOVE_REVERSE;
+
 pub const INPUT_INVALID_STYLE: &str = "invalid-style";
 pub const INPUT_PLACEHOLDER: &str = "placeholder";
 pub const CMD_BACKSPACE: &str = "Backspace";
@@ -895,11 +897,11 @@ impl KEModifierSelect {
             .title(title.into().alignment(HorizontalAlignment::Left))
             .rewind(false)
             .highlight_style(
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(config_r.settings.theme.fallback_highlight()),
+                CommonHighlight::default()
+                    .style
+                    .fg(config_r.settings.theme.fallback_highlight()),
             )
-            .highlight_style_inactive(Style::default())
+            .highlight_style_inactive(STYLE_REMOVE_REVERSE)
             .highlight_str(">> ")
             .choices(choices)
             .placeholder(LineStatic::styled(
