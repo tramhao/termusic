@@ -1,6 +1,6 @@
 use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::components::Select;
-use tui_realm_stdlib::prop_ext::CommonHighlight;
+use tuirealm::ratatui::style::Color;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
@@ -31,11 +31,10 @@ impl TESelectLyric {
                 .background(config.settings.theme.library_background())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" Select a lyric ").alignment(HorizontalAlignment::Center))
-                .rewind(true)
-                .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                .rewind(true)                .highlight_style(
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
                 .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())

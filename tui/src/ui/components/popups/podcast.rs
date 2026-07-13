@@ -1,7 +1,7 @@
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
+use tuirealm::ratatui::style::Color;
 use tui_realm_stdlib::{
     components::{Input, Table},
-    prop_ext::CommonHighlight,
 };
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
@@ -143,11 +143,10 @@ impl PodcastSearchTablePopup {
                         .modifiers(BorderType::Rounded),
                 )
                 .title(Title::from(" Enter to add feed: ").alignment(HorizontalAlignment::Left))
-                .scroll(true)
-                .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                .scroll(true)                .highlight_style(
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
                 .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())

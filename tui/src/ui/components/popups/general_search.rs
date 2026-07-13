@@ -4,7 +4,7 @@ use anyhow::{Result, anyhow, bail};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::track::MediaTypes;
 use tui_realm_stdlib::components::{Input, Table};
-use tui_realm_stdlib::prop_ext::CommonHighlight;
+use tuirealm::ratatui::style::Color;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
@@ -155,11 +155,10 @@ fn common_table_comp(config: &TuiOverlay, title: String) -> Table {
         .background(config.settings.theme.fallback_background())
         .inactive(Style::new().bg(config.settings.theme.fallback_background()))
         .title(Title::from(title).alignment(HorizontalAlignment::Left))
-        .scroll(true)
-        .highlight_style(
-            CommonHighlight::default()
-                .style
-                .fg(config.settings.theme.fallback_highlight()),
+        .scroll(true)        .highlight_style(
+            Style::default()
+                .fg(Color::Black)
+                .bg(config.settings.theme.fallback_highlight()),
         )
         .highlight_style_inactive(STYLE_REMOVE_REVERSE)
         .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())

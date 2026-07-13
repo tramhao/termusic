@@ -9,7 +9,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::components::List;
-use tui_realm_stdlib::prop_ext::CommonHighlight;
+use tuirealm::ratatui::style::Color;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
@@ -49,11 +49,10 @@ impl FeedsList {
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" Podcast Feeds: ").alignment(HorizontalAlignment::Left))
-                .scroll(true)
-                .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                .scroll(true)                .highlight_style(
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
                 .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
@@ -222,11 +221,10 @@ impl EpisodeList {
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" Episodes: ").alignment(HorizontalAlignment::Left))
-                .scroll(true)
-                .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                .scroll(true)                .highlight_style(
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
                 .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())

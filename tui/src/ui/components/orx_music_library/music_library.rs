@@ -9,7 +9,6 @@ use std::{
 
 use anyhow::{Context, Result};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay, v2::server::ScanDepth};
-use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     component::{AppComponent, Component},
@@ -17,6 +16,7 @@ use tuirealm::{
     props::{BorderType, Borders, HorizontalAlignment, LineStatic, Style, Title},
     ratatui::{buffer::Buffer, layout::Rect},
 };
+use tuirealm::ratatui::style::Color;
 use tuirealm_orx_tree::{
     NodeRef,
     component::{TreeView, cmd},
@@ -177,11 +177,10 @@ impl OrxMusicLibraryComponent {
             .highlight_symbol_draw_width(2)
             .highlight_symbol_draw_behavior(HighlightDrawBehavior::Static)
             .scroll_step_horizontal(NonZeroUsize::new(2).unwrap())
-            .title(Title::from(" Library ").alignment(HorizontalAlignment::Left))
-            .highlight_style(
-                CommonHighlight::default()
-                    .style
-                    .fg(config.settings.theme.library_highlight()),
+            .title(Title::from(" Library ").alignment(HorizontalAlignment::Left))            .highlight_style(
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(config.settings.theme.library_highlight()),
             )
             .highlight_style_inactive(STYLE_REMOVE_REVERSE)
             .highlight_symbol(config.settings.theme.style.library.highlight_symbol.clone())

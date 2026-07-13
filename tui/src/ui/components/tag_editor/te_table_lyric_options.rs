@@ -3,7 +3,7 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::songtag::{SongTag, SongtagSearchResult, search};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::components::Table;
-use tui_realm_stdlib::prop_ext::CommonHighlight;
+use tuirealm::ratatui::style::Color;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
@@ -39,11 +39,10 @@ impl TETableLyricOptions {
                 .foreground(config.settings.theme.library_foreground())
                 .background(config.settings.theme.library_background())
                 .title(Title::from(" Search Results ").alignment(HorizontalAlignment::Left))
-                .scroll(true)
-                .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
+                .scroll(true)                .highlight_style(
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(config.settings.theme.library_highlight()),
                 )
                 .highlight_style_inactive(STYLE_REMOVE_REVERSE)
                 .highlight_str("\u{1f680}")
