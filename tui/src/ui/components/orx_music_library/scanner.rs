@@ -88,8 +88,14 @@ fn library_dir_tree_inner(path: &Path, depth: ScanDepth, is_dir: Option<bool>) -
     {
         let mut paths: Vec<(String, (PathBuf, bool))> = paths
             .filter_map(std::result::Result::ok)
-            // filter out hidden files
-            .filter(|p| !p.file_name().to_string_lossy().starts_with('.'))
+            // filter out hidden files and files without playback
+            .filter(|p| {
+                !p.file_name().to_string_lossy().starts_with('.')
+                    && (p.path().is_dir()
+                        || mime_guess::from_path(p.path())
+                            .first()
+                            .is_some_and(|f| f.type_() == mime_guess::mime::AUDIO))
+            })
             .map(|v| {
                 let sort_str = get_pin_yin(&v.file_name().to_string_lossy());
                 let is_dir = v.file_type().is_ok_and(|v| v.is_dir());
