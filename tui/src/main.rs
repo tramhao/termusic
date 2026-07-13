@@ -18,6 +18,7 @@ use termusiclib::config::{
     ServerOverlay, SharedServerSettings, SharedTuiSettings, TuiOverlay, new_shared_server_settings,
     new_shared_tui_settings,
 };
+use termusiclib::player::RunningStatus;
 use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::{podcast, utils};
 use tokio::io::AsyncReadExt;
@@ -29,6 +30,7 @@ use tokio_util::sync::CancellationToken;
 use ui::UI;
 
 mod cli;
+use cli::Action;
 mod logger;
 mod ui;
 
@@ -549,6 +551,93 @@ async fn execute_action(action: cli::Action, config: &CombinedSettings) -> Resul
                 utils::get_app_config_path().context("getting app-config-path")?;
             podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
         }
+        action => execute_media_control(action, config).await?,
+    }
+
+    Ok(())
+}
+
+/// Execute a media control [`Action`] by sending the corresponding gRPC
+/// command to the running server.
+async fn execute_media_control(action: Action, config: &CombinedSettings) -> Result<()> {
+    let pid = find_active_server_process()
+        .context("No active server process found. Start the Server first.")?;
+
+    let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
+    let mut playback = ui::Playback::new(raw_client);
+
+    match action {
+        Action::Next => {
+            playback.skip_next().await?;
+            println!("Next track");
+        }
+        Action::Previous => {
+            playback.skip_previous().await?;
+            println!("Previous track");
+        }
+        Action::Play => {
+            let status = playback.get_progress().await?.status;
+            if RunningStatus::from_u32(status) == RunningStatus::Running {
+                println!("Already playing");
+            } else {
+                playback.toggle_pause().await?;
+                println!("Playing");
+            }
+        }
+        Action::Pause => {
+            let status = playback.get_progress().await?.status;
+            if RunningStatus::from_u32(status) == RunningStatus::Running {
+                playback.toggle_pause().await?;
+                println!("Paused");
+            } else {
+                println!("Already paused");
+            }
+        }
+        Action::TogglePause => {
+            let status = playback.toggle_pause().await?;
+            println!("{status}");
+        }
+        Action::VolumeUp => {
+            let volume = playback.volume_up().await?;
+            println!("Volume: {volume}");
+        }
+        Action::VolumeDown => {
+            let volume = playback.volume_down().await?;
+            println!("Volume: {volume}");
+        }
+        Action::SpeedUp => {
+            let speed = playback.speed_up().await?;
+            println!("Speed: {speed}x");
+        }
+        Action::SpeedDown => {
+            let speed = playback.speed_down().await?;
+            println!("Speed: {speed}x");
+        }
+        Action::RestartTrack => {
+            playback.restart_track().await?;
+            println!("Restarted track");
+        }
+        Action::SeekForward => {
+            playback.seek_forward().await?;
+            println!("Seeked forward");
+        }
+        Action::SeekBackward => {
+            playback.seek_backward().await?;
+            println!("Seeked backward");
+        }
+        Action::CycleLoop => {
+            let mode = playback.cycle_loop().await?;
+            println!("Loop: {}", mode.display(false));
+        }
+        Action::Shuffle => {
+            playback.shuffle_playlist().await?;
+            println!("Shuffled playlist");
+        }
+        Action::Quit => {
+            playback.quit_server().await?;
+            println!("Quit server");
+        }
+        _ => unreachable!(),
     }
 
     Ok(())

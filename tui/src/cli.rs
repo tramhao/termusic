@@ -76,6 +76,42 @@ pub enum Action {
         #[arg(value_name = "FILE")]
         file: PathBuf,
     },
+    /// Skip to next track
+    #[command(aliases = &["n"])]
+    Next,
+    /// Skip to previous track
+    #[command(aliases = &["p", "prev"])]
+    Previous,
+    /// Resume playback
+    #[command(aliases = &["unpause", "resume"])]
+    Play,
+    /// Pause playback
+    Pause,
+    /// Toggle play/pause
+    #[command(aliases = &["t", "play-pause"])]
+    TogglePause,
+    /// Increase volume
+    #[command(aliases = &["v-up", "volumeup"])]
+    VolumeUp,
+    /// Decrease volume
+    #[command(aliases = &["v-down", "volumedown"])]
+    VolumeDown,
+    /// Increase playback speed
+    SpeedUp,
+    /// Decrease playback speed
+    SpeedDown,
+    /// Restart current track
+    RestartTrack,
+    /// Seek forward
+    SeekForward,
+    /// Seek backward
+    SeekBackward,
+    /// Cycle loop mode (list → track → one → list)
+    CycleLoop,
+    /// Shuffle the current playlist
+    Shuffle,
+    /// Quit the server
+    Quit,
 }
 
 const DEFAULT_LOGFILE_FILENAME: &str = "termusic-tui.log";
