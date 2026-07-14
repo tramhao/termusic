@@ -80,7 +80,7 @@ pub fn log_format(
         now.format_rfc3339(),
         record.level(),
         record.module_path().unwrap_or("<unnamed module>"),
-        &record.args()
+        record.args()
     )
 }
 
@@ -102,6 +102,6 @@ pub fn color_log_format(
         now.format_rfc3339().color(Color::BrightBlack), // Bright Black = Grey
         style(level).paint(format!("{level:5}")), // pad level to 2 characters, cannot be done in the string itself, because of the color characters
         record.module_path().unwrap_or("<unnamed module>"),
-        &record.args() // dont apply any color to the input, so that the input can dynamically set the color
+        record.args() // dont apply any color to the input, so that the input can dynamically set the color
     )
 }

@@ -83,7 +83,7 @@ const LONG_TRACK_TIME: u64 = 600; // 60 * 10
 ///
 /// If the current track position is past this threshold, pressing "Previous Track" will restart the current track.
 /// If before the threshold, it goes to the previous track.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(try_from = "u8", into = "u8")]
 pub struct PreviousTrackThreshold(u8);
 
@@ -103,12 +103,6 @@ impl PreviousTrackThreshold {
     #[must_use]
     pub fn is_enabled(&self) -> bool {
         self.0 > 0
-    }
-}
-
-impl Default for PreviousTrackThreshold {
-    fn default() -> Self {
-        Self(0)
     }
 }
 

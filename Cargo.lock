@@ -5291,6 +5291,7 @@ dependencies = [
  "parking_lot",
  "pathdiff",
  "percent-encoding",
+ "pinyin",
  "pretty_assertions",
  "rand 0.10.1",
  "regex",
@@ -5322,7 +5323,6 @@ name = "termusic-lib"
 version = "0.13.2"
 dependencies = [
  "ahash",
- "alphanumeric-sort",
  "anyhow",
  "base64",
  "bytes",
@@ -5330,7 +5330,6 @@ dependencies = [
  "chrono",
  "dirs",
  "either",
- "escaper",
  "futures-util",
  "hex",
  "id3",
@@ -5345,7 +5344,6 @@ dependencies = [
  "num-bigint",
  "opml",
  "parking_lot",
- "pinyin",
  "pretty_assertions",
  "prost",
  "quick-xml 0.40.1",
@@ -5362,7 +5360,6 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "shellexpand",
- "textwrap",
  "thiserror 2.0.18",
  "tokio",
  "tokio-util",
@@ -5372,11 +5369,9 @@ dependencies = [
  "tonic-prost-build",
  "tuirealm",
  "unicode-segmentation",
- "unicode-width",
  "urlencoding",
  "viuer",
  "walkdir",
- "wildmatch",
  "ytd-rs",
 ]
 
