@@ -12,7 +12,6 @@ use termusiclib::new_database::{album_ops, artist_ops, track_ops};
 use termusiclib::track::{DurationFmtShort, Track};
 use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::components::List;
-use tuirealm::ratatui::style::Color;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
@@ -22,6 +21,7 @@ use tuirealm::props::{
     PropPayloadRef, PropValue, QueryResult, Table, TableBuilder, Title,
 };
 use tuirealm::props::{Borders, Style};
+use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 
 use super::popups::{YNConfirm, YNConfirmStyle};
@@ -201,7 +201,8 @@ impl DBListCriteria {
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" DataBase ").alignment(HorizontalAlignment::Left))
-                .scroll(true)                .highlight_style(
+                .scroll(true)
+                .highlight_style(
                     Style::default()
                         .fg(Color::Black)
                         .bg(config.settings.theme.library_highlight()),
@@ -330,7 +331,8 @@ impl DBListSearchResult {
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" Result ").alignment(HorizontalAlignment::Left))
-                .scroll(true)                .highlight_style(
+                .scroll(true)
+                .highlight_style(
                     Style::default()
                         .fg(Color::Black)
                         .bg(config.settings.theme.library_highlight()),
@@ -432,7 +434,8 @@ impl DBListSearchTracks {
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" Tracks ").alignment(HorizontalAlignment::Left))
-                .scroll(true)                .highlight_style(
+                .scroll(true)
+                .highlight_style(
                     Style::default()
                         .fg(Color::Black)
                         .bg(config.settings.theme.library_highlight()),

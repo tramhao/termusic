@@ -9,7 +9,6 @@ use termusiclib::config::SharedTuiSettings;
 use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::components::List;
-use tuirealm::ratatui::style::Color;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
@@ -19,6 +18,7 @@ use tuirealm::props::{
     PropPayloadRef, QueryResult, Style, TableBuilder, Title,
 };
 use tuirealm::props::{Borders, PropPayload, PropValue};
+use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 
 use crate::ui::Model;
@@ -49,7 +49,8 @@ impl FeedsList {
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" Podcast Feeds: ").alignment(HorizontalAlignment::Left))
-                .scroll(true)                .highlight_style(
+                .scroll(true)
+                .highlight_style(
                     Style::default()
                         .fg(Color::Black)
                         .bg(config.settings.theme.library_highlight()),
@@ -221,7 +222,8 @@ impl EpisodeList {
                 .foreground(config.settings.theme.library_foreground())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" Episodes: ").alignment(HorizontalAlignment::Left))
-                .scroll(true)                .highlight_style(
+                .scroll(true)
+                .highlight_style(
                     Style::default()
                         .fg(Color::Black)
                         .bg(config.settings.theme.library_highlight()),

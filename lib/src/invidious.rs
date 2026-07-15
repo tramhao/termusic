@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow, bail};
-use serde_json::Value;
 use reqwest::{Client, ClientBuilder, StatusCode};
+use serde_json::Value;
 use std::time::Duration;
 use tokio::task::JoinSet;
 
@@ -232,7 +232,7 @@ pub fn ytdlp_search(query: &str, limit: u32) -> Result<Vec<YoutubeVideo>> {
 }
 
 impl Instance {
-fn parse_youtube_options(data: &str) -> Option<Vec<YoutubeVideo>> {
+    fn parse_youtube_options(data: &str) -> Option<Vec<YoutubeVideo>> {
         if let Ok(value) = serde_json::from_str::<Value>(data) {
             let mut vec: Vec<YoutubeVideo> = Vec::new();
             // below two lines are left for debug purpose

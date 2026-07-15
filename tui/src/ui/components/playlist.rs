@@ -21,7 +21,6 @@ use termusiclib::track::Track;
 use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::utils::{filetype_supported, is_playlist, playlist_get_vec};
 use tui_realm_stdlib::components::Table;
-use tuirealm::ratatui::style::Color;
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::event::{Key, KeyEvent};
@@ -30,6 +29,7 @@ use tuirealm::props::{
     TableBuilder, Title,
 };
 use tuirealm::props::{Borders, Style};
+use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},

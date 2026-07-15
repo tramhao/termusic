@@ -9,7 +9,10 @@ use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
 use tokio::runtime::Handle;
 use tokio::time::sleep;
-use tuirealm::props::{AttrValue, AttrValueRef, Attribute, HorizontalAlignment, LineStatic, QueryResult, TableBuilder, Title};
+use tuirealm::props::{
+    AttrValue, AttrValueRef, Attribute, HorizontalAlignment, LineStatic, QueryResult, TableBuilder,
+    Title,
+};
 
 use crate::ui::ids::Id;
 use crate::ui::model::youtube_options::{YTDLMsg, YoutubeOptions};
@@ -1166,7 +1169,9 @@ impl Model {
                     self.update_layout(MainLayoutMsg::Podcast);
                 }
                 MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => match self.layout {
-                    TermusicLayout::TreeView | TermusicLayout::DataBase | TermusicLayout::Playlist => {}
+                    TermusicLayout::TreeView
+                    | TermusicLayout::DataBase
+                    | TermusicLayout::Playlist => {}
                     TermusicLayout::Podcast => {
                         self.update_layout(MainLayoutMsg::TreeView);
                     }

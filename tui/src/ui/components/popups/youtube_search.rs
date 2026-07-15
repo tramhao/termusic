@@ -25,13 +25,13 @@ use std::path::PathBuf;
 
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::components::{Input, Table};
-use tuirealm::ratatui::style::{Color, Style};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
     BorderType, Borders, HorizontalAlignment, InputType, LineStatic, TableBuilder, Title,
 };
+use tuirealm::ratatui::style::{Color, Style};
 use tuirealm::state::{State, StateValue};
 
 use crate::ui::ids::Id;
@@ -139,7 +139,8 @@ impl YSTablePopup {
                     Title::from(" Tab/Shift+Tab for next and previous page ")
                         .alignment(HorizontalAlignment::Left),
                 )
-                .scroll(true)                .highlight_style(
+                .scroll(true)
+                .highlight_style(
                     Style::default()
                         .fg(Color::Black)
                         .bg(config.settings.theme.fallback_highlight()),

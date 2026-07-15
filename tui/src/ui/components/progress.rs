@@ -39,10 +39,7 @@ impl Progress {
                 .background(config.settings.theme.progress_background())
                 .foreground(config.settings.theme.progress_foreground())
                 .inactive(Style::new().fg(config.settings.theme.progress_foreground()))
-                .title(
-                    Title::from(" 󰣿 - 󰕾 ?? - 󰓅 ?.? ")
-                        .alignment(HorizontalAlignment::Center),
-                )
+                .title(Title::from(" 󰣿 - 󰕾 ?? - 󰓅 ?.? ").alignment(HorizontalAlignment::Center))
                 .progress(0.0),
         }
     }
@@ -64,12 +61,7 @@ fn status_icon(status: RunningStatus) -> &'static str {
 }
 
 #[allow(clippy::cast_precision_loss)] // speed is never realisitcally expected to be above i16::MAX
-fn title_format(
-    status: RunningStatus,
-    title: Option<&str>,
-    volume: u16,
-    speed: i32,
-) -> String {
+fn title_format(status: RunningStatus, title: Option<&str>, volume: u16, speed: i32) -> String {
     let icon = status_icon(status);
     if let Some(title) = title {
         format!(
@@ -77,10 +69,7 @@ fn title_format(
             speed as f32 / 10.0,
         )
     } else {
-        format!(
-            " {icon} - 󰕾 {volume} - 󰓅 {:^.1} ",
-            speed as f32 / 10.0,
-        )
+        format!(" {icon} - 󰕾 {volume} - 󰓅 {:^.1} ", speed as f32 / 10.0,)
     }
 }
 
@@ -112,12 +101,9 @@ impl Model {
 
         let progress_title = if let Some(track) = self.playback.current_track() {
             match track.media_type() {
-                MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => title_format(
-                    self.playback.status(),
-                    None,
-                    player.volume,
-                    player.speed,
-                ),
+                MediaTypesSimple::Music | MediaTypesSimple::LiveRadio => {
+                    title_format(self.playback.status(), None, player.volume, player.speed)
+                }
                 MediaTypesSimple::Podcast => title_format(
                     self.playback.status(),
                     Some(track.title().unwrap_or("Unknown title")),
@@ -126,12 +112,7 @@ impl Model {
                 ),
             }
         } else {
-            title_format(
-                self.playback.status(),
-                None,
-                player.volume,
-                player.speed,
-            )
+            title_format(self.playback.status(), None, player.volume, player.speed)
         };
 
         drop(config_server);

@@ -1,10 +1,10 @@
 use termusiclib::config::SharedTuiSettings;
 use tui_realm_stdlib::components::Select;
-use tuirealm::ratatui::style::Color;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{BorderType, Borders, HorizontalAlignment, Style, Title};
+use tuirealm::ratatui::style::Color;
 use tuirealm::state::{State, StateValue};
 
 use crate::ui::model::UserEvent;
@@ -31,7 +31,8 @@ impl TESelectLyric {
                 .background(config.settings.theme.library_background())
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .title(Title::from(" Select a lyric ").alignment(HorizontalAlignment::Center))
-                .rewind(true)                .highlight_style(
+                .rewind(true)
+                .highlight_style(
                     Style::default()
                         .fg(Color::Black)
                         .bg(config.settings.theme.library_highlight()),

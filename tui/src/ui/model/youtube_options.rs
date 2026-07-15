@@ -8,7 +8,7 @@ use id3::TagLike;
 use id3::Version::Id3v24;
 use regex::Regex;
 use shell_words;
-use termusiclib::invidious::{ytdlp_search, Instance, YoutubeVideo};
+use termusiclib::invidious::{Instance, YoutubeVideo, ytdlp_search};
 use termusiclib::track::DurationFmtShort;
 use termusiclib::utils::get_parent_folder;
 use tuirealm::props::{
@@ -125,14 +125,11 @@ impl Model {
         let tx = self.tx_to_main.clone();
 
         // Show loading state immediately
-        tx.send(Msg::YoutubeSearch(YSMsg::SearchStarted))
-            .ok();
+        tx.send(Msg::YoutubeSearch(YSMsg::SearchStarted)).ok();
 
         let kw = keyword.clone();
         // Reduce Invidious timeout — try fast, don't waste time if servers are down
-        let invidious = async move {
-            Instance::new(&kw).await
-        };
+        let invidious = async move { Instance::new(&kw).await };
 
         let kw2 = keyword.clone();
         let ytdlp = async move {

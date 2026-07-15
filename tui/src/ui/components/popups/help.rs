@@ -4,11 +4,11 @@ use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::components::Table;
-use tuirealm::ratatui::style::Color;
-use tuirealm::ratatui::text::Span;
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::props::{HorizontalAlignment, LineStatic, Title};
+use tuirealm::ratatui::style::Color;
+use tuirealm::ratatui::text::Span;
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
@@ -87,7 +87,8 @@ impl HelpPopup {
                 )
                 .inactive(Style::new().bg(config.settings.theme.library_background()))
                 .foreground(config.settings.theme.fallback_foreground())
-                .background(config.settings.theme.fallback_background())                .highlight_style(
+                .background(config.settings.theme.fallback_background())
+                .highlight_style(
                     Style::default()
                         .fg(Color::Black)
                         .bg(config.settings.theme.fallback_highlight()),

@@ -432,7 +432,11 @@ impl Model {
             ueberzug_instance,
             viuer_supported,
             db,
-            layout: if layout_4 { TermusicLayout::Playlist } else { TermusicLayout::TreeView },
+            layout: if layout_4 {
+                TermusicLayout::Playlist
+            } else {
+                TermusicLayout::TreeView
+            },
             dw: DatabaseWidgetData {
                 criteria: db_criteria,
                 search_results: Vec::new(),

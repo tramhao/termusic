@@ -895,7 +895,8 @@ impl KEModifierSelect {
             .background(config_r.settings.theme.fallback_background())
             .inactive(Style::new().fg(config_r.settings.theme.fallback_foreground()))
             .title(title.into().alignment(HorizontalAlignment::Left))
-            .rewind(false)            .highlight_style(
+            .rewind(false)
+            .highlight_style(
                 Style::default()
                     .fg(Color::Black)
                     .bg(config_r.settings.theme.fallback_highlight()),
