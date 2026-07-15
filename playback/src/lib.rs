@@ -500,7 +500,6 @@ impl GeneralPlayer {
                 self.add_and_play(&track).await;
             };
             Handle::current().block_on(wait);
-            self.get_player_mut().resume();
             self.run_info.write().set_current_track(track);
 
             self.set_track_mpris_discord();
