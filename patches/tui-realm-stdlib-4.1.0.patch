@@ -47,7 +47,7 @@
          // Get percentage
          let percentage = self
              .props
-@@ -117,22 +113,67 @@
+@@ -117,22 +113,81 @@
              .and_then(PropValue::as_f64)
              .unwrap_or_default();
  
@@ -95,9 +95,6 @@
 +        let fill_bg = self.common.style.bg.unwrap_or(Color::Reset);
 +        let right_edge = content_area.right().saturating_sub(1);
 +
-+        // Overall gauge background
-+        buf.set_style(content_area, Style::default().bg(fill_bg));
-+
 +        let max_fill = content_area.width.saturating_sub(2);
 +        let filled = (max_fill as f64 * ratio).round() as u16;
 +        let filled = filled.clamp(0, max_fill);
@@ -105,24 +102,41 @@
 +        let left_pill_x = content_area.x;
 +        let right_pill_x = (left_pill_x + 1 + filled).clamp(left_pill_x + 1, right_edge);
 +
-+        // Left pill
++        // Left pill (no bg)
 +        buf[(left_pill_x, content_area.y)]
 +            .set_symbol("")
 +            .set_fg(fill_fg)
-+            .set_bg(fill_bg);
++            .set_bg(Color::Reset);
 +
-+        // Right pill
++        // Right pill (thumb)
 +        buf[(right_pill_x, content_area.y)]
 +            .set_symbol("")
 +            .set_fg(fill_fg)
 +            .set_bg(fill_bg);
 +
-+        // Fill between pills
++        // Fill between pills (elapsed)
 +        for x in left_pill_x + 1..right_pill_x {
 +            buf[(x, content_area.y)]
 +                .set_symbol("█")
 +                .set_fg(fill_fg)
 +                .set_bg(fill_fg);
++        }
++
++        // Fill unfilled track area
++        let end_x = content_area.right().saturating_sub(1);
++        for x in right_pill_x + 1..end_x {
++            buf[(x, content_area.y)]
++                .set_symbol("█")
++                .set_fg(fill_bg)
++                .set_bg(fill_bg);
++        }
++
++        // End pill (closing, no bg)
++        if end_x > right_pill_x {
++            buf[(end_x, content_area.y)]
++                .set_symbol("")
++                .set_fg(fill_bg)
++                .set_bg(Color::Reset);
 +        }
      }
  
