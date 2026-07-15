@@ -841,3 +841,90 @@ impl<V: ListValue> Component for PlaylistTable<V> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+    use tuirealm::{
+        command::{Cmd, Direction},
+        component::Component,
+        ratatui::{layout::Rect, text::Span, widgets::Widget},
+    };
+
+    use crate::ui::components::playlist::playlist_mock::{
+        Column, ListValue, ListValueRenderReturn,
+    };
+
+    use super::PlaylistTable;
+
+    /// Helper that implements [`ListValue`] for a simple 2D string array
+    #[repr(transparent)]
+    struct ListVecString(Vec<Vec<String>>);
+
+    impl ListValue for ListVecString {
+        fn render(
+            &self,
+            buf: &mut tuirealm::ratatui::prelude::Buffer,
+            ctx: &super::PlaylistTableContext<'_>,
+            style: tuirealm::ratatui::prelude::Style,
+        ) -> super::ListValueRenderReturn {
+            let Some(item) = self.0.get(ctx.item_offset) else {
+                return ListValueRenderReturn::EMPTY;
+            };
+
+            for area in ctx.areas {
+                // we only draw with Spans here, which can only be 1 height.
+                let rect = Rect { height: 1, ..*area };
+                buf.set_style(rect, style);
+            }
+
+            if ctx.is_selected {
+                Span::styled(">", style).render(ctx.areas[0], buf);
+            }
+
+            for (idx, elem) in item.iter().enumerate() {
+                Span::styled(elem, style).render(ctx.areas[idx], buf);
+            }
+
+            ListValueRenderReturn {
+                consumed_vertical_size: 1,
+                done: false,
+            }
+        }
+
+        fn len(&self) -> Option<usize> {
+            Some(self.0.len())
+        }
+
+        fn prep(&mut self) {}
+
+        fn done(&mut self) {}
+
+        fn is_empty(&self) -> bool {
+            self.0.is_empty()
+        }
+    }
+
+    #[test]
+    fn should_work_basic() {
+        let data = ListVecString(vec![vec![
+            "Row 1".to_string(),
+            "Row 2".to_string(),
+            "Row 3".to_string(),
+        ]]);
+        let mut table = PlaylistTable::new(data).columns(vec![
+            Column::new("", 1, 1),
+            Column::new("Col 1", 1, 5),
+            Column::new("Col 2", 1, 5),
+            Column::new("Col 3", 1, 5),
+        ]);
+
+        assert_eq!(table.selected(), None);
+        assert_eq!(table.state.item_offset, 0);
+
+        table.perform(Cmd::Move(Direction::Down));
+
+        assert_eq!(table.selected(), Some(0));
+        assert_eq!(table.state.item_offset, 0);
+    }
+}
