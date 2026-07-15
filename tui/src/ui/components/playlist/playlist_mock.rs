@@ -492,6 +492,55 @@ impl PlaylistTableState {
         self.item_offset = 0;
         self.display_offset_horiz = 0;
     }
+
+    /// Clamp the view to be within bounds.
+    ///
+    /// - If the data is empty, clears the state via [`clear`](Self::clear).
+    /// - If the data is not empty, but there is a known length:
+    ///   - if something is selected, clamp the selected index to the length
+    ///   - if nothing is selected, clamp the item offset to be length
+    /// - If there is a selection, but not within view anymore, clamp the offset to have it within view again. (eg. after a resize)
+    ///
+    /// Note that this function will always run once a [`view`](PlaylistTable::view).
+    ///
+    /// If there is no known length, we cannot clamp.
+    #[allow(clippy::needless_return)] // to make it explicit, in case it is ever changed to add handling for no-known length
+    pub fn clamp(&mut self, data: &impl ListValue) {
+        // if there is no more data, clear the state
+        if data.is_empty() {
+            self.clear();
+            return;
+        }
+
+        // if there is a known length, clamp to that length if beyond
+        if let Some(len) = data.len() {
+            if let Some(selected) = self.selected()
+                && selected >= len
+            {
+                self.select_last(data);
+                return;
+            }
+
+            if self.item_offset >= len {
+                self.set_vert_offset(len);
+                return;
+            }
+        }
+
+        // If there is a last known size and a selection, clamp the view to have the selection be within view.
+        // This has to be *after* the length clamping, otherwise we might lose the selection.
+        if let Some(last_size) = self.last_size_data.as_ref()
+            && let Some(selected) = self.selected()
+        {
+            let height = last_size.height as usize;
+            if self.item_offset + height > selected || self.item_offset < selected {
+                self.set_vert_offset(selected);
+                return;
+            }
+        }
+
+        // there is no known length, so we cannot clamp to a length
+    }
 }
 
 #[derive(Debug)]
@@ -780,6 +829,8 @@ impl<V: for<'a> ListAcquire<'a>> Component for PlaylistTable<V> {
         }
 
         let data = self.data.acquire();
+
+        self.state.clamp(&data);
 
         let empty_table_text = self
             .props
