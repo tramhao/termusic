@@ -821,6 +821,11 @@ impl<V: for<'a> ListAcquire<'a>> Component for PlaylistTable<V> {
             Attribute::Custom(attr::VERT_SCROLL_STEP) => {
                 Some(AttrValueRef::Length(self.state.vertical_scroll_step).into())
             }
+            Attribute::Value => self
+                .state
+                .selected()
+                .map(AttrValueRef::Length)
+                .map(Into::into),
             _ => self.props.get_for_query(attr),
         }
     }
@@ -837,6 +842,10 @@ impl<V: for<'a> ListAcquire<'a>> Component for PlaylistTable<V> {
                     if val != 0 {
                         self.state.vertical_scroll_step = val;
                     }
+                }
+                Attribute::Value => {
+                    let val = value.unwrap_length();
+                    self.perform(Cmd::GoTo(Position::At(val)));
                 }
                 _ => self.props.set(attr, value),
             }

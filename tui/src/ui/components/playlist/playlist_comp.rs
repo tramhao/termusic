@@ -28,14 +28,13 @@ use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::event::{Key, KeyEvent};
 use tuirealm::props::{
-    AttrValue, Attribute, BorderType, HorizontalAlignment, LineStatic, PropPayload, PropValue,
-    TableBuilder, Title,
+    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, LineStatic, PropPayload,
+    PropValue, QueryResult, TableBuilder, Title,
 };
 use tuirealm::props::{Borders, Style};
 use tuirealm::ratatui::layout::Rect;
 use tuirealm::ratatui::text::Span;
 use tuirealm::ratatui::widgets::Widget;
-use tuirealm::state::{State, StateValue};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::KeyModifiers,
@@ -993,26 +992,20 @@ impl Model {
 
     /// Select the given index in the playlist list component
     pub fn playlist_locate(&mut self, index: usize) {
-        assert!(
-            self.app
-                .attr(
-                    &Id::Playlist,
-                    Attribute::Value,
-                    AttrValue::Payload(PropPayload::Single(PropValue::Usize(index))),
-                )
-                .is_ok()
-        );
+        let _ = self
+            .app
+            .attr(&Id::Playlist, Attribute::Value, AttrValue::Length(index));
     }
 
     /// Get the current selected index in the playlist list component
     pub fn playlist_get_selected_index(&self) -> Option<usize> {
-        // the index on a "Table" can be set via "AttrValue::Payload(PropPayload::Single(PropValue::Usize(val)))", but reading that is stale
-        // as that value is only read in the "Table", not removed or updated, but "state" is
-        let Ok(State::Single(StateValue::Usize(val))) = self.app.state(&Id::Playlist) else {
-            return None;
-        };
-
-        Some(val)
+        self.app
+            .query(&Id::Playlist, Attribute::Value)
+            .ok()
+            .flatten()
+            .as_ref()
+            .map(QueryResult::as_ref)
+            .and_then(AttrValueRef::as_length)
     }
 
     pub fn playlist_get_random_tracks(&mut self, quantity: u32) -> Vec<TrackRead> {
