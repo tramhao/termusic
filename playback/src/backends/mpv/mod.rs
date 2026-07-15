@@ -256,6 +256,7 @@ impl MpvBackend {
         match cmd {
             PlayerInternalCmd::Play(new) => {
                 let _ = mpv.command("loadfile", &[&format!("\"{new}\""), "replace"]);
+                let _ = mpv.unpause();
             }
             PlayerInternalCmd::QueueNext(next) => {
                 let _ = mpv.command("loadfile", &[&format!("\"{next}\""), "append"]);
