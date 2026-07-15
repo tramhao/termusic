@@ -480,14 +480,17 @@ impl PlaylistTableState {
         self.item_offset = new_offset;
     }
 
-    /// Clear all state related to the Data.
+    /// Reset State.
     ///
-    /// Clears `selected` item.
+    /// - Clears selected state
+    /// - Clears item offset
+    /// - Clears horizontal offset
     ///
     /// Does **not** reset `offset`.
-    #[expect(unused)]
     pub fn clear(&mut self) {
         let _ = self.selected.take();
+        self.item_offset = 0;
+        self.display_offset_horiz = 0;
     }
 }
 
@@ -629,6 +632,16 @@ impl<V: for<'a> ListAcquire<'a>> PlaylistTable<V> {
     /// Get the currently selected item index, if there is one.
     pub fn selected(&self) -> Option<usize> {
         self.state.selected()
+    }
+
+    /// Reset the state for most things.
+    ///
+    /// This resets:
+    /// - selected item
+    /// - item offset
+    /// - horizontal display offset
+    pub fn reset_state(&mut self) {
+        self.state.clear();
     }
 
     /// Handle [`Cmd::GoTo`].

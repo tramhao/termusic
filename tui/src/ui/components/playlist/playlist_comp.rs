@@ -453,6 +453,16 @@ impl Model {
         self.playlist_sync();
     }
 
+    /// Get the mounted [`Playlist`] component for direct modification.
+    fn playlist_comp_mut(&mut self) -> &mut Playlist {
+        self.app
+            .get_component_mut(&Id::Playlist)
+            .expect("Expected Playlist to always be mounted")
+            .as_any_mut()
+            .downcast_mut::<Playlist>()
+            .expect("Expected Playlist to always be Playlist")
+    }
+
     /// Add a playlist (like m3u) to the playlist.
     fn playlist_add_playlist(&mut self, playlist_path: &Path) -> Result<()> {
         let vec = playlist_get_vec(playlist_path)?;
@@ -623,6 +633,7 @@ impl Model {
     /// Handle when a playlist was cleared
     pub fn handle_playlist_clear(&mut self) {
         self.playback.playlist.write().clear();
+        self.playlist_comp_mut().component.reset_state();
 
         self.playlist_sync();
     }
