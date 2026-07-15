@@ -5,6 +5,7 @@ use termusiclib::config::v2::server::Backend as ConfigBackend;
 #[derive(Parser, Debug)]
 // mostly read from `Cargo.toml`
 #[clap(name = "Termusic", author, version = env!("TERMUSIC_VERSION"), about, long_about=None)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Args {
     /// Subcommands, overwriting default action of starting the TUI
     #[command(subcommand)]

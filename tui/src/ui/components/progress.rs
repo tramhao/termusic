@@ -69,7 +69,7 @@ fn title_format(status: RunningStatus, title: Option<&str>, volume: u16, speed: 
             speed as f32 / 10.0,
         )
     } else {
-        format!(" {icon} - 󰕾 {volume} - 󰓅 {:^.1} ", speed as f32 / 10.0,)
+        format!(" {icon} - 󰕾 {volume} - 󰓅 {:^.1} ", speed as f32 / 10.0)
     }
 }
 

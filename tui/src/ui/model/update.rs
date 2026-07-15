@@ -526,11 +526,11 @@ impl Model {
                     self.app.active(&Id::DBListCriteria).ok();
                 }
 
-                if self.layout == TermusicLayout::Playlist {
-                    if let Some(saved) = self.xywh_saved.take() {
-                        self.xywh = saved;
-                        let _ = self.update_photo();
-                    }
+                if self.layout == TermusicLayout::Playlist
+                    && let Some(saved) = self.xywh_saved.take()
+                {
+                    self.xywh = saved;
+                    let _ = self.update_photo();
                 }
                 self.layout = TermusicLayout::DataBase;
                 self.playlist_switch_layout();
@@ -567,11 +567,11 @@ impl Model {
                     self.app.active(&Id::Library).ok();
                 }
 
-                if self.layout == TermusicLayout::Playlist {
-                    if let Some(saved) = self.xywh_saved.take() {
-                        self.xywh = saved;
-                        let _ = self.update_photo();
-                    }
+                if self.layout == TermusicLayout::Playlist
+                    && let Some(saved) = self.xywh_saved.take()
+                {
+                    self.xywh = saved;
+                    let _ = self.update_photo();
                 }
                 self.layout = TermusicLayout::TreeView;
                 self.playlist_switch_layout();
@@ -631,11 +631,11 @@ impl Model {
                     self.app.active(&Id::Podcast).ok();
                 }
 
-                if self.layout == TermusicLayout::Playlist {
-                    if let Some(saved) = self.xywh_saved.take() {
-                        self.xywh = saved;
-                        let _ = self.update_photo();
-                    }
+                if self.layout == TermusicLayout::Playlist
+                    && let Some(saved) = self.xywh_saved.take()
+                {
+                    self.xywh = saved;
+                    let _ = self.update_photo();
                 }
                 self.layout = TermusicLayout::Podcast;
                 self.podcast_sync_feeds_and_episodes();
@@ -801,7 +801,7 @@ impl Model {
                     }
                 } else {
                     self.mount_youtube_search_table(current_node);
-                    self.youtube_options_search(url);
+                    self.youtube_options_search(&url);
                 }
             }
             YSMsg::TablePopupCloseCancel => {
@@ -1083,10 +1083,11 @@ impl Model {
                 self.command(TuiCmd::CycleLoop);
             }
             PLMsg::PlaylistTableBlurDown => match self.layout {
-                TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
+                TermusicLayout::TreeView | TermusicLayout::Playlist => {
+                    assert!(self.app.active(&Id::Library).is_ok());
+                }
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
-                TermusicLayout::Playlist => assert!(self.app.active(&Id::Library).is_ok()),
             },
             PLMsg::NextSong => {
                 self.command(TuiCmd::SkipNext);
@@ -1108,12 +1109,13 @@ impl Model {
                 self.playlist_add_random_tracks();
             }
             PLMsg::PlaylistTableBlurUp => match self.layout {
-                TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
+                TermusicLayout::TreeView | TermusicLayout::Playlist => {
+                    assert!(self.app.active(&Id::Library).is_ok());
+                }
                 TermusicLayout::DataBase => {
                     assert!(self.app.active(&Id::DBListSearchTracks).is_ok());
                 }
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
-                TermusicLayout::Playlist => assert!(self.app.active(&Id::Library).is_ok()),
             },
         }
     }

@@ -179,7 +179,7 @@ impl Instance {
     }
 }
 
-/// Search YouTube using yt-dlp directly. Falls back to this when Invidious servers are down.
+/// Search `YouTube` using yt-dlp directly. Falls back to this when Invidious servers are down.
 /// Spawns `yt-dlp --dump-json --flat-playlist "ytsearch{N}:{query}"` and parses JSON lines.
 pub fn ytdlp_search(query: &str, limit: u32) -> Result<Vec<YoutubeVideo>> {
     let search_str = format!("ytsearch{limit}:{query}");
@@ -211,9 +211,10 @@ pub fn ytdlp_search(query: &str, limit: u32) -> Result<Vec<YoutubeVideo>> {
                 Some(t) => t.to_owned(),
                 None => continue,
             };
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
             let length_seconds = value
                 .get("duration")
-                .and_then(|v| v.as_f64())
+                .and_then(serde_json::Value::as_f64)
                 .unwrap_or(0.0) as u64;
 
             results.push(YoutubeVideo {

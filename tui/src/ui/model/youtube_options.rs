@@ -121,17 +121,17 @@ impl Model {
     }
 
     /// This function requires to be run in a tokio Runtime context
-    pub fn youtube_options_search(&mut self, keyword: String) {
+    pub fn youtube_options_search(&mut self, keyword: &str) {
         let tx = self.tx_to_main.clone();
 
         // Show loading state immediately
         tx.send(Msg::YoutubeSearch(YSMsg::SearchStarted)).ok();
 
-        let kw = keyword.clone();
+        let kw = keyword.to_string();
         // Reduce Invidious timeout — try fast, don't waste time if servers are down
         let invidious = async move { Instance::new(&kw).await };
 
-        let kw2 = keyword.clone();
+        let kw2 = keyword.to_string();
         let ytdlp = async move {
             let handle = tokio::task::spawn_blocking(move || ytdlp_search(&kw2, 20)).await;
             let result: Vec<YoutubeVideo> = handle
@@ -150,7 +150,7 @@ impl Model {
                         Ok((instance, result)) => {
                             if let Some(ref domain) = instance.domain {
                                 tx.send(Msg::YoutubeSearch(YSMsg::SearchStatus(
-                                    format!("{domain}"),
+                                    domain.clone(),
                                 ))).ok();
                             }
                             for item in &result {
