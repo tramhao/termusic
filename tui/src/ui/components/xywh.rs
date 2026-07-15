@@ -14,9 +14,7 @@ use std::io::Write;
 ))]
 use anyhow::Context;
 use anyhow::Result;
-use bytes::Buf;
 use image::DynamicImage;
-use lofty::picture::Picture;
 use termusiclib::track::MediaTypes;
 use tokio::runtime::Handle;
 
@@ -176,7 +174,7 @@ impl Model {
                     return;
                 }
 
-                let mut reader = {
+                let cursor = {
                     let bytes = match result.bytes().await {
                         Ok(v) => v,
                         Err(err) => {
@@ -190,23 +188,22 @@ impl Model {
                         }
                     };
 
-                    bytes.reader()
+                    std::io::Cursor::new(bytes)
                 };
 
-                let picture = match Picture::from_reader(&mut reader) {
+                let image = match image::ImageReader::new(cursor).with_guessed_format() {
                     Ok(v) => v,
-                    Err(e) => {
-                        tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
+                    Err(err) => {
+                        let _ = tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
                             CoverDLResult::FetchPhotoErr(format!(
-                                "Error in picture from_reader: {e}"
+                                "Failed to get a valid format for downloaded image: {err}"
                             )),
-                        )))
-                        .ok();
+                        )));
                         return;
                     }
                 };
 
-                match image::load_from_memory(picture.data()) {
+                match image.decode() {
                     Ok(image) => {
                         let image_wrapper = ImageWrapper { data: image };
                         tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
@@ -216,7 +213,9 @@ impl Model {
                     }
                     Err(e) => tx
                         .send(Msg::Xywh(XYWHMsg::CoverDLResult(
-                            CoverDLResult::FetchPhotoErr(format!("Error in load_from_memory: {e}")),
+                            CoverDLResult::FetchPhotoErr(format!(
+                                "Decoding downloaded image failed: {e}"
+                            )),
                         )))
                         .ok(),
                 }

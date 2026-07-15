@@ -2,13 +2,14 @@
 
 use std::path::{Path, PathBuf};
 
-use termusiclib::{config::v2::server::ScanDepth, utils::get_pin_yin};
+use termusiclib::config::v2::server::ScanDepth;
 use tuirealm_orx_tree::types::{NodeIdx, Tree};
 
 use crate::ui::{
     components::orx_music_library::music_library::MusicLibData,
     model::{DownloadTracker, TxToMain},
     msg::{IsDir, LIMsg, LINodeReady, Msg, RecVec},
+    utils::get_pin_yin,
 };
 
 /// Execute a library scan on a different thread.

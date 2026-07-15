@@ -19,7 +19,7 @@ path = "src/server.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-termusic-lib.workspace = true # = {path = "../lib/"}
+termusic-lib.workspace = true
 termusic-playback = { workspace = true, default-features = false }
 anyhow.workspace = true
 ctrlc.workspace = true
@@ -58,7 +58,9 @@ pkg-fmt = "zip"
 
 [features]
 # NOTE: this package fails to compile if not one of the backends (rusty, gst, mpv) are compiled in!
-default = ["mpv"]
+default = []
+# left for debug
+# default = ["mpv"]
 # default = ["gst"]
 gst = ["termusic-playback/gst"]
 mpv = ["termusic-playback/mpv"]
