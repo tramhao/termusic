@@ -1031,8 +1031,6 @@ impl Model {
             let name = track.title().map_or_else(|| track.id_str(), Into::into);
             self.update_show_message_timeout("Currently Playing", &name, None);
 
-            // TODO: is there a better way to update only a single / 2 columns (prev/next) instead of re-doing the whole playist; OR a way to decide at draw-time?
-            // sync playlist to update any dynamic parts added to the columns (like current playing symbol)
             self.playlist_sync();
         }
     }

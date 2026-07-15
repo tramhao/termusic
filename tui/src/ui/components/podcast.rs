@@ -856,7 +856,6 @@ impl Model {
     }
 
     fn episode_update_playlist(&mut self) {
-        // self.player.playlist.reload().ok();
         self.playlist_sync();
     }
 

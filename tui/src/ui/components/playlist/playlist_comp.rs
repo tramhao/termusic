@@ -20,16 +20,16 @@ use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
     PlaylistSwapInfo,
 };
+use termusiclib::track::DurationFmtShort;
 use termusiclib::track::Track;
-use termusiclib::track::{DurationFmtShort, PodcastTrackData};
 use termusiclib::utils::{filetype_supported, is_playlist, playlist_get_vec};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::Event;
 use tuirealm::event::{Key, KeyEvent};
 use tuirealm::props::{
-    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, LineStatic, PropPayload,
-    PropValue, QueryResult, TableBuilder, Title,
+    AttrValue, AttrValueRef, Attribute, BorderType, HorizontalAlignment, PropPayload, PropValue,
+    QueryResult, Title,
 };
 use tuirealm::props::{Borders, Style};
 use tuirealm::ratatui::layout::Rect;
@@ -377,17 +377,13 @@ impl AppComponent<Msg, UserEvent> for Playlist {
 
 impl Model {
     pub fn playlist_reload(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::Playlist,
-                    Box::new(Playlist::new(
-                        self.config_tui.clone(),
-                        self.playback.playlist.clone(),
-                    )),
-                    Vec::new(),
-                )
-                .is_ok()
+        let _ = self.app.remount(
+            Id::Playlist,
+            Box::new(Playlist::new(
+                self.config_tui.clone(),
+                self.playback.playlist.clone(),
+            )),
+            Vec::new(),
         );
         self.playlist_switch_layout();
         self.playlist_sync();
@@ -730,129 +726,8 @@ impl Model {
         }
     }
 
-    fn playlist_sync_podcasts(&mut self) {
-        let mut table: TableBuilder = TableBuilder::default();
-
-        let playlist = self.playback.playlist.read();
-        for (idx, track) in playlist.tracks().iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
-
-            let duration_str = if let Some(dur) = track.duration_str_short() {
-                format!("[{dur:^7.7}]")
-            } else {
-                "[--:--]".to_string()
-            };
-
-            let mut title = track.title().unwrap_or("Unknown Title").to_string();
-            if track
-                .as_podcast()
-                .is_some_and(PodcastTrackData::has_localfile)
-            {
-                title = format!("[D] {title}");
-            }
-            if Some(idx) == playlist.current_track_index() {
-                title = format!(
-                    "{}{title}",
-                    self.config_tui
-                        .read()
-                        .settings
-                        .theme
-                        .style
-                        .playlist
-                        .current_track_symbol
-                );
-            }
-            table
-                .add_col(LineStatic::from(duration_str))
-                .add_col(LineStatic::styled(title, Style::new().bold()));
-        }
-        if playlist.is_empty() {
-            table.add_col(LineStatic::from("0"));
-            table.add_col(LineStatic::from("empty playlist"));
-        }
-        drop(playlist);
-
-        let table = table.build();
-        self.app
-            .attr(&Id::Playlist, Attribute::Content, AttrValue::Table(table))
-            .ok();
-
-        self.playlist_update_title();
-    }
-
+    /// Update the `Playlist` Component title and force a re-draw due to updates to the [`TUIPlaylist`].
     pub fn playlist_sync(&mut self) {
-        if self.layout == TermusicLayout::Podcast {
-            self.playlist_sync_podcasts();
-            return;
-        }
-
-        let mut table: TableBuilder = TableBuilder::default();
-        let artist_color = self
-            .config_tui
-            .read_recursive()
-            .settings
-            .theme
-            .library_highlight();
-
-        let playlist = self.playback.playlist.read();
-        for (idx, track) in playlist.tracks().iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
-
-            let duration_str = if let Some(dur) = track.duration_str_short() {
-                format!("[{dur:^7.7}]")
-            } else {
-                "[--:--]".to_string()
-            };
-
-            let mut title: Cow<'_, str> = track.title().map_or_else(|| track.id_str(), Into::into);
-
-            let artist = track.artist().unwrap_or(UNKNOWN_ARTIST);
-            let album = track
-                .as_track()
-                .and_then(|v| v.album())
-                .unwrap_or(UNKNOWN_ALBUM);
-
-            // TODO: is there maybe a better option to do this on-demand instead of the whole playlist; like on draw-time?
-            if Some(idx) == playlist.current_track_index() {
-                title = format!(
-                    "{}{title}",
-                    self.config_tui
-                        .read()
-                        .settings
-                        .theme
-                        .style
-                        .playlist
-                        .current_track_symbol
-                )
-                .into();
-            }
-
-            table
-                .add_col(LineStatic::from(duration_str))
-                .add_col(LineStatic::styled(
-                    artist.to_string(),
-                    Style::new().fg(artist_color),
-                ))
-                .add_col(LineStatic::styled(title.to_string(), Style::new().bold()))
-                .add_col(LineStatic::from(album.to_string()));
-        }
-        if playlist.is_empty() {
-            table.add_col(LineStatic::from("0"));
-            table.add_col(LineStatic::from("empty playlist"));
-            table.add_col(LineStatic::from(""));
-            table.add_col(LineStatic::from(""));
-        }
-        drop(playlist);
-
-        let table = table.build();
-        self.app
-            .attr(&Id::Playlist, Attribute::Content, AttrValue::Table(table))
-            .ok();
-
         self.playlist_update_title();
     }
 
