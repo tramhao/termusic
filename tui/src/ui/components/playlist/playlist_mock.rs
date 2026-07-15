@@ -60,6 +60,7 @@ pub struct PlaylistTableHeaderContext<'a> {
     /// There are always the same amount of areas as set in headers, but some [`Rect`]s may be 0-size.
     pub areas: &'a [Rect],
     /// There are always `columns.len() - 1` spacer areas.
+    #[expect(unused)]
     pub areas_spacer: &'a [Rect],
     /// All the columns that are defined.
     pub columns: &'a [Column],
@@ -355,6 +356,7 @@ impl PlaylistTableState {
     }
 
     /// Get a copy of the current offset.
+    #[expect(unused)]
     pub(crate) fn get_offset_horiz(&self) -> usize {
         self.display_offset_horiz
     }
@@ -457,6 +459,7 @@ impl PlaylistTableState {
     /// Clears `selected` item.
     ///
     /// Does **not** reset `offset`.
+    #[expect(unused)]
     pub fn clear(&mut self) {
         let _ = self.selected.take();
     }
@@ -485,6 +488,7 @@ impl<V: ListValue> PlaylistTable<V> {
     }
 
     /// Set the main foreground color for the tree.
+    #[expect(unused)]
     pub fn foreground(mut self, color: Color) -> Self {
         self.attr(Attribute::Foreground, AttrValue::Color(color));
 
@@ -492,6 +496,7 @@ impl<V: ListValue> PlaylistTable<V> {
     }
 
     /// Set the main background color for the tree.
+    #[expect(unused)]
     pub fn background(mut self, color: Color) -> Self {
         self.attr(Attribute::Background, AttrValue::Color(color));
 
@@ -499,6 +504,7 @@ impl<V: ListValue> PlaylistTable<V> {
     }
 
     /// Set the main text modifiers. This may get overwritten by individual text styles.
+    #[expect(unused)]
     pub fn modifiers(mut self, m: TextModifiers) -> Self {
         self.attr(Attribute::TextProps, AttrValue::TextModifiers(m));
         self
@@ -546,6 +552,7 @@ impl<V: ListValue> PlaylistTable<V> {
     }
 
     /// Set a custom highlight style that is patched on-top of the highlight style when unfocused.
+    #[expect(unused)]
     pub fn highlight_style_inactive(mut self, s: Style) -> Self {
         self.attr(Attribute::HighlightStyleUnfocused, AttrValue::Style(s));
 
@@ -566,6 +573,7 @@ impl<V: ListValue> PlaylistTable<V> {
     /// whichever is more applicable.
     ///
     /// Default: [`DEFAULT_EMPTY_TABLE_TEXT`](crate::widget::DEFAULT_EMPTY_TABLE_TEXT)
+    #[expect(unused)]
     pub fn empty_table_text<S: Into<String>>(mut self, val: S) -> Self {
         // TODO: make this a line?
         self.attr(
