@@ -108,6 +108,36 @@ impl Column {
     }
 }
 
+/// Run prep work once before rendering each value.
+/// For example to acquire a lock once and releasing it once, not each iteration.
+/// If no prep work is required, see the [`ListAcquire::acquire`] example
+/// for implementing [`ListValue`] and [`ListAcquire`] on the same struct.
+///
+/// Release (eg. Lock release) should happen in [`Self::Value`]'s [`Drop`] impl.
+pub trait ListAcquire<'a> {
+    type Value: ListValue + 'a;
+
+    /// Acquire the value to render, for example to acquire locks.
+    ///
+    /// Note that this function may also be called outside of the rendering to get access to other functions on [`ListValue`],
+    /// for example to [`ListValue::is_empty`].
+    ///
+    /// To impl [`ListAcquire`] and [`ListValue`] on the same value, follow:
+    ///
+    /// ```
+    /// # struct Type(Vec<String>);
+    /// #
+    /// impl<'a> ListAcquire<'a> for ListVecString {
+    ///     type Value = &'a Self;
+    ///
+    ///     fn acquire(&'a mut self) -> Self::Value {
+    ///         self
+    ///     }
+    /// }
+    /// ```
+    fn acquire(&'a mut self) -> Self::Value;
+}
+
 pub trait ListValue {
     /// Render a individual value from the list.
     ///
@@ -152,10 +182,6 @@ pub trait ListValue {
     ///
     /// If a max length is known, element scroll will be limited to that length.
     fn len(&self) -> Option<usize>;
-    /// Called before trying to generate Areas and other functions in this trait to for example acquire a Lock and cache it.
-    fn prep(&mut self);
-    /// Called after all has been viewed and to cleanup any data, like a acquired lock.
-    fn done(&mut self);
     /// Determine if the list is empty and the empty messages should be displayed.
     fn is_empty(&self) -> bool;
     /// Fallback selection.
@@ -466,7 +492,7 @@ impl PlaylistTableState {
 }
 
 #[derive(Debug)]
-pub struct PlaylistTable<V: ListValue> {
+pub struct PlaylistTable<V: for<'a> ListAcquire<'a>> {
     common: CommonProps,
     common_hg: CommonHighlight,
     props: Props,
@@ -476,7 +502,7 @@ pub struct PlaylistTable<V: ListValue> {
     data: V,
 }
 
-impl<V: ListValue> PlaylistTable<V> {
+impl<V: for<'a> ListAcquire<'a>> PlaylistTable<V> {
     pub fn new(data: V) -> Self {
         Self {
             common: CommonProps::default(),
@@ -607,7 +633,8 @@ impl<V: ListValue> PlaylistTable<V> {
 
     /// Handle [`Cmd::GoTo`].
     fn handle_goto(&mut self, position: Position) -> CmdResult {
-        if self.data.is_empty() {
+        let data = self.data.acquire();
+        if data.is_empty() {
             return CmdResult::NoChange;
         }
 
@@ -615,21 +642,21 @@ impl<V: ListValue> PlaylistTable<V> {
 
         match position {
             Position::Begin => {
-                if self.state.select_first(&self.data) == state_before {
+                if self.state.select_first(&data) == state_before {
                     CmdResult::NoChange
                 } else {
                     CmdResult::Visual
                 }
             }
             Position::End => {
-                if self.state.select_last(&self.data) == state_before {
+                if self.state.select_last(&data) == state_before {
                     CmdResult::NoChange
                 } else {
                     CmdResult::Visual
                 }
             }
             Position::At(idx) => {
-                if self.state.select(Some(idx), &self.data) == state_before {
+                if self.state.select(Some(idx), &data) == state_before {
                     CmdResult::NoChange
                 } else {
                     CmdResult::Visual
@@ -640,7 +667,8 @@ impl<V: ListValue> PlaylistTable<V> {
 
     /// Handle [`Cmd::Move`].
     fn handle_move(&mut self, direction: Direction) -> CmdResult {
-        if self.data.is_empty() {
+        let data = self.data.acquire();
+        if data.is_empty() {
             return CmdResult::NoChange;
         }
 
@@ -648,14 +676,14 @@ impl<V: ListValue> PlaylistTable<V> {
 
         match direction {
             Direction::Down => {
-                if self.state.select_next(&self.data) == state_before {
+                if self.state.select_next(&data) == state_before {
                     CmdResult::NoChange
                 } else {
                     CmdResult::Visual
                 }
             }
             Direction::Up => {
-                if self.state.select_previous(&self.data) == state_before {
+                if self.state.select_previous(&data) == state_before {
                     CmdResult::NoChange
                 } else {
                     CmdResult::Visual
@@ -668,12 +696,13 @@ impl<V: ListValue> PlaylistTable<V> {
 
     /// Handle [`Cmd::Scroll`].
     fn handle_scroll(&mut self, direction: Direction) -> CmdResult {
-        if self.data.is_empty() {
+        let data = self.data.acquire();
+        if data.is_empty() {
             return CmdResult::NoChange;
         }
 
         match direction {
-            Direction::Down => self.state.scroll_down(&self.data),
+            Direction::Down => self.state.scroll_down(&data),
             Direction::Up => self.state.scroll_up(),
 
             Direction::Left => self.state.scroll_left(),
@@ -685,13 +714,14 @@ impl<V: ListValue> PlaylistTable<V> {
 
     /// Handle [`Cmd::Custom(cmd::PG_DOWN)`].
     fn handle_pg_down(&mut self) -> CmdResult {
-        if self.data.is_empty() {
+        let data = self.data.acquire();
+        if data.is_empty() {
             return CmdResult::NoChange;
         }
 
         let state_before = self.state.selected();
 
-        if self.state.select_pg_down(&self.data) == state_before {
+        if self.state.select_pg_down(&data) == state_before {
             CmdResult::NoChange
         } else {
             CmdResult::Visual
@@ -700,13 +730,14 @@ impl<V: ListValue> PlaylistTable<V> {
 
     /// Handle [`Cmd::Custom(cmd::PG_UP)`].
     fn handle_pg_up(&mut self) -> CmdResult {
-        if self.data.is_empty() {
+        let data = self.data.acquire();
+        if data.is_empty() {
             return CmdResult::NoChange;
         }
 
         let state_before = self.state.selected();
 
-        if self.state.select_pg_up(&self.data) == state_before {
+        if self.state.select_pg_up(&data) == state_before {
             CmdResult::NoChange
         } else {
             CmdResult::Visual
@@ -716,7 +747,7 @@ impl<V: ListValue> PlaylistTable<V> {
 
 impl<V> Clone for PlaylistTable<V>
 where
-    V: ListValue + Clone,
+    V: for<'a> ListAcquire<'a> + Clone,
 {
     fn clone(&self) -> Self {
         Self {
@@ -729,20 +760,20 @@ where
     }
 }
 
-impl<V: ListValue> Component for PlaylistTable<V> {
+impl<V: for<'a> ListAcquire<'a>> Component for PlaylistTable<V> {
     fn view(&mut self, frame: &mut tuirealm::ratatui::prelude::Frame<'_>, area: Rect) {
         if !self.common.display {
             return;
         }
 
-        self.data.prep();
+        let data = self.data.acquire();
 
         let empty_table_text = self
             .props
             .get(Attribute::Custom(attr::EMPTY_TABLE))
             .and_then(AttrValue::as_string);
 
-        let mut widget = PlaylistTableWidget::new(&self.data)
+        let mut widget = PlaylistTableWidget::new(&data)
             .style(self.common.style)
             // .hg_draw_behavior(hg_behavior)
             // .hg_width(hg_width)
@@ -762,8 +793,6 @@ impl<V: ListValue> Component for PlaylistTable<V> {
         }
 
         frame.render_stateful_widget(widget, area, &mut self.state);
-
-        self.data.done();
     }
 
     fn query(&self, attr: Attribute) -> Option<tuirealm::props::QueryResult<'_>> {
@@ -852,7 +881,7 @@ mod tests {
     };
 
     use crate::ui::components::playlist::playlist_mock::{
-        Column, ListValue, ListValueRenderReturn,
+        Column, ListAcquire, ListValue, ListValueRenderReturn,
     };
 
     use super::PlaylistTable;
@@ -861,7 +890,15 @@ mod tests {
     #[repr(transparent)]
     struct ListVecString(Vec<Vec<String>>);
 
-    impl ListValue for ListVecString {
+    impl<'a> ListAcquire<'a> for ListVecString {
+        type Value = &'a Self;
+
+        fn acquire(&'a mut self) -> Self::Value {
+            self
+        }
+    }
+
+    impl ListValue for &ListVecString {
         fn render(
             &self,
             buf: &mut tuirealm::ratatui::prelude::Buffer,
@@ -895,10 +932,6 @@ mod tests {
         fn len(&self) -> Option<usize> {
             Some(self.0.len())
         }
-
-        fn prep(&mut self) {}
-
-        fn done(&mut self) {}
 
         fn is_empty(&self) -> bool {
             self.0.is_empty()

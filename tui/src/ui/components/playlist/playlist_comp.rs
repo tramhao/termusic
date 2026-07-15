@@ -4,11 +4,12 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Context as _, Result, anyhow};
+use parking_lot::RwLockReadGuard;
 use rand::seq::IndexedRandom;
 use termusiclib::common::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
-use termusiclib::config::SharedTuiSettings;
 use termusiclib::config::v2::server::{LoopMode, ScanDepth};
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
+use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::new_database::track_ops::TrackRead;
 use termusiclib::new_database::{album_ops, track_ops};
 use termusiclib::player::playlist_helpers::{
@@ -42,46 +43,65 @@ use tuirealm::{
 
 use crate::ui::Model;
 use crate::ui::components::orx_music_library::scanner::library_dir_tree;
-use crate::ui::components::playlist::playlist_mock;
+use crate::ui::components::playlist::playlist_mock::{self, ListAcquire};
 use crate::ui::components::playlist::playlist_mock::{
     Column, ListValue, ListValueRenderReturn, PlaylistTable,
 };
 use crate::ui::ids::Id;
-use crate::ui::model::{SharedPlaylist, TermusicLayout, UserEvent};
+use crate::ui::model::{SharedPlaylist, TUIPlaylist, TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 
+/// Holds the playlist reference.
+///
+/// Actual draw impl is in [`PlaylistDataBorrow`] to not have to acquire the lock for each iteration / item.
 pub struct PlaylistData {
     list: SharedPlaylist,
     config: SharedTuiSettings,
 }
 
-impl ListValue for PlaylistData {
+impl<'a> ListAcquire<'a> for PlaylistData {
+    type Value = PlaylistDataBorrow<'a>;
+
+    fn acquire(&'a mut self) -> Self::Value {
+        PlaylistDataBorrow {
+            list: self.list.read(),
+            config: self.config.read(),
+        }
+    }
+}
+
+/// The version of [`PlaylistData`] with all the locks acquired.
+pub struct PlaylistDataBorrow<'a> {
+    list: RwLockReadGuard<'a, TUIPlaylist>,
+    config: RwLockReadGuard<'a, TuiOverlay>,
+}
+
+impl ListValue for PlaylistDataBorrow<'_> {
     fn render(
         &self,
         buf: &mut tuirealm::ratatui::prelude::Buffer,
         ctx: &super::playlist_mock::PlaylistTableContext<'_>,
         mut style: Style,
     ) -> ListValueRenderReturn {
-        let playlist = self.list.read();
-        let Some(track) = playlist.tracks().get(ctx.item_offset) else {
+        let Some(track) = self.list.tracks().get(ctx.item_offset) else {
             return ListValueRenderReturn::EMPTY;
         };
 
         // When in specific loop modes, change all previous entries to be grey (default color), to make it more obvious where it currently
         // is and what has been played.
         // If more modes like reverse play or other LoopModes are implemented, this should be updated too.
-        if playlist
+        if self
+            .list
             .current_track_index()
             .is_some_and(|v| ctx.item_offset < v)
             && matches!(
-                playlist.loop_mode(),
+                self.list.loop_mode(),
                 LoopMode::Playlist | LoopMode::PlaylistOnce
             )
         {
             style = style.fg(self
                 .config
-                .read()
                 .settings
                 .theme
                 .get_color_from_theme(ColorTermusic::LightBlack));
@@ -102,14 +122,14 @@ impl ListValue for PlaylistData {
 
         // only render the current track symbol for the selected item
         if !ctx.is_selected
-            && playlist
+            && self
+                .list
                 .current_track_index()
                 .is_some_and(|v| v == ctx.item_offset)
         {
             Span::styled(
                 &self
                     .config
-                    .read()
                     .settings
                     .theme
                     .style
@@ -124,14 +144,7 @@ impl ListValue for PlaylistData {
         // this overwrites & takes precendence over the "current track" symbol
         if ctx.is_selected {
             Span::styled(
-                &self
-                    .config
-                    .read()
-                    .settings
-                    .theme
-                    .style
-                    .playlist
-                    .highlight_symbol,
+                &self.config.settings.theme.style.playlist.highlight_symbol,
                 style,
             )
             .render(ctx.areas[0], buf);
@@ -173,20 +186,16 @@ impl ListValue for PlaylistData {
     }
 
     fn len(&self) -> Option<usize> {
-        Some(self.list.read().len())
+        Some(self.list.len())
     }
 
-    fn prep(&mut self) {}
-
-    fn done(&mut self) {}
-
     fn is_empty(&self) -> bool {
-        self.list.read().is_empty()
+        self.list.is_empty()
     }
 
     fn fallback_select(&self) -> usize {
         // If there previously was no selection, start the selection at the currently playing track index
-        self.list.read().current_track_index().unwrap_or_default()
+        self.list.current_track_index().unwrap_or_default()
     }
 }
 

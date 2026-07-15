@@ -36,6 +36,7 @@ use crate::ui::msg::{ConfigEditorLayout, Msg, SearchCriteria};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use crate::ui::ueberzug::UeInstance;
 pub use download_tracker::DownloadTracker;
+pub use playlist::TUIPlaylist;
 pub use user_events::UserEvent;
 
 mod download_tracker;
