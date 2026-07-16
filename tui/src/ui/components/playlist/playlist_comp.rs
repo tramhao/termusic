@@ -90,10 +90,11 @@ impl ListValue for PlaylistDataBorrow<'_> {
         // When in specific loop modes, change all previous entries to be grey (default color), to make it more obvious where it currently
         // is and what has been played.
         // If more modes like reverse play or other LoopModes are implemented, this should be updated too.
-        if self
-            .list
-            .current_track_index()
-            .is_some_and(|v| ctx.item_offset < v)
+        if !ctx.is_selected
+            && self
+                .list
+                .current_track_index()
+                .is_some_and(|v| ctx.item_offset < v)
             && matches!(
                 self.list.loop_mode(),
                 LoopMode::Playlist | LoopMode::PlaylistOnce
