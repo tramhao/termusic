@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use id3::frame::Lyrics as Id3Lyrics;
+use parking_lot::RwLock;
 #[allow(unused_imports)]
 use termusiclib::config::v2::tui::CoverArtProtocol;
 use termusiclib::config::v2::tui::keys::Keys;
@@ -34,6 +36,7 @@ use crate::ui::msg::{ConfigEditorLayout, Msg, SearchCriteria};
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use crate::ui::ueberzug::UeInstance;
 pub use download_tracker::DownloadTracker;
+pub use playlist::TUIPlaylist;
 pub use user_events::UserEvent;
 
 mod download_tracker;
@@ -43,6 +46,8 @@ mod update;
 mod user_events;
 mod view;
 pub mod youtube_options;
+
+pub type SharedPlaylist = Arc<RwLock<playlist::TUIPlaylist>>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TermusicLayout {
@@ -105,7 +110,7 @@ pub struct ConfigEditorData {
 #[derive(Debug, Clone)]
 pub struct Playback {
     /// The Playlist with all the tracks.
-    pub playlist: playlist::TUIPlaylist,
+    pub playlist: SharedPlaylist,
     /// The current Running Status like Playing / Paused
     status: RunningStatus,
     /// The current track, if there is one. Does not need to be in the playlist.
@@ -115,8 +120,10 @@ pub struct Playback {
 
 impl Playback {
     fn new() -> Self {
+        let playlist = Arc::new(RwLock::new(playlist::TUIPlaylist::default()));
+
         Self {
-            playlist: playlist::TUIPlaylist::default(),
+            playlist,
             status: RunningStatus::default(),
             current_track: None,
             current_track_pos: Duration::ZERO,
@@ -164,7 +171,8 @@ impl Playback {
 
     /// Set the current track from the playlist, if there is one
     pub fn set_current_track_from_playlist(&mut self) {
-        self.set_current_track(self.playlist.current_track().cloned());
+        let track = self.playlist.read().current_track().cloned();
+        self.set_current_track(track);
     }
 
     pub fn current_track_pos(&self) -> Duration {
@@ -218,13 +226,17 @@ impl Playback {
             playlist_items.push(track);
         }
 
-        self.playlist.set_tracks(playlist_items);
+        let mut playlist = self.playlist.write();
+
+        playlist.set_tracks(playlist_items);
 
         // the old server playlist implementation will send `current_track_index: 0`, even if there are not tracks
         // but the new TUI implementation function "set_current_track_index" will refuse to set anything if the index is out-of-bounds
-        if !self.playlist.is_empty() {
-            self.playlist.set_current_track_index(current_track_index)?;
+        if !playlist.is_empty() {
+            playlist.set_current_track_index(current_track_index)?;
         }
+
+        drop(playlist);
 
         self.set_current_track_from_playlist();
 
@@ -547,7 +559,7 @@ impl Model {
 
     /// Send a [`TogglePause`](TuiCmd::TogglePause) command, if the conditions are right.
     pub fn player_toggle_pause(&mut self) {
-        if self.playback.playlist.is_empty() && self.playback.current_track().is_none() {
+        if self.playback.playlist.read().is_empty() && self.playback.current_track().is_none() {
             return;
         }
 

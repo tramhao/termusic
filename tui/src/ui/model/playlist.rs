@@ -46,6 +46,11 @@ impl TUIPlaylist {
         self.loop_mode = new_mode;
     }
 
+    /// Get the current [`LoopMode`].
+    pub fn loop_mode(&self) -> LoopMode {
+        self.loop_mode
+    }
+
     /// Swap specific indexes.
     ///
     /// # Errors
