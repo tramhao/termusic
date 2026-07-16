@@ -3,6 +3,7 @@ use tuirealm::{
     ratatui::{
         buffer::Buffer,
         layout::{Constraint, Layout, Rect},
+        style::Color,
         text::Line,
         widgets::{Block, StatefulWidget, Widget},
     },
@@ -123,6 +124,7 @@ where
 {
     type State = PlaylistTableState;
 
+    #[allow(clippy::too_many_lines)]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.main_style);
         // render the block, if set
@@ -193,6 +195,7 @@ where
 
         // draw the actual data
         let mut item_offset = state.get_item_offset();
+        let mut selected_row_y: Option<u16> = None;
 
         while !remaining_area.is_empty() {
             for area in &mut areas {
@@ -214,6 +217,7 @@ where
             };
 
             let use_style = if is_selected {
+                selected_row_y = Some(remaining_area.y);
                 self.hg_style
             } else {
                 self.main_style
@@ -230,6 +234,24 @@ where
             remaining_area.y = remaining_area.y.saturating_add(used_vert);
             remaining_area.height = remaining_area.height.saturating_sub(used_vert);
             item_offset += 1;
+        }
+
+        // Draw Nerd Font pill indicators on the selected row
+        if let Some(row_y) = selected_row_y
+            && let Some(fill_bg) = self.hg_style.bg
+        {
+            let left_edge = area.x;
+            let right_edge = area.right().saturating_sub(1);
+            if right_edge > left_edge {
+                buf[(left_edge, row_y)]
+                    .set_symbol("")
+                    .set_fg(fill_bg)
+                    .set_bg(Color::Reset);
+                buf[(right_edge, row_y)]
+                    .set_symbol("")
+                    .set_fg(fill_bg)
+                    .set_bg(Color::Reset);
+            }
         }
     }
 }
