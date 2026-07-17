@@ -60,6 +60,8 @@ pub struct TrackRead {
     // Direct data on `tracks`
     pub duration: Option<Duration>,
     pub last_position: Option<Duration>,
+    /// Date the track was first added to the library (used for the "first added" sort).
+    pub added_at: Option<chrono::DateTime<chrono::Utc>>,
     /// Either a reference to a insertable to look-up or a direct integer to use as reference into `albums`.
     pub album: Option<AlbumRead>,
 
@@ -426,6 +428,7 @@ pub fn get_track_from_path(conn: &Connection, path: &Path) -> Result<TrackRead> 
     let mut stmt = conn.prepare(indoc! {"
         SELECT
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks.added_at,
             tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
             albums.id AS album_id, albums.title AS album_title
         FROM tracks
@@ -497,6 +500,13 @@ fn common_row_to_trackread(conn: &Connection, row: &Row<'_>) -> TrackRead {
         }
     };
 
+    let added_at: Option<String> = row.get("added_at").unwrap_or(None);
+    let added_at = added_at.and_then(|s| {
+        chrono::DateTime::parse_from_rfc3339(&s)
+            .ok()
+            .map(|dt| dt.with_timezone(&chrono::Utc))
+    });
+
     TrackRead {
         id,
         file_dir,
@@ -504,6 +514,7 @@ fn common_row_to_trackread(conn: &Connection, row: &Row<'_>) -> TrackRead {
         file_ext,
         duration,
         last_position,
+        added_at,
         album,
         title,
         genre,
@@ -735,6 +746,7 @@ mod tests {
                 file_ext: OsString::from("ext"),
                 duration: Some(Duration::from_secs(10)),
                 last_position: None,
+                added_at: None,
                 album: Some(AlbumRead {
                     id: 1,
                     title: "AlbumA".to_string()
@@ -1254,6 +1266,7 @@ mod tests {
             file_ext: OsString::from("ext"),
             duration: None,
             last_position: None,
+            added_at: None,
             album: None,
             title: None,
             genre: None,
