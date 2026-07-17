@@ -30,6 +30,7 @@ pub enum Id {
     SavePlaylistPopup,
     SavePlaylistLabel,
     SavePlaylistConfirm,
+    SortPopup,
     TagEditor(IdTagEditor),
     YoutubeSearchInputPopup,
     YoutubeSearchTablePopup,
@@ -224,6 +225,7 @@ pub enum IdKeyOther {
     PlaylistDeleteAll,
     PlaylistAddRandomAlbum,
     PlaylistAddRandomTracks,
+    PlaylistSort,
 
     DatabaseAddAll,
     DatabaseAddSelected,

@@ -1013,6 +1013,7 @@ impl KEModifierSelect {
             IdKey::Other(IdKeyOther::PlaylistAddRandomTracks) => {
                 keys.playlist_keys.add_random_songs.mod_key()
             }
+            IdKey::Other(IdKeyOther::PlaylistSort) => keys.playlist_keys.sort.mod_key(),
             IdKey::Other(IdKeyOther::LibrarySwitchRoot) => keys.library_keys.cycle_root.mod_key(),
             IdKey::Other(IdKeyOther::LibraryAddRoot) => keys.library_keys.add_root.mod_key(),
             IdKey::Other(IdKeyOther::LibraryRemoveRoot) => keys.library_keys.remove_root.mod_key(),
@@ -1739,6 +1740,15 @@ fn key_playlist_add_random_tracks(config: SharedTuiSettings) -> KEModifierSelect
     )
 }
 
+#[inline]
+fn key_playlist_sort(config: SharedTuiSettings) -> KEModifierSelect {
+    KEModifierSelect::new(
+        " Playlist Sort Popup ",
+        IdKey::Other(IdKeyOther::PlaylistSort),
+        config,
+    )
+}
+
 // --- Section Database Keys ---
 
 #[inline]
@@ -2156,6 +2166,12 @@ impl Model {
             Vec::new(),
         )?;
 
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::KeyOther(IdKeyOther::PlaylistSort)),
+            Box::new(key_playlist_sort(self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
         Ok(())
     }
 
@@ -2453,6 +2469,10 @@ impl Model {
 
         self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
             IdKeyOther::PlaylistAddRandomTracks,
+        )))?;
+
+        self.app.umount(&Id::ConfigEditor(IdConfigEditor::KeyOther(
+            IdKeyOther::PlaylistSort,
         )))?;
 
         Ok(())

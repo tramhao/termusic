@@ -399,10 +399,11 @@ fn delete_confirm_popups() -> [SubClause<Id>; 2] {
 ///
 /// The values returned are meant to be used in a [`SubClause::OrMany`].
 #[inline]
-fn everywhere_popups() -> [SubClause<Id>; 3] {
+fn everywhere_popups() -> [SubClause<Id>; 4] {
     [
         SubClause::IsMounted(Id::HelpPopup),
         SubClause::IsMounted(Id::ErrorPopup),
         SubClause::IsMounted(Id::QuitPopup),
+        SubClause::IsMounted(Id::SortPopup),
     ]
 }
