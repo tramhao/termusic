@@ -5379,10 +5379,12 @@ dependencies = [
 name = "termusic-playback"
 version = "0.13.2"
 dependencies = [
+ "alphanumeric-sort",
  "anyhow",
  "async-ringbuf",
  "async-trait",
  "base64",
+ "chrono",
  "criterion",
  "discord-rich-presence",
  "glib",

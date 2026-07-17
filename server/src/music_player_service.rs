@@ -7,8 +7,9 @@ use termusiclib::player::music_player_server::MusicPlayer;
 use termusiclib::player::playlist_helpers::{PlaylistPlaySpecific, PlaylistRemoveTrackType};
 use termusiclib::player::{
     self, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime, PlaylistLoopMode,
-    PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd, PlaylistTracksToRemove, SpeedReply,
-    StreamUpdates, UpdateMissedEvents, VolumeReply, stream_updates,
+    PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd, PlaylistTracksToRemove,
+    SortPlaylistRequest, SpeedReply, StreamUpdates, UpdateMissedEvents, VolumeReply,
+    stream_updates,
 };
 use termusicplayback::{
     PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, SharedRunInfo, StreamTX,
@@ -338,6 +339,23 @@ impl MusicPlayer for MusicPlayerService {
         // this does not necessarily need to be done, but its better to have the service read-only
         let rx = self.command_cb(PlayerCmd::PlaylistShuffle)?;
         // wait until the event was processed
+        let _ = rx.await;
+
+        let reply = Empty {};
+
+        Ok(Response::new(reply))
+    }
+
+    async fn sort_playlist(
+        &self,
+        request: Request<SortPlaylistRequest>,
+    ) -> Result<Response<Empty>, Status> {
+        let req = request.into_inner();
+        let criterion = player::SortCriterion::try_from(req.criterion)
+            .map_err(|e| Status::invalid_argument(format!("unknown sort criterion: {e}")))?;
+        let direction = player::SortDirection::try_from(req.direction)
+            .map_err(|e| Status::invalid_argument(format!("unknown sort direction: {e}")))?;
+        let rx = self.command_cb(PlayerCmd::PlaylistSort(criterion, direction))?;
         let _ = rx.await;
 
         let reply = Empty {};

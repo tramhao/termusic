@@ -6,7 +6,8 @@ use termusiclib::player::playlist_helpers::{
 };
 use termusiclib::player::{
     Empty, GetProgressResponse, PlayerProgress, PlaylistSwapTracks, PlaylistTracks,
-    PlaylistTracksToAdd, PlaylistTracksToRemove, RunningStatus,
+    PlaylistTracksToAdd, PlaylistTracksToRemove, RunningStatus, SortCriterion, SortDirection,
+    SortPlaylistRequest,
 };
 use tokio_stream::{Stream, StreamExt as _};
 use tonic::transport::Channel;
@@ -195,6 +196,21 @@ impl Playback {
     pub async fn shuffle_playlist(&mut self) -> Result<()> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.shuffle_playlist(request).await?;
+        info!("Got response from server: {response:?}");
+
+        Ok(())
+    }
+
+    pub async fn sort_playlist(
+        &mut self,
+        criterion: SortCriterion,
+        direction: SortDirection,
+    ) -> Result<()> {
+        let request = tonic::Request::new(SortPlaylistRequest {
+            criterion: criterion.into(),
+            direction: direction.into(),
+        });
+        let response = self.client.sort_playlist(request).await?;
         info!("Got response from server: {response:?}");
 
         Ok(())
