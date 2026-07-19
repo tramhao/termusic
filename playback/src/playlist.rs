@@ -1018,6 +1018,7 @@ impl Playlist {
         sort_scored(&mut scored, criterion, direction);
 
         self.tracks = scored.into_iter().map(|s| s.track).collect();
+        self.is_modified = true;
 
         // Restore current track index
         if let Some(current_track_file) = current_track_file
