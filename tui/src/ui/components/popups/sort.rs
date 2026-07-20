@@ -6,8 +6,8 @@ use tuirealm::command::{Cmd, Direction};
 use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
-    AttrValue, BorderType, Borders, HorizontalAlignment, LineStatic, PropPayload, PropValue, Style,
-    TableBuilder, Title,
+    AttrValue, Attribute, BorderType, Borders, HorizontalAlignment, LineStatic, PropPayload,
+    PropValue, Style, TableBuilder, Title,
 };
 use tuirealm::state::{State, StateValue};
 
@@ -52,8 +52,8 @@ const SORT_HINTS: &[SortHint] = &[
     },
 ];
 
-const TITLE_ASC: &str = " Sort (Ascending) \u{2014} Tab: toggle, Enter: select, q/Esc: cancel ";
-const TITLE_DESC: &str = " Sort (Descending) \u{2014} Tab: toggle, Enter: select, q/Esc: cancel ";
+const TITLE_ASC: &str = " Sort (Ascending) \u{2014} Tab: toggle, Enter: select, Esc: cancel ";
+const TITLE_DESC: &str = " Sort (Descending) \u{2014} Tab: toggle, Enter: select, Esc: cancel ";
 
 /// Build the table content (rows) for the given sort direction.
 fn table_data(direction: SortDirection) -> tuirealm::props::Table {
@@ -65,7 +65,7 @@ fn table_data(direction: SortDirection) -> tuirealm::props::Table {
         };
         builder
             .add_col(LineStatic::from(format!(
-                "  {} / {}",
+                "{} / {}",
                 hint.ascending_key, hint.descending_key
             )))
             .add_col(LineStatic::from(hint.label))
@@ -100,12 +100,13 @@ fn build_table(config: &SharedTuiSettings, direction: SortDirection) -> Table {
                 .style
                 .fg(config.settings.theme.fallback_highlight()),
         )
+        .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
         .scroll(true)
         .title(Title::from(title).alignment(HorizontalAlignment::Center))
         .rewind(false)
         .step(1)
         .row_height(1)
-        .headers(["  Key", "Name", "Description"])
+        .headers(["Key", "Name", "Description"])
         .column_spacing(3)
         .widths(&[12, 20, 46])
         .table(table)
@@ -156,17 +157,15 @@ impl SortPopup {
             SortDirection::Asc => TITLE_ASC,
             SortDirection::Desc => TITLE_DESC,
         };
+        self.component
+            .attr(Attribute::Content, AttrValue::Table(table_data(direction)));
         self.component.attr(
-            tuirealm::props::Attribute::Content,
-            AttrValue::Table(table_data(direction)),
-        );
-        self.component.attr(
-            tuirealm::props::Attribute::Title,
+            Attribute::Title,
             AttrValue::Title(Title::from(title).alignment(HorizontalAlignment::Center)),
         );
         if let Some(i) = idx {
             self.component.attr(
-                tuirealm::props::Attribute::Value,
+                Attribute::Value,
                 AttrValue::Payload(PropPayload::Single(PropValue::Usize(i))),
             );
         }

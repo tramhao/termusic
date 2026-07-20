@@ -22,7 +22,6 @@ doctest = false
 [dependencies]
 termusic-lib.workspace = true
 alphanumeric-sort.workspace = true
-chrono.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
 async-ringbuf.workspace = true

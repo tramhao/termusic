@@ -355,6 +355,7 @@ impl MusicPlayer for MusicPlayerService {
             .map_err(|e| Status::invalid_argument(format!("unknown sort criterion: {e}")))?;
         let direction = player::SortDirection::try_from(req.direction)
             .map_err(|e| Status::invalid_argument(format!("unknown sort direction: {e}")))?;
+        info!("Sort playlist: {criterion:?} {direction:?}");
         let rx = self.command_cb(PlayerCmd::PlaylistSort(criterion, direction))?;
         let _ = rx.await;
 

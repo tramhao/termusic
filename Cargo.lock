@@ -5384,7 +5384,6 @@ dependencies = [
  "async-ringbuf",
  "async-trait",
  "base64",
- "chrono",
  "criterion",
  "discord-rich-presence",
  "glib",
