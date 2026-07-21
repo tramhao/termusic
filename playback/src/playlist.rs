@@ -1161,14 +1161,11 @@ struct ScoredTrack {
     track: Track,
     /// Primary sort key (score, duration, etc.).
     key: f64,
-    /// Title used for natural-sort tie-breaking.
-    title: String,
 }
 
 /// Compute the sort key for a single track against the given criterion.
 #[allow(clippy::cast_precision_loss)]
 fn score_track(track: Track, criterion: SortCriterion, db: &Database) -> ScoredTrack {
-    let title = track.title().unwrap_or_default().to_string();
     let key = match criterion {
         SortCriterion::Alphanumeric => f64::NEG_INFINITY,
         SortCriterion::Duration => track.duration().map_or(0.0, |d| d.as_secs_f64()),
@@ -1178,7 +1175,7 @@ fn score_track(track: Track, criterion: SortCriterion, db: &Database) -> ScoredT
             .and_then(|x| x.added_at)
             .map_or(f64::MIN, |dt| dt.timestamp() as f64),
     };
-    ScoredTrack { track, key, title }
+    ScoredTrack { track, key }
 }
 
 /// Sort a scored track list in-place according to `criterion` + `direction`.
@@ -1186,10 +1183,20 @@ fn sort_scored(scored: &mut [ScoredTrack], criterion: SortCriterion, direction: 
     if criterion == SortCriterion::Alphanumeric {
         match direction {
             SortDirection::Asc => {
-                scored.sort_by(|a, b| alphanumeric_sort::compare_str(&a.title, &b.title));
+                scored.sort_by(|a, b| {
+                    alphanumeric_sort::compare_str(
+                        a.track.title().unwrap_or_default(),
+                        b.track.title().unwrap_or_default(),
+                    )
+                });
             }
             SortDirection::Desc => {
-                scored.sort_by(|a, b| alphanumeric_sort::compare_str(&b.title, &a.title));
+                scored.sort_by(|a, b| {
+                    alphanumeric_sort::compare_str(
+                        b.track.title().unwrap_or_default(),
+                        a.track.title().unwrap_or_default(),
+                    )
+                });
             }
         }
     } else {
@@ -1198,8 +1205,12 @@ fn sort_scored(scored: &mut [ScoredTrack], criterion: SortCriterion, direction: 
                 SortDirection::Asc => a.key.partial_cmp(&b.key),
                 SortDirection::Desc => b.key.partial_cmp(&a.key),
             };
-            ord.unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| alphanumeric_sort::compare_str(&a.title, &b.title))
+            ord.unwrap_or(std::cmp::Ordering::Equal).then_with(|| {
+                alphanumeric_sort::compare_str(
+                    a.track.title().unwrap_or_default(),
+                    b.track.title().unwrap_or_default(),
+                )
+            })
         });
     }
 }
