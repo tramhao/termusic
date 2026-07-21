@@ -3,6 +3,7 @@ use parking_lot::RwLock;
 use pathdiff::diff_paths;
 use rand::RngExt;
 use rand::seq::SliceRandom;
+use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt::{Display, Write as _};
 use std::fs::File;
@@ -1178,34 +1179,38 @@ fn score_track(track: Track, criterion: SortCriterion, db: &Database) -> ScoredT
     ScoredTrack { track, key }
 }
 
+/// Apply the [`SortDirection`] to the given [`Ordering`].
+///
+/// Effectively this means it returns:
+/// - `initial` as-is if [`SortDirection::Asc`]
+/// - `initial` reversed if [`SortDirection::Desc`]
+fn apply_direction(initial: Ordering, dir: SortDirection) -> Ordering {
+    if dir == SortDirection::Desc {
+        initial.reverse()
+    } else {
+        initial
+    }
+}
+
 /// Sort a scored track list in-place according to `criterion` + `direction`.
 fn sort_scored(scored: &mut [ScoredTrack], criterion: SortCriterion, direction: SortDirection) {
     if criterion == SortCriterion::Alphanumeric {
-        match direction {
-            SortDirection::Asc => {
-                scored.sort_by(|a, b| {
-                    alphanumeric_sort::compare_str(
-                        a.track.title().unwrap_or_default(),
-                        b.track.title().unwrap_or_default(),
-                    )
-                });
-            }
-            SortDirection::Desc => {
-                scored.sort_by(|a, b| {
-                    alphanumeric_sort::compare_str(
-                        b.track.title().unwrap_or_default(),
-                        a.track.title().unwrap_or_default(),
-                    )
-                });
-            }
-        }
+        scored.sort_by(|a, b| {
+            apply_direction(
+                alphanumeric_sort::compare_str(
+                    a.track.title().unwrap_or_default(),
+                    b.track.title().unwrap_or_default(),
+                ),
+                direction,
+            )
+        });
     } else {
         scored.sort_by(|a, b| {
-            let ord = match direction {
-                SortDirection::Asc => a.key.partial_cmp(&b.key),
-                SortDirection::Desc => b.key.partial_cmp(&a.key),
-            };
-            ord.unwrap_or(std::cmp::Ordering::Equal).then_with(|| {
+            apply_direction(
+                a.key.partial_cmp(&b.key).unwrap_or(Ordering::Equal),
+                direction,
+            )
+            .then_with(|| {
                 alphanumeric_sort::compare_str(
                     a.track.title().unwrap_or_default(),
                     b.track.title().unwrap_or_default(),
