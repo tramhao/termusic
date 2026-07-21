@@ -12,7 +12,8 @@ use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
 use termusiclib::player::{
-    PlayerProgress, PlayerTimeUnit, RunningStatus, TrackChangedInfo, UpdateEvents,
+    PlayerProgress, PlayerTimeUnit, RunningStatus, SortCriterion, SortDirection, TrackChangedInfo,
+    UpdateEvents,
 };
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaTypes, Track};
@@ -147,6 +148,7 @@ pub enum PlayerCmd {
     PlaylistClear,
     PlaylistSwapTrack(PlaylistSwapTrack),
     PlaylistShuffle,
+    PlaylistSort(SortCriterion, SortDirection),
     PlaylistRemoveDeletedTracks,
 }
 
@@ -500,8 +502,8 @@ impl GeneralPlayer {
                 self.add_and_play(&track).await;
             };
             Handle::current().block_on(wait);
-            self.run_info.write().set_current_track(track);
 
+            self.run_info.write().set_current_track(track);
             self.set_track_mpris_discord();
             self.player_restore_last_position();
 

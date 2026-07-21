@@ -16,7 +16,7 @@ use crate::ui::model::youtube_options::YTDLMsg;
 use crate::ui::msg::{
     CoverDLResult, DBMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg,
     MainLayoutMsg, Msg, NotificationMsg, PCMsg, PLMsg, PlayerMsg, QuitPopupMsg, SavePlaylistMsg,
-    ServerReqResponse, XYWHMsg, YSMsg,
+    ServerReqResponse, SortPopupMsg, XYWHMsg, YSMsg,
 };
 use crate::ui::tui_cmd::TuiCmd;
 use crate::ui::{Model, model::TermusicLayout};
@@ -49,6 +49,7 @@ impl Model {
             Msg::Player(msg) => self.update_player(msg),
 
             Msg::HelpPopup(msg) => self.update_help_popup_msg(&msg),
+            Msg::SortPopup(msg) => self.update_sort_popup_msg(msg),
             Msg::YoutubeSearch(msg) => {
                 self.update_youtube_search(msg);
             }
@@ -107,6 +108,24 @@ impl Model {
                 if self.app.mounted(&Id::HelpPopup) {
                     self.app.umount(&Id::HelpPopup).ok();
                 }
+                self.update_photo().ok();
+            }
+        }
+    }
+
+    /// Handle all [`SortPopupMsg`] messages. Sub-function for [`update`](Self::update).
+    fn update_sort_popup_msg(&mut self, msg: SortPopupMsg) {
+        match msg {
+            SortPopupMsg::Show => {
+                self.mount_sort_popup();
+            }
+            SortPopupMsg::Close => {
+                self.umount_sort_popup();
+                self.update_photo().ok();
+            }
+            SortPopupMsg::Selected(criterion, direction) => {
+                self.umount_sort_popup();
+                self.playlist_sort(criterion, direction);
                 self.update_photo().ok();
             }
         }

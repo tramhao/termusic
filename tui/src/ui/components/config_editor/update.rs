@@ -356,6 +356,9 @@ impl Model {
             IdKey::Other(IdKeyOther::PlaylistAddRandomTracks) => {
                 keys.playlist_keys.add_random_songs = binding;
             }
+            IdKey::Other(IdKeyOther::PlaylistSort) => {
+                keys.playlist_keys.sort = binding;
+            }
             IdKey::Other(IdKeyOther::LibrarySwitchRoot) => keys.library_keys.cycle_root = binding,
             IdKey::Other(IdKeyOther::LibraryAddRoot) => keys.library_keys.add_root = binding,
             IdKey::Other(IdKeyOther::LibraryRemoveRoot) => keys.library_keys.remove_root = binding,

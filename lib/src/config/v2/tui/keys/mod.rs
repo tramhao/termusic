@@ -783,6 +783,9 @@ pub struct KeysPlaylist {
     /// previously known as `cmus_lqueue`
     // NOTE: currently this can be somewhat broken sometimes, cause unknown
     pub add_random_album: KeyBinding,
+
+    /// Open the sort popup menu to select a sort criterion and direction
+    pub sort: KeyBinding,
 }
 
 impl Default for KeysPlaylist {
@@ -814,6 +817,12 @@ impl Default for KeysPlaylist {
                 tuievents::KeyModifiers::SHIFT,
             )
             .into(),
+
+            sort: tuievents::KeyEvent::new(
+                tuievents::Key::Char(','),
+                tuievents::KeyModifiers::empty(),
+            )
+            .into(),
         }
     }
 }
@@ -832,6 +841,8 @@ impl CheckConflict for KeysPlaylist {
 
             (&self.add_random_songs, "add_random_songs"),
             (&self.add_random_album, "add_random_album"),
+
+            (&self.sort, "sort"),
         }
     }
 
@@ -1963,6 +1974,7 @@ mod v1_interop {
                     swap_down: value.playlist_swap_down.into(),
                     add_random_songs: value.playlist_add_random_tracks.into(),
                     add_random_album: value.playlist_add_random_album.into(),
+                    sort: KeysPlaylist::default().sort,
                 },
                 database_keys: KeysDatabase {
                     // this is weird, but the previous implementation used "global_right" as the loading key to not conflict
@@ -2153,6 +2165,7 @@ mod v1_interop {
                     tuievents::KeyModifiers::SHIFT,
                 )
                 .into(),
+                sort: KeysPlaylist::default().sort,
             };
             assert_eq!(converted.playlist_keys, expected_playlist_keys);
 

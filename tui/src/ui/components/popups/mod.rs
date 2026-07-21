@@ -9,6 +9,7 @@ mod mock_yn_confirm;
 mod podcast;
 mod quit;
 mod saveplaylist;
+mod sort;
 pub mod youtube_search;
 
 #[allow(unused_imports)]
@@ -26,3 +27,5 @@ pub use podcast::{FeedDeleteConfirmRadioPopup, PodcastAddPopup, PodcastSearchTab
 pub use quit::QuitPopup;
 #[allow(unused_imports)]
 pub use saveplaylist::{SavePlaylistConfirmPopup, SavePlaylistPopup};
+#[allow(unused_imports)]
+pub use sort::SortPopup;

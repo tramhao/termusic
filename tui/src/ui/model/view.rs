@@ -305,6 +305,10 @@ impl Model {
             let popup = draw_area_in_absolute(f.area(), 40, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::SavePlaylistConfirm, f, popup);
+        } else if app.mounted(&Id::SortPopup) {
+            let popup = draw_area_in_absolute(f.area(), 70, 10);
+            f.render_widget(Clear, popup);
+            app.view(&Id::SortPopup, f, popup);
         } else if app.mounted(&Id::PodcastAddPopup) {
             let popup = draw_area_in_absolute(f.area(), 65, 3);
             f.render_widget(Clear, popup);
