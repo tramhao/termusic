@@ -977,6 +977,7 @@ impl Playlist {
         let current_track_file = self.get_current_track_internal();
 
         self.tracks.shuffle(&mut rand::rng());
+        self.is_modified = true;
 
         if let Some(current_track_file) = current_track_file
             && let Some(index) = self.find_index_from_file(&current_track_file)
