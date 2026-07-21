@@ -287,17 +287,20 @@ message TrackId {
   }
 }
 
+// A request to sort the Playlist.
 message SortPlaylistRequest {
   SortCriterion criterion = 1;
   SortDirection direction = 2;
 }
 
+// All the sort methods available.
 enum SortCriterion {
   ALPHANUMERIC = 0;
   FIRST_ADDED = 1;
   DURATION = 2;
 }
 
+// All the orderings a sort can take.
 enum SortDirection {
   ASC = 0;
   DESC = 1;
