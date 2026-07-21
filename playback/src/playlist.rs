@@ -1006,12 +1006,14 @@ impl Playlist {
     ) {
         let current_track_file = self.get_current_track_internal();
 
-        // We collect into a separate Vec rather than using `sort_by_cached_key`
-        // because `score_track` borrows `db` and each track immutably, which
-        // conflicts with the mutable borrow `sort_by_cached_key` would need.
-        let mut scored: Vec<ScoredTrack> = self
-            .tracks
-            .iter()
+        // take the original vec as this allows us to use the existing "Track"s already without cloning
+        let orig_track = std::mem::take(&mut self.tracks);
+
+        // Another vec is necessary as "sort_by_*_key" require that the returned key
+        // is not tied to a lifetime, which it in this case it would require
+        // to match against the track's title.
+        let mut scored: Vec<ScoredTrack> = orig_track
+            .into_iter()
             .map(|t| score_track(t, criterion, db))
             .collect();
 
@@ -1165,7 +1167,7 @@ struct ScoredTrack {
 
 /// Compute the sort key for a single track against the given criterion.
 #[allow(clippy::cast_precision_loss)]
-fn score_track(track: &Track, criterion: SortCriterion, db: &Database) -> ScoredTrack {
+fn score_track(track: Track, criterion: SortCriterion, db: &Database) -> ScoredTrack {
     let title = track.title().unwrap_or_default().to_string();
     let key = match criterion {
         SortCriterion::Alphanumeric => f64::NEG_INFINITY,
@@ -1176,11 +1178,7 @@ fn score_track(track: &Track, criterion: SortCriterion, db: &Database) -> Scored
             .and_then(|x| x.added_at)
             .map_or(f64::MIN, |dt| dt.timestamp() as f64),
     };
-    ScoredTrack {
-        track: track.clone(),
-        key,
-        title,
-    }
+    ScoredTrack { track, key, title }
 }
 
 /// Sort a scored track list in-place according to `criterion` + `direction`.
