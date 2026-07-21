@@ -982,6 +982,8 @@ impl Playlist {
             self.current_track_index = index;
         }
 
+        self.next_track_index = None;
+
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistShuffled(
             PlaylistShuffledInfo {
                 tracks: self.as_grpc_playlist_tracks().unwrap(),

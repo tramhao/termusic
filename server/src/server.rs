@@ -532,6 +532,7 @@ fn player_loop(
             }
             PlayerCmd::PlaylistShuffle => {
                 player.playlist.write().shuffle();
+                player.run_info.write().take_enqueued();
             }
             PlayerCmd::PlaylistRemoveDeletedTracks => {
                 player.playlist.write().remove_deleted_items();
