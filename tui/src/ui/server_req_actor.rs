@@ -150,6 +150,14 @@ impl ServerRequestActor {
                 // result will be populated back via UpdateStream
                 self.client_handle.shuffle_playlist().await?;
             }
+            PlaylistCmd::Sort {
+                criterion,
+                direction,
+            } => {
+                self.client_handle
+                    .sort_playlist(criterion, direction)
+                    .await?;
+            }
             PlaylistCmd::RemoveDeletedItems => {
                 // result will be populated back via UpdateStream
                 self.client_handle.remove_deleted_tracks().await?;

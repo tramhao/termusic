@@ -18,7 +18,7 @@ use termusiclib::player::playlist_helpers::{
 };
 use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
-    PlaylistSwapInfo,
+    PlaylistSwapInfo, SortCriterion, SortDirection,
 };
 use termusiclib::track::DurationFmtShort;
 use termusiclib::track::Track;
@@ -48,7 +48,7 @@ use crate::ui::components::playlist::playlist_mock::{
 };
 use crate::ui::ids::Id;
 use crate::ui::model::{SharedPlaylist, TUIPlaylist, TermusicLayout, UserEvent};
-use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria};
+use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria, SortPopupMsg};
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 
 /// Holds the playlist reference.
@@ -319,6 +319,9 @@ impl AppComponent<Msg, UserEvent> for Playlist {
             }
             Event::Keyboard(key) if key == keys.playlist_keys.shuffle.get() => {
                 return Some(Msg::Playlist(PLMsg::Shuffle));
+            }
+            Event::Keyboard(key) if key == keys.playlist_keys.sort.get() => {
+                return Some(Msg::SortPopup(SortPopupMsg::Show));
             }
             Event::Keyboard(key) if key == keys.playlist_keys.cycle_loop_mode.get() => {
                 return Some(Msg::Playlist(PLMsg::LoopModeCycle));
@@ -762,6 +765,14 @@ impl Model {
     /// Shuffle the whole playlist
     pub fn playlist_shuffle(&mut self) {
         self.command(TuiCmd::Playlist(PlaylistCmd::Shuffle));
+    }
+
+    /// Sort the whole playlist by criterion and direction
+    pub fn playlist_sort(&mut self, criterion: SortCriterion, direction: SortDirection) {
+        self.command(TuiCmd::Playlist(PlaylistCmd::Sort {
+            criterion,
+            direction,
+        }));
     }
 
     /// Send command to swap 2 indexes. Does nothing if either index is out-of-bounds.

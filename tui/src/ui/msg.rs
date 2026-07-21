@@ -3,6 +3,8 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 
+use termusiclib::player::{SortCriterion, SortDirection};
+
 use image::DynamicImage;
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
 use termusiclib::player::{GetProgressResponse, PlaylistTracks, UpdateEvents};
@@ -35,6 +37,7 @@ pub enum Msg {
     DeleteConfirm(DeleteConfirmMsg),
     QuitPopup(QuitPopupMsg),
     HelpPopup(HelpPopupMsg),
+    SortPopup(SortPopupMsg),
     ErrorPopup(ErrorPopupMsg),
 
     /// Same as [`ForceRedraw`](Msg::ForceRedraw), but also updated the drawn cover.
@@ -168,6 +171,14 @@ pub enum QuitPopupMsg {
 pub enum HelpPopupMsg {
     Show,
     Close,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortPopupMsg {
+    Show,
+    Close,
+    /// User selected a sort criterion + direction from the menu.
+    Selected(SortCriterion, SortDirection),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -518,6 +529,7 @@ pub const KFOTHER_FOCUS_ORDER: &[IdKey] = &[
     IdKey::Other(IdKeyOther::PlaylistDeleteAll),
     IdKey::Other(IdKeyOther::PlaylistAddRandomAlbum),
     IdKey::Other(IdKeyOther::PlaylistAddRandomTracks),
+    IdKey::Other(IdKeyOther::PlaylistSort),
     // database keys
     IdKey::Other(IdKeyOther::DatabaseAddAll),
     IdKey::Other(IdKeyOther::DatabaseAddSelected),

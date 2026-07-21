@@ -534,6 +534,12 @@ fn player_loop(
                 player.playlist.write().shuffle();
                 player.run_info.write().take_enqueued();
             }
+            PlayerCmd::PlaylistSort(criterion, direction) => {
+                player
+                    .playlist
+                    .write()
+                    .sort_by_mode(criterion, direction, &player.db);
+            }
             PlayerCmd::PlaylistRemoveDeletedTracks => {
                 player.playlist.write().remove_deleted_items();
             }

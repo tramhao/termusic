@@ -1,17 +1,18 @@
+use anyhow::{Context, Result, bail};
+use parking_lot::RwLock;
+use pathdiff::diff_paths;
+use rand::RngExt;
+use rand::seq::SliceRandom;
+use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt::{Display, Write as _};
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-
-use anyhow::{Context, Result, bail};
-use parking_lot::RwLock;
-use pathdiff::diff_paths;
-use rand::RngExt;
-use rand::seq::SliceRandom;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
+use termusiclib::new_database::{Database, track_ops};
 use termusiclib::player;
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistShuffledInfo;
@@ -24,6 +25,7 @@ use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
+use termusiclib::player::{SortCriterion, SortDirection};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::{MediaTypes, Track, TrackData};
 use termusiclib::utils::{filetype_supported, get_app_config_path, get_parent_folder};
@@ -975,6 +977,7 @@ impl Playlist {
         let current_track_file = self.get_current_track_internal();
 
         self.tracks.shuffle(&mut rand::rng());
+        self.is_modified = true;
 
         if let Some(current_track_file) = current_track_file
             && let Some(index) = self.find_index_from_file(&current_track_file)
@@ -983,6 +986,52 @@ impl Playlist {
         }
 
         self.next_track_index = None;
+
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistShuffled(
+            PlaylistShuffledInfo {
+                tracks: self.as_grpc_playlist_tracks().unwrap(),
+            },
+        ));
+    }
+
+    /// Reorder the playlist by `criterion` + `direction` and emit `PlaylistShuffled`.
+    ///
+    /// Ties on non-alphanumeric criteria are broken by track title (natural sort).
+    /// Mirrors `shuffle()` but with deterministic ordering.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `as_grpc_playlist_tracks` fails (should not happen in practice).
+    pub fn sort_by_mode(
+        &mut self,
+        criterion: SortCriterion,
+        direction: SortDirection,
+        db: &Database,
+    ) {
+        let current_track_file = self.get_current_track_internal();
+
+        // take the original vec as this allows us to use the existing "Track"s already without cloning
+        let orig_track = std::mem::take(&mut self.tracks);
+
+        // Another vec is necessary as "sort_by_*_key" require that the returned key
+        // is not tied to a lifetime, which it in this case it would require
+        // to match against the track's title.
+        let mut scored: Vec<ScoredTrack> = orig_track
+            .into_iter()
+            .map(|t| score_track(t, criterion, db))
+            .collect();
+
+        sort_scored(&mut scored, criterion, direction);
+
+        self.tracks = scored.into_iter().map(|s| s.track).collect();
+        self.is_modified = true;
+
+        // Restore current track index
+        if let Some(current_track_file) = current_track_file
+            && let Some(index) = self.find_index_from_file(&current_track_file)
+        {
+            self.current_track_index = index;
+        }
 
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistShuffled(
             PlaylistShuffledInfo {
@@ -1108,6 +1157,69 @@ impl Playlist {
         {
             debug!("Stream Event not send: No Receivers");
         }
+    }
+}
+
+/// A track paired with its sort key and title for deterministic ordering.
+struct ScoredTrack {
+    track: Track,
+    /// Primary sort key (score, duration, etc.).
+    key: f64,
+}
+
+/// Compute the sort key for a single track against the given criterion.
+#[allow(clippy::cast_precision_loss)]
+fn score_track(track: Track, criterion: SortCriterion, db: &Database) -> ScoredTrack {
+    let key = match criterion {
+        SortCriterion::Alphanumeric => f64::NEG_INFINITY,
+        SortCriterion::Duration => track.duration().map_or(0.0, |d| d.as_secs_f64()),
+        SortCriterion::FirstAdded => track
+            .path()
+            .and_then(|p| track_ops::get_track_from_path(&db.get_connection(), p).ok())
+            .and_then(|x| x.added_at)
+            .map_or(f64::MIN, |dt| dt.timestamp() as f64),
+    };
+    ScoredTrack { track, key }
+}
+
+/// Apply the [`SortDirection`] to the given [`Ordering`].
+///
+/// Effectively this means it returns:
+/// - `initial` as-is if [`SortDirection::Asc`]
+/// - `initial` reversed if [`SortDirection::Desc`]
+fn apply_direction(initial: Ordering, dir: SortDirection) -> Ordering {
+    if dir == SortDirection::Desc {
+        initial.reverse()
+    } else {
+        initial
+    }
+}
+
+/// Sort a scored track list in-place according to `criterion` + `direction`.
+fn sort_scored(scored: &mut [ScoredTrack], criterion: SortCriterion, direction: SortDirection) {
+    if criterion == SortCriterion::Alphanumeric {
+        scored.sort_by(|a, b| {
+            apply_direction(
+                alphanumeric_sort::compare_str(
+                    a.track.title().unwrap_or_default(),
+                    b.track.title().unwrap_or_default(),
+                ),
+                direction,
+            )
+        });
+    } else {
+        scored.sort_by(|a, b| {
+            apply_direction(
+                a.key.partial_cmp(&b.key).unwrap_or(Ordering::Equal),
+                direction,
+            )
+            .then_with(|| {
+                alphanumeric_sort::compare_str(
+                    a.track.title().unwrap_or_default(),
+                    b.track.title().unwrap_or_default(),
+                )
+            })
+        });
     }
 }
 
