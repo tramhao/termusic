@@ -60,8 +60,12 @@ pub struct TrackRead {
     // Direct data on `tracks`
     pub duration: Option<Duration>,
     pub last_position: Option<Duration>,
-    /// Date the track was first added to the library (used for the "first added" sort).
-    pub added_at: Option<chrono::DateTime<chrono::Utc>>,
+    /// Total number of times this track has been started (incremented once per start).
+    pub total_play_count: u64,
+    /// Unix epoch seconds of the last time this track was started, or `None` if never played.
+    pub last_played_at: Option<u64>,
+    /// Unix epoch seconds of when this track was added to the library, or `None`.
+    pub added_at: Option<u64>,
     /// Either a reference to a insertable to look-up or a direct integer to use as reference into `albums`.
     pub album: Option<AlbumRead>,
 
@@ -118,6 +122,8 @@ pub fn get_all_tracks(conn: &Connection, order: RowOrdering) -> Result<Vec<Track
     let stmt = formatdoc! {"
         SELECT 
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks.added_at,
+            tracks.total_play_count, tracks.last_played_at,
             tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
             albums.id AS album_id, albums.title AS album_title
         FROM tracks
@@ -231,6 +237,8 @@ pub fn get_tracks_from_album(
     let stmt = formatdoc! {"
         SELECT 
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks.added_at,
+            tracks.total_play_count, tracks.last_played_at,
             tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
             albums.id AS album_id, albums.title AS album_title
         FROM tracks
@@ -270,6 +278,8 @@ pub fn get_tracks_from_artist(
     let stmt = formatdoc! {"
         SELECT 
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks.added_at,
+            tracks.total_play_count, tracks.last_played_at,
             tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
             albums.id AS album_id, albums.title AS album_title
         FROM tracks
@@ -316,6 +326,8 @@ pub fn get_tracks_from_genre(
     let stmt = formatdoc! {"
         SELECT
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks.added_at,
+            tracks.total_play_count, tracks.last_played_at,
             tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
             albums.id AS album_id, albums.title AS album_title
         FROM tracks
@@ -355,10 +367,12 @@ pub fn get_tracks_from_directory(
     let stmt = formatdoc! {"
         SELECT 
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks.added_at,
+            tracks.total_play_count, tracks.last_played_at,
             tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
             albums.id AS album_id, albums.title AS album_title
         FROM tracks
-        LEFT JOIN tracks_metadata ON tracks.id=tracks_metadata.track
+        LEFT JOIN tracks_metadata ON tracks.id = tracks_metadata.track
         LEFT JOIN albums ON tracks.album = albums.id
         WHERE tracks.file_dir=:dir
         ORDER BY {};
@@ -391,6 +405,8 @@ pub fn get_tracks_from_genre_like(
     let stmt = formatdoc! {"
         SELECT
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
+            tracks.added_at,
+            tracks.total_play_count, tracks.last_played_at,
             tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
             albums.id AS album_id, albums.title AS album_title
         FROM tracks
@@ -428,7 +444,7 @@ pub fn get_track_from_path(conn: &Connection, path: &Path) -> Result<TrackRead> 
     let mut stmt = conn.prepare(indoc! {"
         SELECT
             tracks.id AS track_id, tracks.file_dir, tracks.file_stem, tracks.file_ext, tracks.duration, tracks.last_position,
-            tracks.added_at,
+            tracks.added_at, tracks.total_play_count, tracks.last_played_at,
             tracks_metadata.title AS track_title, tracks_metadata.artist_display, tracks_metadata.genre,
             albums.id AS album_id, albums.title AS album_title
         FROM tracks
@@ -500,12 +516,21 @@ fn common_row_to_trackread(conn: &Connection, row: &Row<'_>) -> TrackRead {
         }
     };
 
-    let added_at: Option<String> = row.get("added_at").unwrap_or(None);
-    let added_at = added_at.and_then(|s| {
-        chrono::DateTime::parse_from_rfc3339(&s)
-            .ok()
-            .map(|dt| dt.with_timezone(&chrono::Utc))
-    });
+    let total_play_count: u64 = row
+        .get::<_, i64>("total_play_count")
+        .unwrap_or(0)
+        .max(0)
+        .cast_unsigned();
+    let last_played_at: Option<u64> = row
+        .get::<_, i64>("last_played_at")
+        .ok()
+        .filter(|v| *v >= 0)
+        .map(i64::cast_unsigned);
+    let added_at: Option<u64> = row
+        .get::<_, i64>("added_at")
+        .ok()
+        .filter(|v| *v >= 0)
+        .map(i64::cast_unsigned);
 
     TrackRead {
         id,
@@ -514,6 +539,8 @@ fn common_row_to_trackread(conn: &Connection, row: &Row<'_>) -> TrackRead {
         file_ext,
         duration,
         last_position,
+        total_play_count,
+        last_played_at,
         added_at,
         album,
         title,
@@ -590,6 +617,51 @@ pub fn all_distinct_directories(conn: &Connection) -> Result<Vec<String>> {
         .collect::<Result<Vec<_>, rusqlite::Error>>()?;
 
     Ok(result)
+}
+
+/// Increment `total_play_count` for the given track by 1.
+///
+/// The track is identified by its file path. If the track is not found, this is a no-op.
+pub fn increment_total_play_count(conn: &Connection, track: &Path) -> Result<()> {
+    let (file_dir, file_stem, file_ext) = path_to_db_comp(track)?;
+    let file_dir = file_dir.to_string_lossy();
+    let file_stem = file_stem.to_string_lossy();
+    let file_ext = file_ext.to_string_lossy();
+
+    conn.execute(
+        "UPDATE tracks SET total_play_count = total_play_count + 1
+        WHERE file_dir=:file_dir AND file_stem=:file_stem AND file_ext=:file_ext;",
+        named_params! {
+            ":file_dir": file_dir.as_ref(),
+            ":file_stem": file_stem.as_ref(),
+            ":file_ext": file_ext.as_ref(),
+        },
+    )?;
+
+    Ok(())
+}
+
+/// Set `last_played_at` to the given unix epoch timestamp for the given track.
+///
+/// The track is identified by its file path. If the track is not found, this is a no-op.
+pub fn set_last_played_at(conn: &Connection, track: &Path, timestamp: u64) -> Result<()> {
+    let (file_dir, file_stem, file_ext) = path_to_db_comp(track)?;
+    let file_dir = file_dir.to_string_lossy();
+    let file_stem = file_stem.to_string_lossy();
+    let file_ext = file_ext.to_string_lossy();
+
+    conn.execute(
+        "UPDATE tracks SET last_played_at=:timestamp
+        WHERE file_dir=:file_dir AND file_stem=:file_stem AND file_ext=:file_ext;",
+        named_params! {
+            ":timestamp": timestamp.cast_signed(),
+            ":file_dir": file_dir.as_ref(),
+            ":file_stem": file_stem.as_ref(),
+            ":file_ext": file_ext.as_ref(),
+        },
+    )?;
+
+    Ok(())
 }
 
 /// Remove all tracks-artists mappings for the given path or track id.
@@ -737,15 +809,21 @@ mod tests {
 
         let all_tracks = get_all_tracks(&db.get_connection(), RowOrdering::IdAsc).unwrap();
 
+        let mut expected = all_tracks[0].clone();
+        let inserted_at = expected.added_at.take();
+        assert!(inserted_at.is_some(), "added_at should be set by insert");
+
         assert_eq!(
-            all_tracks,
-            &[TrackRead {
+            expected,
+            TrackRead {
                 id: 1,
                 file_dir: PathBuf::from("/somewhere"),
                 file_stem: OsString::from("file"),
                 file_ext: OsString::from("ext"),
                 duration: Some(Duration::from_secs(10)),
                 last_position: None,
+                total_play_count: 0,
+                last_played_at: None,
                 added_at: None,
                 album: Some(AlbumRead {
                     id: 1,
@@ -758,7 +836,7 @@ mod tests {
                     id: 1,
                     name: "ArtistA".to_string()
                 }]
-            }]
+            }
         );
     }
 
@@ -1266,6 +1344,8 @@ mod tests {
             file_ext: OsString::from("ext"),
             duration: None,
             last_position: None,
+            total_play_count: 0,
+            last_played_at: None,
             added_at: None,
             album: None,
             title: None,
