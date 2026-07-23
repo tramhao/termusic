@@ -219,6 +219,74 @@ pub fn random_ascii(len: usize) -> String {
         .collect()
 }
 
+/// "Frecency" score — a hybrid of **fre**quency and re**cency**, popularized
+/// by zoxide and Firefox. Tracks that are played often *and* recently score
+/// highest.
+///
+/// `total_play_count` is the rank (starts at 1, incremented per access).
+/// `last_played_at` is the last-access time (unix epoch seconds).
+/// Buckets match zoxide's `dir.rs` exactly:
+///   < 1 hour  → × 4.0
+///   < 1 day   → × 2.0
+///   < 1 week  → × 0.5
+///   else      → × 0.25
+#[must_use]
+#[allow(clippy::cast_precision_loss)]
+pub fn frecency_score(total_play_count: u64, last_played_at: Option<u64>, now: u64) -> f64 {
+    if total_play_count == 0 {
+        return 0.0;
+    }
+    let rank = total_play_count as f64;
+    let multiplier = match last_played_at {
+        None => 0.25,
+        Some(lp) => {
+            let elapsed = now.saturating_sub(lp);
+            if elapsed < FrecencyTimeBucket::Hour.as_secs() {
+                FrecencyTimeBucket::Hour.multiplier()
+            } else if elapsed < FrecencyTimeBucket::Day.as_secs() {
+                FrecencyTimeBucket::Day.multiplier()
+            } else if elapsed < FrecencyTimeBucket::Week.as_secs() {
+                FrecencyTimeBucket::Week.multiplier()
+            } else {
+                FrecencyTimeBucket::Old.multiplier()
+            }
+        }
+    };
+    rank * multiplier
+}
+
+/// Time buckets for the frecency scoring algorithm.
+///
+/// Each bucket maps a recency window to a score multiplier, matching zoxide's
+/// `dir.rs` exactly.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u64)]
+enum FrecencyTimeBucket {
+    /// < 1 hour  → × 4.0
+    Hour = 3_600,
+    /// < 1 day   → × 2.0
+    Day = 86_400,
+    /// < 1 week  → × 0.5
+    Week = 604_800,
+    /// ≥ 1 week  → × 0.25
+    Old = u64::MAX,
+}
+
+impl FrecencyTimeBucket {
+    const fn as_secs(self) -> u64 {
+        self as u64
+    }
+
+    const fn multiplier(self) -> f64 {
+        match self {
+            Self::Hour => 4.0,
+            Self::Day => 2.0,
+            Self::Week => 0.5,
+            Self::Old => 0.25,
+        }
+    }
+}
+
 /// Helper function to defer formatting to later, without having to allocate a intermediate [`String`]
 ///
 /// similar to [`format_args!`], but it can be returned by `move`d values
@@ -429,6 +497,34 @@ mod tests {
         assert_eq!(iter.next(), Some("hello there"));
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn frecency_score_basic() {
+        let now = 1_700_000_000;
+        let eps = f64::EPSILON;
+
+        // total_play_count=0 → score is 0 regardless of last_played_at
+        assert!(frecency_score(0, Some(now), now).abs() < eps);
+        assert!(frecency_score(0, None, now).abs() < eps);
+
+        // 1 play, < 1 hour ago → rank 1 × 4.0 = 4.0
+        assert!((frecency_score(1, Some(now - 1_800), now) - 4.0).abs() < eps);
+
+        // 1 play, < 1 day ago → rank 1 × 2.0 = 2.0
+        assert!((frecency_score(1, Some(now - 7_200), now) - 2.0).abs() < eps);
+
+        // 1 play, < 1 week ago → rank 1 × 0.5 = 0.5
+        assert!((frecency_score(1, Some(now - 100_000), now) - 0.5).abs() < eps);
+
+        // 1 play, ≥ 1 week ago → rank 1 × 0.25 = 0.25
+        assert!((frecency_score(1, Some(now - 700_000), now) - 0.25).abs() < eps);
+
+        // 1 play, never played → rank 1 × 0.25 = 0.25
+        assert!((frecency_score(1, None, now) - 0.25).abs() < eps);
+
+        // 3 plays, < 1 week ago → rank 3 × 0.5 = 1.5
+        assert!((frecency_score(3, Some(now - 100_000), now) - 1.5).abs() < eps);
     }
 
     #[test]
