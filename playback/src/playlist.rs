@@ -10,6 +10,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::new_database::{Database, track_ops};
@@ -28,7 +30,9 @@ use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::player::{SortCriterion, SortDirection};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::{MediaTypes, Track, TrackData};
-use termusiclib::utils::{filetype_supported, get_app_config_path, get_parent_folder};
+use termusiclib::utils::{
+    filetype_supported, frecency_score, get_app_config_path, get_parent_folder,
+};
 
 use crate::SharedPlaylist;
 use crate::StreamTX;
@@ -1009,16 +1013,23 @@ impl Playlist {
         db: &Database,
     ) {
         let current_track_file = self.get_current_track_internal();
+        let now = if criterion == SortCriterion::Frecency {
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+        } else {
+            0
+        };
 
-        // take the original vec as this allows us to use the existing "Track"s already without cloning
+        // take the original vec so we can consume tracks without cloning
         let orig_track = std::mem::take(&mut self.tracks);
 
-        // Another vec is necessary as "sort_by_*_key" require that the returned key
-        // is not tied to a lifetime, which it in this case it would require
-        // to match against the track's title.
+        // Another vec is necessary as score_track requires the returned key
+        // to not be tied to a lifetime.
         let mut scored: Vec<ScoredTrack> = orig_track
             .into_iter()
-            .map(|t| score_track(t, criterion, db))
+            .map(|t| score_track(t, criterion, db, now))
             .collect();
 
         sort_scored(&mut scored, criterion, direction);
@@ -1171,15 +1182,30 @@ struct ScoredTrack {
 
 /// Compute the sort key for a single track against the given criterion.
 #[allow(clippy::cast_precision_loss)]
-fn score_track(track: Track, criterion: SortCriterion, db: &Database) -> ScoredTrack {
+fn score_track(track: Track, criterion: SortCriterion, db: &Database, now: u64) -> ScoredTrack {
     let key = match criterion {
         SortCriterion::Alphanumeric => f64::NEG_INFINITY,
         SortCriterion::Duration => track.duration().map_or(0.0, |d| d.as_secs_f64()),
-        SortCriterion::FirstAdded => track
-            .path()
-            .and_then(|p| track_ops::get_track_from_path(&db.get_connection(), p).ok())
-            .and_then(|x| x.added_at)
-            .map_or(f64::MIN, |dt| dt.timestamp() as f64),
+        SortCriterion::MostPlayed
+        | SortCriterion::Recency
+        | SortCriterion::FirstAdded
+        | SortCriterion::Frecency => {
+            let conn = db.get_connection();
+            let tr = track
+                .path()
+                .and_then(|p| track_ops::get_track_from_path(&conn, p).ok());
+            let (pc, lp, added) = tr.as_ref().map_or((0, None, None), |x| {
+                (x.total_play_count, x.last_played_at, x.added_at)
+            });
+
+            match criterion {
+                SortCriterion::MostPlayed => pc as f64,
+                SortCriterion::Recency => lp.map_or(f64::MIN, |v| v as f64),
+                SortCriterion::FirstAdded => added.map_or(f64::MIN, |v| v as f64),
+                SortCriterion::Frecency => frecency_score(pc, lp, now),
+                _ => unreachable!(),
+            }
+        }
     };
     ScoredTrack { track, key }
 }

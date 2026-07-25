@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -16,7 +16,7 @@ use termusiclib::player::{
     UpdateEvents,
 };
 use termusiclib::podcast::db::Database as DBPod;
-use termusiclib::track::{MediaTypes, Track};
+use termusiclib::track::{MediaTypes, MediaTypesSimple, Track};
 use termusiclib::utils::get_app_config_path;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::error::SendError;
@@ -280,6 +280,10 @@ impl RunInfo {
     }
 }
 
+/// Minimum playback duration (seconds) before a track start counts as a "play".
+/// Mirrors the `previous_track_threshold` pattern in [`PlayerTrait::previous`].
+const PLAY_THRESHOLD_SECS: u64 = 5;
+
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     /// The backend in use where audio will be output to.
@@ -453,6 +457,15 @@ impl GeneralPlayer {
     ///
     /// if `current_track_index` in playlist is above u32
     pub fn start_play(&mut self, from_eos: bool) {
+        // Record the outgoing track's play count if it played past the threshold.
+        if self
+            .position()
+            .is_some_and(|pos| pos.as_secs() >= PLAY_THRESHOLD_SECS)
+            && let Some(current) = self.run_info.read().current_track()
+        {
+            self.record_track_play(current);
+        }
+
         let mut run_info = self.run_info.write();
         if run_info.is_stopped() | run_info.is_paused() {
             run_info.play(&self.stream_tx);
@@ -480,6 +493,7 @@ impl GeneralPlayer {
             };
             if enqueued_track.as_track_source() == track.as_track_source() {
                 info!("Starting seamless Track {track:#?}");
+
                 run_info.set_current_track(track.clone());
                 drop(playlist);
                 drop(run_info);
@@ -504,6 +518,7 @@ impl GeneralPlayer {
             Handle::current().block_on(wait);
 
             self.run_info.write().set_current_track(track);
+
             self.set_track_mpris_discord();
             self.player_restore_last_position();
 
@@ -529,6 +544,27 @@ impl GeneralPlayer {
             title: self.media_info().media_title,
             progress: self.get_progress(),
         }));
+    }
+
+    /// Record that a track was started — bumps play count and last-played timestamp.
+    fn record_track_play(&self, track: &Track) {
+        if track.media_type() == MediaTypesSimple::Music
+            && let Some(path) = track.path()
+        {
+            let conn = self.db.get_connection();
+            if let Err(e) = track_ops::increment_total_play_count(&conn, path) {
+                warn!(
+                    "Failed to increment play count for {}: {e:#}",
+                    path.display()
+                );
+            }
+            let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_or(0, |d| d.as_secs());
+            if let Err(e) = track_ops::set_last_played_at(&conn, path, now) {
+                warn!("Failed to set last played at for {}: {e:#}", path.display());
+            }
+        }
     }
 
     /// Set the current track for extra services like Media Control or discord.

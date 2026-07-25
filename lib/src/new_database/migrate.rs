@@ -2,7 +2,7 @@ use anyhow::{Context, Result, bail};
 use rusqlite::{Connection, named_params};
 
 /// The Current Database schema version this application is meant to run against
-pub(super) const DB_VERSION: u32 = 1;
+pub(super) const DB_VERSION: u32 = 2;
 
 /// Helper function to get the `user_version` with a single function call.
 #[inline]
@@ -53,6 +53,15 @@ fn apply_migrations(conn: &Connection, mut user_version: u32) -> Result<()> {
 
         set_db_created_at(conn)?;
         set_db_created_with(conn)?;
+    }
+
+    if user_version == 1 {
+        // Add total_play_count and last_played_at columns for sort support (MostPlayed, Recency, Frecency) plus `added_at` column type change
+        let tx = conn.unchecked_transaction()?;
+        tx.execute_batch(include_str!("./migrations/002.sql"))
+            .context("Database version 2 migration failed")?;
+        set_user_version(&tx, 2)?;
+        tx.commit()?;
     }
 
     set_last_updated_at(conn)?;
