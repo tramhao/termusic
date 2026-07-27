@@ -678,24 +678,33 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
 
 async fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<()> {
     match action {
-        cli::Action::Import { file } => {
-            println!("need to import from file {}", file.display());
+        cli::Action::Podcast(podcast_action) => match podcast_action {
+            cli::PodcastAction::Import { file } => {
+                println!("need to import from file {}", file.display());
 
-            let path = get_path(&file).context("import cli file-path")?;
-            let config_dir_path =
-                utils::get_app_config_path().context("getting app-config-path")?;
+                let path = get_path(&file).context("import cli file-path")?;
+                let config_dir_path =
+                    utils::get_app_config_path().context("getting app-config-path")?;
 
-            podcast::import_from_opml(&config_dir_path, &config.settings.podcast, &path)
-                .await
-                .context("import opml")?;
-        }
-        cli::Action::Export { file } => {
-            println!("need to export to file {}", file.display());
-            let path = utils::absolute_path(&file)?;
-            let config_dir_path =
-                utils::get_app_config_path().context("getting app-config-path")?;
-            podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
-        }
+                podcast::import_from_opml(&config_dir_path, &config.settings.podcast, &path)
+                    .await
+                    .context("import opml")?;
+            }
+            cli::PodcastAction::Export { file } => {
+                println!("need to export to file {}", file.display());
+                let path = utils::absolute_path(&file)?;
+                let config_dir_path =
+                    utils::get_app_config_path().context("getting app-config-path")?;
+                podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
+            }
+            cli::PodcastAction::Refresh => {
+                let config_dir_path =
+                    utils::get_app_config_path().context("getting app-config-path")?;
+                podcast::refresh_all_feeds(&config_dir_path, &config.settings.podcast)
+                    .await
+                    .context("refresh feeds")?;
+            }
+        },
     };
 
     Ok(())

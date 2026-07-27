@@ -11,6 +11,17 @@ pub use protobuf::*;
 
 use crate::config::v2::server::LoopMode;
 
+impl SortDirection {
+    /// Swap between `Asc` and `Desc`.
+    #[must_use]
+    pub fn invert(self) -> Self {
+        match self {
+            Self::Asc => Self::Desc,
+            Self::Desc => Self::Asc,
+        }
+    }
+}
+
 // implement transform function for easy use
 impl From<protobuf::Duration> for std::time::Duration {
     fn from(value: protobuf::Duration) -> Self {

@@ -1,6 +1,7 @@
 use clap::{ArgAction, Parser, Subcommand, ValueEnum, builder::ArgPredicate};
 use std::path::PathBuf;
 use termusiclib::config::v2::server::Backend as ConfigBackend;
+use termusiclib::player::{SortCriterion, SortDirection};
 
 #[derive(Parser, Debug)]
 // mostly read from `Cargo.toml`
@@ -66,16 +67,12 @@ impl std::fmt::Display for Backend {
 /// Subcommands for the binary
 #[derive(Subcommand, Debug)]
 pub enum Action {
-    /// Export Podcast feeds to a opml file.
-    Export {
-        #[arg(value_name = "FILE")]
-        file: PathBuf,
-    },
-    /// Import Podcast feeds from a opml file.
-    Import {
-        #[arg(value_name = "FILE")]
-        file: PathBuf,
-    },
+    /// Podcast management commands.
+    #[command(subcommand)]
+    Podcast(PodcastAction),
+    /// Playlist management commands.
+    #[command(subcommand)]
+    Playlist(PlaylistAction),
     /// Skip to next track
     #[command(aliases = &["n"])]
     Next,
@@ -106,12 +103,80 @@ pub enum Action {
     SeekForward,
     /// Seek backward
     SeekBackward,
-    /// Cycle loop mode (list → track → one → list)
-    CycleLoop,
-    /// Shuffle the current playlist
-    Shuffle,
     /// Quit the server
     Quit,
+}
+
+/// Podcast management subcommands.
+#[derive(Subcommand, Debug)]
+pub enum PodcastAction {
+    /// Export Podcast feeds to a opml file.
+    Export {
+        #[arg(value_name = "FILE")]
+        file: PathBuf,
+    },
+    /// Import Podcast feeds from a opml file.
+    Import {
+        #[arg(value_name = "FILE")]
+        file: PathBuf,
+    },
+    /// Refresh all podcast feeds.
+    Refresh,
+}
+
+/// Playlist management subcommands.
+#[derive(Subcommand, Debug)]
+pub enum PlaylistAction {
+    /// Shuffle the current playlist.
+    Shuffle,
+    /// Sort the current playlist.
+    Sort {
+        /// Sort criterion.
+        #[arg(value_enum)]
+        criterion: SortCli,
+        /// Invert the default sort direction.
+        #[arg(short, long)]
+        invert: bool,
+    },
+    /// Cycle loop mode (list -> track -> one -> list).
+    CycleLoop,
+}
+
+/// Sort criterion for playlist sorting.
+#[derive(Clone, Copy, Debug, ValueEnum)]
+pub enum SortCli {
+    Alphanumeric,
+    #[value(name = "atoz")]
+    AtoZ,
+    #[value(name = "ztoa")]
+    ZtoA,
+    FirstAdded,
+    LastAdded,
+    Duration,
+    HighestDuration,
+    LowestDuration,
+    MostPlayed,
+    LeastPlayed,
+    Recency,
+    Frecency,
+}
+
+impl SortCli {
+    /// Returns the base sort criterion and the default sort direction.
+    pub fn into_criterion_and_direction(self) -> (SortCriterion, SortDirection) {
+        match self {
+            Self::Alphanumeric | Self::AtoZ => (SortCriterion::Alphanumeric, SortDirection::Asc),
+            Self::ZtoA => (SortCriterion::Alphanumeric, SortDirection::Desc),
+            Self::FirstAdded => (SortCriterion::FirstAdded, SortDirection::Asc),
+            Self::LastAdded => (SortCriterion::FirstAdded, SortDirection::Desc),
+            Self::Duration | Self::LowestDuration => (SortCriterion::Duration, SortDirection::Asc),
+            Self::HighestDuration => (SortCriterion::Duration, SortDirection::Desc),
+            Self::MostPlayed => (SortCriterion::MostPlayed, SortDirection::Desc),
+            Self::LeastPlayed => (SortCriterion::MostPlayed, SortDirection::Asc),
+            Self::Recency => (SortCriterion::Recency, SortDirection::Asc),
+            Self::Frecency => (SortCriterion::Frecency, SortDirection::Asc),
+        }
+    }
 }
 
 const DEFAULT_LOGFILE_FILENAME: &str = "termusic-tui.log";

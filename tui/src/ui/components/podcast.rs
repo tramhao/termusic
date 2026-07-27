@@ -6,7 +6,7 @@ use reqwest::ClientBuilder;
 use sanitize_filename::{Options, sanitize_with_options};
 use serde_json::Value;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, download_list};
+use termusiclib::podcast::{EpData, PodcastFeed, PodcastNoId, dispatch_feed_checks, download_list};
 use tokio::runtime::Handle;
 use tui_realm_stdlib::components::List;
 use tui_realm_stdlib::prop_ext::CommonHighlight;
@@ -667,24 +667,17 @@ impl Model {
                     .collect();
             }
         }
-        for feed in pod_data {
-            let tx_to_main = self.tx_to_main.clone();
-
-            crate::podcast::check_feed(
-                feed,
-                usize::from(
-                    self.config_server
-                        .read()
-                        .settings
-                        .podcast
-                        .max_download_retries,
-                ),
-                &self.taskpool,
-                move |msg| {
-                    let _ = tx_to_main.send(Msg::Podcast(PCMsg::SyncResult(msg)));
-                },
-            );
-        }
+        let tx_to_main = self.tx_to_main.clone();
+        let max_retries = usize::from(
+            self.config_server
+                .read()
+                .settings
+                .podcast
+                .max_download_retries,
+        );
+        dispatch_feed_checks(pod_data, max_retries, &self.taskpool, move |msg| {
+            let _ = tx_to_main.send(Msg::Podcast(PCMsg::SyncResult(msg)));
+        });
         // self.update_tracker_notif();
         self.podcast_sync_feeds_and_episodes();
         Ok(())

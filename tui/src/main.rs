@@ -532,28 +532,77 @@ fn get_path(dir: &Path) -> Result<PathBuf> {
 
 async fn execute_action(action: cli::Action, config: &CombinedSettings) -> Result<()> {
     match action {
-        cli::Action::Import { file } => {
-            println!("need to import from file {}", file.display());
+        cli::Action::Podcast(podcast_action) => match podcast_action {
+            cli::PodcastAction::Import { file } => {
+                println!("need to import from file {}", file.display());
 
-            let path = get_path(&file).context("import cli file-path")?;
-            let config_dir_path =
-                utils::get_app_config_path().context("getting app-config-path")?;
+                let path = get_path(&file).context("import cli file-path")?;
+                let config_dir_path =
+                    utils::get_app_config_path().context("getting app-config-path")?;
 
-            // to not hold a mutexguard across await points
-            let config_c = config.server.read().settings.podcast.clone();
+                // to not hold a mutexguard across await points
+                let config_c = config.server.read().settings.podcast.clone();
 
-            podcast::import_from_opml(&config_dir_path, &config_c, &path)
-                .await
-                .context("import opml")?;
-        }
-        cli::Action::Export { file } => {
-            println!("need to export to file {}", file.display());
-            let path = utils::absolute_path(&file)?;
-            let config_dir_path =
-                utils::get_app_config_path().context("getting app-config-path")?;
-            podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
+                podcast::import_from_opml(&config_dir_path, &config_c, &path)
+                    .await
+                    .context("import opml")?;
+            }
+            cli::PodcastAction::Export { file } => {
+                println!("need to export to file {}", file.display());
+                let path = utils::absolute_path(&file)?;
+                let config_dir_path =
+                    utils::get_app_config_path().context("getting app-config-path")?;
+                podcast::export_to_opml(&config_dir_path, &path).context("export opml")?;
+            }
+            cli::PodcastAction::Refresh => {
+                let config_dir_path =
+                    utils::get_app_config_path().context("getting app-config-path")?;
+                let config_c = config.server.read().settings.podcast.clone();
+                podcast::refresh_all_feeds(&config_dir_path, &config_c)
+                    .await
+                    .context("refresh feeds")?;
+            }
+        },
+        cli::Action::Playlist(playlist_action) => {
+            execute_playlist_action(playlist_action, config).await?;
         }
         action => execute_media_control(action, config).await?,
+    }
+
+    Ok(())
+}
+
+/// Execute a playlist subcommand by sending the corresponding gRPC
+/// command to the running server.
+async fn execute_playlist_action(
+    action: cli::PlaylistAction,
+    config: &CombinedSettings,
+) -> Result<()> {
+    let pid = find_active_server_process()
+        .context("No active server process found. Start the Server first.")?;
+
+    let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
+    let mut playback = ui::Playback::new(raw_client);
+
+    match action {
+        cli::PlaylistAction::Shuffle => {
+            playback.shuffle_playlist().await?;
+            println!("Shuffled playlist");
+        }
+        cli::PlaylistAction::Sort { criterion, invert } => {
+            let (criterion, direction) = criterion.into_criterion_and_direction();
+            let direction = if invert {
+                direction.invert()
+            } else {
+                direction
+            };
+            playback.sort_playlist(criterion, direction).await?;
+            println!("Sorted playlist");
+        }
+        cli::PlaylistAction::CycleLoop => {
+            let mode = playback.cycle_loop().await?;
+            println!("Loop: {}", mode.display(false));
+        }
     }
 
     Ok(())
@@ -626,14 +675,6 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
         Action::SeekBackward => {
             playback.seek_backward().await?;
             println!("Seeked backward");
-        }
-        Action::CycleLoop => {
-            let mode = playback.cycle_loop().await?;
-            println!("Loop: {}", mode.display(false));
-        }
-        Action::Shuffle => {
-            playback.shuffle_playlist().await?;
-            println!("Shuffled playlist");
         }
         Action::Quit => {
             playback.quit_server().await?;

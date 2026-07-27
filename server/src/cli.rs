@@ -69,6 +69,14 @@ impl std::fmt::Display for Backend {
 /// Subcommands for the binary
 #[derive(Subcommand, Debug)]
 pub enum Action {
+    /// Podcast management commands.
+    #[command(subcommand)]
+    Podcast(PodcastAction),
+}
+
+/// Podcast management subcommands.
+#[derive(Subcommand, Debug)]
+pub enum PodcastAction {
     /// Export Podcast feeds to a opml file.
     Export {
         #[arg(value_name = "FILE")]
@@ -79,6 +87,8 @@ pub enum Action {
         #[arg(value_name = "FILE")]
         file: PathBuf,
     },
+    /// Refresh all podcast feeds.
+    Refresh,
 }
 
 const DEFAULT_LOGFILE_FILENAME: &str = "termusic-server.log";
