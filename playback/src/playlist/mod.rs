@@ -544,8 +544,6 @@ impl Playlist {
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
-                title: track.title().map(ToOwned::to_owned),
-                duration: track.duration().unwrap_or_default(),
                 // Note: Safe unwrap, as a podcast uri is always a uri, not a path (which has been a string before)
                 trackid: PlaylistTrackSource::PodcastUrl(url.to_owned()),
             },
@@ -598,8 +596,6 @@ impl Playlist {
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
-                title: track.title().map(ToOwned::to_owned),
-                duration: track.duration().unwrap_or_default(),
                 trackid: PlaylistTrackSource::Path(track_str.to_string()),
             },
         ));
@@ -676,8 +672,6 @@ impl Playlist {
                 self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
                     PlaylistAddTrackInfo {
                         at_index: u64::try_from(self.tracks.len()).unwrap(),
-                        title: track.title().map(ToOwned::to_owned),
-                        duration: track.duration().unwrap_or_default(),
                         trackid: track_location,
                     },
                 ));
@@ -702,8 +696,6 @@ impl Playlist {
                 self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
                     PlaylistAddTrackInfo {
                         at_index: u64::try_from(at_index).unwrap(),
-                        title: track.title().map(ToOwned::to_owned),
-                        duration: track.duration().unwrap_or_default(),
                         trackid: track_location,
                     },
                 ));
@@ -981,9 +973,7 @@ impl Playlist {
 
                 Ok(player::PlaylistAddTrack {
                     at_index,
-                    duration: Some(track.duration().unwrap_or_default().into()),
                     id: Some(track_source.into()),
-                    optional_title: None,
                 })
             })
             .collect::<Result<_>>()?;

@@ -192,18 +192,6 @@ message PlaylistAddTrack {
   // If this is not at the end, all tracks at that index and after need to be shifted to make place for this new one.
   uint64 at_index = 1;
 
-  // all values below should be moved into their own "Track" message at some point
-  // instead of having the TUI fetch everything from the file itself
-  // radio title, track title
-  // the following is (linux protobuf) 3.15, ubuntu 2204 still has (linux protobuf) 3.12
-  // optional string title = 3;
-  // the following "oneof" is wire equivalent to the above "optional"
-  oneof optional_title {
-    string title = 2;
-  }
-  // TODO: allow this to be optional for unknown durations
-  Duration duration = 3;
-
   // The Id of the track that was added
   TrackId id = 4;
 }
