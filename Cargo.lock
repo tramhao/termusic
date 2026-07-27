@@ -5482,6 +5482,7 @@ dependencies = [
  "discord-rich-presence",
  "glib",
  "gstreamer",
+ "indoc",
  "libmpv-sirno",
  "log",
  "objc2",
