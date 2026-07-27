@@ -3,7 +3,6 @@ use parking_lot::RwLock;
 use pathdiff::diff_paths;
 use rand::RngExt;
 use rand::seq::SliceRandom;
-use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt::{Display, Write as _};
 use std::fs::File;
@@ -14,7 +13,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
-use termusiclib::new_database::{Database, track_ops};
+use termusiclib::new_database::Database;
 use termusiclib::player;
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistShuffledInfo;
@@ -30,12 +29,13 @@ use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::player::{SortCriterion, SortDirection};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::{MediaTypes, Track, TrackData};
-use termusiclib::utils::{
-    filetype_supported, frecency_score, get_app_config_path, get_parent_folder,
-};
+use termusiclib::utils::{filetype_supported, get_app_config_path, get_parent_folder};
 
 use crate::SharedPlaylist;
 use crate::StreamTX;
+use crate::playlist::sorting::{ScoredTrack, score_track, sort_scored};
+
+mod sorting;
 
 #[derive(Debug)]
 pub struct Playlist {
@@ -1034,7 +1034,7 @@ impl Playlist {
 
         sort_scored(&mut scored, criterion, direction);
 
-        self.tracks = scored.into_iter().map(|s| s.track).collect();
+        self.tracks = scored.into_iter().map(Into::into).collect();
         self.is_modified = true;
 
         // Restore current track index
@@ -1170,84 +1170,6 @@ impl Playlist {
         {
             debug!("Stream Event not send: No Receivers");
         }
-    }
-}
-
-/// A track paired with its sort key and title for deterministic ordering.
-struct ScoredTrack {
-    track: Track,
-    /// Primary sort key (score, duration, etc.).
-    key: f64,
-}
-
-/// Compute the sort key for a single track against the given criterion.
-#[allow(clippy::cast_precision_loss)]
-fn score_track(track: Track, criterion: SortCriterion, db: &Database, now: u64) -> ScoredTrack {
-    let key = match criterion {
-        SortCriterion::Alphanumeric => f64::NEG_INFINITY,
-        SortCriterion::Duration => track.duration().map_or(0.0, |d| d.as_secs_f64()),
-        SortCriterion::MostPlayed
-        | SortCriterion::Recency
-        | SortCriterion::FirstAdded
-        | SortCriterion::Frecency => {
-            let conn = db.get_connection();
-            let tr = track
-                .path()
-                .and_then(|p| track_ops::get_track_from_path(&conn, p).ok());
-            let (pc, lp, added) = tr.as_ref().map_or((0, None, None), |x| {
-                (x.total_play_count, x.last_played_at, x.added_at)
-            });
-
-            match criterion {
-                SortCriterion::MostPlayed => pc as f64,
-                SortCriterion::Recency => lp.map_or(f64::MIN, |v| v as f64),
-                SortCriterion::FirstAdded => added.map_or(f64::MIN, |v| v as f64),
-                SortCriterion::Frecency => frecency_score(pc, lp, now),
-                _ => unreachable!(),
-            }
-        }
-    };
-    ScoredTrack { track, key }
-}
-
-/// Apply the [`SortDirection`] to the given [`Ordering`].
-///
-/// Effectively this means it returns:
-/// - `initial` as-is if [`SortDirection::Asc`]
-/// - `initial` reversed if [`SortDirection::Desc`]
-fn apply_direction(initial: Ordering, dir: SortDirection) -> Ordering {
-    if dir == SortDirection::Desc {
-        initial.reverse()
-    } else {
-        initial
-    }
-}
-
-/// Sort a scored track list in-place according to `criterion` + `direction`.
-fn sort_scored(scored: &mut [ScoredTrack], criterion: SortCriterion, direction: SortDirection) {
-    if criterion == SortCriterion::Alphanumeric {
-        scored.sort_by(|a, b| {
-            apply_direction(
-                alphanumeric_sort::compare_str(
-                    a.track.title().unwrap_or_default(),
-                    b.track.title().unwrap_or_default(),
-                ),
-                direction,
-            )
-        });
-    } else {
-        scored.sort_by(|a, b| {
-            apply_direction(
-                a.key.partial_cmp(&b.key).unwrap_or(Ordering::Equal),
-                direction,
-            )
-            .then_with(|| {
-                alphanumeric_sort::compare_str(
-                    a.track.title().unwrap_or_default(),
-                    b.track.title().unwrap_or_default(),
-                )
-            })
-        });
     }
 }
 
