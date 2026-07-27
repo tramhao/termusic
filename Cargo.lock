@@ -5487,6 +5487,7 @@ dependencies = [
  "objc2",
  "parking_lot",
  "pathdiff",
+ "predicates",
  "pretty_assertions",
  "rand 0.10.1",
  "reqwest",
