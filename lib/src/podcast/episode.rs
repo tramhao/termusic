@@ -112,3 +112,21 @@ pub struct EpisodeNoId {
     pub duration: Option<i64>,
     pub image_url: Option<String>,
 }
+
+impl EpisodeNoId {
+    /// Create a dummy instance, similar to a [`Default`].
+    ///
+    /// This is only meant for testing.
+    #[must_use]
+    pub fn dummy() -> Self {
+        Self {
+            title: String::new(),
+            url: String::new(),
+            guid: String::new(),
+            description: String::new(),
+            pubdate: None,
+            duration: None,
+            image_url: None,
+        }
+    }
+}

@@ -102,3 +102,24 @@ pub struct PodcastNoId {
     pub episodes: Vec<EpisodeNoId>,
     pub image_url: Option<String>,
 }
+
+impl PodcastNoId {
+    /// Create a dummy instance, similar to a [`Default`].
+    ///
+    /// This is only meant for testing.
+    #[must_use]
+    pub fn dummy() -> Self {
+        let now = chrono::Local::now();
+
+        Self {
+            title: String::new(),
+            url: String::new(),
+            description: None,
+            author: None,
+            explicit: None,
+            last_checked: now.into(),
+            episodes: Vec::new(),
+            image_url: None,
+        }
+    }
+}

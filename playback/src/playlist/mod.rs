@@ -187,7 +187,9 @@ impl Playlist {
     ///
     /// See [`load`](Self::load)
     pub fn load_apply(&mut self) -> Result<()> {
-        let (current_track_index, tracks) = save_load::load()?;
+        let db_path = get_app_config_path()?;
+        let db_podcast = DBPod::new(&db_path)?;
+        let (current_track_index, tracks) = save_load::load(&get_playlist_path()?, &db_podcast)?;
         self.current_track_index = current_track_index;
         self.tracks = tracks;
         self.is_modified = false;
@@ -250,7 +252,9 @@ impl Playlist {
     ///
     /// See [`Self::load`]
     pub fn reload_tracks(&mut self) -> Result<()> {
-        let (current_track_index, tracks) = save_load::load()?;
+        let db_path = get_app_config_path()?;
+        let db_podcast = DBPod::new(&db_path)?;
+        let (current_track_index, tracks) = save_load::load(&get_playlist_path()?, &db_podcast)?;
         self.tracks = tracks;
         self.current_track_index = current_track_index;
         self.is_modified = false;
@@ -266,7 +270,7 @@ impl Playlist {
     ///
     /// Errors could happen when writing files
     pub fn save(&mut self) -> Result<()> {
-        save_load::save(self)?;
+        save_load::save(self, &get_playlist_path()?)?;
         self.is_modified = false;
 
         Ok(())
@@ -604,6 +608,16 @@ impl Playlist {
         self.is_modified = true;
 
         Ok(())
+    }
+
+    /// Add tracks for testing.
+    /// This means those Tracks may or may not exist on the file system or in the database.
+    ///
+    /// Also does not send any event.
+    #[cfg(test)]
+    fn add_track_test(&mut self, track: Track) {
+        self.tracks.push(track);
+        self.is_modified = true;
     }
 
     /// Convert [`PlaylistTrackSource`] to [`Track`] by calling the correct functions.

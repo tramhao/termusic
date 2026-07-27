@@ -265,18 +265,25 @@ impl Track {
             }
         };
 
+        Ok(Self::from_track_metadata(path, metadata))
+    }
+
+    /// Create a Track instance from the given Track Metadata.
+    ///
+    /// This is mainly meant to be used for creating dummy tracks for testing.
+    pub fn from_track_metadata<P: Into<PathBuf>>(path: P, metadata: TrackMetadata) -> Self {
         let track_data = TrackData {
-            path,
+            path: path.into(),
             album: metadata.album,
             file_type: metadata.file_type,
         };
 
-        Ok(Self {
+        Self {
             inner: MediaTypes::Track(track_data),
             duration: metadata.duration,
             title: metadata.title,
             artist: metadata.artist,
-        })
+        }
     }
 
     #[must_use]
