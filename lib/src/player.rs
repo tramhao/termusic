@@ -233,9 +233,6 @@ pub struct PlaylistAddTrackInfo {
     /// The Index at which a track was added at.
     /// If this is not at the end, all tracks at this index and beyond should be shifted.
     pub at_index: u64,
-    pub title: Option<String>,
-    /// Duration of the track
-    pub duration: PlayerTimeUnit,
     pub trackid: playlist_helpers::PlaylistTrackSource,
 }
 
@@ -292,10 +289,6 @@ impl From<UpdatePlaylistEvents> for protobuf::UpdatePlaylist {
             UpdatePlaylistEvents::PlaylistAddTrack(vals) => {
                 PPlaylistTypes::AddTrack(protobuf::PlaylistAddTrack {
                     at_index: vals.at_index,
-                    optional_title: vals
-                        .title
-                        .map(protobuf::playlist_add_track::OptionalTitle::Title),
-                    duration: Some(vals.duration.into()),
                     id: Some(vals.trackid.into()),
                 })
             }
@@ -336,11 +329,6 @@ impl TryFrom<protobuf::UpdatePlaylist> for UpdatePlaylistEvents {
         let res = match value {
             PPlaylistTypes::AddTrack(ev) => Self::PlaylistAddTrack(PlaylistAddTrackInfo {
                 at_index: ev.at_index,
-                title: ev.optional_title.map(|v| {
-                    let protobuf::playlist_add_track::OptionalTitle::Title(v) = v;
-                    v
-                }),
-                duration: unwrap_msg(ev.duration, "UpdatePlaylist.type.add_track.duration")?.into(),
                 trackid: unwrap_msg(
                     unwrap_msg(ev.id, "UpdatePlaylist.type.add_track.id")?.source,
                     "UpdatePlaylist.type.add_track.id.source",
