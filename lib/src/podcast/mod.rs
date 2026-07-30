@@ -84,6 +84,22 @@ pub enum PodcastSyncResult {
     Error(PodcastFeed),
 }
 
+/// Dispatches `check_feed` for each podcast in the provided list.
+///
+/// This is the shared core used by both the CLI `refresh_all_feeds` and the TUI's
+/// `podcast_refresh_feeds`. Each caller provides its own callback to handle sync results.
+pub fn dispatch_feed_checks(
+    feeds: Vec<PodcastFeed>,
+    max_retries: usize,
+    taskpool: &TaskPool,
+    callback: impl Fn(PodcastSyncResult) + Send + 'static + Clone,
+) {
+    for feed in feeds {
+        let cb = callback.clone();
+        check_feed(feed, max_retries, taskpool, cb);
+    }
+}
+
 /// Spawns a new task to check a feed and retrieve podcast data.
 ///
 /// If `tx_to_main` is closed, no errors will be throws and the task will continue
@@ -259,6 +275,82 @@ fn duration_to_int(duration: Option<&str>) -> Option<i32> {
         1 => times[0],
         _ => None,
     }
+}
+
+/// Refreshes all podcast feeds in the database by re-fetching their RSS data
+/// and updating existing entries with new episodes.
+pub async fn refresh_all_feeds(db_path: &Path, config: &PodcastSettings) -> Result<()> {
+    let db_inst = Database::new(db_path)?;
+    let podcasts = db_inst.get_podcasts()?;
+    let total = podcasts.len();
+
+    if total == 0 {
+        println!("No podcasts to refresh.");
+        return Ok(());
+    }
+
+    println!("Refreshing {total} podcasts...");
+
+    let taskpool = TaskPool::new(usize::from(config.concurrent_downloads_max.get()));
+    let feeds: Vec<PodcastFeed> = podcasts
+        .into_iter()
+        .map(|pod| PodcastFeed::new(Some(pod.id), pod.url.clone(), Some(pod.title.clone())))
+        .collect();
+
+    let (tx_to_main, mut rx_to_main) = unbounded_channel();
+
+    dispatch_feed_checks(
+        feeds,
+        usize::from(config.max_download_retries),
+        &taskpool,
+        move |msg| {
+            let _ = tx_to_main.send(msg);
+        },
+    );
+
+    let mut failure = false;
+    while let Some(message) = rx_to_main.recv().await {
+        match message {
+            PodcastSyncResult::FetchPodcastStart(_) => (),
+            PodcastSyncResult::SyncData((id, pod)) => {
+                let title = &pod.title;
+                match db_inst.update_podcast(id, &pod) {
+                    Ok(_) => {
+                        println!("Updated {title}");
+                    }
+                    Err(err) => {
+                        failure = true;
+                        error!("Error updating {title}, err: {err}");
+                    }
+                }
+            }
+            PodcastSyncResult::NewData(pod) => {
+                let title = &pod.title;
+                // new data for an existing podcast shouldn't normally happen,
+                // but handle it gracefully by inserting
+                match db_inst.insert_podcast(&pod) {
+                    Ok(_) => {
+                        println!("Added {title}");
+                    }
+                    Err(err) => {
+                        failure = true;
+                        error!("Error adding {title}, err: {err}");
+                    }
+                }
+            }
+            PodcastSyncResult::Error(feed) => {
+                failure = true;
+                error!("Error retrieving RSS feed: {}", feed.url);
+            }
+        }
+    }
+
+    if failure {
+        bail!("Process finished with errors.");
+    }
+    println!("Refresh successful.");
+
+    Ok(())
 }
 
 /// Imports a list of podcasts from OPML format, reading from a file. If the `replace` flag is set, this replaces all
