@@ -3,18 +3,15 @@ use parking_lot::RwLock;
 use pathdiff::diff_paths;
 use rand::RngExt;
 use rand::seq::SliceRandom;
-use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt::{Display, Write as _};
-use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
-use termusiclib::new_database::{Database, track_ops};
+use termusiclib::new_database::Database;
 use termusiclib::player;
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistShuffledInfo;
@@ -30,12 +27,14 @@ use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
 use termusiclib::player::{SortCriterion, SortDirection};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::{MediaTypes, Track, TrackData};
-use termusiclib::utils::{
-    filetype_supported, frecency_score, get_app_config_path, get_parent_folder,
-};
+use termusiclib::utils::{filetype_supported, get_app_config_path, get_parent_folder};
 
 use crate::SharedPlaylist;
 use crate::StreamTX;
+use crate::playlist::sorting::{ScoredTrack, score_track, sort_scored};
+
+mod save_load;
+mod sorting;
 
 #[derive(Debug)]
 pub struct Playlist {
@@ -182,93 +181,15 @@ impl Playlist {
         self.next_track_index.and_then(|v| self.tracks.get(v))
     }
 
-    /// Load the playlist from the file.
-    ///
-    /// Path in `$config$/playlist.log`.
-    ///
-    /// Returns `(Position, Tracks[])`.
-    ///
-    /// # Errors
-    /// - When the playlist path is not write-able
-    /// - When podcasts cannot be loaded
-    pub fn load() -> Result<(usize, Vec<Track>)> {
-        let path = get_playlist_path()?;
-
-        let Ok(file) = File::open(&path) else {
-            // new file, nothing to parse from it
-            File::create(&path)?;
-
-            return Ok((0, Vec::new()));
-        };
-
-        let reader = BufReader::new(file);
-        let mut lines = reader.lines();
-
-        let mut current_track_index = 0;
-        if let Some(line) = lines.next() {
-            let index_line = line?;
-            if let Ok(index) = index_line.trim().parse() {
-                current_track_index = index;
-            }
-        } else {
-            // empty file, nothing to parse from it
-            return Ok((0, Vec::new()));
-        }
-
-        let mut playlist_items = Vec::new();
-        let db_path = get_app_config_path()?;
-        let db_podcast = DBPod::new(&db_path)?;
-        let podcasts = db_podcast
-            .get_podcasts()
-            .with_context(|| "failed to get podcasts from db.")?;
-        for line in lines {
-            let line = line?;
-
-            let trimmed_line = line.trim();
-
-            // skip empty lines without trying to process them
-            // skip lines that are comments (m3u-like)
-            if trimmed_line.is_empty() || trimmed_line.starts_with('#') {
-                continue;
-            }
-
-            if line.starts_with("http") {
-                let mut is_podcast = false;
-                'outer: for pod in &podcasts {
-                    for ep in &pod.episodes {
-                        if ep.url == line.as_str() {
-                            is_podcast = true;
-                            let track = Track::from_podcast_episode(ep);
-                            playlist_items.push(track);
-                            break 'outer;
-                        }
-                    }
-                }
-                if !is_podcast {
-                    let track = Track::new_radio(&line);
-                    playlist_items.push(track);
-                }
-                continue;
-            }
-            if let Ok(track) = Track::read_track_from_path(&line) {
-                playlist_items.push(track);
-            }
-        }
-
-        // protect against the listed index in the playlist file not matching the elements in the playlist
-        // for example lets say it has "100", but there are only 2 elements in the playlist
-        let current_track_index = current_track_index.min(playlist_items.len().saturating_sub(1));
-
-        Ok((current_track_index, playlist_items))
-    }
-
     /// Run [`load`](Self::load), but also apply the values directly to the current instance.
     ///
     /// # Errors
     ///
     /// See [`load`](Self::load)
     pub fn load_apply(&mut self) -> Result<()> {
-        let (current_track_index, tracks) = Self::load()?;
+        let db_path = get_app_config_path()?;
+        let db_podcast = DBPod::new(&db_path)?;
+        let (current_track_index, tracks) = save_load::load(&get_playlist_path()?, &db_podcast)?;
         self.current_track_index = current_track_index;
         self.tracks = tracks;
         self.is_modified = false;
@@ -331,7 +252,9 @@ impl Playlist {
     ///
     /// See [`Self::load`]
     pub fn reload_tracks(&mut self) -> Result<()> {
-        let (current_track_index, tracks) = Self::load()?;
+        let db_path = get_app_config_path()?;
+        let db_podcast = DBPod::new(&db_path)?;
+        let (current_track_index, tracks) = save_load::load(&get_playlist_path()?, &db_podcast)?;
         self.tracks = tracks;
         self.current_track_index = current_track_index;
         self.is_modified = false;
@@ -347,29 +270,7 @@ impl Playlist {
     ///
     /// Errors could happen when writing files
     pub fn save(&mut self) -> Result<()> {
-        let path = get_playlist_path()?;
-
-        let file = File::create(&path)?;
-
-        // If the playlist is empty, truncate the file, but dont write anything else (like a index number)
-        if self.is_empty() {
-            self.is_modified = false;
-            return Ok(());
-        }
-
-        let mut writer = BufWriter::new(file);
-        writer.write_all(self.current_track_index.to_string().as_bytes())?;
-        writer.write_all(b"\n")?;
-        for track in &self.tracks {
-            let id = match track.inner() {
-                MediaTypes::Track(track_data) => track_data.path().to_string_lossy(),
-                MediaTypes::Radio(radio_track_data) => radio_track_data.url().into(),
-                MediaTypes::Podcast(podcast_track_data) => podcast_track_data.url().into(),
-            };
-            writeln!(writer, "{id}")?;
-        }
-
-        writer.flush()?;
+        save_load::save(self, &get_playlist_path()?)?;
         self.is_modified = false;
 
         Ok(())
@@ -643,8 +544,6 @@ impl Playlist {
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
-                title: track.title().map(ToOwned::to_owned),
-                duration: track.duration().unwrap_or_default(),
                 // Note: Safe unwrap, as a podcast uri is always a uri, not a path (which has been a string before)
                 trackid: PlaylistTrackSource::PodcastUrl(url.to_owned()),
             },
@@ -697,8 +596,6 @@ impl Playlist {
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
-                title: track.title().map(ToOwned::to_owned),
-                duration: track.duration().unwrap_or_default(),
                 trackid: PlaylistTrackSource::Path(track_str.to_string()),
             },
         ));
@@ -707,6 +604,16 @@ impl Playlist {
         self.is_modified = true;
 
         Ok(())
+    }
+
+    /// Add tracks for testing.
+    /// This means those Tracks may or may not exist on the file system or in the database.
+    ///
+    /// Also does not send any event.
+    #[cfg(test)]
+    fn add_track_test(&mut self, track: Track) {
+        self.tracks.push(track);
+        self.is_modified = true;
     }
 
     /// Convert [`PlaylistTrackSource`] to [`Track`] by calling the correct functions.
@@ -765,8 +672,6 @@ impl Playlist {
                 self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
                     PlaylistAddTrackInfo {
                         at_index: u64::try_from(self.tracks.len()).unwrap(),
-                        title: track.title().map(ToOwned::to_owned),
-                        duration: track.duration().unwrap_or_default(),
                         trackid: track_location,
                     },
                 ));
@@ -791,8 +696,6 @@ impl Playlist {
                 self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
                     PlaylistAddTrackInfo {
                         at_index: u64::try_from(at_index).unwrap(),
-                        title: track.title().map(ToOwned::to_owned),
-                        duration: track.duration().unwrap_or_default(),
                         trackid: track_location,
                     },
                 ));
@@ -1034,7 +937,7 @@ impl Playlist {
 
         sort_scored(&mut scored, criterion, direction);
 
-        self.tracks = scored.into_iter().map(|s| s.track).collect();
+        self.tracks = scored.into_iter().map(Into::into).collect();
         self.is_modified = true;
 
         // Restore current track index
@@ -1070,9 +973,7 @@ impl Playlist {
 
                 Ok(player::PlaylistAddTrack {
                     at_index,
-                    duration: Some(track.duration().unwrap_or_default().into()),
                     id: Some(track_source.into()),
-                    optional_title: None,
                 })
             })
             .collect::<Result<_>>()?;
@@ -1170,84 +1071,6 @@ impl Playlist {
         {
             debug!("Stream Event not send: No Receivers");
         }
-    }
-}
-
-/// A track paired with its sort key and title for deterministic ordering.
-struct ScoredTrack {
-    track: Track,
-    /// Primary sort key (score, duration, etc.).
-    key: f64,
-}
-
-/// Compute the sort key for a single track against the given criterion.
-#[allow(clippy::cast_precision_loss)]
-fn score_track(track: Track, criterion: SortCriterion, db: &Database, now: u64) -> ScoredTrack {
-    let key = match criterion {
-        SortCriterion::Alphanumeric => f64::NEG_INFINITY,
-        SortCriterion::Duration => track.duration().map_or(0.0, |d| d.as_secs_f64()),
-        SortCriterion::MostPlayed
-        | SortCriterion::Recency
-        | SortCriterion::FirstAdded
-        | SortCriterion::Frecency => {
-            let conn = db.get_connection();
-            let tr = track
-                .path()
-                .and_then(|p| track_ops::get_track_from_path(&conn, p).ok());
-            let (pc, lp, added) = tr.as_ref().map_or((0, None, None), |x| {
-                (x.total_play_count, x.last_played_at, x.added_at)
-            });
-
-            match criterion {
-                SortCriterion::MostPlayed => pc as f64,
-                SortCriterion::Recency => lp.map_or(f64::MIN, |v| v as f64),
-                SortCriterion::FirstAdded => added.map_or(f64::MIN, |v| v as f64),
-                SortCriterion::Frecency => frecency_score(pc, lp, now),
-                _ => unreachable!(),
-            }
-        }
-    };
-    ScoredTrack { track, key }
-}
-
-/// Apply the [`SortDirection`] to the given [`Ordering`].
-///
-/// Effectively this means it returns:
-/// - `initial` as-is if [`SortDirection::Asc`]
-/// - `initial` reversed if [`SortDirection::Desc`]
-fn apply_direction(initial: Ordering, dir: SortDirection) -> Ordering {
-    if dir == SortDirection::Desc {
-        initial.reverse()
-    } else {
-        initial
-    }
-}
-
-/// Sort a scored track list in-place according to `criterion` + `direction`.
-fn sort_scored(scored: &mut [ScoredTrack], criterion: SortCriterion, direction: SortDirection) {
-    if criterion == SortCriterion::Alphanumeric {
-        scored.sort_by(|a, b| {
-            apply_direction(
-                alphanumeric_sort::compare_str(
-                    a.track.title().unwrap_or_default(),
-                    b.track.title().unwrap_or_default(),
-                ),
-                direction,
-            )
-        });
-    } else {
-        scored.sort_by(|a, b| {
-            apply_direction(
-                a.key.partial_cmp(&b.key).unwrap_or(Ordering::Equal),
-                direction,
-            )
-            .then_with(|| {
-                alphanumeric_sort::compare_str(
-                    a.track.title().unwrap_or_default(),
-                    b.track.title().unwrap_or_default(),
-                )
-            })
-        });
     }
 }
 

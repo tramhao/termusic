@@ -149,6 +149,8 @@ alphanumeric-sort = "1.5.7"
 # --- Dev Dependencies ---
 criterion = "0.8"
 pretty_assertions = "1.4.1"
+assert_fs = "1.1"
+predicates = { version = "3.1", default-features = false }
 
 [profile.release]
 lto = true
