@@ -23,7 +23,9 @@
  */
 use anyhow::Result;
 use termusiclib::config::v2::server::{Backend, ComProtocol, default_uds_socket_path};
-use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
+use termusiclib::config::v2::tui::theme::styles::{
+    ColorTermusic, LoopModeDisplay, LoopModeDisplayBase,
+};
 use termusiclib::config::v2::tui::{Alignment as XywhAlign, keys::Keys};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::components::{Input, Radio};
@@ -313,11 +315,22 @@ pub struct PlaylistDisplaySymbol {
 impl PlaylistDisplaySymbol {
     pub fn new(config: SharedTuiSettings) -> Self {
         let config_r = config.read();
-        let enabled = config_r.settings.theme.style.playlist.use_loop_mode_symbol;
-        let component = common_radio_comp(&config_r, " Use symbols for playlist loop mode? ")
-            .choices(["Yes", "No"])
+        let display = config_r
+            .settings
+            .theme
+            .style
+            .playlist
+            .effective_loop_mode_display();
+        let value = match &display {
+            LoopModeDisplay::Base(LoopModeDisplayBase::BaseSymbols) => 0,
+            LoopModeDisplay::Base(LoopModeDisplayBase::NerdFont) => 1,
+            LoopModeDisplay::Base(LoopModeDisplayBase::Text) => 2,
+            LoopModeDisplay::Custom(_) => 3,
+        };
+        let component = common_radio_comp(&config_r, " Loop mode display mode? ")
+            .choices(["Base Symbols", "Nerd Font", "Text", "Custom"])
             .rewind(true)
-            .value(usize::from(!enabled));
+            .value(value);
 
         drop(config_r);
         Self { component, config }

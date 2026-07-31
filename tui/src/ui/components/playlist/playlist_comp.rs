@@ -826,20 +826,20 @@ impl Model {
     pub fn playlist_update_title(&mut self) {
         let playlist = self.playback.playlist.read();
         let duration = playlist.tracks().iter().filter_map(Track::duration).sum();
-        let display_symbol = self
+        let display = self
             .config_tui
             .read()
             .settings
             .theme
             .style
             .playlist
-            .use_loop_mode_symbol;
+            .effective_loop_mode_display();
         let loop_mode = self.config_server.read().settings.player.loop_mode;
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} \u{251c}\u{2500}",
             playlist.len(),
             DurationFmtShort(duration),
-            loop_mode.display(display_symbol),
+            display.display(loop_mode),
         );
         drop(playlist);
         self.app

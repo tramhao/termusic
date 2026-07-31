@@ -435,22 +435,14 @@ pub enum LoopMode {
 }
 
 impl LoopMode {
+    /// Return the text name of this loop mode.
     #[must_use]
-    pub fn display(self, display_symbol: bool) -> &'static str {
-        if display_symbol {
-            match self {
-                Self::Track => "🔂",
-                Self::Playlist => "🔁",
-                Self::Random => "🔀",
-                Self::PlaylistOnce => "⮕",
-            }
-        } else {
-            match self {
-                Self::Track => "track",
-                Self::Playlist => "playlist",
-                Self::Random => "random",
-                Self::PlaylistOnce => "playlist once",
-            }
+    pub fn display_text(self) -> &'static str {
+        match self {
+            Self::Track => "track",
+            Self::Playlist => "playlist",
+            Self::Random => "random",
+            Self::PlaylistOnce => "playlist once",
         }
     }
 

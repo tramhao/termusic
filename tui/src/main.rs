@@ -601,7 +601,7 @@ async fn execute_playlist_action(
         }
         cli::PlaylistAction::CycleLoop => {
             let mode = playback.cycle_loop().await?;
-            println!("Loop: {}", mode.display(false));
+            println!("Loop: {}", mode.display_text());
         }
     }
 
