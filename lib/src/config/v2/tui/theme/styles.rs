@@ -40,7 +40,7 @@ impl LoopModeDisplay {
 
 impl Default for LoopModeDisplay {
     fn default() -> Self {
-        Self::Base(LoopModeDisplayBase::BaseSymbols)
+        Self::Base(LoopModeDisplayBase::default())
     }
 }
 
@@ -73,10 +73,11 @@ impl From<LoopModeDisplayBase> for CustomLoopSymbols {
 }
 
 /// Built-in loop mode display modes.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum LoopModeDisplayBase {
     Text,
+    #[default]
     BaseSymbols,
     NerdFont,
 }
