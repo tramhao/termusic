@@ -22,6 +22,46 @@ pub enum LoopModeDisplay {
     Custom(CustomLoopSymbols),
 }
 
+impl LoopModeDisplay {
+    #[must_use]
+    pub fn display(&self, mode: LoopMode) -> &str {
+        match self {
+            Self::Base(base) => match base {
+                LoopModeDisplayBase::Text => match mode {
+                    LoopMode::Track => "track",
+                    LoopMode::Playlist => "playlist",
+                    LoopMode::Random => "random",
+                    LoopMode::PlaylistOnce => "playlist once",
+                },
+                LoopModeDisplayBase::BaseSymbols => match mode {
+                    LoopMode::Track => "🔂",
+                    LoopMode::Playlist => "🔁",
+                    LoopMode::Random => "🔀",
+                    LoopMode::PlaylistOnce => "⮕",
+                },
+                LoopModeDisplayBase::NerdFont => match mode {
+                    LoopMode::Track => nf_loop_icons::TRACK,
+                    LoopMode::Playlist => nf_loop_icons::PLAYLIST,
+                    LoopMode::Random => nf_loop_icons::RANDOM,
+                    LoopMode::PlaylistOnce => nf_loop_icons::PLAYLIST_ONCE,
+                },
+            },
+            Self::Custom(symbols) => match mode {
+                LoopMode::Track => &symbols.track,
+                LoopMode::Playlist => &symbols.playlist,
+                LoopMode::Random => &symbols.random,
+                LoopMode::PlaylistOnce => &symbols.playlist_once,
+            },
+        }
+    }
+}
+
+impl Default for LoopModeDisplay {
+    fn default() -> Self {
+        Self::Base(LoopModeDisplayBase::BaseSymbols)
+    }
+}
+
 /// User-defined symbols for each loop mode.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)]
@@ -72,45 +112,6 @@ pub enum LoopModeDisplayBase {
     NerdFont,
 }
 
-impl LoopModeDisplay {
-    #[must_use]
-    pub fn display(&self, mode: LoopMode) -> &str {
-        match self {
-            Self::Base(base) => match base {
-                LoopModeDisplayBase::Text => match mode {
-                    LoopMode::Track => "track",
-                    LoopMode::Playlist => "playlist",
-                    LoopMode::Random => "random",
-                    LoopMode::PlaylistOnce => "playlist once",
-                },
-                LoopModeDisplayBase::BaseSymbols => match mode {
-                    LoopMode::Track => "🔂",
-                    LoopMode::Playlist => "🔁",
-                    LoopMode::Random => "🔀",
-                    LoopMode::PlaylistOnce => "⮕",
-                },
-                LoopModeDisplayBase::NerdFont => match mode {
-                    LoopMode::Track => nf_loop_icons::TRACK,
-                    LoopMode::Playlist => nf_loop_icons::PLAYLIST,
-                    LoopMode::Random => nf_loop_icons::RANDOM,
-                    LoopMode::PlaylistOnce => nf_loop_icons::PLAYLIST_ONCE,
-                },
-            },
-            Self::Custom(symbols) => match mode {
-                LoopMode::Track => &symbols.track,
-                LoopMode::Playlist => &symbols.playlist,
-                LoopMode::Random => &symbols.random,
-                LoopMode::PlaylistOnce => &symbols.playlist_once,
-            },
-        }
-    }
-}
-
-impl Default for LoopModeDisplay {
-    fn default() -> Self {
-        Self::Base(LoopModeDisplayBase::BaseSymbols)
-    }
-}
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub enum ColorTermusic {
     /// Reset to Terminal default (resulting color will depend on what context it is set)
