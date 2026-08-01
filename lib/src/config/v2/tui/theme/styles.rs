@@ -264,6 +264,7 @@ pub struct StylePlaylist {
 }
 
 impl StylePlaylist {
+    // TODO: consider adding a migration trait similar to what "Keys" has as "CheckConflict"
     #[must_use]
     pub fn effective_loop_mode_display(&self) -> LoopModeDisplay {
         match self.use_loop_mode_symbol_deprecated {
