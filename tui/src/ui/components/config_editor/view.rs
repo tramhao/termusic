@@ -661,16 +661,15 @@ impl Model {
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)),
         ) {
             let playlist_style = &mut config_tui.settings.theme.style.playlist;
-            let display = match display_idx {
-                3 => match &playlist_style.loop_mode_display {
-                    LoopModeDisplay::Custom(_) => playlist_style.loop_mode_display.clone(),
-                    LoopModeDisplay::Base(base) => LoopModeDisplay::Custom(base.clone().into()),
+            playlist_style.loop_mode_display = match display_idx {
+                3 => match std::mem::take(&mut playlist_style.loop_mode_display) {
+                    LoopModeDisplay::Custom(v) => LoopModeDisplay::Custom(v),
+                    LoopModeDisplay::Base(base) => LoopModeDisplay::Custom(base.into()),
                 },
                 1 => LoopModeDisplay::Base(LoopModeDisplayBase::NerdFont),
                 2 => LoopModeDisplay::Base(LoopModeDisplayBase::Text),
                 _ => LoopModeDisplay::Base(LoopModeDisplayBase::BaseSymbols),
             };
-            playlist_style.loop_mode_display = display;
             // Clear the deprecated field so the new loop_mode_display takes effect immediately
             playlist_style.use_loop_mode_symbol_deprecated = None;
         }

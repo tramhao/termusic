@@ -73,7 +73,7 @@ impl From<LoopModeDisplayBase> for CustomLoopSymbols {
 }
 
 /// Built-in loop mode display modes.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum LoopModeDisplayBase {
     Text,
