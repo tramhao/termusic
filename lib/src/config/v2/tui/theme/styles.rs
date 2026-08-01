@@ -23,29 +23,11 @@ pub enum LoopModeDisplay {
 }
 
 impl LoopModeDisplay {
+    /// Get the text to display for the given loopmode.
     #[must_use]
     pub fn display(&self, mode: LoopMode) -> &str {
         match self {
-            Self::Base(base) => match base {
-                LoopModeDisplayBase::Text => match mode {
-                    LoopMode::Track => "track",
-                    LoopMode::Playlist => "playlist",
-                    LoopMode::Random => "random",
-                    LoopMode::PlaylistOnce => "playlist once",
-                },
-                LoopModeDisplayBase::BaseSymbols => match mode {
-                    LoopMode::Track => "🔂",
-                    LoopMode::Playlist => "🔁",
-                    LoopMode::Random => "🔀",
-                    LoopMode::PlaylistOnce => "⮕",
-                },
-                LoopModeDisplayBase::NerdFont => match mode {
-                    LoopMode::Track => nf_loop_icons::TRACK,
-                    LoopMode::Playlist => nf_loop_icons::PLAYLIST,
-                    LoopMode::Random => nf_loop_icons::RANDOM,
-                    LoopMode::PlaylistOnce => nf_loop_icons::PLAYLIST_ONCE,
-                },
-            },
+            Self::Base(base) => base.display(mode),
             Self::Custom(symbols) => match mode {
                 LoopMode::Track => &symbols.track,
                 LoopMode::Playlist => &symbols.playlist,
@@ -78,27 +60,14 @@ impl Default for CustomLoopSymbols {
     }
 }
 
+/// Convert a existing [`LoopModeDisplayBase`] to a Custom one to customize individual fields.
 impl From<LoopModeDisplayBase> for CustomLoopSymbols {
     fn from(value: LoopModeDisplayBase) -> Self {
-        match value {
-            LoopModeDisplayBase::Text => Self {
-                track: "track".into(),
-                playlist: "playlist".into(),
-                random: "random".into(),
-                playlist_once: "playlist once".into(),
-            },
-            LoopModeDisplayBase::BaseSymbols => Self {
-                track: "🔂".into(),
-                playlist: "🔁".into(),
-                random: "🔀".into(),
-                playlist_once: "⮕".into(),
-            },
-            LoopModeDisplayBase::NerdFont => Self {
-                track: nf_loop_icons::TRACK.into(),
-                playlist: nf_loop_icons::PLAYLIST.into(),
-                random: nf_loop_icons::RANDOM.into(),
-                playlist_once: nf_loop_icons::PLAYLIST_ONCE.into(),
-            },
+        Self {
+            track: value.display(LoopMode::Track).to_string(),
+            playlist: value.display(LoopMode::Playlist).to_string(),
+            random: value.display(LoopMode::Random).to_string(),
+            playlist_once: value.display(LoopMode::PlaylistOnce).to_string(),
         }
     }
 }
@@ -110,6 +79,28 @@ pub enum LoopModeDisplayBase {
     Text,
     BaseSymbols,
     NerdFont,
+}
+
+impl LoopModeDisplayBase {
+    /// Get the text to display for the given loopmode.
+    #[must_use]
+    pub fn display(&self, mode: LoopMode) -> &'static str {
+        match self {
+            LoopModeDisplayBase::Text => mode.display_text(),
+            LoopModeDisplayBase::BaseSymbols => match mode {
+                LoopMode::Track => "🔂",
+                LoopMode::Playlist => "🔁",
+                LoopMode::Random => "🔀",
+                LoopMode::PlaylistOnce => "⮕",
+            },
+            LoopModeDisplayBase::NerdFont => match mode {
+                LoopMode::Track => nf_loop_icons::TRACK,
+                LoopMode::Playlist => nf_loop_icons::PLAYLIST,
+                LoopMode::Random => nf_loop_icons::RANDOM,
+                LoopMode::PlaylistOnce => nf_loop_icons::PLAYLIST_ONCE,
+            },
+        }
+    }
 }
 
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
