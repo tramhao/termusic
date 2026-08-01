@@ -34,6 +34,7 @@ use termusiclib::config::v2::server::{
 };
 use termusiclib::config::v2::tui::Alignment as XywhAlign;
 use termusiclib::config::v2::tui::theme::ThemeColors;
+use termusiclib::config::v2::tui::theme::styles::{LoopModeDisplay, LoopModeDisplayBase};
 use termusiclib::utils::get_app_config_path;
 use tuirealm::application::Application;
 use tuirealm::props::{
@@ -656,15 +657,21 @@ impl Model {
             config_tui.settings.behavior.confirm_quit = matches!(exit_confirmation, 0);
         }
 
-        if let Ok(State::Single(StateValue::Usize(display_symbol))) = self.app.state(
+        if let Ok(State::Single(StateValue::Usize(display_idx))) = self.app.state(
             &Id::ConfigEditor(IdConfigEditor::General(IdCEGeneral::PlaylistDisplaySymbol)),
         ) {
-            config_tui
-                .settings
-                .theme
-                .style
-                .playlist
-                .use_loop_mode_symbol = matches!(display_symbol, 0);
+            let playlist_style = &mut config_tui.settings.theme.style.playlist;
+            playlist_style.loop_mode_display = match display_idx {
+                3 => match std::mem::take(&mut playlist_style.loop_mode_display) {
+                    LoopModeDisplay::Custom(v) => LoopModeDisplay::Custom(v),
+                    LoopModeDisplay::Base(base) => LoopModeDisplay::Custom(base.into()),
+                },
+                1 => LoopModeDisplay::Base(LoopModeDisplayBase::NerdFont),
+                2 => LoopModeDisplay::Base(LoopModeDisplayBase::Text),
+                _ => LoopModeDisplay::Base(LoopModeDisplayBase::BaseSymbols),
+            };
+            // Clear the deprecated field so the new loop_mode_display takes effect immediately
+            playlist_style.use_loop_mode_symbol_deprecated = None;
         }
 
         if let Ok(State::Single(StateValue::String(random_track_quantity_str))) = self.app.state(

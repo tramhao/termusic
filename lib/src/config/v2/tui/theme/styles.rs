@@ -1,7 +1,109 @@
 use serde::{Deserialize, Serialize};
 use tuirealm::props::Color;
 
-/// All values correspond to the Theme's selected color for that
+use crate::config::v2::server::LoopMode;
+
+/// Nerd Font icons for loop mode display (from the Nerd Font PUA range).
+mod nf_loop_icons {
+    pub const TRACK: &str = "\u{f0456}";
+    pub const PLAYLIST: &str = "\u{f0458}";
+    pub const RANDOM: &str = "\u{f049f}";
+    pub const PLAYLIST_ONCE: &str = "\u{f049e}";
+}
+
+/// Display mode for loop/shuffle icons in the playlist header.
+///
+/// Serialized as a string for built-in modes: `"text"`, `"base_symbols"`, `"nerd_font"`
+/// or as an object for custom: `{ "track": "...", "playlist": "...", "random": "...", "playlist_once": "..." }`
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum LoopModeDisplay {
+    Base(LoopModeDisplayBase),
+    Custom(CustomLoopSymbols),
+}
+
+impl LoopModeDisplay {
+    /// Get the text to display for the given loopmode.
+    #[must_use]
+    pub fn display(&self, mode: LoopMode) -> &str {
+        match self {
+            Self::Base(base) => base.display(mode),
+            Self::Custom(symbols) => match mode {
+                LoopMode::Track => &symbols.track,
+                LoopMode::Playlist => &symbols.playlist,
+                LoopMode::Random => &symbols.random,
+                LoopMode::PlaylistOnce => &symbols.playlist_once,
+            },
+        }
+    }
+}
+
+impl Default for LoopModeDisplay {
+    fn default() -> Self {
+        Self::Base(LoopModeDisplayBase::default())
+    }
+}
+
+/// User-defined symbols for each loop mode.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(default)]
+pub struct CustomLoopSymbols {
+    pub track: String,
+    pub playlist: String,
+    pub random: String,
+    pub playlist_once: String,
+}
+
+impl Default for CustomLoopSymbols {
+    fn default() -> Self {
+        Self::from(LoopModeDisplayBase::BaseSymbols)
+    }
+}
+
+/// Convert a existing [`LoopModeDisplayBase`] to a Custom one to customize individual fields.
+impl From<LoopModeDisplayBase> for CustomLoopSymbols {
+    fn from(value: LoopModeDisplayBase) -> Self {
+        Self {
+            track: value.display(LoopMode::Track).to_string(),
+            playlist: value.display(LoopMode::Playlist).to_string(),
+            random: value.display(LoopMode::Random).to_string(),
+            playlist_once: value.display(LoopMode::PlaylistOnce).to_string(),
+        }
+    }
+}
+
+/// Built-in loop mode display modes.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum LoopModeDisplayBase {
+    Text,
+    #[default]
+    BaseSymbols,
+    NerdFont,
+}
+
+impl LoopModeDisplayBase {
+    /// Get the text to display for the given loopmode.
+    #[must_use]
+    pub fn display(&self, mode: LoopMode) -> &'static str {
+        match self {
+            LoopModeDisplayBase::Text => mode.display_text(),
+            LoopModeDisplayBase::BaseSymbols => match mode {
+                LoopMode::Track => "🔂",
+                LoopMode::Playlist => "🔁",
+                LoopMode::Random => "🔀",
+                LoopMode::PlaylistOnce => "⮕",
+            },
+            LoopModeDisplayBase::NerdFont => match mode {
+                LoopMode::Track => nf_loop_icons::TRACK,
+                LoopMode::Playlist => nf_loop_icons::PLAYLIST,
+                LoopMode::Random => nf_loop_icons::RANDOM,
+                LoopMode::PlaylistOnce => nf_loop_icons::PLAYLIST_ONCE,
+            },
+        }
+    }
+}
+
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub enum ColorTermusic {
     /// Reset to Terminal default (resulting color will depend on what context it is set)
@@ -153,10 +255,24 @@ pub struct StylePlaylist {
     /// Playlist current playing track symbol
     pub current_track_symbol: String,
 
-    /// If enabled use a symbol for the Loop-Mode, otherwise use text
-    ///
-    /// Example: true -> "Mode: 🔁"; false -> "Mode: playlist"
-    pub use_loop_mode_symbol: bool,
+    /// Display mode for loop/shuffle icons in the playlist header.
+    pub loop_mode_display: LoopModeDisplay,
+
+    /// Deprecated: reads from `use_loop_mode_symbol` in config for backward compat.
+    #[serde(skip_serializing, rename = "use_loop_mode_symbol")]
+    pub use_loop_mode_symbol_deprecated: Option<bool>,
+}
+
+impl StylePlaylist {
+    // TODO: consider adding a migration trait similar to what "Keys" has as "CheckConflict"
+    #[must_use]
+    pub fn effective_loop_mode_display(&self) -> LoopModeDisplay {
+        match self.use_loop_mode_symbol_deprecated {
+            Some(true) => LoopModeDisplay::Base(LoopModeDisplayBase::BaseSymbols),
+            Some(false) => LoopModeDisplay::Base(LoopModeDisplayBase::Text),
+            None => self.loop_mode_display.clone(),
+        }
+    }
 }
 
 impl Default for StylePlaylist {
@@ -170,7 +286,8 @@ impl Default for StylePlaylist {
             highlight_symbol: "🚀".into(),
             current_track_symbol: "►".into(),
 
-            use_loop_mode_symbol: true,
+            loop_mode_display: LoopModeDisplay::default(),
+            use_loop_mode_symbol_deprecated: None,
         }
     }
 }
@@ -269,8 +386,8 @@ impl Default for StyleFallback {
 #[cfg(feature = "config-v1-compat")]
 mod v1_interop {
     use super::{
-        ColorTermusic, StyleFallback, StyleImportantPopup, StyleLibrary, StyleLyric, StylePlaylist,
-        StyleProgress, Styles,
+        ColorTermusic, LoopModeDisplay, LoopModeDisplayBase, StyleFallback, StyleImportantPopup,
+        StyleLibrary, StyleLyric, StylePlaylist, StyleProgress, Styles,
     };
     use crate::config::v1;
 
@@ -315,7 +432,11 @@ mod v1_interop {
 
     impl From<&v1::Settings> for StylePlaylist {
         fn from(value: &v1::Settings) -> Self {
-            let use_loop_mode_symbol = value.playlist_display_symbol;
+            let loop_mode_display = if value.playlist_display_symbol {
+                LoopModeDisplay::Base(LoopModeDisplayBase::BaseSymbols)
+            } else {
+                LoopModeDisplay::Base(LoopModeDisplayBase::Text)
+            };
             let value = &value.style_color_symbol;
             Self {
                 foreground_color: value.playlist_foreground.into(),
@@ -324,7 +445,8 @@ mod v1_interop {
                 highlight_color: value.playlist_highlight.into(),
                 highlight_symbol: value.playlist_highlight_symbol.clone(),
                 current_track_symbol: value.currently_playing_track_symbol.clone(),
-                use_loop_mode_symbol,
+                loop_mode_display,
+                use_loop_mode_symbol_deprecated: None,
             }
         }
     }
@@ -411,7 +533,8 @@ mod v1_interop {
 
                 highlight_symbol: "🚀".into(),
                 current_track_symbol: "►".into(),
-                use_loop_mode_symbol: true,
+                loop_mode_display: LoopModeDisplay::Base(LoopModeDisplayBase::BaseSymbols),
+                use_loop_mode_symbol_deprecated: None,
             };
             assert_eq!(converted.playlist, expected_playlist);
 
@@ -456,5 +579,32 @@ mod v1_interop {
                 }
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_serde_custom_loop_symbols_with_partial_config() {
+        let input = r#"{"track":"A"}"#;
+        let symbols: CustomLoopSymbols = serde_json::from_str(input).unwrap();
+        assert_eq!(symbols.track, "A");
+        assert_eq!(symbols.playlist, CustomLoopSymbols::default().playlist);
+        assert_eq!(symbols.random, CustomLoopSymbols::default().random);
+        assert_eq!(
+            symbols.playlist_once,
+            CustomLoopSymbols::default().playlist_once
+        );
+    }
+
+    #[test]
+    fn should_convert_base_display_to_custom_symbols() {
+        let nerd_font: CustomLoopSymbols = LoopModeDisplayBase::NerdFont.into();
+        assert_eq!(nerd_font.track, nf_loop_icons::TRACK);
+        assert_eq!(nerd_font.playlist, nf_loop_icons::PLAYLIST);
+        assert_eq!(nerd_font.random, nf_loop_icons::RANDOM);
+        assert_eq!(nerd_font.playlist_once, nf_loop_icons::PLAYLIST_ONCE);
     }
 }
