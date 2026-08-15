@@ -170,12 +170,16 @@ impl ColorTermusic {
     }
 }
 
-/// Mainly necessary for Native Theme
+/// Necessary for Native Theme
 impl From<ColorTermusic> for Color {
     fn from(value: ColorTermusic) -> Self {
         match value {
-            ColorTermusic::Reset => Color::Reset,
-            ColorTermusic::Background | ColorTermusic::Black => Color::Black,
+            // "Foreground" and "Background" color do not exist like that in ASCII color modes, and "Reset" is the only one to actually get those colors properly.
+            // Otherwise there is a mismatch between the terminal themes "Black" and "Background"; not all themes have them set the same.
+            ColorTermusic::Reset | ColorTermusic::Background | ColorTermusic::Foreground => {
+                Color::Reset
+            }
+            ColorTermusic::Black => Color::Black,
             ColorTermusic::Red => Color::Red,
             ColorTermusic::Green => Color::Green,
             ColorTermusic::Yellow => Color::Yellow,
@@ -190,7 +194,7 @@ impl From<ColorTermusic> for Color {
             ColorTermusic::LightBlue => Color::LightBlue,
             ColorTermusic::LightMagenta => Color::LightMagenta,
             ColorTermusic::LightCyan => Color::LightCyan,
-            ColorTermusic::Foreground | ColorTermusic::LightWhite => Color::White,
+            ColorTermusic::LightWhite => Color::White,
         }
     }
 }
