@@ -1,0 +1,28 @@
+# Not run as part of pre-commit checks because they don't handle sending the correct commit
+# range to `committed`
+name: Check PR Style
+on: [pull_request]
+
+permissions:
+  contents: read
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+  CLICOLOR: 1
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  committed:
+    name: Lint Commits
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Actions Repository
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - name: Lint Commits
+      uses: crate-ci/committed@faeed42f2e10c244533a01525f13c4d8b6ce383f # v1.1.11
