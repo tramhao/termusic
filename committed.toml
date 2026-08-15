@@ -14,7 +14,7 @@ no_fixup = true
 no_wip = true
 # We use merge commits; disabled for PRs though
 merge_commit = true
-style = "conventional"##
+style = "conventional"#
 allowed_types = [
     "fix",
     "feat",
