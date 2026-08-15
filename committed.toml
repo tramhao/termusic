@@ -26,5 +26,6 @@ allowed_types = [
     "test",
     "deps",
     "revert",
+    "merge",
 ]
 allowed_scopes = []
