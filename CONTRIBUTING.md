@@ -53,6 +53,7 @@ Specifically, we use:
    - `deps`: A Dependency update. (includes updates necessary for breaking dependency updates)
    - `docs`: Documentation update. (ex. for `README`; code should use `style` instead)
    - `chore`: Anything that does not touch the code itself and does not fall into any other category like `docs`.
+   - `test`: Changes that only touch tests (`#[cfg(test)]` blocks).
    - `revert`: A Revert commit. (may be excempt from following conventional commits)
    - `merge`: A Merge commit. (may be excempt from following conventional commits)
 2. For Scope:
