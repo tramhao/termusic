@@ -1,0 +1,31 @@
+# We currently dont enforce a subject or line length
+subject_length = 0
+hard_line_length = 0
+line_length = 0
+# We dont require the subject to be capitalized (automatically done in changelog generation)
+subject_capitalized = false
+# Subject lines are a headlines, they dont need punctuation
+subject_not_punctuated = true
+# For now, allow all subject writing
+imperative_subject = false
+# dont allow "!fixup" commits
+no_fixup = true
+# dont allow commits that contain "WIP"
+no_wip = true
+# We use merge commits; disabled for PRs though
+merge_commit = true
+style = "conventional"
+allowed_types = [
+    "fix",
+    "feat",
+    "chore",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "deps",
+    "revert",
+    "merge",
+]
+allowed_scopes = []

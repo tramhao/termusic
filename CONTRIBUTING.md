@@ -48,7 +48,8 @@ Specifically, we use:
 1. For types:
    - `feat`: Feature work, which would not fall into `refactor`, `fix` or `style`.
    - `fix`: A minor fix, which does not change much overall.
-   - `refactor`: A Code refactor that does not change the observable behavior of the code.
+   - `perf`: A change that does not change the observable behavior and is a performance fix.
+   - `refactor`: A Code refactor that does not change the observable behavior of the code. (except performance changes)
    - `style`: A style only change. (ex. `cargo clippy --fix`)
    - `deps`: A Dependency update. (includes updates necessary for breaking dependency updates)
    - `docs`: Documentation update. (ex. for `README`; code should use `style` instead)
