@@ -411,7 +411,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
                 // only check the result and advance the buffer if the send buffer is not 0-length
                 // as "written" in that case will be "Err".
                 if !exhausted_buffer {
-                    written.ok()?;
+                    written?;
                     decoder.advance_offset(decoder.get_buffer().len());
                 }
             },
@@ -426,12 +426,12 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
         let spec_len = decoder.get_spec();
         if decoder.decode_once().is_none() {
             trace!("Sending decoder EOS");
-            prod.new_eos().await.ok()?;
+            prod.new_eos().await?;
             send_eos = true;
         }
         let new_spec = decoder.get_spec();
         if spec_len != new_spec {
-            prod.new_spec(&new_spec.0, new_spec.1).await.ok()?;
+            prod.new_spec(&new_spec.0, new_spec.1).await?;
         }
     }
 }
