@@ -383,7 +383,7 @@ fn remove_downloaded_json(path: &Path, file_fullname: &str) {
     let files = walkdir::WalkDir::new(path).follow_links(true);
     for f in files
         .into_iter()
-        .filter_map(std::result::Result::ok)
+        .filter_map(Result::ok)
         .filter(|f| {
             let p = Path::new(f.file_name());
             p.extension().is_some_and(|ext| ext == "json")
@@ -422,7 +422,7 @@ fn embed_downloaded_lrc(path: &Path, file_fullname: &str) {
 
     for entry in files
         .into_iter()
-        .filter_map(std::result::Result::ok)
+        .filter_map(Result::ok)
         .filter(|f| f.file_type().is_file())
         .filter(|f| {
             let name = f.file_name();

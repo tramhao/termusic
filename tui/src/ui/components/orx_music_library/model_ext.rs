@@ -163,7 +163,7 @@ impl Model {
         let mut idx: usize = 0;
         let search = format!("*{}*", input.to_lowercase());
         let search = wildmatch::WildMatch::new(&search);
-        for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+        for record in all_items.into_iter().filter_map(Result::ok) {
             let file_name = record.path();
             if search.matches(&file_name.to_string_lossy().to_lowercase()) {
                 if idx > 0 {

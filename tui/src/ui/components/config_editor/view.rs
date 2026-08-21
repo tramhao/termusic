@@ -900,7 +900,7 @@ impl Model {
 
         if let Ok(paths) = std::fs::read_dir(path) {
             self.config_editor.themes.clear();
-            let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
+            let mut paths: Vec<_> = paths.filter_map(Result::ok).collect();
 
             paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
             for entry in paths {
