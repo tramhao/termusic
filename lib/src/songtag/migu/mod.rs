@@ -147,19 +147,20 @@ impl SongTagService for Api {
         }
     }
 
-    async fn download_recording(
+    fn download_recording(
         &self,
         song: &SongTag,
-    ) -> std::result::Result<String, super::service::SongTagServiceError<Self::Error>> {
+    ) -> impl Future<Output = Result<String, super::service::SongTagServiceError<Self::Error>>>
+    {
         // this function is to get the url for downloading, which in migu does not require extra fetching
         // so if its available, use it, otherwise report "NotSupported"
         if let Some(UrlTypes::FreeDownloadable(url)) = song.url.as_ref() {
-            return Ok(url.clone());
+            return std::future::ready(Ok(url.clone()));
         }
 
-        Err(SongTagServiceError::NotSupported(
+        std::future::ready(Err(SongTagServiceError::NotSupported(
             SongTagServiceErrorWhere::DownloadRecording,
             Self::display_name(),
-        ))
+        )))
     }
 }
