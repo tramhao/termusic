@@ -756,7 +756,7 @@ impl Model {
             let all_items = walkdir::WalkDir::new(absolute_dir).follow_links(true);
             for record in all_items
                 .into_iter()
-                .filter_map(std::result::Result::ok)
+                .filter_map(Result::ok)
                 .filter(|p| is_playlist(p.path()))
             {
                 let full_path_name = record.path().to_string_lossy().to_string();

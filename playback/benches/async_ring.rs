@@ -28,7 +28,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         runtime.block_on(async {
             loop {
                 let data = [1u8; 256];
-                if prod.write_data(&data).await.is_err() {
+                if prod.write_data(&data).await.is_none() {
                     break;
                 }
             }

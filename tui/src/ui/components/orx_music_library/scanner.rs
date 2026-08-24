@@ -88,7 +88,7 @@ fn library_dir_tree_inner(path: &Path, depth: ScanDepth, is_dir: Option<bool>) -
         && let Ok(paths) = std::fs::read_dir(path)
     {
         let mut paths: Vec<(String, (PathBuf, bool))> = paths
-            .filter_map(std::result::Result::ok)
+            .filter_map(Result::ok)
             // filter out hidden files and files without playback
             .filter(|p| {
                 !p.file_name().to_string_lossy().starts_with('.')

@@ -46,7 +46,7 @@ impl SongTagService for Api {
         keywords: &str,
         offset: u32,
         limit: u32,
-    ) -> std::result::Result<Vec<SongTag>, super::service::SongTagServiceError<Self::Error>> {
+    ) -> Result<Vec<SongTag>, super::service::SongTagServiceError<Self::Error>> {
         // let offset = offset.to_string();
         // let limit = limit.to_string();
 
@@ -74,7 +74,7 @@ impl SongTagService for Api {
     async fn get_lyrics(
         &self,
         song: &SongTag,
-    ) -> std::result::Result<String, super::service::SongTagServiceError<Self::Error>> {
+    ) -> Result<String, super::service::SongTagServiceError<Self::Error>> {
         if song.service_provider() != ServiceProvider::Migu {
             return Err(SongTagServiceError::IncorrectService(
                 song.service_provider().to_string(),
@@ -105,7 +105,7 @@ impl SongTagService for Api {
     async fn get_picture(
         &self,
         song: &SongTag,
-    ) -> std::result::Result<Picture, super::service::SongTagServiceError<Self::Error>> {
+    ) -> Result<Picture, super::service::SongTagServiceError<Self::Error>> {
         if song.service_provider() != ServiceProvider::Migu {
             return Err(SongTagServiceError::IncorrectService(
                 song.service_provider().to_string(),
@@ -147,19 +147,20 @@ impl SongTagService for Api {
         }
     }
 
-    async fn download_recording(
+    fn download_recording(
         &self,
         song: &SongTag,
-    ) -> std::result::Result<String, super::service::SongTagServiceError<Self::Error>> {
+    ) -> impl Future<Output = Result<String, super::service::SongTagServiceError<Self::Error>>>
+    {
         // this function is to get the url for downloading, which in migu does not require extra fetching
         // so if its available, use it, otherwise report "NotSupported"
         if let Some(UrlTypes::FreeDownloadable(url)) = song.url.as_ref() {
-            return Ok(url.clone());
+            return std::future::ready(Ok(url.clone()));
         }
 
-        Err(SongTagServiceError::NotSupported(
+        std::future::ready(Err(SongTagServiceError::NotSupported(
             SongTagServiceErrorWhere::DownloadRecording,
             Self::display_name(),
-        ))
+        )))
     }
 }

@@ -72,15 +72,9 @@ impl AsyncRingSourceProvider {
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
     ///
-    /// # Errors
-    ///
-    /// Ringbuffer closed and no more data available.
+    /// Returns [`None`] if the ring buffer is closed.
     #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
-    pub async fn new_spec(
-        &mut self,
-        spec: &AudioSpec,
-        current_span_len: usize,
-    ) -> Result<usize, ()> {
+    pub async fn new_spec(&mut self, spec: &AudioSpec, current_span_len: usize) -> Option<usize> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(MessageSpec::MESSAGE_SIZE)];
         // SAFETY: we allocated the exact necessary size, this can never fail
         // #[expect(
@@ -89,20 +83,18 @@ impl AsyncRingSourceProvider {
         // )]
         let _ = RingMsgWrite2::try_write_spec(spec, current_span_len, &mut msg_buf).unwrap();
 
-        self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
+        self.inner.push_exact(&msg_buf).await.ok()?;
 
-        Ok(msg_buf.len())
+        Some(msg_buf.len())
     }
 
     /// Write a new data message, without the buffer yet.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
     ///
-    /// # Errors
-    ///
-    /// Ringbuffer closed and no more data available.
+    /// Returns [`None`] if the ring buffer is closed.
     #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
-    async fn new_data(&mut self, length: usize) -> Result<usize, ()> {
+    async fn new_data(&mut self, length: usize) -> Option<usize> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(MessageDataFirst::MESSAGE_SIZE)];
         // SAFETY: we allocated the exact necessary size, this can never fail
         // #[expect(
@@ -111,11 +103,11 @@ impl AsyncRingSourceProvider {
         // )]
         let (data, _written) = RingMsgWrite2::try_write_data_first(length, &mut msg_buf).unwrap();
 
-        self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
+        self.inner.push_exact(&msg_buf).await.ok()?;
 
         self.data = Some(data);
 
-        Ok(msg_buf.len())
+        Some(msg_buf.len())
     }
 
     /// Write a buffer's content.
@@ -124,32 +116,28 @@ impl AsyncRingSourceProvider {
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
     ///
-    /// # Errors
-    ///
-    /// Ringbuffer closed and no more data available.
-    async fn write_data_inner(&mut self, data: &[u8]) -> Result<usize, ()> {
+    /// Returns [`None`] if the ring buffer is closed.
+    async fn write_data_inner(&mut self, data: &[u8]) -> Option<usize> {
         let Some(msg) = &mut self.data else {
             unimplemented!("This should be checked outside of the function");
         };
 
         let buf = &data[msg.get_range()];
-        self.inner.push_exact(buf).await.map_err(|_| ())?;
+        self.inner.push_exact(buf).await.ok()?;
         msg.advance_read(buf.len());
 
-        Ok(buf.len())
+        Some(buf.len())
     }
 
     /// Write a given buffer as a data message.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
     ///
-    /// # Errors
-    ///
-    /// Ringbuffer closed and no more data available.
+    /// Returns [`None`] if the ring buffer is closed.
     #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
-    pub async fn write_data(&mut self, data: &[u8]) -> Result<usize, ()> {
+    pub async fn write_data(&mut self, data: &[u8]) -> Option<usize> {
         if data.is_empty() {
-            return Err(());
+            return None;
         }
 
         let mut written = 0;
@@ -167,18 +155,16 @@ impl AsyncRingSourceProvider {
 
         self.data.take();
 
-        Ok(written)
+        Some(written)
     }
 
     /// Write a EOS message.
     ///
     /// Returns [`Ok(count)`](Ok) if the message is written, with the length, [`Err`] if closed.
     ///
-    /// # Errors
-    ///
-    /// Ringbuffer closed and no more data available.
+    /// Returns [`None`] if the ring buffer is closed.
     #[allow(clippy::missing_panics_doc)] // https://github.com/rust-lang/rust-clippy/issues/14534
-    pub async fn new_eos(&mut self) -> Result<usize, ()> {
+    pub async fn new_eos(&mut self) -> Option<usize> {
         let mut msg_buf = [0; RingMsgWrite2::get_msg_size(0)];
         // SAFETY: we allocated the exact necessary size, this can never fail
         // #[expect(
@@ -187,9 +173,9 @@ impl AsyncRingSourceProvider {
         // )]
         let _ = RingMsgWrite2::try_write_eos(&mut msg_buf).unwrap();
 
-        self.inner.push_exact(&msg_buf).await.map_err(|_| ())?;
+        self.inner.push_exact(&msg_buf).await.ok()?;
 
-        Ok(msg_buf.len())
+        Some(msg_buf.len())
     }
 
     /// Wait until the seek channel is dropped([`None`]) or a seek is requested([`Some`]).
@@ -878,7 +864,7 @@ mod tests {
             let written = prod.new_eos().await.unwrap();
             assert_eq!(written, RingMsgWrite2::get_msg_size(0));
 
-            prod.write_data(&[]).await.unwrap_err();
+            assert!(prod.write_data(&[]).await.is_none());
 
             // just to prevent an infinitely running test due to a deadlock
             let res = tokio::time::timeout(Duration::from_secs(3), handle)
