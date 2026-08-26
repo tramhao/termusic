@@ -475,15 +475,34 @@ impl Track {
 
         let res = LYRIC_CACHE.with_borrow_mut(|cache| {
             cache
-                .try_get_or_insert(path_key, || {
-                    let result = parse_metadata_from_file(
+                .try_get_or_insert(path_key.clone(), || {
+                    let lyric_frames = parse_metadata_from_file(
                         track_data.path(),
                         MetadataOptions {
                             lyrics: true,
                             ..Default::default()
                         },
-                    )?;
-                    let lyric_frames = result.lyric_frames.unwrap_or_default();
+                    )
+                    .and_then(|result| {
+                        result
+                            .lyric_frames
+                            .filter(|frames| !frames.is_empty())
+                            .ok_or(anyhow::format_err!("Music metadata doesn't contain lyric."))
+                    })
+                    .or_else(|e| {
+                        // Try to load lyric from .lrc file named same as track file
+                        let path = path_key.with_extension("lrc");
+                        if path.is_file() {
+                            let lyric = std::fs::read_to_string(&path)?;
+                            Ok(vec![Id3Lyrics {
+                                text: lyric,
+                                lang: String::default(),
+                                description: format!("Loaded from {}", path.display()),
+                            }])
+                        } else {
+                            Err(e)
+                        }
+                    })?;
 
                     let parsed_lyric = lyric_frames
                         .first()
