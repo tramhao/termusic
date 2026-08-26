@@ -482,27 +482,24 @@ impl Track {
                             lyrics: true,
                             ..Default::default()
                         },
-                    )
-                    .and_then(|result| {
-                        result
-                            .lyric_frames
-                            .filter(|frames| !frames.is_empty())
-                            .ok_or(anyhow::format_err!("Music metadata doesn't contain lyric."))
-                    })
-                    .or_else(|e| {
+                    )?
+                    .lyric_frames
+                    .unwrap_or_default();
+                    let lyric_frames = if !lyric_frames.is_empty() {
+                        lyric_frames
+                    } else if let path = path_key.with_extension("lrc")
+                        && path.is_file()
+                    {
                         // Try to load lyric from .lrc file named same as track file
-                        let path = path_key.with_extension("lrc");
-                        if path.is_file() {
-                            let lyric = std::fs::read_to_string(&path)?;
-                            Ok(vec![Id3Lyrics {
-                                text: lyric,
-                                lang: String::default(),
-                                description: format!("Loaded from {}", path.display()),
-                            }])
-                        } else {
-                            Err(e)
-                        }
-                    })?;
+                        let lyric = std::fs::read_to_string(&path).map_err(|e| Some(e.into()))?;
+                        vec![Id3Lyrics {
+                            text: lyric,
+                            lang: String::default(),
+                            description: format!("Loaded from {}", path.display()),
+                        }]
+                    } else {
+                        Vec::new()
+                    };
 
                     let parsed_lyric = lyric_frames
                         .first()
