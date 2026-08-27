@@ -307,7 +307,9 @@ impl Model {
                     return;
                 }
 
-                if let Ok(Some(data)) = track.get_lyrics() {
+                if let Ok(data) = track.get_lyrics()
+                    && data.parsed_lyrics.is_some()
+                {
                     self.current_track_lyric = Some(ExtraLyricData {
                         for_track: track.as_track().unwrap().path().to_owned(),
                         data: (*data).clone(),

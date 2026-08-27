@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use id3::frame::Lyrics as Id3Lyrics;
 use lofty::{file::FileType, picture::Picture};
 use lru::LruCache;
@@ -169,6 +169,15 @@ pub enum MediaTypes {
 pub struct LyricData {
     pub raw_lyrics: Vec<Id3Lyrics>,
     pub parsed_lyrics: Option<Lyric>,
+}
+
+impl LyricData {
+    /// Checks if `parsed_lyrics` is empty or not and if the parsed lyrics is empty.
+    #[inline]
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.parsed_lyrics.as_ref().is_none_or(Lyric::is_empty)
+    }
 }
 
 type PictureCache = LruCache<PathBuf, Arc<Picture>>;
@@ -469,59 +478,28 @@ impl Track {
     /// Get the lyrics data for the current Track.
     ///
     /// Only works for Music Tracks.
-    pub fn get_lyrics(&self) -> Result<Option<Arc<LyricData>>> {
+    ///
+    /// This returns a empty [`LyricData`] object if there are no lyrics found.
+    ///
+    /// To force a re-fetch from disk, unset the path in the cache first with [`Self::unset_cache_for_path`].
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if and only if the track has some kind of read error, for example, but not limited to:
+    /// - If the current track is not a Music track
+    /// - If [`parse_metadata_from_file`] returns a error
+    pub fn get_lyrics(&self) -> Result<Arc<LyricData>> {
         let Some(track_data) = self.as_track() else {
             bail!("Track is not a Music Track!");
         };
 
-        let path_key = track_data.path().to_owned();
+        let path_key = track_data.path();
 
-        let res = LYRIC_CACHE.with_borrow_mut(|cache| {
+        LYRIC_CACHE.with_borrow_mut(|cache| {
             cache
-                .try_get_or_insert(path_key.clone(), || {
-                    let lyric_frames = parse_metadata_from_file(
-                        track_data.path(),
-                        MetadataOptions {
-                            lyrics: true,
-                            ..Default::default()
-                        },
-                    )?
-                    .lyric_frames
-                    .unwrap_or_default();
-                    let lyric_frames = if !lyric_frames.is_empty() {
-                        lyric_frames
-                    } else if let path = path_key.with_extension("lrc")
-                        && path.is_file()
-                    {
-                        // Try to load lyric from .lrc file named same as track file
-                        let lyric = std::fs::read_to_string(&path).map_err(|e| Some(e.into()))?;
-                        vec![Id3Lyrics {
-                            text: lyric,
-                            lang: String::default(),
-                            description: format!("Loaded from {}", path.display()),
-                        }]
-                    } else {
-                        Vec::new()
-                    };
-
-                    let parsed_lyric = lyric_frames
-                        .first()
-                        .and_then(|frame| Lyric::from_str(&frame.text).ok());
-
-                    Ok(Arc::new(LyricData {
-                        raw_lyrics: lyric_frames,
-                        parsed_lyrics: parsed_lyric,
-                    }))
-                })
+                .try_get_or_insert(path_key.to_owned(), || fetch_lyrics(path_key))
                 .cloned()
-        });
-
-        // this has to be done as LruCache::try_get_or_insert enforces that the Ok result is the value itself, no mapping can be done.
-        match res {
-            Ok(v) => Ok(Some(v)),
-            Err(None) => Ok(None),
-            Err(Some(err)) => Err(err),
-        }
+        })
     }
 
     /// Remove the given path from the Lyric parse cache, forcing a reload upon next access.
@@ -532,6 +510,52 @@ impl Track {
             cache.pop(path);
         });
     }
+}
+
+/// Fetch the lyrics data for the given Track path.
+///
+/// This returns a empty [`LyricData`] object if there are no Lyrics found.
+///
+/// # Errors
+///
+/// Returns `Err` if and only if the track has some kind of read error, for example, but not limited to:
+/// - If [`parse_metadata_from_file`] returns a error
+fn fetch_lyrics(path: &Path) -> Result<Arc<LyricData>> {
+    let lyric_frames = parse_metadata_from_file(
+        path,
+        MetadataOptions {
+            lyrics: true,
+            ..Default::default()
+        },
+    )?;
+    let lyric_frames = lyric_frames.lyric_frames.unwrap_or_default();
+
+    let lyric_frames = if lyric_frames.is_empty()
+        && let lrc_path = path.with_extension("lrc")
+        && lrc_path.is_file()
+    {
+        // Try to load lyric from .lrc file named same as track file
+        #[expect(clippy::unnecessary_debug_formatting)] // we want the path to be escaped here
+        let lyric = std::fs::read_to_string(&lrc_path)
+            .with_context(|| format!("Reading lyric file {lrc_path:#?}"))?;
+        vec![Id3Lyrics {
+            text: lyric,
+            // we dont need to give extra metadata, as only the text is relevant below
+            lang: String::new(),
+            description: String::new(),
+        }]
+    } else {
+        lyric_frames
+    };
+
+    let parsed_lyric = lyric_frames
+        .first()
+        .and_then(|frame| Lyric::from_str(&frame.text).ok());
+
+    Ok(Arc::new(LyricData {
+        raw_lyrics: lyric_frames,
+        parsed_lyrics: parsed_lyric,
+    }))
 }
 
 impl PartialEq<PlaylistTrackSource> for &Track {

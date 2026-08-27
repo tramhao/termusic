@@ -44,6 +44,13 @@ pub struct Caption {
 }
 
 impl Lyric {
+    /// Checks if the stored captions array is empty.
+    #[inline]
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.captions.is_empty()
+    }
+
     /// Get the lyric text at `time` or next lowest (in seconds)
     ///
     /// `time` is adjusted by +2 seconds.
