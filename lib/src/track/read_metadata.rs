@@ -179,6 +179,14 @@ pub struct FileTimes {
 }
 
 /// Try to parse all specified metadata in the given `options`.
+///
+/// # Errors
+///
+/// Returns a error if:
+/// - Path does not exist
+/// - There is a read / seek error
+/// - lofty cannot determine the file type
+/// - The metadata contains invalid data
 pub fn parse_metadata_from_file(
     path: &Path,
     options: MetadataOptions<'_>,

@@ -162,6 +162,9 @@ pub enum MediaTypes {
     Podcast(PodcastTrackData),
 }
 
+/// Stores the Lyric data for the cache.
+///
+/// Invariant: `parsed_lyrics` needs to be present at struct creation time if there is going to be one.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LyricData {
     pub raw_lyrics: Vec<Id3Lyrics>,
