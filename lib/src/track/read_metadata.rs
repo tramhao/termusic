@@ -320,7 +320,11 @@ fn split_artists<'a>(
 
 /// Fetch all lyrics from the given Lofty tag into the given array.
 fn get_lyrics_from_tags(tag: &LoftyTag, lyric_frames: &mut Vec<Id3Lyrics>) {
-    let lyrics = tag.get_items(ItemKey::Lyrics);
+    // NOTE: despite what the lofty documentation currently says about "ItemKey::Lyrics" containg *both* synced and unsynced lyrics
+    // It *DOES NOT* contain unsynced lyrics!
+    // It seems like this mapping was removed in lofty 0.23.3 for id3v2, which are used for mp3.
+
+    let lyrics = tag.get_items(ItemKey::UnsyncLyrics);
     for lyric in lyrics {
         if let ItemValue::Text(lyrics_text) = lyric.value() {
             lyric_frames.push(Id3Lyrics {
