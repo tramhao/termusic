@@ -307,10 +307,26 @@ impl Model {
                     return;
                 }
 
-                if let Ok(Some(data)) = track.get_lyrics() {
+                let lyrics = match track.get_lyrics() {
+                    Err(err) => {
+                        // we want a escaped path here
+                        #[expect(clippy::unnecessary_debug_formatting)]
+                        {
+                            error!(
+                                "Failed fetching lyric data for {:#?}: {err}",
+                                track.as_track().unwrap().path()
+                            );
+                        }
+                        self.lyric_set_lyric(NO_LYRICS);
+                        return;
+                    }
+                    Ok(v) => v,
+                };
+
+                if lyrics.parsed_lyrics.is_some() {
                     self.current_track_lyric = Some(ExtraLyricData {
                         for_track: track.as_track().unwrap().path().to_owned(),
-                        data: (*data).clone(),
+                        data: (*lyrics).clone(),
                         selected_idx: 0,
                     });
                 } else {

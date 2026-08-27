@@ -1,19 +1,22 @@
-// Package downloaded lyrics from different websites and embed them into an MP3 file.
-// lrc file is used to parse lrc file into subtitle. Similar to subtitles package
-// [al:''Album where the song is from'']
-// [ar:''Lyrics artist'']
-// [by:''Creator of the LRC file'']
-// [offset:''+/- Overall timestamp adjustment in milliseconds, + shifts time up, - shifts down'']
-// [re:''The player or editor that creates LRC file'']
-// [ti:''Lyrics (song) title'']
-// [ve:''version of program'']
-// [ti:Let's Twist Again]
-// [ar:Chubby Checker oppure  Beatles, The]
-// [au:Written by Kal Mann / Dave Appell, 1961]
-// [al:Hits Of The 60's - Vol. 2 – Oldies]
-// [00:12.00]Lyrics beginning ...
-// [00:15.30]Some more lyrics ...
+//! Lyric(LRC) file parsing, writing and manipulating.
+//! Example LRC content:
+//! ```lrc
+//! [al:''Album where the song is from'']
+//! [ar:''Lyrics artist'']
+//! [by:''Creator of the LRC file'']
+//! [offset:''+/- Overall timestamp adjustment in milliseconds, + shifts time up, - shifts down'']
+//! [re:''The player or editor that creates LRC file'']
+//! [ti:''Lyrics (song) title'']
+//! [ve:''version of program'']
+//! [ti:Let's Twist Again]
+//! [ar:Chubby Checker oppure  Beatles, The]
+//! [au:Written by Kal Mann / Dave Appell, 1961]
+//! [al:Hits Of The 60's - Vol. 2 – Oldies]
+//! [00:12.00]Lyrics beginning ...
+//! [00:15.30]Some more lyrics ...
+//! ```
 use anyhow::Result;
+use std::convert::Infallible;
 use std::fmt::{Error as FmtError, Write};
 use std::str::FromStr;
 use std::time::Duration;
@@ -41,6 +44,13 @@ pub struct Caption {
 }
 
 impl Lyric {
+    /// Checks if the stored captions array is empty.
+    #[inline]
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.captions.is_empty()
+    }
+
     /// Get the lyric text at `time` or next lowest (in seconds)
     ///
     /// `time` is adjusted by +2 seconds.
@@ -237,7 +247,7 @@ fn time_lrc(time_stamp: u64) -> impl std::fmt::Display {
 }
 
 impl FromStr for Lyric {
-    type Err = ();
+    type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut offset: i64 = 0;
