@@ -73,7 +73,7 @@ impl MusicLibData {
             is_dir,
             is_loading: false,
             is_error: false,
-            as_str: OnceCell::default(),
+            as_str: cell,
         }
     }
 }
