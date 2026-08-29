@@ -5,7 +5,6 @@ use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
-use termusiclib::utils::get_app_config_path;
 
 use crate::ui::Model;
 use crate::ui::components::CEHeader;
@@ -71,6 +70,8 @@ impl Model {
                         if both_ok {
                             self.command(TuiCmd::ReloadConfig);
 
+                            self.refresh_static_theme_components();
+
                             // only exit config editor if saving was successful
                             self.umount_config_editor();
                         }
@@ -126,40 +127,10 @@ impl Model {
 
     /// Preview theme at Table index
     fn preview_theme(&mut self, index: usize) {
-        // table entry 0 is termusic default
-        if index == 0 {
-            self.preview_theme_apply(ThemeColors::full_default(), 0);
-
+        let Some(theme) = self.resolve_theme_by_index(index) else {
             return;
-        }
-        if index == 1 {
-            self.preview_theme_apply(ThemeColors::full_native(), 1);
-
-            return;
-        }
-
-        // idx - THEMES_WITHOUT_FILES as 0 until THEMES_WITHOUT_FILES table-entries are termusic themes without files, which always exists
-        if let Some(theme_filename) = self.config_editor.themes.get(index - THEMES_WITHOUT_FILES) {
-            match get_app_config_path() {
-                Ok(mut theme_path) => {
-                    theme_path.push("themes");
-                    theme_path.push(format!("{theme_filename}.yml"));
-                    match ThemeColors::from_yaml_file(&theme_path) {
-                        Ok(mut theme) => {
-                            theme.file_name = Some(theme_filename.clone());
-
-                            self.preview_theme_apply(theme, index);
-                        }
-                        Err(e) => {
-                            error!("Failed to load theme colors: {e:?}");
-                        }
-                    }
-                }
-                Err(e) => {
-                    error!("Error getting config path: {e:?}");
-                }
-            }
-        }
+        };
+        self.preview_theme_apply(theme, index);
     }
 
     /// Apply the given theme as a preview

@@ -2,16 +2,22 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::{Result, anyhow};
+use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
+use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::player::{
     PlayerProgress, RunningStatus, UpdateEvents, UpdatePlaylistEvents, clamp_u16,
 };
 use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
+use termusiclib::utils::get_app_config_path;
 use tokio::runtime::Handle;
 use tokio::time::sleep;
+use tuirealm::event::Event;
 use tuirealm::props::{AttrValueRef, Attribute, QueryResult};
 
+use crate::ui::components::update::THEMES_WITHOUT_FILES;
 use crate::ui::ids::Id;
+use crate::ui::model::UserEvent;
 use crate::ui::model::youtube_options::YTDLMsg;
 use crate::ui::msg::{
     CoverDLResult, DBMsg, DeleteConfirmMsg, ErrorPopupMsg, GSMsg, HelpPopupMsg, LIMsg, LyricMsg,
@@ -73,6 +79,7 @@ impl Model {
             Msg::StreamUpdate(msg) => self.update_events_msg(msg),
 
             Msg::ForceRedraw => (),
+            Msg::ChangeTheme(index) => self.change_theme(index),
         }
     }
 }
@@ -1267,5 +1274,86 @@ impl Model {
         }
 
         Ok(())
+    }
+
+    /// Apply and persist a theme globally (used outside of the Config Editor preview flow).
+    fn change_theme(&mut self, index: usize) {
+        let Some(theme) = self.resolve_theme_by_index(index) else {
+            return;
+        };
+
+        self.config_tui.write().settings.theme.theme = theme;
+        self.redraw = true;
+
+        self.refresh_static_theme_components();
+
+        let save_result = {
+            let config = self.config_tui.read();
+            TuiConfigVersionedDefaulted::save_config_path(&config.settings)
+        };
+        if let Err(e) = save_result {
+            self.mount_error_popup(e.context("save theme"));
+        }
+    }
+
+    /// Re-apply theme colors to components that bake style in at mount time
+    /// and don't otherwise re-read `config_tui` on every render (unlike e.g. Playlist).
+    ///
+    /// Called both from [`change_theme`](Self::change_theme) and from the Config
+    /// Editor's save path (`ConfigEditorMsg::ConfigSaveOk`).
+    ///
+    /// Every such component is notified through its own `on()` (the same path
+    /// tui-realm uses for every other event) instead of being downcast to its
+    /// concrete type: the Model only needs each `Id` and the generic
+    /// `AppComponent::on` trait method, never the underlying struct. This is why
+    /// this is the *only* place that needs to know the full list of `Id`s -- it
+    /// never needs to import `MessagePopup`, `FeedsList`, etc.
+    ///
+    /// The `0` passed below is a placeholder: none of these components read the
+    /// index out of `Msg::ChangeTheme`, they only check that a theme change
+    /// happened and then re-read the *current* theme from their own stored config.
+    pub fn refresh_static_theme_components(&mut self) {
+        let ev = Event::User(UserEvent::Forward(Msg::ChangeTheme(0)));
+
+        for id in [Id::Library, Id::Podcast, Id::Episode, Id::MessagePopup] {
+            if let Some(component) = self.app.get_component_mut(&id) {
+                component.on(&ev);
+            }
+        }
+    }
+
+    pub(crate) fn resolve_theme_by_index(&self, index: usize) -> Option<ThemeColors> {
+        if index == 0 {
+            return Some(ThemeColors::full_default());
+        }
+        if index == 1 {
+            return Some(ThemeColors::full_native());
+        }
+
+        let theme_filename = self
+            .config_editor
+            .themes
+            .get(index - THEMES_WITHOUT_FILES)?;
+
+        match get_app_config_path() {
+            Ok(mut theme_path) => {
+                theme_path.push("themes");
+                theme_path.push(format!("{theme_filename}.yml"));
+                match ThemeColors::from_yaml_file(&theme_path) {
+                    Ok(mut theme) => {
+                        theme.file_name = Some(theme_filename.clone());
+                        Some(theme)
+                    }
+                    Err(e) => {
+                        error!("Failed to load theme colors: {e:?}");
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                error!("Error getting config path: {e:?}");
+                None
+            }
+        }
     }
 }

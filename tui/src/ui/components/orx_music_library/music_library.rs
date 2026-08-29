@@ -736,6 +736,30 @@ impl OrxMusicLibraryComponent {
             _ => None,
         }
     }
+
+    /// Re-apply the current theme's styling to this component, without losing
+    /// the currently loaded tree / selection (unlike a full remount).
+    #[expect(unsafe_code)]
+    pub fn refresh_theme(&mut self, config: &TuiOverlay) {
+        let selected_idx = self.component.get_current_selected_node().map(|n| n.idx());
+
+        let mut fresh = Self::get_inner_comp(config);
+
+        // Swap the actual tree data into the freshly-styled component,
+        // leaving an empty tree behind in the old one (which is dropped right after).
+        // TODO: Need better way than std::mem::swap?
+        unsafe {
+            std::mem::swap(self.component.get_tree_mut(), fresh.get_tree_mut());
+        }
+
+        self.component = fresh;
+
+        if let Some(idx) = selected_idx {
+            self.component.select(idx);
+            self.component.open_all_parents(idx);
+            self.component.open(idx);
+        }
+    }
 }
 
 impl AppComponent<Msg, UserEvent> for OrxMusicLibraryComponent {
@@ -743,6 +767,11 @@ impl AppComponent<Msg, UserEvent> for OrxMusicLibraryComponent {
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
             return self.handle_user_events(ev);
+        }
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ChangeTheme(_)))) {
+            let config = self.config.clone();
+            self.refresh_theme(&config.read());
+            return Some(Msg::ForceRedraw);
         }
 
         let config = self.config.clone();

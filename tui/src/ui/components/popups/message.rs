@@ -4,8 +4,8 @@ use tuirealm::{
     component::{AppComponent, Component},
     event::Event,
     props::{
-        AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment, PropPayloadRef,
-        QueryResult, TextModifiers, TextStatic, Title,
+        AttrValue, AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment,
+        PropPayloadRef, QueryResult, TextModifiers, TextStatic, Title,
     },
 };
 
@@ -16,6 +16,7 @@ use crate::ui::msg::Msg;
 #[derive(Component)]
 pub struct MessagePopup {
     component: Paragraph,
+    config: SharedTuiSettings,
 }
 
 impl MessagePopup {
@@ -25,35 +26,76 @@ impl MessagePopup {
         msg: V,
     ) -> Self {
         let config_tui = config.read_recursive();
+        let component = Paragraph::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_tui
+                            .settings
+                            .theme
+                            .get_color_from_theme(ColorTermusic::Cyan),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .foreground(
+                config_tui
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::Green),
+            )
+            .background(config_tui.settings.theme.library_background())
+            .modifiers(TextModifiers::BOLD)
+            .alignment_horizontal(HorizontalAlignment::Center)
+            .title(title.into().alignment(HorizontalAlignment::Center))
+            .text(msg.into());
+
         Self {
-            component: Paragraph::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config_tui
-                                .settings
-                                .theme
-                                .get_color_from_theme(ColorTermusic::Cyan),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(
-                    config_tui
-                        .settings
-                        .theme
-                        .get_color_from_theme(ColorTermusic::Green),
-                )
-                .background(config_tui.settings.theme.library_background())
-                .modifiers(TextModifiers::BOLD)
-                .alignment_horizontal(HorizontalAlignment::Center)
-                .title(title.into().alignment(HorizontalAlignment::Center))
-                .text(msg.into()),
+            component,
+            config: config.clone(),
         }
+    }
+
+    /// Re-apply the current theme's colors to this already-mounted popup, without
+    /// touching its currently displayed title / text.
+    fn refresh_theme(&mut self) {
+        let config_tui = self.config.read_recursive();
+
+        self.component.attr(
+            Attribute::Borders,
+            AttrValue::Borders(
+                Borders::default()
+                    .color(
+                        config_tui
+                            .settings
+                            .theme
+                            .get_color_from_theme(ColorTermusic::Cyan),
+                    )
+                    .modifiers(BorderType::Rounded),
+            ),
+        );
+        self.component.attr(
+            Attribute::Foreground,
+            AttrValue::Color(
+                config_tui
+                    .settings
+                    .theme
+                    .get_color_from_theme(ColorTermusic::Green),
+            ),
+        );
+        self.component.attr(
+            Attribute::Background,
+            AttrValue::Color(config_tui.settings.theme.library_background()),
+        );
     }
 }
 
 impl AppComponent<Msg, UserEvent> for MessagePopup {
-    fn on(&mut self, _ev: &Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ChangeTheme(_)))) {
+            self.refresh_theme();
+            return Some(Msg::ForceRedraw);
+        }
+
         None
     }
 }

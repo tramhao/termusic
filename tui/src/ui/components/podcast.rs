@@ -70,11 +70,43 @@ impl FeedsList {
             config,
         }
     }
+
+    pub fn refresh_theme(&mut self, config: &SharedTuiSettings) {
+        let rows = self
+            .component
+            .query(Attribute::Text)
+            .map(tuirealm::props::QueryResult::into_owned);
+
+        let selected = match self.component.state() {
+            State::Single(StateValue::Usize(idx)) => Some(idx),
+            _ => None,
+        };
+
+        *self = Self::new(
+            config.clone(),
+            self.on_key_tab.clone(),
+            self.on_key_backtab.clone(),
+        );
+
+        if let Some(rows) = rows {
+            self.component.attr(Attribute::Text, rows);
+        }
+        if let Some(idx) = selected {
+            self.component
+                .attr(Attribute::Value, AttrValue::Number(idx.cast_signed()));
+        }
+    }
 }
 
 impl AppComponent<Msg, UserEvent> for FeedsList {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ChangeTheme(_)))) {
+            let config = self.config.clone();
+            self.refresh_theme(&config);
+            return Some(Msg::ForceRedraw);
+        }
+
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
@@ -243,11 +275,43 @@ impl EpisodeList {
             config,
         }
     }
+
+    pub fn refresh_theme(&mut self, config: &SharedTuiSettings) {
+        let rows = self
+            .component
+            .query(Attribute::Text)
+            .map(tuirealm::props::QueryResult::into_owned);
+
+        let selected = match self.component.state() {
+            State::Single(StateValue::Usize(idx)) => Some(idx),
+            _ => None,
+        };
+
+        *self = Self::new(
+            config.clone(),
+            self.on_key_tab.clone(),
+            self.on_key_backtab.clone(),
+        );
+
+        if let Some(rows) = rows {
+            self.component.attr(Attribute::Text, rows);
+        }
+        if let Some(idx) = selected {
+            self.component
+                .attr(Attribute::Value, AttrValue::Number(idx.cast_signed()));
+        }
+    }
 }
 
 impl AppComponent<Msg, UserEvent> for EpisodeList {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ChangeTheme(_)))) {
+            let config = self.config.clone();
+            self.refresh_theme(&config);
+            return Some(Msg::ForceRedraw);
+        }
+
         let config = self.config.clone();
         let keys = &config.read().settings.keys;
         let cmd_result = match ev {
