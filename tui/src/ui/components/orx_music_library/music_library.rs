@@ -162,10 +162,12 @@ pub struct OrxMusicLibraryComponent {
 }
 
 impl OrxMusicLibraryComponent {
-    fn get_inner_comp(config: &TuiOverlay) -> TreeView<MusicLibData> {
-        // TODO: this component should either remount or listen to style changes and apply them
-        TreeView::<MusicLibData>::default()
-            .background(config.settings.theme.library_background())
+    /// Apply theme-derived styling onto a TreeView instance, in place.
+    fn apply_theme_style(
+        comp: TreeView<MusicLibData>,
+        config: &TuiOverlay,
+    ) -> TreeView<MusicLibData> {
+        comp.background(config.settings.theme.library_background())
             .foreground(config.settings.theme.library_foreground())
             .border(
                 Borders::default()
@@ -186,6 +188,10 @@ impl OrxMusicLibraryComponent {
             .highlight_style_inactive(STYLE_REMOVE_REVERSE)
             .highlight_symbol(config.settings.theme.style.library.highlight_symbol.clone())
             .empty_tree_text(LOADING_TREE_TEXT)
+    }
+
+    fn get_inner_comp(config: &TuiOverlay) -> TreeView<MusicLibData> {
+        Self::apply_theme_style(TreeView::<MusicLibData>::default(), config)
     }
 
     /// Get a new empty instance, which shows "Loading..." while empty.
@@ -739,26 +745,9 @@ impl OrxMusicLibraryComponent {
 
     /// Re-apply the current theme's styling to this component, without losing
     /// the currently loaded tree / selection (unlike a full remount).
-    #[expect(unsafe_code)]
     pub fn refresh_theme(&mut self, config: &TuiOverlay) {
-        let selected_idx = self.component.get_current_selected_node().map(|n| n.idx());
-
-        let mut fresh = Self::get_inner_comp(config);
-
-        // Swap the actual tree data into the freshly-styled component,
-        // leaving an empty tree behind in the old one (which is dropped right after).
-        // TODO: Need better way than std::mem::swap?
-        unsafe {
-            std::mem::swap(self.component.get_tree_mut(), fresh.get_tree_mut());
-        }
-
-        self.component = fresh;
-
-        if let Some(idx) = selected_idx {
-            self.component.select(idx);
-            self.component.open_all_parents(idx);
-            self.component.open(idx);
-        }
+        let moved = std::mem::take(&mut self.component);
+        self.component = Self::apply_theme_style(moved, config);
     }
 }
 
