@@ -162,7 +162,7 @@ pub struct OrxMusicLibraryComponent {
 }
 
 impl OrxMusicLibraryComponent {
-    /// Apply theme-derived styling onto a TreeView instance, in place.
+    /// Apply theme-derived styling onto a `TreeView` instance, in place.
     fn apply_theme_style(
         comp: TreeView<MusicLibData>,
         config: &TuiOverlay,

@@ -5,16 +5,22 @@ use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
+use termusiclib::utils::get_app_config_path;
+use tuirealm::event::Event;
 
 use crate::ui::Model;
 use crate::ui::components::CEHeader;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
+use crate::ui::model::UserEvent;
 use crate::ui::msg::{
     CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, ConfigEditorMsg, GENERAL_FOCUS_ORDER,
-    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, THEME_COLOR_ITEM_FOCUS_ORDER_START,
+    KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg, THEME_COLOR_ITEM_FOCUS_ORDER_START,
     THEME_FOCUS_ORDER,
 };
 use crate::ui::tui_cmd::TuiCmd;
+
+/// How many Themes there are without actual files and always exist
+pub const THEMES_WITHOUT_FILES: usize = 2;
 
 impl Model {
     #[allow(clippy::too_many_lines)]
@@ -68,7 +74,6 @@ impl Model {
                             self.command(TuiCmd::ReloadConfig);
 
                             self.refresh_static_theme_components();
-
                             // only exit config editor if saving was successful
                             self.umount_config_editor();
                         }
@@ -122,12 +127,54 @@ impl Model {
         }
     }
 
+    /// Re-apply theme colors to components that bake style in at mount time
+    /// and don't otherwise re-read `config_tui` on every render (unlike e.g. Playlist).
+    fn refresh_static_theme_components(&mut self) {
+        let ev = Event::User(UserEvent::Forward(Msg::ReloadTheme));
+
+        for id in [Id::Library, Id::Podcast, Id::Episode, Id::MessagePopup] {
+            if let Some(component) = self.app.get_component_mut(&id) {
+                component.on(&ev);
+            }
+        }
+    }
+
     /// Preview theme at Table index
     fn preview_theme(&mut self, index: usize) {
-        let Some(theme) = self.resolve_theme_by_index(index) else {
+        // table entry 0 is termusic default
+        if index == 0 {
+            self.preview_theme_apply(ThemeColors::full_default(), 0);
+
             return;
-        };
-        self.preview_theme_apply(theme, index);
+        }
+        if index == 1 {
+            self.preview_theme_apply(ThemeColors::full_native(), 1);
+
+            return;
+        }
+
+        // idx - THEMES_WITHOUT_FILES as 0 until THEMES_WITHOUT_FILES table-entries are termusic themes without files, which always exists
+        if let Some(theme_filename) = self.config_editor.themes.get(index - THEMES_WITHOUT_FILES) {
+            match get_app_config_path() {
+                Ok(mut theme_path) => {
+                    theme_path.push("themes");
+                    theme_path.push(format!("{theme_filename}.yml"));
+                    match ThemeColors::from_yaml_file(&theme_path) {
+                        Ok(mut theme) => {
+                            theme.file_name = Some(theme_filename.clone());
+
+                            self.preview_theme_apply(theme, index);
+                        }
+                        Err(e) => {
+                            error!("Failed to load theme colors: {e:?}");
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!("Error getting config path: {e:?}");
+                }
+            }
+        }
     }
 
     /// Apply the given theme as a preview

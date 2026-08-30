@@ -427,9 +427,6 @@ impl ThemeColors {
             bright: ThemeBright::native(),
         }
     }
-
-    /// How many Themes there are without actual files and always exist
-    pub const THEMES_WITHOUT_FILES: usize = 2;
 }
 
 /// Error for when [`ThemeColors`] parsing fails
