@@ -47,7 +47,6 @@ use tuirealm::state::{State, StateValue};
 use tuirealm::terminal::TerminalAdapter;
 
 use crate::ui::components::ConfigSavePopup;
-use crate::ui::components::config_editor::update::THEMES_WITHOUT_FILES;
 use crate::ui::components::raw::dynamic_height_grid::DynamicHeightGrid;
 use crate::ui::components::raw::uniform_dynamic_grid::UniformDynamicGrid;
 use crate::ui::ids::{Id, IdCEGeneral, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
@@ -937,7 +936,9 @@ impl Model {
 
             // idx + X as 0 until X entries are termusic default, always existing themes
             table
-                .add_col(LineStatic::from((idx + THEMES_WITHOUT_FILES).to_string()))
+                .add_col(LineStatic::from(
+                    (idx + ThemeColors::THEMES_WITHOUT_FILES).to_string(),
+                ))
                 .add_col(LineStatic::from(record.clone()));
         }
 
@@ -959,7 +960,7 @@ impl Model {
                 for (idx, name) in self.config_editor.themes.iter().enumerate() {
                     if name == current_file_name {
                         // idx + X as 0 until X entries are termusic default, always existing themes
-                        index = Some(idx + THEMES_WITHOUT_FILES);
+                        index = Some(idx + ThemeColors::THEMES_WITHOUT_FILES);
                         break;
                     }
                 }

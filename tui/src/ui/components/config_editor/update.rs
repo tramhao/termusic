@@ -16,9 +16,6 @@ use crate::ui::msg::{
 };
 use crate::ui::tui_cmd::TuiCmd;
 
-/// How many Themes there are without actual files and always exist
-pub const THEMES_WITHOUT_FILES: usize = 2;
-
 impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn update_config_editor(&mut self, msg: ConfigEditorMsg) {

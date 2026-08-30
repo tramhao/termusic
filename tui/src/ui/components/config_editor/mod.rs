@@ -38,7 +38,7 @@ use crate::ui::msg::{ConfigEditorLayout, ConfigEditorMsg, Msg};
 mod color;
 mod general;
 mod key_combo;
-pub(crate) mod update;
+mod update;
 mod view;
 
 #[derive(Component)]

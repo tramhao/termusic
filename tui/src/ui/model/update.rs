@@ -15,7 +15,6 @@ use tokio::time::sleep;
 use tuirealm::event::Event;
 use tuirealm::props::{AttrValueRef, Attribute, QueryResult};
 
-use crate::ui::components::update::THEMES_WITHOUT_FILES;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::model::youtube_options::YTDLMsg;
@@ -1298,20 +1297,6 @@ impl Model {
 
     /// Re-apply theme colors to components that bake style in at mount time
     /// and don't otherwise re-read `config_tui` on every render (unlike e.g. Playlist).
-    ///
-    /// Called both from [`change_theme`](Self::change_theme) and from the Config
-    /// Editor's save path (`ConfigEditorMsg::ConfigSaveOk`).
-    ///
-    /// Every such component is notified through its own `on()` (the same path
-    /// tui-realm uses for every other event) instead of being downcast to its
-    /// concrete type: the Model only needs each `Id` and the generic
-    /// `AppComponent::on` trait method, never the underlying struct. This is why
-    /// this is the *only* place that needs to know the full list of `Id`s -- it
-    /// never needs to import `MessagePopup`, `FeedsList`, etc.
-    ///
-    /// The `0` passed below is a placeholder: none of these components read the
-    /// index out of `Msg::ChangeTheme`, they only check that a theme change
-    /// happened and then re-read the *current* theme from their own stored config.
     pub fn refresh_static_theme_components(&mut self) {
         let ev = Event::User(UserEvent::Forward(Msg::ChangeTheme(0)));
 
@@ -1333,7 +1318,7 @@ impl Model {
         let theme_filename = self
             .config_editor
             .themes
-            .get(index - THEMES_WITHOUT_FILES)?;
+            .get(index - ThemeColors::THEMES_WITHOUT_FILES)?;
 
         match get_app_config_path() {
             Ok(mut theme_path) => {
