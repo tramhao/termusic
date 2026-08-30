@@ -51,7 +51,7 @@ pub enum Msg {
     /// Note that this message does *not* update the drawn cover.
     ForceRedraw,
 
-    ChangeTheme(usize),
+    ReloadTheme,
 
     ServerReqResponse(ServerReqResponse),
     StreamUpdate(UpdateEvents),

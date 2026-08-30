@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::{Result, anyhow};
-use termusiclib::config::v2::tui::config_extra::TuiConfigVersionedDefaulted;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::player::{
     PlayerProgress, RunningStatus, UpdateEvents, UpdatePlaylistEvents, clamp_u16,
@@ -77,8 +76,7 @@ impl Model {
             Msg::ServerReqResponse(msg) => self.update_server_resp_msg(msg),
             Msg::StreamUpdate(msg) => self.update_events_msg(msg),
 
-            Msg::ForceRedraw => (),
-            Msg::ChangeTheme(index) => self.change_theme(index),
+            Msg::ForceRedraw | Msg::ReloadTheme => (),
         }
     }
 }
@@ -1275,30 +1273,10 @@ impl Model {
         Ok(())
     }
 
-    /// Apply and persist a theme globally (used outside of the Config Editor preview flow).
-    fn change_theme(&mut self, index: usize) {
-        let Some(theme) = self.resolve_theme_by_index(index) else {
-            return;
-        };
-
-        self.config_tui.write().settings.theme.theme = theme;
-        self.redraw = true;
-
-        self.refresh_static_theme_components();
-
-        let save_result = {
-            let config = self.config_tui.read();
-            TuiConfigVersionedDefaulted::save_config_path(&config.settings)
-        };
-        if let Err(e) = save_result {
-            self.mount_error_popup(e.context("save theme"));
-        }
-    }
-
     /// Re-apply theme colors to components that bake style in at mount time
     /// and don't otherwise re-read `config_tui` on every render (unlike e.g. Playlist).
     pub fn refresh_static_theme_components(&mut self) {
-        let ev = Event::User(UserEvent::Forward(Msg::ChangeTheme(0)));
+        let ev = Event::User(UserEvent::Forward(Msg::ReloadTheme));
 
         for id in [Id::Library, Id::Podcast, Id::Episode, Id::MessagePopup] {
             if let Some(component) = self.app.get_component_mut(&id) {

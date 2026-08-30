@@ -101,7 +101,7 @@ impl FeedsList {
 impl AppComponent<Msg, UserEvent> for FeedsList {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
-        if matches!(ev, Event::User(UserEvent::Forward(Msg::ChangeTheme(_)))) {
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ReloadTheme))) {
             let config = self.config.clone();
             self.refresh_theme(&config);
             return Some(Msg::ForceRedraw);
@@ -306,7 +306,7 @@ impl EpisodeList {
 impl AppComponent<Msg, UserEvent> for EpisodeList {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
-        if matches!(ev, Event::User(UserEvent::Forward(Msg::ChangeTheme(_)))) {
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ReloadTheme))) {
             let config = self.config.clone();
             self.refresh_theme(&config);
             return Some(Msg::ForceRedraw);

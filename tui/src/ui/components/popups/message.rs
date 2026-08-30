@@ -91,7 +91,7 @@ impl MessagePopup {
 
 impl AppComponent<Msg, UserEvent> for MessagePopup {
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
-        if matches!(ev, Event::User(UserEvent::Forward(Msg::ChangeTheme(_)))) {
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ReloadTheme))) {
             self.refresh_theme();
             return Some(Msg::ForceRedraw);
         }

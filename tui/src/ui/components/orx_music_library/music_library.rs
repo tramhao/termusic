@@ -768,7 +768,7 @@ impl AppComponent<Msg, UserEvent> for OrxMusicLibraryComponent {
         if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
             return self.handle_user_events(ev);
         }
-        if matches!(ev, Event::User(UserEvent::Forward(Msg::ChangeTheme(_)))) {
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ReloadTheme))) {
             let config = self.config.clone();
             self.refresh_theme(&config.read());
             return Some(Msg::ForceRedraw);
