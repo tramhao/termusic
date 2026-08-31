@@ -63,7 +63,7 @@ impl AppComponent<Msg, UserEvent> for QuitPopup {
 }
 
 impl Model {
-    /// Mount quit popup
+    /// Mount the Quit Popup.
     pub fn mount_quit_popup(&mut self) -> Result<()> {
         self.app.remount(
             Id::QuitPopup,
@@ -71,6 +71,13 @@ impl Model {
             vec![],
         )?;
         self.app.active(&Id::QuitPopup)?;
+
+        Ok(())
+    }
+
+    /// Unmount the Quit Popup.
+    pub fn umount_quit_popup(&mut self) -> Result<()> {
+        self.app.umount(&Id::QuitPopup)?;
 
         Ok(())
     }

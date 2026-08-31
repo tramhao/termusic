@@ -14,8 +14,7 @@ use tuirealm::subscription::{EventClause, Sub, SubClause};
 use tuirealm::terminal::TerminalAdapter;
 
 use crate::ui::components::{
-    DBListCriteria, DownloadSpinner, Footer, GSInputPopup, GSTablePopup, Lyric, Playlist, Progress,
-    Source,
+    DBListCriteria, DownloadSpinner, Footer, Lyric, Playlist, Progress, Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
@@ -323,52 +322,34 @@ impl Model {
         Self::view_popups(f, app);
     }
 
-    /// Mount / Remount a search popup for the provided source
-    fn mount_search(&mut self, source: Source) {
-        self.app
-            .remount(
-                Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(source.clone(), &self.config_tui.read())),
-                Vec::new(),
-            )
-            .unwrap();
-        self.app
-            .remount(
-                Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(source, self.config_tui.clone())),
-                Vec::new(),
-            )
-            .unwrap();
-
-        self.app.active(&Id::GeneralSearchInput).unwrap();
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(e.context("update_photo"));
-        }
-    }
-
     #[inline]
     pub fn mount_search_library(&mut self, path: PathBuf) {
-        self.mount_search(Source::Library(path));
+        self.mount_general_search(Source::Library(path))
+            .expect("Expected GeneralSearch to mount correctly");
     }
 
     #[inline]
     pub fn mount_search_playlist(&mut self) {
-        self.mount_search(Source::Playlist);
+        self.mount_general_search(Source::Playlist)
+            .expect("Expected GeneralSearch to mount correctly");
     }
 
     #[inline]
     pub fn mount_search_database(&mut self) {
-        self.mount_search(Source::Database);
+        self.mount_general_search(Source::Database)
+            .expect("Expected GeneralSearch to mount correctly");
     }
 
     #[inline]
     pub fn mount_search_episode(&mut self) {
-        self.mount_search(Source::Episode);
+        self.mount_general_search(Source::Episode)
+            .expect("Expected GeneralSearch to mount correctly");
     }
 
     #[inline]
     pub fn mount_search_podcast(&mut self) {
-        self.mount_search(Source::Podcast);
+        self.mount_general_search(Source::Podcast)
+            .expect("Expected GeneralSearch to mount correctly");
     }
 
     pub fn mount_label_help(&mut self) {

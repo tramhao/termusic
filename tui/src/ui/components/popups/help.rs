@@ -439,7 +439,7 @@ impl AppComponent<Msg, UserEvent> for HelpPopup {
 }
 
 impl Model {
-    /// Mount help popup
+    /// Mount the Help Popup.
     pub fn mount_help_popup(&mut self) -> Result<()> {
         self.app.remount(
             Id::HelpPopup,
@@ -450,6 +450,16 @@ impl Model {
             self.mount_error_popup(e.context("update_photo"));
         }
         self.app.active(&Id::HelpPopup)?;
+
+        Ok(())
+    }
+
+    /// Unmount the Help Popup.
+    pub fn umount_help_popup(&mut self) -> Result<()> {
+        self.app.umount(&Id::HelpPopup)?;
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
 
         Ok(())
     }

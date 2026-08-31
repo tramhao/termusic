@@ -106,10 +106,7 @@ impl Model {
                     .expect("Expect HelpPopup to mount correctly");
             }
             HelpPopupMsg::Close => {
-                if self.app.mounted(&Id::HelpPopup) {
-                    self.app.umount(&Id::HelpPopup).ok();
-                }
-                self.update_photo().ok();
+                let _ = self.umount_help_popup();
             }
         }
     }
@@ -147,7 +144,7 @@ impl Model {
                 }
             }
             QuitPopupMsg::CloseCancel => {
-                self.app.umount(&Id::QuitPopup).ok();
+                let _ = self.umount_quit_popup();
             }
             QuitPopupMsg::CloseOk => {
                 self.quit = true;
@@ -725,11 +722,12 @@ impl Model {
             DBMsg::AddAllResultsConfirmShow => {
                 // dont try showing the popup if there is nothing to add
                 if !self.dw.search_results.is_empty() {
-                    self.mount_results_add_confirm_database(self.dw.criteria);
+                    self.mount_results_add_confirm_database(self.dw.criteria)
+                        .expect("Expected ResultAddConfirmPopup to mount correctly");
                 }
             }
             DBMsg::AddAllResultsConfirmCancel => {
-                self.umount_results_add_confirm_database();
+                let _ = self.umount_results_add_confirm_database();
             }
         }
     }
@@ -908,11 +906,7 @@ impl Model {
                 }
             }
             GSMsg::PopupCloseCancel => {
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
 
             GSMsg::PopupCloseLibraryAddPlaylist => {
@@ -922,30 +916,15 @@ impl Model {
             }
             GSMsg::PopupCloseOkLibraryLocate => {
                 self.general_search_after_library_select();
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
             GSMsg::PopupClosePlaylistPlaySelected => {
                 self.general_search_after_playlist_play_selected();
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
             GSMsg::PopupCloseOkPlaylistLocate => {
                 self.general_search_after_playlist_select();
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
             GSMsg::PopupCloseDatabaseAddPlaylist => {
                 if let Err(e) = self.general_search_after_database_add_playlist() {
@@ -961,12 +940,8 @@ impl Model {
                 if let Err(e) = self.general_search_after_episode_select() {
                     self.mount_error_popup(e.context("general search after episode select"));
                 }
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
                 self.podcast_focus_episode_list();
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
 
             GSMsg::PopupUpdateEpisode(input) => self.podcast_update_search_episode(input),
@@ -975,12 +950,8 @@ impl Model {
                 if let Err(e) = self.general_search_after_podcast_select() {
                     self.mount_error_popup(e.context("general search after podcast select"));
                 }
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
                 self.podcast_focus_podcast_list();
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
         }
     }
@@ -993,20 +964,12 @@ impl Model {
                     .expect("Expect DeleteConfirm to mount correctly");
             }
             DeleteConfirmMsg::CloseCancel => {
-                if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                    let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
-                }
-                if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                    let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
-                }
+                let _ = self.umount_confirm_radio();
+                let _ = self.umount_confirm_input();
             }
             DeleteConfirmMsg::CloseOk(path, focus_node) => {
-                if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                    let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
-                }
-                if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                    let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
-                }
+                let _ = self.umount_confirm_radio();
+                let _ = self.umount_confirm_input();
                 if let Err(e) = self.new_library_delete_node(&path, focus_node) {
                     self.mount_error_popup(e.context("library delete song"));
                 }

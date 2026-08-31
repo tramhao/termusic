@@ -610,7 +610,7 @@ impl Model {
         Ok(())
     }
 
-    /// Mount quit popup
+    /// Mount the Config Save Popup.
     pub fn mount_config_save_popup(&mut self) -> Result<()> {
         self.app.remount(
             Id::ConfigEditor(IdConfigEditor::ConfigSavePopup),
@@ -619,6 +619,14 @@ impl Model {
         )?;
         self.app
             .active(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config Save Popup.
+    pub fn umount_config_save_popup(&mut self) -> Result<()> {
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))?;
 
         Ok(())
     }

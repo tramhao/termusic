@@ -152,6 +152,13 @@ impl Model {
         Ok(())
     }
 
+    /// Umount the Delete Confirm Radio Popup.
+    pub fn umount_confirm_radio(&mut self) -> Result<()> {
+        self.app.umount(&Id::DeleteConfirmRadioPopup)?;
+
+        Ok(())
+    }
+
     /// Mount a [`DeleteConfirmInputPopup`] with specific Messages on ok & cancel
     /// as [`Id::DeleteConfirmInputPopup`].
     pub fn mount_confirm_input(
@@ -171,6 +178,13 @@ impl Model {
             vec![],
         )?;
         self.app.active(&Id::DeleteConfirmInputPopup)?;
+
+        Ok(())
+    }
+
+    /// Umount the Delete Confirm Input Popup.
+    pub fn umount_confirm_input(&mut self) -> Result<()> {
+        self.app.umount(&Id::DeleteConfirmInputPopup)?;
 
         Ok(())
     }
