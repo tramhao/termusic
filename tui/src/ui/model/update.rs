@@ -117,13 +117,11 @@ impl Model {
                     .expect("Expect SortPopup to mount correctly");
             }
             SortPopupMsg::Close => {
-                self.umount_sort_popup()
-                    .expect("Expect SortPopup to unmount correctly");
+                let _ = self.umount_sort_popup();
                 self.update_photo().ok();
             }
             SortPopupMsg::Selected(criterion, direction) => {
-                self.umount_sort_popup()
-                    .expect("Expect SortPopup to unmount correctly");
+                let _ = self.umount_sort_popup();
                 self.playlist_sort(criterion, direction);
                 self.update_photo().ok();
             }
