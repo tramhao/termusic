@@ -1,3 +1,4 @@
+use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, v2::tui::theme::styles::ColorTermusic};
 use tui_realm_stdlib::components::Paragraph;
 use tuirealm::{
@@ -92,21 +93,22 @@ impl AppComponent<Msg, UserEvent> for MessagePopup {
 }
 
 impl Model {
-    pub fn mount_message<T: Into<Title>, V: Into<TextStatic>>(&mut self, title: T, text: V) {
-        assert!(
-            self.app
-                .remount(
-                    Id::MessagePopup,
-                    Box::new(MessagePopup::new(&self.config_tui, title, text)),
-                    message_subs()
-                )
-                .is_ok()
-        );
+    /// Mount a message / notification, for example for current track information.
+    pub fn mount_message<T: Into<Title>, V: Into<TextStatic>>(
+        &mut self,
+        title: T,
+        text: V,
+    ) -> Result<()> {
+        self.app.remount(
+            Id::MessagePopup,
+            Box::new(MessagePopup::new(&self.config_tui, title, text)),
+            message_subs(),
+        )?;
+
+        Ok(())
     }
 
-    /// ### `umount_message`
-    ///
-    /// Umount error message
+    /// Umount the Message component
     pub fn umount_message(&mut self, _title: &str, text: &str) {
         if let Some(spans) = self
             .app

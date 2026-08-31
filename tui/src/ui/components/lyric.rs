@@ -134,18 +134,16 @@ impl AppComponent<Msg, UserEvent> for Lyric {
 
 impl Model {
     /// Remount and reload the lyrics from the current track.
-    pub fn lyric_reload(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::Lyric,
-                    Box::new(Lyric::new(self.config_tui.clone())),
-                    Vec::new()
-                )
-                .is_ok()
-        );
+    pub fn remount_lyric(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::Lyric,
+            Box::new(Lyric::new(self.config_tui.clone())),
+            Vec::new(),
+        )?;
         self.lyric_update_title();
         self.lyric_update();
+
+        Ok(())
     }
 
     /// Force reload lyrics from file. For example after a Tag Editor exit.
@@ -159,7 +157,8 @@ impl Model {
             Track::unset_cache_for_path(track.path());
         }
 
-        self.lyric_reload();
+        self.remount_lyric()
+            .expect("Expected Lyric to remount correctly");
     }
 
     pub fn lyric_update_for_podcast_by_current_track(&mut self) {

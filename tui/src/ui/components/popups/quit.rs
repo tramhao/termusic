@@ -1,3 +1,4 @@
+use anyhow::Result;
 /**
  * MIT License
  *
@@ -63,16 +64,14 @@ impl AppComponent<Msg, UserEvent> for QuitPopup {
 
 impl Model {
     /// Mount quit popup
-    pub fn mount_quit_popup(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::QuitPopup,
-                    Box::new(QuitPopup::new(self.config_tui.clone())),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::QuitPopup).is_ok());
+    pub fn mount_quit_popup(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::QuitPopup,
+            Box::new(QuitPopup::new(self.config_tui.clone())),
+            vec![],
+        )?;
+        self.app.active(&Id::QuitPopup)?;
+
+        Ok(())
     }
 }

@@ -1,5 +1,6 @@
 use std::fmt::Write as _;
 
+use anyhow::Result;
 use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
@@ -439,17 +440,17 @@ impl AppComponent<Msg, UserEvent> for HelpPopup {
 
 impl Model {
     /// Mount help popup
-    pub fn mount_help_popup(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::HelpPopup,
-                    Box::new(HelpPopup::new(self.config_tui.clone())),
-                    vec![]
-                )
-                .is_ok()
-        );
-        self.update_photo().ok();
-        assert!(self.app.active(&Id::HelpPopup).is_ok());
+    pub fn mount_help_popup(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::HelpPopup,
+            Box::new(HelpPopup::new(self.config_tui.clone())),
+            vec![],
+        )?;
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
+        self.app.active(&Id::HelpPopup)?;
+
+        Ok(())
     }
 }

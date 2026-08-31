@@ -36,7 +36,8 @@ impl Model {
             ConfigEditorMsg::CloseOk => {
                 if self.config_editor.config_changed {
                     self.config_editor.config_changed = false;
-                    self.mount_config_save_popup();
+                    self.mount_config_save_popup()
+                        .expect("Expected ConfigSavePopup to mount correctly");
                 } else {
                     self.umount_config_editor();
                 }

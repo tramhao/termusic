@@ -102,7 +102,8 @@ impl Model {
     fn update_help_popup_msg(&mut self, msg: &HelpPopupMsg) {
         match msg {
             HelpPopupMsg::Show => {
-                self.mount_help_popup();
+                self.mount_help_popup()
+                    .expect("Expect HelpPopup to mount correctly");
             }
             HelpPopupMsg::Close => {
                 if self.app.mounted(&Id::HelpPopup) {
@@ -117,14 +118,17 @@ impl Model {
     fn update_sort_popup_msg(&mut self, msg: SortPopupMsg) {
         match msg {
             SortPopupMsg::Show => {
-                self.mount_sort_popup();
+                self.mount_sort_popup()
+                    .expect("Expect SortPopup to mount correctly");
             }
             SortPopupMsg::Close => {
-                self.umount_sort_popup();
+                self.umount_sort_popup()
+                    .expect("Expect SortPopup to unmount correctly");
                 self.update_photo().ok();
             }
             SortPopupMsg::Selected(criterion, direction) => {
-                self.umount_sort_popup();
+                self.umount_sort_popup()
+                    .expect("Expect SortPopup to unmount correctly");
                 self.playlist_sort(criterion, direction);
                 self.update_photo().ok();
             }
@@ -136,7 +140,8 @@ impl Model {
         match msg {
             QuitPopupMsg::Show => {
                 if self.config_tui.read().settings.behavior.confirm_quit {
-                    self.mount_quit_popup();
+                    self.mount_quit_popup()
+                        .expect("Expect QuitPopup to unmount correctly");
                 } else {
                     self.quit = true;
                 }
@@ -199,7 +204,8 @@ impl Model {
     fn update_notification_msg(&mut self, msg: NotificationMsg) {
         match msg {
             NotificationMsg::MessageShow((title, text)) => {
-                self.mount_message(title, text);
+                self.mount_message(title, text)
+                    .expect("Expect MessagePopup to mount correctly");
             }
             NotificationMsg::MessageHide((title, text)) => {
                 self.umount_message(&title, &text);
@@ -223,18 +229,26 @@ impl Model {
             PCMsg::EpisodeBlurUp => {
                 self.app.active(&Id::Podcast).ok();
             }
-            PCMsg::PodcastAddPopupShow => self.mount_podcast_add_popup(),
+            PCMsg::PodcastAddPopupShow => {
+                self.mount_podcast_add_popup()
+                    .expect("Expected PodcastAddPopup to mount correctly");
+            }
             PCMsg::PodcastAddPopupCloseOk(url) => {
-                self.umount_podcast_add_popup();
+                self.umount_podcast_add_popup()
+                    .expect("Expected PodcastAddPopup to unmount correctly");
 
                 if url.starts_with("http") {
                     self.podcast_add(url);
                 } else {
                     self.podcast_search_itunes(&url);
-                    self.mount_podcast_search_table();
+                    self.mount_podcast_search_table()
+                        .expect("Expect PodcastSearchTablePopup to mount correctly");
                 }
             }
-            PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
+            PCMsg::PodcastAddPopupCloseCancel => {
+                self.umount_podcast_add_popup()
+                    .expect("Expected PodcastAddPopup to unmount correctly");
+            }
 
             PCMsg::SyncResult(msg) => self.podcast_handle_sync_result(msg),
             PCMsg::DLResult(msg) => self.podcast_handle_dl_result(msg),
@@ -283,23 +297,39 @@ impl Model {
                     self.mount_error_popup(e.context("podcast episode delete"));
                 }
             }
-            PCMsg::FeedDeleteShow => self.mount_feed_delete_confirm_radio(),
+            PCMsg::FeedDeleteShow => {
+                self.mount_feed_delete_confirm_radio()
+                    .expect("Expected FeedDeleteConfirmRadioPopup to mount correctly");
+            }
             PCMsg::FeedDeleteCloseOk => {
-                self.umount_feed_delete_confirm_radio();
+                self.umount_feed_delete_confirm_radio()
+                    .expect("Expected FeedDeleteConfirmRadioPopup to unmount correctly");
                 if let Err(e) = self.podcast_remove_feed() {
                     self.mount_error_popup(e.context("podcast remove feed"));
                 }
             }
-            PCMsg::FeedDeleteCloseCancel => self.umount_feed_delete_confirm_radio(),
-            PCMsg::FeedsDeleteShow => self.mount_feed_delete_confirm_input(),
+            PCMsg::FeedDeleteCloseCancel => {
+                self.umount_feed_delete_confirm_radio()
+                    .expect("Expected FeedDeleteConfirmRadioPopup to unmount correctly");
+            }
+            PCMsg::FeedsDeleteShow => {
+                self.mount_feed_delete_confirm_input()
+                    .expect("Expected FeedDeleteConfirmInputPopup to mount correctly");
+            }
             PCMsg::FeedsDeleteCloseOk => {
-                self.umount_feed_delete_confirm_input();
+                self.umount_feed_delete_confirm_input()
+                    .expect("Expected FeedDeleteConfirmInputPopup to unmount correctly");
                 if let Err(e) = self.podcast_remove_all_feeds() {
                     self.mount_error_popup(e.context("podcast remove all feeds"));
                 }
             }
-            PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
-            PCMsg::SearchItunesCloseCancel => self.umount_podcast_search_table(),
+            PCMsg::FeedsDeleteCloseCancel => {
+                self.umount_feed_delete_confirm_input()
+                    .expect("Expected FeedDeleteConfirmInputPopup to unmount correctly");
+            }
+            PCMsg::SearchItunesCloseCancel => self
+                .umount_podcast_search_table()
+                .expect("Expected PodcastSearchTablePopup to unmount correctly"),
             PCMsg::SearchItunesCloseOk(index) => {
                 if let Some(vec) = &self.podcast.search_results
                     && let Some(pod) = vec.get(index)
@@ -737,17 +767,16 @@ impl Model {
     fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
             YSMsg::InputPopupShow(current_node) => {
-                self.mount_youtube_search_input(current_node);
+                self.mount_youtube_search_input(current_node)
+                    .expect("Expect YoutubeSearchInputPopup to mount correctly");
             }
             YSMsg::InputPopupCloseCancel => {
-                if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                    assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
-                }
+                self.umount_youtube_search_input()
+                    .expect("Expect YoutubeSearchInputPopup to unmount correctly");
             }
             YSMsg::InputPopupCloseOk(url, current_node) => {
-                if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                    assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
-                }
+                self.umount_youtube_search_input()
+                    .expect("Expect YoutubeSearchInputPopup to unmount correctly");
                 if url.starts_with("http") {
                     match self.youtube_dl(&url, &current_node) {
                         Ok(()) => {}
@@ -756,12 +785,14 @@ impl Model {
                         }
                     }
                 } else {
-                    self.mount_youtube_search_table(current_node);
+                    self.mount_youtube_search_table(current_node)
+                        .expect("Expect YoutubeSearchTablePopup to mount correctly");
                     self.youtube_options_search(url);
                 }
             }
             YSMsg::TablePopupCloseCancel => {
-                self.umount_youtube_search_table_popup();
+                self.umount_youtube_search_table_popup()
+                    .expect("Expect YoutubeSearchTablePopup to unmount correctly");
             }
             YSMsg::ReqNextPage => {
                 self.youtube_options_next_page();
@@ -958,7 +989,8 @@ impl Model {
     fn update_delete_confirmation(&mut self, msg: DeleteConfirmMsg) {
         match msg {
             DeleteConfirmMsg::Show(path, focus_node) => {
-                self.new_library_show_delete_confirm(path, focus_node);
+                self.new_library_show_delete_confirm(path, focus_node)
+                    .expect("Expect DeleteConfirm to mount correctly");
             }
             DeleteConfirmMsg::CloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
