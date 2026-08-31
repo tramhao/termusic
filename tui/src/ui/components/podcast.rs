@@ -20,6 +20,7 @@ use tuirealm::props::{
 };
 use tuirealm::props::{Borders, PropPayload, PropValue};
 use tuirealm::state::{State, StateValue};
+use tuirealm::subscription::{EventClause, Sub, SubClause};
 
 use crate::ui::Model;
 use crate::ui::ids::Id;
@@ -82,6 +83,14 @@ impl FeedsList {
         let moved = std::mem::take(&mut self.component);
         self.component = Self::apply_theme_style(moved, config);
     }
+}
+
+/// Get all subscriptions for the [`FeedsList`] Component.
+fn feedslist_subs() -> Vec<Sub<Id, UserEvent>> {
+    vec![Sub::new(
+        EventClause::User(UserEvent::Forward(Msg::ReloadTheme)),
+        SubClause::Always,
+    )]
 }
 
 impl AppComponent<Msg, UserEvent> for FeedsList {
@@ -275,6 +284,14 @@ impl EpisodeList {
     }
 }
 
+/// Get all subscriptions for the [`EpisodeList`] Component.
+fn episodelist_subs() -> Vec<Sub<Id, UserEvent>> {
+    vec![Sub::new(
+        EventClause::User(UserEvent::Forward(Msg::ReloadTheme)),
+        SubClause::Always,
+    )]
+}
+
 impl AppComponent<Msg, UserEvent> for EpisodeList {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
@@ -416,7 +433,7 @@ impl Model {
                 Msg::Podcast(PCMsg::PodcastBlurDown),
                 Msg::Podcast(PCMsg::PodcastBlurUp),
             )),
-            Vec::new(),
+            feedslist_subs(),
         )?;
 
         self.app.mount(
@@ -426,7 +443,7 @@ impl Model {
                 Msg::Podcast(PCMsg::EpisodeBlurDown),
                 Msg::Podcast(PCMsg::EpisodeBlurUp),
             )),
-            Vec::new(),
+            episodelist_subs(),
         )?;
 
         Ok(())
