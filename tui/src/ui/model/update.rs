@@ -72,7 +72,7 @@ impl Model {
             Msg::ServerReqResponse(msg) => self.update_server_resp_msg(msg),
             Msg::StreamUpdate(msg) => self.update_events_msg(msg),
 
-            Msg::ForceRedraw => (),
+            Msg::ForceRedraw | Msg::ReloadTheme => (),
         }
     }
 }

@@ -162,10 +162,12 @@ pub struct OrxMusicLibraryComponent {
 }
 
 impl OrxMusicLibraryComponent {
-    fn get_inner_comp(config: &TuiOverlay) -> TreeView<MusicLibData> {
-        // TODO: this component should either remount or listen to style changes and apply them
-        TreeView::<MusicLibData>::default()
-            .background(config.settings.theme.library_background())
+    /// Apply theme-derived styling onto a `TreeView` instance, in place.
+    fn apply_theme_style(
+        comp: TreeView<MusicLibData>,
+        config: &TuiOverlay,
+    ) -> TreeView<MusicLibData> {
+        comp.background(config.settings.theme.library_background())
             .foreground(config.settings.theme.library_foreground())
             .border(
                 Borders::default()
@@ -186,6 +188,10 @@ impl OrxMusicLibraryComponent {
             .highlight_style_inactive(STYLE_REMOVE_REVERSE)
             .highlight_symbol(config.settings.theme.style.library.highlight_symbol.clone())
             .empty_tree_text(LOADING_TREE_TEXT)
+    }
+
+    fn get_inner_comp(config: &TuiOverlay) -> TreeView<MusicLibData> {
+        Self::apply_theme_style(TreeView::<MusicLibData>::default(), config)
     }
 
     /// Get a new empty instance, which shows "Loading..." while empty.
@@ -736,6 +742,13 @@ impl OrxMusicLibraryComponent {
             _ => None,
         }
     }
+
+    /// Re-apply the current theme's styling to this component, without losing
+    /// the currently loaded tree / selection (unlike a full remount).
+    pub fn refresh_theme(&mut self, config: &TuiOverlay) {
+        let moved = std::mem::take(&mut self.component);
+        self.component = Self::apply_theme_style(moved, config);
+    }
 }
 
 impl AppComponent<Msg, UserEvent> for OrxMusicLibraryComponent {
@@ -743,6 +756,11 @@ impl AppComponent<Msg, UserEvent> for OrxMusicLibraryComponent {
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         if let Event::User(UserEvent::Forward(Msg::Library(ev))) = ev {
             return self.handle_user_events(ev);
+        }
+        if matches!(ev, Event::User(UserEvent::Forward(Msg::ReloadTheme))) {
+            let config = self.config.clone();
+            self.refresh_theme(&config.read());
+            return Some(Msg::ForceRedraw);
         }
 
         let config = self.config.clone();
