@@ -79,7 +79,7 @@ impl Database {
 
     /// Prepare the given Connection for usage.
     fn new_from_connection(conn: Connection) -> Result<Self> {
-        migrate::migrate(&conn).context("Database migration")?;
+        migrate::migrate(&conn).context("Database migration (library)")?;
 
         let conn = Arc::new(Mutex::new(conn));
         // for now limit to one worker at a time

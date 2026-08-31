@@ -49,7 +49,7 @@ impl Database {
         db_path.push("data.db");
         let conn = Connection::open(&db_path)?;
 
-        migration::migrate(&conn).context("Database creation / migration")?;
+        migration::migrate(&conn).context("Database migration (podcast)")?;
 
         // SQLite defaults to foreign key support off
         conn.execute("PRAGMA foreign_keys=ON;", [])
