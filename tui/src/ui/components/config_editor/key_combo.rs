@@ -893,7 +893,7 @@ impl KEModifierSelect {
             )
             .foreground(config_r.settings.theme.fallback_foreground())
             .background(config_r.settings.theme.fallback_background())
-            .inactive(Style::new().fg(config_r.settings.theme.fallback_foreground()))
+            .inactive(Style::new().bg(config_r.settings.theme.fallback_background()))
             .title(title.into().alignment(HorizontalAlignment::Left))
             .rewind(false)
             .highlight_style(
