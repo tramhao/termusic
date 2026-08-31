@@ -4,8 +4,8 @@ use tuirealm::{
     component::{AppComponent, Component},
     event::Event,
     props::{
-        AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment,
-        PropPayloadRef, QueryResult, TextModifiers, TextStatic, Title,
+        AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment, PropPayloadRef,
+        QueryResult, TextModifiers, TextStatic, Title,
     },
 };
 
