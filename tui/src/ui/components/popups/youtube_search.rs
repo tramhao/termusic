@@ -258,9 +258,7 @@ impl Model {
 
     /// Unmount the youtube search input component.
     pub fn umount_youtube_search_input(&mut self) -> Result<()> {
-        if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-            self.app.umount(&Id::YoutubeSearchInputPopup)?;
-        }
+        self.app.umount(&Id::YoutubeSearchInputPopup)?;
 
         Ok(())
     }
@@ -282,9 +280,7 @@ impl Model {
 
     /// Unmount the youtube search table component.
     pub fn umount_youtube_search_table_popup(&mut self) -> Result<()> {
-        if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-            self.app.umount(&Id::YoutubeSearchTablePopup)?;
-        }
+        self.app.umount(&Id::YoutubeSearchTablePopup)?;
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }

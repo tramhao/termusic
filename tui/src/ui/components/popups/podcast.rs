@@ -248,9 +248,7 @@ impl Model {
 
     /// Unmount the feed deletion confirmation via radio component.
     pub fn umount_feed_delete_confirm_radio(&mut self) -> Result<()> {
-        if self.app.mounted(&Id::FeedDeleteConfirmRadioPopup) {
-            self.app.umount(&Id::FeedDeleteConfirmRadioPopup)?;
-        }
+        self.app.umount(&Id::FeedDeleteConfirmRadioPopup)?;
 
         Ok(())
     }
@@ -274,9 +272,7 @@ impl Model {
 
     /// Unmount the feeed deletion confirmation via input component.
     pub fn umount_feed_delete_confirm_input(&mut self) -> Result<()> {
-        if self.app.mounted(&Id::FeedDeleteConfirmInputPopup) {
-            self.app.umount(&Id::FeedDeleteConfirmInputPopup)?;
-        }
+        self.app.umount(&Id::FeedDeleteConfirmInputPopup)?;
 
         Ok(())
     }
@@ -335,9 +331,7 @@ impl Model {
 
     /// Unmount the podcast search component.
     pub fn umount_podcast_search_table(&mut self) -> Result<()> {
-        if self.app.mounted(&Id::PodcastSearchTablePopup) {
-            self.app.umount(&Id::PodcastSearchTablePopup)?;
-        }
+        self.app.umount(&Id::PodcastSearchTablePopup)?;
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
@@ -360,9 +354,7 @@ impl Model {
 
     /// Unmount the component to add a podcast.
     pub fn umount_podcast_add_popup(&mut self) -> Result<()> {
-        if self.app.mounted(&Id::PodcastAddPopup) {
-            self.app.umount(&Id::PodcastAddPopup)?;
-        }
+        self.app.umount(&Id::PodcastAddPopup)?;
 
         Ok(())
     }

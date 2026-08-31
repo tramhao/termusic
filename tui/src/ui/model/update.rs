@@ -229,8 +229,7 @@ impl Model {
                     .expect("Expected PodcastAddPopup to mount correctly");
             }
             PCMsg::PodcastAddPopupCloseOk(url) => {
-                self.umount_podcast_add_popup()
-                    .expect("Expected PodcastAddPopup to unmount correctly");
+                let _ = self.umount_podcast_add_popup();
 
                 if url.starts_with("http") {
                     self.podcast_add(url);
@@ -241,8 +240,7 @@ impl Model {
                 }
             }
             PCMsg::PodcastAddPopupCloseCancel => {
-                self.umount_podcast_add_popup()
-                    .expect("Expected PodcastAddPopup to unmount correctly");
+                let _ = self.umount_podcast_add_popup();
             }
 
             PCMsg::SyncResult(msg) => self.podcast_handle_sync_result(msg),
@@ -297,34 +295,30 @@ impl Model {
                     .expect("Expected FeedDeleteConfirmRadioPopup to mount correctly");
             }
             PCMsg::FeedDeleteCloseOk => {
-                self.umount_feed_delete_confirm_radio()
-                    .expect("Expected FeedDeleteConfirmRadioPopup to unmount correctly");
+                let _ = self.umount_feed_delete_confirm_radio();
                 if let Err(e) = self.podcast_remove_feed() {
                     self.mount_error_popup(e.context("podcast remove feed"));
                 }
             }
             PCMsg::FeedDeleteCloseCancel => {
-                self.umount_feed_delete_confirm_radio()
-                    .expect("Expected FeedDeleteConfirmRadioPopup to unmount correctly");
+                let _ = self.umount_feed_delete_confirm_radio();
             }
             PCMsg::FeedsDeleteShow => {
                 self.mount_feed_delete_confirm_input()
                     .expect("Expected FeedDeleteConfirmInputPopup to mount correctly");
             }
             PCMsg::FeedsDeleteCloseOk => {
-                self.umount_feed_delete_confirm_input()
-                    .expect("Expected FeedDeleteConfirmInputPopup to unmount correctly");
+                let _ = self.umount_feed_delete_confirm_input();
                 if let Err(e) = self.podcast_remove_all_feeds() {
                     self.mount_error_popup(e.context("podcast remove all feeds"));
                 }
             }
             PCMsg::FeedsDeleteCloseCancel => {
-                self.umount_feed_delete_confirm_input()
-                    .expect("Expected FeedDeleteConfirmInputPopup to unmount correctly");
+                let _ = self.umount_feed_delete_confirm_input();
             }
-            PCMsg::SearchItunesCloseCancel => self
-                .umount_podcast_search_table()
-                .expect("Expected PodcastSearchTablePopup to unmount correctly"),
+            PCMsg::SearchItunesCloseCancel => {
+                let _ = self.umount_podcast_search_table();
+            }
             PCMsg::SearchItunesCloseOk(index) => {
                 if let Some(vec) = &self.podcast.search_results
                     && let Some(pod) = vec.get(index)
@@ -767,12 +761,10 @@ impl Model {
                     .expect("Expect YoutubeSearchInputPopup to mount correctly");
             }
             YSMsg::InputPopupCloseCancel => {
-                self.umount_youtube_search_input()
-                    .expect("Expect YoutubeSearchInputPopup to unmount correctly");
+                let _ = self.umount_youtube_search_input();
             }
             YSMsg::InputPopupCloseOk(url, current_node) => {
-                self.umount_youtube_search_input()
-                    .expect("Expect YoutubeSearchInputPopup to unmount correctly");
+                let _ = self.umount_youtube_search_input();
                 if url.starts_with("http") {
                     match self.youtube_dl(&url, &current_node) {
                         Ok(()) => {}
@@ -787,8 +779,7 @@ impl Model {
                 }
             }
             YSMsg::TablePopupCloseCancel => {
-                self.umount_youtube_search_table_popup()
-                    .expect("Expect YoutubeSearchTablePopup to unmount correctly");
+                let _ = self.umount_youtube_search_table_popup();
             }
             YSMsg::ReqNextPage => {
                 self.youtube_options_next_page();
@@ -1099,26 +1090,22 @@ impl Model {
                 }
             }
             SavePlaylistMsg::CloseCancel => {
-                self.umount_save_playlist()
-                    .expect("Expected SavePlaylist to unmount correctly");
+                let _ = self.umount_save_playlist();
             }
             SavePlaylistMsg::CloseOk(full_path) => {
-                self.umount_save_playlist()
-                    .expect("Expected SavePlaylist to unmount correctly");
+                let _ = self.umount_save_playlist();
                 if let Err(e) = self.playlist_save_m3u_before(full_path) {
                     self.mount_error_popup(e.context("save m3u playlist before"));
                 }
             }
             SavePlaylistMsg::OverwriteCancel => {
-                self.umount_save_playlist_confirm()
-                    .expect("Expected SavePlaylist to unmount correctly");
+                let _ = self.umount_save_playlist_confirm();
             }
             SavePlaylistMsg::OverwriteOk(filename) => {
                 if let Err(e) = self.playlist_save_m3u(filename) {
                     self.mount_error_popup(e.context("save m3u playlist"));
                 }
-                self.umount_save_playlist_confirm()
-                    .expect("Expected SavePlaylistConfirm to unmount correctly");
+                let _ = self.umount_save_playlist_confirm();
             }
 
             // handled by the component
