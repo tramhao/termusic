@@ -4,7 +4,7 @@ use tuirealm::{
     component::{AppComponent, Component},
     event::Event,
     props::{
-        AttrValue, AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment,
+        AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment,
         PropPayloadRef, QueryResult, TextModifiers, TextStatic, Title,
     },
 };
@@ -20,30 +20,38 @@ pub struct MessagePopup {
 }
 
 impl MessagePopup {
+    /// Apply theme-derived styling onto a Paragraph instance, in place.
+    ///
+    /// Shared by `new` (fresh component) and `refresh_theme` (re-styling an
+    /// already-mounted component) so the two can never drift out of sync.
+    fn apply_theme_style(comp: Paragraph, config: &SharedTuiSettings) -> Paragraph {
+        let config_tui = config.read_recursive();
+
+        comp.borders(
+            Borders::default()
+                .color(
+                    config_tui
+                        .settings
+                        .theme
+                        .get_color_from_theme(ColorTermusic::Cyan),
+                )
+                .modifiers(BorderType::Rounded),
+        )
+        .foreground(
+            config_tui
+                .settings
+                .theme
+                .get_color_from_theme(ColorTermusic::Green),
+        )
+        .background(config_tui.settings.theme.library_background())
+    }
+
     pub fn new<T: Into<Title>, V: Into<TextStatic>>(
         config: &SharedTuiSettings,
         title: T,
         msg: V,
     ) -> Self {
-        let config_tui = config.read_recursive();
-        let component = Paragraph::default()
-            .borders(
-                Borders::default()
-                    .color(
-                        config_tui
-                            .settings
-                            .theme
-                            .get_color_from_theme(ColorTermusic::Cyan),
-                    )
-                    .modifiers(BorderType::Rounded),
-            )
-            .foreground(
-                config_tui
-                    .settings
-                    .theme
-                    .get_color_from_theme(ColorTermusic::Green),
-            )
-            .background(config_tui.settings.theme.library_background())
+        let component = Self::apply_theme_style(Paragraph::default(), config)
             .modifiers(TextModifiers::BOLD)
             .alignment_horizontal(HorizontalAlignment::Center)
             .title(title.into().alignment(HorizontalAlignment::Center))
@@ -58,34 +66,8 @@ impl MessagePopup {
     /// Re-apply the current theme's colors to this already-mounted popup, without
     /// touching its currently displayed title / text.
     fn refresh_theme(&mut self) {
-        let config_tui = self.config.read_recursive();
-
-        self.component.attr(
-            Attribute::Borders,
-            AttrValue::Borders(
-                Borders::default()
-                    .color(
-                        config_tui
-                            .settings
-                            .theme
-                            .get_color_from_theme(ColorTermusic::Cyan),
-                    )
-                    .modifiers(BorderType::Rounded),
-            ),
-        );
-        self.component.attr(
-            Attribute::Foreground,
-            AttrValue::Color(
-                config_tui
-                    .settings
-                    .theme
-                    .get_color_from_theme(ColorTermusic::Green),
-            ),
-        );
-        self.component.attr(
-            Attribute::Background,
-            AttrValue::Color(config_tui.settings.theme.library_background()),
-        );
+        let moved = std::mem::take(&mut self.component);
+        self.component = Self::apply_theme_style(moved, &self.config);
     }
 }
 

@@ -36,32 +36,37 @@ pub struct FeedsList {
 }
 
 impl FeedsList {
+    /// Apply theme-derived styling onto a List instance, in place.
+    ///
+    /// Shared by `new` (fresh component) and `refresh_theme` (re-styling an
+    /// already-mounted component) so the two can never drift out of sync.
+    fn apply_theme_style(comp: List, config: &SharedTuiSettings) -> List {
+        let config = config.read();
+
+        comp.borders(
+            Borders::default()
+                .modifiers(BorderType::Rounded)
+                .color(config.settings.theme.library_border()),
+        )
+        .background(config.settings.theme.library_background())
+        .foreground(config.settings.theme.library_foreground())
+        .inactive(Style::new().bg(config.settings.theme.library_background()))
+        .highlight_style(
+            CommonHighlight::default()
+                .style
+                .fg(config.settings.theme.library_highlight()),
+        )
+        .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+        .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
+    }
+
     pub fn new(config: SharedTuiSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
-        let component = {
-            let config = config.read();
-            List::default()
-                .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(config.settings.theme.library_border()),
-                )
-                .background(config.settings.theme.library_background())
-                .foreground(config.settings.theme.library_foreground())
-                .inactive(Style::new().bg(config.settings.theme.library_background()))
-                .title(Title::from(" Podcast Feeds: ").alignment(HorizontalAlignment::Left))
-                .scroll(true)
-                .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
-                )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
-                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
-                .rewind(false)
-                .step(4)
-                .scroll(true)
-                .rows([LineStatic::from("Empty")])
-        };
+        let component = Self::apply_theme_style(List::default(), &config)
+            .title(Title::from(" Podcast Feeds: ").alignment(HorizontalAlignment::Left))
+            .scroll(true)
+            .rewind(false)
+            .step(4)
+            .rows([LineStatic::from("Empty")]);
 
         Self {
             component,
@@ -71,30 +76,11 @@ impl FeedsList {
         }
     }
 
+    /// Re-apply the current theme's colors to this already-mounted list, without
+    /// losing its currently displayed rows / selection (unlike a full remount).
     pub fn refresh_theme(&mut self, config: &SharedTuiSettings) {
-        let rows = self
-            .component
-            .query(Attribute::Text)
-            .map(tuirealm::props::QueryResult::into_owned);
-
-        let selected = match self.component.state() {
-            State::Single(StateValue::Usize(idx)) => Some(idx),
-            _ => None,
-        };
-
-        *self = Self::new(
-            config.clone(),
-            self.on_key_tab.clone(),
-            self.on_key_backtab.clone(),
-        );
-
-        if let Some(rows) = rows {
-            self.component.attr(Attribute::Text, rows);
-        }
-        if let Some(idx) = selected {
-            self.component
-                .attr(Attribute::Value, AttrValue::Number(idx.cast_signed()));
-        }
+        let moved = std::mem::take(&mut self.component);
+        self.component = Self::apply_theme_style(moved, config);
     }
 }
 
@@ -241,32 +227,37 @@ pub struct EpisodeList {
 }
 
 impl EpisodeList {
+    /// Apply theme-derived styling onto a List instance, in place.
+    ///
+    /// Shared by `new` (fresh component) and `refresh_theme` (re-styling an
+    /// already-mounted component) so the two can never drift out of sync.
+    fn apply_theme_style(comp: List, config: &SharedTuiSettings) -> List {
+        let config = config.read();
+
+        comp.borders(
+            Borders::default()
+                .modifiers(BorderType::Rounded)
+                .color(config.settings.theme.library_border()),
+        )
+        .background(config.settings.theme.library_background())
+        .foreground(config.settings.theme.library_foreground())
+        .inactive(Style::new().bg(config.settings.theme.library_background()))
+        .highlight_style(
+            CommonHighlight::default()
+                .style
+                .fg(config.settings.theme.library_highlight()),
+        )
+        .highlight_style_inactive(STYLE_REMOVE_REVERSE)
+        .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
+    }
+
     pub fn new(config: SharedTuiSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
-        let component = {
-            let config = config.read();
-            List::default()
-                .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(config.settings.theme.library_border()),
-                )
-                .background(config.settings.theme.library_background())
-                .foreground(config.settings.theme.library_foreground())
-                .inactive(Style::new().bg(config.settings.theme.library_background()))
-                .title(Title::from(" Episodes: ").alignment(HorizontalAlignment::Left))
-                .scroll(true)
-                .highlight_style(
-                    CommonHighlight::default()
-                        .style
-                        .fg(config.settings.theme.library_highlight()),
-                )
-                .highlight_style_inactive(STYLE_REMOVE_REVERSE)
-                .highlight_str(config.settings.theme.style.library.highlight_symbol.clone())
-                .rewind(false)
-                .step(4)
-                .scroll(true)
-                .rows([LineStatic::from("Empty")])
-        };
+        let component = Self::apply_theme_style(List::default(), &config)
+            .title(Title::from(" Episodes: ").alignment(HorizontalAlignment::Left))
+            .scroll(true)
+            .rewind(false)
+            .step(4)
+            .rows([LineStatic::from("Empty")]);
 
         Self {
             component,
@@ -276,30 +267,11 @@ impl EpisodeList {
         }
     }
 
+    /// Re-apply the current theme's colors to this already-mounted list, without
+    /// losing its currently displayed rows / selection (unlike a full remount).
     pub fn refresh_theme(&mut self, config: &SharedTuiSettings) {
-        let rows = self
-            .component
-            .query(Attribute::Text)
-            .map(tuirealm::props::QueryResult::into_owned);
-
-        let selected = match self.component.state() {
-            State::Single(StateValue::Usize(idx)) => Some(idx),
-            _ => None,
-        };
-
-        *self = Self::new(
-            config.clone(),
-            self.on_key_tab.clone(),
-            self.on_key_backtab.clone(),
-        );
-
-        if let Some(rows) = rows {
-            self.component.attr(Attribute::Text, rows);
-        }
-        if let Some(idx) = selected {
-            self.component
-                .attr(Attribute::Value, AttrValue::Number(idx.cast_signed()));
-        }
+        let moved = std::mem::take(&mut self.component);
+        self.component = Self::apply_theme_style(moved, config);
     }
 }
 
