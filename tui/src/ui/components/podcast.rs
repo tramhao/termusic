@@ -407,6 +407,31 @@ impl AppComponent<Msg, UserEvent> for EpisodeList {
 }
 
 impl Model {
+    /// Mount the Podcast View
+    pub fn mount_podcast(&mut self) -> Result<()> {
+        self.app.mount(
+            Id::Podcast,
+            Box::new(FeedsList::new(
+                self.config_tui.clone(),
+                Msg::Podcast(PCMsg::PodcastBlurDown),
+                Msg::Podcast(PCMsg::PodcastBlurUp),
+            )),
+            Vec::new(),
+        )?;
+
+        self.app.mount(
+            Id::Episode,
+            Box::new(EpisodeList::new(
+                self.config_tui.clone(),
+                Msg::Podcast(PCMsg::EpisodeBlurDown),
+                Msg::Podcast(PCMsg::EpisodeBlurUp),
+            )),
+            Vec::new(),
+        )?;
+
+        Ok(())
+    }
+
     #[allow(clippy::doc_markdown)]
     /// Search ITunes for podcasts and send it to `Model::tx_to_main` as [`Msg::Podcast`] and [`PCMsg::Search*`](PCMsg).
     ///

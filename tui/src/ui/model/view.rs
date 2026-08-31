@@ -14,14 +14,14 @@ use tuirealm::subscription::{EventClause, Sub, SubClause};
 use tuirealm::terminal::TerminalAdapter;
 
 use crate::ui::components::{
-    DBListCriteria, DownloadSpinner, EpisodeList, FeedsList, Footer, GSInputPopup, GSTablePopup,
-    Lyric, Playlist, Progress, Source,
+    DBListCriteria, DownloadSpinner, Footer, GSInputPopup, GSTablePopup, Lyric, Playlist, Progress,
+    Source,
 };
 use crate::ui::ids::{Id, IdConfigEditor, IdTagEditor};
 use crate::ui::model::ports::rx_main::PortRxMain;
 use crate::ui::model::ports::stream_events::PortStreamEvents;
 use crate::ui::model::{Model, TermusicLayout, UserEvent};
-use crate::ui::msg::{Msg, PCMsg};
+use crate::ui::msg::Msg;
 use crate::ui::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute,
 };
@@ -49,6 +49,7 @@ impl Model {
 
         self.mount_new_library()?;
         self.remount_database_search()?;
+        self.mount_podcast()?;
 
         self.app.mount(
             Id::Playlist,
@@ -69,25 +70,6 @@ impl Model {
             Vec::new(),
         )?;
 
-        self.app.mount(
-            Id::Podcast,
-            Box::new(FeedsList::new(
-                self.config_tui.clone(),
-                Msg::Podcast(PCMsg::PodcastBlurDown),
-                Msg::Podcast(PCMsg::PodcastBlurUp),
-            )),
-            Vec::new(),
-        )?;
-
-        self.app.mount(
-            Id::Episode,
-            Box::new(EpisodeList::new(
-                self.config_tui.clone(),
-                Msg::Podcast(PCMsg::EpisodeBlurDown),
-                Msg::Podcast(PCMsg::EpisodeBlurUp),
-            )),
-            Vec::new(),
-        )?;
         self.app.mount(
             Id::DownloadSpinner,
             Box::new(DownloadSpinner::new(&self.config_tui.read())),
