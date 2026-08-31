@@ -91,9 +91,7 @@ impl Model {
     fn update_error_popup_msg(&mut self, msg: &ErrorPopupMsg) {
         match msg {
             ErrorPopupMsg::Close => {
-                if self.app.mounted(&Id::ErrorPopup) {
-                    self.umount_error_popup();
-                }
+                let _ = self.umount_error_popup();
             }
         }
     }
@@ -205,7 +203,7 @@ impl Model {
                     .expect("Expect MessagePopup to mount correctly");
             }
             NotificationMsg::MessageHide((title, text)) => {
-                self.umount_message(&title, &text);
+                let _ = self.umount_message(&title, &text);
             }
         }
     }

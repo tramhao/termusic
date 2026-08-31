@@ -117,7 +117,9 @@ impl Model {
     }
 
     /// Unmount the error popup.
-    pub fn umount_error_popup(&mut self) {
-        self.app.umount(&Id::ErrorPopup).ok();
+    pub fn umount_error_popup(&mut self) -> Result<()> {
+        self.app.umount(&Id::ErrorPopup)?;
+
+        Ok(())
     }
 }

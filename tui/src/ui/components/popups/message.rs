@@ -109,7 +109,7 @@ impl Model {
     }
 
     /// Umount the Message component
-    pub fn umount_message(&mut self, _title: &str, text: &str) {
+    pub fn umount_message(&mut self, _title: &str, text: &str) -> Result<()> {
         if let Some(spans) = self
             .app
             .query(&Id::MessagePopup, Attribute::Text)
@@ -123,8 +123,10 @@ impl Model {
         {
             let d = &display_text.as_textspan().unwrap().content;
             if text.eq(d) {
-                self.app.umount(&Id::MessagePopup).ok();
+                self.app.umount(&Id::MessagePopup)?;
             }
         }
+
+        Ok(())
     }
 }
