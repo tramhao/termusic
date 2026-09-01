@@ -20,6 +20,7 @@ use tuirealm::props::{
 };
 use tuirealm::props::{Borders, PropPayload, PropValue};
 use tuirealm::state::{State, StateValue};
+use tuirealm::subscription::{EventClause, Sub, SubClause};
 
 use crate::ui::Model;
 use crate::ui::ids::Id;
@@ -82,6 +83,14 @@ impl FeedsList {
         let moved = std::mem::take(&mut self.component);
         self.component = Self::apply_theme_style(moved, config);
     }
+}
+
+/// Get all subscriptions for the [`FeedsList`] Component.
+fn feedslist_subs() -> Vec<Sub<Id, UserEvent>> {
+    vec![Sub::new(
+        EventClause::User(UserEvent::Forward(Msg::ReloadTheme)),
+        SubClause::Always,
+    )]
 }
 
 impl AppComponent<Msg, UserEvent> for FeedsList {
@@ -275,6 +284,14 @@ impl EpisodeList {
     }
 }
 
+/// Get all subscriptions for the [`EpisodeList`] Component.
+fn episodelist_subs() -> Vec<Sub<Id, UserEvent>> {
+    vec![Sub::new(
+        EventClause::User(UserEvent::Forward(Msg::ReloadTheme)),
+        SubClause::Always,
+    )]
+}
+
 impl AppComponent<Msg, UserEvent> for EpisodeList {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
@@ -407,6 +424,31 @@ impl AppComponent<Msg, UserEvent> for EpisodeList {
 }
 
 impl Model {
+    /// Mount the Podcast View
+    pub fn mount_podcast(&mut self) -> Result<()> {
+        self.app.mount(
+            Id::Podcast,
+            Box::new(FeedsList::new(
+                self.config_tui.clone(),
+                Msg::Podcast(PCMsg::PodcastBlurDown),
+                Msg::Podcast(PCMsg::PodcastBlurUp),
+            )),
+            feedslist_subs(),
+        )?;
+
+        self.app.mount(
+            Id::Episode,
+            Box::new(EpisodeList::new(
+                self.config_tui.clone(),
+                Msg::Podcast(PCMsg::EpisodeBlurDown),
+                Msg::Podcast(PCMsg::EpisodeBlurUp),
+            )),
+            episodelist_subs(),
+        )?;
+
+        Ok(())
+    }
+
     #[allow(clippy::doc_markdown)]
     /// Search ITunes for podcasts and send it to `Model::tx_to_main` as [`Msg::Podcast`] and [`PCMsg::Search*`](PCMsg).
     ///

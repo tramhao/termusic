@@ -6,12 +6,10 @@ use termusiclib::config::v2::tui::keys::KeyBinding;
 use termusiclib::config::v2::tui::theme::ThemeColors;
 use termusiclib::config::v2::tui::theme::styles::ColorTermusic;
 use termusiclib::utils::get_app_config_path;
-use tuirealm::event::Event;
 
 use crate::ui::Model;
 use crate::ui::components::CEHeader;
 use crate::ui::ids::{Id, IdCETheme, IdConfigEditor, IdKey, IdKeyGlobal, IdKeyOther};
-use crate::ui::model::UserEvent;
 use crate::ui::msg::{
     CONFIG_EDITOR_TABS_ORDER, ConfigEditorLayout, ConfigEditorMsg, GENERAL_FOCUS_ORDER,
     KFGLOBAL_FOCUS_ORDER, KFMsg, KFOTHER_FOCUS_ORDER, Msg, THEME_COLOR_ITEM_FOCUS_ORDER_START,
@@ -127,16 +125,10 @@ impl Model {
         }
     }
 
-    /// Re-apply theme colors to components that bake style in at mount time
-    /// and don't otherwise re-read `config_tui` on every render (unlike e.g. Playlist).
+    /// Send a Mesasge to reload the theme on components that cannot simply be remounted without losing state.
+    #[inline]
     fn refresh_static_theme_components(&mut self) {
-        let ev = Event::User(UserEvent::Forward(Msg::ReloadTheme));
-
-        for id in [Id::Library, Id::Podcast, Id::Episode, Id::MessagePopup] {
-            if let Some(component) = self.app.get_component_mut(&id) {
-                component.on(&ev);
-            }
-        }
+        let _ = self.tx_to_main.send(Msg::ReloadTheme);
     }
 
     /// Preview theme at Table index

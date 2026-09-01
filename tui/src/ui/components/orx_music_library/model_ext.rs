@@ -22,7 +22,7 @@ use crate::ui::{
     tui_cmd::TuiCmd,
 };
 
-/// Get all subscriptions for the [`MusicLibrary`] Component.
+/// Get all subscriptions for the [`OrxMusicLibraryComponent`] Component.
 fn library_subs() -> Vec<Sub<Id, UserEvent>> {
     vec![
         Sub::new(
@@ -53,6 +53,10 @@ fn library_subs() -> Vec<Sub<Id, UserEvent>> {
             EventClause::User(UserEvent::Forward(Msg::Library(LIMsg::RequestCurrentPath(
                 LIReqNode::default(),
             )))),
+            SubClause::Always,
+        ),
+        Sub::new(
+            EventClause::User(UserEvent::Forward(Msg::ReloadTheme)),
             SubClause::Always,
         ),
     ]

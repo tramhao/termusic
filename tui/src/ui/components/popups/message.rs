@@ -7,6 +7,7 @@ use tuirealm::{
         AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment, PropPayloadRef,
         QueryResult, TextModifiers, TextStatic, Title,
     },
+    subscription::{EventClause, Sub, SubClause},
 };
 
 use crate::ui::ids::Id;
@@ -71,6 +72,14 @@ impl MessagePopup {
     }
 }
 
+/// Get all subscriptions for the [`MessagePopup`] Component.
+fn message_subs() -> Vec<Sub<Id, UserEvent>> {
+    vec![Sub::new(
+        EventClause::User(UserEvent::Forward(Msg::ReloadTheme)),
+        SubClause::Always,
+    )]
+}
+
 impl AppComponent<Msg, UserEvent> for MessagePopup {
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
         if matches!(ev, Event::User(UserEvent::Forward(Msg::ReloadTheme))) {
@@ -89,7 +98,7 @@ impl Model {
                 .remount(
                     Id::MessagePopup,
                     Box::new(MessagePopup::new(&self.config_tui, title, text)),
-                    vec![]
+                    message_subs()
                 )
                 .is_ok()
         );
