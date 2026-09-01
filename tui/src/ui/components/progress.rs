@@ -38,7 +38,7 @@ impl Progress {
                 )
                 .background(config.settings.theme.progress_background())
                 .foreground(config.settings.theme.progress_foreground())
-                .inactive(Style::new().fg(config.settings.theme.progress_foreground()))
+                .inactive(Style::new().bg(config.settings.theme.progress_background()))
                 .label("Progress")
                 .title(
                     Title::from(" Status: Stopped | Volume: ?? | Speed: ??.? ")

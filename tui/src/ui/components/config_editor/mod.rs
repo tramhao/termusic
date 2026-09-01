@@ -59,7 +59,6 @@ impl CEHeader {
                 .choices(ConfigEditorLayout::choice_array())
                 .foreground(config.settings.theme.library_highlight())
                 .background(config.settings.theme.library_background())
-                // .inactive(Style::default().fg(config.settings.theme.library_highlight()))
                 .value(layout.to_array_idx()),
         };
 
