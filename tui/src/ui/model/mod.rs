@@ -13,8 +13,9 @@ use termusiclib::config::v2::tui::theme::ThemeWrap;
 use termusiclib::config::{ServerOverlay, SharedServerSettings, SharedTuiSettings, TuiOverlay};
 use termusiclib::new_database::Database;
 use termusiclib::new_database::track_ops::TrackRead;
+use termusiclib::player::RunningStatus;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
-use termusiclib::player::{PlaylistTracks, RunningStatus};
+use termusiclib::player::protobuf::queue::PlaylistState;
 use termusiclib::podcast::{Podcast, PodcastFeed, db::Database as DBPod};
 use termusiclib::songtag::SongTag;
 use termusiclib::songtag::lrc::Lyric;
@@ -194,7 +195,7 @@ impl Playback {
     /// - when reading a Track from path or podcast database fails
     pub fn load_from_grpc(
         &mut self,
-        info: PlaylistTracks,
+        info: PlaylistState,
         podcast_db: &DBPod,
     ) -> anyhow::Result<()> {
         let current_track_index = usize::try_from(info.current_track_index)

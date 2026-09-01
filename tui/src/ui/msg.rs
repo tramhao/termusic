@@ -3,11 +3,11 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-use termusiclib::player::{SortCriterion, SortDirection};
-
 use image::DynamicImage;
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
-use termusiclib::player::{GetProgressResponse, PlaylistTracks, UpdateEvents};
+use termusiclib::player::UpdateEvents;
+use termusiclib::player::protobuf::player::GetProgressResponse;
+use termusiclib::player::protobuf::queue::{PlaylistState, SortCriterion, SortDirection};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 use tokio::sync::mpsc;
@@ -883,7 +883,7 @@ impl SearchCriteria {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ServerReqResponse {
     GetProgress(GetProgressResponse),
-    FullPlaylist(PlaylistTracks),
+    FullPlaylist(PlaylistState),
 }
 
 impl Eq for ServerReqResponse {}

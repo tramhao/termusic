@@ -12,19 +12,18 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::new_database::Database;
-use termusiclib::player;
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistShuffledInfo;
 use termusiclib::player::PlaylistSwapInfo;
-use termusiclib::player::PlaylistTracks;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
+use termusiclib::player::protobuf;
+use termusiclib::player::protobuf::queue::{PlaylistState, SortCriterion, SortDirection};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
-use termusiclib::player::{SortCriterion, SortDirection};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::{MediaTypes, Track, TrackData};
 use termusiclib::utils::{filetype_supported, get_app_config_path, get_parent_folder};
@@ -206,7 +205,7 @@ impl Playlist {
     /// - when converting from u64 grpc values to usize fails
     /// - when there is no track-id
     /// - when reading a Track from path or podcast database fails
-    pub fn load_from_grpc(&mut self, info: PlaylistTracks, podcast_db: &DBPod) -> Result<()> {
+    pub fn load_from_grpc(&mut self, info: PlaylistState, podcast_db: &DBPod) -> Result<()> {
         let current_track_index = usize::try_from(info.current_track_index)
             .context("convert current_track_index(u64) to usize")?;
         let mut playlist_items = Vec::with_capacity(info.tracks.len());
@@ -956,13 +955,13 @@ impl Playlist {
         ));
     }
 
-    /// Get the current tracks and state as a GRPC [`PlaylistTracks`] object.
+    /// Get the current tracks and state as a GRPC [`PlaylistState`] object.
     ///
     /// # Errors
     ///
     /// - if some track does not have a file-id
     /// - converting usize to u64 fails
-    pub fn as_grpc_playlist_tracks(&self) -> Result<PlaylistTracks> {
+    pub fn as_grpc_playlist_tracks(&self) -> Result<PlaylistState> {
         let tracks = self
             .tracks()
             .iter()
@@ -971,14 +970,14 @@ impl Playlist {
                 let at_index = u64::try_from(idx).context("track index(usize) to u64")?;
                 let track_source = track.as_track_source();
 
-                Ok(player::PlaylistAddTrack {
+                Ok(protobuf::queue::PlaylistTrack {
                     at_index,
                     id: Some(track_source.into()),
                 })
             })
             .collect::<Result<_>>()?;
 
-        Ok(PlaylistTracks {
+        Ok(PlaylistState {
             current_track_index: u64::try_from(self.current_track_index)
                 .context("current_track_index(usize) to u64")?,
             tracks,

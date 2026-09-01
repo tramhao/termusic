@@ -19,7 +19,6 @@ use termusiclib::config::{
     new_shared_tui_settings,
 };
 use termusiclib::player::RunningStatus;
-use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::{podcast, utils};
 use tokio::io::AsyncReadExt;
 use tokio::process::{Child, Command};
@@ -27,12 +26,13 @@ use tokio::sync::RwLock;
 use tokio::task::AbortHandle;
 use tokio_util::sync::CancellationToken;
 
-use ui::UI;
-
 mod cli;
-use cli::Action;
+mod clients;
 mod logger;
 mod ui;
+
+use cli::Action;
+use ui::UI;
 
 #[macro_use]
 extern crate log;
@@ -306,7 +306,7 @@ const WAIT_INTERVAL: Duration = Duration::from_millis(100);
 async fn wait_till_connected(
     config: &CombinedSettings,
     pid: u32,
-) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+) -> Result<(tonic::transport::Channel, String)> {
     let protocol = config.tui.read().settings.get_com().unwrap().protocol;
     let player = match protocol {
         ComProtocol::HTTP => wait_till_connected_tcp(config, pid).await?,
@@ -323,7 +323,7 @@ async fn wait_till_connected(
 async fn wait_till_connected_tcp(
     config: &CombinedSettings,
     pid: u32,
-) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+) -> Result<(tonic::transport::Channel, String)> {
     let addr = {
         let config_read = config.tui.read();
         SocketAddr::from(config_read.settings.get_com().ok_or(anyhow::anyhow!(
@@ -354,7 +354,11 @@ async fn wait_till_connected_tcp(
             anyhow::bail!("Process {pid} exited before being able to connect!");
         }
 
-        match MusicPlayerClient::connect(addr.clone()).await {
+        match tonic::transport::Endpoint::new(addr.clone())
+            .context("Convert Address to endpoint")?
+            .connect()
+            .await
+        {
             Err(err) => {
                 // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
                 if let Some(os_err) = find_source::<std::io::Error>(&err)
@@ -380,7 +384,7 @@ async fn wait_till_connected_tcp(
 async fn wait_till_connected_uds(
     config: &CombinedSettings,
     pid: u32,
-) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+) -> Result<(tonic::transport::Channel, String)> {
     let addr = {
         let config_read = config.tui.read();
         let addr = config_read
@@ -414,7 +418,11 @@ async fn wait_till_connected_uds(
             anyhow::bail!("Process {pid} exited before being able to connect!");
         }
 
-        match MusicPlayerClient::connect(addr.clone()).await {
+        match tonic::transport::Endpoint::new(addr.clone())
+            .context("Convert Address to endpoint")?
+            .connect()
+            .await
+        {
             Err(err) => {
                 // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
                 if let Some(os_err) = find_source::<std::io::Error>(&err) {
@@ -582,11 +590,11 @@ async fn execute_playlist_action(
         .context("No active server process found. Start the Server first.")?;
 
     let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
-    let mut playback = ui::Playback::new(raw_client);
+    let mut queue_client = clients::QueueControlConsumer::new(raw_client);
 
     match action {
         cli::PlaylistAction::Shuffle => {
-            playback.shuffle_playlist().await?;
+            queue_client.shuffle_playlist().await?;
             println!("Shuffled playlist");
         }
         cli::PlaylistAction::Sort { criterion, invert } => {
@@ -596,11 +604,11 @@ async fn execute_playlist_action(
             } else {
                 direction
             };
-            playback.sort_playlist(criterion, direction).await?;
+            queue_client.sort_playlist(criterion, direction).await?;
             println!("Sorted playlist");
         }
         cli::PlaylistAction::CycleLoop => {
-            let mode = playback.cycle_loop().await?;
+            let mode = queue_client.cycle_loop().await?;
             println!("Loop: {}", mode.display_text());
         }
     }
@@ -615,69 +623,70 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
         .context("No active server process found. Start the Server first.")?;
 
     let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
-    let mut playback = ui::Playback::new(raw_client);
+    let mut player_client = clients::PlayerControlConsumer::new(raw_client.clone());
+    let mut generic_client = clients::ServerControlConsumer::new(raw_client);
 
     match action {
         Action::Next => {
-            playback.skip_next().await?;
+            player_client.skip_next().await?;
             println!("Next track");
         }
         Action::Previous => {
-            playback.skip_previous().await?;
+            player_client.skip_previous().await?;
             println!("Previous track");
         }
         Action::Play => {
-            let status = playback.get_progress().await?.status;
+            let status = player_client.get_progress().await?.status;
             if RunningStatus::from_u32(status) == RunningStatus::Running {
                 println!("Already playing");
             } else {
-                playback.toggle_pause().await?;
+                player_client.toggle_pause().await?;
                 println!("Playing");
             }
         }
         Action::Pause => {
-            let status = playback.get_progress().await?.status;
+            let status = player_client.get_progress().await?.status;
             if RunningStatus::from_u32(status) == RunningStatus::Running {
-                playback.toggle_pause().await?;
+                player_client.toggle_pause().await?;
                 println!("Paused");
             } else {
                 println!("Already paused");
             }
         }
         Action::TogglePause => {
-            let status = playback.toggle_pause().await?;
+            let status = player_client.toggle_pause().await?;
             println!("{status}");
         }
         Action::VolumeUp => {
-            let volume = playback.volume_up().await?;
+            let volume = player_client.volume_up().await?;
             println!("Volume: {volume}");
         }
         Action::VolumeDown => {
-            let volume = playback.volume_down().await?;
+            let volume = player_client.volume_down().await?;
             println!("Volume: {volume}");
         }
         Action::SpeedUp => {
-            let speed = playback.speed_up().await?;
+            let speed = player_client.speed_up().await?;
             println!("Speed: {speed}x");
         }
         Action::SpeedDown => {
-            let speed = playback.speed_down().await?;
+            let speed = player_client.speed_down().await?;
             println!("Speed: {speed}x");
         }
         Action::RestartTrack => {
-            playback.restart_track().await?;
+            player_client.restart_track().await?;
             println!("Restarted track");
         }
         Action::SeekForward => {
-            playback.seek_forward().await?;
+            player_client.seek_forward().await?;
             println!("Seeked forward");
         }
         Action::SeekBackward => {
-            playback.seek_backward().await?;
+            player_client.seek_backward().await?;
             println!("Seeked backward");
         }
         Action::Quit => {
-            playback.quit_server().await?;
+            generic_client.quit_server().await?;
             println!("Quit server");
         }
         _ => unreachable!(),

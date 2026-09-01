@@ -1,0 +1,14 @@
+syntax = "proto3";
+package termusic.server;
+
+import "common.proto";
+
+// Interfaces that dont fit neatly in other services.
+service ServerControl {
+  // Reload the config, as the client saved it.
+  // TODO: this should be phased out!
+  rpc ReloadConfig(common.Empty) returns (common.Empty);
+  // Request the server to exit.
+  // The Server may or may not exit.
+  rpc QuitServer(common.Empty) returns (common.Empty);
+}
