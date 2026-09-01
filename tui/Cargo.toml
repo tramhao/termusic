@@ -65,6 +65,7 @@ either.workspace = true
 lru.workspace = true
 mime_guess.workspace = true
 pinyin.workspace = true
+indoc.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 # required for setting "DETACHED_PROCESS" for spawning the server

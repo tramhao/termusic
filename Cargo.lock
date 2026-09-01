@@ -5377,6 +5377,7 @@ dependencies = [
  "id3",
  "image",
  "include_dir",
+ "indoc",
  "lofty",
  "log",
  "lru",
