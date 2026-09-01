@@ -14,7 +14,9 @@ use termusiclib::player::protobuf::player::{GetProgressResponse, PlayerTime};
 use termusiclib::player::protobuf::queue::queue_control_server::QueueControlServer;
 use termusiclib::player::protobuf::server::server_control_server::ServerControlServer;
 use termusiclib::player::protobuf::stream::stream_events_server::StreamEventsServer;
-use termusiclib::player::{PlayerProgress, RunningStatus};
+use termusiclib::player::{
+    ChangeLoopMode, ChangeSpeed, ChangeVolume, PlayerProgress, RunningStatus, SeekReq,
+};
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -382,9 +384,13 @@ fn player_loop(
                     return Ok(());
                 }
             }
-            PlayerCmd::CycleLoop => {
-                player.config.write().settings.player.loop_mode =
-                    player.playlist.write().cycle_loop_mode();
+            PlayerCmd::ChangeLoopMode(mode) => {
+                player.config.write().settings.player.loop_mode = match mode {
+                    ChangeLoopMode::Cycle => player.playlist.write().cycle_loop_mode(),
+                    ChangeLoopMode::Mode(loop_mode) => {
+                        player.playlist.write().set_loop_mode(loop_mode)
+                    }
+                }
             }
             PlayerCmd::Eos => {
                 info!("Eos received");
@@ -415,31 +421,53 @@ fn player_loop(
             PlayerCmd::ReloadPlaylist => {
                 player.playlist.write().reload_tracks().ok();
             }
-            PlayerCmd::SeekBackward => {
-                // TODO: do seek callback for faster progress updates?
-                player.seek_relative(false);
-            }
-            PlayerCmd::RestartTrack => {
-                player.restart_track();
-            }
-            PlayerCmd::SeekForward => {
-                player.seek_relative(true);
-            }
+            PlayerCmd::Seek(seek) => match seek {
+                SeekReq::Steps(steps) => {
+                    if steps.is_positive() {
+                        for _ in 0..steps {
+                            player.seek_relative(true);
+                        }
+                    } else {
+                        for _ in steps..0 {
+                            player.seek_relative(false)
+                        }
+                    }
+                }
+                SeekReq::Unit(units) => {
+                    if let Err(err) = player.seek(units) {
+                        error!("Error running seek: {err:#?}");
+                    }
+                }
+                SeekReq::RestartTrack => player.restart_track(),
+            },
             PlayerCmd::SkipNext => {
                 player.reset_errors();
                 info!("skip to next track.");
                 player.player_save_last_position();
                 player.next();
             }
-            PlayerCmd::SpeedDown => {
-                let new_speed = player.add_speed(-SPEED_STEP);
-                info!("after speed down: {new_speed}");
-                player.config.write().settings.player.speed = new_speed;
-            }
-
-            PlayerCmd::SpeedUp => {
-                let new_speed = player.add_speed(SPEED_STEP);
-                info!("after speed up: {new_speed}");
+            PlayerCmd::ChangeSpeed(speed) => {
+                match speed {
+                    ChangeSpeed::Steps(steps) => {
+                        if steps.is_positive() {
+                            for _ in 0..steps {
+                                player.add_speed(SPEED_STEP);
+                            }
+                        } else {
+                            for _ in steps..0 {
+                                player.add_speed(-SPEED_STEP);
+                            }
+                        }
+                    }
+                    ChangeSpeed::Unit(units) => {
+                        player.add_speed(units);
+                    }
+                    ChangeSpeed::Reset => {
+                        player.set_speed(0);
+                    }
+                };
+                let new_speed = player.speed();
+                info!("After speed change: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
             }
             PlayerCmd::Tick => {
@@ -492,23 +520,31 @@ fn player_loop(
                 info!("player toggled pause");
                 player.toggle_pause();
             }
-            PlayerCmd::VolumeDown => {
-                info!("before volumedown: {}", player.volume());
-                let new_volume = player.add_volume(-VOLUME_STEP);
-                player.config.write().settings.player.volume = new_volume;
-                info!("after volumedown: {new_volume}");
-            }
-            PlayerCmd::VolumeUp => {
-                info!("before volumeup: {}", player.volume());
-                let new_volume = player.add_volume(VOLUME_STEP);
-                player.config.write().settings.player.volume = new_volume;
-                info!("after volumeup: {new_volume}");
+            PlayerCmd::ChangeVolume(vol) => {
+                match vol {
+                    ChangeVolume::Steps(steps) => {
+                        if steps.is_positive() {
+                            for _ in 0..steps {
+                                player.add_volume(VOLUME_STEP);
+                            }
+                        } else {
+                            for _ in steps..0 {
+                                player.add_volume(-VOLUME_STEP);
+                            }
+                        }
+                    }
+                    ChangeVolume::Unit(units) => {
+                        player.add_volume(units);
+                    }
+                }
+                let new_vol = player.volume();
+                info!("After volume change: {new_vol}");
+                player.config.write().settings.player.volume = new_vol;
             }
             PlayerCmd::VolumeSet(volume) => {
-                info!("before volumeset: {}", player.volume());
                 let new_volume = player.set_volume(volume);
                 player.config.write().settings.player.volume = new_volume;
-                info!("after volumeset: {new_volume}");
+                info!("After volume set: {new_volume}");
             }
             PlayerCmd::Pause => {
                 player.pause();

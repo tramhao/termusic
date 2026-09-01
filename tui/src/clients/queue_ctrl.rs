@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use termusiclib::{
     config::v2::server::LoopMode,
     player::{
+        ChangeLoopMode,
         playlist_helpers::{
             PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackType, PlaylistSwapTrack,
         },
@@ -30,8 +31,8 @@ impl QueueControlConsumer {
     }
 
     pub async fn cycle_loop(&mut self) -> Result<LoopMode> {
-        let request = Request::new(Empty {});
-        let response = self.client.cycle_loop(request).await?;
+        let request = Request::new(ChangeLoopMode::Cycle.into());
+        let response = self.client.change_loop_mode(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         let as_u8 = u8::try_from(response.mode).context("Failed to convert u32 to u8")?;

@@ -50,6 +50,181 @@ impl From<std::time::Duration> for protobuf::common::Duration {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ChangeLoopMode {
+    Cycle,
+    Mode(LoopMode),
+}
+
+impl From<ChangeLoopMode> for protobuf::queue::ChangeLoopModeRequest {
+    fn from(value: ChangeLoopMode) -> Self {
+        use protobuf::queue::{ChangeLoopModeRequest, change_loop_mode_request};
+        match value {
+            ChangeLoopMode::Cycle => ChangeLoopModeRequest {
+                r#type: Some(change_loop_mode_request::Type::Cycle(
+                    protobuf::common::Empty {},
+                )),
+            },
+            ChangeLoopMode::Mode(loop_mode) => ChangeLoopModeRequest {
+                r#type: Some(change_loop_mode_request::Type::Mode(loop_mode.into())),
+            },
+        }
+    }
+}
+
+impl TryFrom<protobuf::queue::ChangeLoopModeRequest> for ChangeLoopMode {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::queue::ChangeLoopModeRequest) -> Result<Self, Self::Error> {
+        use protobuf::queue::change_loop_mode_request;
+        let value = unwrap_msg(value.r#type, "ChangeLoopModeRequest.type")?;
+        Ok(match value {
+            change_loop_mode_request::Type::Cycle(_) => Self::Cycle,
+            change_loop_mode_request::Type::Mode(val) => Self::Mode(val.try_into()?),
+        })
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ChangeRunningState {
+    Toggle = 0,
+    Pause = 1,
+    Resume = 2,
+}
+
+impl From<ChangeRunningState> for protobuf::player::ChangeRunningStateRequest {
+    fn from(value: ChangeRunningState) -> Self {
+        protobuf::player::ChangeRunningStateRequest {
+            state: value as u32,
+        }
+    }
+}
+
+impl TryFrom<protobuf::player::ChangeRunningStateRequest> for ChangeRunningState {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::player::ChangeRunningStateRequest) -> Result<Self, Self::Error> {
+        Ok(match value.state {
+            0 => Self::Toggle,
+            1 => Self::Pause,
+            2 => Self::Resume,
+            v => bail!("Invalid value {v} for ChangeRunningState"),
+        })
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ChangeVolume {
+    Steps(i16),
+    Unit(i16),
+}
+
+impl From<ChangeVolume> for protobuf::player::ChangeVolumeRequest {
+    fn from(value: ChangeVolume) -> Self {
+        use protobuf::player::{ChangeVolumeRequest, change_volume_request};
+        match value {
+            ChangeVolume::Steps(v) => ChangeVolumeRequest {
+                r#type: Some(change_volume_request::Type::Step(i32::from(v))),
+            },
+            ChangeVolume::Unit(v) => ChangeVolumeRequest {
+                r#type: Some(change_volume_request::Type::Volume(i32::from(v))),
+            },
+        }
+    }
+}
+
+impl TryFrom<protobuf::player::ChangeVolumeRequest> for ChangeVolume {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::player::ChangeVolumeRequest) -> Result<Self, Self::Error> {
+        use protobuf::player::change_volume_request;
+        let value = unwrap_msg(value.r#type, "ChangeVolumeRequest.type")?;
+        Ok(match value {
+            change_volume_request::Type::Step(v) => ChangeVolume::Steps(clamp_i16(v)),
+            change_volume_request::Type::Volume(v) => ChangeVolume::Unit(clamp_i16(v)),
+        })
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ChangeSpeed {
+    Steps(i32),
+    Unit(i32),
+    Reset,
+}
+
+impl From<ChangeSpeed> for protobuf::player::ChangeSpeedRequest {
+    fn from(value: ChangeSpeed) -> Self {
+        use protobuf::player::{ChangeSpeedRequest, change_speed_request};
+        match value {
+            ChangeSpeed::Steps(v) => ChangeSpeedRequest {
+                r#type: Some(change_speed_request::Type::Step(v)),
+            },
+            ChangeSpeed::Unit(v) => ChangeSpeedRequest {
+                r#type: Some(change_speed_request::Type::Speed(v)),
+            },
+            ChangeSpeed::Reset => ChangeSpeedRequest {
+                r#type: Some(change_speed_request::Type::Reset(
+                    protobuf::common::Empty {},
+                )),
+            },
+        }
+    }
+}
+
+impl TryFrom<protobuf::player::ChangeSpeedRequest> for ChangeSpeed {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::player::ChangeSpeedRequest) -> Result<Self, Self::Error> {
+        use protobuf::player::change_speed_request;
+        let value = unwrap_msg(value.r#type, "ChangeSpeedRequest.type")?;
+        Ok(match value {
+            change_speed_request::Type::Step(v) => ChangeSpeed::Steps(v),
+            change_speed_request::Type::Speed(v) => ChangeSpeed::Unit(v),
+            change_speed_request::Type::Reset(_) => ChangeSpeed::Reset,
+        })
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SeekReq {
+    Steps(i32),
+    // Seconds
+    Unit(i64),
+    RestartTrack,
+}
+
+impl From<SeekReq> for protobuf::player::SeekRequest {
+    fn from(value: SeekReq) -> Self {
+        use protobuf::player::{SeekRequest, seek_request};
+        match value {
+            SeekReq::Steps(v) => SeekRequest {
+                r#type: Some(seek_request::Type::Step(v)),
+            },
+            SeekReq::Unit(v) => SeekRequest {
+                r#type: Some(seek_request::Type::Time(v)),
+            },
+            SeekReq::RestartTrack => SeekRequest {
+                r#type: Some(seek_request::Type::RestartTrack(protobuf::common::Empty {})),
+            },
+        }
+    }
+}
+
+impl TryFrom<protobuf::player::SeekRequest> for SeekReq {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::player::SeekRequest) -> Result<Self, Self::Error> {
+        use protobuf::player::seek_request;
+        let value = unwrap_msg(value.r#type, "SeekRequest.type")?;
+        Ok(match value {
+            seek_request::Type::Step(v) => SeekReq::Steps(v),
+            seek_request::Type::Time(v) => SeekReq::Unit(v),
+            seek_request::Type::RestartTrack(_) => SeekReq::RestartTrack,
+        })
+    }
+}
+
 /// The primitive in which time (current position / total duration) will be stored as
 pub type PlayerTimeUnit = std::time::Duration;
 
@@ -261,7 +436,7 @@ pub struct PlaylistAddTrackInfo {
     /// The Index at which a track was added at.
     /// If this is not at the end, all tracks at this index and beyond should be shifted.
     pub at_index: u64,
-    pub trackid: playlist_helpers::PlaylistTrackSource,
+    pub tracks: Vec<playlist_helpers::PlaylistTrackSource>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -314,14 +489,14 @@ type PPlaylistTypes = protobuf::stream::update_playlist::Type;
 impl From<UpdatePlaylistEvents> for protobuf::stream::UpdatePlaylist {
     fn from(value: UpdatePlaylistEvents) -> Self {
         use protobuf::stream::{
-            PlaylistAddTrack, PlaylistLoopMode, PlaylistRemoveTrack, PlaylistShuffled,
+            PlaylistAddTracks, PlaylistLoopMode, PlaylistRemoveTrack, PlaylistShuffled,
             PlaylistSwapTracks,
         };
         let val = match value {
             UpdatePlaylistEvents::PlaylistAddTrack(vals) => {
-                PPlaylistTypes::AddTrack(PlaylistAddTrack {
+                PPlaylistTypes::AddTrack(PlaylistAddTracks {
                     at_index: vals.at_index,
-                    track: Some(vals.trackid.into()),
+                    tracks: vals.tracks.into_iter().map(Into::into).collect(),
                 })
             }
             UpdatePlaylistEvents::PlaylistRemoveTrack(vals) => {
@@ -365,11 +540,11 @@ impl TryFrom<protobuf::stream::UpdatePlaylist> for UpdatePlaylistEvents {
         let res = match value {
             PPlaylistTypes::AddTrack(ev) => Self::PlaylistAddTrack(PlaylistAddTrackInfo {
                 at_index: ev.at_index,
-                trackid: unwrap_msg(
-                    unwrap_msg(ev.track, "UpdatePlaylist.type.add_track.track")?.source,
-                    "UpdatePlaylist.type.add_track.track.source",
-                )?
-                .try_into()?,
+                tracks: ev
+                    .tracks
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<Vec<_>, _>>()?,
             }),
             PPlaylistTypes::RemoveTrack(ev) => Self::PlaylistRemoveTrack(PlaylistRemoveTrackInfo {
                 at_index: ev.at_index,
@@ -414,8 +589,19 @@ pub fn clamp_u16(val: u32) -> u16 {
     val.min(u32::from(u16::MAX)) as u16
 }
 
+/// Clamp a given `i32` to be `i16`.
+///
+/// This is mainly used for volume clamping as we only use i16 for that, but protobuf minimal number is i32.
+#[allow(clippy::cast_possible_truncation)]
+#[must_use]
+pub fn clamp_i16(val: i32) -> i16 {
+    val.min(i32::from(i16::MAX)) as i16
+}
+
 pub mod playlist_helpers {
-    use anyhow::Context;
+    use anyhow::{Context, anyhow};
+
+    use crate::config::v2::server::LoopMode;
 
     use super::{protobuf, unwrap_msg};
 
@@ -462,6 +648,24 @@ pub mod playlist_helpers {
 
         fn try_from(value: protobuf::common::TrackId) -> Result<Self, Self::Error> {
             unwrap_msg(value.source, "TrackId.source").and_then(Self::try_from)
+        }
+    }
+
+    impl From<LoopMode> for protobuf::queue::PlaylistLoopMode {
+        fn from(value: LoopMode) -> Self {
+            protobuf::queue::PlaylistLoopMode {
+                mode: u32::from(value.discriminant()),
+            }
+        }
+    }
+
+    impl TryFrom<protobuf::queue::PlaylistLoopMode> for LoopMode {
+        type Error = anyhow::Error;
+
+        fn try_from(value: protobuf::queue::PlaylistLoopMode) -> Result<Self, Self::Error> {
+            let mode = u8::try_from(value.mode).context("Unsupported LoopMode")?;
+            LoopMode::tryfrom_discriminant(mode)
+                .ok_or(anyhow!("Failed to convert PlaylistLoopMode to LoopMode"))
         }
     }
 

@@ -612,7 +612,7 @@ impl Model {
         self.playback.playlist.write().add_tracks(
             PlaylistAddTrack {
                 at_index: items.at_index,
-                tracks: vec![items.trackid],
+                tracks: items.tracks,
             },
             &self.podcast.db_podcast,
         )?;

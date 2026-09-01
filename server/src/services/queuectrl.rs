@@ -4,9 +4,9 @@ use termusiclib::player::playlist_helpers::{PlaylistPlaySpecific, PlaylistRemove
 use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::queue::queue_control_server::QueueControl;
 use termusiclib::player::protobuf::queue::{
-    PlaylistLoopMode, PlaylistPlaySpecificRequest, PlaylistState, PlaylistSwapTracksRequest,
-    PlaylistTracksToAddRequest, PlaylistTracksToRemoveRequest, SortCriterion, SortDirection,
-    SortPlaylistRequest,
+    ChangeLoopModeRequest, PlaylistLoopMode, PlaylistPlaySpecificRequest, PlaylistState,
+    PlaylistSwapTracksRequest, PlaylistTracksToAddRequest, PlaylistTracksToRemoveRequest,
+    SortCriterion, SortDirection, SortPlaylistRequest,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist};
 use tonic::{Request, Response, Status};
@@ -46,11 +46,18 @@ impl QueueControlService {
 
 #[tonic::async_trait]
 impl QueueControl for QueueControlService {
-    async fn cycle_loop(
+    async fn change_loop_mode(
         &self,
-        _request: Request<Empty>,
+        request: Request<ChangeLoopModeRequest>,
     ) -> Result<Response<PlaylistLoopMode>, Status> {
-        let rx = self.command_cb(PlayerCmd::CycleLoop)?;
+        let ev = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| {
+                error!("error {err}");
+                Status::from_error(err.into())
+            })?;
+        let rx = self.command_cb(PlayerCmd::ChangeLoopMode(ev))?;
         // wait until the event was processed
         let _ = rx.await;
         let config = self.config.read();

@@ -6,33 +6,69 @@ import "common.proto";
 // Everything directly related to playback control.
 service PlayerControl {
   // Player Commands
-  // Toggle Pause/Play, returns the new state
-  rpc TogglePause(common.Empty) returns (PlayState);
+  // Change the running state (Play/Pause)
+  rpc ChangeRunningState(ChangeRunningStateRequest) returns (PlayState);
   // Skip to the next track
   rpc SkipNext(common.Empty) returns (common.Empty);
   // Skip to the previous track
   rpc SkipPrevious(common.Empty) returns (common.Empty);
   // Get the current Track progress once (use stream for continuous usage)
   rpc GetProgress(common.Empty) returns (GetProgressResponse);
-  // Change the volume one step up
-  rpc VolumeUp(common.Empty) returns (VolumeReply);
-  // Change the volume one step down
-  rpc VolumeDown(common.Empty) returns (VolumeReply);
-  // Change the speed one step up
-  rpc SpeedUp(common.Empty) returns (SpeedReply);
-  // Change the speed one step down
-  rpc SpeedDown(common.Empty) returns (SpeedReply);
+  // Change the volume
+  rpc ChangeVolume(ChangeVolumeRequest) returns (VolumeReply);
+  // Change the speed
+  rpc ChangeSpeed(ChangeSpeedRequest) returns (SpeedReply);
   // Toggle the gapless mode, returns the new state.
   rpc ToggleGapless(common.Empty) returns (GaplessState);
-  // Restart the current track
-  // Note that this is a seek and this request does not wait until the seek is done
-  rpc RestartTrack(common.Empty) returns (common.Empty);
-  // Seek one step forward
-  // Note that this request does not wait until the seek is done
-  rpc SeekForward(common.Empty) returns (common.Empty);
-  // Seek one step backward
-  // Note that this request does not wait until the seek is done
-  rpc SeekBackward(common.Empty) returns (common.Empty);
+  // Seek to a specific point
+  // Note that this request does not wait until the seek has finished executing!
+  rpc Seek(SeekRequest) returns (common.Empty);
+}
+
+message ChangeRunningStateRequest {
+  // 0 = toggle
+  // 1 = pause
+  // 2 = resume
+  uint32 state = 1;
+}
+
+message ChangeVolumeRequest {
+  oneof type {
+    // Change in steps
+    // Positive increases the volume
+    // Negative decreases the volume
+    // Only i16 is actually supported
+    int32 step = 1;
+    // Change in specific units
+    // Only i16 is actually supported
+    int32 volume = 2;
+  }
+}
+
+message ChangeSpeedRequest {
+  oneof type {
+    // Change in steps
+    // Positive increases the speed
+    // Negative decreases the speed
+    int32 step = 1;
+    // Change in specific units
+    int32 speed = 2;
+    // Reset speed to normal
+    common.Empty reset = 3;
+  }
+}
+
+message SeekRequest {
+  oneof type {
+    // Change in steps
+    // Positive seeks forward
+    // Negative seeks backwards
+    int32 step = 1;
+    // Seek relatively in seconds
+    int64 time = 3;
+    // Seek to the beginning of the current track, effectively restarting it
+    common.Empty restart_track = 2;
+  }
 }
 
 message GetProgressResponse {
