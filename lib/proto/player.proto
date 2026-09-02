@@ -1,52 +1,52 @@
 syntax = "proto3";
 package termusic.player;
 
+import "common.proto";
+
 service MusicPlayer {
   // Player Commands
   // Toggle Pause/Play, returns the new state
-  rpc TogglePause(Empty) returns (PlayState);
-  rpc SkipNext(Empty) returns (Empty);
-  rpc SkipPrevious(Empty) returns (Empty);
-  rpc GetProgress(Empty) returns (GetProgressResponse);
-  rpc VolumeUp(Empty) returns (VolumeReply);
-  rpc VolumeDown(Empty) returns (VolumeReply);
-  rpc SpeedUp(Empty) returns (SpeedReply);
-  rpc SpeedDown(Empty) returns (SpeedReply);
+  rpc TogglePause(common.Empty) returns (PlayState);
+  rpc SkipNext(common.Empty) returns (common.Empty);
+  rpc SkipPrevious(common.Empty) returns (common.Empty);
+  rpc GetProgress(common.Empty) returns (GetProgressResponse);
+  rpc VolumeUp(common.Empty) returns (VolumeReply);
+  rpc VolumeDown(common.Empty) returns (VolumeReply);
+  rpc SpeedUp(common.Empty) returns (SpeedReply);
+  rpc SpeedDown(common.Empty) returns (SpeedReply);
   // Toggle the gapless mdoe, returns the new state.
-  rpc ToggleGapless(Empty) returns (GaplessState);
-  rpc RestartTrack(Empty) returns (PlayerTime);
-  rpc SeekForward(Empty) returns (PlayerTime);
-  rpc SeekBackward(Empty) returns (PlayerTime);
+  rpc ToggleGapless(common.Empty) returns (GaplessState);
+  rpc RestartTrack(common.Empty) returns (PlayerTime);
+  rpc SeekForward(common.Empty) returns (PlayerTime);
+  rpc SeekBackward(common.Empty) returns (PlayerTime);
 
   // Playlist Commands
   // Skip to a specific track in the playlist
   // at the momemnt, the one set via "current_track_index"
-  rpc PlaySpecific(PlaylistPlaySpecific) returns (Empty);
+  rpc PlaySpecific(PlaylistPlaySpecific) returns (common.Empty);
   // Cycle the playlist loop mode, returns the new mode.
-  rpc CycleLoop(Empty) returns (PlaylistLoopMode);
+  rpc CycleLoop(common.Empty) returns (PlaylistLoopMode);
   // Add one or multiple tracks to the playlist
-  rpc AddToPlaylist(PlaylistTracksToAdd) returns (Empty);
+  rpc AddToPlaylist(PlaylistTracksToAdd) returns (common.Empty);
   // Remove one or multiple tracks from the playlist
-  rpc RemoveFromPlaylist(PlaylistTracksToRemove) returns (Empty);
+  rpc RemoveFromPlaylist(PlaylistTracksToRemove) returns (common.Empty);
   // Swap some tracks.
-  rpc SwapTracks(PlaylistSwapTracks) returns (Empty);
+  rpc SwapTracks(PlaylistSwapTracks) returns (common.Empty);
   // Get all tracks of the playlist.
-  rpc GetPlaylist(Empty) returns (PlaylistTracks);
+  rpc GetPlaylist(common.Empty) returns (PlaylistTracks);
   // Shuffle the playlist, returns the new playlist tracks.
-  rpc ShufflePlaylist(Empty) returns (Empty);
+  rpc ShufflePlaylist(common.Empty) returns (common.Empty);
   // Sort the playlist by criterion and direction, emits PlaylistShuffled event.
-  rpc SortPlaylist(SortPlaylistRequest) returns (Empty);
+  rpc SortPlaylist(SortPlaylistRequest) returns (common.Empty);
   // Check for and remove deleted items from the playlist.
   // Unlike shuffle, this will send Removal events
-  rpc RemoveDeletedTracks(Empty) returns (Empty);
+  rpc RemoveDeletedTracks(common.Empty) returns (common.Empty);
 
   // Misc Commands
-  rpc ReloadConfig(Empty) returns (Empty);
-  rpc SubscribeServerUpdates(Empty) returns (stream StreamUpdates);
-  rpc QuitServer(Empty) returns (Empty);
+  rpc ReloadConfig(common.Empty) returns (common.Empty);
+  rpc SubscribeServerUpdates(common.Empty) returns (stream StreamUpdates);
+  rpc QuitServer(common.Empty) returns (common.Empty);
 }
-
-message Empty {}
 
 // A play status.
 message PlayState {
@@ -55,9 +55,9 @@ message PlayState {
 }
 
 message PlayerTime {
-  Duration position = 1;
+  common.Duration position = 1;
   // TODO: likely also should be possible to be optional
-  Duration total_duration = 2;
+  common.Duration total_duration = 2;
 }
 
 message GetProgressResponse {
@@ -83,13 +83,6 @@ message SpeedReply {
 // A Gapless state.
 message GaplessState {
   bool gapless = 1;
-}
-
-// using a custom Duration that matches rust's definition, as rust's may not fit
-// into google's well-known Duration
-message Duration {
-  uint64 secs = 1;
-  uint32 nanos = 2;
 }
 
 // all updates that can happen from the server side, without the client to have to ask explicitly
@@ -166,7 +159,7 @@ message UpdateProgress {
 message PlaylistPlaySpecific {
   uint64 track_index = 1;
 
-  TrackId id = 2;
+  common.TrackId id = 2;
 }
 
 // All tracks in the current playlist, they *should* be ordered from lowest to highest index.
@@ -193,7 +186,7 @@ message PlaylistAddTrack {
   uint64 at_index = 1;
 
   // The Id of the track that was added
-  TrackId id = 4;
+  common.TrackId id = 4;
 }
 
 // A Track got removed from the playlist.
@@ -202,12 +195,12 @@ message PlaylistRemoveTrack {
   uint64 at_index = 1;
 
   // The Id of the track that was removed
-  TrackId id = 2;
+  common.TrackId id = 2;
 }
 
 // The Playlist got completely cleared
 message PlaylistCleared {
-  // empty as there are no values, but not using "Empty" to have a unique message id
+  // common.Empty as there are no values, but not using "common.Empty" to have a unique message id
 }
 
 // The current Loop mode for the playlist
@@ -231,7 +224,7 @@ message PlaylistTracksToAdd {
   uint64 at_index = 1;
 
   // All the Tracks to add at the index
-  repeated TrackId tracks = 2;
+  repeated common.TrackId tracks = 2;
 }
 
 // Remove multiple track or clear the playlist
@@ -249,30 +242,17 @@ message PlaylistTracksToRemoveIndexed {
   uint64 at_index = 1;
 
   // All the Tracks to remove at the index
-  repeated TrackId tracks = 2;
+  repeated common.TrackId tracks = 2;
 }
 
 /// Clear the entire playlist
 message PlaylistTracksToRemoveClear {
-  // empty as there are no values, but not using "Empty" to have a unique message id
+  // common.Empty as there are no values, but not using "common.Empty" to have a unique message id
 }
 
 /// Indicate that the playlist has been shuffled and should be re-fetched
 message PlaylistShuffled {
   PlaylistTracks shuffled = 1;
-}
-
-// A Identifier for a track.
-message TrackId {
-  oneof source {
-    // Path on the system
-    // bytes *could* be used, but it way more complex and platform dependant
-    string path = 1;
-    // Url (ex. radio)
-    string url = 2;
-    // A podcast episode
-    string podcastUrl = 3;
-  }
 }
 
 // A request to sort the Playlist.

@@ -4,9 +4,10 @@ use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
+use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::music_player_server::MusicPlayer;
 use termusiclib::player::protobuf::player::{
-    Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime, PlaylistLoopMode,
+    GaplessState, GetProgressResponse, PlayState, PlayerTime, PlaylistLoopMode,
     PlaylistPlaySpecific, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
     PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest, SpeedReply,
     StreamUpdates, UpdateMissedEvents, VolumeReply, stream_updates,

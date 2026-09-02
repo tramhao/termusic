@@ -3,9 +3,10 @@ use termusiclib::config::v2::server::LoopMode;
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackType, PlaylistSwapTrack,
 };
+use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::protobuf::player::{
-    Empty, GetProgressResponse, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
+    GetProgressResponse, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
     PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest, StreamUpdates,
 };
 use termusiclib::player::{PlayerProgress, RunningStatus};

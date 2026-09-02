@@ -7,6 +7,9 @@ pub mod protobuf {
     pub mod player {
         tonic::include_proto!("termusic.player");
     }
+    pub mod common {
+        tonic::include_proto!("termusic.common");
+    }
 }
 
 use crate::config::v2::server::LoopMode;
@@ -23,13 +26,13 @@ impl protobuf::player::SortDirection {
 }
 
 // implement transform function for easy use
-impl From<protobuf::player::Duration> for std::time::Duration {
-    fn from(value: protobuf::player::Duration) -> Self {
+impl From<protobuf::common::Duration> for std::time::Duration {
+    fn from(value: protobuf::common::Duration) -> Self {
         std::time::Duration::new(value.secs, value.nanos)
     }
 }
 
-impl From<std::time::Duration> for protobuf::player::Duration {
+impl From<std::time::Duration> for protobuf::common::Duration {
     fn from(value: std::time::Duration) -> Self {
         Self {
             secs: value.as_secs(),
@@ -413,7 +416,7 @@ pub mod playlist_helpers {
         PodcastUrl(String),
     }
 
-    impl From<PlaylistTrackSource> for protobuf::player::track_id::Source {
+    impl From<PlaylistTrackSource> for protobuf::common::track_id::Source {
         fn from(value: PlaylistTrackSource) -> Self {
             match value {
                 PlaylistTrackSource::Path(v) => Self::Path(v),
@@ -423,7 +426,7 @@ pub mod playlist_helpers {
         }
     }
 
-    impl From<PlaylistTrackSource> for protobuf::player::TrackId {
+    impl From<PlaylistTrackSource> for protobuf::common::TrackId {
         fn from(value: PlaylistTrackSource) -> Self {
             Self {
                 source: Some(value.into()),
@@ -431,22 +434,23 @@ pub mod playlist_helpers {
         }
     }
 
-    impl TryFrom<protobuf::player::track_id::Source> for PlaylistTrackSource {
+    impl TryFrom<protobuf::common::track_id::Source> for PlaylistTrackSource {
         type Error = anyhow::Error;
 
-        fn try_from(value: protobuf::player::track_id::Source) -> Result<Self, Self::Error> {
+        fn try_from(value: protobuf::common::track_id::Source) -> Result<Self, Self::Error> {
+            use protobuf::common::track_id;
             Ok(match value {
-                protobuf::player::track_id::Source::Path(v) => Self::Path(v),
-                protobuf::player::track_id::Source::Url(v) => Self::Url(v),
-                protobuf::player::track_id::Source::PodcastUrl(v) => Self::PodcastUrl(v),
+                track_id::Source::Path(v) => Self::Path(v),
+                track_id::Source::Url(v) => Self::Url(v),
+                track_id::Source::PodcastUrl(v) => Self::PodcastUrl(v),
             })
         }
     }
 
-    impl TryFrom<protobuf::player::TrackId> for PlaylistTrackSource {
+    impl TryFrom<protobuf::common::TrackId> for PlaylistTrackSource {
         type Error = anyhow::Error;
 
-        fn try_from(value: protobuf::player::TrackId) -> Result<Self, Self::Error> {
+        fn try_from(value: protobuf::common::TrackId) -> Result<Self, Self::Error> {
             unwrap_msg(value.source, "TrackId.source").and_then(Self::try_from)
         }
     }
