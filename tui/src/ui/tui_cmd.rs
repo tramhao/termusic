@@ -1,7 +1,7 @@
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
-use termusiclib::player::protobuf::player::{SortCriterion, SortDirection};
+use termusiclib::player::protobuf::queue::{SortCriterion, SortDirection};
 
 #[allow(clippy::doc_link_with_quotes)]
 /// Enum for Commands to send to the Services to send to the server.

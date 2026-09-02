@@ -1,7 +1,7 @@
 use clap::{ArgAction, Parser, Subcommand, ValueEnum, builder::ArgPredicate};
 use std::path::PathBuf;
 use termusiclib::config::v2::server::Backend as ConfigBackend;
-use termusiclib::player::protobuf::player::{SortCriterion, SortDirection};
+use termusiclib::player::protobuf::queue::{SortCriterion, SortDirection};
 
 #[derive(Parser, Debug)]
 // mostly read from `Cargo.toml`

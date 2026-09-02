@@ -10,6 +10,9 @@ pub mod protobuf {
     pub mod player {
         tonic::include_proto!("termusic.player");
     }
+    pub mod queue {
+        tonic::include_proto!("termusic.queue");
+    }
     pub mod stream {
         tonic::include_proto!("termusic.stream");
     }
@@ -20,7 +23,7 @@ pub mod protobuf {
 
 use crate::{config::v2::server::LoopMode, player::protobuf::common::Empty};
 
-impl protobuf::player::SortDirection {
+impl protobuf::queue::SortDirection {
     /// Swap between `Asc` and `Desc`.
     #[must_use]
     pub fn invert(self) -> Self {
@@ -289,7 +292,7 @@ pub struct PlaylistSwapInfo {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlaylistShuffledInfo {
-    pub tracks: protobuf::player::PlaylistTracks,
+    pub state: protobuf::queue::PlaylistState,
 }
 
 /// Separate nested enum to handle all playlist related events
@@ -328,7 +331,7 @@ impl From<UpdatePlaylistEvents> for protobuf::stream::UpdatePlaylist {
             UpdatePlaylistEvents::PlaylistCleared => PPlaylistTypes::Cleared(Empty {}),
             UpdatePlaylistEvents::PlaylistLoopMode(vals) => {
                 PPlaylistTypes::LoopMode(PlaylistLoopMode {
-                    mode: protobuf::player::PlaylistLoopMode { mode: vals.mode }.into(),
+                    mode: protobuf::queue::PlaylistLoopMode { mode: vals.mode }.into(),
                 })
             }
             UpdatePlaylistEvents::PlaylistSwapTracks(vals) => {
@@ -339,7 +342,7 @@ impl From<UpdatePlaylistEvents> for protobuf::stream::UpdatePlaylist {
             }
             UpdatePlaylistEvents::PlaylistShuffled(vals) => {
                 PPlaylistTypes::Shuffled(PlaylistShuffled {
-                    shuffled: Some(vals.tracks),
+                    shuffled: Some(vals.state),
                 })
             }
         };
@@ -382,7 +385,7 @@ impl TryFrom<protobuf::stream::UpdatePlaylist> for UpdatePlaylistEvents {
             }),
             PPlaylistTypes::Shuffled(ev) => {
                 let shuffled = unwrap_msg(ev.shuffled, "UpdatePlaylist.type.shuffled.shuffled")?;
-                Self::PlaylistShuffled(PlaylistShuffledInfo { tracks: shuffled })
+                Self::PlaylistShuffled(PlaylistShuffledInfo { state: shuffled })
             }
         };
 
@@ -410,7 +413,7 @@ pub fn clamp_u16(val: u32) -> u16 {
 pub mod playlist_helpers {
     use anyhow::Context;
 
-    use crate::player::protobuf::player::PlaylistTracksToRemoveClear;
+    use crate::player::protobuf::common::Empty;
 
     use super::{protobuf, unwrap_msg};
 
@@ -483,7 +486,7 @@ pub mod playlist_helpers {
         }
     }
 
-    impl From<PlaylistAddTrack> for protobuf::player::PlaylistTracksToAdd {
+    impl From<PlaylistAddTrack> for protobuf::queue::PlaylistTracksToAddRequest {
         fn from(value: PlaylistAddTrack) -> Self {
             Self {
                 at_index: value.at_index,
@@ -492,14 +495,18 @@ pub mod playlist_helpers {
         }
     }
 
-    impl TryFrom<protobuf::player::PlaylistTracksToAdd> for PlaylistAddTrack {
+    impl TryFrom<protobuf::queue::PlaylistTracksToAddRequest> for PlaylistAddTrack {
         type Error = anyhow::Error;
 
-        fn try_from(value: protobuf::player::PlaylistTracksToAdd) -> Result<Self, Self::Error> {
+        fn try_from(
+            value: protobuf::queue::PlaylistTracksToAddRequest,
+        ) -> Result<Self, Self::Error> {
             let tracks = value
                 .tracks
                 .into_iter()
-                .map(|v| PlaylistTrackSource::try_from(v).context("PlaylistTracksToAdd.tracks"))
+                .map(|v| {
+                    PlaylistTrackSource::try_from(v).context("PlaylistTracksToAddRequest.tracks")
+                })
                 .collect::<Result<Vec<_>, anyhow::Error>>()?;
 
             Ok(Self {
@@ -531,7 +538,7 @@ pub mod playlist_helpers {
         }
     }
 
-    impl From<PlaylistRemoveTrackIndexed> for protobuf::player::PlaylistTracksToRemoveIndexed {
+    impl From<PlaylistRemoveTrackIndexed> for protobuf::queue::PlaylistTracksToRemoveIndexed {
         fn from(value: PlaylistRemoveTrackIndexed) -> Self {
             Self {
                 at_index: value.at_index,
@@ -540,11 +547,11 @@ pub mod playlist_helpers {
         }
     }
 
-    impl TryFrom<protobuf::player::PlaylistTracksToRemoveIndexed> for PlaylistRemoveTrackIndexed {
+    impl TryFrom<protobuf::queue::PlaylistTracksToRemoveIndexed> for PlaylistRemoveTrackIndexed {
         type Error = anyhow::Error;
 
         fn try_from(
-            value: protobuf::player::PlaylistTracksToRemoveIndexed,
+            value: protobuf::queue::PlaylistTracksToRemoveIndexed,
         ) -> Result<Self, Self::Error> {
             let tracks = value
                 .tracks
@@ -568,26 +575,26 @@ pub mod playlist_helpers {
         Clear,
     }
 
-    type PToRemoveTypes = protobuf::player::playlist_tracks_to_remove::Type;
+    type PToRemoveTypes = protobuf::queue::playlist_tracks_to_remove_request::Type;
 
-    impl From<PlaylistRemoveTrackType> for protobuf::player::PlaylistTracksToRemove {
+    impl From<PlaylistRemoveTrackType> for protobuf::queue::PlaylistTracksToRemoveRequest {
         fn from(value: PlaylistRemoveTrackType) -> Self {
             Self {
                 r#type: Some(match value {
                     PlaylistRemoveTrackType::Indexed(v) => PToRemoveTypes::Indexed(v.into()),
-                    PlaylistRemoveTrackType::Clear => {
-                        PToRemoveTypes::Clear(PlaylistTracksToRemoveClear {})
-                    }
+                    PlaylistRemoveTrackType::Clear => PToRemoveTypes::Clear(Empty {}),
                 }),
             }
         }
     }
 
-    impl TryFrom<protobuf::player::PlaylistTracksToRemove> for PlaylistRemoveTrackType {
+    impl TryFrom<protobuf::queue::PlaylistTracksToRemoveRequest> for PlaylistRemoveTrackType {
         type Error = anyhow::Error;
 
-        fn try_from(value: protobuf::player::PlaylistTracksToRemove) -> Result<Self, Self::Error> {
-            let value = unwrap_msg(value.r#type, "PlaylistTracksToRemove.type")?;
+        fn try_from(
+            value: protobuf::queue::PlaylistTracksToRemoveRequest,
+        ) -> Result<Self, Self::Error> {
+            let value = unwrap_msg(value.r#type, "PlaylistTracksToRemoveRequest.type")?;
 
             Ok(match value {
                 PToRemoveTypes::Indexed(v) => Self::Indexed(v.try_into()?),
@@ -603,7 +610,7 @@ pub mod playlist_helpers {
         pub index_b: u64,
     }
 
-    impl From<PlaylistSwapTrack> for protobuf::player::PlaylistSwapTracksRequest {
+    impl From<PlaylistSwapTrack> for protobuf::queue::PlaylistSwapTracksRequest {
         fn from(value: PlaylistSwapTrack) -> Self {
             Self {
                 index_a: value.index_a,
@@ -612,11 +619,11 @@ pub mod playlist_helpers {
         }
     }
 
-    impl TryFrom<protobuf::player::PlaylistSwapTracksRequest> for PlaylistSwapTrack {
+    impl TryFrom<protobuf::queue::PlaylistSwapTracksRequest> for PlaylistSwapTrack {
         type Error = anyhow::Error;
 
         fn try_from(
-            value: protobuf::player::PlaylistSwapTracksRequest,
+            value: protobuf::queue::PlaylistSwapTracksRequest,
         ) -> Result<Self, Self::Error> {
             Ok(Self {
                 index_a: value.index_a,
@@ -632,7 +639,7 @@ pub mod playlist_helpers {
         pub id: PlaylistTrackSource,
     }
 
-    impl From<PlaylistPlaySpecific> for protobuf::player::PlaylistPlaySpecific {
+    impl From<PlaylistPlaySpecific> for protobuf::queue::PlaylistPlaySpecificRequest {
         fn from(value: PlaylistPlaySpecific) -> Self {
             Self {
                 track_index: value.track_index,
@@ -641,14 +648,16 @@ pub mod playlist_helpers {
         }
     }
 
-    impl TryFrom<protobuf::player::PlaylistPlaySpecific> for PlaylistPlaySpecific {
+    impl TryFrom<protobuf::queue::PlaylistPlaySpecificRequest> for PlaylistPlaySpecific {
         type Error = anyhow::Error;
 
-        fn try_from(value: protobuf::player::PlaylistPlaySpecific) -> Result<Self, Self::Error> {
+        fn try_from(
+            value: protobuf::queue::PlaylistPlaySpecificRequest,
+        ) -> Result<Self, Self::Error> {
             Ok(Self {
                 track_index: value.track_index,
-                id: unwrap_msg(value.id, "PlaylistPlaySpecific.id").and_then(|v| {
-                    PlaylistTrackSource::try_from(v).context("PlaylistPlaySpecific.id")
+                id: unwrap_msg(value.id, "PlaylistPlaySpecificRequest.id").and_then(|v| {
+                    PlaylistTrackSource::try_from(v).context("PlaylistPlaySpecificRequest.id")
                 })?,
             })
         }

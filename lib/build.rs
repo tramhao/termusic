@@ -6,7 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let files = [
         include_dir.join("server.proto"),
         include_dir.join("player.proto"),
-        // include_dir.join("queue.proto"),
+        include_dir.join("queue.proto"),
         include_dir.join("stream.proto"),
     ];
 

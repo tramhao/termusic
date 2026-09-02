@@ -3,6 +3,7 @@ package termusic.stream;
 
 import "common.proto";
 import "player.proto";
+import "queue.proto";
 
 // Everything related to player events
 service StreamEvents {
@@ -109,12 +110,12 @@ message PlaylistSwapTracks {
 
 // Indicate that the playlist has changed its loop mode
 message PlaylistLoopMode {
-  player.PlaylistLoopMode mode = 1;
+  queue.PlaylistLoopMode mode = 1;
 }
 
 /// Indicate that the playlist has been shuffled and should be re-fetched
 message PlaylistShuffled {
-  player.PlaylistTracks shuffled = 1;
+  queue.PlaylistState shuffled = 1;
 }
 
 // A Track got added to the playlist, this message contains where it was added and all the metadata required for display.

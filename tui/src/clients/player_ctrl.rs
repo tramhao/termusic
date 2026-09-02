@@ -1,14 +1,7 @@
-use anyhow::{Context, Result};
-use termusiclib::config::v2::server::LoopMode;
-use termusiclib::player::playlist_helpers::{
-    PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackType, PlaylistSwapTrack,
-};
+use anyhow::Result;
 use termusiclib::player::protobuf::common::Empty;
+use termusiclib::player::protobuf::player::GetProgressResponse;
 use termusiclib::player::protobuf::player::player_control_client::PlayerControlClient;
-use termusiclib::player::protobuf::player::{
-    GetProgressResponse, PlaylistSwapTracksRequest, PlaylistTracks, PlaylistTracksToAdd,
-    PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest,
-};
 use termusiclib::player::{PlayerProgress, RunningStatus};
 use tonic::transport::Channel;
 
@@ -68,17 +61,6 @@ impl PlayerControlConsumer {
         Ok(response.volume.min(u32::from(u16::MAX)) as u16)
     }
 
-    pub async fn cycle_loop(&mut self) -> Result<LoopMode> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.cycle_loop(request).await?;
-        let response = response.into_inner();
-        info!("Got response from server: {response:?}");
-        let as_u8 = u8::try_from(response.mode).context("Failed to convert u32 to u8")?;
-        let loop_mode =
-            LoopMode::tryfrom_discriminant(as_u8).context("Failed to get LoopMode from u8")?;
-        Ok(loop_mode)
-    }
-
     pub async fn speed_up(&mut self) -> Result<i32> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.speed_up(request).await?;
@@ -127,83 +109,11 @@ impl PlayerControlConsumer {
         Ok(response.into())
     }
 
-    pub async fn play_specific(&mut self, info: PlaylistPlaySpecific) -> Result<()> {
-        let request = tonic::Request::new(info.into());
-        let response = self.client.play_specific(request).await?;
-        let response = response.into_inner();
-        info!("Got response from server: {response:?}");
-        Ok(())
-    }
-
     pub async fn skip_previous(&mut self) -> Result<()> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.skip_previous(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
-        Ok(())
-    }
-
-    pub async fn add_to_playlist(&mut self, info: PlaylistAddTrack) -> Result<()> {
-        let request = tonic::Request::new(PlaylistTracksToAdd::from(info));
-        let response = self.client.add_to_playlist(request).await?;
-        info!("Got response from server: {response:?}");
-
-        Ok(())
-    }
-
-    pub async fn remove_from_playlist(&mut self, info: PlaylistRemoveTrackType) -> Result<()> {
-        let request = tonic::Request::new(PlaylistTracksToRemove::from(info));
-        let response = self.client.remove_from_playlist(request).await?;
-        info!("Got response from server: {response:?}");
-
-        Ok(())
-    }
-
-    pub async fn swap_tracks(&mut self, info: PlaylistSwapTrack) -> Result<()> {
-        let request = tonic::Request::new(PlaylistSwapTracksRequest::from(info));
-        let response = self.client.swap_tracks(request).await?;
-        info!("Got response from server: {response:?}");
-
-        Ok(())
-    }
-
-    pub async fn get_playlist(&mut self) -> Result<PlaylistTracks> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.get_playlist(request).await?;
-        // This might be massively spamming the log
-        info!("Got response from server: {response:?}");
-
-        Ok(response.into_inner())
-    }
-
-    pub async fn shuffle_playlist(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.shuffle_playlist(request).await?;
-        info!("Got response from server: {response:?}");
-
-        Ok(())
-    }
-
-    pub async fn sort_playlist(
-        &mut self,
-        criterion: SortCriterion,
-        direction: SortDirection,
-    ) -> Result<()> {
-        let request = tonic::Request::new(SortPlaylistRequest {
-            criterion: criterion.into(),
-            direction: direction.into(),
-        });
-        let response = self.client.sort_playlist(request).await?;
-        info!("Got response from server: {response:?}");
-
-        Ok(())
-    }
-
-    pub async fn remove_deleted_tracks(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.remove_deleted_tracks(request).await?;
-        info!("Got response from server: {response:?}");
-
         Ok(())
     }
 }

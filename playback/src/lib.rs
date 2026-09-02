@@ -11,7 +11,7 @@ use termusiclib::new_database::{Database, track_ops};
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
 };
-use termusiclib::player::protobuf::player::{SortCriterion, SortDirection};
+use termusiclib::player::protobuf::queue::{SortCriterion, SortDirection};
 use termusiclib::player::{
     PlayerProgress, PlayerTimeUnit, RunningStatus, TrackChangedInfo, UpdateEvents,
 };

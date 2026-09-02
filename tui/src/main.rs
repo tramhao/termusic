@@ -35,7 +35,7 @@ mod ui;
 use cli::Action;
 use ui::UI;
 
-use crate::clients::{PlayerControlConsumer, ServerControlConsumer};
+use crate::clients::{PlayerControlConsumer, QueueControlConsumer, ServerControlConsumer};
 
 #[macro_use]
 extern crate log;
@@ -603,11 +603,11 @@ async fn execute_playlist_action(
         .context("No active server process found. Start the Server first.")?;
 
     let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
-    let mut playback = PlayerControlConsumer::new(raw_client);
+    let mut queue_client = QueueControlConsumer::new(raw_client);
 
     match action {
         cli::PlaylistAction::Shuffle => {
-            playback.shuffle_playlist().await?;
+            queue_client.shuffle_playlist().await?;
             println!("Shuffled playlist");
         }
         cli::PlaylistAction::Sort { criterion, invert } => {
@@ -617,11 +617,11 @@ async fn execute_playlist_action(
             } else {
                 direction
             };
-            playback.sort_playlist(criterion, direction).await?;
+            queue_client.sort_playlist(criterion, direction).await?;
             println!("Sorted playlist");
         }
         cli::PlaylistAction::CycleLoop => {
-            let mode = playback.cycle_loop().await?;
+            let mode = queue_client.cycle_loop().await?;
             println!("Loop: {}", mode.display_text());
         }
     }

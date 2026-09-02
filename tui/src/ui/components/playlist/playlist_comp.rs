@@ -16,7 +16,7 @@ use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
     PlaylistTrackSource,
 };
-use termusiclib::player::protobuf::player::{SortCriterion, SortDirection};
+use termusiclib::player::protobuf::queue::{SortCriterion, SortDirection};
 use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
     PlaylistSwapInfo,
@@ -679,7 +679,7 @@ impl Model {
         drop(playlist);
 
         self.playback
-            .load_from_grpc(shuffled.tracks, &self.podcast.db_podcast)?;
+            .load_from_grpc(shuffled.state, &self.podcast.db_podcast)?;
         self.playlist_sync();
 
         if let Some(old_id) = playlist_track_at_old_file {
