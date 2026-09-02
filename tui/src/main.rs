@@ -35,7 +35,7 @@ mod ui;
 use cli::Action;
 use ui::UI;
 
-use crate::clients::Playback;
+use crate::clients::PlayerControlConsumer;
 
 #[macro_use]
 extern crate log;
@@ -315,7 +315,7 @@ const WAIT_MESSAGE_TIME: Duration = Duration::from_secs(5);
 /// Time to sleep between connect tries.
 const WAIT_INTERVAL: Duration = Duration::from_millis(100);
 
-/// Wait until the [`MusicPlayerClient`] is connected on the correct transport protocol.
+/// Wait until the channel for the services is connected on the transport protocol defined by the config.
 async fn wait_till_connected(
     config: &CombinedSettings,
     pid: u32,
@@ -603,7 +603,7 @@ async fn execute_playlist_action(
         .context("No active server process found. Start the Server first.")?;
 
     let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
-    let mut playback = Playback::new(raw_client);
+    let mut playback = PlayerControlConsumer::new(raw_client);
 
     match action {
         cli::PlaylistAction::Shuffle => {
@@ -636,7 +636,7 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
         .context("No active server process found. Start the Server first.")?;
 
     let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
-    let mut playback = Playback::new(raw_client);
+    let mut playback = PlayerControlConsumer::new(raw_client);
 
     match action {
         Action::Next => {

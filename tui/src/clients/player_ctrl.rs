@@ -4,7 +4,7 @@ use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackType, PlaylistSwapTrack,
 };
 use termusiclib::player::protobuf::common::Empty;
-use termusiclib::player::protobuf::player::music_player_client::MusicPlayerClient;
+use termusiclib::player::protobuf::player::player_control_client::PlayerControlClient;
 use termusiclib::player::protobuf::player::{
     GetProgressResponse, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
     PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest, StreamUpdates,
@@ -15,13 +15,13 @@ use tonic::transport::Channel;
 
 /// Handle TUI Requests to the server.
 #[derive(Debug)]
-pub struct Playback {
-    client: MusicPlayerClient<Channel>,
+pub struct PlayerControlConsumer {
+    client: PlayerControlClient<Channel>,
 }
 
-impl Playback {
+impl PlayerControlConsumer {
     pub fn new(raw_client: Channel) -> Self {
-        let client = MusicPlayerClient::new(raw_client);
+        let client = PlayerControlClient::new(raw_client);
         Self { client }
     }
 

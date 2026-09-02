@@ -572,7 +572,7 @@ impl Model {
         self.command(TuiCmd::SkipPrevious);
     }
 
-    /// Send a command to the `MusicPlayerService` (via the Client)
+    /// Send a command to the server
     pub fn command(&mut self, cmd: TuiCmd) {
         if let Err(e) = self.cmd_to_server_tx.send(cmd) {
             self.mount_error_popup(anyhow!(e));

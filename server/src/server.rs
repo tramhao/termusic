@@ -9,7 +9,7 @@ use parking_lot::{Mutex, RwLock};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
-use termusiclib::player::protobuf::player::music_player_server::MusicPlayerServer;
+use termusiclib::player::protobuf::player::player_control_server::PlayerControlServer;
 use termusiclib::player::protobuf::player::{GetProgressResponse, PlayerTime};
 use termusiclib::player::{PlayerProgress, RunningStatus};
 use termusiclib::track::{MediaTypesSimple, Track};
@@ -28,7 +28,7 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
 use crate::connection::{ActiveConnectionData, ActiveConnections, tcp_stream};
-use crate::services::MusicPlayerService;
+use crate::services::PlayerControlService;
 
 mod cli;
 mod connection;
@@ -144,7 +144,7 @@ async fn actual_main() -> Result<()> {
 
     let run_info = Arc::new(RwLock::new(RunInfo::default()));
 
-    let music_player_service = MusicPlayerService::new(
+    let music_player_service = PlayerControlService::new(
         cmd_tx.clone(),
         stream_tx.clone(),
         config.clone(),
@@ -243,10 +243,10 @@ fn start_playlist_save_interval(
     });
 }
 
-/// Start the [`MusicPlayerService`] with the according transport protocol.
+/// Start all the services with the transport protocol defined in the config.
 async fn start_service(
     config: &SharedServerSettings,
-    music_player_service: MusicPlayerService,
+    music_player_service: PlayerControlService,
     cancel_token: CancellationToken,
 ) -> Result<(
     JoinHandle<Result<(), tonic::transport::Error>>,
@@ -254,7 +254,7 @@ async fn start_service(
 )> {
     let protocol = config.read().settings.com.protocol;
 
-    let player_ctrl_svc = MusicPlayerServer::new(music_player_service);
+    let player_ctrl_svc = PlayerControlServer::new(music_player_service);
     let active_connection_count: ActiveConnections = Arc::new(ActiveConnectionData::default());
 
     let handle = match protocol {

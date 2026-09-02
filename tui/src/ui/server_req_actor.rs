@@ -3,7 +3,7 @@ use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 use crate::{
-    clients::Playback,
+    clients::PlayerControlConsumer,
     ui::{
         model::TxToMain,
         msg::{Msg, ServerReqResponse},
@@ -15,7 +15,7 @@ use crate::{
 ///
 /// This actor can be given commands via [`TuiCmd`] and responds on [`TxToMain`].
 pub struct ServerRequestActor {
-    client_handle: Playback,
+    client_handle: PlayerControlConsumer,
     rx_cmd: UnboundedReceiver<TuiCmd>,
     tx_main: TxToMain,
 }
@@ -25,7 +25,7 @@ impl ServerRequestActor {
     ///
     /// To shutdown this actor, close `rx_cmd` channel.
     pub fn start_actor(
-        client_handle: Playback,
+        client_handle: PlayerControlConsumer,
         rx_cmd: UnboundedReceiver<TuiCmd>,
         tx_main: TxToMain,
     ) -> JoinHandle<()> {

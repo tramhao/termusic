@@ -4,7 +4,7 @@ use termusiclib::player::playlist_helpers::{
 use termusiclib::player::protobuf::player::{SortCriterion, SortDirection};
 
 #[allow(clippy::doc_link_with_quotes)]
-/// Enum for Commands to send to the [`MusicPlayerClient` "Actor"](crate::ui::music_player_client).
+/// Enum for Commands to send to the Services to send to the server.
 // This is completely different from playback's PlayerCmd, as the tui may need to handle stuff differently and not need all variants
 #[derive(Clone, Debug)]
 pub enum TuiCmd {

@@ -1,3 +1,3 @@
 mod player_ctrl;
 
-pub use player_ctrl::MusicPlayerService;
+pub use player_ctrl::PlayerControlService;

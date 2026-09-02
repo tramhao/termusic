@@ -3,7 +3,8 @@ package termusic.player;
 
 import "common.proto";
 
-service MusicPlayer {
+// Everything directly related to playback control.
+service PlayerControl {
   // Player Commands
   // Toggle Pause/Play, returns the new state
   rpc TogglePause(common.Empty) returns (PlayState);

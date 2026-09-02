@@ -5,7 +5,7 @@ use std::sync::Arc;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use termusiclib::player::protobuf::common::Empty;
-use termusiclib::player::protobuf::player::music_player_server::MusicPlayer;
+use termusiclib::player::protobuf::player::player_control_server::PlayerControl;
 use termusiclib::player::protobuf::player::{
     GaplessState, GetProgressResponse, PlayState, PlayerTime, PlaylistLoopMode,
     PlaylistPlaySpecific, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
@@ -23,7 +23,7 @@ use tonic::{Request, Response, Status};
 use crate::PlayerStats;
 
 #[derive(Debug)]
-pub struct MusicPlayerService {
+pub struct PlayerControlService {
     cmd_tx: PlayerCmdSender,
     stream_tx: StreamTX,
     config: SharedServerSettings,
@@ -32,7 +32,7 @@ pub struct MusicPlayerService {
     pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
-impl MusicPlayerService {
+impl PlayerControlService {
     pub fn new(
         cmd_tx: PlayerCmdSender,
         stream_tx: StreamTX,
@@ -57,7 +57,7 @@ impl MusicPlayerService {
     }
 }
 
-impl MusicPlayerService {
+impl PlayerControlService {
     fn command(&self, cmd: PlayerCmd) {
         if let Err(e) = self.cmd_tx.send(cmd.clone()) {
             error!("error {cmd:?}: {e}");
@@ -75,7 +75,7 @@ impl MusicPlayerService {
 }
 
 #[tonic::async_trait]
-impl MusicPlayer for MusicPlayerService {
+impl PlayerControl for PlayerControlService {
     async fn cycle_loop(
         &self,
         _request: Request<Empty>,
