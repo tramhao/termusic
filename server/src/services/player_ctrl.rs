@@ -3,13 +3,13 @@ use parking_lot::Mutex;
 use std::pin::Pin;
 use std::sync::Arc;
 use termusiclib::config::SharedServerSettings;
-use termusiclib::player::music_player_server::MusicPlayer;
-use termusiclib::player::playlist_helpers::{PlaylistPlaySpecific, PlaylistRemoveTrackType};
-use termusiclib::player::{
-    self, Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime, PlaylistLoopMode,
-    PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd, PlaylistTracksToRemove,
-    SortPlaylistRequest, SpeedReply, StreamUpdates, UpdateMissedEvents, VolumeReply,
-    stream_updates,
+use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
+use termusiclib::player::protobuf::player::music_player_server::MusicPlayer;
+use termusiclib::player::protobuf::player::{
+    Empty, GaplessState, GetProgressResponse, PlayState, PlayerTime, PlaylistLoopMode,
+    PlaylistPlaySpecific, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
+    PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest, SpeedReply,
+    StreamUpdates, UpdateMissedEvents, VolumeReply, stream_updates,
 };
 use termusicplayback::{
     PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, SharedRunInfo, StreamTX,
@@ -103,9 +103,9 @@ impl MusicPlayer for MusicPlayerService {
 
     async fn play_specific(
         &self,
-        request: Request<player::PlaylistPlaySpecific>,
+        request: Request<PlaylistPlaySpecific>,
     ) -> Result<Response<Empty>, Status> {
-        let converted: PlaylistPlaySpecific = request
+        let converted = request
             .into_inner()
             .try_into()
             .map_err(|err: anyhow::Error| Status::from_error(err.into()))?;
@@ -247,7 +247,7 @@ impl MusicPlayer for MusicPlayerService {
     }
 
     type SubscribeServerUpdatesStream =
-        Pin<Box<dyn Stream<Item = Result<termusiclib::player::StreamUpdates, Status>> + Send>>;
+        Pin<Box<dyn Stream<Item = Result<StreamUpdates, Status>> + Send>>;
     async fn subscribe_server_updates(
         &self,
         _: Request<Empty>,
@@ -351,9 +351,9 @@ impl MusicPlayer for MusicPlayerService {
         request: Request<SortPlaylistRequest>,
     ) -> Result<Response<Empty>, Status> {
         let req = request.into_inner();
-        let criterion = player::SortCriterion::try_from(req.criterion)
+        let criterion = SortCriterion::try_from(req.criterion)
             .map_err(|e| Status::invalid_argument(format!("unknown sort criterion: {e}")))?;
-        let direction = player::SortDirection::try_from(req.direction)
+        let direction = SortDirection::try_from(req.direction)
             .map_err(|e| Status::invalid_argument(format!("unknown sort direction: {e}")))?;
         info!("Sort playlist: {criterion:?} {direction:?}");
         let rx = self.command_cb(PlayerCmd::PlaylistSort(criterion, direction))?;

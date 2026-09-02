@@ -9,8 +9,9 @@ use parking_lot::{Mutex, RwLock};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
-use termusiclib::player::music_player_server::MusicPlayerServer;
-use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
+use termusiclib::player::protobuf::player::music_player_server::MusicPlayerServer;
+use termusiclib::player::protobuf::player::{GetProgressResponse, PlayerTime};
+use termusiclib::player::{PlayerProgress, RunningStatus};
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -253,7 +254,7 @@ async fn start_service(
 )> {
     let protocol = config.read().settings.com.protocol;
 
-    let svc = MusicPlayerServer::new(music_player_service);
+    let player_ctrl_svc = MusicPlayerServer::new(music_player_service);
     let active_connection_count: ActiveConnections = Arc::new(ActiveConnectionData::default());
 
     let handle = match protocol {
@@ -263,7 +264,7 @@ async fn start_service(
 
             tokio::spawn(
                 Server::builder()
-                    .add_service(svc)
+                    .add_service(player_ctrl_svc)
                     .serve_with_incoming_shutdown(tcp_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -276,7 +277,7 @@ async fn start_service(
 
             tokio::spawn(
                 Server::builder()
-                    .add_service(svc)
+                    .add_service(player_ctrl_svc)
                     .serve_with_incoming_shutdown(uds_stream, cancel_token.cancelled_owned()),
             )
         }

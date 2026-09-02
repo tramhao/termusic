@@ -1,14 +1,14 @@
 use anyhow::{Context, Result};
 use termusiclib::config::v2::server::LoopMode;
-use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackType, PlaylistSwapTrack,
 };
-use termusiclib::player::{
-    Empty, GetProgressResponse, PlayerProgress, PlaylistSwapTracks, PlaylistTracks,
-    PlaylistTracksToAdd, PlaylistTracksToRemove, RunningStatus, SortCriterion, SortDirection,
-    SortPlaylistRequest,
+use termusiclib::player::protobuf::player::music_player_client::MusicPlayerClient;
+use termusiclib::player::protobuf::player::{
+    Empty, GetProgressResponse, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
+    PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest, StreamUpdates,
 };
+use termusiclib::player::{PlayerProgress, RunningStatus};
 use tokio_stream::{Stream, StreamExt as _};
 use tonic::transport::Channel;
 
@@ -153,7 +153,7 @@ impl Playback {
 
     pub async fn subscribe_to_stream_updates(
         &mut self,
-    ) -> Result<impl Stream<Item = Result<termusiclib::player::StreamUpdates>> + use<>> {
+    ) -> Result<impl Stream<Item = Result<StreamUpdates>> + use<>> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.subscribe_server_updates(request).await?;
         let response = response.into_inner().map(|res| res.map_err(Into::into));

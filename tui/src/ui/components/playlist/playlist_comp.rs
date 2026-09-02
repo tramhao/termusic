@@ -16,9 +16,10 @@ use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
     PlaylistTrackSource,
 };
+use termusiclib::player::protobuf::player::{SortCriterion, SortDirection};
 use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
-    PlaylistSwapInfo, SortCriterion, SortDirection,
+    PlaylistSwapInfo,
 };
 use termusiclib::track::DurationFmtShort;
 use termusiclib::track::Track;

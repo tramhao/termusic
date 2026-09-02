@@ -12,19 +12,19 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::new_database::Database;
-use termusiclib::player;
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistShuffledInfo;
 use termusiclib::player::PlaylistSwapInfo;
-use termusiclib::player::PlaylistTracks;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
+use termusiclib::player::protobuf;
+use termusiclib::player::protobuf::player::PlaylistTracks;
+use termusiclib::player::protobuf::player::{SortCriterion, SortDirection};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
-use termusiclib::player::{SortCriterion, SortDirection};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::{MediaTypes, Track, TrackData};
 use termusiclib::utils::{filetype_supported, get_app_config_path, get_parent_folder};
@@ -971,7 +971,7 @@ impl Playlist {
                 let at_index = u64::try_from(idx).context("track index(usize) to u64")?;
                 let track_source = track.as_track_source();
 
-                Ok(player::PlaylistAddTrack {
+                Ok(protobuf::player::PlaylistAddTrack {
                     at_index,
                     id: Some(track_source.into()),
                 })

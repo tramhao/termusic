@@ -3,11 +3,13 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-use termusiclib::player::{SortCriterion, SortDirection};
+use termusiclib::player::protobuf::player::{
+    GetProgressResponse, PlaylistTracks, SortCriterion, SortDirection,
+};
 
 use image::DynamicImage;
 use termusiclib::config::v2::tui::{keys::KeyBinding, theme::styles::ColorTermusic};
-use termusiclib::player::{GetProgressResponse, PlaylistTracks, UpdateEvents};
+use termusiclib::player::UpdateEvents;
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
 use tokio::sync::mpsc;

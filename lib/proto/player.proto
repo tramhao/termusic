@@ -1,5 +1,5 @@
 syntax = "proto3";
-package player;
+package termusic.player;
 
 service MusicPlayer {
   // Player Commands
