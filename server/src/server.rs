@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
-use music_player_service::MusicPlayerService;
 use parking_lot::{Mutex, RwLock};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
@@ -28,11 +27,12 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
 use crate::connection::{ActiveConnectionData, ActiveConnections, tcp_stream};
+use crate::services::MusicPlayerService;
 
 mod cli;
 mod connection;
 mod logger;
-mod music_player_service;
+mod services;
 
 #[macro_use]
 extern crate log;
@@ -143,7 +143,7 @@ async fn actual_main() -> Result<()> {
 
     let run_info = Arc::new(RwLock::new(RunInfo::default()));
 
-    let music_player_service: MusicPlayerService = MusicPlayerService::new(
+    let music_player_service = MusicPlayerService::new(
         cmd_tx.clone(),
         stream_tx.clone(),
         config.clone(),

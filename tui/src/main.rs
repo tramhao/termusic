@@ -28,12 +28,15 @@ use tokio::sync::RwLock;
 use tokio::task::AbortHandle;
 use tokio_util::sync::CancellationToken;
 
-use ui::UI;
-
 mod cli;
-use cli::Action;
+mod clients;
 mod logger;
 mod ui;
+
+use cli::Action;
+use ui::UI;
+
+use crate::clients::Playback;
 
 #[macro_use]
 extern crate log;
@@ -593,7 +596,7 @@ async fn execute_playlist_action(
         .context("No active server process found. Start the Server first.")?;
 
     let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
-    let mut playback = ui::Playback::new(raw_client);
+    let mut playback = Playback::new(raw_client);
 
     match action {
         cli::PlaylistAction::Shuffle => {
@@ -626,7 +629,7 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
         .context("No active server process found. Start the Server first.")?;
 
     let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
-    let mut playback = ui::Playback::new(raw_client);
+    let mut playback = Playback::new(raw_client);
 
     match action {
         Action::Next => {

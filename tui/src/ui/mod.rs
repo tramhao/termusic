@@ -7,9 +7,9 @@ use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
 
 use crate::CombinedSettings;
+use crate::clients::Playback;
 use crate::ui::server_req_actor::ServerRequestActor;
 use model::Model;
-pub use music_player_client::Playback;
 use tui_cmd::PlaylistCmd;
 use tui_cmd::TuiCmd;
 
@@ -17,7 +17,6 @@ pub mod components;
 mod ids;
 pub mod model;
 mod msg;
-mod music_player_client;
 mod server_req_actor;
 mod tui_cmd;
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]

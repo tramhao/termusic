@@ -2,11 +2,13 @@ use anyhow::Result;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
-use crate::ui::{
-    model::TxToMain,
-    msg::{Msg, ServerReqResponse},
-    music_player_client::Playback,
-    tui_cmd::{PlaylistCmd, TuiCmd},
+use crate::{
+    clients::Playback,
+    ui::{
+        model::TxToMain,
+        msg::{Msg, ServerReqResponse},
+        tui_cmd::{PlaylistCmd, TuiCmd},
+    },
 };
 
 /// Actor that handles all requests to the Server via GRPC.
