@@ -67,15 +67,15 @@ impl ServerRequestActor {
             }
             TuiCmd::RestartTrack => {
                 // result will be populated back via UpdateStream
-                let _ = self.player_client.restart_track().await?;
+                let () = self.player_client.restart_track().await?;
             }
             TuiCmd::SeekForward => {
                 // result will be populated back via UpdateStream
-                let _ = self.player_client.seek_forward().await?;
+                let () = self.player_client.seek_forward().await?;
             }
             TuiCmd::SeekBackward => {
                 // result will be populated back via UpdateStream
-                let _ = self.player_client.seek_backward().await?;
+                let () = self.player_client.seek_backward().await?;
             }
             TuiCmd::VolumeUp => {
                 // result will be populated back via UpdateStream

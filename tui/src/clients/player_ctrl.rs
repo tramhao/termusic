@@ -1,9 +1,11 @@
-use anyhow::Result;
-use termusiclib::player::protobuf::common::Empty;
-use termusiclib::player::protobuf::player::GetProgressResponse;
-use termusiclib::player::protobuf::player::player_control_client::PlayerControlClient;
-use termusiclib::player::{PlayerProgress, RunningStatus};
-use tonic::transport::Channel;
+use termusiclib::player::{
+    RunningStatus,
+    protobuf::{
+        common::Empty,
+        player::{GetProgressResponse, player_control_client::PlayerControlClient},
+    },
+};
+use tonic::{Result, transport::Channel};
 
 /// Handle TUI Requests to the server.
 #[derive(Debug)]
@@ -24,13 +26,6 @@ impl PlayerControlConsumer {
         let status = RunningStatus::from_u32(response.status);
         info!("Got response from server: {response:?}");
         Ok(status)
-    }
-
-    pub async fn skip_next(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.skip_next(request).await?;
-        info!("Got response from server: {response:?}");
-        Ok(())
     }
 
     pub async fn get_progress(&mut self) -> Result<GetProgressResponse> {
@@ -85,28 +80,35 @@ impl PlayerControlConsumer {
         Ok(response.gapless)
     }
 
-    pub async fn restart_track(&mut self) -> Result<PlayerProgress> {
+    pub async fn restart_track(&mut self) -> Result<()> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.restart_track(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
-        Ok(response.into())
+        Ok(())
     }
 
-    pub async fn seek_forward(&mut self) -> Result<PlayerProgress> {
+    pub async fn seek_forward(&mut self) -> Result<()> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.seek_forward(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
-        Ok(response.into())
+        Ok(())
     }
 
-    pub async fn seek_backward(&mut self) -> Result<PlayerProgress> {
+    pub async fn seek_backward(&mut self) -> Result<()> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.seek_backward(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
-        Ok(response.into())
+        Ok(())
+    }
+
+    pub async fn skip_next(&mut self) -> Result<()> {
+        let request = tonic::Request::new(Empty {});
+        let response = self.client.skip_next(request).await?;
+        info!("Got response from server: {response:?}");
+        Ok(())
     }
 
     pub async fn skip_previous(&mut self) -> Result<()> {

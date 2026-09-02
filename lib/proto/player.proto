@@ -26,13 +26,13 @@ service PlayerControl {
   rpc ToggleGapless(common.Empty) returns (GaplessState);
   // Restart the current track
   // Note that this is a seek and this request does not wait until the seek is done
-  rpc RestartTrack(common.Empty) returns (PlayerTime);
+  rpc RestartTrack(common.Empty) returns (common.Empty);
   // Seek one step forward
   // Note that this request does not wait until the seek is done
-  rpc SeekForward(common.Empty) returns (PlayerTime);
+  rpc SeekForward(common.Empty) returns (common.Empty);
   // Seek one step backward
   // Note that this request does not wait until the seek is done
-  rpc SeekBackward(common.Empty) returns (PlayerTime);
+  rpc SeekBackward(common.Empty) returns (common.Empty);
 }
 
 // A play status.

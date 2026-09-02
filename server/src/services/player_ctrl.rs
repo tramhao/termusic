@@ -6,7 +6,7 @@ use termusiclib::config::SharedServerSettings;
 use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::player_control_server::PlayerControl;
 use termusiclib::player::protobuf::player::{
-    GaplessState, GetProgressResponse, PlayState, PlayerTime, SpeedReply, VolumeReply,
+    GaplessState, GetProgressResponse, PlayState, SpeedReply, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedRunInfo};
 use tonic::{Request, Response, Status};
@@ -28,6 +28,7 @@ impl PlayerControlService {
         run_info: SharedRunInfo,
     ) -> Self {
         let player_stats = PlayerStats::new();
+
         let player_stats = Arc::new(Mutex::new(player_stats));
 
         Self {
@@ -40,12 +41,14 @@ impl PlayerControlService {
 }
 
 impl PlayerControlService {
+    /// Send a command without a callback.
     fn command(&self, cmd: PlayerCmd) {
         if let Err(e) = self.cmd_tx.send(cmd.clone()) {
             error!("error {cmd:?}: {e}");
         }
     }
 
+    /// Send a command with a callback that can be waited for.
     fn command_cb(&self, cmd: PlayerCmd) -> Result<PlayerCmdCallback, Status> {
         let rx = self.cmd_tx.send_cb(cmd.clone()).map_err(|err| {
             error!("error {cmd:?}: {err}");
@@ -69,40 +72,29 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn seek_backward(
-        &self,
-        _request: Request<Empty>,
-    ) -> Result<Response<PlayerTime>, Status> {
+    async fn seek_backward(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let rx = self.command_cb(PlayerCmd::SeekBackward)?;
         // wait until the event was processed
         let _ = rx.await;
-        let s = self.player_stats.lock();
-        let reply = s.as_playertime();
+        let reply = Empty {};
 
         Ok(Response::new(reply))
     }
 
-    async fn restart_track(
-        &self,
-        _request: Request<Empty>,
-    ) -> Result<Response<PlayerTime>, Status> {
+    async fn restart_track(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let rx = self.command_cb(PlayerCmd::RestartTrack)?;
         // wait until the event was processed
         let _ = rx.await;
-        let s = self.player_stats.lock();
-
-        let reply = s.as_playertime();
+        let reply = Empty {};
 
         Ok(Response::new(reply))
     }
 
-    async fn seek_forward(&self, _request: Request<Empty>) -> Result<Response<PlayerTime>, Status> {
+    async fn seek_forward(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let rx = self.command_cb(PlayerCmd::SeekForward)?;
         // wait until the event was processed
         let _ = rx.await;
-        let s = self.player_stats.lock();
-
-        let reply = s.as_playertime();
+        let reply = Empty {};
 
         Ok(Response::new(reply))
     }
