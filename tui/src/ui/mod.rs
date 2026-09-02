@@ -1,6 +1,5 @@
 use anyhow::Result;
 use futures_util::StreamExt;
-use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::sync::mpsc::{self};
 use tokio::task::JoinHandle;
 use tonic::transport::Channel;
@@ -32,8 +31,8 @@ pub struct UI {
 
 impl UI {
     /// Create a new [`UI`] instance
-    pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>) -> Result<Self> {
-        let mut playback = Playback::new(client);
+    pub async fn new(config: CombinedSettings, raw_client: Channel) -> Result<Self> {
+        let mut playback = Playback::new(raw_client);
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let stream_updates = playback.subscribe_to_stream_updates().await?;

@@ -19,7 +19,8 @@ pub struct Playback {
 }
 
 impl Playback {
-    pub fn new(client: MusicPlayerClient<Channel>) -> Self {
+    pub fn new(raw_client: Channel) -> Self {
+        let client = MusicPlayerClient::new(raw_client);
         Self { client }
     }
 

@@ -20,7 +20,6 @@ use termusiclib::config::{
     new_shared_tui_settings,
 };
 use termusiclib::player::RunningStatus;
-use termusiclib::player::music_player_client::MusicPlayerClient;
 use termusiclib::{podcast, utils};
 use tokio::io::AsyncReadExt;
 use tokio::process::{Child, Command};
@@ -320,7 +319,7 @@ const WAIT_INTERVAL: Duration = Duration::from_millis(100);
 async fn wait_till_connected(
     config: &CombinedSettings,
     pid: u32,
-) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+) -> Result<(tonic::transport::Channel, String)> {
     let protocol = config.tui.read().settings.get_com().unwrap().protocol;
     let player = match protocol {
         ComProtocol::HTTP => wait_till_connected_tcp(config, pid).await?,
@@ -337,7 +336,7 @@ async fn wait_till_connected(
 async fn wait_till_connected_tcp(
     config: &CombinedSettings,
     pid: u32,
-) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+) -> Result<(tonic::transport::Channel, String)> {
     let addr = {
         let config_read = config.tui.read();
         SocketAddr::from(config_read.settings.get_com().ok_or(anyhow::anyhow!(
@@ -368,7 +367,11 @@ async fn wait_till_connected_tcp(
             anyhow::bail!("Process {pid} exited before being able to connect!");
         }
 
-        match MusicPlayerClient::connect(addr.clone()).await {
+        match tonic::transport::Endpoint::new(addr.clone())
+            .context("Convert Address to endpoint")?
+            .connect()
+            .await
+        {
             Err(err) => {
                 // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
                 if let Some(os_err) = find_source::<std::io::Error>(&err)
@@ -394,7 +397,7 @@ async fn wait_till_connected_tcp(
 async fn wait_till_connected_uds(
     config: &CombinedSettings,
     pid: u32,
-) -> Result<(MusicPlayerClient<tonic::transport::Channel>, String)> {
+) -> Result<(tonic::transport::Channel, String)> {
     let addr = {
         let config_read = config.tui.read();
         let addr = config_read
@@ -428,7 +431,11 @@ async fn wait_till_connected_uds(
             anyhow::bail!("Process {pid} exited before being able to connect!");
         }
 
-        match MusicPlayerClient::connect(addr.clone()).await {
+        match tonic::transport::Endpoint::new(addr.clone())
+            .context("Convert Address to endpoint")?
+            .connect()
+            .await
+        {
             Err(err) => {
                 // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
                 if let Some(os_err) = find_source::<std::io::Error>(&err) {
