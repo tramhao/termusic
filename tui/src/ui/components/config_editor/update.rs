@@ -36,7 +36,8 @@ impl Model {
             ConfigEditorMsg::CloseOk => {
                 if self.config_editor.config_changed {
                     self.config_editor.config_changed = false;
-                    self.mount_config_save_popup();
+                    self.mount_config_save_popup()
+                        .expect("Expected ConfigSavePopup to mount correctly");
                 } else {
                     self.umount_config_editor();
                 }
@@ -44,9 +45,7 @@ impl Model {
             ConfigEditorMsg::ConfigChanged => self.config_editor.config_changed = true,
 
             ConfigEditorMsg::ConfigSaveOk => {
-                self.app
-                    .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
-                    .ok();
+                let _ = self.umount_config_save_popup();
                 match self.collect_config_data() {
                     Ok(()) => {
                         let res_server = ServerConfigVersionedDefaulted::save_config_path(
@@ -83,9 +82,7 @@ impl Model {
                 }
             }
             ConfigEditorMsg::ConfigSaveCancel => {
-                self.app
-                    .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
-                    .ok();
+                let _ = self.umount_config_save_popup();
                 self.umount_config_editor();
             }
 

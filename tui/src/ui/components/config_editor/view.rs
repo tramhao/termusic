@@ -580,9 +580,11 @@ impl Model {
     pub fn umount_config_editor(&mut self) {
         self.playlist_reload();
         self.database_reload();
-        self.progress_reload();
+        self.remount_progress()
+            .expect("Expected Progress to remount correctly");
         self.mount_label_help();
-        self.lyric_reload();
+        self.remount_lyric()
+            .expect("Expected Lyric to remount correctly");
 
         self.umount_config_editor_components()
             .expect("Expected Config Editor Components to unmount correctly");
@@ -608,22 +610,25 @@ impl Model {
         Ok(())
     }
 
-    /// Mount quit popup
-    pub fn mount_config_save_popup(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::ConfigEditor(IdConfigEditor::ConfigSavePopup),
-                    Box::new(ConfigSavePopup::new(self.config_tui.clone())),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(
-            self.app
-                .active(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
-                .is_ok()
-        );
+    /// Mount the Config Save Popup.
+    pub fn mount_config_save_popup(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::ConfigEditor(IdConfigEditor::ConfigSavePopup),
+            Box::new(ConfigSavePopup::new(self.config_tui.clone())),
+            vec![],
+        )?;
+        self.app
+            .active(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))?;
+
+        Ok(())
+    }
+
+    /// Unmount the Config Save Popup.
+    pub fn umount_config_save_popup(&mut self) -> Result<()> {
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))?;
+
+        Ok(())
     }
 
     #[allow(clippy::too_many_lines)]

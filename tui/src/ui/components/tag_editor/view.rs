@@ -260,7 +260,8 @@ impl Model {
     /// Unmount all tag editor components.
     pub fn umount_tageditor(&mut self) {
         self.mount_label_help();
-        self.umount_tageditor_inner().unwrap();
+        self.umount_tageditor_inner()
+            .expect("Expected TagEditor to unmount correctly");
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }

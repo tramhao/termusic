@@ -1,6 +1,7 @@
 use std::ops::Div;
 use std::time::Duration;
 
+use anyhow::Result;
 use termusiclib::config::TuiOverlay;
 use termusiclib::player::RunningStatus;
 use termusiclib::track::DurationFmtShort;
@@ -86,17 +87,16 @@ fn title_format(
 }
 
 impl Model {
-    pub fn progress_reload(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::Progress,
-                    Box::new(Progress::new(&self.config_tui.read())),
-                    Vec::new()
-                )
-                .is_ok()
-        );
+    /// Remount the Progress component
+    pub fn remount_progress(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::Progress,
+            Box::new(Progress::new(&self.config_tui.read())),
+            Vec::new(),
+        )?;
         self.progress_update_title();
+
+        Ok(())
     }
 
     /// Update the [`Progress`] component's title.

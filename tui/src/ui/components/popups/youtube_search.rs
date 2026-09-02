@@ -23,6 +23,7 @@
  */
 use std::path::PathBuf;
 
+use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::components::{Input, Table};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
@@ -243,41 +244,47 @@ impl AppComponent<Msg, UserEvent> for YSTablePopup {
 }
 
 impl Model {
-    pub fn mount_youtube_search_input(&mut self, current_node: PathBuf) {
-        assert!(
-            self.app
-                .remount(
-                    Id::YoutubeSearchInputPopup,
-                    Box::new(YSInputPopup::new(&self.config_tui.read(), current_node)),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::YoutubeSearchInputPopup).is_ok());
+    /// Mount the youtube search input component.
+    pub fn mount_youtube_search_input(&mut self, current_node: PathBuf) -> Result<()> {
+        self.app.remount(
+            Id::YoutubeSearchInputPopup,
+            Box::new(YSInputPopup::new(&self.config_tui.read(), current_node)),
+            vec![],
+        )?;
+        self.app.active(&Id::YoutubeSearchInputPopup)?;
+
+        Ok(())
     }
 
-    pub fn mount_youtube_search_table(&mut self, current_node: PathBuf) {
-        assert!(
-            self.app
-                .remount(
-                    Id::YoutubeSearchTablePopup,
-                    Box::new(YSTablePopup::new(self.config_tui.clone(), current_node)),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
+    /// Unmount the youtube search input component.
+    pub fn umount_youtube_search_input(&mut self) -> Result<()> {
+        self.app.umount(&Id::YoutubeSearchInputPopup)?;
+
+        Ok(())
+    }
+
+    /// Mount the youtube search table component.
+    pub fn mount_youtube_search_table(&mut self, current_node: PathBuf) -> Result<()> {
+        self.app.remount(
+            Id::YoutubeSearchTablePopup,
+            Box::new(YSTablePopup::new(self.config_tui.clone(), current_node)),
+            vec![],
+        )?;
+        self.app.active(&Id::YoutubeSearchTablePopup)?;
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
+
+        Ok(())
     }
 
-    pub fn umount_youtube_search_table_popup(&mut self) {
-        if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-            assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-        }
+    /// Unmount the youtube search table component.
+    pub fn umount_youtube_search_table_popup(&mut self) -> Result<()> {
+        self.app.umount(&Id::YoutubeSearchTablePopup)?;
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
+
+        Ok(())
     }
 }

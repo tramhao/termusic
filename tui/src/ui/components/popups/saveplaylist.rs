@@ -286,10 +286,8 @@ impl Model {
 
     /// Unount the [`SavePlaylistPopup`] component.
     pub fn umount_save_playlist(&mut self) -> Result<()> {
-        if self.app.mounted(&Id::SavePlaylistPopup) {
-            self.app.umount(&Id::SavePlaylistPopup)?;
-            self.app.umount(&Id::SavePlaylistLabel)?;
-        }
+        self.app.umount(&Id::SavePlaylistPopup)?;
+        self.app.umount(&Id::SavePlaylistLabel)?;
 
         Ok(())
     }
@@ -308,9 +306,7 @@ impl Model {
 
     /// Unmount the overwrite confirmation dialog.
     pub fn umount_save_playlist_confirm(&mut self) -> Result<()> {
-        if self.app.mounted(&Id::SavePlaylistConfirm) {
-            self.app.umount(&Id::SavePlaylistConfirm)?;
-        }
+        self.app.umount(&Id::SavePlaylistConfirm)?;
 
         Ok(())
     }

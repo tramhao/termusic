@@ -91,9 +91,7 @@ impl Model {
     fn update_error_popup_msg(&mut self, msg: &ErrorPopupMsg) {
         match msg {
             ErrorPopupMsg::Close => {
-                if self.app.mounted(&Id::ErrorPopup) {
-                    self.umount_error_popup();
-                }
+                let _ = self.umount_error_popup();
             }
         }
     }
@@ -102,13 +100,11 @@ impl Model {
     fn update_help_popup_msg(&mut self, msg: &HelpPopupMsg) {
         match msg {
             HelpPopupMsg::Show => {
-                self.mount_help_popup();
+                self.mount_help_popup()
+                    .expect("Expect HelpPopup to mount correctly");
             }
             HelpPopupMsg::Close => {
-                if self.app.mounted(&Id::HelpPopup) {
-                    self.app.umount(&Id::HelpPopup).ok();
-                }
-                self.update_photo().ok();
+                let _ = self.umount_help_popup();
             }
         }
     }
@@ -117,14 +113,15 @@ impl Model {
     fn update_sort_popup_msg(&mut self, msg: SortPopupMsg) {
         match msg {
             SortPopupMsg::Show => {
-                self.mount_sort_popup();
+                self.mount_sort_popup()
+                    .expect("Expect SortPopup to mount correctly");
             }
             SortPopupMsg::Close => {
-                self.umount_sort_popup();
+                let _ = self.umount_sort_popup();
                 self.update_photo().ok();
             }
             SortPopupMsg::Selected(criterion, direction) => {
-                self.umount_sort_popup();
+                let _ = self.umount_sort_popup();
                 self.playlist_sort(criterion, direction);
                 self.update_photo().ok();
             }
@@ -136,13 +133,14 @@ impl Model {
         match msg {
             QuitPopupMsg::Show => {
                 if self.config_tui.read().settings.behavior.confirm_quit {
-                    self.mount_quit_popup();
+                    self.mount_quit_popup()
+                        .expect("Expect QuitPopup to unmount correctly");
                 } else {
                     self.quit = true;
                 }
             }
             QuitPopupMsg::CloseCancel => {
-                self.app.umount(&Id::QuitPopup).ok();
+                let _ = self.umount_quit_popup();
             }
             QuitPopupMsg::CloseOk => {
                 self.quit = true;
@@ -199,10 +197,11 @@ impl Model {
     fn update_notification_msg(&mut self, msg: NotificationMsg) {
         match msg {
             NotificationMsg::MessageShow((title, text)) => {
-                self.mount_message(title, text);
+                self.mount_message(title, text)
+                    .expect("Expect MessagePopup to mount correctly");
             }
             NotificationMsg::MessageHide((title, text)) => {
-                self.umount_message(&title, &text);
+                let _ = self.umount_message(&title, &text);
             }
         }
     }
@@ -223,18 +222,24 @@ impl Model {
             PCMsg::EpisodeBlurUp => {
                 self.app.active(&Id::Podcast).ok();
             }
-            PCMsg::PodcastAddPopupShow => self.mount_podcast_add_popup(),
+            PCMsg::PodcastAddPopupShow => {
+                self.mount_podcast_add_popup()
+                    .expect("Expected PodcastAddPopup to mount correctly");
+            }
             PCMsg::PodcastAddPopupCloseOk(url) => {
-                self.umount_podcast_add_popup();
+                let _ = self.umount_podcast_add_popup();
 
                 if url.starts_with("http") {
                     self.podcast_add(url);
                 } else {
                     self.podcast_search_itunes(&url);
-                    self.mount_podcast_search_table();
+                    self.mount_podcast_search_table()
+                        .expect("Expect PodcastSearchTablePopup to mount correctly");
                 }
             }
-            PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
+            PCMsg::PodcastAddPopupCloseCancel => {
+                let _ = self.umount_podcast_add_popup();
+            }
 
             PCMsg::SyncResult(msg) => self.podcast_handle_sync_result(msg),
             PCMsg::DLResult(msg) => self.podcast_handle_dl_result(msg),
@@ -283,23 +288,35 @@ impl Model {
                     self.mount_error_popup(e.context("podcast episode delete"));
                 }
             }
-            PCMsg::FeedDeleteShow => self.mount_feed_delete_confirm_radio(),
+            PCMsg::FeedDeleteShow => {
+                self.mount_feed_delete_confirm_radio()
+                    .expect("Expected FeedDeleteConfirmRadioPopup to mount correctly");
+            }
             PCMsg::FeedDeleteCloseOk => {
-                self.umount_feed_delete_confirm_radio();
+                let _ = self.umount_feed_delete_confirm_radio();
                 if let Err(e) = self.podcast_remove_feed() {
                     self.mount_error_popup(e.context("podcast remove feed"));
                 }
             }
-            PCMsg::FeedDeleteCloseCancel => self.umount_feed_delete_confirm_radio(),
-            PCMsg::FeedsDeleteShow => self.mount_feed_delete_confirm_input(),
+            PCMsg::FeedDeleteCloseCancel => {
+                let _ = self.umount_feed_delete_confirm_radio();
+            }
+            PCMsg::FeedsDeleteShow => {
+                self.mount_feed_delete_confirm_input()
+                    .expect("Expected FeedDeleteConfirmInputPopup to mount correctly");
+            }
             PCMsg::FeedsDeleteCloseOk => {
-                self.umount_feed_delete_confirm_input();
+                let _ = self.umount_feed_delete_confirm_input();
                 if let Err(e) = self.podcast_remove_all_feeds() {
                     self.mount_error_popup(e.context("podcast remove all feeds"));
                 }
             }
-            PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
-            PCMsg::SearchItunesCloseCancel => self.umount_podcast_search_table(),
+            PCMsg::FeedsDeleteCloseCancel => {
+                let _ = self.umount_feed_delete_confirm_input();
+            }
+            PCMsg::SearchItunesCloseCancel => {
+                let _ = self.umount_podcast_search_table();
+            }
             PCMsg::SearchItunesCloseOk(index) => {
                 if let Some(vec) = &self.podcast.search_results
                     && let Some(pod) = vec.get(index)
@@ -695,11 +712,12 @@ impl Model {
             DBMsg::AddAllResultsConfirmShow => {
                 // dont try showing the popup if there is nothing to add
                 if !self.dw.search_results.is_empty() {
-                    self.mount_results_add_confirm_database(self.dw.criteria);
+                    self.mount_results_add_confirm_database(self.dw.criteria)
+                        .expect("Expected ResultAddConfirmPopup to mount correctly");
                 }
             }
             DBMsg::AddAllResultsConfirmCancel => {
-                self.umount_results_add_confirm_database();
+                let _ = self.umount_results_add_confirm_database();
             }
         }
     }
@@ -737,17 +755,14 @@ impl Model {
     fn update_youtube_search(&mut self, msg: YSMsg) {
         match msg {
             YSMsg::InputPopupShow(current_node) => {
-                self.mount_youtube_search_input(current_node);
+                self.mount_youtube_search_input(current_node)
+                    .expect("Expect YoutubeSearchInputPopup to mount correctly");
             }
             YSMsg::InputPopupCloseCancel => {
-                if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                    assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
-                }
+                let _ = self.umount_youtube_search_input();
             }
             YSMsg::InputPopupCloseOk(url, current_node) => {
-                if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                    assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
-                }
+                let _ = self.umount_youtube_search_input();
                 if url.starts_with("http") {
                     match self.youtube_dl(&url, &current_node) {
                         Ok(()) => {}
@@ -756,12 +771,13 @@ impl Model {
                         }
                     }
                 } else {
-                    self.mount_youtube_search_table(current_node);
+                    self.mount_youtube_search_table(current_node)
+                        .expect("Expect YoutubeSearchTablePopup to mount correctly");
                     self.youtube_options_search(url);
                 }
             }
             YSMsg::TablePopupCloseCancel => {
-                self.umount_youtube_search_table_popup();
+                let _ = self.umount_youtube_search_table_popup();
             }
             YSMsg::ReqNextPage => {
                 self.youtube_options_next_page();
@@ -877,11 +893,7 @@ impl Model {
                 }
             }
             GSMsg::PopupCloseCancel => {
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
 
             GSMsg::PopupCloseLibraryAddPlaylist => {
@@ -891,30 +903,15 @@ impl Model {
             }
             GSMsg::PopupCloseOkLibraryLocate => {
                 self.general_search_after_library_select();
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
             GSMsg::PopupClosePlaylistPlaySelected => {
                 self.general_search_after_playlist_play_selected();
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
             GSMsg::PopupCloseOkPlaylistLocate => {
                 self.general_search_after_playlist_select();
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
             GSMsg::PopupCloseDatabaseAddPlaylist => {
                 if let Err(e) = self.general_search_after_database_add_playlist() {
@@ -930,12 +927,8 @@ impl Model {
                 if let Err(e) = self.general_search_after_episode_select() {
                     self.mount_error_popup(e.context("general search after episode select"));
                 }
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
                 self.podcast_focus_episode_list();
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
 
             GSMsg::PopupUpdateEpisode(input) => self.podcast_update_search_episode(input),
@@ -944,12 +937,8 @@ impl Model {
                 if let Err(e) = self.general_search_after_podcast_select() {
                     self.mount_error_popup(e.context("general search after podcast select"));
                 }
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
                 self.podcast_focus_podcast_list();
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(e.context("update_photo"));
-                }
+                let _ = self.umount_general_search();
             }
         }
     }
@@ -958,23 +947,16 @@ impl Model {
     fn update_delete_confirmation(&mut self, msg: DeleteConfirmMsg) {
         match msg {
             DeleteConfirmMsg::Show(path, focus_node) => {
-                self.new_library_show_delete_confirm(path, focus_node);
+                self.new_library_show_delete_confirm(path, focus_node)
+                    .expect("Expect DeleteConfirm to mount correctly");
             }
             DeleteConfirmMsg::CloseCancel => {
-                if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                    let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
-                }
-                if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                    let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
-                }
+                let _ = self.umount_confirm_radio();
+                let _ = self.umount_confirm_input();
             }
             DeleteConfirmMsg::CloseOk(path, focus_node) => {
-                if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                    let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
-                }
-                if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                    let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
-                }
+                let _ = self.umount_confirm_radio();
+                let _ = self.umount_confirm_input();
                 if let Err(e) = self.new_library_delete_node(&path, focus_node) {
                     self.mount_error_popup(e.context("library delete song"));
                 }
@@ -1106,26 +1088,22 @@ impl Model {
                 }
             }
             SavePlaylistMsg::CloseCancel => {
-                self.umount_save_playlist()
-                    .expect("Expected SavePlaylist to unmount correctly");
+                let _ = self.umount_save_playlist();
             }
             SavePlaylistMsg::CloseOk(full_path) => {
-                self.umount_save_playlist()
-                    .expect("Expected SavePlaylist to unmount correctly");
+                let _ = self.umount_save_playlist();
                 if let Err(e) = self.playlist_save_m3u_before(full_path) {
                     self.mount_error_popup(e.context("save m3u playlist before"));
                 }
             }
             SavePlaylistMsg::OverwriteCancel => {
-                self.umount_save_playlist_confirm()
-                    .expect("Expected SavePlaylist to unmount correctly");
+                let _ = self.umount_save_playlist_confirm();
             }
             SavePlaylistMsg::OverwriteOk(filename) => {
                 if let Err(e) = self.playlist_save_m3u(filename) {
                     self.mount_error_popup(e.context("save m3u playlist"));
                 }
-                self.umount_save_playlist_confirm()
-                    .expect("Expected SavePlaylistConfirm to unmount correctly");
+                let _ = self.umount_save_playlist_confirm();
             }
 
             // handled by the component

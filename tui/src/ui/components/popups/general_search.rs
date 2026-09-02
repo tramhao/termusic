@@ -320,6 +320,38 @@ impl AppComponent<Msg, UserEvent> for GSTablePopup {
 }
 
 impl Model {
+    /// Mount / Remount a search popup for the provided source
+    pub fn mount_general_search(&mut self, source: Source) -> Result<()> {
+        self.app.remount(
+            Id::GeneralSearchInput,
+            Box::new(GSInputPopup::new(source.clone(), &self.config_tui.read())),
+            Vec::new(),
+        )?;
+        self.app.remount(
+            Id::GeneralSearchTable,
+            Box::new(GSTablePopup::new(source, self.config_tui.clone())),
+            Vec::new(),
+        )?;
+
+        self.app.active(&Id::GeneralSearchInput)?;
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
+
+        Ok(())
+    }
+
+    /// Unmount the General Search Popup.
+    pub fn umount_general_search(&mut self) -> Result<()> {
+        self.app.umount(&Id::GeneralSearchInput)?;
+        self.app.umount(&Id::GeneralSearchTable)?;
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
+
+        Ok(())
+    }
+
     pub fn general_search_update_show(&mut self, table: tuirealm::props::Table) {
         self.app
             .attr(

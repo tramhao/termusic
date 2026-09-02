@@ -1,3 +1,4 @@
+use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::{
     components::{Input, Table},
@@ -233,61 +234,62 @@ impl AppComponent<Msg, UserEvent> for PodcastSearchTablePopup {
 }
 
 impl Model {
-    pub fn mount_feed_delete_confirm_radio(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::FeedDeleteConfirmRadioPopup,
-                    Box::new(FeedDeleteConfirmRadioPopup::new(self.config_tui.clone())),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::FeedDeleteConfirmRadioPopup).is_ok());
+    /// Mount a confirmation box to confirm the deletion of a feed via 2 option.
+    pub fn mount_feed_delete_confirm_radio(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::FeedDeleteConfirmRadioPopup,
+            Box::new(FeedDeleteConfirmRadioPopup::new(self.config_tui.clone())),
+            vec![],
+        )?;
+        self.app.active(&Id::FeedDeleteConfirmRadioPopup)?;
+
+        Ok(())
     }
 
-    pub fn umount_feed_delete_confirm_radio(&mut self) {
-        if self.app.mounted(&Id::FeedDeleteConfirmRadioPopup) {
-            assert!(self.app.umount(&Id::FeedDeleteConfirmRadioPopup).is_ok());
-        }
-    }
-    pub fn mount_feed_delete_confirm_input(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::FeedDeleteConfirmInputPopup,
-                    Box::new(DeleteConfirmInputPopup::new(
-                        &self.config_tui.read(),
-                        "You're about the erase all feeds.",
-                        Msg::Podcast(PCMsg::FeedsDeleteCloseOk),
-                        Msg::Podcast(PCMsg::FeedsDeleteCloseCancel)
-                    )),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::FeedDeleteConfirmInputPopup).is_ok());
-    }
-    pub fn umount_feed_delete_confirm_input(&mut self) {
-        if self.app.mounted(&Id::FeedDeleteConfirmInputPopup) {
-            assert!(self.app.umount(&Id::FeedDeleteConfirmInputPopup).is_ok());
-        }
+    /// Unmount the feed deletion confirmation via radio component.
+    pub fn umount_feed_delete_confirm_radio(&mut self) -> Result<()> {
+        self.app.umount(&Id::FeedDeleteConfirmRadioPopup)?;
+
+        Ok(())
     }
 
-    pub fn mount_podcast_search_table(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::PodcastSearchTablePopup,
-                    Box::new(PodcastSearchTablePopup::new(self.config_tui.clone())),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::PodcastSearchTablePopup).is_ok());
+    /// Mount a confirmation box to confirm the deletion of a feed via a specific input.
+    pub fn mount_feed_delete_confirm_input(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::FeedDeleteConfirmInputPopup,
+            Box::new(DeleteConfirmInputPopup::new(
+                &self.config_tui.read(),
+                "You're about the erase all feeds.",
+                Msg::Podcast(PCMsg::FeedsDeleteCloseOk),
+                Msg::Podcast(PCMsg::FeedsDeleteCloseCancel),
+            )),
+            vec![],
+        )?;
+        self.app.active(&Id::FeedDeleteConfirmInputPopup)?;
+
+        Ok(())
+    }
+
+    /// Unmount the feeed deletion confirmation via input component.
+    pub fn umount_feed_delete_confirm_input(&mut self) -> Result<()> {
+        self.app.umount(&Id::FeedDeleteConfirmInputPopup)?;
+
+        Ok(())
+    }
+
+    /// Mount the podcast search component
+    pub fn mount_podcast_search_table(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::PodcastSearchTablePopup,
+            Box::new(PodcastSearchTablePopup::new(self.config_tui.clone())),
+            vec![],
+        )?;
+        self.app.active(&Id::PodcastSearchTablePopup)?;
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
+
+        Ok(())
     }
 
     pub fn update_podcast_search_table(&mut self) {
@@ -326,32 +328,34 @@ impl Model {
             )
             .ok();
     }
-    pub fn umount_podcast_search_table(&mut self) {
-        if self.app.mounted(&Id::PodcastSearchTablePopup) {
-            assert!(self.app.umount(&Id::PodcastSearchTablePopup).is_ok());
-        }
+
+    /// Unmount the podcast search component.
+    pub fn umount_podcast_search_table(&mut self) -> Result<()> {
+        self.app.umount(&Id::PodcastSearchTablePopup)?;
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(e.context("update_photo"));
         }
+
+        Ok(())
     }
 
-    pub fn mount_podcast_add_popup(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::PodcastAddPopup,
-                    Box::new(PodcastAddPopup::new(&self.config_tui.read())),
-                    vec![]
-                )
-                .is_ok()
-        );
+    /// Mount the component to add a podcast.
+    pub fn mount_podcast_add_popup(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::PodcastAddPopup,
+            Box::new(PodcastAddPopup::new(&self.config_tui.read())),
+            vec![],
+        )?;
 
-        assert!(self.app.active(&Id::PodcastAddPopup).is_ok());
+        self.app.active(&Id::PodcastAddPopup)?;
+
+        Ok(())
     }
 
-    pub fn umount_podcast_add_popup(&mut self) {
-        if self.app.mounted(&Id::PodcastAddPopup) {
-            assert!(self.app.umount(&Id::PodcastAddPopup).is_ok());
-        }
+    /// Unmount the component to add a podcast.
+    pub fn umount_podcast_add_popup(&mut self) -> Result<()> {
+        self.app.umount(&Id::PodcastAddPopup)?;
+
+        Ok(())
     }
 }

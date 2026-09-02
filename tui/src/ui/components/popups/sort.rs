@@ -1,3 +1,4 @@
+use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::player::{SortCriterion, SortDirection};
 use tui_realm_stdlib::components::Table;
@@ -258,22 +259,24 @@ impl AppComponent<Msg, UserEvent> for SortPopup {
 
 impl Model {
     /// Mount the sort popup, hiding the album cover behind it.
-    pub fn mount_sort_popup(&mut self) {
-        assert!(
-            self.app
-                .remount(
-                    Id::SortPopup,
-                    Box::new(SortPopup::new(&self.config_tui)),
-                    vec![]
-                )
-                .is_ok()
-        );
-        self.update_photo().ok();
-        assert!(self.app.active(&Id::SortPopup).is_ok());
+    pub fn mount_sort_popup(&mut self) -> Result<()> {
+        self.app.remount(
+            Id::SortPopup,
+            Box::new(SortPopup::new(&self.config_tui)),
+            vec![],
+        )?;
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(e.context("update_photo"));
+        }
+        self.app.active(&Id::SortPopup)?;
+
+        Ok(())
     }
 
     /// Unmount the sort popup.
-    pub fn umount_sort_popup(&mut self) {
-        self.app.umount(&Id::SortPopup).ok();
+    pub fn umount_sort_popup(&mut self) -> Result<()> {
+        self.app.umount(&Id::SortPopup)?;
+
+        Ok(())
     }
 }

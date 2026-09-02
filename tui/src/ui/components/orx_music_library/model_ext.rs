@@ -124,15 +124,21 @@ impl Model {
     }
 
     /// Show a deletion confirmation for the currently selected node.
-    pub fn new_library_show_delete_confirm(&mut self, path: PathBuf, focus_node: Option<String>) {
+    pub fn new_library_show_delete_confirm(
+        &mut self,
+        path: PathBuf,
+        focus_node: Option<String>,
+    ) -> Result<()> {
         if path.is_file() {
-            self.mount_confirm_radio(path, focus_node);
+            self.mount_confirm_radio(path, focus_node)
+                .context("DeleteConfirmRadioPopup")
         } else {
             self.mount_confirm_input(
                 path,
                 focus_node,
                 "You're about to delete the whole directory.",
-            );
+            )
+            .context("DeleteConfirmInputPopup")
         }
     }
 

@@ -910,7 +910,7 @@ impl Model {
 
     /// Add all Results (from view `Result`) to the playlist.
     pub fn database_add_all_results(&mut self) {
-        self.umount_results_add_confirm_database();
+        let _ = self.umount_results_add_confirm_database();
         if !self.dw.search_results.is_empty() {
             let mut tracks = Vec::new();
             // clone once instead every value in every iteration
@@ -1058,24 +1058,26 @@ impl Model {
         self.general_search_update_show(Model::build_table(filtered_music, &self.config_tui));
     }
 
-    /// Mount the [`AddAlbumConfirm`] popup
-    pub fn mount_results_add_confirm_database(&mut self, criteria: SearchCriteria) {
-        self.app
-            .remount(
-                Id::DatabaseAddConfirmPopup,
-                Box::new(AddAlbumConfirm::new(
-                    self.config_tui.clone(),
-                    criteria.as_str(),
-                )),
-                Vec::new(),
-            )
-            .unwrap();
+    /// Mount the [`AddAlbumConfirm`] popup.
+    pub fn mount_results_add_confirm_database(&mut self, criteria: SearchCriteria) -> Result<()> {
+        self.app.remount(
+            Id::DatabaseAddConfirmPopup,
+            Box::new(AddAlbumConfirm::new(
+                self.config_tui.clone(),
+                criteria.as_str(),
+            )),
+            Vec::new(),
+        )?;
 
-        self.app.active(&Id::DatabaseAddConfirmPopup).unwrap();
+        self.app.active(&Id::DatabaseAddConfirmPopup)?;
+
+        Ok(())
     }
 
-    /// Unmount the [`AddAlbumConfirm`] popup
-    pub fn umount_results_add_confirm_database(&mut self) {
-        let _ = self.app.umount(&Id::DatabaseAddConfirmPopup);
+    /// Unmount the [`AddAlbumConfirm`] popup.
+    pub fn umount_results_add_confirm_database(&mut self) -> Result<()> {
+        self.app.umount(&Id::DatabaseAddConfirmPopup)?;
+
+        Ok(())
     }
 }

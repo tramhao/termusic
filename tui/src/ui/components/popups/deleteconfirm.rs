@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use tui_realm_stdlib::components::Input;
 use tuirealm::{
@@ -134,42 +135,57 @@ impl AppComponent<Msg, UserEvent> for DeleteConfirmInputPopup {
 }
 
 impl Model {
-    /// Mount a [`DeleteConfirmRadioPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
+    /// Mount a [`DeleteConfirmRadioPopup`] with specific Messages on ok & cancel
     /// as [`Id::DeleteConfirmRadioPopup`].
-    pub fn mount_confirm_radio(&mut self, path: PathBuf, focus_node: Option<String>) {
-        assert!(
-            self.app
-                .remount(
-                    Id::DeleteConfirmRadioPopup,
-                    Box::new(DeleteConfirmRadioPopup::new(
-                        self.config_tui.clone(),
-                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path, focus_node)),
-                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel)
-                    )),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::DeleteConfirmRadioPopup).is_ok());
+    pub fn mount_confirm_radio(&mut self, path: PathBuf, focus_node: Option<String>) -> Result<()> {
+        self.app.remount(
+            Id::DeleteConfirmRadioPopup,
+            Box::new(DeleteConfirmRadioPopup::new(
+                self.config_tui.clone(),
+                Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path, focus_node)),
+                Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel),
+            )),
+            vec![],
+        )?;
+        self.app.active(&Id::DeleteConfirmRadioPopup)?;
+
+        Ok(())
     }
 
-    /// Mount a [`DeleteConfirmInputPopup`] with [`Msg::DeleteConfirmCloseOk`] and [`Msg::DeleteConfirmCloseCancel`]
+    /// Umount the Delete Confirm Radio Popup.
+    pub fn umount_confirm_radio(&mut self) -> Result<()> {
+        self.app.umount(&Id::DeleteConfirmRadioPopup)?;
+
+        Ok(())
+    }
+
+    /// Mount a [`DeleteConfirmInputPopup`] with specific Messages on ok & cancel
     /// as [`Id::DeleteConfirmInputPopup`].
-    pub fn mount_confirm_input(&mut self, path: PathBuf, focus_node: Option<String>, title: &str) {
-        assert!(
-            self.app
-                .remount(
-                    Id::DeleteConfirmInputPopup,
-                    Box::new(DeleteConfirmInputPopup::new(
-                        &self.config_tui.read(),
-                        title,
-                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path, focus_node)),
-                        Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel)
-                    )),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::DeleteConfirmInputPopup).is_ok());
+    pub fn mount_confirm_input(
+        &mut self,
+        path: PathBuf,
+        focus_node: Option<String>,
+        title: &str,
+    ) -> Result<()> {
+        self.app.remount(
+            Id::DeleteConfirmInputPopup,
+            Box::new(DeleteConfirmInputPopup::new(
+                &self.config_tui.read(),
+                title,
+                Msg::DeleteConfirm(DeleteConfirmMsg::CloseOk(path, focus_node)),
+                Msg::DeleteConfirm(DeleteConfirmMsg::CloseCancel),
+            )),
+            vec![],
+        )?;
+        self.app.active(&Id::DeleteConfirmInputPopup)?;
+
+        Ok(())
+    }
+
+    /// Umount the Delete Confirm Input Popup.
+    pub fn umount_confirm_input(&mut self) -> Result<()> {
+        self.app.umount(&Id::DeleteConfirmInputPopup)?;
+
+        Ok(())
     }
 }

@@ -29,6 +29,6 @@ pub use footer::Footer;
 pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use playlist::Playlist;
-pub use popups::general_search::{GSInputPopup, GSTablePopup, Source};
+pub use popups::general_search::Source;
 pub use progress::Progress;
 pub use tag_editor::*;

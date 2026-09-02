@@ -1,3 +1,4 @@
+use anyhow::Result;
 /**
  * MIT License
  *
@@ -91,22 +92,34 @@ impl AppComponent<Msg, UserEvent> for ErrorPopup {
 }
 
 impl Model {
-    /// Mount error and give focus to it
-    // This should likely be refactored to be "std::error::Error", but see https://github.com/dtolnay/anyhow/issues/63 on why it was easier this way
+    /// Mount error and give focus to it.
+    ///
+    /// # Panics
+    ///
+    /// If mounting the popup fails.
     pub fn mount_error_popup<E: Into<anyhow::Error>>(&mut self, err: E) {
-        assert!(
-            self.app
-                .remount(
-                    Id::ErrorPopup,
-                    Box::new(ErrorPopup::new(self.config_tui.clone(), err)),
-                    vec![]
-                )
-                .is_ok()
-        );
-        assert!(self.app.active(&Id::ErrorPopup).is_ok());
+        // unlike other mount functions, this one wraps the actual mounting function and adds a expect
+        // because it is used in many more places.
+        self.mount_error_popup_inner(err)
+            .expect("Expected ErrorPopup to mount correctly");
     }
 
-    pub fn umount_error_popup(&mut self) {
-        self.app.umount(&Id::ErrorPopup).ok();
+    // This should likely be refactored to be "std::error::Error", but see https://github.com/dtolnay/anyhow/issues/63 on why it was easier this way
+    fn mount_error_popup_inner<E: Into<anyhow::Error>>(&mut self, err: E) -> Result<()> {
+        self.app.remount(
+            Id::ErrorPopup,
+            Box::new(ErrorPopup::new(self.config_tui.clone(), err)),
+            vec![],
+        )?;
+        self.app.active(&Id::ErrorPopup)?;
+
+        Ok(())
+    }
+
+    /// Unmount the error popup.
+    pub fn umount_error_popup(&mut self) -> Result<()> {
+        self.app.umount(&Id::ErrorPopup)?;
+
+        Ok(())
     }
 }
