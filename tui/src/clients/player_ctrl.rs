@@ -128,14 +128,6 @@ impl PlayerControlConsumer {
         Ok(response.into())
     }
 
-    pub async fn reload_config(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.reload_config(request).await?;
-        let response = response.into_inner();
-        info!("Got response from server: {response:?}");
-        Ok(())
-    }
-
     pub async fn play_specific(&mut self, info: PlaylistPlaySpecific) -> Result<()> {
         let request = tonic::Request::new(info.into());
         let response = self.client.play_specific(request).await?;
@@ -221,14 +213,6 @@ impl PlayerControlConsumer {
     pub async fn remove_deleted_tracks(&mut self) -> Result<()> {
         let request = tonic::Request::new(Empty {});
         let response = self.client.remove_deleted_tracks(request).await?;
-        info!("Got response from server: {response:?}");
-
-        Ok(())
-    }
-
-    pub async fn quit_server(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.quit_server(request).await?;
         info!("Got response from server: {response:?}");
 
         Ok(())

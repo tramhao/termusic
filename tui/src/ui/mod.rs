@@ -32,7 +32,7 @@ pub struct UI {
 impl UI {
     /// Create a new [`UI`] instance
     pub async fn new(config: CombinedSettings, raw_client: Channel) -> Result<Self> {
-        let mut playback = PlayerControlConsumer::new(raw_client);
+        let mut playback = PlayerControlConsumer::new(raw_client.clone());
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let stream_updates = playback.subscribe_to_stream_updates().await?;
@@ -40,7 +40,7 @@ impl UI {
         let mut model = Model::new(config, cmd_tx, stream_updates.boxed());
         model.init();
 
-        let jh = ServerRequestActor::start_actor(playback, cmd_rx, model.tx_to_main.clone());
+        let jh = ServerRequestActor::start_actor(raw_client, cmd_rx, model.tx_to_main.clone());
 
         Ok(Self {
             model,

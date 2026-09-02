@@ -4,6 +4,9 @@ use anyhow::{Context, anyhow, bail};
 // using lower mod to restrict clippy
 #[allow(clippy::pedantic)]
 pub mod protobuf {
+    pub mod server {
+        tonic::include_proto!("termusic.server");
+    }
     pub mod player {
         tonic::include_proto!("termusic.player");
     }

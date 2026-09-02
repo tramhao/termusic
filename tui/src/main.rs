@@ -35,7 +35,7 @@ mod ui;
 use cli::Action;
 use ui::UI;
 
-use crate::clients::PlayerControlConsumer;
+use crate::clients::{PlayerControlConsumer, ServerControlConsumer};
 
 #[macro_use]
 extern crate log;
@@ -636,69 +636,70 @@ async fn execute_media_control(action: Action, config: &CombinedSettings) -> Res
         .context("No active server process found. Start the Server first.")?;
 
     let (raw_client, _addr) = wait_till_connected(config, pid.as_u32()).await?;
-    let mut playback = PlayerControlConsumer::new(raw_client);
+    let mut player_client = PlayerControlConsumer::new(raw_client.clone());
+    let mut server_client = ServerControlConsumer::new(raw_client);
 
     match action {
         Action::Next => {
-            playback.skip_next().await?;
+            player_client.skip_next().await?;
             println!("Next track");
         }
         Action::Previous => {
-            playback.skip_previous().await?;
+            player_client.skip_previous().await?;
             println!("Previous track");
         }
         Action::Play => {
-            let status = playback.get_progress().await?.status;
+            let status = player_client.get_progress().await?.status;
             if RunningStatus::from_u32(status) == RunningStatus::Running {
                 println!("Already playing");
             } else {
-                playback.toggle_pause().await?;
+                player_client.toggle_pause().await?;
                 println!("Playing");
             }
         }
         Action::Pause => {
-            let status = playback.get_progress().await?.status;
+            let status = player_client.get_progress().await?.status;
             if RunningStatus::from_u32(status) == RunningStatus::Running {
-                playback.toggle_pause().await?;
+                player_client.toggle_pause().await?;
                 println!("Paused");
             } else {
                 println!("Already paused");
             }
         }
         Action::TogglePause => {
-            let status = playback.toggle_pause().await?;
+            let status = player_client.toggle_pause().await?;
             println!("{status}");
         }
         Action::VolumeUp => {
-            let volume = playback.volume_up().await?;
+            let volume = player_client.volume_up().await?;
             println!("Volume: {volume}");
         }
         Action::VolumeDown => {
-            let volume = playback.volume_down().await?;
+            let volume = player_client.volume_down().await?;
             println!("Volume: {volume}");
         }
         Action::SpeedUp => {
-            let speed = playback.speed_up().await?;
+            let speed = player_client.speed_up().await?;
             println!("Speed: {speed}x");
         }
         Action::SpeedDown => {
-            let speed = playback.speed_down().await?;
+            let speed = player_client.speed_down().await?;
             println!("Speed: {speed}x");
         }
         Action::RestartTrack => {
-            playback.restart_track().await?;
+            player_client.restart_track().await?;
             println!("Restarted track");
         }
         Action::SeekForward => {
-            playback.seek_forward().await?;
+            player_client.seek_forward().await?;
             println!("Seeked forward");
         }
         Action::SeekBackward => {
-            playback.seek_backward().await?;
+            player_client.seek_backward().await?;
             println!("Seeked backward");
         }
         Action::Quit => {
-            playback.quit_server().await?;
+            server_client.quit_server().await?;
             println!("Quit server");
         }
         _ => unreachable!(),

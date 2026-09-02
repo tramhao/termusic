@@ -43,10 +43,7 @@ service PlayerControl {
   // Unlike shuffle, this will send Removal events
   rpc RemoveDeletedTracks(common.Empty) returns (common.Empty);
 
-  // Misc Commands
-  rpc ReloadConfig(common.Empty) returns (common.Empty);
   rpc SubscribeServerUpdates(common.Empty) returns (stream StreamUpdates);
-  rpc QuitServer(common.Empty) returns (common.Empty);
 }
 
 // A play status.

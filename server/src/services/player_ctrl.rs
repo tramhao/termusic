@@ -120,13 +120,6 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn reload_config(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let reply = Empty {};
-        self.command(PlayerCmd::ReloadConfig);
-
-        Ok(Response::new(reply))
-    }
-
     async fn seek_backward(
         &self,
         _request: Request<Empty>,
@@ -370,13 +363,6 @@ impl PlayerControl for PlayerControlService {
         // wait until the event was processed
         let _ = rx.await;
         let reply = Empty {};
-
-        Ok(Response::new(reply))
-    }
-
-    async fn quit_server(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let reply = Empty {};
-        self.command(PlayerCmd::Quit(crate::quit_sources::CLIENT));
 
         Ok(Response::new(reply))
     }

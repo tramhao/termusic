@@ -1,9 +1,10 @@
 use anyhow::Result;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
+use tonic::transport::Channel;
 
 use crate::{
-    clients::PlayerControlConsumer,
+    clients::{PlayerControlConsumer, ServerControlConsumer},
     ui::{
         model::TxToMain,
         msg::{Msg, ServerReqResponse},
@@ -15,7 +16,9 @@ use crate::{
 ///
 /// This actor can be given commands via [`TuiCmd`] and responds on [`TxToMain`].
 pub struct ServerRequestActor {
-    client_handle: PlayerControlConsumer,
+    server_client: ServerControlConsumer,
+    player_client: PlayerControlConsumer,
+
     rx_cmd: UnboundedReceiver<TuiCmd>,
     tx_main: TxToMain,
 }
@@ -25,12 +28,16 @@ impl ServerRequestActor {
     ///
     /// To shutdown this actor, close `rx_cmd` channel.
     pub fn start_actor(
-        client_handle: PlayerControlConsumer,
+        raw_client: Channel,
         rx_cmd: UnboundedReceiver<TuiCmd>,
         tx_main: TxToMain,
     ) -> JoinHandle<()> {
+        let server_client = ServerControlConsumer::new(raw_client.clone());
+        let player_client = PlayerControlConsumer::new(raw_client);
+
         let obj = Self {
-            client_handle,
+            server_client,
+            player_client,
             rx_cmd,
             tx_main,
         };
@@ -52,63 +59,63 @@ impl ServerRequestActor {
         match cmd {
             TuiCmd::TogglePause => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.toggle_pause().await?;
+                let _ = self.player_client.toggle_pause().await?;
             }
             TuiCmd::RestartTrack => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.restart_track().await?;
+                let _ = self.player_client.restart_track().await?;
             }
             TuiCmd::SeekForward => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.seek_forward().await?;
+                let _ = self.player_client.seek_forward().await?;
             }
             TuiCmd::SeekBackward => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.seek_backward().await?;
+                let _ = self.player_client.seek_backward().await?;
             }
             TuiCmd::VolumeUp => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.volume_up().await?;
+                let _ = self.player_client.volume_up().await?;
             }
             TuiCmd::VolumeDown => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.volume_down().await?;
+                let _ = self.player_client.volume_down().await?;
             }
             TuiCmd::SpeedUp => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.speed_up().await?;
+                let _ = self.player_client.speed_up().await?;
             }
             TuiCmd::SpeedDown => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.speed_down().await?;
+                let _ = self.player_client.speed_down().await?;
             }
             TuiCmd::SkipNext => {
                 // result will be populated back via UpdateStream
-                self.client_handle.skip_next().await?;
+                self.player_client.skip_next().await?;
             }
             TuiCmd::SkipPrevious => {
                 // result will be populated back via UpdateStream
-                self.client_handle.skip_previous().await?;
+                self.player_client.skip_previous().await?;
             }
             TuiCmd::ToggleGapless => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.toggle_gapless().await?;
+                let _ = self.player_client.toggle_gapless().await?;
             }
             TuiCmd::CycleLoop => {
                 // result will be populated back via UpdateStream
-                let _ = self.client_handle.cycle_loop().await?;
+                let _ = self.player_client.cycle_loop().await?;
             }
             TuiCmd::GetProgress => {
-                let res = self.client_handle.get_progress().await?;
+                let res = self.player_client.get_progress().await?;
 
                 self.send_response(Msg::ServerReqResponse(ServerReqResponse::GetProgress(res)));
             }
             TuiCmd::ReloadConfig => {
-                self.client_handle.reload_config().await?;
+                self.server_client.reload_config().await?;
             }
             TuiCmd::Playlist(playlist_cmd) => self.handle_playlist_cmd(playlist_cmd).await?,
             TuiCmd::QuitServer => {
-                let () = self.client_handle.quit_server().await?;
+                let () = self.server_client.quit_server().await?;
             }
         }
 
@@ -120,19 +127,19 @@ impl ServerRequestActor {
         match cmd {
             PlaylistCmd::PlaySpecific(playlist_play_specific) => {
                 // result will be populated back via UpdateStream
-                self.client_handle
+                self.player_client
                     .play_specific(playlist_play_specific)
                     .await?;
             }
             PlaylistCmd::AddTrack(playlist_add_track) => {
                 // result will be populated back via UpdateStream
-                self.client_handle
+                self.player_client
                     .add_to_playlist(playlist_add_track)
                     .await?;
             }
             PlaylistCmd::RemoveTrack(playlist_remove_track_indexed) => {
                 // result will be populated back via UpdateStream
-                self.client_handle
+                self.player_client
                     .remove_from_playlist(PlaylistRemoveTrackType::Indexed(
                         playlist_remove_track_indexed,
                     ))
@@ -140,32 +147,32 @@ impl ServerRequestActor {
             }
             PlaylistCmd::Clear => {
                 // result will be populated back via UpdateStream
-                self.client_handle
+                self.player_client
                     .remove_from_playlist(PlaylistRemoveTrackType::Clear)
                     .await?;
             }
             PlaylistCmd::SwapTrack(playlist_swap_track) => {
                 // result will be populated back via UpdateStream
-                self.client_handle.swap_tracks(playlist_swap_track).await?;
+                self.player_client.swap_tracks(playlist_swap_track).await?;
             }
             PlaylistCmd::Shuffle => {
                 // result will be populated back via UpdateStream
-                self.client_handle.shuffle_playlist().await?;
+                self.player_client.shuffle_playlist().await?;
             }
             PlaylistCmd::Sort {
                 criterion,
                 direction,
             } => {
-                self.client_handle
+                self.player_client
                     .sort_playlist(criterion, direction)
                     .await?;
             }
             PlaylistCmd::RemoveDeletedItems => {
                 // result will be populated back via UpdateStream
-                self.client_handle.remove_deleted_tracks().await?;
+                self.player_client.remove_deleted_tracks().await?;
             }
             PlaylistCmd::SelfReloadPlaylist => {
-                let tracks = self.client_handle.get_playlist().await?;
+                let tracks = self.player_client.get_playlist().await?;
 
                 self.send_response(Msg::ServerReqResponse(ServerReqResponse::FullPlaylist(
                     tracks,
