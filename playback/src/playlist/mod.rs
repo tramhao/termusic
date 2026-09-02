@@ -12,19 +12,18 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::LoopMode;
 use termusiclib::new_database::Database;
-use termusiclib::player;
 use termusiclib::player::PlaylistLoopModeInfo;
 use termusiclib::player::PlaylistShuffledInfo;
 use termusiclib::player::PlaylistSwapInfo;
-use termusiclib::player::PlaylistTracks;
 use termusiclib::player::UpdateEvents;
 use termusiclib::player::UpdatePlaylistEvents;
 use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::playlist_helpers::PlaylistSwapTrack;
 use termusiclib::player::playlist_helpers::PlaylistTrackSource;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistRemoveTrackIndexed};
+use termusiclib::player::protobuf;
+use termusiclib::player::protobuf::queue::{PlaylistState, SortCriterion, SortDirection};
 use termusiclib::player::{PlaylistAddTrackInfo, PlaylistRemoveTrackInfo};
-use termusiclib::player::{SortCriterion, SortDirection};
 use termusiclib::podcast::{db::Database as DBPod, episode::Episode};
 use termusiclib::track::{MediaTypes, Track, TrackData};
 use termusiclib::utils::{filetype_supported, get_app_config_path, get_parent_folder};
@@ -206,7 +205,7 @@ impl Playlist {
     /// - when converting from u64 grpc values to usize fails
     /// - when there is no track-id
     /// - when reading a Track from path or podcast database fails
-    pub fn load_from_grpc(&mut self, info: PlaylistTracks, podcast_db: &DBPod) -> Result<()> {
+    pub fn load_from_grpc(&mut self, info: PlaylistState, podcast_db: &DBPod) -> Result<()> {
         let current_track_index = usize::try_from(info.current_track_index)
             .context("convert current_track_index(u64) to usize")?;
         let mut playlist_items = Vec::with_capacity(info.tracks.len());
@@ -475,10 +474,10 @@ impl Playlist {
 
     /// Set a specific [`LoopMode`], also sends a event that the mode changed.
     /// Only sets & sends a event if the new mode is not the same as the old one.
-    pub fn set_loop_mode(&mut self, new_mode: LoopMode) {
+    pub fn set_loop_mode(&mut self, new_mode: LoopMode) -> LoopMode {
         // dont set and dont send a event if the mode is the same
         if new_mode == self.loop_mode {
-            return;
+            return self.loop_mode;
         }
 
         self.loop_mode = new_mode;
@@ -486,6 +485,8 @@ impl Playlist {
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistLoopMode(
             PlaylistLoopModeInfo::from(self.loop_mode),
         ));
+
+        self.loop_mode
     }
 
     /// Export the current playlist to a `.m3u` playlist file.
@@ -545,7 +546,7 @@ impl Playlist {
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
                 // Note: Safe unwrap, as a podcast uri is always a uri, not a path (which has been a string before)
-                trackid: PlaylistTrackSource::PodcastUrl(url.to_owned()),
+                tracks: vec![PlaylistTrackSource::PodcastUrl(url.to_owned())],
             },
         ));
 
@@ -558,9 +559,11 @@ impl Playlist {
     /// # Errors
     /// - When invalid inputs are given
     /// - When the file(s) cannot be read correctly
+    // TODO: this function is unused, maybe cull it?
     pub fn add_playlist<T: AsRef<str>>(&mut self, vec: &[T]) -> Result<(), PlaylistAddErrorVec> {
         let mut errors = PlaylistAddErrorVec::default();
         for item in vec {
+            // TODO: actually make use of PlaylistAddTrackInfo::tracks being a vec, instead of always sending only one per event
             let Err(err) = self.add_track(item) else {
                 continue;
             };
@@ -596,7 +599,7 @@ impl Playlist {
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
-                trackid: PlaylistTrackSource::Path(track_str.to_string()),
+                tracks: vec![PlaylistTrackSource::Path(track_str.to_string())],
             },
         ));
 
@@ -655,7 +658,7 @@ impl Playlist {
             tracks.tracks.len()
         );
 
-        let mut added_tracks = 0;
+        let mut pushed_tracks = Vec::with_capacity(tracks.tracks.len());
 
         if at_index >= self.len() {
             // insert tracks at the end
@@ -669,16 +672,10 @@ impl Playlist {
                     }
                 };
 
-                self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
-                    PlaylistAddTrackInfo {
-                        at_index: u64::try_from(self.tracks.len()).unwrap(),
-                        trackid: track_location,
-                    },
-                ));
+                pushed_tracks.push(track_location);
 
                 self.tracks.push(track);
                 self.is_modified = true;
-                added_tracks += 1;
             }
         } else {
             let mut at_index = at_index;
@@ -693,19 +690,22 @@ impl Playlist {
                     }
                 };
 
-                self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
-                    PlaylistAddTrackInfo {
-                        at_index: u64::try_from(at_index).unwrap(),
-                        trackid: track_location,
-                    },
-                ));
+                pushed_tracks.push(track_location);
 
                 self.tracks.insert(at_index, track);
                 self.is_modified = true;
                 at_index += 1;
-                added_tracks += 1;
             }
         }
+
+        let added_tracks = pushed_tracks.len();
+
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
+            PlaylistAddTrackInfo {
+                at_index: u64::try_from(at_index).unwrap(),
+                tracks: pushed_tracks,
+            },
+        ));
 
         info!("Added {} tracks with {} errors", added_tracks, errors.len());
 
@@ -956,13 +956,13 @@ impl Playlist {
         ));
     }
 
-    /// Get the current tracks and state as a GRPC [`PlaylistTracks`] object.
+    /// Get the current tracks and state as a GRPC [`PlaylistState`] object.
     ///
     /// # Errors
     ///
     /// - if some track does not have a file-id
     /// - converting usize to u64 fails
-    pub fn as_grpc_playlist_tracks(&self) -> Result<PlaylistTracks> {
+    pub fn as_grpc_playlist_tracks(&self) -> Result<PlaylistState> {
         let tracks = self
             .tracks()
             .iter()
@@ -971,14 +971,14 @@ impl Playlist {
                 let at_index = u64::try_from(idx).context("track index(usize) to u64")?;
                 let track_source = track.as_track_source();
 
-                Ok(player::PlaylistAddTrack {
+                Ok(protobuf::queue::PlaylistTrack {
                     at_index,
                     id: Some(track_source.into()),
                 })
             })
             .collect::<Result<_>>()?;
 
-        Ok(PlaylistTracks {
+        Ok(PlaylistState {
             current_track_index: u64::try_from(self.current_track_index)
                 .context("current_track_index(usize) to u64")?,
             tracks,

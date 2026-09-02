@@ -1,0 +1,25 @@
+syntax = "proto3";
+package termusic.common;
+
+// A Empty message; nothing to send; nothing to return
+message Empty {}
+
+// A Identifier for a track.
+message TrackId {
+  oneof source {
+    // Path on the system
+    // bytes *could* be used, but it way more complex and platform dependant
+    string path = 1;
+    // Url (ex. radio)
+    string url = 2;
+    // A podcast episode
+    string podcast_url = 3;
+  }
+}
+
+// using a custom Duration that matches rust's definition, as rust's may not fit
+// into google's well-known Duration
+message Duration {
+  uint64 secs = 1;
+  uint32 nanos = 2;
+}

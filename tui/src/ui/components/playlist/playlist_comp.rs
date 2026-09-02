@@ -16,9 +16,10 @@ use termusiclib::player::playlist_helpers::{
     PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
     PlaylistTrackSource,
 };
+use termusiclib::player::protobuf::queue::{SortCriterion, SortDirection};
 use termusiclib::player::{
     PlaylistAddTrackInfo, PlaylistLoopModeInfo, PlaylistRemoveTrackInfo, PlaylistShuffledInfo,
-    PlaylistSwapInfo, SortCriterion, SortDirection,
+    PlaylistSwapInfo,
 };
 use termusiclib::track::DurationFmtShort;
 use termusiclib::track::Track;
@@ -611,7 +612,7 @@ impl Model {
         self.playback.playlist.write().add_tracks(
             PlaylistAddTrack {
                 at_index: items.at_index,
-                tracks: vec![items.trackid],
+                tracks: items.tracks,
             },
             &self.podcast.db_podcast,
         )?;

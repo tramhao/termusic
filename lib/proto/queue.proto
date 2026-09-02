@@ -1,0 +1,127 @@
+syntax = "proto3";
+package termusic.queue;
+
+import "common.proto";
+
+// Control the Queue (also know that the playlist)
+service QueueControl {
+  // Get all tracks of the playlist.
+  rpc GetPlaylist(common.Empty) returns (PlaylistState);
+  // Skip to a specific track in the playlist
+  // at the momemnt, the one set via "current_track_index"
+  rpc PlaySpecific(PlaylistPlaySpecificRequest) returns (common.Empty);
+  // Set a queue loopmode
+  rpc ChangeLoopMode(ChangeLoopModeRequest) returns (PlaylistLoopMode);
+  // Add one or multiple tracks to the playlist
+  rpc AddToPlaylist(PlaylistTracksToAddRequest) returns (common.Empty);
+  // Remove one or multiple tracks from the playlist
+  rpc RemoveFromPlaylist(PlaylistTracksToRemoveRequest) returns (common.Empty);
+  // Swap some tracks.
+  rpc SwapTracks(PlaylistSwapTracksRequest) returns (common.Empty);
+  // Shuffle the playlist, returns the new playlist tracks.
+  rpc ShufflePlaylist(common.Empty) returns (common.Empty);
+  // Sort the playlist by criterion and direction, emits PlaylistShuffled event.
+  rpc SortPlaylist(SortPlaylistRequest) returns (common.Empty);
+  // Check for and remove deleted items from the playlist.
+  // Unlike shuffle, this will send Removal events
+  rpc RemoveDeletedTracks(common.Empty) returns (common.Empty);
+}
+
+// Set or cycle the Loop Mode
+message ChangeLoopModeRequest {
+  oneof type {
+    // Cycle to the next Loop Mode
+    common.Empty cycle = 1;
+    // Set a specific type
+    PlaylistLoopMode mode = 2;
+  }
+}
+
+// The current Loop mode for the playlist
+message PlaylistLoopMode {
+  // The actual mode, mapped to [`config::v2::server::LoopMode`]
+  uint32 mode = 1;
+}
+
+message PlaylistSwapTracksRequest {
+  // The first index to swap
+  uint64 index_a = 1;
+  // The second index to swap
+  uint64 index_b = 2;
+}
+
+// Play a specific track in the playlist
+message PlaylistPlaySpecificRequest {
+  // The track index to play
+  uint64 track_index = 1;
+  // The id to check that the track index is actually the one requested
+  common.TrackId id = 2;
+}
+
+// The State of the playlist
+message PlaylistState {
+  // The currently playing index
+  uint64 current_track_index = 1;
+  // All the tracks in the playlist
+  repeated PlaylistTrack tracks = 2;
+}
+
+// A Track in the playlist
+message PlaylistTrack {
+  // The index the track is at in the playlist
+  uint64 at_index = 1;
+
+  // The Track itself
+  common.TrackId id = 4;
+}
+
+// Add multiple tracks to a Playlist
+message PlaylistTracksToAddRequest {
+  // The index the track(s) are added at.
+  // If this is not at the end, all tracks at that index and after need to be shifted to make place for this new one.
+  uint64 at_index = 1;
+
+  // All the Tracks to add at the index
+  repeated common.TrackId tracks = 2;
+}
+
+// Remove multiple track or clear the playlist
+message PlaylistTracksToRemoveRequest {
+  oneof type {
+    PlaylistTracksToRemoveIndexed indexed = 1;
+    // Clear the entire playlist
+    common.Empty   clear   = 2;
+  }
+}
+
+// Remove multiple tracks from a playlist at position
+message PlaylistTracksToRemoveIndexed {
+  // The index the track(s) that are removed
+  // This is the starting index, and x amount of elements are removed after
+  uint64 at_index = 1;
+
+  // All the Tracks to remove at the index
+  repeated common.TrackId tracks = 2;
+}
+
+// A request to sort the Playlist.
+message SortPlaylistRequest {
+  SortCriterion criterion = 1;
+  SortDirection direction = 2;
+}
+
+// All the sort methods available.
+enum SortCriterion {
+  ALPHANUMERIC = 0;
+  FIRST_ADDED = 1;
+  DURATION = 2;
+  MOST_PLAYED = 3;
+  RECENCY = 4;
+  FRECENCY = 5;
+}
+
+// All the orderings a sort can take.
+enum SortDirection {
+  ASC = 0;
+  DESC = 1;
+}

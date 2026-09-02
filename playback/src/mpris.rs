@@ -6,6 +6,7 @@ use std::{
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use termusiclib::{
     common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE},
+    player::SeekReq,
     track::Track,
 };
 
@@ -173,12 +174,12 @@ impl GeneralPlayer {
             // The "Seek" even seems to currently only be used for windows, mpris uses "SeekBy"
             MediaControlEvent::Seek(direction) => {
                 let cmd = match direction {
-                    souvlaki::SeekDirection::Forward => PlayerCmd::SeekForward,
-                    souvlaki::SeekDirection::Backward => PlayerCmd::SeekBackward,
+                    souvlaki::SeekDirection::Forward => SeekReq::Steps(1),
+                    souvlaki::SeekDirection::Backward => SeekReq::Steps(-1),
                 };
 
                 // ignore error if sending failed
-                self.cmd_tx.send(cmd).ok();
+                self.cmd_tx.send(PlayerCmd::Seek(cmd)).ok();
             }
             MediaControlEvent::SetPosition(position) => {
                 self.seek_to(position.0);

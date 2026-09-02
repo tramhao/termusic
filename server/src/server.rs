@@ -5,13 +5,18 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
-use music_player_service::MusicPlayerService;
 use parking_lot::{Mutex, RwLock};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
-use termusiclib::player::music_player_server::MusicPlayerServer;
-use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
+use termusiclib::player::protobuf::player::player_control_server::PlayerControlServer;
+use termusiclib::player::protobuf::player::{GetProgressResponse, PlayerTime};
+use termusiclib::player::protobuf::queue::queue_control_server::QueueControlServer;
+use termusiclib::player::protobuf::server::server_control_server::ServerControlServer;
+use termusiclib::player::protobuf::stream::stream_events_server::StreamEventsServer;
+use termusiclib::player::{
+    ChangeLoopMode, ChangeSpeed, ChangeVolume, PlayerProgress, RunningStatus, SeekReq,
+};
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -28,11 +33,14 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
 use crate::connection::{ActiveConnectionData, ActiveConnections, tcp_stream};
+use crate::services::{
+    PlayerControlService, QueueControlService, ServerControlService, StreamEventsService,
+};
 
 mod cli;
 mod connection;
 mod logger;
-mod music_player_service;
+mod services;
 
 #[macro_use]
 extern crate log;
@@ -143,14 +151,13 @@ async fn actual_main() -> Result<()> {
 
     let run_info = Arc::new(RwLock::new(RunInfo::default()));
 
-    let music_player_service: MusicPlayerService = MusicPlayerService::new(
-        cmd_tx.clone(),
-        stream_tx.clone(),
-        config.clone(),
-        playlist.clone(),
-        run_info.clone(),
-    );
-    let playerstats = music_player_service.player_stats.clone();
+    let server_svc = ServerControlService::new(cmd_tx.clone());
+    let player_ctrl_svc =
+        PlayerControlService::new(cmd_tx.clone(), config.clone(), run_info.clone());
+    let queue_ctrl_svc = QueueControlService::new(cmd_tx.clone(), config.clone(), playlist.clone());
+    let stream_svc = StreamEventsService::new(stream_tx.clone());
+
+    let playerstats = player_ctrl_svc.player_stats.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
     let cmd_tx_ticker = cmd_tx.clone();
@@ -164,8 +171,15 @@ async fn actual_main() -> Result<()> {
 
     let service_cancel_token = CancellationToken::new();
 
-    let (join_handle, active_connections_data) =
-        start_service(&config, music_player_service, service_cancel_token.clone()).await?;
+    let (join_handle, active_connections_data) = start_service(
+        &config,
+        server_svc,
+        player_ctrl_svc,
+        queue_ctrl_svc,
+        stream_svc,
+        service_cancel_token.clone(),
+    )
+    .await?;
 
     let tokio_handle = Handle::current();
 
@@ -245,7 +259,10 @@ fn start_playlist_save_interval(
 /// Start the [`MusicPlayerService`] with the according transport protocol.
 async fn start_service(
     config: &SharedServerSettings,
-    music_player_service: MusicPlayerService,
+    server_svc: ServerControlService,
+    player_ctrl_svc: PlayerControlService,
+    queue_ctrl_svc: QueueControlService,
+    stream_svc: StreamEventsService,
     cancel_token: CancellationToken,
 ) -> Result<(
     JoinHandle<Result<(), tonic::transport::Error>>,
@@ -253,7 +270,11 @@ async fn start_service(
 )> {
     let protocol = config.read().settings.com.protocol;
 
-    let svc = MusicPlayerServer::new(music_player_service);
+    let server_ctrl = ServerControlServer::new(server_svc);
+    let player_ctrl = PlayerControlServer::new(player_ctrl_svc);
+    let queue_ctrl = QueueControlServer::new(queue_ctrl_svc);
+    let stream_ctrl = StreamEventsServer::new(stream_svc);
+
     let active_connection_count: ActiveConnections = Arc::new(ActiveConnectionData::default());
 
     let handle = match protocol {
@@ -263,7 +284,10 @@ async fn start_service(
 
             tokio::spawn(
                 Server::builder()
-                    .add_service(svc)
+                    .add_service(server_ctrl)
+                    .add_service(player_ctrl)
+                    .add_service(queue_ctrl)
+                    .add_service(stream_ctrl)
                     .serve_with_incoming_shutdown(tcp_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -276,7 +300,10 @@ async fn start_service(
 
             tokio::spawn(
                 Server::builder()
-                    .add_service(svc)
+                    .add_service(server_ctrl)
+                    .add_service(player_ctrl)
+                    .add_service(queue_ctrl)
+                    .add_service(stream_ctrl)
                     .serve_with_incoming_shutdown(uds_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -357,9 +384,13 @@ fn player_loop(
                     return Ok(());
                 }
             }
-            PlayerCmd::CycleLoop => {
-                player.config.write().settings.player.loop_mode =
-                    player.playlist.write().cycle_loop_mode();
+            PlayerCmd::ChangeLoopMode(mode) => {
+                player.config.write().settings.player.loop_mode = match mode {
+                    ChangeLoopMode::Cycle => player.playlist.write().cycle_loop_mode(),
+                    ChangeLoopMode::Mode(loop_mode) => {
+                        player.playlist.write().set_loop_mode(loop_mode)
+                    }
+                }
             }
             PlayerCmd::Eos => {
                 info!("Eos received");
@@ -390,31 +421,53 @@ fn player_loop(
             PlayerCmd::ReloadPlaylist => {
                 player.playlist.write().reload_tracks().ok();
             }
-            PlayerCmd::SeekBackward => {
-                // TODO: do seek callback for faster progress updates?
-                player.seek_relative(false);
-            }
-            PlayerCmd::RestartTrack => {
-                player.restart_track();
-            }
-            PlayerCmd::SeekForward => {
-                player.seek_relative(true);
-            }
+            PlayerCmd::Seek(seek) => match seek {
+                SeekReq::Steps(steps) => {
+                    if steps.is_positive() {
+                        for _ in 0..steps {
+                            player.seek_relative(true);
+                        }
+                    } else {
+                        for _ in steps..0 {
+                            player.seek_relative(false)
+                        }
+                    }
+                }
+                SeekReq::Unit(units) => {
+                    if let Err(err) = player.seek(units) {
+                        error!("Error running seek: {err:#?}");
+                    }
+                }
+                SeekReq::RestartTrack => player.restart_track(),
+            },
             PlayerCmd::SkipNext => {
                 player.reset_errors();
                 info!("skip to next track.");
                 player.player_save_last_position();
                 player.next();
             }
-            PlayerCmd::SpeedDown => {
-                let new_speed = player.add_speed(-SPEED_STEP);
-                info!("after speed down: {new_speed}");
-                player.config.write().settings.player.speed = new_speed;
-            }
-
-            PlayerCmd::SpeedUp => {
-                let new_speed = player.add_speed(SPEED_STEP);
-                info!("after speed up: {new_speed}");
+            PlayerCmd::ChangeSpeed(speed) => {
+                match speed {
+                    ChangeSpeed::Steps(steps) => {
+                        if steps.is_positive() {
+                            for _ in 0..steps {
+                                player.add_speed(SPEED_STEP);
+                            }
+                        } else {
+                            for _ in steps..0 {
+                                player.add_speed(-SPEED_STEP);
+                            }
+                        }
+                    }
+                    ChangeSpeed::Unit(units) => {
+                        player.add_speed(units);
+                    }
+                    ChangeSpeed::Reset => {
+                        player.set_speed(0);
+                    }
+                };
+                let new_speed = player.speed();
+                info!("After speed change: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
             }
             PlayerCmd::Tick => {
@@ -467,23 +520,31 @@ fn player_loop(
                 info!("player toggled pause");
                 player.toggle_pause();
             }
-            PlayerCmd::VolumeDown => {
-                info!("before volumedown: {}", player.volume());
-                let new_volume = player.add_volume(-VOLUME_STEP);
-                player.config.write().settings.player.volume = new_volume;
-                info!("after volumedown: {new_volume}");
-            }
-            PlayerCmd::VolumeUp => {
-                info!("before volumeup: {}", player.volume());
-                let new_volume = player.add_volume(VOLUME_STEP);
-                player.config.write().settings.player.volume = new_volume;
-                info!("after volumeup: {new_volume}");
+            PlayerCmd::ChangeVolume(vol) => {
+                match vol {
+                    ChangeVolume::Steps(steps) => {
+                        if steps.is_positive() {
+                            for _ in 0..steps {
+                                player.add_volume(VOLUME_STEP);
+                            }
+                        } else {
+                            for _ in steps..0 {
+                                player.add_volume(-VOLUME_STEP);
+                            }
+                        }
+                    }
+                    ChangeVolume::Unit(units) => {
+                        player.add_volume(units);
+                    }
+                }
+                let new_vol = player.volume();
+                info!("After volume change: {new_vol}");
+                player.config.write().settings.player.volume = new_vol;
             }
             PlayerCmd::VolumeSet(volume) => {
-                info!("before volumeset: {}", player.volume());
                 let new_volume = player.set_volume(volume);
                 player.config.write().settings.player.volume = new_volume;
-                info!("after volumeset: {new_volume}");
+                info!("After volume set: {new_volume}");
             }
             PlayerCmd::Pause => {
                 player.pause();

@@ -1,15 +1,13 @@
 use anyhow::Result;
 use futures_util::StreamExt;
-use termusiclib::player::music_player_client::MusicPlayerClient;
 use tokio::sync::mpsc::{self};
 use tokio::task::JoinHandle;
 use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
 
-use crate::CombinedSettings;
 use crate::ui::server_req_actor::ServerRequestActor;
+use crate::{CombinedSettings, clients};
 use model::Model;
-pub use music_player_client::Playback;
 use tui_cmd::PlaylistCmd;
 use tui_cmd::TuiCmd;
 
@@ -17,7 +15,6 @@ pub mod components;
 mod ids;
 pub mod model;
 mod msg;
-mod music_player_client;
 mod server_req_actor;
 mod tui_cmd;
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
@@ -33,16 +30,16 @@ pub struct UI {
 
 impl UI {
     /// Create a new [`UI`] instance
-    pub async fn new(config: CombinedSettings, client: MusicPlayerClient<Channel>) -> Result<Self> {
-        let mut playback = Playback::new(client);
+    pub async fn new(config: CombinedSettings, raw_client: Channel) -> Result<Self> {
+        let mut stream_client = clients::StreamEventsConsumer::new(raw_client.clone());
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
-        let stream_updates = playback.subscribe_to_stream_updates().await?;
+        let stream_updates = stream_client.subscribe_to_stream_updates().await?;
 
         let mut model = Model::new(config, cmd_tx, stream_updates.boxed());
         model.init();
 
-        let jh = ServerRequestActor::start_actor(playback, cmd_rx, model.tx_to_main.clone());
+        let jh = ServerRequestActor::start_actor(raw_client, cmd_rx, model.tx_to_main.clone());
 
         Ok(Self {
             model,

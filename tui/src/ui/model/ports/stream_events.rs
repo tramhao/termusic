@@ -2,7 +2,7 @@ use std::{fmt::Debug, pin::Pin};
 
 use anyhow::{Context, Result};
 use futures_util::Stream;
-use termusiclib::player::{PlayerProgress, StreamUpdates, UpdateEvents};
+use termusiclib::player::{PlayerProgress, UpdateEvents, protobuf::stream::StreamUpdates};
 use tokio_stream::StreamExt;
 use tuirealm::{
     event::Event,
