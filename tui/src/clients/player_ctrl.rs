@@ -6,11 +6,10 @@ use termusiclib::player::playlist_helpers::{
 use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::player_control_client::PlayerControlClient;
 use termusiclib::player::protobuf::player::{
-    GetProgressResponse, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
-    PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest, StreamUpdates,
+    GetProgressResponse, PlaylistSwapTracksRequest, PlaylistTracks, PlaylistTracksToAdd,
+    PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest,
 };
 use termusiclib::player::{PlayerProgress, RunningStatus};
-use tokio_stream::{Stream, StreamExt as _};
 use tonic::transport::Channel;
 
 /// Handle TUI Requests to the server.
@@ -144,16 +143,6 @@ impl PlayerControlConsumer {
         Ok(())
     }
 
-    pub async fn subscribe_to_stream_updates(
-        &mut self,
-    ) -> Result<impl Stream<Item = Result<StreamUpdates>> + use<>> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.subscribe_server_updates(request).await?;
-        let response = response.into_inner().map(|res| res.map_err(Into::into));
-        info!("Got response from server: {response:?}");
-        Ok(response)
-    }
-
     pub async fn add_to_playlist(&mut self, info: PlaylistAddTrack) -> Result<()> {
         let request = tonic::Request::new(PlaylistTracksToAdd::from(info));
         let response = self.client.add_to_playlist(request).await?;
@@ -171,7 +160,7 @@ impl PlayerControlConsumer {
     }
 
     pub async fn swap_tracks(&mut self, info: PlaylistSwapTrack) -> Result<()> {
-        let request = tonic::Request::new(PlaylistSwapTracks::from(info));
+        let request = tonic::Request::new(PlaylistSwapTracksRequest::from(info));
         let response = self.client.swap_tracks(request).await?;
         info!("Got response from server: {response:?}");
 

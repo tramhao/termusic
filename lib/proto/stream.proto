@@ -1,0 +1,128 @@
+syntax = "proto3";
+package termusic.stream;
+
+import "common.proto";
+import "player.proto";
+
+// Everything related to player events
+service StreamEvents {
+  // Subscribe to events happening
+  rpc SubscribeServerUpdates(common.Empty) returns (stream StreamUpdates);
+}
+
+// all updates that can happen from the server side, without the client to have to ask explicitly
+// naming convention for the stream update specific messages is to add the "Update" prefix, even if a similar non-prefix message already exists
+message StreamUpdates {
+  oneof type {
+    UpdateMissedEvents     missed_events      = 1;
+    UpdateVolumeChanged    volume_changed     = 2;
+    UpdateSpeedChanged     speed_changed      = 3;
+    UpdatePlayStateChanged play_state_changed = 4;
+    UpdateTrackChanged     track_changed      = 5;
+    UpdateGaplessChanged   gapless_changed    = 6;
+    UpdatePlaylist         playlist_changed   = 7;
+    UpdateProgress         progress_changed   = 8;
+  }
+}
+
+// Indicate that some events could not be send
+// Like a "Lagged" Error from tokio-stream
+message UpdateMissedEvents {
+  uint64 amount = 1;
+}
+
+// The Volume changed, send new information
+message UpdateVolumeChanged {
+  // reuse the existing message
+  player.VolumeReply msg = 1;
+}
+
+// The Speed changed, send new information
+message UpdateSpeedChanged {
+  // reuse the existing message
+  player.SpeedReply msg = 1;
+}
+
+// TODO: is play-state (playing / paused / ??) the only things this should do?
+message UpdatePlayStateChanged {
+  // reuse the existing message
+  player.PlayState msg = 1;
+}
+
+// The Gapless state changed, send new information.
+message UpdateGaplessChanged {
+  // reuse the existing message
+  player.GaplessState msg = 1;
+}
+
+// The track changed in some way, send new information
+// This includes everything from changing to a new track, new radio title, etc
+// This is *not* used for regular track progress updates
+// NOTE: this may or may not be sent for the initial track after startup as the client may connect after the track started
+message UpdateTrackChanged {
+  // The index into the playlist of which track changed.
+  uint64 current_track_index = 1;
+
+  // all values below should be moved into their own "Track" message at some point
+  // instead of having the TUI fetch everything from the file itself
+  // radio title, track title
+  // the following is (linux protobuf) 3.15, ubuntu 2204 still has (linux protobuf) 3.12
+  // optional string title = 3;
+  // the following "oneof" is wire equivalent to the above "optional"
+  oneof optional_title {
+    string title = 3;
+  }
+  player.PlayerTime progress = 4;
+}
+
+// There is a progress update to the currently playing track, may not be fired if paused or stopped
+message UpdateProgress {
+  player.PlayerTime progress = 1;
+}
+
+message UpdatePlaylist {
+  oneof type {
+    PlaylistAddTrack   add_track    = 1;
+    PlaylistRemoveTrack remove_track = 2;
+    common.Empty         cleared      = 3;
+    PlaylistLoopMode    loop_mode    = 4;
+    PlaylistSwapTracks  swap_tracks  = 5;
+    PlaylistShuffled    shuffled     = 6;
+  }
+}
+
+// A Track got removed from the playlist.
+message PlaylistRemoveTrack {
+  // The index of the track that was removed.
+  uint64 at_index = 1;
+
+  // The Id of the track that was removed
+  common.TrackId id = 2;
+}
+
+message PlaylistSwapTracks {
+  // The first index to swap
+  uint64 index_a = 1;
+  // The second index to swap
+  uint64 index_b = 2;
+}
+
+// Indicate that the playlist has changed its loop mode
+message PlaylistLoopMode {
+  player.PlaylistLoopMode mode = 1;
+}
+
+/// Indicate that the playlist has been shuffled and should be re-fetched
+message PlaylistShuffled {
+  player.PlaylistTracks shuffled = 1;
+}
+
+// A Track got added to the playlist, this message contains where it was added and all the metadata required for display.
+message PlaylistAddTrack {
+  // The index the track(s) are added at.
+  // If this is not at the end, all tracks at that index and after need to be shifted to make place for this new one.
+  uint64 at_index = 1;
+
+  // The Track to add at the index
+  common.TrackId track = 2;
+}

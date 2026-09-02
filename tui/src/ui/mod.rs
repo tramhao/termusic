@@ -6,7 +6,7 @@ use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
 
 use crate::CombinedSettings;
-use crate::clients::PlayerControlConsumer;
+use crate::clients::StreamEventsConsumer;
 use crate::ui::server_req_actor::ServerRequestActor;
 use model::Model;
 use tui_cmd::PlaylistCmd;
@@ -32,10 +32,10 @@ pub struct UI {
 impl UI {
     /// Create a new [`UI`] instance
     pub async fn new(config: CombinedSettings, raw_client: Channel) -> Result<Self> {
-        let mut playback = PlayerControlConsumer::new(raw_client.clone());
+        let mut stream_client = StreamEventsConsumer::new(raw_client.clone());
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
-        let stream_updates = playback.subscribe_to_stream_updates().await?;
+        let stream_updates = stream_client.subscribe_to_stream_updates().await?;
 
         let mut model = Model::new(config, cmd_tx, stream_updates.boxed());
         model.init();

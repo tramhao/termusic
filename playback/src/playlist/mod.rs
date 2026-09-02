@@ -971,7 +971,7 @@ impl Playlist {
                 let at_index = u64::try_from(idx).context("track index(usize) to u64")?;
                 let track_source = track.as_track_source();
 
-                Ok(protobuf::player::PlaylistAddTrack {
+                Ok(protobuf::player::PlaylistTrack {
                     at_index,
                     id: Some(track_source.into()),
                 })

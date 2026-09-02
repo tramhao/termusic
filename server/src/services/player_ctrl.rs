@@ -1,23 +1,20 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use parking_lot::Mutex;
-use std::pin::Pin;
-use std::sync::Arc;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::player::playlist_helpers::PlaylistRemoveTrackType;
 use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::player_control_server::PlayerControl;
 use termusiclib::player::protobuf::player::{
     GaplessState, GetProgressResponse, PlayState, PlayerTime, PlaylistLoopMode,
-    PlaylistPlaySpecific, PlaylistSwapTracks, PlaylistTracks, PlaylistTracksToAdd,
+    PlaylistPlaySpecific, PlaylistSwapTracksRequest, PlaylistTracks, PlaylistTracksToAdd,
     PlaylistTracksToRemove, SortCriterion, SortDirection, SortPlaylistRequest, SpeedReply,
-    StreamUpdates, UpdateMissedEvents, VolumeReply, stream_updates,
+    VolumeReply,
 };
 use termusicplayback::{
-    PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, SharedRunInfo, StreamTX,
+    PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist, SharedRunInfo,
 };
-use tokio_stream::wrappers::BroadcastStream;
-use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
-use tokio_stream::{Stream, StreamExt};
 use tonic::{Request, Response, Status};
 
 use crate::PlayerStats;
@@ -25,7 +22,6 @@ use crate::PlayerStats;
 #[derive(Debug)]
 pub struct PlayerControlService {
     cmd_tx: PlayerCmdSender,
-    stream_tx: StreamTX,
     config: SharedServerSettings,
     playlist: SharedPlaylist,
     run_info: SharedRunInfo,
@@ -35,7 +31,6 @@ pub struct PlayerControlService {
 impl PlayerControlService {
     pub fn new(
         cmd_tx: PlayerCmdSender,
-        stream_tx: StreamTX,
         config: SharedServerSettings,
         playlist: SharedPlaylist,
         run_info: SharedRunInfo,
@@ -49,7 +44,6 @@ impl PlayerControlService {
         Self {
             cmd_tx,
             player_stats,
-            stream_tx,
             playlist,
             config,
             run_info,
@@ -240,32 +234,6 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    type SubscribeServerUpdatesStream =
-        Pin<Box<dyn Stream<Item = Result<StreamUpdates, Status>> + Send>>;
-    async fn subscribe_server_updates(
-        &self,
-        _: Request<Empty>,
-    ) -> Result<Response<Self::SubscribeServerUpdatesStream>, Status> {
-        let rx = self.stream_tx.subscribe();
-
-        // map to the grpc types
-        let receiver_stream = BroadcastStream::new(rx).map(|res| match res {
-            Ok(ev) => Ok(ev.into()),
-            Err(err) => {
-                let BroadcastStreamRecvError::Lagged(amount) = err;
-                Ok(StreamUpdates {
-                    r#type: Some(stream_updates::Type::MissedEvents(UpdateMissedEvents {
-                        amount,
-                    })),
-                })
-
-                // else case if ever necessary
-                // Err(Status::from_error(Box::new(err)))
-            }
-        });
-        Ok(Response::new(Box::pin(receiver_stream)))
-    }
-
     async fn add_to_playlist(
         &self,
         request: Request<PlaylistTracksToAdd>,
@@ -306,7 +274,7 @@ impl PlayerControl for PlayerControlService {
 
     async fn swap_tracks(
         &self,
-        request: Request<PlaylistSwapTracks>,
+        request: Request<PlaylistSwapTracksRequest>,
     ) -> Result<Response<Empty>, Status> {
         let converted = request
             .into_inner()

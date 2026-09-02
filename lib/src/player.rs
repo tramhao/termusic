@@ -10,12 +10,15 @@ pub mod protobuf {
     pub mod player {
         tonic::include_proto!("termusic.player");
     }
+    pub mod stream {
+        tonic::include_proto!("termusic.stream");
+    }
     pub mod common {
         tonic::include_proto!("termusic.common");
     }
 }
 
-use crate::config::v2::server::LoopMode;
+use crate::{config::v2::server::LoopMode, player::protobuf::common::Empty};
 
 impl protobuf::player::SortDirection {
     /// Swap between `Asc` and `Desc`.
@@ -111,10 +114,10 @@ impl From<PlayerProgress> for protobuf::player::PlayerTime {
     }
 }
 
-impl TryFrom<protobuf::player::UpdateProgress> for PlayerProgress {
+impl TryFrom<protobuf::stream::UpdateProgress> for PlayerProgress {
     type Error = anyhow::Error;
 
-    fn try_from(value: protobuf::player::UpdateProgress) -> Result<Self, Self::Error> {
+    fn try_from(value: protobuf::stream::UpdateProgress) -> Result<Self, Self::Error> {
         let Some(val) = value.progress else {
             bail!("Expected \"UpdateProgress\" to contain \"Some(progress)\"");
         };
@@ -123,7 +126,7 @@ impl TryFrom<protobuf::player::UpdateProgress> for PlayerProgress {
     }
 }
 
-impl From<PlayerProgress> for protobuf::player::UpdateProgress {
+impl From<PlayerProgress> for protobuf::stream::UpdateProgress {
     fn from(value: PlayerProgress) -> Self {
         Self {
             progress: Some(value.into()),
@@ -156,15 +159,15 @@ pub enum UpdateEvents {
 // might not be fully true, but necessary for Msg
 impl Eq for UpdateEvents {}
 
-type StreamTypes = protobuf::player::stream_updates::Type;
+type StreamTypes = protobuf::stream::stream_updates::Type;
 
 // mainly for server to grpc
-impl From<UpdateEvents> for protobuf::player::StreamUpdates {
+impl From<UpdateEvents> for protobuf::stream::StreamUpdates {
     fn from(value: UpdateEvents) -> Self {
-        use protobuf::player::{
-            GaplessState, PlayState, SpeedReply, UpdateGaplessChanged, UpdateMissedEvents,
-            UpdatePlayStateChanged, UpdateSpeedChanged, UpdateTrackChanged, UpdateVolumeChanged,
-            VolumeReply,
+        use protobuf::player::{GaplessState, PlayState, SpeedReply, VolumeReply};
+        use protobuf::stream::{
+            UpdateGaplessChanged, UpdateMissedEvents, UpdatePlayStateChanged, UpdateSpeedChanged,
+            UpdateTrackChanged, UpdateVolumeChanged, update_track_changed,
         };
         let val = match value {
             UpdateEvents::MissedEvents { amount } => {
@@ -187,9 +190,7 @@ impl From<UpdateEvents> for protobuf::player::StreamUpdates {
             }
             UpdateEvents::TrackChanged(info) => StreamTypes::TrackChanged(UpdateTrackChanged {
                 current_track_index: info.current_track_index,
-                optional_title: info
-                    .title
-                    .map(protobuf::player::update_track_changed::OptionalTitle::Title),
+                optional_title: info.title.map(update_track_changed::OptionalTitle::Title),
                 progress: info.progress.map(Into::into),
             }),
             UpdateEvents::GaplessChanged { gapless } => {
@@ -206,10 +207,10 @@ impl From<UpdateEvents> for protobuf::player::StreamUpdates {
 }
 
 // mainly for grpc to client(tui)
-impl TryFrom<protobuf::player::StreamUpdates> for UpdateEvents {
+impl TryFrom<protobuf::stream::StreamUpdates> for UpdateEvents {
     type Error = anyhow::Error;
 
-    fn try_from(value: protobuf::player::StreamUpdates) -> Result<Self, Self::Error> {
+    fn try_from(value: protobuf::stream::StreamUpdates) -> Result<Self, Self::Error> {
         let value = unwrap_msg(value.r#type, "StreamUpdates.type")?;
 
         let res = match value {
@@ -228,7 +229,7 @@ impl TryFrom<protobuf::player::StreamUpdates> for UpdateEvents {
             StreamTypes::TrackChanged(ev) => Self::TrackChanged(TrackChangedInfo {
                 current_track_index: ev.current_track_index,
                 title: ev.optional_title.map(|v| {
-                    let protobuf::player::update_track_changed::OptionalTitle::Title(v) = v;
+                    let protobuf::stream::update_track_changed::OptionalTitle::Title(v) = v;
                     v
                 }),
                 progress: ev.progress.map(Into::into),
@@ -302,20 +303,20 @@ pub enum UpdatePlaylistEvents {
     PlaylistShuffled(PlaylistShuffledInfo),
 }
 
-type PPlaylistTypes = protobuf::player::update_playlist::Type;
+type PPlaylistTypes = protobuf::stream::update_playlist::Type;
 
 // mainly for server to grpc
-impl From<UpdatePlaylistEvents> for protobuf::player::UpdatePlaylist {
+impl From<UpdatePlaylistEvents> for protobuf::stream::UpdatePlaylist {
     fn from(value: UpdatePlaylistEvents) -> Self {
-        use protobuf::player::{
-            PlaylistAddTrack, PlaylistCleared, PlaylistLoopMode, PlaylistRemoveTrack,
-            PlaylistShuffled, PlaylistSwapTracks,
+        use protobuf::stream::{
+            PlaylistAddTrack, PlaylistLoopMode, PlaylistRemoveTrack, PlaylistShuffled,
+            PlaylistSwapTracks,
         };
         let val = match value {
             UpdatePlaylistEvents::PlaylistAddTrack(vals) => {
                 PPlaylistTypes::AddTrack(PlaylistAddTrack {
                     at_index: vals.at_index,
-                    id: Some(vals.trackid.into()),
+                    track: Some(vals.trackid.into()),
                 })
             }
             UpdatePlaylistEvents::PlaylistRemoveTrack(vals) => {
@@ -324,9 +325,11 @@ impl From<UpdatePlaylistEvents> for protobuf::player::UpdatePlaylist {
                     id: Some(vals.trackid.into()),
                 })
             }
-            UpdatePlaylistEvents::PlaylistCleared => PPlaylistTypes::Cleared(PlaylistCleared {}),
+            UpdatePlaylistEvents::PlaylistCleared => PPlaylistTypes::Cleared(Empty {}),
             UpdatePlaylistEvents::PlaylistLoopMode(vals) => {
-                PPlaylistTypes::LoopMode(PlaylistLoopMode { mode: vals.mode })
+                PPlaylistTypes::LoopMode(PlaylistLoopMode {
+                    mode: protobuf::player::PlaylistLoopMode { mode: vals.mode }.into(),
+                })
             }
             UpdatePlaylistEvents::PlaylistSwapTracks(vals) => {
                 PPlaylistTypes::SwapTracks(PlaylistSwapTracks {
@@ -346,17 +349,17 @@ impl From<UpdatePlaylistEvents> for protobuf::player::UpdatePlaylist {
 }
 
 // mainly for grpc to client(tui)
-impl TryFrom<protobuf::player::UpdatePlaylist> for UpdatePlaylistEvents {
+impl TryFrom<protobuf::stream::UpdatePlaylist> for UpdatePlaylistEvents {
     type Error = anyhow::Error;
 
-    fn try_from(value: protobuf::player::UpdatePlaylist) -> Result<Self, Self::Error> {
+    fn try_from(value: protobuf::stream::UpdatePlaylist) -> Result<Self, Self::Error> {
         let value = unwrap_msg(value.r#type, "UpdatePlaylist.type")?;
 
         let res = match value {
             PPlaylistTypes::AddTrack(ev) => Self::PlaylistAddTrack(PlaylistAddTrackInfo {
                 at_index: ev.at_index,
                 trackid: unwrap_msg(
-                    unwrap_msg(ev.id, "UpdatePlaylist.type.add_track.id")?.source,
+                    unwrap_msg(ev.track, "UpdatePlaylist.type.add_track.id")?.source,
                     "UpdatePlaylist.type.add_track.id.source",
                 )?
                 .try_into()?,
@@ -370,9 +373,9 @@ impl TryFrom<protobuf::player::UpdatePlaylist> for UpdatePlaylistEvents {
                 .try_into()?,
             }),
             PPlaylistTypes::Cleared(_) => Self::PlaylistCleared,
-            PPlaylistTypes::LoopMode(ev) => {
-                Self::PlaylistLoopMode(PlaylistLoopModeInfo { mode: ev.mode })
-            }
+            PPlaylistTypes::LoopMode(ev) => Self::PlaylistLoopMode(PlaylistLoopModeInfo {
+                mode: unwrap_msg(ev.mode, "UpdatePlaylist.type.loop_mode.mode")?.mode,
+            }),
             PPlaylistTypes::SwapTracks(ev) => Self::PlaylistSwapTracks(PlaylistSwapInfo {
                 index_a: ev.index_a,
                 index_b: ev.index_b,
@@ -600,7 +603,7 @@ pub mod playlist_helpers {
         pub index_b: u64,
     }
 
-    impl From<PlaylistSwapTrack> for protobuf::player::PlaylistSwapTracks {
+    impl From<PlaylistSwapTrack> for protobuf::player::PlaylistSwapTracksRequest {
         fn from(value: PlaylistSwapTrack) -> Self {
             Self {
                 index_a: value.index_a,
@@ -609,10 +612,12 @@ pub mod playlist_helpers {
         }
     }
 
-    impl TryFrom<protobuf::player::PlaylistSwapTracks> for PlaylistSwapTrack {
+    impl TryFrom<protobuf::player::PlaylistSwapTracksRequest> for PlaylistSwapTrack {
         type Error = anyhow::Error;
 
-        fn try_from(value: protobuf::player::PlaylistSwapTracks) -> Result<Self, Self::Error> {
+        fn try_from(
+            value: protobuf::player::PlaylistSwapTracksRequest,
+        ) -> Result<Self, Self::Error> {
             Ok(Self {
                 index_a: value.index_a,
                 index_b: value.index_b,
