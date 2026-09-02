@@ -9,6 +9,7 @@ use std::{error::Error, path::Path};
 use anyhow::{Context, Result, bail};
 use clap::Parser;
 use flexi_logger::LogSpecification;
+use indoc::{formatdoc, indoc};
 use parking_lot::Mutex;
 use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
@@ -123,15 +124,25 @@ async fn actual_main() -> Result<()> {
                 let stdout = server_output.stdout.read().await;
                 let stderr = server_output.stderr.read().await;
 
-                let stdout = String::from_utf8_lossy(&stdout).to_string();
-                let stderr = String::from_utf8_lossy(&stderr).to_string();
+                let stdout = String::from_utf8_lossy(&stdout).trim().to_string();
+                let stderr = String::from_utf8_lossy(&stderr).trim().to_string();
 
-                return Err(err.context(format!(
-                    "Server output during start:\n---STDOUT---\n{stdout}\n---STDERR---\n{stderr}\n---"
-                )));
+                return Err(err.context(formatdoc!{"
+                    Server output during start:
+                    ---STDOUT---
+                    {stdout}
+                    ---STDERR---
+                    {stderr}
+                    ---
+                    The full log's location can be found in https://github.com/tramhao/termusic#logs.
+                "}));
             }
 
-            return Err(err);
+            return Err(err.context(indoc! {"
+                Could not connect with the server. Maybe it exited before being ready?
+                More information might available in the server logs.
+                The log's location can be found in https://github.com/tramhao/termusic#logs
+            "}));
         }
     };
     info!("Connected on {addr}");
