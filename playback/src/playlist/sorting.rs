@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 
 use termusiclib::{
     new_database::{Database, track_ops},
-    player::{SortCriterion, SortDirection},
+    player::protobuf::queue::{SortCriterion, SortDirection},
     track::Track,
 };
 

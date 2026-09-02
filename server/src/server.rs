@@ -5,13 +5,16 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
 use clap::Parser;
-use music_player_service::MusicPlayerService;
 use parking_lot::{Mutex, RwLock};
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::config::v2::server::{ComProtocol, ScanDepth, StartupState};
 use termusiclib::config::{ServerOverlay, SharedServerSettings, new_shared_server_settings};
-use termusiclib::player::music_player_server::MusicPlayerServer;
-use termusiclib::player::{GetProgressResponse, PlayerProgress, PlayerTime, RunningStatus};
+use termusiclib::player::protobuf::player::player_control_server::PlayerControlServer;
+use termusiclib::player::protobuf::player::{GetProgressResponse, PlayerTime};
+use termusiclib::player::protobuf::queue::queue_control_server::QueueControlServer;
+use termusiclib::player::protobuf::server::server_control_server::ServerControlServer;
+use termusiclib::player::protobuf::stream::stream_events_server::StreamEventsServer;
+use termusiclib::player::{PlayerProgress, RunningStatus};
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -28,11 +31,14 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
 use crate::connection::{ActiveConnectionData, ActiveConnections, tcp_stream};
+use crate::services::{
+    PlayerControlService, QueueControlService, ServerControlService, StreamEventsService,
+};
 
 mod cli;
 mod connection;
 mod logger;
-mod music_player_service;
+mod services;
 
 #[macro_use]
 extern crate log;
@@ -143,14 +149,12 @@ async fn actual_main() -> Result<()> {
 
     let run_info = Arc::new(RwLock::new(RunInfo::default()));
 
-    let music_player_service: MusicPlayerService = MusicPlayerService::new(
-        cmd_tx.clone(),
-        stream_tx.clone(),
-        config.clone(),
-        playlist.clone(),
-        run_info.clone(),
-    );
-    let playerstats = music_player_service.player_stats.clone();
+    let server_ctrl_svc = ServerControlService::new(cmd_tx.clone());
+    let player_ctrl_svc =
+        PlayerControlService::new(cmd_tx.clone(), config.clone(), run_info.clone());
+    let queue_ctrl_svc = QueueControlService::new(cmd_tx.clone(), config.clone(), playlist.clone());
+    let stream_svc = StreamEventsService::new(stream_tx.clone());
+    let playerstats = player_ctrl_svc.player_stats.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
     let cmd_tx_ticker = cmd_tx.clone();
@@ -164,8 +168,15 @@ async fn actual_main() -> Result<()> {
 
     let service_cancel_token = CancellationToken::new();
 
-    let (join_handle, active_connections_data) =
-        start_service(&config, music_player_service, service_cancel_token.clone()).await?;
+    let (join_handle, active_connections_data) = start_service(
+        &config,
+        server_ctrl_svc,
+        player_ctrl_svc,
+        queue_ctrl_svc,
+        stream_svc,
+        service_cancel_token.clone(),
+    )
+    .await?;
 
     let tokio_handle = Handle::current();
 
@@ -242,10 +253,13 @@ fn start_playlist_save_interval(
     });
 }
 
-/// Start the [`MusicPlayerService`] with the according transport protocol.
+/// Start all the services with the transport protocol defined in the config.
 async fn start_service(
     config: &SharedServerSettings,
-    music_player_service: MusicPlayerService,
+    server_ctrl_svc: ServerControlService,
+    player_ctrl_svc: PlayerControlService,
+    queue_ctrl_svc: QueueControlService,
+    stream_svc: StreamEventsService,
     cancel_token: CancellationToken,
 ) -> Result<(
     JoinHandle<Result<(), tonic::transport::Error>>,
@@ -253,7 +267,10 @@ async fn start_service(
 )> {
     let protocol = config.read().settings.com.protocol;
 
-    let svc = MusicPlayerServer::new(music_player_service);
+    let server_ctrl_svc = ServerControlServer::new(server_ctrl_svc);
+    let player_ctrl_svc = PlayerControlServer::new(player_ctrl_svc);
+    let queue_ctrl_svc = QueueControlServer::new(queue_ctrl_svc);
+    let stream_svc = StreamEventsServer::new(stream_svc);
     let active_connection_count: ActiveConnections = Arc::new(ActiveConnectionData::default());
 
     let handle = match protocol {
@@ -263,7 +280,10 @@ async fn start_service(
 
             tokio::spawn(
                 Server::builder()
-                    .add_service(svc)
+                    .add_service(server_ctrl_svc)
+                    .add_service(player_ctrl_svc)
+                    .add_service(queue_ctrl_svc)
+                    .add_service(stream_svc)
                     .serve_with_incoming_shutdown(tcp_stream, cancel_token.cancelled_owned()),
             )
         }
@@ -276,7 +296,10 @@ async fn start_service(
 
             tokio::spawn(
                 Server::builder()
-                    .add_service(svc)
+                    .add_service(server_ctrl_svc)
+                    .add_service(player_ctrl_svc)
+                    .add_service(queue_ctrl_svc)
+                    .add_service(stream_svc)
                     .serve_with_incoming_shutdown(uds_stream, cancel_token.cancelled_owned()),
             )
         }
