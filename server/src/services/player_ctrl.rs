@@ -3,10 +3,12 @@ use std::sync::Arc;
 use anyhow::Result;
 use parking_lot::Mutex;
 use termusiclib::config::SharedServerSettings;
+use termusiclib::player::ChangeRunningState;
 use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::player_control_server::PlayerControl;
 use termusiclib::player::protobuf::player::{
-    GaplessState, GetProgressResponse, PlayState, SpeedReply, VolumeReply,
+    ChangeRunningStateRequest, GaplessState, GetProgressResponse, PlayState, SpeedReply,
+    VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedRunInfo};
 use tonic::{Request, Response, Status};
@@ -148,8 +150,24 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn toggle_pause(&self, _request: Request<Empty>) -> Result<Response<PlayState>, Status> {
-        let rx = self.command_cb(PlayerCmd::TogglePause)?;
+    async fn change_running_state(
+        &self,
+        request: Request<ChangeRunningStateRequest>,
+    ) -> Result<Response<PlayState>, Status> {
+        let ev: ChangeRunningState =
+            request
+                .into_inner()
+                .try_into()
+                .map_err(|err: anyhow::Error| {
+                    error!("error {err}");
+                    Status::from_error(err.into())
+                })?;
+        let ev = match ev {
+            ChangeRunningState::Toggle => PlayerCmd::TogglePause,
+            ChangeRunningState::Pause => PlayerCmd::Pause,
+            ChangeRunningState::Resume => PlayerCmd::Play,
+        };
+        let rx = self.command_cb(ev)?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = PlayState {

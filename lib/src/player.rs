@@ -85,6 +85,34 @@ impl TryFrom<protobuf::queue::ChangeLoopModeRequest> for ChangeLoopMode {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ChangeRunningState {
+    Toggle = 0,
+    Pause = 1,
+    Resume = 2,
+}
+
+impl From<ChangeRunningState> for protobuf::player::ChangeRunningStateRequest {
+    fn from(value: ChangeRunningState) -> Self {
+        protobuf::player::ChangeRunningStateRequest {
+            state: value as u32,
+        }
+    }
+}
+
+impl TryFrom<protobuf::player::ChangeRunningStateRequest> for ChangeRunningState {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::player::ChangeRunningStateRequest) -> Result<Self, Self::Error> {
+        Ok(match value.state {
+            0 => Self::Toggle,
+            1 => Self::Pause,
+            2 => Self::Resume,
+            v => bail!("Invalid value {v} for ChangeRunningState"),
+        })
+    }
+}
+
 /// The primitive in which time (current position / total duration) will be stored as
 pub type PlayerTimeUnit = std::time::Duration;
 

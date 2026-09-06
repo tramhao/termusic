@@ -1,5 +1,5 @@
 use termusiclib::player::{
-    RunningStatus,
+    ChangeRunningState, RunningStatus,
     protobuf::{
         common::Empty,
         player::{GetProgressResponse, player_control_client::PlayerControlClient},
@@ -20,8 +20,8 @@ impl PlayerControlConsumer {
     }
 
     pub async fn toggle_pause(&mut self) -> Result<RunningStatus> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.toggle_pause(request).await?;
+        let request = tonic::Request::new(ChangeRunningState::Toggle.into());
+        let response = self.client.change_running_state(request).await?;
         let response = response.into_inner();
         let status = RunningStatus::from_u32(response.status);
         info!("Got response from server: {response:?}");
