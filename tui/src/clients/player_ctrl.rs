@@ -1,5 +1,5 @@
 use termusiclib::player::{
-    ChangeRunningState, ChangeVolume, RunningStatus,
+    ChangeRunningState, ChangeSpeed, ChangeVolume, RunningStatus,
     protobuf::{
         common::Empty,
         player::{GetProgressResponse, player_control_client::PlayerControlClient},
@@ -57,16 +57,16 @@ impl PlayerControlConsumer {
     }
 
     pub async fn speed_up(&mut self) -> Result<i32> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.speed_up(request).await?;
+        let request = tonic::Request::new(ChangeSpeed::Steps(1).into());
+        let response = self.client.change_speed(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(response.speed)
     }
 
     pub async fn speed_down(&mut self) -> Result<i32> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.speed_down(request).await?;
+        let request = tonic::Request::new(ChangeSpeed::Steps(-1).into());
+        let response = self.client.change_speed(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(response.speed)

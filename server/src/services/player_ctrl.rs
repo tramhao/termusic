@@ -7,8 +7,8 @@ use termusiclib::player::ChangeRunningState;
 use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::player_control_server::PlayerControl;
 use termusiclib::player::protobuf::player::{
-    ChangeRunningStateRequest, ChangeVolumeRequest, GaplessState, GetProgressResponse, PlayState,
-    SpeedReply, VolumeReply,
+    ChangeRunningStateRequest, ChangeSpeedRequest, ChangeVolumeRequest, GaplessState,
+    GetProgressResponse, PlayState, SpeedReply, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedRunInfo};
 use tonic::{Request, Response, Status};
@@ -114,19 +114,18 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn speed_down(&self, _request: Request<Empty>) -> Result<Response<SpeedReply>, Status> {
-        let rx = self.command_cb(PlayerCmd::SpeedDown)?;
-        // wait until the event was processed
-        let _ = rx.await;
-        let reply = SpeedReply {
-            speed: self.config.read().settings.player.speed,
-        };
-
-        Ok(Response::new(reply))
-    }
-
-    async fn speed_up(&self, _request: Request<Empty>) -> Result<Response<SpeedReply>, Status> {
-        let rx = self.command_cb(PlayerCmd::SpeedUp)?;
+    async fn change_speed(
+        &self,
+        request: Request<ChangeSpeedRequest>,
+    ) -> Result<Response<SpeedReply>, Status> {
+        let ev = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| {
+                error!("error {err}");
+                Status::from_error(err.into())
+            })?;
+        let rx = self.command_cb(PlayerCmd::ChangeSpeed(ev))?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = SpeedReply {

@@ -146,6 +146,46 @@ impl TryFrom<protobuf::player::ChangeVolumeRequest> for ChangeVolume {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ChangeSpeed {
+    Steps(i32),
+    Unit(i32),
+    Reset,
+}
+
+impl From<ChangeSpeed> for protobuf::player::ChangeSpeedRequest {
+    fn from(value: ChangeSpeed) -> Self {
+        use protobuf::player::{ChangeSpeedRequest, change_speed_request};
+        match value {
+            ChangeSpeed::Steps(v) => ChangeSpeedRequest {
+                r#type: Some(change_speed_request::Type::Step(v)),
+            },
+            ChangeSpeed::Unit(v) => ChangeSpeedRequest {
+                r#type: Some(change_speed_request::Type::Speed(v)),
+            },
+            ChangeSpeed::Reset => ChangeSpeedRequest {
+                r#type: Some(change_speed_request::Type::Reset(
+                    protobuf::common::Empty {},
+                )),
+            },
+        }
+    }
+}
+
+impl TryFrom<protobuf::player::ChangeSpeedRequest> for ChangeSpeed {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::player::ChangeSpeedRequest) -> Result<Self, Self::Error> {
+        use protobuf::player::change_speed_request;
+        let value = unwrap_msg(value.r#type, "ChangeSpeedRequest.type")?;
+        Ok(match value {
+            change_speed_request::Type::Step(v) => ChangeSpeed::Steps(v),
+            change_speed_request::Type::Speed(v) => ChangeSpeed::Unit(v),
+            change_speed_request::Type::Reset(_) => ChangeSpeed::Reset,
+        })
+    }
+}
+
 /// The primitive in which time (current position / total duration) will be stored as
 pub type PlayerTimeUnit = std::time::Duration;
 

@@ -14,7 +14,9 @@ use termusiclib::player::protobuf::player::{GetProgressResponse, PlayerTime};
 use termusiclib::player::protobuf::queue::queue_control_server::QueueControlServer;
 use termusiclib::player::protobuf::server::server_control_server::ServerControlServer;
 use termusiclib::player::protobuf::stream::stream_events_server::StreamEventsServer;
-use termusiclib::player::{ChangeLoopMode, ChangeVolume, PlayerProgress, RunningStatus};
+use termusiclib::player::{
+    ChangeLoopMode, ChangeSpeed, ChangeVolume, PlayerProgress, RunningStatus,
+};
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -433,15 +435,28 @@ fn player_loop(
                 player.player_save_last_position();
                 player.next();
             }
-            PlayerCmd::SpeedDown => {
-                let new_speed = player.add_speed(-SPEED_STEP);
-                info!("after speed down: {new_speed}");
-                player.config.write().settings.player.speed = new_speed;
-            }
-
-            PlayerCmd::SpeedUp => {
-                let new_speed = player.add_speed(SPEED_STEP);
-                info!("after speed up: {new_speed}");
+            PlayerCmd::ChangeSpeed(speed) => {
+                match speed {
+                    ChangeSpeed::Steps(steps) => {
+                        if steps.is_positive() {
+                            for _ in 0..steps {
+                                player.add_speed(SPEED_STEP);
+                            }
+                        } else {
+                            for _ in steps..0 {
+                                player.add_speed(-SPEED_STEP);
+                            }
+                        }
+                    }
+                    ChangeSpeed::Unit(units) => {
+                        player.add_speed(units);
+                    }
+                    ChangeSpeed::Reset => {
+                        player.set_speed(0);
+                    }
+                };
+                let new_speed = player.speed();
+                info!("After speed change: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
             }
             PlayerCmd::Tick => {

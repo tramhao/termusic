@@ -16,10 +16,8 @@ service PlayerControl {
   rpc GetProgress(common.Empty) returns (GetProgressResponse);
   // Change the volume
   rpc ChangeVolume(ChangeVolumeRequest) returns (VolumeReply);
-  // Change the speed one step up
-  rpc SpeedUp(common.Empty) returns (SpeedReply);
-  // Change the speed one step down
-  rpc SpeedDown(common.Empty) returns (SpeedReply);
+  // Change the speed
+  rpc ChangeSpeed(ChangeSpeedRequest) returns (SpeedReply);
   // Toggle the gapless mode, returns the new state.
   rpc ToggleGapless(common.Empty) returns (GaplessState);
   // Restart the current track
@@ -50,6 +48,19 @@ message ChangeVolumeRequest {
     // Change in specific units
     // Only i16 is actually supported
     int32 volume = 2;
+  }
+}
+
+message ChangeSpeedRequest {
+  oneof type {
+    // Change in steps
+    // Positive increases the speed
+    // Negative decreases the speed
+    int32 step = 1;
+    // Change in specific units
+    int32 speed = 2;
+    // Reset speed to normal
+    common.Empty reset = 3;
   }
 }
 

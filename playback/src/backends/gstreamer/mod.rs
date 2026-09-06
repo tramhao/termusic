@@ -14,6 +14,7 @@ use gstreamer::{ClockTime, StateChangeError, StateChangeSuccess};
 use gstreamer::{Element, SeekFlags, SeekType, event::Seek};
 use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
+use termusiclib::player::ChangeSpeed;
 use termusiclib::track::{MediaTypes, Track};
 use tokio::sync::mpsc;
 
@@ -487,8 +488,8 @@ impl GStreamerBackend {
                 }
                 PlayerInternalCmd::ReloadSpeed => {
                     // HACK: currently gstreamer does not have any internal events to be send, and there is no global "re-apply speed property", this also means that if using max speed, it will not actually use full-speed
-                    let _ = cmd_tx.send(PlayerCmd::SpeedUp);
-                    let _ = cmd_tx.send(PlayerCmd::SpeedDown);
+                    let _ = cmd_tx.send(PlayerCmd::ChangeSpeed(ChangeSpeed::Unit(1)));
+                    let _ = cmd_tx.send(PlayerCmd::ChangeSpeed(ChangeSpeed::Unit(-1)));
                 }
                 PlayerInternalCmd::MetadataChanged => {
                     let _ = cmd_tx.send(PlayerCmd::MetadataChanged);
