@@ -1,5 +1,5 @@
 use termusiclib::player::{
-    ChangeRunningState, ChangeSpeed, ChangeVolume, RunningStatus,
+    ChangeRunningState, ChangeSpeed, ChangeVolume, RunningStatus, SeekReq,
     protobuf::{
         common::Empty,
         player::{GetProgressResponse, player_control_client::PlayerControlClient},
@@ -81,24 +81,24 @@ impl PlayerControlConsumer {
     }
 
     pub async fn restart_track(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.restart_track(request).await?;
+        let request = tonic::Request::new(SeekReq::RestartTrack.into());
+        let response = self.client.seek(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(())
     }
 
     pub async fn seek_forward(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.seek_forward(request).await?;
+        let request = tonic::Request::new(SeekReq::Steps(1).into());
+        let response = self.client.seek(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(())
     }
 
     pub async fn seek_backward(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.seek_backward(request).await?;
+        let request = tonic::Request::new(SeekReq::Steps(-1).into());
+        let response = self.client.seek(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(())

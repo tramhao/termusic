@@ -15,7 +15,7 @@ use termusiclib::player::protobuf::queue::queue_control_server::QueueControlServ
 use termusiclib::player::protobuf::server::server_control_server::ServerControlServer;
 use termusiclib::player::protobuf::stream::stream_events_server::StreamEventsServer;
 use termusiclib::player::{
-    ChangeLoopMode, ChangeSpeed, ChangeVolume, PlayerProgress, RunningStatus,
+    ChangeLoopMode, ChangeSpeed, ChangeVolume, PlayerProgress, RunningStatus, SeekReq,
 };
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
@@ -419,16 +419,25 @@ fn player_loop(
             PlayerCmd::ReloadPlaylist => {
                 player.playlist.write().reload_tracks().ok();
             }
-            PlayerCmd::SeekBackward => {
-                // TODO: do seek callback for faster progress updates?
-                player.seek_relative(false);
-            }
-            PlayerCmd::RestartTrack => {
-                player.restart_track();
-            }
-            PlayerCmd::SeekForward => {
-                player.seek_relative(true);
-            }
+            PlayerCmd::Seek(seek) => match seek {
+                SeekReq::Steps(steps) => {
+                    if steps.is_positive() {
+                        for _ in 0..steps {
+                            player.seek_relative(true);
+                        }
+                    } else {
+                        for _ in steps..0 {
+                            player.seek_relative(false)
+                        }
+                    }
+                }
+                SeekReq::Unit(units) => {
+                    if let Err(err) = player.seek(units) {
+                        error!("Error running seek: {err:#?}");
+                    }
+                }
+                SeekReq::RestartTrack => player.restart_track(),
+            },
             PlayerCmd::SkipNext => {
                 player.reset_errors();
                 info!("skip to next track.");
@@ -531,10 +540,9 @@ fn player_loop(
                 player.config.write().settings.player.volume = new_vol;
             }
             PlayerCmd::VolumeSet(volume) => {
-                info!("before volumeset: {}", player.volume());
                 let new_volume = player.set_volume(volume);
                 player.config.write().settings.player.volume = new_volume;
-                info!("after volumeset: {new_volume}");
+                info!("After volume set: {new_volume}");
             }
             PlayerCmd::Pause => {
                 player.pause();

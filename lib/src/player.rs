@@ -186,6 +186,45 @@ impl TryFrom<protobuf::player::ChangeSpeedRequest> for ChangeSpeed {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SeekReq {
+    Steps(i32),
+    // Seconds
+    Unit(i64),
+    RestartTrack,
+}
+
+impl From<SeekReq> for protobuf::player::SeekRequest {
+    fn from(value: SeekReq) -> Self {
+        use protobuf::player::{SeekRequest, seek_request};
+        match value {
+            SeekReq::Steps(v) => SeekRequest {
+                r#type: Some(seek_request::Type::Step(v)),
+            },
+            SeekReq::Unit(v) => SeekRequest {
+                r#type: Some(seek_request::Type::Time(v)),
+            },
+            SeekReq::RestartTrack => SeekRequest {
+                r#type: Some(seek_request::Type::RestartTrack(protobuf::common::Empty {})),
+            },
+        }
+    }
+}
+
+impl TryFrom<protobuf::player::SeekRequest> for SeekReq {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::player::SeekRequest) -> Result<Self, Self::Error> {
+        use protobuf::player::seek_request;
+        let value = unwrap_msg(value.r#type, "SeekRequest.type")?;
+        Ok(match value {
+            seek_request::Type::Step(v) => SeekReq::Steps(v),
+            seek_request::Type::Time(v) => SeekReq::Unit(v),
+            seek_request::Type::RestartTrack(_) => SeekReq::RestartTrack,
+        })
+    }
+}
+
 /// The primitive in which time (current position / total duration) will be stored as
 pub type PlayerTimeUnit = std::time::Duration;
 

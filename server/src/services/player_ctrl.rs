@@ -8,7 +8,7 @@ use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::player_control_server::PlayerControl;
 use termusiclib::player::protobuf::player::{
     ChangeRunningStateRequest, ChangeSpeedRequest, ChangeVolumeRequest, GaplessState,
-    GetProgressResponse, PlayState, SpeedReply, VolumeReply,
+    GetProgressResponse, PlayState, SeekRequest, SpeedReply, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedRunInfo};
 use tonic::{Request, Response, Status};
@@ -74,26 +74,15 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn seek_backward(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let rx = self.command_cb(PlayerCmd::SeekBackward)?;
-        // wait until the event was processed
-        let _ = rx.await;
-        let reply = Empty {};
-
-        Ok(Response::new(reply))
-    }
-
-    async fn restart_track(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let rx = self.command_cb(PlayerCmd::RestartTrack)?;
-        // wait until the event was processed
-        let _ = rx.await;
-        let reply = Empty {};
-
-        Ok(Response::new(reply))
-    }
-
-    async fn seek_forward(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let rx = self.command_cb(PlayerCmd::SeekForward)?;
+    async fn seek(&self, request: Request<SeekRequest>) -> Result<Response<Empty>, Status> {
+        let ev = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| {
+                error!("error {err}");
+                Status::from_error(err.into())
+            })?;
+        let rx = self.command_cb(PlayerCmd::Seek(ev))?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = Empty {};
