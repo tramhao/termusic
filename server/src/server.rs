@@ -14,7 +14,7 @@ use termusiclib::player::protobuf::player::{GetProgressResponse, PlayerTime};
 use termusiclib::player::protobuf::queue::queue_control_server::QueueControlServer;
 use termusiclib::player::protobuf::server::server_control_server::ServerControlServer;
 use termusiclib::player::protobuf::stream::stream_events_server::StreamEventsServer;
-use termusiclib::player::{PlayerProgress, RunningStatus};
+use termusiclib::player::{ChangeLoopMode, PlayerProgress, RunningStatus};
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -380,9 +380,13 @@ fn player_loop(
                     return Ok(());
                 }
             }
-            PlayerCmd::CycleLoop => {
-                player.config.write().settings.player.loop_mode =
-                    player.playlist.write().cycle_loop_mode();
+            PlayerCmd::ChangeLoopMode(mode) => {
+                player.config.write().settings.player.loop_mode = match mode {
+                    ChangeLoopMode::Cycle => player.playlist.write().cycle_loop_mode(),
+                    ChangeLoopMode::Mode(loop_mode) => {
+                        player.playlist.write().set_loop_mode(loop_mode)
+                    }
+                }
             }
             PlayerCmd::Eos => {
                 info!("Eos received");

@@ -474,10 +474,10 @@ impl Playlist {
 
     /// Set a specific [`LoopMode`], also sends a event that the mode changed.
     /// Only sets & sends a event if the new mode is not the same as the old one.
-    pub fn set_loop_mode(&mut self, new_mode: LoopMode) {
+    pub fn set_loop_mode(&mut self, new_mode: LoopMode) -> LoopMode {
         // dont set and dont send a event if the mode is the same
         if new_mode == self.loop_mode {
-            return;
+            return self.loop_mode;
         }
 
         self.loop_mode = new_mode;
@@ -485,6 +485,8 @@ impl Playlist {
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistLoopMode(
             PlaylistLoopModeInfo::from(self.loop_mode),
         ));
+
+        self.loop_mode
     }
 
     /// Export the current playlist to a `.m3u` playlist file.

@@ -50,6 +50,41 @@ impl From<std::time::Duration> for protobuf::common::Duration {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ChangeLoopMode {
+    Cycle,
+    Mode(LoopMode),
+}
+
+impl From<ChangeLoopMode> for protobuf::queue::ChangeLoopModeRequest {
+    fn from(value: ChangeLoopMode) -> Self {
+        use protobuf::queue::{ChangeLoopModeRequest, change_loop_mode_request};
+        match value {
+            ChangeLoopMode::Cycle => ChangeLoopModeRequest {
+                r#type: Some(change_loop_mode_request::Type::Cycle(
+                    protobuf::common::Empty {},
+                )),
+            },
+            ChangeLoopMode::Mode(loop_mode) => ChangeLoopModeRequest {
+                r#type: Some(change_loop_mode_request::Type::Mode(loop_mode.into())),
+            },
+        }
+    }
+}
+
+impl TryFrom<protobuf::queue::ChangeLoopModeRequest> for ChangeLoopMode {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::queue::ChangeLoopModeRequest) -> Result<Self, Self::Error> {
+        use protobuf::queue::change_loop_mode_request;
+        let value = unwrap_msg(value.r#type, "ChangeLoopModeRequest.type")?;
+        Ok(match value {
+            change_loop_mode_request::Type::Cycle(_) => Self::Cycle,
+            change_loop_mode_request::Type::Mode(val) => Self::Mode(val.try_into()?),
+        })
+    }
+}
+
 /// The primitive in which time (current position / total duration) will be stored as
 pub type PlayerTimeUnit = std::time::Duration;
 
@@ -412,9 +447,9 @@ pub fn clamp_u16(val: u32) -> u16 {
 }
 
 pub mod playlist_helpers {
-    use anyhow::Context;
+    use anyhow::{Context, anyhow};
 
-    use crate::player::protobuf::common::Empty;
+    use crate::{config::v2::server::LoopMode, player::protobuf::common::Empty};
 
     use super::{protobuf, unwrap_msg};
 
@@ -462,6 +497,24 @@ pub mod playlist_helpers {
 
         fn try_from(value: protobuf::common::TrackId) -> Result<Self, Self::Error> {
             unwrap_msg(value.source, "TrackId.source").and_then(Self::try_from)
+        }
+    }
+
+    impl From<LoopMode> for protobuf::queue::PlaylistLoopMode {
+        fn from(value: LoopMode) -> Self {
+            protobuf::queue::PlaylistLoopMode {
+                mode: u32::from(value.discriminant()),
+            }
+        }
+    }
+
+    impl TryFrom<protobuf::queue::PlaylistLoopMode> for LoopMode {
+        type Error = anyhow::Error;
+
+        fn try_from(value: protobuf::queue::PlaylistLoopMode) -> Result<Self, Self::Error> {
+            let mode = u8::try_from(value.mode).context("Unsupported LoopMode")?;
+            LoopMode::tryfrom_discriminant(mode)
+                .ok_or(anyhow!("Failed to convert PlaylistLoopMode to LoopMode"))
         }
     }
 
