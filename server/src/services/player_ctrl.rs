@@ -7,8 +7,8 @@ use termusiclib::player::ChangeRunningState;
 use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::player_control_server::PlayerControl;
 use termusiclib::player::protobuf::player::{
-    ChangeRunningStateRequest, GaplessState, GetProgressResponse, PlayState, SpeedReply,
-    VolumeReply,
+    ChangeRunningStateRequest, ChangeVolumeRequest, GaplessState, GetProgressResponse, PlayState,
+    SpeedReply, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedRunInfo};
 use tonic::{Request, Response, Status};
@@ -177,19 +177,18 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn volume_down(&self, _request: Request<Empty>) -> Result<Response<VolumeReply>, Status> {
-        let rx = self.command_cb(PlayerCmd::VolumeDown)?;
-        // wait until the event was processed
-        let _ = rx.await;
-        let reply = VolumeReply {
-            volume: u32::from(self.config.read().settings.player.volume),
-        };
-
-        Ok(Response::new(reply))
-    }
-
-    async fn volume_up(&self, _request: Request<Empty>) -> Result<Response<VolumeReply>, Status> {
-        let rx = self.command_cb(PlayerCmd::VolumeUp)?;
+    async fn change_volume(
+        &self,
+        request: Request<ChangeVolumeRequest>,
+    ) -> Result<Response<VolumeReply>, Status> {
+        let ev = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| {
+                error!("error {err}");
+                Status::from_error(err.into())
+            })?;
+        let rx = self.command_cb(PlayerCmd::ChangeVolume(ev))?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = VolumeReply {

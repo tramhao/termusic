@@ -14,10 +14,8 @@ service PlayerControl {
   rpc SkipPrevious(common.Empty) returns (common.Empty);
   // Get the current Track progress once (use stream for continuous usage)
   rpc GetProgress(common.Empty) returns (GetProgressResponse);
-  // Change the volume one step up
-  rpc VolumeUp(common.Empty) returns (VolumeReply);
-  // Change the volume one step down
-  rpc VolumeDown(common.Empty) returns (VolumeReply);
+  // Change the volume
+  rpc ChangeVolume(ChangeVolumeRequest) returns (VolumeReply);
   // Change the speed one step up
   rpc SpeedUp(common.Empty) returns (SpeedReply);
   // Change the speed one step down
@@ -40,6 +38,19 @@ message ChangeRunningStateRequest {
   // 1 = pause
   // 2 = resume
   uint32 state = 1;
+}
+
+message ChangeVolumeRequest {
+  oneof type {
+    // Change in steps
+    // Positive increases the volume
+    // Negative decreases the volume
+    // Only i16 is actually supported
+    int32 step = 1;
+    // Change in specific units
+    // Only i16 is actually supported
+    int32 volume = 2;
+  }
 }
 
 // A play status.

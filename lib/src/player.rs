@@ -113,6 +113,39 @@ impl TryFrom<protobuf::player::ChangeRunningStateRequest> for ChangeRunningState
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ChangeVolume {
+    Steps(i16),
+    Unit(i16),
+}
+
+impl From<ChangeVolume> for protobuf::player::ChangeVolumeRequest {
+    fn from(value: ChangeVolume) -> Self {
+        use protobuf::player::{ChangeVolumeRequest, change_volume_request};
+        match value {
+            ChangeVolume::Steps(v) => ChangeVolumeRequest {
+                r#type: Some(change_volume_request::Type::Step(i32::from(v))),
+            },
+            ChangeVolume::Unit(v) => ChangeVolumeRequest {
+                r#type: Some(change_volume_request::Type::Volume(i32::from(v))),
+            },
+        }
+    }
+}
+
+impl TryFrom<protobuf::player::ChangeVolumeRequest> for ChangeVolume {
+    type Error = anyhow::Error;
+
+    fn try_from(value: protobuf::player::ChangeVolumeRequest) -> Result<Self, Self::Error> {
+        use protobuf::player::change_volume_request;
+        let value = unwrap_msg(value.r#type, "ChangeVolumeRequest.type")?;
+        Ok(match value {
+            change_volume_request::Type::Step(v) => ChangeVolume::Steps(clamp_i16(v)),
+            change_volume_request::Type::Volume(v) => ChangeVolume::Unit(clamp_i16(v)),
+        })
+    }
+}
+
 /// The primitive in which time (current position / total duration) will be stored as
 pub type PlayerTimeUnit = std::time::Duration;
 
@@ -472,6 +505,15 @@ fn unwrap_msg<T>(opt: Option<T>, place: &str) -> Result<T, anyhow::Error> {
 #[must_use]
 pub fn clamp_u16(val: u32) -> u16 {
     val.min(u32::from(u16::MAX)) as u16
+}
+
+/// Clamp a given `i32` to be `i16`.
+///
+/// This is mainly used for volume clamping as we only use i16 for that, but protobuf minimal number is i32.
+#[allow(clippy::cast_possible_truncation)]
+#[must_use]
+pub fn clamp_i16(val: i32) -> i16 {
+    val.min(i32::from(i16::MAX)) as i16
 }
 
 pub mod playlist_helpers {

@@ -14,7 +14,7 @@ use termusiclib::player::protobuf::player::{GetProgressResponse, PlayerTime};
 use termusiclib::player::protobuf::queue::queue_control_server::QueueControlServer;
 use termusiclib::player::protobuf::server::server_control_server::ServerControlServer;
 use termusiclib::player::protobuf::stream::stream_events_server::StreamEventsServer;
-use termusiclib::player::{ChangeLoopMode, PlayerProgress, RunningStatus};
+use termusiclib::player::{ChangeLoopMode, ChangeVolume, PlayerProgress, RunningStatus};
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
 use termusicplayback::{
@@ -494,17 +494,26 @@ fn player_loop(
                 info!("player toggled pause");
                 player.toggle_pause();
             }
-            PlayerCmd::VolumeDown => {
-                info!("before volumedown: {}", player.volume());
-                let new_volume = player.add_volume(-VOLUME_STEP);
-                player.config.write().settings.player.volume = new_volume;
-                info!("after volumedown: {new_volume}");
-            }
-            PlayerCmd::VolumeUp => {
-                info!("before volumeup: {}", player.volume());
-                let new_volume = player.add_volume(VOLUME_STEP);
-                player.config.write().settings.player.volume = new_volume;
-                info!("after volumeup: {new_volume}");
+            PlayerCmd::ChangeVolume(vol) => {
+                match vol {
+                    ChangeVolume::Steps(steps) => {
+                        if steps.is_positive() {
+                            for _ in 0..steps {
+                                player.add_volume(VOLUME_STEP);
+                            }
+                        } else {
+                            for _ in steps..0 {
+                                player.add_volume(-VOLUME_STEP);
+                            }
+                        }
+                    }
+                    ChangeVolume::Unit(units) => {
+                        player.add_volume(units);
+                    }
+                }
+                let new_vol = player.volume();
+                info!("After volume change: {new_vol}");
+                player.config.write().settings.player.volume = new_vol;
             }
             PlayerCmd::VolumeSet(volume) => {
                 info!("before volumeset: {}", player.volume());

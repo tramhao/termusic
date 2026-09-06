@@ -1,5 +1,5 @@
 use termusiclib::player::{
-    ChangeRunningState, RunningStatus,
+    ChangeRunningState, ChangeVolume, RunningStatus,
     protobuf::{
         common::Empty,
         player::{GetProgressResponse, player_control_client::PlayerControlClient},
@@ -37,8 +37,8 @@ impl PlayerControlConsumer {
     }
 
     pub async fn volume_up(&mut self) -> Result<u16> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.volume_up(request).await?;
+        let request = tonic::Request::new(ChangeVolume::Steps(1).into());
+        let response = self.client.change_volume(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         // clamped to u16::MAX, also send is a u16, but protobuf does not support u16 directly
@@ -47,8 +47,8 @@ impl PlayerControlConsumer {
     }
 
     pub async fn volume_down(&mut self) -> Result<u16> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.volume_down(request).await?;
+        let request = tonic::Request::new(ChangeVolume::Steps(-1).into());
+        let response = self.client.change_volume(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         // clamped to u16::MAX, also send is a u16, but protobuf does not support u16 directly
