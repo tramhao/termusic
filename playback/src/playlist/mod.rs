@@ -544,7 +544,7 @@ impl Playlist {
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
                 // Note: Safe unwrap, as a podcast uri is always a uri, not a path (which has been a string before)
-                trackid: PlaylistTrackSource::PodcastUrl(url.to_owned()),
+                tracks: vec![PlaylistTrackSource::PodcastUrl(url.to_owned())],
             },
         ));
 
@@ -557,9 +557,11 @@ impl Playlist {
     /// # Errors
     /// - When invalid inputs are given
     /// - When the file(s) cannot be read correctly
+    // TODO: this function is unused, maybe cull it?
     pub fn add_playlist<T: AsRef<str>>(&mut self, vec: &[T]) -> Result<(), PlaylistAddErrorVec> {
         let mut errors = PlaylistAddErrorVec::default();
         for item in vec {
+            // TODO: actually make use of PlaylistAddTrackInfo::tracks being a vec, instead of always sending only one per event
             let Err(err) = self.add_track(item) else {
                 continue;
             };
@@ -595,7 +597,7 @@ impl Playlist {
         self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
             PlaylistAddTrackInfo {
                 at_index: u64::try_from(self.tracks.len()).unwrap(),
-                trackid: PlaylistTrackSource::Path(track_str.to_string()),
+                tracks: vec![PlaylistTrackSource::Path(track_str.to_string())],
             },
         ));
 
@@ -654,7 +656,7 @@ impl Playlist {
             tracks.tracks.len()
         );
 
-        let mut added_tracks = 0;
+        let mut pushed_tracks = Vec::with_capacity(tracks.tracks.len());
 
         if at_index >= self.len() {
             // insert tracks at the end
@@ -668,16 +670,10 @@ impl Playlist {
                     }
                 };
 
-                self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
-                    PlaylistAddTrackInfo {
-                        at_index: u64::try_from(self.tracks.len()).unwrap(),
-                        trackid: track_location,
-                    },
-                ));
+                pushed_tracks.push(track_location);
 
                 self.tracks.push(track);
                 self.is_modified = true;
-                added_tracks += 1;
             }
         } else {
             let mut at_index = at_index;
@@ -692,19 +688,22 @@ impl Playlist {
                     }
                 };
 
-                self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
-                    PlaylistAddTrackInfo {
-                        at_index: u64::try_from(at_index).unwrap(),
-                        trackid: track_location,
-                    },
-                ));
+                pushed_tracks.push(track_location);
 
                 self.tracks.insert(at_index, track);
                 self.is_modified = true;
                 at_index += 1;
-                added_tracks += 1;
             }
         }
+
+        let added_tracks = pushed_tracks.len();
+
+        self.send_stream_ev_pl(UpdatePlaylistEvents::PlaylistAddTrack(
+            PlaylistAddTrackInfo {
+                at_index: u64::try_from(at_index).unwrap(),
+                tracks: pushed_tracks,
+            },
+        ));
 
         info!("Added {} tracks with {} errors", added_tracks, errors.len());
 

@@ -83,7 +83,7 @@ message UpdateProgress {
 
 message UpdatePlaylist {
   oneof type {
-    PlaylistAddTrack   add_track    = 1;
+    PlaylistAddTracks   add_track    = 1;
     PlaylistRemoveTrack remove_track = 2;
     common.Empty         cleared      = 3;
     PlaylistLoopMode    loop_mode    = 4;
@@ -119,11 +119,11 @@ message PlaylistShuffled {
 }
 
 // A Track got added to the playlist, this message contains where it was added and all the metadata required for display.
-message PlaylistAddTrack {
+message PlaylistAddTracks {
   // The index the track(s) are added at.
   // If this is not at the end, all tracks at that index and after need to be shifted to make place for this new one.
   uint64 at_index = 1;
 
-  // The Track to add at the index
-  common.TrackId track = 2;
+  // All the Tracks to add at the index
+  repeated common.TrackId tracks = 2;
 }

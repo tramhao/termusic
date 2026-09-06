@@ -259,7 +259,7 @@ pub struct PlaylistAddTrackInfo {
     /// The Index at which a track was added at.
     /// If this is not at the end, all tracks at this index and beyond should be shifted.
     pub at_index: u64,
-    pub trackid: playlist_helpers::PlaylistTrackSource,
+    pub tracks: Vec<playlist_helpers::PlaylistTrackSource>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -312,14 +312,14 @@ type PPlaylistTypes = protobuf::stream::update_playlist::Type;
 impl From<UpdatePlaylistEvents> for protobuf::stream::UpdatePlaylist {
     fn from(value: UpdatePlaylistEvents) -> Self {
         use protobuf::stream::{
-            PlaylistAddTrack, PlaylistLoopMode, PlaylistRemoveTrack, PlaylistShuffled,
+            PlaylistAddTracks, PlaylistLoopMode, PlaylistRemoveTrack, PlaylistShuffled,
             PlaylistSwapTracks,
         };
         let val = match value {
             UpdatePlaylistEvents::PlaylistAddTrack(vals) => {
-                PPlaylistTypes::AddTrack(PlaylistAddTrack {
+                PPlaylistTypes::AddTrack(PlaylistAddTracks {
                     at_index: vals.at_index,
-                    track: Some(vals.trackid.into()),
+                    tracks: vals.tracks.into_iter().map(Into::into).collect(),
                 })
             }
             UpdatePlaylistEvents::PlaylistRemoveTrack(vals) => {
@@ -361,11 +361,12 @@ impl TryFrom<protobuf::stream::UpdatePlaylist> for UpdatePlaylistEvents {
         let res = match value {
             PPlaylistTypes::AddTrack(ev) => Self::PlaylistAddTrack(PlaylistAddTrackInfo {
                 at_index: ev.at_index,
-                trackid: unwrap_msg(
-                    unwrap_msg(ev.track, "UpdatePlaylist.type.add_track.id")?.source,
-                    "UpdatePlaylist.type.add_track.id.source",
-                )?
-                .try_into()?,
+                tracks: ev
+                    .tracks
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<Vec<_>, _>>()
+                    .context("UpdatePlaylist.type.tracks")?,
             }),
             PPlaylistTypes::RemoveTrack(ev) => Self::PlaylistRemoveTrack(PlaylistRemoveTrackInfo {
                 at_index: ev.at_index,
