@@ -1,6 +1,6 @@
 use anyhow::Result;
 use termusiclib::config::SharedTuiSettings;
-use termusiclib::player::{SortCriterion, SortDirection};
+use termusiclib::player::protobuf::queue::{SortCriterion, SortDirection};
 use tui_realm_stdlib::components::Table;
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, Direction};
