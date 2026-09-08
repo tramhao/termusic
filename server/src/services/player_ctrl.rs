@@ -3,10 +3,12 @@ use std::sync::Arc;
 use anyhow::Result;
 use parking_lot::Mutex;
 use termusiclib::config::SharedServerSettings;
+use termusiclib::player::ChangeRunningState;
 use termusiclib::player::protobuf::common::Empty;
 use termusiclib::player::protobuf::player::player_control_server::PlayerControl;
 use termusiclib::player::protobuf::player::{
-    GaplessState, GetProgressResponse, PlayState, SpeedReply, VolumeReply,
+    ChangeRunningStateRequest, ChangeSpeedRequest, ChangeVolumeRequest, GaplessState,
+    GetProgressResponse, PlayState, SeekRequest, SpeedReply, VolumeReply,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedRunInfo};
 use tonic::{Request, Response, Status};
@@ -72,26 +74,15 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn seek_backward(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let rx = self.command_cb(PlayerCmd::SeekBackward)?;
-        // wait until the event was processed
-        let _ = rx.await;
-        let reply = Empty {};
-
-        Ok(Response::new(reply))
-    }
-
-    async fn restart_track(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let rx = self.command_cb(PlayerCmd::RestartTrack)?;
-        // wait until the event was processed
-        let _ = rx.await;
-        let reply = Empty {};
-
-        Ok(Response::new(reply))
-    }
-
-    async fn seek_forward(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let rx = self.command_cb(PlayerCmd::SeekForward)?;
+    async fn seek(&self, request: Request<SeekRequest>) -> Result<Response<Empty>, Status> {
+        let ev = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| {
+                error!("error {err}");
+                Status::from_error(err.into())
+            })?;
+        let rx = self.command_cb(PlayerCmd::Seek(ev))?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = Empty {};
@@ -112,19 +103,18 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn speed_down(&self, _request: Request<Empty>) -> Result<Response<SpeedReply>, Status> {
-        let rx = self.command_cb(PlayerCmd::SpeedDown)?;
-        // wait until the event was processed
-        let _ = rx.await;
-        let reply = SpeedReply {
-            speed: self.config.read().settings.player.speed,
-        };
-
-        Ok(Response::new(reply))
-    }
-
-    async fn speed_up(&self, _request: Request<Empty>) -> Result<Response<SpeedReply>, Status> {
-        let rx = self.command_cb(PlayerCmd::SpeedUp)?;
+    async fn change_speed(
+        &self,
+        request: Request<ChangeSpeedRequest>,
+    ) -> Result<Response<SpeedReply>, Status> {
+        let ev = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| {
+                error!("error {err}");
+                Status::from_error(err.into())
+            })?;
+        let rx = self.command_cb(PlayerCmd::ChangeSpeed(ev))?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = SpeedReply {
@@ -148,8 +138,24 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn toggle_pause(&self, _request: Request<Empty>) -> Result<Response<PlayState>, Status> {
-        let rx = self.command_cb(PlayerCmd::TogglePause)?;
+    async fn change_running_state(
+        &self,
+        request: Request<ChangeRunningStateRequest>,
+    ) -> Result<Response<PlayState>, Status> {
+        let ev: ChangeRunningState =
+            request
+                .into_inner()
+                .try_into()
+                .map_err(|err: anyhow::Error| {
+                    error!("error {err}");
+                    Status::from_error(err.into())
+                })?;
+        let ev = match ev {
+            ChangeRunningState::Toggle => PlayerCmd::TogglePause,
+            ChangeRunningState::Pause => PlayerCmd::Pause,
+            ChangeRunningState::Resume => PlayerCmd::Play,
+        };
+        let rx = self.command_cb(ev)?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = PlayState {
@@ -159,19 +165,18 @@ impl PlayerControl for PlayerControlService {
         Ok(Response::new(reply))
     }
 
-    async fn volume_down(&self, _request: Request<Empty>) -> Result<Response<VolumeReply>, Status> {
-        let rx = self.command_cb(PlayerCmd::VolumeDown)?;
-        // wait until the event was processed
-        let _ = rx.await;
-        let reply = VolumeReply {
-            volume: u32::from(self.config.read().settings.player.volume),
-        };
-
-        Ok(Response::new(reply))
-    }
-
-    async fn volume_up(&self, _request: Request<Empty>) -> Result<Response<VolumeReply>, Status> {
-        let rx = self.command_cb(PlayerCmd::VolumeUp)?;
+    async fn change_volume(
+        &self,
+        request: Request<ChangeVolumeRequest>,
+    ) -> Result<Response<VolumeReply>, Status> {
+        let ev = request
+            .into_inner()
+            .try_into()
+            .map_err(|err: anyhow::Error| {
+                error!("error {err}");
+                Status::from_error(err.into())
+            })?;
+        let rx = self.command_cb(PlayerCmd::ChangeVolume(ev))?;
         // wait until the event was processed
         let _ = rx.await;
         let reply = VolumeReply {

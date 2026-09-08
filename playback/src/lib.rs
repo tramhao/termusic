@@ -13,7 +13,8 @@ use termusiclib::player::playlist_helpers::{
 };
 use termusiclib::player::protobuf::queue::{SortCriterion, SortDirection};
 use termusiclib::player::{
-    PlayerProgress, PlayerTimeUnit, RunningStatus, TrackChangedInfo, UpdateEvents,
+    ChangeLoopMode, ChangeSpeed, ChangeVolume, PlayerProgress, PlayerTimeUnit, RunningStatus,
+    SeekReq, TrackChangedInfo, UpdateEvents,
 };
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaTypes, MediaTypesSimple, Track};
@@ -122,7 +123,7 @@ pub enum PlayerCmd {
     Tick,
 
     // Mainly called from outside sources (client, mpris)
-    CycleLoop,
+    ChangeLoopMode(ChangeLoopMode),
     SkipPrevious,
     Pause,
     Play,
@@ -130,16 +131,12 @@ pub enum PlayerCmd {
     Quit(&'static str),
     ReloadConfig,
     ReloadPlaylist,
-    RestartTrack,
-    SeekBackward,
-    SeekForward,
+    Seek(SeekReq),
     SkipNext,
-    SpeedDown,
-    SpeedUp,
+    ChangeSpeed(ChangeSpeed),
     ToggleGapless,
     TogglePause,
-    VolumeDown,
-    VolumeUp,
+    ChangeVolume(ChangeVolume),
     VolumeSet(Volume),
 
     PlaylistPlaySpecific(PlaylistPlaySpecific),

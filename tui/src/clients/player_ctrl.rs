@@ -1,5 +1,5 @@
 use termusiclib::player::{
-    RunningStatus,
+    ChangeRunningState, ChangeSpeed, ChangeVolume, RunningStatus, SeekReq,
     protobuf::{
         common::Empty,
         player::{GetProgressResponse, player_control_client::PlayerControlClient},
@@ -20,8 +20,8 @@ impl PlayerControlConsumer {
     }
 
     pub async fn toggle_pause(&mut self) -> Result<RunningStatus> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.toggle_pause(request).await?;
+        let request = tonic::Request::new(ChangeRunningState::Toggle.into());
+        let response = self.client.change_running_state(request).await?;
         let response = response.into_inner();
         let status = RunningStatus::from_u32(response.status);
         info!("Got response from server: {response:?}");
@@ -37,8 +37,8 @@ impl PlayerControlConsumer {
     }
 
     pub async fn volume_up(&mut self) -> Result<u16> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.volume_up(request).await?;
+        let request = tonic::Request::new(ChangeVolume::Steps(1).into());
+        let response = self.client.change_volume(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         // clamped to u16::MAX, also send is a u16, but protobuf does not support u16 directly
@@ -47,8 +47,8 @@ impl PlayerControlConsumer {
     }
 
     pub async fn volume_down(&mut self) -> Result<u16> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.volume_down(request).await?;
+        let request = tonic::Request::new(ChangeVolume::Steps(-1).into());
+        let response = self.client.change_volume(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         // clamped to u16::MAX, also send is a u16, but protobuf does not support u16 directly
@@ -57,16 +57,16 @@ impl PlayerControlConsumer {
     }
 
     pub async fn speed_up(&mut self) -> Result<i32> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.speed_up(request).await?;
+        let request = tonic::Request::new(ChangeSpeed::Steps(1).into());
+        let response = self.client.change_speed(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(response.speed)
     }
 
     pub async fn speed_down(&mut self) -> Result<i32> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.speed_down(request).await?;
+        let request = tonic::Request::new(ChangeSpeed::Steps(-1).into());
+        let response = self.client.change_speed(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(response.speed)
@@ -81,24 +81,24 @@ impl PlayerControlConsumer {
     }
 
     pub async fn restart_track(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.restart_track(request).await?;
+        let request = tonic::Request::new(SeekReq::RestartTrack.into());
+        let response = self.client.seek(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(())
     }
 
     pub async fn seek_forward(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.seek_forward(request).await?;
+        let request = tonic::Request::new(SeekReq::Steps(1).into());
+        let response = self.client.seek(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(())
     }
 
     pub async fn seek_backward(&mut self) -> Result<()> {
-        let request = tonic::Request::new(Empty {});
-        let response = self.client.seek_backward(request).await?;
+        let request = tonic::Request::new(SeekReq::Steps(-1).into());
+        let response = self.client.seek(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {response:?}");
         Ok(())
