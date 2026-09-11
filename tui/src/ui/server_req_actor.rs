@@ -118,6 +118,20 @@ impl ServerRequestActor {
                 self.server_client.reload_config().await?;
             }
             TuiCmd::Playlist(playlist_cmd) => self.handle_playlist_cmd(playlist_cmd).await?,
+            TuiCmd::CheckVersion => {
+                let res = self.server_client.info().await?;
+
+                // This check is a strict check, as termusic does not adhere to semantic versioning, at least as of 0.13.2+some commits.
+                if res.version != env!("TERMUSIC_VERSION") {
+                    // This is only a warning, as it compares the version strictly, meaning even a single commit difference makes it trigger
+                    // which can be annoying when developing only the TUI.
+                    warn!(
+                        "Mismatches Server and TUI version, this is potentially incompatible! TUI: \"{}\"; Server: \"{}\"",
+                        env!("TERMUSIC_VERSION"),
+                        res.version
+                    );
+                }
+            }
             TuiCmd::QuitServer => {
                 let () = self.server_client.quit_server().await?;
             }
