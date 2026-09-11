@@ -106,16 +106,6 @@ async fn actual_main() -> Result<()> {
         .set(Pid::from_u32(pid))
         .unwrap_or_else(|_| error!("Could not set SERVER_PID."));
 
-    // this is a bad implementation, but there is no way to currently only shut off stderr / stdout
-    // see https://github.com/emabee/flexi_logger/issues/142
-    if !args.log_options.log_to_file {
-        logger_handle.set_new_spec(LogSpecification::off());
-    } else if let Err(err) =
-        logger_handle.adapt_duplication_to_stderr(flexi_logger::Duplicate::None)
-    {
-        warn!("flexi_logger error: {err}");
-    }
-
     info!("Waiting until connected");
 
     let (client, addr) = match wait_till_connected(&config, pid).await {
@@ -154,6 +144,17 @@ async fn actual_main() -> Result<()> {
     }
 
     let mut ui = UI::new(config, client).await?;
+
+    // this is a bad implementation, but there is no way to currently only shut off stderr / stdout
+    // see https://github.com/emabee/flexi_logger/issues/142
+    if !args.log_options.log_to_file {
+        logger_handle.set_new_spec(LogSpecification::off());
+    } else if let Err(err) =
+        logger_handle.adapt_duplication_to_stderr(flexi_logger::Duplicate::None)
+    {
+        warn!("flexi_logger error: {err}");
+    }
+
     ui.run()?;
 
     ui.wait_until_done().await;
