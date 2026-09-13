@@ -26,10 +26,10 @@ fn set_user_version(conn: &Connection, version: u32) -> Result<u32> {
 
 /// Check and update the database to be at [`DB_VERSION`].
 pub(super) fn migrate(conn: &mut Connection) -> Result<()> {
-    // Reserve the writer before reading the version so competing initializers
-    // decide which migrations remain only after the previous writer commits.
+    // Acquire an exclusive lock before reading the version so competing
+    // initializers decide which migrations remain only after the previous writer commits.
     let tx = conn
-        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .transaction_with_behavior(TransactionBehavior::Exclusive)
         .context("begin library database migration transaction")?;
     let user_version: u32 = get_user_version(&tx)?;
 
@@ -54,23 +54,37 @@ pub(super) fn migrate(conn: &mut Connection) -> Result<()> {
 #[allow(unused_assignments)] // for future possible migrations
 fn apply_migrations(conn: &Connection, mut user_version: u32) -> Result<()> {
     if user_version == 0 {
-        // Version 2 is the base version, so there are basically no migrations, only creations
-        conn.execute_batch(include_str!("./migrations/001.sql"))
-            .context("Database version 1 could not be created")?;
-        user_version = set_user_version(conn, 1)?;
-
-        set_db_created_at(conn)?;
-        set_db_created_with(conn)?;
+        user_version = apply_version_1(conn)?;
     }
 
     if user_version == 1 {
-        // Add total_play_count and last_played_at columns for sort support (MostPlayed, Recency, Frecency) plus `added_at` column type change
-        conn.execute_batch(include_str!("./migrations/002.sql"))
-            .context("Database version 2 migration failed")?;
-        set_user_version(conn, 2)?;
+        apply_version_2(conn)?;
     }
 
     set_last_updated_at(conn)?;
+
+    Ok(())
+}
+
+/// Create the version 1 schema on a fresh database.
+fn apply_version_1(conn: &Connection) -> Result<u32> {
+    // Version 1 is the first schema, so there are basically no migrations, only creations
+    conn.execute_batch(include_str!("./migrations/001.sql"))
+        .context("Database version 1 could not be created")?;
+    let user_version = set_user_version(conn, 1)?;
+
+    set_db_created_at(conn)?;
+    set_db_created_with(conn)?;
+
+    Ok(user_version)
+}
+
+/// Migrate the database from version 1 to version 2.
+fn apply_version_2(conn: &Connection) -> Result<()> {
+    // Add total_play_count and last_played_at columns for sort support (MostPlayed, Recency, Frecency) plus `added_at` column type change
+    conn.execute_batch(include_str!("./migrations/002.sql"))
+        .context("Database version 2 migration failed")?;
+    set_user_version(conn, 2)?;
 
     Ok(())
 }
@@ -133,7 +147,10 @@ mod tests {
 
     use crate::new_database::{
         Database,
-        migrate::{DB_VERSION, get_user_version, migrate, set_user_version},
+        migrate::{
+            DB_VERSION, apply_version_1, apply_version_2, get_user_version, migrate,
+            set_user_version,
+        },
     };
 
     use super::super::test_utils::gen_database_raw;
@@ -170,9 +187,7 @@ mod tests {
     }
 
     fn version_one(conn: &Connection) {
-        conn.execute_batch(include_str!("./migrations/001.sql"))
-            .unwrap();
-        set_user_version(conn, 1).unwrap();
+        apply_version_1(conn).unwrap();
         conn.execute(
             "INSERT INTO tracks(id, file_dir, file_stem, file_ext, added_at)
              VALUES (42, '/music', 'example', 'mp3', ?1)",
@@ -181,7 +196,7 @@ mod tests {
         .unwrap();
     }
 
-    fn schema(conn: &Connection) -> Vec<(String, String)> {
+    fn get_all_schemas(conn: &Connection) -> Vec<(String, String)> {
         conn.prepare(
             "SELECT name, sql FROM sqlite_schema
              WHERE name NOT LIKE 'sqlite_%' ORDER BY name",
@@ -193,7 +208,7 @@ mod tests {
         .unwrap()
     }
 
-    fn metadata(conn: &Connection) -> Vec<(String, String)> {
+    fn get_all_config_data(conn: &Connection) -> Vec<(String, String)> {
         conn.prepare("SELECT key, value FROM config ORDER BY key")
             .unwrap()
             .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
@@ -202,8 +217,9 @@ mod tests {
             .unwrap()
     }
 
+    /// Asserts that all config key-value pairs from the migration exist and are correct for DB version 2.
     fn assert_creation_metadata(conn: &Connection) {
-        let values = metadata(conn);
+        let values = get_all_config_data(conn);
         assert_eq!(values.len(), 3);
         assert_eq!(values[0].0, "db_created_at");
         chrono::DateTime::parse_from_rfc3339(&values[0].1).unwrap();
@@ -212,6 +228,7 @@ mod tests {
         chrono::DateTime::parse_from_rfc3339(&values[2].1).unwrap();
     }
 
+    /// Assert that the track from [`version_one`] is correctly migrated to version 2.
     fn assert_migrated_track(conn: &Connection) {
         let track = conn
             .query_row(
@@ -230,32 +247,6 @@ mod tests {
             )
             .unwrap();
         assert_eq!(track, (42, "example".into(), 1_704_164_645, 0, None));
-    }
-
-    #[test]
-    fn should_create_from_fresh() {
-        let mut conn = gen_database_raw();
-
-        // verify the created database is at 0
-        assert_eq!(0, get_user_version(&conn).unwrap());
-        migrate(&mut conn).unwrap();
-        assert_full_schema(&conn);
-        assert_creation_metadata(&conn);
-
-        conn.execute_batch(
-            "INSERT INTO tracks(id, file_dir, file_stem, file_ext, added_at)
-             VALUES (42, '/music', 'example', 'mp3', 1704164645);
-             UPDATE config SET value = 'sentinel' WHERE key = 'last_migrated_at';",
-        )
-        .unwrap();
-        let original_schema = schema(&conn);
-        let original_metadata = metadata(&conn);
-
-        migrate(&mut conn).unwrap();
-        assert_full_schema(&conn);
-        assert_eq!(schema(&conn), original_schema);
-        assert_eq!(metadata(&conn), original_metadata);
-        assert_migrated_track(&conn);
     }
 
     fn assert_full_schema(conn: &Connection) {
@@ -303,6 +294,32 @@ mod tests {
             assert!(columns.contains(&(name.into(), "INTEGER".into())));
         }
         assert!(!columns.iter().any(|(name, _)| name == "added_at_new"));
+    }
+
+    #[test]
+    fn should_create_from_fresh() {
+        let mut conn = gen_database_raw();
+
+        // verify the created database is at 0
+        assert_eq!(0, get_user_version(&conn).unwrap());
+        migrate(&mut conn).unwrap();
+        assert_full_schema(&conn);
+        assert_creation_metadata(&conn);
+
+        conn.execute_batch(
+            "INSERT INTO tracks(id, file_dir, file_stem, file_ext, added_at)
+             VALUES (42, '/music', 'example', 'mp3', 1704164645);
+             UPDATE config SET value = 'sentinel' WHERE key = 'last_migrated_at';",
+        )
+        .unwrap();
+        let original_schema = get_all_schemas(&conn);
+        let original_metadata = get_all_config_data(&conn);
+
+        migrate(&mut conn).unwrap();
+        assert_full_schema(&conn);
+        assert_eq!(get_all_schemas(&conn), original_schema);
+        assert_eq!(get_all_config_data(&conn), original_metadata);
+        assert_migrated_track(&conn);
     }
 
     #[test]
@@ -355,12 +372,10 @@ mod tests {
         });
 
         // B has encountered A's writer reservation. With the old migrator B
-        // has already read version 1 here, whereas the immediate transaction
+        // has already read version 1 here, whereas the exclusive transaction
         // waits before reading the version.
         locked_rx.recv_timeout(WAIT_TIMEOUT).unwrap();
-        tx.execute_batch(include_str!("./migrations/002.sql"))
-            .unwrap();
-        set_user_version(&tx, 2).unwrap();
+        apply_version_2(&tx).unwrap();
         tx.commit().unwrap();
         committed_tx.send(()).unwrap();
 
@@ -402,8 +417,8 @@ mod tests {
             assert_creation_metadata(&conn);
         }
         assert_eq!(
-            metadata(&first.get_connection()),
-            metadata(&second.get_connection())
+            get_all_config_data(&first.get_connection()),
+            get_all_config_data(&second.get_connection())
         );
     }
 
@@ -417,15 +432,15 @@ mod tests {
              BEGIN SELECT RAISE(ABORT, 'reject migration metadata'); END;",
         )
         .unwrap();
-        let original_schema = schema(&conn);
-        let original_metadata = metadata(&conn);
+        let original_schema = get_all_schemas(&conn);
+        let original_metadata = get_all_config_data(&conn);
 
         let error = migrate(&mut conn).unwrap_err();
         assert!(format!("{error:#}").contains("reject migration metadata"));
         assert!(conn.is_autocommit());
         assert_eq!(get_user_version(&conn).unwrap(), 1);
-        assert_eq!(schema(&conn), original_schema);
-        assert_eq!(metadata(&conn), original_metadata);
+        assert_eq!(get_all_schemas(&conn), original_schema);
+        assert_eq!(get_all_config_data(&conn), original_metadata);
         let track: (i64, String, String) = conn
             .query_row("SELECT id, file_stem, added_at FROM tracks", [], |r| {
                 Ok((r.get(0)?, r.get(1)?, r.get(2)?))
@@ -445,8 +460,8 @@ mod tests {
         let mut conn = gen_database_raw();
         version_one(&conn);
         set_user_version(&conn, DB_VERSION + 1).unwrap();
-        let original_schema = schema(&conn);
-        let original_metadata = metadata(&conn);
+        let original_schema = get_all_schemas(&conn);
+        let original_metadata = get_all_config_data(&conn);
 
         let error = migrate(&mut conn).unwrap_err();
         assert_eq!(
@@ -458,8 +473,8 @@ mod tests {
         );
         assert!(conn.is_autocommit());
         assert_eq!(get_user_version(&conn).unwrap(), DB_VERSION + 1);
-        assert_eq!(schema(&conn), original_schema);
-        assert_eq!(metadata(&conn), original_metadata);
+        assert_eq!(get_all_schemas(&conn), original_schema);
+        assert_eq!(get_all_config_data(&conn), original_metadata);
         let added_at: String = conn
             .query_row("SELECT added_at FROM tracks WHERE id = 42", [], |r| {
                 r.get(0)
@@ -475,7 +490,7 @@ mod tests {
         version_one(&writer);
         let mut conn = Connection::open(temp.path()).unwrap();
         conn.busy_timeout(Duration::from_millis(50)).unwrap();
-        let original_schema = schema(&conn);
+        let original_schema = get_all_schemas(&conn);
         let tx = writer
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .unwrap();
@@ -492,7 +507,7 @@ mod tests {
         );
         assert!(conn.is_autocommit());
         assert_eq!(get_user_version(&conn).unwrap(), 1);
-        assert_eq!(schema(&conn), original_schema);
+        assert_eq!(get_all_schemas(&conn), original_schema);
 
         tx.rollback().unwrap();
         migrate(&mut conn).unwrap();
