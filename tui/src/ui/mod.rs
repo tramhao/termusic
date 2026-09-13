@@ -17,6 +17,7 @@ mod ids;
 pub mod model;
 mod msg;
 mod server_req_actor;
+mod track_id;
 mod tui_cmd;
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 mod ueberzug;
