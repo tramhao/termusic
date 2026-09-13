@@ -38,11 +38,13 @@ use crate::ui::msg::{ConfigEditorLayout, Msg, SearchCriteria};
 use crate::ui::ueberzug::UeInstance;
 pub use download_tracker::DownloadTracker;
 pub use playlist::TUIPlaylist;
+pub use tmp_trackloader::{TMPTrackLoadMsg, TrackLoadActorSender};
 pub use user_events::UserEvent;
 
 mod download_tracker;
 mod playlist;
 mod ports;
+mod tmp_trackloader;
 mod update;
 mod user_events;
 mod view;

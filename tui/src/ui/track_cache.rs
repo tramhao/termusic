@@ -3,20 +3,20 @@ use std::{num::NonZeroUsize, sync::Arc};
 use lru::LruCache;
 use parking_lot::RwLock;
 use termusiclib::track::Track;
-use tokio::sync::mpsc::UnboundedSender;
 
-use crate::ui::track_id::TUITrackId;
+use crate::ui::{
+    model::{TMPTrackLoadMsg, TrackLoadActorSender},
+    track_id::TUITrackId,
+};
 
 /// The minimal amount of pinned tracks remaining before the current track in the playlist before fetching more data.
-const PINNED_TRACKS_MIN: NonZeroUsize = NonZeroUsize::new(5).expect("Const number");
+pub const PINNED_TRACKS_MIN: NonZeroUsize = NonZeroUsize::new(5).expect("Const number");
 /// The amount of tracks to load for pinned once below [`PINNED_TRACKS_MIN`].
-const PINNED_TRACKS_LOAD: NonZeroUsize = NonZeroUsize::new(10).expect("Const number");
+pub const PINNED_TRACKS_LOAD: NonZeroUsize = NonZeroUsize::new(10).expect("Const number");
 /// The size of the pinend track cache.
 const PINNED_TRACKS_SIZE: NonZeroUsize = NonZeroUsize::new(15).expect("Const number");
 /// The inital cache size of tracks.
 const CACHE_SIZE: NonZeroUsize = NonZeroUsize::new(200).expect("Const number");
-
-type ActorSender = UnboundedSender<()>;
 
 pub type SharedTrackCache = Arc<RwLock<TrackCache>>;
 
@@ -29,12 +29,12 @@ pub struct TrackCache {
 
     lru: LruCache<TUITrackId, Arc<Track>>,
 
-    tx: ActorSender,
+    tx: TrackLoadActorSender,
 }
 
 impl TrackCache {
     /// Create a new Cache for tracks, based on [`TUITrackId`] being the key, and [`Track`] being the value.
-    pub fn new(tx: ActorSender) -> Self {
+    pub fn new(tx: TrackLoadActorSender) -> Self {
         let pinned = LruCache::new(PINNED_TRACKS_SIZE);
         let lru = LruCache::new(CACHE_SIZE);
 
@@ -42,7 +42,7 @@ impl TrackCache {
     }
 
     /// Create a new Cache which can be shared.
-    pub fn new_shared(tx: ActorSender) -> SharedTrackCache {
+    pub fn new_shared(tx: TrackLoadActorSender) -> SharedTrackCache {
         Arc::new(RwLock::new(Self::new(tx)))
     }
 
@@ -56,6 +56,19 @@ impl TrackCache {
     /// Try to get a cached track for the given [`TUITrackId`].
     /// If none exists, [`None`] is returned, and the actor will fetch it in the background.
     pub fn try_get_track(&mut self, id: &TUITrackId) -> Option<Arc<Track>> {
+        if let Some(val) = self.try_get_cached(id) {
+            return Some(val);
+        }
+
+        let _ = self.tx.send(TMPTrackLoadMsg::Track(id.clone()));
+
+        None
+    }
+
+    /// Try to get a cached track for the given [`TUITrackId`].
+    ///
+    /// Unlike [`try_get_track`](Self::try_get_track), this function does **not** request a load.
+    pub fn try_get_cached(&mut self, id: &TUITrackId) -> Option<Arc<Track>> {
         if let Some(pinned) = self.pinned.get(id) {
             // Update last used time
             let _ = self.lru.promote(id);
@@ -66,8 +79,6 @@ impl TrackCache {
         if let Some(cache) = self.lru.get(id) {
             return Some(cache.clone());
         }
-
-        let _ = self.tx.send(());
 
         None
     }
@@ -81,33 +92,31 @@ impl TrackCache {
     }
 
     /// Insert new values to be cached.
-    pub fn insert_new(&mut self, data: Vec<Track>) {
-        for track in data {
-            let id = match TUITrackId::from_track(&track) {
-                Ok(v) => v,
-                Err(err) => {
-                    error!("Failed to convert to proper track for {track:#?}: {err:#?}");
-                    continue;
-                }
-            };
-            // dont overwrite existing value, if it already exists
-            let _ = self.lru.get_or_insert(id, || Arc::new(track));
-        }
+    pub fn insert_new<T: Into<Arc<Track>>>(&mut self, track: T) {
+        let track = track.into();
+        let id = match TUITrackId::from_track(&track) {
+            Ok(v) => v,
+            Err(err) => {
+                error!("Failed to convert to proper track for {track:#?}: {err:#?}");
+                return;
+            }
+        };
+        // dont overwrite existing value, if it already exists
+        let _ = self.lru.get_or_insert(id, || track);
     }
 
     /// Insert new values to be pinned.
-    pub fn insert_new_pinned(&mut self, data: Vec<Track>) {
-        for track in data {
-            let id = match TUITrackId::from_track(&track) {
-                Ok(v) => v,
-                Err(err) => {
-                    error!("Failed to convert to proper track for {track:#?}: {err:#?}");
-                    continue;
-                }
-            };
-            // dont overwrite existing value, if it already exists
-            let _ = self.pinned.get_or_insert(id, || Arc::new(track));
-        }
+    pub fn insert_new_pinned<T: Into<Arc<Track>>>(&mut self, track: T) {
+        let track = track.into();
+        let id = match TUITrackId::from_track(&track) {
+            Ok(v) => v,
+            Err(err) => {
+                error!("Failed to convert to proper track for {track:#?}: {err:#?}");
+                return;
+            }
+        };
+        // dont overwrite existing value, if it already exists
+        let _ = self.pinned.get_or_insert(id, || track);
     }
 }
 
@@ -118,9 +127,11 @@ mod test {
     use pretty_assertions::assert_eq;
     use tokio::sync::mpsc::{UnboundedReceiver, unbounded_channel};
 
+    use crate::ui::model::TMPTrackLoadMsg;
+
     use super::{TUITrackId, Track, TrackCache};
 
-    fn new_cache() -> (UnboundedReceiver<()>, TrackCache) {
+    fn new_cache() -> (UnboundedReceiver<TMPTrackLoadMsg>, TrackCache) {
         let (tx, rx) = unbounded_channel();
         let cache = TrackCache::new(tx);
         (rx, cache)
@@ -135,14 +146,19 @@ mod test {
             None
         );
         assert_eq!(rx.len(), 1);
-        assert_eq!(rx.blocking_recv(), Some(()));
+        assert_eq!(
+            rx.blocking_recv(),
+            Some(TMPTrackLoadMsg::Track(TUITrackId::Track(PathBuf::from(
+                "/test"
+            ))))
+        );
     }
 
     #[test]
     fn should_get_from_cache() {
         let (rx, mut cache) = new_cache();
 
-        cache.insert_new(vec![Track::new_radio("https://example.com")]);
+        cache.insert_new(Track::new_radio("https://example.com"));
 
         assert_eq!(
             cache.try_get_track(&TUITrackId::Radio("https://example.com".to_string())),
@@ -150,7 +166,7 @@ mod test {
         );
         assert_eq!(rx.len(), 0);
 
-        cache.insert_new_pinned(vec![Track::new_radio("https://example2.com")]);
+        cache.insert_new_pinned(Track::new_radio("https://example2.com"));
 
         assert_eq!(
             cache.try_get_track(&TUITrackId::Radio("https://example2.com".to_string())),
@@ -164,8 +180,8 @@ mod test {
         let (rx, mut cache) = new_cache();
 
         // setup
-        cache.insert_new(vec![Track::new_radio("https://example.com")]);
-        cache.insert_new_pinned(vec![Track::new_radio("https://example.com")]);
+        cache.insert_new(Track::new_radio("https://example.com"));
+        cache.insert_new_pinned(Track::new_radio("https://example.com"));
 
         assert_eq!(
             cache.try_get_track(&TUITrackId::Radio("https://example.com".to_string())),
