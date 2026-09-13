@@ -58,7 +58,7 @@ fn apply_migrations(conn: &Connection, mut user_version: u32) -> Result<()> {
     }
 
     if user_version == 1 {
-        apply_version_2(conn)?;
+        user_version = apply_version_2(conn)?;
     }
 
     set_last_updated_at(conn)?;
@@ -80,13 +80,13 @@ fn apply_version_1(conn: &Connection) -> Result<u32> {
 }
 
 /// Migrate the database from version 1 to version 2.
-fn apply_version_2(conn: &Connection) -> Result<()> {
+fn apply_version_2(conn: &Connection) -> Result<u32> {
     // Add total_play_count and last_played_at columns for sort support (MostPlayed, Recency, Frecency) plus `added_at` column type change
     conn.execute_batch(include_str!("./migrations/002.sql"))
         .context("Database version 2 migration failed")?;
-    set_user_version(conn, 2)?;
+    let user_version = set_user_version(conn, 2)?;
 
-    Ok(())
+    Ok(user_version)
 }
 
 // the following are to set some values in table "config", values which could help debugging database issues.
