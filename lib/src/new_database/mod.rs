@@ -1,6 +1,6 @@
 #![allow(clippy::unnecessary_debug_formatting)] // for logging we want all paths's characters to be escaped
 
-use std::{fmt::Debug, path::Path, sync::Arc};
+use std::{fmt::Debug, path::Path, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result};
 use parking_lot::{Mutex, MutexGuard};
@@ -78,8 +78,10 @@ impl Database {
     }
 
     /// Prepare the given Connection for usage.
-    fn new_from_connection(conn: Connection) -> Result<Self> {
-        migrate::migrate(&conn).context("Database migration (library)")?;
+    fn new_from_connection(mut conn: Connection) -> Result<Self> {
+        conn.busy_timeout(Duration::from_secs(5))
+            .context("configure library database busy timeout")?;
+        migrate::migrate(&mut conn).context("Database migration (library)")?;
 
         let conn = Arc::new(Mutex::new(conn));
         // for now limit to one worker at a time
