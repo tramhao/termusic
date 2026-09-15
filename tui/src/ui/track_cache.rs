@@ -13,10 +13,6 @@ use crate::ui::{
 pub const PINNED_TRACKS_MIN: NonZeroUsize = NonZeroUsize::new(5).expect("Const number");
 /// The amount of tracks to load for pinned once below [`PINNED_TRACKS_MIN`].
 pub const PINNED_TRACKS_LOAD: NonZeroUsize = NonZeroUsize::new(10).expect("Const number");
-/// The size of the pinend track cache.
-const PINNED_TRACKS_SIZE: NonZeroUsize = NonZeroUsize::new(15).expect("Const number");
-/// The inital cache size of tracks.
-const CACHE_SIZE: NonZeroUsize = NonZeroUsize::new(200).expect("Const number");
 
 pub type SharedTrackCache = Arc<RwLock<TrackCache>>;
 
@@ -33,10 +29,15 @@ pub struct TrackCache {
 }
 
 impl TrackCache {
+    /// The minimal Cache size for the base cache
+    pub const MIN_CACHE_SIZE: NonZeroUsize = NonZeroUsize::new(200).expect("Const number");
+    /// The size of the pinend track cache.
+    const PINNED_TRACKS_SIZE: NonZeroUsize = NonZeroUsize::new(15).expect("Const number");
+
     /// Create a new Cache for tracks, based on [`TUITrackId`] being the key, and [`Track`] being the value.
     pub fn new(tx: TrackLoadActorSender) -> Self {
-        let pinned = LruCache::new(PINNED_TRACKS_SIZE);
-        let lru = LruCache::new(CACHE_SIZE);
+        let pinned = LruCache::new(Self::PINNED_TRACKS_SIZE);
+        let lru = LruCache::new(Self::MIN_CACHE_SIZE);
 
         Self { pinned, lru, tx }
     }
@@ -51,6 +52,11 @@ impl TrackCache {
     /// This size should always be higher than the last viewport's size.
     pub fn update_capacity(&mut self, new_capacity: NonZeroUsize) {
         self.lru.resize(new_capacity);
+    }
+
+    /// Get the current capacity of the main LRU.
+    pub fn capacity(&self) -> NonZeroUsize {
+        self.lru.cap()
     }
 
     /// Try to get a cached track for the given [`TUITrackId`].
