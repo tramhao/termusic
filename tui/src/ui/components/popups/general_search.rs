@@ -1,8 +1,12 @@
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use anyhow::{Result, anyhow, bail};
+use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
-use termusiclib::track::MediaTypes;
+use termusiclib::new_database::track_ops;
+use termusiclib::track::{DurationFmtShort, MediaTypes, Track};
 use tui_realm_stdlib::components::{Input, Table};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -10,7 +14,7 @@ use tuirealm::component::{AppComponent, Component};
 use tuirealm::event::{Event, Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
     AttrValue, AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment, InputType,
-    LineStatic, QueryResult, Style, TableBuilder, Title,
+    LineStatic, QueryResult, Style, Table as PropTable, TableBuilder, Title,
 };
 use tuirealm::state::{State, StateValue};
 
@@ -533,4 +537,187 @@ impl Model {
         }
         bail!("column cannot find in general search")
     }
+}
+
+/// Get various values for matching.
+///
+/// [`wildmatch`] requires matching against strings.
+/// Aside from just matching, it is also used to display the found matches.
+pub trait Matchable {
+    fn meta_file(&self) -> Option<Cow<'_, str>>;
+    fn meta_title(&self) -> Option<&str>;
+    fn meta_album(&self) -> Option<&str>;
+    fn meta_artist(&self) -> Option<&str>;
+    fn meta_duration(&self) -> Option<Duration>;
+}
+
+impl Matchable for Track {
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        self.as_track()
+            .and_then(|v| v.path().to_str())
+            .map(Cow::from)
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.album())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        self.duration()
+    }
+}
+
+impl Matchable for &Track {
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        self.as_track()
+            .and_then(|v| v.path().to_str())
+            .map(Cow::from)
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.as_track().and_then(|v| v.album())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        self.duration()
+    }
+}
+
+impl Matchable for track_ops::TrackRead {
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        let pathbuf = self.as_pathbuf();
+        let _ = pathbuf.to_str()?;
+        Some(pathbuf.into_os_string().into_string().unwrap().into())
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.album.as_ref().map(|v| v.title.as_str())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist_display.as_deref()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        self.duration
+    }
+}
+
+impl Matchable for &track_ops::TrackRead {
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        let pathbuf = self.as_pathbuf();
+        let _ = pathbuf.to_str()?;
+        Some(pathbuf.into_os_string().into_string().unwrap().into())
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        self.album.as_ref().map(|v| v.title.as_str())
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        self.artist_display.as_deref()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        self.duration
+    }
+}
+
+fn match_record<T: Matchable>(record: &T, search: &str) -> bool {
+    let artist_match: bool = if let Some(artist) = record.meta_artist() {
+        wildmatch::WildMatch::new(search).matches(&artist.to_lowercase())
+    } else {
+        false
+    };
+    let title_match: bool = if let Some(title) = record.meta_title() {
+        wildmatch::WildMatch::new(search).matches(&title.to_lowercase())
+    } else {
+        false
+    };
+    let album_match: bool = if let Some(album) = record.meta_album() {
+        wildmatch::WildMatch::new(search).matches(&album.to_lowercase())
+    } else {
+        false
+    };
+    artist_match || title_match || album_match
+}
+
+pub fn update_search<'a, T: Matchable>(
+    data: &'a [T],
+    pattern: &'a str,
+) -> impl Iterator<Item = &'a T> {
+    let search = format!("*{}*", pattern.to_lowercase());
+    data.iter()
+        .filter(move |&record| match_record(record, &search))
+}
+
+pub fn build_table<T: Matchable, I: Iterator<Item = T>>(
+    data: I,
+    config: &SharedTuiSettings,
+) -> PropTable {
+    let mut peekable_data = data.peekable();
+    let mut table: TableBuilder = TableBuilder::default();
+    if peekable_data.peek().is_none() {
+        table.add_col(LineStatic::from("0"));
+        table.add_col(LineStatic::from("empty tracks from db/playlist"));
+        table.add_col(LineStatic::from(""));
+        return table.build();
+    }
+
+    let artist_color = config.read_recursive().settings.theme.library_highlight();
+
+    for (idx, record) in peekable_data.enumerate() {
+        if idx > 0 {
+            table.add_row();
+        }
+
+        let duration_string = if let Some(dur) = record.meta_duration() {
+            let duration = DurationFmtShort(dur);
+            format!("[{duration:^6.6}]")
+        } else {
+            "[--:--]".to_string()
+        };
+
+        table
+            .add_col(LineStatic::from(duration_string))
+            .add_col(LineStatic::styled(
+                record.meta_artist().unwrap_or(UNKNOWN_ARTIST).to_string(),
+                Style::new().fg(artist_color),
+            ))
+            .add_col(LineStatic::styled(
+                record.meta_title().unwrap_or(UNKNOWN_TITLE).to_string(),
+                Style::new().bold(),
+            ))
+            .add_col(LineStatic::from(
+                record
+                    .meta_file()
+                    .unwrap_or(Cow::Borrowed(UNKNOWN_FILE))
+                    .to_string(),
+            ));
+    }
+    table.build()
 }
