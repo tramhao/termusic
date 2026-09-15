@@ -647,6 +647,15 @@ impl Matchable for &track_ops::TrackRead {
     }
 }
 
+/// Create a empty table for "no matches".
+pub fn empty_search_table() -> PropTable {
+    let mut table: TableBuilder = TableBuilder::default();
+    table.add_col(LineStatic::from("0"));
+    table.add_col(LineStatic::from("No matches"));
+    table.add_col(LineStatic::from(""));
+    table.build()
+}
+
 fn match_record<T: Matchable>(record: &T, search: &str) -> bool {
     let artist_match: bool = if let Some(artist) = record.meta_artist() {
         wildmatch::WildMatch::new(search).matches(&artist.to_lowercase())
@@ -680,15 +689,12 @@ pub fn build_table<T: Matchable, I: Iterator<Item = T>>(
     config: &SharedTuiSettings,
 ) -> PropTable {
     let mut peekable_data = data.peekable();
-    let mut table: TableBuilder = TableBuilder::default();
     if peekable_data.peek().is_none() {
-        table.add_col(LineStatic::from("0"));
-        table.add_col(LineStatic::from("empty tracks from db/playlist"));
-        table.add_col(LineStatic::from(""));
-        return table.build();
+        return empty_search_table();
     }
 
     let artist_color = config.read_recursive().settings.theme.library_highlight();
+    let mut table: TableBuilder = TableBuilder::default();
 
     for (idx, record) in peekable_data.enumerate() {
         if idx > 0 {
