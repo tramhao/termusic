@@ -1,5 +1,8 @@
 use anyhow::Result;
-use termusiclib::player::protobuf::{common::Empty, server::server_control_server::ServerControl};
+use termusiclib::player::protobuf::{
+    common::Empty,
+    server::{InfoResponse, server_control_server::ServerControl},
+};
 use termusicplayback::{PlayerCmd, PlayerCmdSender};
 use tonic::{Request, Response, Status};
 
@@ -25,6 +28,14 @@ impl ServerControlService {
 
 #[tonic::async_trait]
 impl ServerControl for ServerControlService {
+    async fn info(&self, _request: Request<Empty>) -> Result<Response<InfoResponse>, Status> {
+        let reply = InfoResponse {
+            version: env!("TERMUSIC_VERSION").to_string(),
+        };
+
+        Ok(Response::new(reply))
+    }
+
     async fn reload_config(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
         self.command(PlayerCmd::ReloadConfig);

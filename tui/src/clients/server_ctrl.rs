@@ -1,6 +1,7 @@
 use anyhow::Result;
 use termusiclib::player::protobuf::{
-    common::Empty, server::server_control_client::ServerControlClient,
+    common::Empty,
+    server::{InfoResponse, server_control_client::ServerControlClient},
 };
 use tonic::{Request, transport::Channel};
 
@@ -14,6 +15,14 @@ impl ServerControlConsumer {
     pub fn new(raw_client: Channel) -> Self {
         let client = ServerControlClient::new(raw_client);
         Self { client }
+    }
+
+    pub async fn info(&mut self) -> Result<InfoResponse> {
+        let request = Request::new(Empty {});
+        let response = self.client.info(request).await?;
+        info!("Got response from server: {response:?}");
+
+        Ok(response.into_inner())
     }
 
     pub async fn reload_config(&mut self) -> Result<()> {

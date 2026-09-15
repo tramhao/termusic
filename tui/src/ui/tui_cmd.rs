@@ -26,6 +26,7 @@ pub enum TuiCmd {
     GetProgress,
     ReloadConfig,
 
+    CheckVersion,
     Playlist(PlaylistCmd),
     QuitServer,
 }

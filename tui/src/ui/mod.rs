@@ -37,6 +37,8 @@ impl UI {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let stream_updates = stream_client.subscribe_to_stream_updates().await?;
 
+        let _ = cmd_tx.send(TuiCmd::CheckVersion);
+
         let mut model = Model::new(config, cmd_tx, stream_updates.boxed());
         model.init();
 
