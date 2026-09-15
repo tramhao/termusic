@@ -1058,9 +1058,10 @@ impl Model {
         None
     }
 
-    pub fn podcast_update_search_episode(&mut self, input: &str) {
+    /// Generate and set the Search table for the given pattern for Episode search.
+    pub fn podcast_update_search_episode(&mut self, pattern: &str) {
         let mut idx: usize = 0;
-        let search = format!("*{}*", input.to_lowercase());
+        let pattern = format!("*{}*", pattern.to_lowercase());
         let mut db_tracks = vec![];
         // Get all episodes
         for podcast in &self.podcast.podcasts {
@@ -1069,21 +1070,25 @@ impl Model {
             }
         }
 
-        let table = if db_tracks.is_empty() {
+        let search = wildmatch::WildMatch::new(&pattern);
+        let mut iter = db_tracks
+            .into_iter()
+            .filter(|v| search.matches(&v.title.to_lowercase()))
+            .peekable();
+
+        let table = if iter.peek().is_none() {
             empty_search_table()
         } else {
             let mut table: TableBuilder = TableBuilder::default();
-            for record in db_tracks {
-                if wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase()) {
-                    if idx > 0 {
-                        table.add_row();
-                    }
-                    idx += 1;
-                    table
-                        .add_col(LineStatic::from(idx.to_string()))
-                        .add_col(LineStatic::styled(record.title, Style::new().bold()))
-                        .add_col(LineStatic::from(format!("{}", record.id)));
+            for record in iter {
+                if idx > 0 {
+                    table.add_row();
                 }
+                idx += 1;
+                table
+                    .add_col(LineStatic::from(idx.to_string()))
+                    .add_col(LineStatic::styled(record.title, Style::new().bold()))
+                    .add_col(LineStatic::from(format!("{}", record.id)));
             }
             table.build()
         };
@@ -1091,30 +1096,35 @@ impl Model {
         self.general_search_update_show(table);
     }
 
-    pub fn podcast_update_search_podcast(&mut self, input: &str) {
+    /// Generate and set the Search table for the given pattern for Podcast search.
+    pub fn podcast_update_search_podcast(&mut self, pattern: &str) {
         let mut idx: usize = 0;
-        let search = format!("*{}*", input.to_lowercase());
+        let pattern = format!("*{}*", pattern.to_lowercase());
         // Get all episodes
         let db_tracks = &self.podcast.podcasts;
 
-        let table = if db_tracks.is_empty() {
+        let search = wildmatch::WildMatch::new(&pattern);
+        let mut iter = db_tracks
+            .iter()
+            .filter(|v| search.matches(&v.title.to_lowercase()))
+            .peekable();
+
+        let table = if iter.peek().is_none() {
             empty_search_table()
         } else {
             let mut table: TableBuilder = TableBuilder::default();
-            for record in db_tracks {
-                if wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase()) {
-                    if idx > 0 {
-                        table.add_row();
-                    }
-                    idx += 1;
-                    table
-                        .add_col(LineStatic::from(idx.to_string()))
-                        .add_col(LineStatic::styled(
-                            record.title.clone(),
-                            Style::new().bold(),
-                        ))
-                        .add_col(LineStatic::from(format!("{}", record.id)));
+            for record in iter {
+                if idx > 0 {
+                    table.add_row();
                 }
+                idx += 1;
+                table
+                    .add_col(LineStatic::from(idx.to_string()))
+                    .add_col(LineStatic::styled(
+                        record.title.clone(),
+                        Style::new().bold(),
+                    ))
+                    .add_col(LineStatic::from(format!("{}", record.id)));
             }
             table.build()
         };
