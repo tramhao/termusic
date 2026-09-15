@@ -295,14 +295,29 @@ fn find_active_server_process() -> Option<Pid> {
 fn get_server_binary_exe() -> Result<PathBuf> {
     let mut termusic_server_prog = std::path::PathBuf::from("termusic-server");
 
+    let mut exe = std::env::current_exe()?;
+    exe.pop();
+
     // try to find the server binary adjacent to the currently executing binary path
-    let potential_server_exe = {
-        let mut exe = std::env::current_exe()?;
-        exe.pop();
-        exe.join(&termusic_server_prog)
-    };
+    let potential_server_exe = exe.join(&termusic_server_prog);
     if potential_server_exe.exists() {
         termusic_server_prog = potential_server_exe;
+    } else if exe
+        .components()
+        .rev()
+        .take(3)
+        .any(|comp| comp.as_os_str() == "target")
+    {
+        // In this path we know that:
+        // - The server binary is not adjacent to the tui binary
+        // - The TUI binary lives in a path that contains "/target/" (it is very likely in the workspace)
+        // - The "/target/" component is not more than 3 distance away (to catch "/target/debug/BIN", "/target/PLATFORM/debug/BIN")
+        // So to prevent accidentally using the global server installation (if present), we just refuse to start with better context than random incompatability errors.
+        // See #762 on why this can happen
+        bail!(indoc! {"
+            Found TUI binary to be part of the termusic workspace, but found no server binary.
+            Did you forget to also compile the server binary? (dont use \"cargo run --bin=termusic\")
+        "})
     }
 
     Ok(termusic_server_prog)
