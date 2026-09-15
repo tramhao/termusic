@@ -62,6 +62,7 @@ fn apply_migrations(conn: &Connection, mut user_version: u32) -> Result<()> {
     }
 
     set_last_updated_at(conn)?;
+    set_last_updated_with(conn)?;
 
     Ok(())
 }
@@ -118,13 +119,27 @@ fn set_db_created_at(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-/// Set database config value `db_created_with` to the current time.
+/// Set database config value `db_created_with` to the current version.
 #[inline]
 fn set_db_created_with(conn: &Connection) -> Result<()> {
     let version = crate::VERSION;
 
     conn.execute(
         "INSERT INTO config(key, value) VALUES (\"db_created_with\", :value) ON CONFLICT(key) DO NOTHING;",
+        named_params! {":value": version},
+    )?;
+
+    Ok(())
+}
+
+/// Set database config value `last_migrated_with` to the current version.
+#[inline]
+fn set_last_updated_with(conn: &Connection) -> Result<()> {
+    let version = crate::VERSION;
+
+    conn.execute(
+        "INSERT INTO config(key, value) VALUES (\"last_migrated_with\", :value)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value;",
         named_params! {":value": version},
     )?;
 
@@ -220,12 +235,16 @@ mod tests {
     /// Asserts that all config key-value pairs from the migration exist and are correct for DB version 2.
     fn assert_creation_metadata(conn: &Connection) {
         let values = get_all_config_data(conn);
-        assert_eq!(values.len(), 3);
+        assert_eq!(values.len(), 4);
         assert_eq!(values[0].0, "db_created_at");
         chrono::DateTime::parse_from_rfc3339(&values[0].1).unwrap();
         assert_eq!(values[1], ("db_created_with".into(), crate::VERSION.into()));
         assert_eq!(values[2].0, "last_migrated_at");
         chrono::DateTime::parse_from_rfc3339(&values[2].1).unwrap();
+        assert_eq!(
+            values[3],
+            ("last_migrated_with".into(), crate::VERSION.into())
+        );
     }
 
     /// Assert that the track from [`version_one`] is correctly migrated to version 2.
