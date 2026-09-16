@@ -23,6 +23,7 @@ use tuirealm::state::{State, StateValue};
 use tuirealm::subscription::{EventClause, Sub, SubClause};
 
 use crate::ui::Model;
+use crate::ui::components::popups::general_search::empty_search_table;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg, PCMsg};
@@ -1057,26 +1058,10 @@ impl Model {
         None
     }
 
-    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    // pub fn podcast_get_episode_index_by_url(&mut self, url: &str) -> Option<usize> {
-    //     if self.podcasts.is_empty() {
-    //         return None;
-    //     }
-    //     for (idx_pod, pod) in self.podcasts.iter().enumerate() {
-    //         for (idx_ep, ep) in pod.episodes.iter().enumerate() {
-    //             if ep.url == url {
-    //                 self.podcasts_index = idx_pod;
-    //                 return Some(idx_ep);
-    //             }
-    //         }
-    //     }
-    //     None
-    // }
-
-    pub fn podcast_update_search_episode(&mut self, input: &str) {
-        let mut table: TableBuilder = TableBuilder::default();
+    /// Generate and set the Search table for the given pattern for Episode search.
+    pub fn podcast_update_search_episode(&mut self, pattern: &str) {
         let mut idx: usize = 0;
-        let search = format!("*{}*", input.to_lowercase());
+        let pattern = format!("*{}*", pattern.to_lowercase());
         let mut db_tracks = vec![];
         // Get all episodes
         for podcast in &self.podcast.podcasts {
@@ -1085,59 +1070,65 @@ impl Model {
             }
         }
 
-        if db_tracks.is_empty() {
-            table.add_col(LineStatic::from("0"));
-            table.add_col(LineStatic::from("empty tracks in the podcasts db"));
-            table.add_col(LineStatic::from(""));
-        } else {
-            for record in db_tracks {
-                if wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase()) {
-                    if idx > 0 {
-                        table.add_row();
-                    }
-                    idx += 1;
-                    table
-                        .add_col(LineStatic::from(idx.to_string()))
-                        .add_col(LineStatic::styled(record.title, Style::new().bold()))
-                        .add_col(LineStatic::from(format!("{}", record.id)));
-                }
-            }
-        }
+        let search = wildmatch::WildMatch::new(&pattern);
+        let mut iter = db_tracks
+            .into_iter()
+            .filter(|v| search.matches(&v.title.to_lowercase()))
+            .peekable();
 
-        let table = table.build();
+        let table = if iter.peek().is_none() {
+            empty_search_table()
+        } else {
+            let mut table: TableBuilder = TableBuilder::default();
+            for record in iter {
+                if idx > 0 {
+                    table.add_row();
+                }
+                idx += 1;
+                table
+                    .add_col(LineStatic::from(idx.to_string()))
+                    .add_col(LineStatic::styled(record.title, Style::new().bold()))
+                    .add_col(LineStatic::from(format!("{}", record.id)));
+            }
+            table.build()
+        };
+
         self.general_search_update_show(table);
     }
 
-    pub fn podcast_update_search_podcast(&mut self, input: &str) {
-        let mut table: TableBuilder = TableBuilder::default();
+    /// Generate and set the Search table for the given pattern for Podcast search.
+    pub fn podcast_update_search_podcast(&mut self, pattern: &str) {
         let mut idx: usize = 0;
-        let search = format!("*{}*", input.to_lowercase());
+        let pattern = format!("*{}*", pattern.to_lowercase());
         // Get all episodes
         let db_tracks = &self.podcast.podcasts;
 
-        if db_tracks.is_empty() {
-            table.add_col(LineStatic::from("0"));
-            table.add_col(LineStatic::from("empty tracks in the podcasts db"));
-            table.add_col(LineStatic::from(""));
-        } else {
-            for record in db_tracks {
-                if wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase()) {
-                    if idx > 0 {
-                        table.add_row();
-                    }
-                    idx += 1;
-                    table
-                        .add_col(LineStatic::from(idx.to_string()))
-                        .add_col(LineStatic::styled(
-                            record.title.clone(),
-                            Style::new().bold(),
-                        ))
-                        .add_col(LineStatic::from(format!("{}", record.id)));
-                }
-            }
-        }
+        let search = wildmatch::WildMatch::new(&pattern);
+        let mut iter = db_tracks
+            .iter()
+            .filter(|v| search.matches(&v.title.to_lowercase()))
+            .peekable();
 
-        let table = table.build();
+        let table = if iter.peek().is_none() {
+            empty_search_table()
+        } else {
+            let mut table: TableBuilder = TableBuilder::default();
+            for record in iter {
+                if idx > 0 {
+                    table.add_row();
+                }
+                idx += 1;
+                table
+                    .add_col(LineStatic::from(idx.to_string()))
+                    .add_col(LineStatic::styled(
+                        record.title.clone(),
+                        Style::new().bold(),
+                    ))
+                    .add_col(LineStatic::from(format!("{}", record.id)));
+            }
+            table.build()
+        };
+
         self.general_search_update_show(table);
     }
 

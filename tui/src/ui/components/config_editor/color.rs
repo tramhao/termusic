@@ -455,7 +455,7 @@ impl ConfigInputHighlight {
             IdConfigEditor::Theme(IdCETheme::CurrentlyPlayingTrackSymbol) => {
                 &config_r.settings.theme.style.playlist.current_track_symbol
             }
-            _ => todo!("Unhandled IdConfigEditor Variant: {:#?}", id),
+            _ => unimplemented!("Unhandled IdConfigEditor Variant: {:#?}", id),
         };
         let component = Input::default()
             .borders(

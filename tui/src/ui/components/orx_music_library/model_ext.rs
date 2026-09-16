@@ -13,8 +13,9 @@ use tuirealm::{
 };
 
 use crate::ui::{
-    components::orx_music_library::{
-        music_library::OrxMusicLibraryComponent, scanner::library_scan,
+    components::{
+        orx_music_library::{music_library::OrxMusicLibraryComponent, scanner::library_scan},
+        popups::general_search::empty_search_table,
     },
     ids::Id,
     model::{Model, UserEvent},
@@ -167,15 +168,24 @@ impl Model {
     }
 
     /// Generate the result table for search `input`, recursively from the tree's root node's path.
-    pub fn new_library_update_search(&mut self, input: &str, path: &Path) {
-        let mut table: TableBuilder = TableBuilder::default();
+    pub fn new_library_update_search(&mut self, pattern: &str, path: &Path) {
         let all_items = walkdir::WalkDir::new(path).follow_links(true);
         let mut idx: usize = 0;
-        let search = format!("*{}*", input.to_lowercase());
-        let search = wildmatch::WildMatch::new(&search);
-        for record in all_items.into_iter().filter_map(Result::ok) {
-            let file_name = record.path();
-            if search.matches(&file_name.to_string_lossy().to_lowercase()) {
+        let pattern = format!("*{}*", pattern.to_lowercase());
+
+        let search = wildmatch::WildMatch::new(&pattern);
+        let mut iter = all_items
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|v| search.matches(&v.path().to_string_lossy().to_lowercase()))
+            .peekable();
+
+        let table = if iter.peek().is_none() {
+            empty_search_table()
+        } else {
+            let mut table: TableBuilder = TableBuilder::default();
+            for record in iter {
+                let file_name = record.path();
                 if idx > 0 {
                     table.add_row();
                 }
@@ -184,8 +194,8 @@ impl Model {
                     .add_col(LineStatic::from(idx.to_string()))
                     .add_col(LineStatic::from(file_name.to_string_lossy().to_string()));
             }
-        }
-        let table = table.build();
+            table.build()
+        };
 
         self.general_search_update_show(table);
     }

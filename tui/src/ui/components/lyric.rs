@@ -162,9 +162,8 @@ impl Model {
     }
 
     pub fn lyric_update_for_podcast_by_current_track(&mut self) {
-        let mut need_update = false;
         let mut pod_title = String::new();
-        let mut ep_for_lyric = Episode::default();
+        let mut ep_for_lyric = None;
         if let Some(track) = self.playback.current_track()
             && let Some(podcast_data) = track.as_podcast()
         {
@@ -173,16 +172,15 @@ impl Model {
                 for ep in &pod.episodes {
                     if ep.url == url {
                         pod_title.clone_from(&pod.title);
-                        ep_for_lyric = ep.clone();
-                        need_update = true;
+                        ep_for_lyric = Some(ep.clone());
                         break 'outer;
                     }
                 }
             }
         }
 
-        if need_update {
-            self.lyric_update_for_episode_after(&pod_title, &ep_for_lyric);
+        if let Some(ep) = ep_for_lyric {
+            self.lyric_update_for_episode_after(&pod_title, &ep);
         }
 
         self.lyric_update_title();

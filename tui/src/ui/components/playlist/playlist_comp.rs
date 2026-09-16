@@ -47,6 +47,7 @@ use crate::ui::components::playlist::playlist_mock::{self, ListAcquire};
 use crate::ui::components::playlist::playlist_mock::{
     Column, ListValue, ListValueRenderReturn, PlaylistTable,
 };
+use crate::ui::components::popups::general_search::{build_table, update_search};
 use crate::ui::ids::Id;
 use crate::ui::model::{SharedPlaylist, TUIPlaylist, TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria, SortPopupMsg};
@@ -873,8 +874,8 @@ impl Model {
 
     pub fn playlist_update_search(&mut self, input: &str) {
         let playlist = self.playback.playlist.read();
-        let filtered_music = Model::update_search(playlist.tracks(), input);
-        let table = Model::build_table(filtered_music, &self.config_tui);
+        let filtered_music = update_search(playlist.tracks(), input);
+        let table = build_table(filtered_music, &self.config_tui);
         drop(playlist);
         self.general_search_update_show(table);
     }
