@@ -38,10 +38,10 @@ impl Model {
                 self.update_library(msg);
             }
             Msg::GeneralSearch(msg) => {
-                self.update_general_search(&msg);
+                self.update_general_search(msg);
             }
             Msg::Playlist(msg) => {
-                self.update_playlist(&msg);
+                self.update_playlist(msg);
             }
 
             Msg::Player(msg) => self.update_player(msg),
@@ -851,7 +851,7 @@ impl Model {
 
     /// Handle all [`GSMsg`] messages. Sub-function for [`update`](Self::update).
     #[allow(clippy::too_many_lines)]
-    fn update_general_search(&mut self, msg: &GSMsg) {
+    fn update_general_search(&mut self, msg: GSMsg) {
         match msg {
             GSMsg::PopupShowDatabase => {
                 self.mount_search_database();
@@ -859,7 +859,7 @@ impl Model {
             }
             GSMsg::PopupShowLibrary(path) => {
                 self.mount_search_library(path.clone());
-                self.new_library_update_search("*", path);
+                self.new_library_update_search("*", &path);
             }
             GSMsg::PopupShowPlaylist => {
                 self.mount_search_playlist();
@@ -874,11 +874,11 @@ impl Model {
                 self.mount_search_podcast();
                 self.podcast_update_search_podcast("*");
             }
-            GSMsg::PopupUpdateLibrary(input, path) => self.new_library_update_search(input, path),
+            GSMsg::PopupUpdateLibrary(input, path) => self.new_library_update_search(&input, &path),
 
-            GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(input),
+            GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(&input),
 
-            GSMsg::PopupUpdateDatabase(input) => self.database_update_search(input),
+            GSMsg::PopupUpdateDatabase(input) => self.database_update_search(&input),
 
             GSMsg::InputBlur => {
                 if self.app.mounted(&Id::GeneralSearchTable) {
@@ -929,8 +929,8 @@ impl Model {
                 let _ = self.umount_general_search();
             }
 
-            GSMsg::PopupUpdateEpisode(input) => self.podcast_update_search_episode(input),
-            GSMsg::PopupUpdatePodcast(input) => self.podcast_update_search_podcast(input),
+            GSMsg::PopupUpdateEpisode(input) => self.podcast_update_search_episode(&input),
+            GSMsg::PopupUpdatePodcast(input) => self.podcast_update_search_podcast(&input),
             GSMsg::PopupCloseOkPodcastLocate => {
                 if let Err(e) = self.general_search_after_podcast_select() {
                     self.mount_error_popup(e.context("general search after podcast select"));
@@ -963,15 +963,15 @@ impl Model {
     }
 
     /// Handle all [`PLMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_playlist(&mut self, msg: &PLMsg) {
+    fn update_playlist(&mut self, msg: PLMsg) {
         match msg {
             PLMsg::Add(current_node) => {
-                if let Err(e) = self.playlist_add(current_node) {
+                if let Err(e) = self.playlist_add(&current_node) {
                     self.mount_error_popup(e.context("playlist add"));
                 }
             }
             PLMsg::Delete(index) => {
-                self.playlist_delete_item(*index);
+                self.playlist_delete_item(index);
             }
             PLMsg::DeleteAll => {
                 self.playlist_clear();
@@ -980,7 +980,7 @@ impl Model {
                 self.playlist_shuffle();
             }
             PLMsg::PlaySelected(index) => {
-                self.playlist_play_selected(*index);
+                self.playlist_play_selected(index);
             }
             PLMsg::LoopModeCycle => {
                 self.command(TuiCmd::CycleLoop);
@@ -998,10 +998,10 @@ impl Model {
                 self.player_previous();
             }
             PLMsg::SwapDown(index) => {
-                self.playlist_swap_down(*index);
+                self.playlist_swap_down(index);
             }
             PLMsg::SwapUp(index) => {
-                self.playlist_swap_up(*index);
+                self.playlist_swap_up(index);
             }
             PLMsg::AddRandomAlbum => {
                 self.playlist_add_random_album();
