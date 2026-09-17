@@ -12,6 +12,7 @@ use termusiclib::player::UpdateEvents;
 use termusiclib::player::protobuf::queue::{PlaylistState, SortCriterion, SortDirection};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
+use termusiclib::track::Track;
 use tokio::sync::mpsc;
 
 use crate::ui::components::TETrack;
@@ -690,7 +691,8 @@ pub enum PLMsg {
     /// Start choosing random tracks to be added to the playlist
     AddRandomTracks,
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum GSMsg {
     PopupShowDatabase,
     /// Show search for the Library, search in the provided path.
@@ -715,6 +717,8 @@ pub enum GSMsg {
     PopupCloseOkPlaylistLocate,
     PopupCloseOkEpisodeLocate,
     PopupCloseOkPodcastLocate,
+
+    CloseLoading,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

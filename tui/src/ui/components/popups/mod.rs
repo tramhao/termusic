@@ -9,6 +9,7 @@ mod mock_yn_confirm;
 mod podcast;
 mod quit;
 mod saveplaylist;
+mod search_data_loading;
 mod sort;
 pub mod youtube_search;
 

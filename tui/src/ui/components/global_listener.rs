@@ -369,6 +369,7 @@ fn general_popups(storage: &mut Vec<SubClause<Id>>) {
         SubClause::IsMounted(Id::SavePlaylistPopup),
         SubClause::IsMounted(Id::SavePlaylistConfirm),
         SubClause::IsMounted(Id::DatabaseAddConfirmPopup),
+        SubClause::IsMounted(Id::GeneralSearchDataLoading),
     ]);
 }
 
