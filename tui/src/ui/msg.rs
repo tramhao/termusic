@@ -12,6 +12,7 @@ use termusiclib::player::UpdateEvents;
 use termusiclib::player::protobuf::queue::{PlaylistState, SortCriterion, SortDirection};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
+use termusiclib::track::Track;
 use tokio::sync::mpsc;
 
 use crate::ui::components::TETrack;
@@ -659,7 +660,7 @@ pub enum DBMsg {
 }
 
 /// Playlist Library View messages
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PLMsg {
     NextSong,
     PrevSong,
@@ -689,6 +690,9 @@ pub enum PLMsg {
     AddRandomAlbum,
     /// Start choosing random tracks to be added to the playlist
     AddRandomTracks,
+
+    /// Notify that a specific track has been loaded and requested to be notified about.
+    TrackNotify(Arc<Track>),
 }
 
 #[derive(Clone, Debug, PartialEq)]

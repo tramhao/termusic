@@ -62,12 +62,26 @@ impl TrackCache {
 
     /// Try to get a cached track for the given [`TUITrackId`].
     /// If none exists, [`None`] is returned, and the actor will fetch it in the background.
+    /// Once fetched, a [`Msg::ForceRedraw`](crate::ui::msg::Msg::ForceRedraw) will be send.
     pub fn try_get_track(&mut self, id: &TUITrackId) -> Option<Arc<Track>> {
         if let Some(val) = self.try_get_cached(id) {
             return Some(val);
         }
 
-        let _ = self.tx.send(TMPTrackLoadMsg::Track(id.clone()));
+        let _ = self.tx.send(TMPTrackLoadMsg::Track(id.clone(), false));
+
+        None
+    }
+
+    /// Try to get a cached track for the given [`TUITrackId`].
+    /// If none exists, [`None`] is returned, and the actor will fetch it in the background.
+    /// Once fetched, a [`Msg::Playlist`](crate::ui::msg::Msg::Playlist) with [`PLMsg::TrackNotify`](crate::ui::msg::PLMsg::TrackNotify) will be send.
+    pub fn try_get_track_notify(&mut self, id: &TUITrackId) -> Option<Arc<Track>> {
+        if let Some(val) = self.try_get_cached(id) {
+            return Some(val);
+        }
+
+        let _ = self.tx.send(TMPTrackLoadMsg::Track(id.clone(), true));
 
         None
     }
@@ -146,7 +160,7 @@ mod test {
     }
 
     #[test]
-    fn should_send_message_to_fetch_tracks() {
+    fn should_send_message_to_fetch_tracks_normal_notify() {
         let (mut rx, mut cache) = new_cache();
 
         assert_eq!(
@@ -156,9 +170,28 @@ mod test {
         assert_eq!(rx.len(), 1);
         assert_eq!(
             rx.blocking_recv(),
-            Some(TMPTrackLoadMsg::Track(TUITrackId::Track(PathBuf::from(
-                "/test"
-            )),))
+            Some(TMPTrackLoadMsg::Track(
+                TUITrackId::Track(PathBuf::from("/test")),
+                false
+            ))
+        );
+    }
+
+    #[test]
+    fn should_send_message_to_fetch_tracks_with_special_notify() {
+        let (mut rx, mut cache) = new_cache();
+
+        assert_eq!(
+            cache.try_get_track_notify(&TUITrackId::Track(PathBuf::from("/test"))),
+            None
+        );
+        assert_eq!(rx.len(), 1);
+        assert_eq!(
+            rx.blocking_recv(),
+            Some(TMPTrackLoadMsg::Track(
+                TUITrackId::Track(PathBuf::from("/test")),
+                true
+            ))
         );
     }
 

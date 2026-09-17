@@ -1020,6 +1020,11 @@ impl Model {
                 }
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
             },
+
+            PLMsg::TrackNotify(_track) => {
+                // TODO: future commit
+                unimplemented!();
+            }
         }
     }
 
