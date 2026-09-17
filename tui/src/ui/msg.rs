@@ -12,7 +12,6 @@ use termusiclib::player::UpdateEvents;
 use termusiclib::player::protobuf::queue::{PlaylistState, SortCriterion, SortDirection};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
-use termusiclib::track::Track;
 use tokio::sync::mpsc;
 
 use crate::ui::components::TETrack;
