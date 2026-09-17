@@ -8,8 +8,8 @@ use tuirealm::{
     component::{AppComponent, Component},
     event::Event,
     props::{
-        AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment, PropPayloadRef,
-        QueryResult, TextModifiers, TextStatic, Title,
+        AttrValueRef, Attribute, BorderType, Borders, HorizontalAlignment, QueryResult,
+        TextModifiers, TextStatic, Title,
     },
     subscription::{EventClause, Sub, SubClause},
 };
@@ -123,14 +123,11 @@ impl Model {
             .flatten()
             .as_ref()
             .map(QueryResult::as_ref)
-            .and_then(AttrValueRef::as_payload)
-            .and_then(PropPayloadRef::as_vec)
+            .and_then(AttrValueRef::as_text)
             && let Some(display_text) = spans.iter().next()
+            && text.eq(&display_text.to_string())
         {
-            let d = &display_text.as_textspan().unwrap().content;
-            if text.eq(d) {
-                self.app.umount(&Id::MessagePopup)?;
-            }
+            self.app.umount(&Id::MessagePopup)?;
         }
 
         Ok(())
