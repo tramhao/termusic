@@ -865,6 +865,10 @@ impl Model {
                 self.mount_search_playlist();
                 self.playlist_update_search("*");
             }
+            GSMsg::CloseLoading => {
+                self.umount_search_loading_playlist_data()
+                    .expect("Unmount Search Data Loading Popup");
+            }
             GSMsg::PopupShowEpisode => {
                 self.mount_search_episode();
                 self.podcast_update_search_episode("*");
