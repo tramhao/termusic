@@ -721,6 +721,7 @@ pub enum GSMsg {
     PopupCloseOkEpisodeLocate,
     PopupCloseOkPodcastLocate,
 
+    PlaylistDataReady(Vec<Arc<Track>>),
     CloseLoading,
 }
 

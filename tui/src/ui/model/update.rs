@@ -869,6 +869,10 @@ impl Model {
                 self.umount_search_loading_playlist_data()
                     .expect("Unmount Search Data Loading Popup");
             }
+            GSMsg::PlaylistDataReady(_data) => {
+                // TODO: future commit
+                todo!()
+            }
             GSMsg::PopupShowEpisode => {
                 self.mount_search_episode();
                 self.podcast_update_search_episode("*");
@@ -1023,7 +1027,7 @@ impl Model {
 
             PLMsg::TrackNotify(_track) => {
                 // TODO: future commit
-                unimplemented!();
+                todo!();
             }
         }
     }

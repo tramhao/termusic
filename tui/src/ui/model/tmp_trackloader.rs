@@ -1,3 +1,5 @@
+use std::{collections::HashSet, sync::Arc};
+
 use anyhow::{Context, Result};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::Track;
@@ -8,7 +10,7 @@ use tokio::{
 
 use crate::ui::{
     model::TxToMain,
-    msg::{Msg, PLMsg},
+    msg::{GSMsg, Msg, PLMsg},
     track_cache::SharedTrackCache,
     track_id::TUITrackId,
 };
@@ -22,6 +24,10 @@ pub enum TMPTrackLoadMsg {
     /// If the `bool` is `false`, send a [`Msg::ForceRedraw`].
     Track(TUITrackId, bool),
     PinnedVec(Vec<TUITrackId>),
+
+    /// Load data from cache, or request from source, but never cache the new data.
+    /// Used for example for search.
+    LoadUncached(HashSet<TUITrackId>),
 }
 
 /// Actor that handles all requests to the Server via GRPC.
@@ -73,6 +79,9 @@ impl TrackLoadActor {
             }
             TMPTrackLoadMsg::PinnedVec(tuitrack_ids) => {
                 self.load_pinned_tracks(tuitrack_ids).await?;
+            }
+            TMPTrackLoadMsg::LoadUncached(tuitrack_ids) => {
+                self.load_uncached_tracks(tuitrack_ids).await?;
             }
         }
 
@@ -155,6 +164,40 @@ impl TrackLoadActor {
         }
 
         self.send_response(Msg::ForceRedraw);
+
+        Ok(())
+    }
+
+    /// Handle the [`LoadUncached`](TMPTrackLoadMsg::LoadUncached) message.
+    async fn load_uncached_tracks(&self, ids: HashSet<TUITrackId>) -> Result<()> {
+        let mut set = JoinSet::new();
+
+        let mut tracks = Vec::with_capacity(ids.len());
+
+        // a simple "drop(cache)" does not satisfy clippy here, so a block is used
+        {
+            let mut cache = self.cache.write();
+
+            for id in ids {
+                // if it already exist, no need to fetch again
+                if let Some(track) = cache.try_get_cached(&id) {
+                    tracks.push(track);
+                    continue;
+                }
+
+                set.spawn(Self::load_single_track(self.db_pod.clone(), id));
+            }
+        }
+
+        let res = set.join_all().await;
+
+        for res in res {
+            let track = res?;
+
+            tracks.push(Arc::new(track));
+        }
+
+        self.send_response(Msg::GeneralSearch(GSMsg::PlaylistDataReady(tracks)));
 
         Ok(())
     }
