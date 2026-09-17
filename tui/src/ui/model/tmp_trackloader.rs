@@ -6,13 +6,21 @@ use tokio::{
     task::{JoinHandle, JoinSet},
 };
 
-use crate::ui::{model::TxToMain, msg::Msg, track_cache::SharedTrackCache, track_id::TUITrackId};
+use crate::ui::{
+    model::TxToMain,
+    msg::{Msg, PLMsg},
+    track_cache::SharedTrackCache,
+    track_id::TUITrackId,
+};
 
 pub type TrackLoadActorSender = UnboundedSender<TMPTrackLoadMsg>;
 
 #[derive(Debug, PartialEq)]
 pub enum TMPTrackLoadMsg {
-    Track(TUITrackId),
+    /// Load a specific track.
+    /// If the `bool` is `true`, send a [`Msg::Playlist`] with [`PLMsg::TrackNotify`] will be send.
+    /// If the `bool` is `false`, send a [`Msg::ForceRedraw`].
+    Track(TUITrackId, bool),
     PinnedVec(Vec<TUITrackId>),
 }
 
@@ -60,7 +68,9 @@ impl TrackLoadActor {
     /// Handle all commands to the server and their responses.
     async fn handle_cmd(&mut self, cmd: TMPTrackLoadMsg) -> Result<()> {
         match cmd {
-            TMPTrackLoadMsg::Track(tuitrack_id) => self.load_track(tuitrack_id).await?,
+            TMPTrackLoadMsg::Track(tuitrack_id, notify) => {
+                self.load_track(tuitrack_id, notify).await?;
+            }
             TMPTrackLoadMsg::PinnedVec(tuitrack_ids) => {
                 self.load_pinned_tracks(tuitrack_ids).await?;
             }
@@ -69,14 +79,23 @@ impl TrackLoadActor {
         Ok(())
     }
 
-    /// Handle the [`LoadTrack`](TMPTrackLoadMsg::LoadTrack) message.
-    async fn load_track(&self, id: TUITrackId) -> Result<()> {
+    /// Handle the [`Track`](TMPTrackLoadMsg::Track) message.
+    ///
+    /// If `notify` is `true`, send a [`Msg::Playlist`] with [`PLMsg::TrackNotify`].
+    /// If `notify` is `false`, send a [`Msg::ForceRedraw`].
+    async fn load_track(&self, id: TUITrackId, notify: bool) -> Result<()> {
         let track = Self::load_single_track(self.db_pod.clone(), id).await?;
 
-        // We currently dont core about the Ok value, and for the error, we dont care if it did not work
-        // A log is still put out. Ultimately, TUITrackID and Track should share the same invariants.
-        let _ = self.cache.write().insert_new(track);
-        self.send_response(Msg::ForceRedraw);
+        let mut cache = self.cache.write();
+        let track = cache
+            .insert_new(track)
+            .expect("Expected insert to not fail");
+
+        if notify {
+            self.send_response(Msg::Playlist(PLMsg::TrackNotify(track.clone())));
+        } else {
+            self.send_response(Msg::ForceRedraw);
+        }
 
         Ok(())
     }
@@ -102,7 +121,7 @@ impl TrackLoadActor {
         Ok(track)
     }
 
-    /// Handle the [`LoadPinned`](TMPTrackLoadMsg::LoadPinned) message.
+    /// Handle the [`PinnedVec`](TMPTrackLoadMsg::PinnedVec) message.
     async fn load_pinned_tracks(&self, ids: Vec<TUITrackId>) -> Result<()> {
         let mut set = JoinSet::new();
 
