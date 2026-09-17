@@ -55,6 +55,7 @@ impl Model {
             Box::new(Playlist::new(
                 self.config_tui.clone(),
                 self.playback.playlist.clone(),
+                self.playback.get_cache(),
             )),
             Vec::new(),
         )?;

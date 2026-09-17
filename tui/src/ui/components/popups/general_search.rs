@@ -7,7 +7,7 @@ use anyhow::{Result, anyhow, bail};
 use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::new_database::track_ops;
-use termusiclib::track::{DurationFmtShort, MediaTypes, Track};
+use termusiclib::track::{DurationFmtShort, Track};
 use tui_realm_stdlib::components::{Input, Table};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -23,6 +23,7 @@ use crate::ui::Model;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg};
+use crate::ui::track_id::TUITrackId;
 use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
@@ -354,6 +355,8 @@ impl Model {
             self.mount_error_popup(e.context("update_photo"));
         }
 
+        self.playback.set_search_cached_tracks(None);
+
         Ok(())
     }
 
@@ -422,16 +425,14 @@ impl Model {
             && let Some(file_name_text_span) = line.get(3)
         {
             let file_name = file_name_text_span.to_string();
-            for (idx, item) in self.playback.playlist.read().tracks().iter().enumerate() {
+            for (idx, id) in self.playback.playlist.read().tracks().iter().enumerate() {
                 // NOTE: i dont know if this should apply to anything other than "track_data"
-                let lower_matched = match item.inner() {
-                    MediaTypes::Track(track_data) => {
-                        track_data.path().to_string_lossy() == file_name.as_str()
+                let lower_matched = match id {
+                    TUITrackId::Track(track_data) => {
+                        track_data.to_string_lossy() == file_name.as_str()
                     }
-                    MediaTypes::Radio(radio_track_data) => radio_track_data.url() == file_name,
-                    MediaTypes::Podcast(podcast_track_data) => {
-                        podcast_track_data.url() == file_name
-                    }
+                    TUITrackId::Radio(radio_track_data) => radio_track_data == &file_name,
+                    TUITrackId::Podcast(podcast_track_data) => podcast_track_data == &file_name,
                 };
                 if lower_matched {
                     index = idx;
@@ -462,16 +463,14 @@ impl Model {
             && let Some(file_name_text_span) = line.get(3)
         {
             let file_name = file_name_text_span.to_string();
-            for (idx, item) in self.playback.playlist.read().tracks().iter().enumerate() {
+            for (idx, id) in self.playback.playlist.read().tracks().iter().enumerate() {
                 // NOTE: i dont know if this should apply to anything other than "track_data"
-                let lower_matched = match item.inner() {
-                    MediaTypes::Track(track_data) => {
-                        track_data.path().to_string_lossy() == file_name.as_str()
+                let lower_matched = match id {
+                    TUITrackId::Track(track_data) => {
+                        track_data.to_string_lossy() == file_name.as_str()
                     }
-                    MediaTypes::Radio(radio_track_data) => radio_track_data.url() == file_name,
-                    MediaTypes::Podcast(podcast_track_data) => {
-                        podcast_track_data.url() == file_name
-                    }
+                    TUITrackId::Radio(radio_track_data) => radio_track_data == &file_name,
+                    TUITrackId::Podcast(podcast_track_data) => podcast_track_data == &file_name,
                 };
                 if lower_matched {
                     index = idx;

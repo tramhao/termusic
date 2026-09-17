@@ -107,6 +107,7 @@ impl TrackCache {
     /// Unset a specific track from all caches.
     ///
     /// For example after a tag editor edit, or the file has been deleted.
+    #[allow(dead_code)] // "expect" does not work here due to usage in tests
     pub fn unset(&mut self, id: &TUITrackId) {
         let _ = self.lru.pop(id);
         let _ = self.pinned.pop(id);

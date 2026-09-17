@@ -92,9 +92,9 @@ impl Model {
         )?;
         self.app.active(&Id::GeneralSearchDataLoading)?;
 
-        // let playlist = self.playback.playlist.read();
-        // let tracks = HashSet::from_iter(playlist.tracks().iter().map(Clone::clone));
-        // let _ = playlist.request_data(TMPTrackLoadMsg::LoadUncached(tracks, token));
+        let playlist = self.playback.playlist.read();
+        let tracks = HashSet::from_iter(playlist.tracks().iter().map(Clone::clone));
+        let _ = playlist.request_data(TMPTrackLoadMsg::LoadUncached(tracks, token));
 
         Ok(())
     }

@@ -1,25 +1,41 @@
 use std::fmt::Write as _;
 use std::path::Path;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use pathdiff::diff_paths;
+use termusiclib::config::v2::server::LoopMode;
 use termusiclib::player::PlaylistRemoveTrackInfo;
 use termusiclib::player::playlist_helpers::{PlaylistAddTrack, PlaylistTrackSource};
-use termusiclib::podcast::db::Database as DBPod;
-use termusiclib::track::MediaTypes;
 use termusiclib::utils::get_parent_folder;
-use termusiclib::{config::v2::server::LoopMode, track::Track};
+use tokio::sync::mpsc::error::SendError;
+
+use crate::ui::model::{TMPTrackLoadMsg, TrackLoadActorSender};
+use crate::ui::track_cache::{PINNED_TRACKS_LOAD, PINNED_TRACKS_MIN};
+use crate::ui::track_id::TUITrackId;
 
 /// A Playlist with all the tracks and options
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone)]
 pub struct TUIPlaylist {
-    tracks: Vec<Track>,
+    tracks: Vec<TUITrackId>,
     /// Index into `tracks`, if set
     current_track_idx: Option<usize>,
+    last_cache_idx: Option<usize>,
     loop_mode: LoopMode,
+
+    cache_tx: TrackLoadActorSender,
 }
 
 impl TUIPlaylist {
+    pub fn new(tx: TrackLoadActorSender) -> Self {
+        Self {
+            tracks: Vec::new(),
+            current_track_idx: None,
+            last_cache_idx: None,
+            loop_mode: LoopMode::default(),
+            cache_tx: tx,
+        }
+    }
+
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.tracks.is_empty()
@@ -31,7 +47,7 @@ impl TUIPlaylist {
     }
 
     #[must_use]
-    pub fn tracks(&self) -> &[Track] {
+    pub fn tracks(&self) -> &[TUITrackId] {
         &self.tracks
     }
 
@@ -39,6 +55,7 @@ impl TUIPlaylist {
     pub fn clear(&mut self) {
         self.tracks.clear();
         self.current_track_idx.take();
+        self.last_cache_idx.take();
     }
 
     /// Set a specific [`LoopMode`].
@@ -73,6 +90,8 @@ impl TUIPlaylist {
 
         self.tracks.swap(index_a, index_b);
 
+        self.check_enough_cached();
+
         Ok(())
     }
 
@@ -98,6 +117,8 @@ impl TUIPlaylist {
             self.current_track_idx = Some(old_current_idx.saturating_sub(1));
         }
 
+        self.check_enough_cached();
+
         Ok(())
     }
 
@@ -115,7 +136,7 @@ impl TUIPlaylist {
             bail!("Failed to get track at index \"{at_index}\"");
         };
 
-        Self::check_same_source(&items.trackid, track_at_idx.inner(), at_index)?;
+        Self::check_same_source(&items.trackid, track_at_idx, at_index)?;
 
         self.remove_simple(at_index)
     }
@@ -125,75 +146,27 @@ impl TUIPlaylist {
     /// # Errors
     ///
     /// - When invalid inputs are given (non-existing path, etc)
-    pub fn add_tracks(&mut self, tracks: PlaylistAddTrack, db_pod: &DBPod) -> Result<()> {
+    pub fn add_tracks(&mut self, tracks: PlaylistAddTrack) -> Result<()> {
         self.tracks.reserve(tracks.tracks.len());
         let at_index = usize::try_from(tracks.at_index).unwrap();
         if at_index >= self.len() {
             // insert tracks at the end
             for track_location in tracks.tracks {
-                let track = match &track_location {
-                    PlaylistTrackSource::Path(path) => Self::track_from_path(path)?,
-                    PlaylistTrackSource::Url(uri) => Self::track_from_uri(uri),
-                    PlaylistTrackSource::PodcastUrl(uri) => {
-                        Self::track_from_podcasturi(uri, db_pod)?
-                    }
-                };
+                let id = TUITrackId::from_track_source(track_location)?;
 
-                self.tracks.push(track);
+                self.tracks.push(id);
             }
 
             return Ok(());
         }
         // insert tracks at position
         for (at_index, track_location) in (at_index..).zip(tracks.tracks) {
-            let track = match &track_location {
-                PlaylistTrackSource::Path(path) => Self::track_from_path(path)?,
-                PlaylistTrackSource::Url(uri) => Self::track_from_uri(uri),
-                PlaylistTrackSource::PodcastUrl(uri) => Self::track_from_podcasturi(uri, db_pod)?,
-            };
+            let id = TUITrackId::from_track_source(track_location)?;
 
-            self.tracks.insert(at_index, track);
+            self.tracks.insert(at_index, id);
         }
 
         Ok(())
-    }
-
-    /// Create a Track from a given Path
-    fn track_from_path(path_str: &str) -> Result<Track> {
-        let path = Path::new(path_str);
-
-        // Not checking that it is a supported file, as the server checks that.
-
-        // if !filetype_supported(path_str) {
-        //     error!("unsupported filetype: {path:#?}");
-        //     let p = path.to_path_buf();
-        //     let ext = path.extension().map(|v| v.to_string_lossy().to_string());
-        //     return Err(PlaylistAddError::UnsupportedFileType(ext, p));
-        // }
-
-        // if !path.exists() {
-        //     return Err(PlaylistAddError::PathDoesNotExist(path.to_path_buf()));
-        // }
-
-        // TODO: refactor to have everything necessary send over grpc instead of having the TUI reading too
-        let track =
-            Track::read_track_from_path(path).with_context(|| path.display().to_string())?;
-
-        Ok(track)
-    }
-
-    /// Create a Track from a given uri (radio only)
-    fn track_from_uri(uri: &str) -> Track {
-        Track::new_radio(uri)
-    }
-
-    /// Create a Track from a given podcast uri
-    fn track_from_podcasturi(uri: &str, db_pod: &DBPod) -> Result<Track> {
-        // TODO: refactor to have everything necessary send over grpc instead of having the TUI access to the database
-        let ep = db_pod.get_episode_by_url(uri)?;
-        let track = Track::from_podcast_episode(&ep);
-
-        Ok(track)
     }
 
     #[must_use]
@@ -213,18 +186,20 @@ impl TUIPlaylist {
 
         self.current_track_idx = Some(index);
 
+        self.check_enough_cached();
+
         Ok(())
     }
 
     /// Get the current track in the playlist, if there is one.
-    pub fn current_track(&self) -> Option<&Track> {
+    pub fn current_track(&self) -> Option<&TUITrackId> {
         let idx = self.current_track_idx?;
 
         self.tracks.get(idx)
     }
 
     /// Completely overwrite the tracks in this playlist.
-    pub fn set_tracks(&mut self, tracks: Vec<Track>) {
+    pub fn set_tracks(&mut self, tracks: Vec<TUITrackId>) {
         self.tracks = tracks;
         // remove the current index, as it is unknown if the data is the same
         self.current_track_idx.take();
@@ -254,18 +229,18 @@ impl TUIPlaylist {
     /// All Paths are relative to the `parent_folder` directory.
     fn get_m3u_file(&self, parent_folder: &Path) -> String {
         let mut m3u = String::from("#EXTM3U\n");
-        for track in &self.tracks {
-            let file = match track.inner() {
-                MediaTypes::Track(track_data) => {
-                    let path_relative = diff_paths(track_data.path(), parent_folder);
+        for id in &self.tracks {
+            let file = match id {
+                TUITrackId::Track(track_data) => {
+                    let path_relative = diff_paths(track_data, parent_folder);
 
                     path_relative.map_or_else(
-                        || track_data.path().to_string_lossy(),
+                        || track_data.to_string_lossy(),
                         |v| v.to_string_lossy().to_string().into(),
                     )
                 }
-                MediaTypes::Radio(radio_track_data) => radio_track_data.url().into(),
-                MediaTypes::Podcast(podcast_track_data) => podcast_track_data.url().into(),
+                TUITrackId::Radio(radio_track_data) => radio_track_data.into(),
+                TUITrackId::Podcast(podcast_track_data) => podcast_track_data.into(),
             };
 
             let _ = writeln!(m3u, "{file}");
@@ -280,32 +255,24 @@ impl TUIPlaylist {
     /// if they dont match
     pub fn check_same_source(
         info: &PlaylistTrackSource,
-        track_inner: &MediaTypes,
+        track_inner: &TUITrackId,
         at_index: usize,
     ) -> Result<()> {
         // Error style: "Error; expected INFO_TYPE; found PLAYLIST_TYPE"
         match (info, track_inner) {
-            (PlaylistTrackSource::Path(file_url), MediaTypes::Track(id)) => {
-                if Path::new(&file_url) != id.path() {
+            (PlaylistTrackSource::Path(file_url), TUITrackId::Track(id)) => {
+                if Path::new(&file_url) != id {
                     bail!(
                         "Path mismatch, expected \"{file_url}\" at \"{at_index}\", found \"{}\"",
-                        id.path().display()
+                        id.display()
                     );
                 }
             }
-            (PlaylistTrackSource::Url(file_url), MediaTypes::Radio(id)) => {
-                if file_url != id.url() {
+            (PlaylistTrackSource::Url(file_url), TUITrackId::Radio(id))
+            | (PlaylistTrackSource::PodcastUrl(file_url), TUITrackId::Podcast(id)) => {
+                if file_url != id {
                     bail!(
-                        "URI mismatch, expected \"{file_url}\" at \"{at_index}\", found \"{}\"",
-                        id.url()
-                    );
-                }
-            }
-            (PlaylistTrackSource::PodcastUrl(file_url), MediaTypes::Podcast(id)) => {
-                if file_url != id.url() {
-                    bail!(
-                        "URI mismatch, expected \"{file_url}\" at \"{at_index}\", found \"{}\"",
-                        id.url()
+                        "URI mismatch, expected \"{file_url}\" at \"{at_index}\", found \"{id}\"",
                     );
                 }
             }
@@ -317,5 +284,45 @@ impl TUIPlaylist {
         }
 
         Ok(())
+    }
+
+    /// Check if enough pinned entries are cached, if not, cache more.
+    fn check_enough_cached(&self) {
+        let Some(current_idx) = self.current_track_index() else {
+            return;
+        };
+        // we dont actually know what will be next, so not much predictive caching can be done.
+        if self.loop_mode == LoopMode::Random {
+            return;
+        }
+
+        if self.last_cache_idx.is_none() {
+            let until = (current_idx + PINNED_TRACKS_LOAD.get()).min(self.tracks.len());
+            let range = self.tracks[current_idx..until].to_vec();
+            let _ = self.cache_tx.send(TMPTrackLoadMsg::PinnedVec(range));
+        } else if let Some(last_idx) = self.last_cache_idx.as_ref() {
+            let max = last_idx.max(&current_idx);
+            let min = last_idx.min(&current_idx);
+
+            if max - min > PINNED_TRACKS_MIN.get() {
+                let range = if *max == current_idx {
+                    // direction is increasing
+                    current_idx..(current_idx + PINNED_TRACKS_LOAD.get()).min(self.tracks.len())
+                } else {
+                    // direction is decreasing
+                    current_idx - PINNED_TRACKS_LOAD.get()..current_idx
+                };
+
+                let range = self.tracks[range].to_vec();
+                let _ = self.request_data(TMPTrackLoadMsg::PinnedVec(range));
+            }
+        }
+    }
+
+    /// Send the given message to the Track loader.
+    ///
+    /// This function is meant to be temorary until the track loader is integrated via protobuf.
+    pub fn request_data(&self, msg: TMPTrackLoadMsg) -> Result<(), SendError<TMPTrackLoadMsg>> {
+        self.cache_tx.send(msg)
     }
 }
