@@ -8,6 +8,7 @@ use tokio_util::sync::CancellationToken;
 ///
 /// Also cancels all tasks spawned by this pool on [`Drop`]
 #[must_use]
+#[derive(Debug, Clone)]
 pub struct TaskPool {
     /// Semaphore to manage how many active tasks there at a time
     semaphore: Arc<Semaphore>,
@@ -55,6 +56,12 @@ impl TaskPool {
                 () = token.cancelled() => {}
             }
         });
+    }
+
+    /// Get a child cancel token for this taskpool.
+    #[must_use]
+    pub fn get_cancel_token(&self) -> CancellationToken {
+        self.cancel_token.child_token()
     }
 }
 
