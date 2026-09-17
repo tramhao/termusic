@@ -31,9 +31,9 @@ pub struct TrackCache {
 
 impl TrackCache {
     /// The minimal Cache size for the base cache
-    pub const MIN_CACHE_SIZE: NonZeroUsize = NonZeroUsize::new(200).expect("Const number");
+    pub const MIN_CACHE_SIZE: NonZeroUsize = NonZeroUsize::new(300).expect("Const number");
     /// The size of the pinend track cache.
-    const PINNED_TRACKS_SIZE: NonZeroUsize = NonZeroUsize::new(15).expect("Const number");
+    const PINNED_TRACKS_SIZE: NonZeroUsize = NonZeroUsize::new(20).expect("Const number");
 
     /// Create a new Cache for tracks, based on [`TUITrackId`] being the key, and [`Track`] being the value.
     pub fn new(tx: TrackLoadActorSender) -> Self {
