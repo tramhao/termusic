@@ -20,7 +20,7 @@ use crate::ui::model::youtube_options::{YTDLMsg, YoutubeData, YoutubeOptions};
 
 /// Main message type that encapsulates everything else.
 // Note that the style is for each thing to have a sub-type, unless it is top-level like "ForceRedraw".
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Msg {
     ConfigEditor(ConfigEditorMsg),
     DataBase(DBMsg),
