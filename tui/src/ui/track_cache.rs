@@ -1,5 +1,6 @@
 use std::{num::NonZeroUsize, sync::Arc};
 
+use anyhow::{Result, bail};
 use lru::LruCache;
 use parking_lot::RwLock;
 use termusiclib::track::Track;
@@ -98,31 +99,32 @@ impl TrackCache {
     }
 
     /// Insert new values to be cached.
-    pub fn insert_new<T: Into<Arc<Track>>>(&mut self, track: T) {
+    pub fn insert_new<T: Into<Arc<Track>>>(&mut self, track: T) -> Result<&Arc<Track>> {
         let track = track.into();
         let id = match TUITrackId::from_track(&track) {
             Ok(v) => v,
             Err(err) => {
+                // TODO: "Track" should also have the same invariants so that we can remove this
                 error!("Failed to convert to proper track for {track:#?}: {err:#?}");
-                return;
+                bail!("Failed to convert to proper track for {track:#?}: {err:#?}")
             }
         };
         // dont overwrite existing value, if it already exists
-        let _ = self.lru.get_or_insert(id, || track);
+        Ok(self.lru.get_or_insert(id, || track))
     }
 
     /// Insert new values to be pinned.
-    pub fn insert_new_pinned<T: Into<Arc<Track>>>(&mut self, track: T) {
+    pub fn insert_new_pinned<T: Into<Arc<Track>>>(&mut self, track: T) -> Result<&Arc<Track>> {
         let track = track.into();
         let id = match TUITrackId::from_track(&track) {
             Ok(v) => v,
             Err(err) => {
                 error!("Failed to convert to proper track for {track:#?}: {err:#?}");
-                return;
+                bail!("Failed to convert to proper track for {track:#?}: {err:#?}")
             }
         };
         // dont overwrite existing value, if it already exists
-        let _ = self.pinned.get_or_insert(id, || track);
+        Ok(self.pinned.get_or_insert(id, || track))
     }
 }
 
@@ -156,7 +158,7 @@ mod test {
             rx.blocking_recv(),
             Some(TMPTrackLoadMsg::Track(TUITrackId::Track(PathBuf::from(
                 "/test"
-            ))))
+            )),))
         );
     }
 
@@ -164,19 +166,29 @@ mod test {
     fn should_get_from_cache() {
         let (rx, mut cache) = new_cache();
 
-        cache.insert_new(Track::new_radio("https://example.com"));
+        let url1 = "https://example.com";
 
         assert_eq!(
-            cache.try_get_track(&TUITrackId::Radio("https://example.com".to_string())),
-            Some(Arc::new(Track::new_radio("https://example.com")))
+            cache.insert_new(Track::new_radio(url1)).unwrap(),
+            &Arc::new(Track::new_radio(url1))
+        );
+
+        assert_eq!(
+            cache.try_get_track(&TUITrackId::Radio(url1.to_string())),
+            Some(Arc::new(Track::new_radio(url1)))
         );
         assert_eq!(rx.len(), 0);
 
-        cache.insert_new_pinned(Track::new_radio("https://example2.com"));
+        let url2 = "https://example2.com";
 
         assert_eq!(
-            cache.try_get_track(&TUITrackId::Radio("https://example2.com".to_string())),
-            Some(Arc::new(Track::new_radio("https://example2.com")))
+            cache.insert_new_pinned(Track::new_radio(url2)).unwrap(),
+            &Arc::new(Track::new_radio(url2))
+        );
+
+        assert_eq!(
+            cache.try_get_track(&TUITrackId::Radio(url2.to_string())),
+            Some(Arc::new(Track::new_radio(url2)))
         );
         assert_eq!(rx.len(), 0);
     }
@@ -185,21 +197,29 @@ mod test {
     fn should_properly_unset() {
         let (rx, mut cache) = new_cache();
 
+        let url1 = "https://example.com";
+
         // setup
-        cache.insert_new(Track::new_radio("https://example.com"));
-        cache.insert_new_pinned(Track::new_radio("https://example.com"));
+        assert_eq!(
+            cache.insert_new(Track::new_radio(url1)).unwrap(),
+            &Arc::new(Track::new_radio(url1))
+        );
+        assert_eq!(
+            cache.insert_new_pinned(Track::new_radio(url1)).unwrap(),
+            &Arc::new(Track::new_radio(url1))
+        );
 
         assert_eq!(
-            cache.try_get_track(&TUITrackId::Radio("https://example.com".to_string())),
-            Some(Arc::new(Track::new_radio("https://example.com")))
+            cache.try_get_track(&TUITrackId::Radio(url1.to_string())),
+            Some(Arc::new(Track::new_radio(url1)))
         );
         assert_eq!(rx.len(), 0);
 
         // verify
-        cache.unset(&TUITrackId::Radio("https://example.com".to_string()));
+        cache.unset(&TUITrackId::Radio(url1.to_string()));
 
         assert_eq!(
-            cache.try_get_track(&TUITrackId::Radio("https://example.com".to_string())),
+            cache.try_get_track(&TUITrackId::Radio(url1.to_string())),
             None
         );
         assert_eq!(rx.len(), 1);
