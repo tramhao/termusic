@@ -73,7 +73,9 @@ impl TrackLoadActor {
     async fn load_track(&self, id: TUITrackId) -> Result<()> {
         let track = Self::load_single_track(self.db_pod.clone(), id).await?;
 
-        self.cache.write().insert_new(track);
+        // We currently dont core about the Ok value, and for the error, we dont care if it did not work
+        // A log is still put out. Ultimately, TUITrackID and Track should share the same invariants.
+        let _ = self.cache.write().insert_new(track);
         self.send_response(Msg::ForceRedraw);
 
         Ok(())
@@ -111,7 +113,9 @@ impl TrackLoadActor {
             for id in ids {
                 // if it already exist, no need to fetch again
                 if let Some(track) = cache.try_get_cached(&id) {
-                    cache.insert_new_pinned(track);
+                    // We currently dont core about the Ok value, and for the error, we dont care if it did not work
+                    // A log is still put out. Ultimately, TUITrackID and Track should share the same invariants.
+                    let _ = cache.insert_new_pinned(track);
                     continue;
                 }
 
@@ -126,7 +130,9 @@ impl TrackLoadActor {
         for res in res {
             let track = res?;
 
-            cache.insert_new_pinned(track);
+            // We currently dont core about the Ok value, and for the error, we dont care if it did not work
+            // A log is still put out. Ultimately, TUITrackID and Track should share the same invariants.
+            let _ = cache.insert_new_pinned(track);
         }
 
         self.send_response(Msg::ForceRedraw);
