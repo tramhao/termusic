@@ -1,5 +1,8 @@
+use std::time::Duration;
+
 use anyhow::Result;
 use termusiclib::config::{SharedTuiSettings, v2::tui::theme::styles::ColorTermusic};
+use tokio::runtime::Handle;
 use tui_realm_stdlib::components::Paragraph;
 use tuirealm::{
     component::{AppComponent, Component},
@@ -11,9 +14,12 @@ use tuirealm::{
     subscription::{EventClause, Sub, SubClause},
 };
 
-use crate::ui::ids::Id;
 use crate::ui::model::{Model, UserEvent};
 use crate::ui::msg::Msg;
+use crate::ui::{
+    ids::Id,
+    msg::{NotificationMsg, SharedStaticStr},
+};
 
 #[derive(Component)]
 pub struct MessagePopup {
@@ -128,5 +134,32 @@ impl Model {
         }
 
         Ok(())
+    }
+
+    /// Show a message with a `title` and `text`, and hide it again after `time_out` or 10 seconds.
+    ///
+    /// This function requires to run in a tokio context.
+    pub fn update_show_message_timeout<TI, TE>(&self, title: TI, text: TE, time_out: Option<u64>)
+    where
+        TE: Into<SharedStaticStr>,
+        TI: Into<SharedStaticStr>,
+    {
+        let title = title.into();
+        let text = text.into();
+        let tx = self.tx_to_main.clone();
+        let delay = time_out.unwrap_or(10);
+
+        Handle::current().spawn(async move {
+            let _ = tx.send(Msg::Notification(NotificationMsg::MessageShow((
+                title.clone(),
+                text.clone(),
+            ))));
+
+            tokio::time::sleep(Duration::from_secs(delay)).await;
+
+            let _ = tx.send(Msg::Notification(NotificationMsg::MessageHide((
+                title, text,
+            ))));
+        });
     }
 }

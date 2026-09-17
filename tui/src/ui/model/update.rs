@@ -7,8 +7,6 @@ use termusiclib::player::{
 };
 use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
-use tokio::runtime::Handle;
-use tokio::time::sleep;
 use tuirealm::props::{AttrValueRef, Attribute, QueryResult};
 
 use crate::ui::ids::Id;
@@ -197,7 +195,7 @@ impl Model {
     fn update_notification_msg(&mut self, msg: NotificationMsg) {
         match msg {
             NotificationMsg::MessageShow((title, text)) => {
-                self.mount_message(title, text)
+                self.mount_message(title.to_string(), text.to_string())
                     .expect("Expect MessagePopup to mount correctly");
             }
             NotificationMsg::MessageHide((title, text)) => {
@@ -1030,34 +1028,10 @@ impl Model {
                 return;
             }
             let name = track.title().map_or_else(|| track.id_str(), Into::into);
-            self.update_show_message_timeout("Currently Playing", &name, None);
+            self.update_show_message_timeout("Currently Playing", name, None);
 
             self.playlist_sync();
         }
-    }
-
-    /// Show a message with a `title` and `text`, and hide it again after `time_out` or 10 seconds.
-    ///
-    /// This function requires to run in a tokio context.
-    pub fn update_show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
-        let title_string = title.to_string();
-        let text_string = text.to_string();
-        let tx = self.tx_to_main.clone();
-        let delay = time_out.unwrap_or(10);
-
-        Handle::current().spawn(async move {
-            let _ = tx.send(Msg::Notification(NotificationMsg::MessageShow((
-                title_string.clone(),
-                text_string.clone(),
-            ))));
-
-            sleep(Duration::from_secs(delay)).await;
-
-            let _ = tx.send(Msg::Notification(NotificationMsg::MessageHide((
-                title_string,
-                text_string,
-            ))));
-        });
     }
 
     pub fn update_layout_for_current_track(&mut self) {
