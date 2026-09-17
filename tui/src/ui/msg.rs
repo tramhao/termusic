@@ -2,6 +2,7 @@
 
 use std::ffi::OsString;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use termusiclib::player::protobuf::player::GetProgressResponse;
 
@@ -845,16 +846,19 @@ pub enum PCMsg {
     DLResult(PodcastDLResult),
 }
 
+/// A static-size shared string.
+pub type SharedStaticStr = Arc<str>;
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum NotificationMsg {
     /// Show a status message in the TUI.
     ///
     /// `((Title, Text))`
-    MessageShow((String, String)),
+    MessageShow((SharedStaticStr, SharedStaticStr)),
     /// Hide a status message in the TUI.
     ///
     /// `((Title, Text))`
-    MessageHide((String, String)),
+    MessageHide((SharedStaticStr, SharedStaticStr)),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

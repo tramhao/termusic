@@ -71,7 +71,10 @@ impl Model {
 
         self.app.mount(
             Id::DownloadSpinner,
-            Box::new(DownloadSpinner::new(&self.config_tui.read())),
+            Box::new(DownloadSpinner::new(
+                &self.config_tui.read(),
+                self.download_tracker.clone(),
+            )),
             vec![Sub::new(EventClause::Tick, SubClause::Always)],
         )?;
 
