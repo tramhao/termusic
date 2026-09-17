@@ -55,6 +55,9 @@ use crate::ui::track_cache::{SharedTrackCache, TrackCache};
 use crate::ui::track_id::TUITrackId;
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 
+/// The minimal difference before the cache capacity gets adjusted.
+const MIN_DIFF_CACHE: NonZeroUsize = NonZeroUsize::new(100).unwrap();
+
 /// Holds the playlist reference.
 ///
 /// Actual draw impl is in [`PlaylistDataBorrow`] to not have to acquire the lock for each iteration / item.
@@ -234,10 +237,10 @@ impl Component for Playlist {
     fn view(&mut self, frame: &mut tuirealm::ratatui::prelude::Frame<'_>, area: Rect) {
         let mut cache = self.track_cache.upgradable_read();
         let area_as_usize = usize::from(area.height);
-        // Only try to adjust the cache capacity downwards if there is at least a 50 slot difference.
+        // Only try to adjust the cache capacity downwards if there is at least a MIN_DIFF_CACHE slot difference.
         // Always grow the cache size if the area is bigger!
         // Also never go below the MIN_CACHE_SIZE.
-        if area_as_usize.abs_diff(cache.capacity().get()) > 50
+        if area_as_usize.abs_diff(cache.capacity().get()) > MIN_DIFF_CACHE.get()
             || area_as_usize > cache.capacity().get()
                 && area_as_usize > TrackCache::MIN_CACHE_SIZE.get()
         {
