@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Result, anyhow, bail};
@@ -575,30 +576,6 @@ impl Matchable for Track {
     }
 }
 
-impl Matchable for &Track {
-    fn meta_file(&self) -> Option<Cow<'_, str>> {
-        self.as_track()
-            .and_then(|v| v.path().to_str())
-            .map(Cow::from)
-    }
-
-    fn meta_title(&self) -> Option<&str> {
-        self.title()
-    }
-
-    fn meta_album(&self) -> Option<&str> {
-        self.as_track().and_then(|v| v.album())
-    }
-
-    fn meta_artist(&self) -> Option<&str> {
-        self.artist()
-    }
-
-    fn meta_duration(&self) -> Option<Duration> {
-        self.duration()
-    }
-}
-
 impl Matchable for track_ops::TrackRead {
     fn meta_file(&self) -> Option<Cow<'_, str>> {
         let pathbuf = self.as_pathbuf();
@@ -623,27 +600,53 @@ impl Matchable for track_ops::TrackRead {
     }
 }
 
-impl Matchable for &track_ops::TrackRead {
+impl<T> Matchable for Arc<T>
+where
+    T: Matchable,
+{
     fn meta_file(&self) -> Option<Cow<'_, str>> {
-        let pathbuf = self.as_pathbuf();
-        let _ = pathbuf.to_str()?;
-        Some(pathbuf.into_os_string().into_string().unwrap().into())
+        (**self).meta_file()
     }
 
     fn meta_title(&self) -> Option<&str> {
-        self.title.as_deref()
+        (**self).meta_title()
     }
 
     fn meta_album(&self) -> Option<&str> {
-        self.album.as_ref().map(|v| v.title.as_str())
+        (**self).meta_album()
     }
 
     fn meta_artist(&self) -> Option<&str> {
-        self.artist_display.as_deref()
+        (**self).meta_artist()
     }
 
     fn meta_duration(&self) -> Option<Duration> {
-        self.duration
+        (**self).meta_duration()
+    }
+}
+
+impl<T> Matchable for &T
+where
+    T: Matchable,
+{
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        (*self).meta_file()
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        (*self).meta_title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        (*self).meta_album()
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        (*self).meta_artist()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        (*self).meta_duration()
     }
 }
 
