@@ -27,6 +27,7 @@ use crate::ui::components::popups::general_search::empty_search_table;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg, PCMsg};
+use crate::ui::track_id::TUITrackId;
 use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
@@ -1021,9 +1022,8 @@ impl Model {
             return Ok(());
         }
         if let Some(track) = self.playback.current_track()
-            && let Some(podcast_data) = track.as_podcast()
+            && let TUITrackId::Podcast(url) = track.as_track_id()?
         {
-            let url = podcast_data.url();
             'outer: for pod in &mut self.podcast.podcasts {
                 for ep in &mut pod.episodes {
                     if ep.url == url {

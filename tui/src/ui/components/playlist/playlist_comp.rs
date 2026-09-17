@@ -1,10 +1,11 @@
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Context as _, Result, anyhow};
-use parking_lot::RwLockReadGuard;
+use parking_lot::{RwLockReadGuard, RwLockWriteGuard};
 use rand::seq::IndexedRandom;
 use termusiclib::common::const_unknown::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
 use termusiclib::config::v2::server::{LoopMode, ScanDepth};
@@ -22,7 +23,6 @@ use termusiclib::player::{
     PlaylistSwapInfo,
 };
 use termusiclib::track::DurationFmtShort;
-use termusiclib::track::Track;
 use termusiclib::utils::{filetype_supported, is_playlist, playlist_get_vec};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::component::{AppComponent, Component};
@@ -51,6 +51,8 @@ use crate::ui::components::popups::general_search::{build_table, update_search};
 use crate::ui::ids::Id;
 use crate::ui::model::{SharedPlaylist, TUIPlaylist, TermusicLayout, UserEvent};
 use crate::ui::msg::{GSMsg, Msg, PLMsg, SearchCriteria, SortPopupMsg};
+use crate::ui::track_cache::{SharedTrackCache, TrackCache};
+use crate::ui::track_id::TUITrackId;
 use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 
 /// Holds the playlist reference.
@@ -59,6 +61,7 @@ use crate::ui::tui_cmd::{PlaylistCmd, TuiCmd};
 pub struct PlaylistData {
     list: SharedPlaylist,
     config: SharedTuiSettings,
+    track_cache: SharedTrackCache,
 }
 
 impl<'a> ListAcquire<'a> for PlaylistData {
@@ -68,6 +71,7 @@ impl<'a> ListAcquire<'a> for PlaylistData {
         PlaylistDataBorrow {
             list: self.list.read(),
             config: self.config.read(),
+            track_cache: RefCell::new(self.track_cache.write()),
         }
     }
 }
@@ -76,6 +80,7 @@ impl<'a> ListAcquire<'a> for PlaylistData {
 pub struct PlaylistDataBorrow<'a> {
     list: RwLockReadGuard<'a, TUIPlaylist>,
     config: RwLockReadGuard<'a, TuiOverlay>,
+    track_cache: RefCell<RwLockWriteGuard<'a, TrackCache>>,
 }
 
 impl ListValue for PlaylistDataBorrow<'_> {
@@ -85,7 +90,7 @@ impl ListValue for PlaylistDataBorrow<'_> {
         ctx: &super::playlist_mock::PlaylistTableContext<'_>,
         mut style: Style,
     ) -> ListValueRenderReturn {
-        let Some(track) = self.list.tracks().get(ctx.item_offset) else {
+        let Some(trackid) = self.list.tracks().get(ctx.item_offset) else {
             return ListValueRenderReturn::EMPTY;
         };
 
@@ -108,16 +113,18 @@ impl ListValue for PlaylistDataBorrow<'_> {
                 .get_color_from_theme(ColorTermusic::LightBlack));
         }
 
-        let duration_str = if let Some(dur) = track.duration_str_short() {
-            format!("[{dur:^7.7}]")
-        } else {
-            "[--:--]".to_string()
-        };
-        let title: Cow<'_, str> = track.title().map_or_else(|| track.id_str(), Into::into);
-
         for area in ctx.areas {
             // we only draw with Spans here, which can only be 1 height.
             let rect = Rect { height: 1, ..*area };
+            buf.set_style(rect, style);
+        }
+
+        // draw highlight all across the line
+        for spacer in ctx.areas_spacer {
+            let rect = Rect {
+                height: 1,
+                ..*spacer
+            };
             buf.set_style(rect, style);
         }
 
@@ -151,6 +158,31 @@ impl ListValue for PlaylistDataBorrow<'_> {
             .render(ctx.areas[0], buf);
         }
 
+        let Some(track) = self.track_cache.borrow_mut().try_get_track(trackid) else {
+            Span::styled("Loading...", style).render(ctx.areas[1], buf);
+            Span::styled(trackid.id_str(), style.bold()).render(ctx.areas[2], buf);
+
+            // normal display, fill the columns
+            if ctx.areas.len() > 2 {
+                // 3. Artist
+                // 4. Album
+                Span::styled("Loading...", style).render(ctx.areas[3], buf);
+                Span::styled("Loading...", style).render(ctx.areas[4], buf);
+            }
+
+            return ListValueRenderReturn {
+                consumed_vertical_size: 1,
+                done: false,
+            };
+        };
+
+        let duration_str = if let Some(dur) = track.duration_str_short() {
+            format!("[{dur:^7.7}]")
+        } else {
+            "[--:--]".to_string()
+        };
+        let title: Cow<'_, str> = track.title().map_or_else(|| track.id_str(), Into::into);
+
         // always display:
         // 1. Duration
         // 2. Title
@@ -169,15 +201,6 @@ impl ListValue for PlaylistDataBorrow<'_> {
 
             Span::styled(artist, style).render(ctx.areas[3], buf);
             Span::styled(album, style).render(ctx.areas[4], buf);
-        }
-
-        // draw highlight all across the line
-        for spacer in ctx.areas_spacer {
-            let rect = Rect {
-                height: 1,
-                ..*spacer
-            };
-            buf.set_style(rect, style);
         }
 
         ListValueRenderReturn {
@@ -200,18 +223,61 @@ impl ListValue for PlaylistDataBorrow<'_> {
     }
 }
 
-#[derive(Component)]
 pub struct Playlist {
     component: PlaylistTable<PlaylistData>,
     config: SharedTuiSettings,
+
+    track_cache: SharedTrackCache,
+}
+
+impl Component for Playlist {
+    fn view(&mut self, frame: &mut tuirealm::ratatui::prelude::Frame<'_>, area: Rect) {
+        let mut cache = self.track_cache.upgradable_read();
+        let area_as_usize = usize::from(area.height);
+        // Only try to adjust the cache capacity downwards if there is at least a 50 slot difference.
+        // Always grow the cache size if the area is bigger!
+        // Also never go below the MIN_CACHE_SIZE.
+        if area_as_usize.abs_diff(cache.capacity().get()) > 50
+            || area_as_usize > cache.capacity().get()
+                && area_as_usize > TrackCache::MIN_CACHE_SIZE.get()
+        {
+            // This should never panic as "TrackCache::MIN_CACHE_SIZE" is a NonZeroUsize itself, so this branch can never happen if 0
+            let new_cap = NonZeroUsize::new(area_as_usize).expect("Expected MIN Check to not fail");
+            cache.with_upgraded(|v| v.update_capacity(new_cap));
+        }
+        drop(cache);
+
+        self.component.view(frame, area);
+    }
+
+    fn query(&'_ self, attr: Attribute) -> Option<QueryResult<'_>> {
+        self.component.query(attr)
+    }
+
+    fn attr(&mut self, attr: Attribute, value: AttrValue) {
+        self.component.attr(attr, value);
+    }
+
+    fn state(&self) -> tuirealm::state::State {
+        self.component.state()
+    }
+
+    fn perform(&mut self, cmd: Cmd) -> CmdResult {
+        self.component.perform(cmd)
+    }
 }
 
 impl Playlist {
-    pub fn new(config: SharedTuiSettings, playlist: SharedPlaylist) -> Self {
+    pub fn new(
+        config: SharedTuiSettings,
+        playlist: SharedPlaylist,
+        track_cache: SharedTrackCache,
+    ) -> Self {
         let component = {
             let data = PlaylistData {
                 list: playlist,
                 config: config.clone(),
+                track_cache: track_cache.clone(),
             };
             let config = config.read();
             let duration_width = DurationFmtShort::fmt_empty().len() + 2;
@@ -255,7 +321,11 @@ impl Playlist {
                 ])
         };
 
-        Self { component, config }
+        Self {
+            component,
+            config,
+            track_cache,
+        }
     }
 }
 
@@ -387,6 +457,7 @@ impl Model {
             Box::new(Playlist::new(
                 self.config_tui.clone(),
                 self.playback.playlist.clone(),
+                self.playback.get_cache(),
             )),
             Vec::new(),
         );
@@ -610,13 +681,13 @@ impl Model {
     /// Handle when a playlist has added a track
     pub fn handle_playlist_add(&mut self, items: PlaylistAddTrackInfo) -> Result<()> {
         // piggyback off-of the server side implementation for now by re-parsing everything.
-        self.playback.playlist.write().add_tracks(
-            PlaylistAddTrack {
+        self.playback
+            .playlist
+            .write()
+            .add_tracks(PlaylistAddTrack {
                 at_index: items.at_index,
                 tracks: items.tracks,
-            },
-            &self.podcast.db_podcast,
-        )?;
+            })?;
 
         self.playlist_sync();
 
@@ -676,11 +747,10 @@ impl Model {
         // this might be fragile if there are multiple of the same track in the playlist as there is no unique identifier currently
         let playlist_track_at_old_file = playlist_comp_selected_index
             .and_then(|idx| playlist.tracks().get(idx))
-            .map(Track::as_track_source);
+            .map(TUITrackId::as_track_source);
         drop(playlist);
 
-        self.playback
-            .load_from_grpc(shuffled.state, &self.podcast.db_podcast)?;
+        self.playback.load_from_grpc(shuffled.state)?;
         self.playlist_sync();
 
         if let Some(old_id) = playlist_track_at_old_file {
@@ -827,7 +897,9 @@ impl Model {
 
     pub fn playlist_update_title(&mut self) {
         let playlist = self.playback.playlist.read();
-        let duration = playlist.tracks().iter().filter_map(Track::duration).sum();
+        // TODO: this is expensive, this should be cached somewhere
+        // let duration = playlist.tracks().iter().filter_map(Track::duration).sum();
+        let duration = Duration::ZERO;
         let display = self
             .config_tui
             .read()
@@ -872,11 +944,17 @@ impl Model {
         )));
     }
 
-    pub fn playlist_update_search(&mut self, input: &str) {
-        let playlist = self.playback.playlist.read();
-        let filtered_music = update_search(playlist.tracks(), input);
+    /// Update the search table with the new data filtered by `pattern`.
+    pub fn playlist_update_search(&mut self, pattern: &str) {
+        let Some(tracks) = self.playback.get_search_cached_tracks() else {
+            self.mount_error_popup(anyhow!(
+                "Unexpectedly called \"playlist_update_search\", but without tracks data loaded!"
+            ));
+            return;
+        };
+
+        let filtered_music = update_search(tracks, pattern);
         let table = build_table(filtered_music, &self.config_tui);
-        drop(playlist);
         self.general_search_update_show(table);
     }
 
