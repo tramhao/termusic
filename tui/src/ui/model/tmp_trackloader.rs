@@ -3,14 +3,17 @@ use std::{collections::HashSet, sync::Arc};
 use anyhow::{Context, Result};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::Track;
+use tokio::select;
 use tokio::{
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
     task::{JoinHandle, JoinSet},
 };
+use tokio_util::sync::CancellationToken;
 
+use crate::ui::msg::PLMsg;
 use crate::ui::{
     model::TxToMain,
-    msg::{GSMsg, Msg, PLMsg},
+    msg::{GSMsg, Msg},
     track_cache::SharedTrackCache,
     track_id::TUITrackId,
 };
@@ -27,7 +30,7 @@ pub enum TMPTrackLoadMsg {
 
     /// Load data from cache, or request from source, but never cache the new data.
     /// Used for example for search.
-    LoadUncached(HashSet<TUITrackId>),
+    LoadUncached(HashSet<TUITrackId>, CancellationToken),
 }
 
 /// Actor that handles all requests to the Server via GRPC.
@@ -50,6 +53,7 @@ impl TrackLoadActor {
         tx_main: TxToMain,
         cache: SharedTrackCache,
         db_pod: DBPod,
+        global_cancel: CancellationToken,
     ) -> JoinHandle<()> {
         let obj = Self {
             rx_cmd,
@@ -59,14 +63,22 @@ impl TrackLoadActor {
             db_pod,
         };
 
-        tokio::spawn(Self::run(obj))
+        tokio::spawn(Self::run(obj, global_cancel))
     }
 
     /// The actor loop.
-    async fn run(mut actor: Self) {
+    async fn run(mut actor: Self, global_cancel: CancellationToken) {
         while let Some(cmd) = actor.rx_cmd.recv().await {
-            if let Err(err) = actor.handle_cmd(cmd).await {
-                error!("Error processing command to fetch track data: {err:#?}");
+            select! {
+                () = global_cancel.cancelled() => {
+                    warn!("Cancelled Track loading due to global cancel!");
+                    break;
+                },
+                res = actor.handle_cmd(cmd) => {
+                    if let Err(err) = res {
+                        error!("Error processing command to fetch track data: {err:#?}");
+                    }
+                }
             }
         }
     }
@@ -80,8 +92,16 @@ impl TrackLoadActor {
             TMPTrackLoadMsg::PinnedVec(tuitrack_ids) => {
                 self.load_pinned_tracks(tuitrack_ids).await?;
             }
-            TMPTrackLoadMsg::LoadUncached(tuitrack_ids) => {
-                self.load_uncached_tracks(tuitrack_ids).await?;
+            TMPTrackLoadMsg::LoadUncached(tuitrack_ids, cancel) => {
+                match cancel
+                    .run_until_cancelled(self.load_uncached_tracks(tuitrack_ids))
+                    .await
+                {
+                    Some(res) => res?,
+                    None => {
+                        warn!("Track Uncached load cancelled!");
+                    }
+                }
             }
         }
 
