@@ -2,6 +2,7 @@
 
 use std::ffi::OsString;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use termusiclib::player::protobuf::player::GetProgressResponse;
 
@@ -11,6 +12,7 @@ use termusiclib::player::UpdateEvents;
 use termusiclib::player::protobuf::queue::{PlaylistState, SortCriterion, SortDirection};
 use termusiclib::podcast::{PodcastDLResult, PodcastFeed, PodcastSyncResult};
 use termusiclib::songtag::{SongtagSearchResult, TrackDLMsg};
+use termusiclib::track::Track;
 use tokio::sync::mpsc;
 
 use crate::ui::components::TETrack;
@@ -19,7 +21,7 @@ use crate::ui::model::youtube_options::{YTDLMsg, YoutubeData, YoutubeOptions};
 
 /// Main message type that encapsulates everything else.
 // Note that the style is for each thing to have a sub-type, unless it is top-level like "ForceRedraw".
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Msg {
     ConfigEditor(ConfigEditorMsg),
     DataBase(DBMsg),
@@ -658,7 +660,7 @@ pub enum DBMsg {
 }
 
 /// Playlist Library View messages
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PLMsg {
     NextSong,
     PrevSong,
@@ -688,8 +690,12 @@ pub enum PLMsg {
     AddRandomAlbum,
     /// Start choosing random tracks to be added to the playlist
     AddRandomTracks,
+
+    /// Notify that a specific track has been loaded and requested to be notified about.
+    TrackNotify(Arc<Track>),
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum GSMsg {
     PopupShowDatabase,
     /// Show search for the Library, search in the provided path.
@@ -714,6 +720,9 @@ pub enum GSMsg {
     PopupCloseOkPlaylistLocate,
     PopupCloseOkEpisodeLocate,
     PopupCloseOkPodcastLocate,
+
+    PlaylistDataReady(Vec<Arc<Track>>),
+    CloseLoading,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -845,16 +854,19 @@ pub enum PCMsg {
     DLResult(PodcastDLResult),
 }
 
+/// A static-size shared string.
+pub type SharedStaticStr = Arc<str>;
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum NotificationMsg {
     /// Show a status message in the TUI.
     ///
     /// `((Title, Text))`
-    MessageShow((String, String)),
+    MessageShow((SharedStaticStr, SharedStaticStr)),
     /// Hide a status message in the TUI.
     ///
     /// `((Title, Text))`
-    MessageHide((String, String)),
+    MessageHide((SharedStaticStr, SharedStaticStr)),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

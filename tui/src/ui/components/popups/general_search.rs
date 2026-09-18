@@ -1,12 +1,13 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Result, anyhow, bail};
 use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_FILE, UNKNOWN_TITLE};
 use termusiclib::config::{SharedTuiSettings, TuiOverlay};
 use termusiclib::new_database::track_ops;
-use termusiclib::track::{DurationFmtShort, MediaTypes, Track};
+use termusiclib::track::{DurationFmtShort, Track};
 use tui_realm_stdlib::components::{Input, Table};
 use tui_realm_stdlib::prop_ext::CommonHighlight;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -22,6 +23,7 @@ use crate::ui::Model;
 use crate::ui::ids::Id;
 use crate::ui::model::UserEvent;
 use crate::ui::msg::{GSMsg, Msg};
+use crate::ui::track_id::TUITrackId;
 use crate::ui::utils::STYLE_REMOVE_REVERSE;
 
 #[derive(Component)]
@@ -353,6 +355,8 @@ impl Model {
             self.mount_error_popup(e.context("update_photo"));
         }
 
+        self.playback.set_search_cached_tracks(None);
+
         Ok(())
     }
 
@@ -421,16 +425,14 @@ impl Model {
             && let Some(file_name_text_span) = line.get(3)
         {
             let file_name = file_name_text_span.to_string();
-            for (idx, item) in self.playback.playlist.read().tracks().iter().enumerate() {
+            for (idx, id) in self.playback.playlist.read().tracks().iter().enumerate() {
                 // NOTE: i dont know if this should apply to anything other than "track_data"
-                let lower_matched = match item.inner() {
-                    MediaTypes::Track(track_data) => {
-                        track_data.path().to_string_lossy() == file_name.as_str()
+                let lower_matched = match id {
+                    TUITrackId::Track(track_data) => {
+                        track_data.to_string_lossy() == file_name.as_str()
                     }
-                    MediaTypes::Radio(radio_track_data) => radio_track_data.url() == file_name,
-                    MediaTypes::Podcast(podcast_track_data) => {
-                        podcast_track_data.url() == file_name
-                    }
+                    TUITrackId::Radio(radio_track_data) => radio_track_data == &file_name,
+                    TUITrackId::Podcast(podcast_track_data) => podcast_track_data == &file_name,
                 };
                 if lower_matched {
                     index = idx;
@@ -461,16 +463,14 @@ impl Model {
             && let Some(file_name_text_span) = line.get(3)
         {
             let file_name = file_name_text_span.to_string();
-            for (idx, item) in self.playback.playlist.read().tracks().iter().enumerate() {
+            for (idx, id) in self.playback.playlist.read().tracks().iter().enumerate() {
                 // NOTE: i dont know if this should apply to anything other than "track_data"
-                let lower_matched = match item.inner() {
-                    MediaTypes::Track(track_data) => {
-                        track_data.path().to_string_lossy() == file_name.as_str()
+                let lower_matched = match id {
+                    TUITrackId::Track(track_data) => {
+                        track_data.to_string_lossy() == file_name.as_str()
                     }
-                    MediaTypes::Radio(radio_track_data) => radio_track_data.url() == file_name,
-                    MediaTypes::Podcast(podcast_track_data) => {
-                        podcast_track_data.url() == file_name
-                    }
+                    TUITrackId::Radio(radio_track_data) => radio_track_data == &file_name,
+                    TUITrackId::Podcast(podcast_track_data) => podcast_track_data == &file_name,
                 };
                 if lower_matched {
                     index = idx;
@@ -575,30 +575,6 @@ impl Matchable for Track {
     }
 }
 
-impl Matchable for &Track {
-    fn meta_file(&self) -> Option<Cow<'_, str>> {
-        self.as_track()
-            .and_then(|v| v.path().to_str())
-            .map(Cow::from)
-    }
-
-    fn meta_title(&self) -> Option<&str> {
-        self.title()
-    }
-
-    fn meta_album(&self) -> Option<&str> {
-        self.as_track().and_then(|v| v.album())
-    }
-
-    fn meta_artist(&self) -> Option<&str> {
-        self.artist()
-    }
-
-    fn meta_duration(&self) -> Option<Duration> {
-        self.duration()
-    }
-}
-
 impl Matchable for track_ops::TrackRead {
     fn meta_file(&self) -> Option<Cow<'_, str>> {
         let pathbuf = self.as_pathbuf();
@@ -623,27 +599,53 @@ impl Matchable for track_ops::TrackRead {
     }
 }
 
-impl Matchable for &track_ops::TrackRead {
+impl<T> Matchable for Arc<T>
+where
+    T: Matchable,
+{
     fn meta_file(&self) -> Option<Cow<'_, str>> {
-        let pathbuf = self.as_pathbuf();
-        let _ = pathbuf.to_str()?;
-        Some(pathbuf.into_os_string().into_string().unwrap().into())
+        (**self).meta_file()
     }
 
     fn meta_title(&self) -> Option<&str> {
-        self.title.as_deref()
+        (**self).meta_title()
     }
 
     fn meta_album(&self) -> Option<&str> {
-        self.album.as_ref().map(|v| v.title.as_str())
+        (**self).meta_album()
     }
 
     fn meta_artist(&self) -> Option<&str> {
-        self.artist_display.as_deref()
+        (**self).meta_artist()
     }
 
     fn meta_duration(&self) -> Option<Duration> {
-        self.duration
+        (**self).meta_duration()
+    }
+}
+
+impl<T> Matchable for &T
+where
+    T: Matchable,
+{
+    fn meta_file(&self) -> Option<Cow<'_, str>> {
+        (*self).meta_file()
+    }
+
+    fn meta_title(&self) -> Option<&str> {
+        (*self).meta_title()
+    }
+
+    fn meta_album(&self) -> Option<&str> {
+        (*self).meta_album()
+    }
+
+    fn meta_artist(&self) -> Option<&str> {
+        (*self).meta_artist()
+    }
+
+    fn meta_duration(&self) -> Option<Duration> {
+        (*self).meta_duration()
     }
 }
 

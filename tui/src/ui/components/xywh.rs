@@ -113,6 +113,10 @@ impl Model {
             return Ok(());
         };
 
+        let Some(track) = track.as_track() else {
+            return Ok(());
+        };
+
         match track.inner() {
             MediaTypes::Track(track_data) => {
                 let res = match track.get_picture() {

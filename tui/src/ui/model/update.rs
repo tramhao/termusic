@@ -7,8 +7,6 @@ use termusiclib::player::{
 };
 use termusiclib::podcast::{PodcastDLResult, PodcastSyncResult};
 use termusiclib::track::MediaTypesSimple;
-use tokio::runtime::Handle;
-use tokio::time::sleep;
 use tuirealm::props::{AttrValueRef, Attribute, QueryResult};
 
 use crate::ui::ids::Id;
@@ -40,10 +38,10 @@ impl Model {
                 self.update_library(msg);
             }
             Msg::GeneralSearch(msg) => {
-                self.update_general_search(&msg);
+                self.update_general_search(msg);
             }
             Msg::Playlist(msg) => {
-                self.update_playlist(&msg);
+                self.update_playlist(msg);
             }
 
             Msg::Player(msg) => self.update_player(msg),
@@ -197,7 +195,7 @@ impl Model {
     fn update_notification_msg(&mut self, msg: NotificationMsg) {
         match msg {
             NotificationMsg::MessageShow((title, text)) => {
-                self.mount_message(title, text)
+                self.mount_message(title.to_string(), text.to_string())
                     .expect("Expect MessagePopup to mount correctly");
             }
             NotificationMsg::MessageHide((title, text)) => {
@@ -853,7 +851,7 @@ impl Model {
 
     /// Handle all [`GSMsg`] messages. Sub-function for [`update`](Self::update).
     #[allow(clippy::too_many_lines)]
-    fn update_general_search(&mut self, msg: &GSMsg) {
+    fn update_general_search(&mut self, msg: GSMsg) {
         match msg {
             GSMsg::PopupShowDatabase => {
                 self.mount_search_database();
@@ -861,9 +859,22 @@ impl Model {
             }
             GSMsg::PopupShowLibrary(path) => {
                 self.mount_search_library(path.clone());
-                self.new_library_update_search("*", path);
+                self.new_library_update_search("*", &path);
             }
             GSMsg::PopupShowPlaylist => {
+                // TODO: best option would be to have the search work on the IDs (paths, urls) while it is loading and also later at lower weight
+                self.mount_search_loading_playlist_data()
+                    .expect("Expected Search Data Loading Popup to mount correctly");
+            }
+            GSMsg::CloseLoading => {
+                self.umount_search_loading_playlist_data()
+                    .expect("Unmount Search Data Loading Popup");
+            }
+            GSMsg::PlaylistDataReady(data) => {
+                self.playback.set_search_cached_tracks(Some(data));
+                self.umount_search_loading_playlist_data()
+                    .expect("Unmount Search Data Loading Popup");
+
                 self.mount_search_playlist();
                 self.playlist_update_search("*");
             }
@@ -876,11 +887,11 @@ impl Model {
                 self.mount_search_podcast();
                 self.podcast_update_search_podcast("*");
             }
-            GSMsg::PopupUpdateLibrary(input, path) => self.new_library_update_search(input, path),
+            GSMsg::PopupUpdateLibrary(input, path) => self.new_library_update_search(&input, &path),
 
-            GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(input),
+            GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(&input),
 
-            GSMsg::PopupUpdateDatabase(input) => self.database_update_search(input),
+            GSMsg::PopupUpdateDatabase(input) => self.database_update_search(&input),
 
             GSMsg::InputBlur => {
                 if self.app.mounted(&Id::GeneralSearchTable) {
@@ -931,8 +942,8 @@ impl Model {
                 let _ = self.umount_general_search();
             }
 
-            GSMsg::PopupUpdateEpisode(input) => self.podcast_update_search_episode(input),
-            GSMsg::PopupUpdatePodcast(input) => self.podcast_update_search_podcast(input),
+            GSMsg::PopupUpdateEpisode(input) => self.podcast_update_search_episode(&input),
+            GSMsg::PopupUpdatePodcast(input) => self.podcast_update_search_podcast(&input),
             GSMsg::PopupCloseOkPodcastLocate => {
                 if let Err(e) = self.general_search_after_podcast_select() {
                     self.mount_error_popup(e.context("general search after podcast select"));
@@ -965,15 +976,15 @@ impl Model {
     }
 
     /// Handle all [`PLMsg`] messages. Sub-function for [`update`](Self::update).
-    fn update_playlist(&mut self, msg: &PLMsg) {
+    fn update_playlist(&mut self, msg: PLMsg) {
         match msg {
             PLMsg::Add(current_node) => {
-                if let Err(e) = self.playlist_add(current_node) {
+                if let Err(e) = self.playlist_add(&current_node) {
                     self.mount_error_popup(e.context("playlist add"));
                 }
             }
             PLMsg::Delete(index) => {
-                self.playlist_delete_item(*index);
+                self.playlist_delete_item(index);
             }
             PLMsg::DeleteAll => {
                 self.playlist_clear();
@@ -982,7 +993,7 @@ impl Model {
                 self.playlist_shuffle();
             }
             PLMsg::PlaySelected(index) => {
-                self.playlist_play_selected(*index);
+                self.playlist_play_selected(index);
             }
             PLMsg::LoopModeCycle => {
                 self.command(TuiCmd::CycleLoop);
@@ -1000,10 +1011,10 @@ impl Model {
                 self.player_previous();
             }
             PLMsg::SwapDown(index) => {
-                self.playlist_swap_down(*index);
+                self.playlist_swap_down(index);
             }
             PLMsg::SwapUp(index) => {
-                self.playlist_swap_up(*index);
+                self.playlist_swap_up(index);
             }
             PLMsg::AddRandomAlbum => {
                 self.playlist_add_random_album();
@@ -1018,46 +1029,43 @@ impl Model {
                 }
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
             },
+
+            PLMsg::TrackNotify(track) => {
+                if self.playback.handle_loaded_current_track(track) {
+                    self.lyric_update_title();
+                    // we dont care if the message was not loaded anymore.
+                    let _ = self.umount_message(Self::CURRENTLY_PLAYING_TXT, Self::LOADING_TXT);
+                    self.update_playing_song();
+                    if let Err(err) = self.update_photo() {
+                        error!("Updating photo failed: {err:#?}");
+                    }
+                }
+            }
         }
     }
+
+    const CURRENTLY_PLAYING_TXT: &str = "Currently Playing";
+    const LOADING_TXT: &str = "Loading...";
 
     // show a popup for playing song
     pub fn update_playing_song(&mut self) {
         if let Some(track) = self.playback.current_track() {
+            // Updated from "Loading..." by calling the function again when data is ready. (and unsetting the old value beforehand)
+            let track = track.as_track();
             if self.layout == TermusicLayout::Podcast {
-                let title = track.title().unwrap_or("Unknown Episode");
-                self.update_show_message_timeout("Currently Playing", title, None);
+                let title = track.map_or(Self::LOADING_TXT, |track| {
+                    track.title().unwrap_or("Unknown Episode")
+                });
+                self.update_show_message_timeout(Self::CURRENTLY_PLAYING_TXT, title, None);
                 return;
             }
-            let name = track.title().map_or_else(|| track.id_str(), Into::into);
-            self.update_show_message_timeout("Currently Playing", &name, None);
+            let name = track.map_or(Self::LOADING_TXT.into(), |track| {
+                track.title().map_or_else(|| track.id_str(), Into::into)
+            });
+            self.update_show_message_timeout(Self::CURRENTLY_PLAYING_TXT, name, None);
 
             self.playlist_sync();
         }
-    }
-
-    /// Show a message with a `title` and `text`, and hide it again after `time_out` or 10 seconds.
-    ///
-    /// This function requires to run in a tokio context.
-    pub fn update_show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
-        let title_string = title.to_string();
-        let text_string = text.to_string();
-        let tx = self.tx_to_main.clone();
-        let delay = time_out.unwrap_or(10);
-
-        Handle::current().spawn(async move {
-            let _ = tx.send(Msg::Notification(NotificationMsg::MessageShow((
-                title_string.clone(),
-                text_string.clone(),
-            ))));
-
-            sleep(Duration::from_secs(delay)).await;
-
-            let _ = tx.send(Msg::Notification(NotificationMsg::MessageHide((
-                title_string,
-                text_string,
-            ))));
-        });
     }
 
     pub fn update_layout_for_current_track(&mut self) {
@@ -1133,10 +1141,7 @@ impl Model {
             ServerReqResponse::FullPlaylist(playlist_tracks) => {
                 info!("Processing Playlist from server");
                 let current_track_index = playlist_tracks.current_track_index;
-                if let Err(err) = self
-                    .playback
-                    .load_from_grpc(playlist_tracks, &self.podcast.db_podcast)
-                {
+                if let Err(err) = self.playback.load_from_grpc(playlist_tracks) {
                     self.mount_error_popup(err);
                 }
 

@@ -37,7 +37,7 @@ use tuirealm::ratatui::Frame;
 use tuirealm::ratatui::layout::Rect;
 use tuirealm::state::State;
 
-use crate::ui::model::UserEvent;
+use crate::ui::model::{DownloadTracker, UserEvent};
 
 #[derive(Component)]
 pub struct LabelGeneric {
@@ -142,10 +142,12 @@ impl Component for LabelSpan {
 #[derive(Component)]
 pub struct DownloadSpinner {
     component: Spinner,
+
+    tracker: DownloadTracker,
 }
 
 impl DownloadSpinner {
-    pub fn new(config: &TuiOverlay) -> Self {
+    pub fn new(config: &TuiOverlay, tracker: DownloadTracker) -> Self {
         Self {
             component: Spinner::default()
                 .foreground(config.settings.theme.library_highlight())
@@ -154,13 +156,14 @@ impl DownloadSpinner {
                 // .sequence("▉▊▋▌▍▎▏▎▍▌▋▊▉"),
                 .sequence("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
                 .manual_step(),
+            tracker,
         }
     }
 }
 
 impl AppComponent<Msg, UserEvent> for DownloadSpinner {
     fn on(&mut self, ev: &Event<UserEvent>) -> Option<Msg> {
-        if matches!(ev, Event::Tick) {
+        if matches!(ev, Event::Tick) && self.tracker.visible() {
             self.component.states.step();
             Some(Msg::ForceRedraw)
         } else {

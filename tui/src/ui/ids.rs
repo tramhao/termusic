@@ -13,6 +13,7 @@ pub enum Id {
     ErrorPopup,
     GeneralSearchInput,
     GeneralSearchTable,
+    GeneralSearchDataLoading,
     GlobalListener,
     HelpPopup,
     Label,

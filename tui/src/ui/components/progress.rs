@@ -120,13 +120,20 @@ impl Model {
                     player.speed,
                     player.gapless,
                 ),
-                MediaTypesSimple::Podcast => title_format(
-                    self.playback.status(),
-                    Some(track.title().unwrap_or("Unknown title")),
-                    player.volume,
-                    player.speed,
-                    player.gapless,
-                ),
+                MediaTypesSimple::Podcast => {
+                    let title = track.as_track().map_or_else(
+                        || "Loading...",
+                        |track| track.title().unwrap_or("Unknown title"),
+                    );
+
+                    title_format(
+                        self.playback.status(),
+                        Some(title),
+                        player.volume,
+                        player.speed,
+                        player.gapless,
+                    )
+                }
             }
         } else {
             title_format(

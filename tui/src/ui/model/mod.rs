@@ -32,17 +32,22 @@ use super::tui_cmd::TuiCmd;
 use crate::CombinedSettings;
 use crate::ui::ids::Id;
 use crate::ui::model::ports::stream_events::{PortStreamEvents, WrappedStreamEvents};
+use crate::ui::model::tmp_trackloader::TrackLoadActor;
 use crate::ui::model::youtube_options::YoutubeOptions;
 use crate::ui::msg::{ConfigEditorLayout, Msg, SearchCriteria};
+use crate::ui::track_cache::{SharedTrackCache, TrackCache};
+use crate::ui::track_id::TUITrackId;
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 use crate::ui::ueberzug::UeInstance;
 pub use download_tracker::DownloadTracker;
 pub use playlist::TUIPlaylist;
+pub use tmp_trackloader::{TMPTrackLoadMsg, TrackLoadActorSender};
 pub use user_events::UserEvent;
 
 mod download_tracker;
 mod playlist;
 mod ports;
+mod tmp_trackloader;
 mod update;
 mod user_events;
 mod view;
@@ -107,6 +112,39 @@ pub struct ConfigEditorData {
     pub config_changed: bool,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum TrackType {
+    Loading(TUITrackId),
+    Present(Arc<Track>),
+}
+
+impl TrackType {
+    /// Get the [`MediaTypesSimple`] type, regardless if loading or present.
+    pub fn media_type(&self) -> MediaTypesSimple {
+        match self {
+            TrackType::Loading(tuitrack_id) => tuitrack_id.media_type(),
+            TrackType::Present(track) => track.media_type(),
+        }
+    }
+
+    /// Get the current value as a [`TUITrackId`], regardless if loading or present.
+    pub fn as_track_id(&self) -> Result<TUITrackId> {
+        match self {
+            TrackType::Loading(tuitrack_id) => Ok(tuitrack_id.clone()),
+            TrackType::Present(track) => TUITrackId::from_track(track),
+        }
+    }
+
+    /// Try to get the present, loaded [`Track`].
+    pub fn as_track(&self) -> Option<&Track> {
+        if let Self::Present(val) = self {
+            Some(val)
+        } else {
+            None
+        }
+    }
+}
+
 /// Information about the playback status
 #[derive(Debug, Clone)]
 pub struct Playback {
@@ -115,19 +153,28 @@ pub struct Playback {
     /// The current Running Status like Playing / Paused
     status: RunningStatus,
     /// The current track, if there is one. Does not need to be in the playlist.
-    current_track: Option<Track>,
+    current_track: Option<TrackType>,
     current_track_pos: Duration,
+
+    cache: SharedTrackCache,
+
+    /// Cache for the search to search through fully loaded tracks.
+    search_tracks_cache: Option<Vec<Arc<Track>>>,
 }
 
 impl Playback {
-    fn new() -> Self {
-        let playlist = Arc::new(RwLock::new(playlist::TUIPlaylist::default()));
+    fn new(cache: SharedTrackCache, tx: TrackLoadActorSender) -> Self {
+        let playlist = Arc::new(RwLock::new(playlist::TUIPlaylist::new(tx)));
 
         Self {
             playlist,
             status: RunningStatus::default(),
             current_track: None,
             current_track_pos: Duration::ZERO,
+
+            cache,
+
+            search_tracks_cache: None,
         }
     }
 
@@ -152,28 +199,46 @@ impl Playback {
     }
 
     #[must_use]
-    pub fn current_track(&self) -> Option<&Track> {
+    pub fn current_track(&self) -> Option<&TrackType> {
         self.current_track.as_ref()
-    }
-
-    #[must_use]
-    #[expect(dead_code)]
-    pub fn current_track_mut(&mut self) -> Option<&mut Track> {
-        self.current_track.as_mut()
     }
 
     pub fn clear_current_track(&mut self) {
         self.current_track.take();
     }
 
-    pub fn set_current_track(&mut self, track: Option<Track>) {
-        self.current_track = track;
+    /// Get a reference to the Shared Track Cache.
+    pub fn get_cache(&self) -> SharedTrackCache {
+        self.cache.clone()
     }
 
     /// Set the current track from the playlist, if there is one
     pub fn set_current_track_from_playlist(&mut self) {
-        let track = self.playlist.read().current_track().cloned();
-        self.set_current_track(track);
+        let playlist = self.playlist.read();
+        let id = playlist.current_track();
+
+        let track = id.map(|id| {
+            self.cache
+                .write()
+                .try_get_track_notify(id)
+                .map_or(TrackType::Loading(id.clone()), TrackType::Present)
+        });
+
+        self.current_track = track;
+    }
+
+    /// Try to set the `current_track` to [`TrackType::Present`], if the ids match.
+    ///
+    /// Returns `true` if the value was successfully applied.
+    pub fn handle_loaded_current_track(&mut self, track: Arc<Track>) -> bool {
+        if let Some(TrackType::Loading(id)) = &self.current_track
+            && *id == TUITrackId::from_track(&track).expect("Expected id to be valid!")
+        {
+            self.current_track = Some(TrackType::Present(track));
+            true
+        } else {
+            false
+        }
     }
 
     pub fn current_track_pos(&self) -> Duration {
@@ -193,11 +258,7 @@ impl Playback {
     /// - when converting from u64 grpc values to usize fails
     /// - when there is no track-id
     /// - when reading a Track from path or podcast database fails
-    pub fn load_from_grpc(
-        &mut self,
-        info: PlaylistState,
-        podcast_db: &DBPod,
-    ) -> anyhow::Result<()> {
+    pub fn load_from_grpc(&mut self, info: PlaylistState) -> anyhow::Result<()> {
         let current_track_index = usize::try_from(info.current_track_index)
             .context("convert current_track_index(u64) to usize")?;
         let mut playlist_items = Vec::with_capacity(info.tracks.len());
@@ -215,16 +276,9 @@ impl Playback {
                 bail!("Track does not have a id, which is required to load!");
             };
 
-            let track = match PlaylistTrackSource::try_from(id)? {
-                PlaylistTrackSource::Path(v) => Track::read_track_from_path(v)?,
-                PlaylistTrackSource::Url(v) => Track::new_radio(&v),
-                PlaylistTrackSource::PodcastUrl(v) => {
-                    let episode = podcast_db.get_episode_by_url(&v)?;
-                    Track::from_podcast_episode(&episode)
-                }
-            };
+            let id = TUITrackId::from_track_source(PlaylistTrackSource::try_from(id)?)?;
 
-            playlist_items.push(track);
+            playlist_items.push(id);
         }
 
         let mut playlist = self.playlist.write();
@@ -242,6 +296,14 @@ impl Playback {
         self.set_current_track_from_playlist();
 
         Ok(())
+    }
+
+    pub fn set_search_cached_tracks(&mut self, data: Option<Vec<Arc<Track>>>) {
+        self.search_tracks_cache = data;
+    }
+
+    pub fn get_search_cached_tracks(&self) -> Option<&[Arc<Track>]> {
+        self.search_tracks_cache.as_deref()
     }
 }
 
@@ -428,6 +490,19 @@ impl Model {
 
         let download_tracker = DownloadTracker::default();
 
+        let (tx_trackload, rx_trackload) = unbounded_channel();
+        let track_cache = TrackCache::new_shared(tx_trackload.clone());
+
+        let jh = TrackLoadActor::start_actor(
+            rx_trackload,
+            tx_to_main.clone(),
+            track_cache.clone(),
+            db_podcast.clone(),
+            // we just use the taskpool we have as a global cancel
+            taskpool.get_cancel_token(),
+        );
+        drop(jh);
+
         let mut model = Self {
             app,
             quit: false,
@@ -465,7 +540,7 @@ impl Model {
             tx_to_main,
             download_tracker,
             current_track_lyric: None,
-            playback: Playback::new(),
+            playback: Playback::new(track_cache, tx_trackload),
             cmd_to_server_tx,
             xywh,
         };
