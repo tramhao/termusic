@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::Write as _;
 use std::path::Path;
 
@@ -296,27 +297,30 @@ impl TUIPlaylist {
             return;
         }
 
-        if self.last_cache_idx.is_none() {
+        let range = if self.last_cache_idx.is_none() {
             let until = (current_idx + PINNED_TRACKS_LOAD.get()).min(self.tracks.len());
-            let range = self.tracks[current_idx..until].to_vec();
-            let _ = self.cache_tx.send(TMPTrackLoadMsg::PinnedVec(range));
+            current_idx..until
         } else if let Some(last_idx) = self.last_cache_idx.as_ref() {
             let max = last_idx.max(&current_idx);
             let min = last_idx.min(&current_idx);
 
             if max - min > PINNED_TRACKS_MIN.get() {
-                let range = if *max == current_idx {
+                if *max == current_idx {
                     // direction is increasing
                     current_idx..(current_idx + PINNED_TRACKS_LOAD.get()).min(self.tracks.len())
                 } else {
                     // direction is decreasing
                     current_idx - PINNED_TRACKS_LOAD.get()..current_idx
-                };
-
-                let range = self.tracks[range].to_vec();
-                let _ = self.request_data(TMPTrackLoadMsg::PinnedVec(range));
+                }
+            } else {
+                return;
             }
-        }
+        } else {
+            return;
+        };
+
+        let tracks = HashSet::from_iter(self.tracks[range].iter().map(Clone::clone));
+        let _ = self.cache_tx.send(TMPTrackLoadMsg::PinnedVec(tracks));
     }
 
     /// Send the given message to the Track loader.
