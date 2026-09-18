@@ -26,7 +26,7 @@ pub enum TMPTrackLoadMsg {
     /// If the `bool` is `true`, send a [`Msg::Playlist`] with [`PLMsg::TrackNotify`] will be send.
     /// If the `bool` is `false`, send a [`Msg::ForceRedraw`].
     Track(TUITrackId, bool),
-    PinnedVec(Vec<TUITrackId>),
+    PinnedVec(HashSet<TUITrackId>),
 
     /// Load data from cache, or request from source, but never cache the new data.
     /// Used for example for search.
@@ -151,7 +151,7 @@ impl TrackLoadActor {
     }
 
     /// Handle the [`PinnedVec`](TMPTrackLoadMsg::PinnedVec) message.
-    async fn load_pinned_tracks(&self, ids: Vec<TUITrackId>) -> Result<()> {
+    async fn load_pinned_tracks(&self, ids: HashSet<TUITrackId>) -> Result<()> {
         let mut set = JoinSet::new();
 
         // a simple "drop(cache)" does not satisfy clippy here, so a block is used
