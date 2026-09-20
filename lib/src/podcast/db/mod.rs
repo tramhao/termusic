@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use ahash::AHashMap;
@@ -7,6 +8,7 @@ use chrono::{DateTime, Utc};
 use episode_db::{EpisodeDB, EpisodeDBInsertable};
 use file_db::{FileDB, FileDBInsertable};
 use indoc::indoc;
+use parking_lot::Mutex;
 use rusqlite::{Connection, params};
 
 use super::{Episode, EpisodeNoId, Podcast, PodcastNoId, RE_ARTICLES};
@@ -29,10 +31,10 @@ pub struct SyncResult {
 
 /// Struct holding a sqlite database connection, with methods to interact
 /// with this connection.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Database {
     path: PathBuf,
-    conn: Connection,
+    conn: Arc<Mutex<Connection>>,
 }
 
 impl Database {
@@ -57,7 +59,7 @@ impl Database {
 
         Ok(Database {
             path: db_path,
-            conn,
+            conn: Arc::new(Mutex::new(conn)),
         })
     }
 
@@ -96,7 +98,7 @@ impl Database {
 
     /// Inserts a filepath to a downloaded episode.
     pub fn insert_file(&self, episode_id: PodcastDBId, path: &Path) -> Result<()> {
-        FileDBInsertable::new(episode_id, path).insert_file(&self.conn)?;
+        FileDBInsertable::new(episode_id, path).insert_file(&self.conn.lock())?;
 
         Ok(())
     }
@@ -104,21 +106,21 @@ impl Database {
     /// Removes a file listing for an episode from the database when the
     /// user has chosen to delete the file.
     pub fn remove_file(&self, episode_id: PodcastDBId) -> Result<()> {
-        file_db::delete_file(episode_id, &self.conn)?;
+        file_db::delete_file(episode_id, &self.conn.lock())?;
 
         Ok(())
     }
 
     /// Removes all file listings for the selected episode ids.
     pub fn remove_files(&self, episode_ids: &[PodcastDBId]) -> Result<()> {
-        file_db::delete_files(episode_ids, &self.conn)?;
+        file_db::delete_files(episode_ids, &self.conn.lock())?;
 
         Ok(())
     }
 
     /// Removes a podcast, all episodes, and files from the database.
     pub fn remove_podcast(&self, podcast_id: PodcastDBId) -> Result<()> {
-        podcast_db::delete_podcast(podcast_id, &self.conn)?;
+        podcast_db::delete_podcast(podcast_id, &self.conn.lock())?;
 
         Ok(())
     }
@@ -127,7 +129,7 @@ impl Database {
     /// changed if necessary, and episodes are updated (modified episodes
     /// are updated, new episodes are inserted).
     pub fn update_podcast(&self, pod_id: PodcastDBId, podcast: &PodcastNoId) -> Result<SyncResult> {
-        PodcastDBInsertable::from(podcast).update_podcast(pod_id, &self.conn)?;
+        PodcastDBInsertable::from(podcast).update_podcast(pod_id, &self.conn.lock())?;
 
         let result = self.update_episodes(pod_id, &podcast.episodes)?;
         Ok(result)
@@ -242,9 +244,8 @@ impl Database {
 
     /// Updates an episode to mark it as played or unplayed.
     pub fn set_played_status(&self, episode_id: PodcastDBId, played: bool) -> Result<()> {
-        let mut stmt = self
-            .conn
-            .prepare_cached("UPDATE episodes SET played = ? WHERE id = ?;")?;
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare_cached("UPDATE episodes SET played = ? WHERE id = ?;")?;
         stmt.execute(params![played, episode_id])?;
         Ok(())
     }
@@ -255,7 +256,7 @@ impl Database {
         episode_id_vec: &[PodcastDBId],
         played: bool,
     ) -> Result<()> {
-        let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
+        let mut conn = self.conn.lock();
         let tx = conn.transaction()?;
 
         for episode_id in episode_id_vec {
@@ -270,9 +271,8 @@ impl Database {
     /// episodes need to stay in the database so that they don't get
     /// re-added when the podcast is synced again.
     pub fn hide_episode(&self, episode_id: PodcastDBId, hide: bool) -> Result<()> {
-        let mut stmt = self
-            .conn
-            .prepare_cached("UPDATE episodes SET hidden = ? WHERE id = ?;")?;
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare_cached("UPDATE episodes SET hidden = ? WHERE id = ?;")?;
         stmt.execute(params![hide, episode_id])?;
         Ok(())
     }
@@ -280,12 +280,13 @@ impl Database {
     /// Generates list of all podcasts in database.
     /// TODO: This should probably use a JOIN statement instead.
     pub fn get_podcasts(&self) -> Result<Vec<Podcast>> {
-        let mut stmt = self.conn.prepare_cached("SELECT * FROM podcasts;")?;
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare_cached("SELECT * FROM podcasts;")?;
         let podcasts = stmt
             .query_map([], PodcastDB::try_from_row_named)?
             .flatten()
             .map(|podcast| {
-                let episodes = match self.get_episodes(podcast.id, false) {
+                let episodes = match Self::get_episodes_internal(&conn, podcast.id, false) {
                     Ok(ep_list) => Ok(ep_list),
                     Err(_) => Err(rusqlite::Error::QueryReturnedNoRows),
                 }?;
@@ -313,15 +314,24 @@ impl Database {
 
     /// Generates list of episodes for a given podcast.
     pub fn get_episodes(&self, pod_id: PodcastDBId, include_hidden: bool) -> Result<Vec<Episode>> {
+        Self::get_episodes_internal(&self.conn.lock(), pod_id, include_hidden)
+    }
+
+    /// Internal function to get all episodes, with connection sharing.
+    fn get_episodes_internal(
+        conn: &Connection,
+        pod_id: PodcastDBId,
+        include_hidden: bool,
+    ) -> Result<Vec<Episode>> {
         let mut stmt = if include_hidden {
-            self.conn.prepare_cached(indoc! {
+            conn.prepare_cached(indoc! {
                 "SELECT episodes.id as epid, files.id as fileid, * FROM episodes
                 LEFT JOIN files ON episodes.id = files.episode_id
                 WHERE episodes.podcast_id = ?
                 ORDER BY pubdate DESC;
             "})?
         } else {
-            self.conn.prepare_cached(indoc! {"
+            conn.prepare_cached(indoc! {"
                 SELECT episodes.id as epid, files.id as fileid, * FROM episodes
                 LEFT JOIN files ON episodes.id = files.episode_id
                 WHERE episodes.podcast_id = ?
@@ -358,7 +368,8 @@ impl Database {
 
     /// Find a single Episode by its Url.
     pub fn get_episode_by_url(&self, ep_uri: &str) -> Result<Episode> {
-        let mut stmt = self.conn.prepare_cached(indoc! {"
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare_cached(indoc! {"
             SELECT episodes.id as epid, files.id as fileid, * FROM episodes
             LEFT JOIN files ON episodes.id = files.episode_id
             WHERE episodes.url = ?
@@ -393,9 +404,10 @@ impl Database {
 
     /// Deletes all rows in all tables
     pub fn clear_db(&self) -> Result<()> {
-        self.conn.execute("DELETE FROM files;", [])?;
-        self.conn.execute("DELETE FROM episodes;", [])?;
-        self.conn.execute("DELETE FROM podcasts;", [])?;
+        let conn = self.conn.lock();
+        conn.execute("DELETE FROM files;", [])?;
+        conn.execute("DELETE FROM episodes;", [])?;
+        conn.execute("DELETE FROM podcasts;", [])?;
         Ok(())
     }
 
@@ -405,13 +417,12 @@ impl Database {
             .ok_or(anyhow!("Track is not a Podcast track!"))?;
         let query = "SELECT last_position FROM episodes WHERE url = ?1";
 
-        let last_position = self
-            .conn
-            .query_row(query, params![podcast_data.url()], |row| {
-                let last_position_i64: i64 = row.get(0)?;
-                // simply cast as we when we store, we also cast to "i64"
-                Ok(Duration::from_secs(last_position_i64.cast_unsigned()))
-            })?;
+        let conn = self.conn.lock();
+        let last_position = conn.query_row(query, params![podcast_data.url()], |row| {
+            let last_position_i64: i64 = row.get(0)?;
+            // simply cast as we when we store, we also cast to "i64"
+            Ok(Duration::from_secs(last_position_i64.cast_unsigned()))
+        })?;
         // info!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
@@ -425,12 +436,12 @@ impl Database {
             .as_podcast()
             .ok_or(anyhow!("Track is not a Podcast track!"))?;
         let query = "UPDATE episodes SET last_position = ?1 WHERE url = ?2";
-        self.conn
-            .execute(
-                query,
-                params![last_position.as_secs().cast_signed(), podcast_data.url()],
-            )
-            .context("update last position failed.")?;
+        let conn = self.conn.lock();
+        conn.execute(
+            query,
+            params![last_position.as_secs().cast_signed(), podcast_data.url()],
+        )
+        .context("update last position failed.")?;
         // error!("set last position as {}", last_position.as_secs());
 
         Ok(())
