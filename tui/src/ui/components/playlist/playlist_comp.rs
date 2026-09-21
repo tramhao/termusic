@@ -240,9 +240,9 @@ impl Component for Playlist {
         // Only try to adjust the cache capacity downwards if there is at least a MIN_DIFF_CACHE slot difference.
         // Always grow the cache size if the area is bigger!
         // Also never go below the MIN_CACHE_SIZE.
-        if area_as_usize.abs_diff(cache.capacity().get()) > MIN_DIFF_CACHE.get()
-            || area_as_usize > cache.capacity().get()
-                && area_as_usize > TrackCache::MIN_CACHE_SIZE.get()
+        if (area_as_usize.abs_diff(cache.capacity().get()) > MIN_DIFF_CACHE.get()
+            || area_as_usize > cache.capacity().get())
+            && area_as_usize > TrackCache::MIN_CACHE_SIZE.get()
         {
             // This should never panic as "TrackCache::MIN_CACHE_SIZE" is a NonZeroUsize itself, so this branch can never happen if 0
             let new_cap = NonZeroUsize::new(area_as_usize).expect("Expected MIN Check to not fail");
