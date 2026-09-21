@@ -7,6 +7,7 @@ use tuirealm::application::PollStrategy;
 
 use crate::CombinedSettings;
 use crate::clients::StreamEventsConsumer;
+use crate::ui::msg::Msg;
 use crate::ui::server_req_actor::ServerRequestActor;
 use model::Model;
 use tui_cmd::PlaylistCmd;
@@ -17,6 +18,8 @@ mod ids;
 pub mod model;
 mod msg;
 mod server_req_actor;
+mod track_cache;
+mod track_id;
 mod tui_cmd;
 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
 mod ueberzug;
@@ -70,7 +73,19 @@ impl UI {
                 Ok(messages) if !messages.is_empty() => {
                     // NOTE: redraw if at least one msg has been processed
                     self.model.redraw = true;
+
+                    let mut last_was_redraw = false;
+
                     for msg in messages {
+                        // Skip repeated ForceRedraw messages, as it is not necessary to run them again in the same cycle.
+                        // This for example can happen at TUI startup when a lot of individual tracks got loaded.
+                        if msg == Msg::ForceRedraw {
+                            if last_was_redraw {
+                                continue;
+                            }
+                            last_was_redraw = true;
+                        }
+
                         self.model.update(msg);
                     }
                 }

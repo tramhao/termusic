@@ -862,6 +862,19 @@ impl Model {
                 self.new_library_update_search("*", &path);
             }
             GSMsg::PopupShowPlaylist => {
+                // TODO: best option would be to have the search work on the IDs (paths, urls) while it is loading and also later at lower weight
+                self.mount_search_loading_playlist_data()
+                    .expect("Expected Search Data Loading Popup to mount correctly");
+            }
+            GSMsg::CloseLoading => {
+                self.umount_search_loading_playlist_data()
+                    .expect("Unmount Search Data Loading Popup");
+            }
+            GSMsg::PlaylistDataReady(data) => {
+                self.playback.set_search_cached_tracks(Some(data));
+                self.umount_search_loading_playlist_data()
+                    .expect("Unmount Search Data Loading Popup");
+
                 self.mount_search_playlist();
                 self.playlist_update_search("*");
             }
@@ -1016,19 +1029,40 @@ impl Model {
                 }
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
             },
+
+            PLMsg::TrackNotify(track) => {
+                if self.playback.handle_loaded_current_track(track) {
+                    self.lyric_update_title();
+                    // we dont care if the message was not loaded anymore.
+                    let _ = self.umount_message(Self::CURRENTLY_PLAYING_TXT, Self::LOADING_TXT);
+                    self.update_playing_song();
+                    if let Err(err) = self.update_photo() {
+                        error!("Updating photo failed: {err:#?}");
+                    }
+                }
+            }
         }
     }
+
+    const CURRENTLY_PLAYING_TXT: &str = "Currently Playing";
+    const LOADING_TXT: &str = "Loading...";
 
     // show a popup for playing song
     pub fn update_playing_song(&mut self) {
         if let Some(track) = self.playback.current_track() {
+            // Updated from "Loading..." by calling the function again when data is ready. (and unsetting the old value beforehand)
+            let track = track.as_track();
             if self.layout == TermusicLayout::Podcast {
-                let title = track.title().unwrap_or("Unknown Episode");
-                self.update_show_message_timeout("Currently Playing", title, None);
+                let title = track.map_or(Self::LOADING_TXT, |track| {
+                    track.title().unwrap_or("Unknown Episode")
+                });
+                self.update_show_message_timeout(Self::CURRENTLY_PLAYING_TXT, title, None);
                 return;
             }
-            let name = track.title().map_or_else(|| track.id_str(), Into::into);
-            self.update_show_message_timeout("Currently Playing", name, None);
+            let name = track.map_or(Self::LOADING_TXT.into(), |track| {
+                track.title().map_or_else(|| track.id_str(), Into::into)
+            });
+            self.update_show_message_timeout(Self::CURRENTLY_PLAYING_TXT, name, None);
 
             self.playlist_sync();
         }
@@ -1107,10 +1141,7 @@ impl Model {
             ServerReqResponse::FullPlaylist(playlist_tracks) => {
                 info!("Processing Playlist from server");
                 let current_track_index = playlist_tracks.current_track_index;
-                if let Err(err) = self
-                    .playback
-                    .load_from_grpc(playlist_tracks, &self.podcast.db_podcast)
-                {
+                if let Err(err) = self.playback.load_from_grpc(playlist_tracks) {
                     self.mount_error_popup(err);
                 }
 

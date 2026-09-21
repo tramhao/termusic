@@ -6,7 +6,7 @@ use termusiclib::common::const_unknown::{UNKNOWN_ARTIST, UNKNOWN_TITLE};
 use termusiclib::config::SharedTuiSettings;
 use termusiclib::player::RunningStatus;
 use termusiclib::podcast::episode::Episode;
-use termusiclib::track::{MediaTypes, MediaTypesSimple, Track};
+use termusiclib::track::{MediaTypesSimple, Track};
 use tui_realm_stdlib::components::Textarea;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::component::{AppComponent, Component};
@@ -19,8 +19,9 @@ use tuirealm::state::{State, StateValue};
 
 use super::TETrack;
 use crate::ui::ids::Id;
-use crate::ui::model::{ExtraLyricData, UserEvent};
+use crate::ui::model::{ExtraLyricData, TrackType, UserEvent};
 use crate::ui::msg::{LyricMsg, Msg};
+use crate::ui::track_id::TUITrackId;
 use crate::ui::{Model, model::TermusicLayout};
 
 /// Regex for finding <br/> tags -- also captures any surrounding
@@ -153,7 +154,12 @@ impl Model {
         info!("Forcing reload of lyrics");
         self.current_track_lyric.take();
 
-        if let Some(track) = self.playback.current_track().and_then(|v| v.as_track()) {
+        if let Some(track) = self
+            .playback
+            .current_track()
+            .and_then(|v| v.as_track())
+            .and_then(|v| v.as_track())
+        {
             Track::unset_cache_for_path(track.path());
         }
 
@@ -165,9 +171,8 @@ impl Model {
         let mut pod_title = String::new();
         let mut ep_for_lyric = None;
         if let Some(track) = self.playback.current_track()
-            && let Some(podcast_data) = track.as_podcast()
+            && let TUITrackId::Podcast(url) = track.as_track_id().expect("Properly formatted id")
         {
-            let url = podcast_data.url();
             'outer: for pod in &self.podcast.podcasts {
                 for ep in &pod.episodes {
                     if ep.url == url {
@@ -292,6 +297,9 @@ impl Model {
             if MediaTypesSimple::LiveRadio == track.media_type() {
                 return;
             }
+            let Some(track) = track.as_track() else {
+                return;
+            };
 
             if self
                 .current_track_lyric
@@ -394,7 +402,8 @@ impl Model {
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
         let time_pos = self.playback.current_track_pos();
-        if let Some(track) = self.playback.current_track() {
+        // Note: this currently discards any offset requests if the track is not yet loaded, which should not happen due to preload
+        if let Some(track) = self.playback.current_track().and_then(TrackType::as_track) {
             let Ok(mut te_track) = TETrack::try_from(track) else {
                 debug!("Could not adjust delay because it is not a music track!");
                 return;
@@ -440,14 +449,19 @@ impl Model {
 
         let track = track.unwrap();
 
-        let lyric_title = match track.inner() {
-            MediaTypes::Track(_track_data) => {
-                let artist = track.artist().unwrap_or(UNKNOWN_ARTIST);
-                let title = track.title().unwrap_or(UNKNOWN_TITLE);
+        let lyric_title = match track.media_type() {
+            MediaTypesSimple::Music => {
+                let track = track.as_track();
+                let artist = track.map_or("Loading...", |track| {
+                    track.artist().unwrap_or(UNKNOWN_ARTIST)
+                });
+                // Updated from "Loading..." by calling the function again when data is ready.
+                let title =
+                    track.map_or("Loading...", |track| track.title().unwrap_or(UNKNOWN_TITLE));
                 format!(" Lyrics of {artist:^.20} - {title:^.20} ")
             }
-            MediaTypes::Radio(_radio_track_data) => " Live Radio ".to_string(),
-            MediaTypes::Podcast(_podcast_track_data) => Self::LYRIC_PODCAST_TITLE.to_string(),
+            MediaTypesSimple::LiveRadio => " Live Radio ".to_string(),
+            MediaTypesSimple::Podcast => Self::LYRIC_PODCAST_TITLE.to_string(),
         };
         self.lyric_title_set(lyric_title);
     }

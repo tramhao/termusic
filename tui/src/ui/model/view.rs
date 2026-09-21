@@ -55,6 +55,7 @@ impl Model {
             Box::new(Playlist::new(
                 self.config_tui.clone(),
                 self.playback.playlist.clone(),
+                self.playback.get_cache(),
             )),
             Vec::new(),
         )?;
@@ -301,6 +302,10 @@ impl Model {
             let popup = draw_area_in_absolute(f.area(), 60, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::DatabaseAddConfirmPopup, f, popup);
+        } else if app.mounted(&Id::GeneralSearchDataLoading) {
+            let popup = draw_area_in_absolute(f.area(), 65, 4);
+            f.render_widget(Clear, popup);
+            app.view(&Id::GeneralSearchDataLoading, f, popup);
         }
         if app.mounted(&Id::MessagePopup) {
             let popup = draw_area_top_right_absolute(f.area(), 25, 4);
