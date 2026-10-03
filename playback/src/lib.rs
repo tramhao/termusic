@@ -23,11 +23,13 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::{broadcast, oneshot};
 
 pub use backends::{Backend, BackendSelect};
+pub use playertrait::{MediaInfo, PlayerTrait, Speed, SpeedSigned, Volume, VolumeSigned};
 
 mod discord;
 mod mpris;
 #[cfg(target_os = "macos")]
 pub use mpris::macos;
+mod playertrait;
 pub mod playlist;
 
 #[macro_use]
@@ -1006,84 +1008,4 @@ impl PlayerTrait for GeneralPlayer {
     fn media_info(&self) -> MediaInfo {
         self.get_player().media_info()
     }
-}
-
-/// Some information that may be available from the backend
-/// This is different from [`Track`] as this is everything parsed from the decoder's metadata
-/// and [`Track`] stores some different extra stuff
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct MediaInfo {
-    /// The title of the current media playing (if present)
-    pub media_title: Option<String>,
-}
-
-pub type Volume = u16;
-/// The type of [`Volume::saturating_add_signed`]
-pub type VolumeSigned = i16;
-pub type Speed = i32;
-// yes this is currently the same as speed, but for consistentcy with VolumeSigned (and maybe other types)
-pub type SpeedSigned = Speed;
-
-pub const MIN_SPEED: Speed = 1;
-pub const MAX_SPEED: Speed = 30;
-
-#[allow(clippy::module_name_repetitions)]
-pub trait PlayerTrait {
-    /// Add the given track, skip to it (if not already) and start playing
-    fn add_and_play(&mut self, track: &Track);
-    /// Get the currently set volume
-    fn volume(&self) -> Volume;
-    /// Add a relative amount to the current volume
-    ///
-    /// Returns the new volume
-    fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
-        let volume = self.volume().saturating_add_signed(volume);
-        self.set_volume(volume)
-    }
-    /// Set the volume to a specific amount.
-    ///
-    /// Returns the new volume
-    fn set_volume(&mut self, volume: Volume) -> Volume;
-    fn pause(&mut self);
-    fn resume(&mut self);
-    fn is_paused(&self) -> bool;
-    /// Seek relatively to the current time
-    ///
-    /// # Errors
-    ///
-    /// Depending on different backend, there could be different errors during seek.
-    fn seek(&mut self, secs: i64) -> Result<()>;
-    // TODO: sync return types between "seek" and "seek_to"?
-    /// Seek to a absolute position
-    fn seek_to(&mut self, position: Duration);
-    /// Get current track time position
-    fn get_progress(&self) -> Option<PlayerProgress>;
-    /// Set the speed to a specific amount.
-    ///
-    /// Returns the new speed
-    fn set_speed(&mut self, speed: Speed) -> Speed;
-    /// Add a relative amount to the current speed
-    ///
-    /// Returns the new speed
-    fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
-        // NOTE: the clamping should likely be done in `set_speed` instead of here
-        let speed = (self.speed() + speed).clamp(MIN_SPEED, MAX_SPEED);
-        self.set_speed(speed)
-    }
-    /// Get the currently set speed
-    fn speed(&self) -> Speed;
-    fn stop(&mut self);
-    fn gapless(&self) -> bool;
-    fn set_gapless(&mut self, to: bool);
-    fn skip_one(&mut self);
-    /// Quickly access the position.
-    ///
-    /// This should ALWAYS match up with [`PlayerTrait::get_progress`]'s `.position`!
-    fn position(&self) -> Option<PlayerTimeUnit> {
-        self.get_progress()?.position
-    }
-    /// Add the given URI to be played, but do not skip currently playing track
-    fn enqueue_next(&mut self, track: &Track);
-    /// Get info of the current media
-    fn media_info(&self) -> MediaInfo;
 }
