@@ -691,7 +691,7 @@ impl GeneralPlayer {
     fn pause_common(&mut self) {
         self.run_info.write().pause(&self.stream_tx);
         self.get_player_mut().pause();
-        let time_pos = self.get_player().position();
+        let time_pos = self.position();
         if let Some(ref mut mpris) = self.mpris {
             mpris.pause(time_pos);
         }
@@ -704,7 +704,7 @@ impl GeneralPlayer {
         self.run_info.write().play(&self.stream_tx);
         self.get_player_mut().resume();
 
-        let time_pos = self.get_player().position();
+        let time_pos = self.position();
         if let Some(ref mut mpris) = self.mpris {
             mpris.resume(time_pos);
         }
@@ -803,7 +803,7 @@ impl GeneralPlayer {
     /// Get the current track position.
     #[must_use]
     pub fn position(&self) -> Option<PlayerTimeUnit> {
-        self.get_player().position()
+        self.get_player().get_progress()?.position
     }
 
     /// Get whether gapless is currently enabled or not.

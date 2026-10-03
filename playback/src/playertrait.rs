@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use anyhow::Result;
-use termusiclib::{
-    player::{PlayerProgress, PlayerTimeUnit},
-    track::Track,
-};
+use termusiclib::{player::PlayerProgress, track::Track};
 
 /// Some Track information the backend may have parsed to be available.
 /// For example, for radio urls this may contain the ICY metadata parsed from the byte stream.
@@ -100,13 +97,6 @@ pub trait PlayerTrait {
 
     /// Get current track time position
     fn get_progress(&self) -> Option<PlayerProgress>;
-    /// Quickly access the position.
-    ///
-    /// This should ALWAYS match up with [`PlayerTrait::get_progress`]'s `.position`!
-    fn position(&self) -> Option<PlayerTimeUnit> {
-        // TODO: maybe remove this from the trait and instead only have "get_progress"?
-        self.get_progress()?.position
-    }
 
     /// Get the state of gapless playback.
     fn gapless(&self) -> bool;
