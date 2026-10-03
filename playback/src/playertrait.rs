@@ -24,9 +24,6 @@ pub type Speed = i32;
 // This is currently the same type as [`Speed`], but for consistentcy with `VolumeSigned` the alias exists.
 pub type SpeedSigned = Speed;
 
-pub const MIN_SPEED: Speed = 1;
-pub const MAX_SPEED: Speed = 30;
-
 #[allow(clippy::module_name_repetitions)]
 pub trait PlayerTrait {
     /// Add the given track, skip to it (if not already) and start playing.
@@ -56,14 +53,6 @@ pub trait PlayerTrait {
 
     /// Get the currently set volume.
     fn volume(&self) -> Volume;
-    /// Add a relative amount to the current volume.
-    ///
-    /// Returns the new volume.
-    fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
-        // TODO: maybe remove this from the trait and instead only have "volume" & "set_volume"?
-        let volume = self.volume().saturating_add_signed(volume);
-        self.set_volume(volume)
-    }
     /// Set the volume to a specific amount.
     ///
     /// Returns the new volume.
@@ -71,15 +60,6 @@ pub trait PlayerTrait {
 
     /// Get the currently set speed.
     fn speed(&self) -> Speed;
-    /// Add a relative amount to the current speed.
-    ///
-    /// Returns the new speed.
-    fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
-        // TODO: maybe remove this from the trait and instead only have "speed" & "set_speed"?
-        // NOTE: the clamping should likely be done in `set_speed` instead of here
-        let speed = (self.speed() + speed).clamp(MIN_SPEED, MAX_SPEED);
-        self.set_speed(speed)
-    }
     /// Set the speed to a specific amount.
     ///
     /// Returns the new speed.

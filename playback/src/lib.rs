@@ -742,7 +742,11 @@ impl GeneralPlayer {
 
     /// Add a specific amount of volume to the current volume.
     pub fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
-        let vol = self.get_player_mut().add_volume(volume);
+        let vol = {
+            let player = self.get_player_mut();
+            let volume = player.volume().saturating_add_signed(volume);
+            player.set_volume(volume)
+        };
         self.mpris_volume_update();
         self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
 
@@ -766,7 +770,14 @@ impl GeneralPlayer {
 
     /// Add a speed difference to the current speed.
     pub fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
-        let speed = self.get_player_mut().add_speed(speed);
+        pub const MIN_SPEED: Speed = 1;
+        pub const MAX_SPEED: Speed = 30;
+
+        let speed = {
+            let player = self.get_player_mut();
+            let speed = (player.speed() + speed).clamp(MIN_SPEED, MAX_SPEED);
+            player.set_speed(speed)
+        };
         self.send_stream_ev(UpdateEvents::SpeedChanged { speed });
 
         speed
