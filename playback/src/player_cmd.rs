@@ -114,9 +114,6 @@ pub enum PlayerCmd {
     Quit(&'static str),
     /// Force reload the config.
     ReloadConfig,
-    /// Force reload the playlist.
-    // TODO: This is not necessary anymore and should be removed.
-    ReloadPlaylist,
     /// Seek with the provided parameters.
     Seek(SeekReq),
     /// Change the speed by the provided parameters.

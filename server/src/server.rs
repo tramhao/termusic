@@ -418,9 +418,6 @@ fn player_loop(
                     error!("Reloading config failed, using old: {err:#?}");
                 }
             }
-            PlayerCmd::ReloadPlaylist => {
-                player.playlist.write().reload_tracks().ok();
-            }
             PlayerCmd::Seek(seek) => match seek {
                 SeekReq::Steps(steps) => {
                     if steps.is_positive() {

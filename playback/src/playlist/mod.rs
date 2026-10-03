@@ -242,25 +242,6 @@ impl Playlist {
         Ok(())
     }
 
-    /// Reload the current playlist from the file. This function does not save beforehand.
-    ///
-    /// This is currently 1:1 the same as [`Self::load_apply`],
-    /// but has some slight different semantic meaning in that [`Self::load_apply`] is meant for a new Playlist instance.
-    ///
-    /// # Errors
-    ///
-    /// See [`Self::load`]
-    pub fn reload_tracks(&mut self) -> Result<()> {
-        let db_path = get_app_config_path()?;
-        let db_podcast = DBPod::new(&db_path)?;
-        let (current_track_index, tracks) = save_load::load(&get_playlist_path()?, &db_podcast)?;
-        self.tracks = tracks;
-        self.current_track_index = current_track_index;
-        self.is_modified = false;
-
-        Ok(())
-    }
-
     /// Save the current playlist and playing index to the playlist log
     ///
     /// Path in `$config$/playlist.log`
