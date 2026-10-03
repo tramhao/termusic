@@ -492,7 +492,10 @@ fn decode_loop(
         // seeking in symphonia can only be done to the nearest packet in the format reader
         // so we need to also seek until the actually required_ts in the decoder
         if let Some(dur) = seek_required_ts {
-            if packet.dts < *dur {
+            // At the point of writing, i am not sure if "dts" or "pts" should be used for seeking,
+            // but "dts" at least is broken for ogg formats, see
+            // https://github.com/pdeljanov/Symphonia/issues/572
+            if packet.pts < *dur {
                 continue;
             }
             // else, remove the value as we are now at or beyond that point
