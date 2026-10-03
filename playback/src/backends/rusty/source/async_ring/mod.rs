@@ -466,7 +466,7 @@ impl Source for AsyncRingSource {
 
     #[inline]
     fn try_seek(&mut self, pos: Duration) -> Result<(), rodio::source::SeekError> {
-        trace!("Consumer Seek");
+        trace!("Consumer Seek to position {pos:#?}");
 
         // clear the ringbuffer before sending, in case it is full and to more quickly unblock the producer
         // though this should not be relied upon

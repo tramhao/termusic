@@ -481,6 +481,7 @@ fn decode_loop(
 ) -> Result<Option<DecodeLoopResult>, symphonia::core::errors::Error> {
     let (audio_buf, elapsed) = loop {
         let Some(packet) = format.next_packet()? else {
+            trace!("No more packets");
             return Ok(None);
         };
 

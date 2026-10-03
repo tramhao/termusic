@@ -418,25 +418,28 @@ fn player_loop(
                     error!("Reloading config failed, using old: {err:#?}");
                 }
             }
-            PlayerCmd::Seek(seek) => match seek {
-                SeekReq::Steps(steps) => {
-                    if steps.is_positive() {
-                        for _ in 0..steps {
-                            player.seek_relative(true);
-                        }
-                    } else {
-                        for _ in steps..0 {
-                            player.seek_relative(false)
+            PlayerCmd::Seek(seek) => {
+                debug!("Doing seek with {seek:#?}");
+                match seek {
+                    SeekReq::Steps(steps) => {
+                        if steps.is_positive() {
+                            for _ in 0..steps {
+                                player.seek_relative(true);
+                            }
+                        } else {
+                            for _ in steps..0 {
+                                player.seek_relative(false)
+                            }
                         }
                     }
-                }
-                SeekReq::Unit(units) => {
-                    if let Err(err) = player.seek(units) {
-                        error!("Error running seek: {err:#?}");
+                    SeekReq::Unit(units) => {
+                        if let Err(err) = player.seek(units) {
+                            error!("Error running seek: {err:#?}");
+                        }
                     }
+                    SeekReq::RestartTrack => player.restart_track(),
                 }
-                SeekReq::RestartTrack => player.restart_track(),
-            },
+            }
             PlayerCmd::SkipNext => {
                 player.reset_errors();
                 info!("skip to next track.");

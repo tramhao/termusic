@@ -443,7 +443,10 @@ async fn decode_task_seek_fut(
     seek_data: SeekData,
 ) -> Option<()> {
     trace!("Seeking Decoder");
-    decoder.try_seek(seek_data.0).ok()?;
+    if let Err(err) = decoder.try_seek(seek_data.0) {
+        error!("Seeking failed: {err:#?}");
+        return None;
+    }
 
     let spec = decoder.get_spec();
     prod.process_seek(&spec.0, spec.1, seek_data.1).await;
