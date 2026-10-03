@@ -218,9 +218,10 @@ impl GeneralPlayer {
         self.backend.as_player_mut()
     }
 
+    /// Toggle the gapless state.
     pub fn toggle_gapless(&mut self) -> bool {
-        let new_gapless = !<Self as PlayerTrait>::gapless(self);
-        <Self as PlayerTrait>::set_gapless(self, new_gapless);
+        let new_gapless = !self.gapless();
+        self.set_gapless(new_gapless);
         self.config.write().settings.player.gapless = new_gapless;
         new_gapless
     }
@@ -438,13 +439,13 @@ impl GeneralPlayer {
         let status = self.run_info.read().status();
         match status {
             RunningStatus::Running => {
-                <Self as PlayerTrait>::pause(self);
+                self.pause_common();
             }
             RunningStatus::Stopped => {
                 self.resume_from_stopped();
             }
             RunningStatus::Paused => {
-                <Self as PlayerTrait>::resume(self);
+                self.resume_common();
             }
         }
     }
@@ -456,14 +457,14 @@ impl GeneralPlayer {
         let status = self.run_info.read().status();
         match status {
             RunningStatus::Running => {
-                <Self as PlayerTrait>::pause(self);
+                self.pause_common();
             }
             RunningStatus::Stopped | RunningStatus::Paused => {}
         }
     }
 
     /// Resume playback if paused
-    pub fn play(&mut self) {
+    pub fn resume(&mut self) {
         // NOTE: if this ".read()" call is in a match's statement, it will not be unlocked until the end of the match
         // see https://github.com/rust-lang/rust/issues/93883
         let status = self.run_info.read().status();
@@ -473,7 +474,7 @@ impl GeneralPlayer {
                 self.resume_from_stopped();
             }
             RunningStatus::Paused => {
-                <Self as PlayerTrait>::resume(self);
+                self.resume_common();
             }
         }
     }
@@ -668,29 +669,26 @@ impl GeneralPlayer {
     }
 }
 
-impl PlayerTrait for GeneralPlayer {
+/// Impls mirroring a impl of [`PlayerTrait`].
+///
+/// We dont implement [`PlayerTrait`] directly as we want to have those a a implementation detail and
+/// make functions available that should not be called directly.
+impl GeneralPlayer {
     fn add_and_play(&mut self, track: &Track) {
         self.get_player_mut().add_and_play(track);
     }
-    fn volume(&self) -> Volume {
-        self.get_player().volume()
-    }
-    fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
-        let vol = self.get_player_mut().add_volume(volume);
-        self.mpris_volume_update();
-        self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
 
-        vol
+    fn enqueue_next(&mut self, track: &Track) {
+        self.run_info.write().set_enqueued(track.clone());
+        self.get_player_mut().enqueue_next(track);
     }
-    fn set_volume(&mut self, volume: Volume) -> Volume {
-        let vol = self.get_player_mut().set_volume(volume);
-        self.mpris_volume_update();
-        self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
 
-        vol
+    fn skip_one(&mut self) {
+        self.in_skip = true;
+        self.get_player_mut().skip_one();
     }
-    /// This function should not be used directly, use `GeneralPlayer::pause`
-    fn pause(&mut self) {
+
+    fn pause_common(&mut self) {
         self.run_info.write().pause(&self.stream_tx);
         self.get_player_mut().pause();
         let time_pos = self.get_player().position();
@@ -701,8 +699,8 @@ impl PlayerTrait for GeneralPlayer {
             discord.pause();
         }
     }
-    /// This function should not be used directly, use `GeneralPlayer::play`
-    fn resume(&mut self) {
+
+    fn resume_common(&mut self) {
         self.run_info.write().play(&self.stream_tx);
         self.get_player_mut().resume();
 
@@ -714,35 +712,11 @@ impl PlayerTrait for GeneralPlayer {
             discord.resume(time_pos);
         }
     }
-    fn is_paused(&self) -> bool {
-        self.get_player().is_paused()
-    }
-    fn seek(&mut self, secs: i64) -> Result<()> {
-        self.get_player_mut().seek(secs)
-    }
-    fn seek_to(&mut self, position: Duration) {
-        self.get_player_mut().seek_to(position);
-    }
 
-    fn set_speed(&mut self, speed: Speed) -> Speed {
-        let speed = self.get_player_mut().set_speed(speed);
-        self.send_stream_ev(UpdateEvents::SpeedChanged { speed });
-
-        speed
-    }
-
-    fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
-        let speed = self.get_player_mut().add_speed(speed);
-        self.send_stream_ev(UpdateEvents::SpeedChanged { speed });
-
-        speed
-    }
-
-    fn speed(&self) -> Speed {
-        self.get_player().speed()
-    }
-
-    fn stop(&mut self) {
+    /// Change the playback into `Stopped` state. Clears all queued and running tracks from the backends.
+    ///
+    /// Does *not* stop the backend itself.
+    pub fn stop(&mut self) {
         self.in_skip = false;
         self.run_info.write().stop(&self.stream_tx);
         self.get_player_mut().stop();
@@ -755,11 +729,86 @@ impl PlayerTrait for GeneralPlayer {
         }
     }
 
-    fn get_progress(&self) -> Option<PlayerProgress> {
+    #[expect(dead_code)]
+    fn is_paused(&self) -> bool {
+        self.get_player().is_paused()
+    }
+
+    /// Get the current volume.
+    #[must_use]
+    pub fn volume(&self) -> Volume {
+        self.get_player().volume()
+    }
+
+    /// Add a specific amount of volume to the current volume.
+    pub fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
+        let vol = self.get_player_mut().add_volume(volume);
+        self.mpris_volume_update();
+        self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
+
+        vol
+    }
+
+    /// Set the volume to a specific amount
+    pub fn set_volume(&mut self, volume: Volume) -> Volume {
+        let vol = self.get_player_mut().set_volume(volume);
+        self.mpris_volume_update();
+        self.send_stream_ev(UpdateEvents::VolumeChanged { volume: vol });
+
+        vol
+    }
+
+    /// Get the current speed.
+    #[must_use]
+    pub fn speed(&self) -> Speed {
+        self.get_player().speed()
+    }
+
+    /// Add a speed difference to the current speed.
+    pub fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
+        let speed = self.get_player_mut().add_speed(speed);
+        self.send_stream_ev(UpdateEvents::SpeedChanged { speed });
+
+        speed
+    }
+
+    /// Set the speed to a specific amount.
+    pub fn set_speed(&mut self, speed: Speed) -> Speed {
+        let speed = self.get_player_mut().set_speed(speed);
+        self.send_stream_ev(UpdateEvents::SpeedChanged { speed });
+
+        speed
+    }
+
+    /// Seek by the given seceonds. Sign determines direction.
+    ///
+    /// # Errors
+    ///
+    /// Depending on different backend, there could be different errors during seek.
+    pub fn seek(&mut self, secs: i64) -> Result<()> {
+        self.get_player_mut().seek(secs)
+    }
+
+    /// Seek to a specific point in the track.
+    pub fn seek_to(&mut self, position: Duration) {
+        self.get_player_mut().seek_to(position);
+    }
+
+    /// Get the current track progress.
+    #[must_use]
+    pub fn get_progress(&self) -> Option<PlayerProgress> {
         self.get_player().get_progress()
     }
 
-    fn gapless(&self) -> bool {
+    /// Get the current track position.
+    #[must_use]
+    pub fn position(&self) -> Option<PlayerTimeUnit> {
+        self.get_player().position()
+    }
+
+    /// Get whether gapless is currently enabled or not.
+    #[must_use]
+    pub fn gapless(&self) -> bool {
         self.get_player().gapless()
     }
 
@@ -768,21 +817,9 @@ impl PlayerTrait for GeneralPlayer {
         self.send_stream_ev(UpdateEvents::GaplessChanged { gapless: to });
     }
 
-    fn skip_one(&mut self) {
-        self.in_skip = true;
-        self.get_player_mut().skip_one();
-    }
-
-    fn position(&self) -> Option<PlayerTimeUnit> {
-        self.get_player().position()
-    }
-
-    fn enqueue_next(&mut self, track: &Track) {
-        self.run_info.write().set_enqueued(track.clone());
-        self.get_player_mut().enqueue_next(track);
-    }
-
-    fn media_info(&self) -> MediaInfo {
+    /// Get the decoded extra metadata from the backend.
+    #[must_use]
+    pub fn media_info(&self) -> MediaInfo {
         self.get_player().media_info()
     }
 }

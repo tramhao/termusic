@@ -63,6 +63,7 @@ pub trait PlayerTrait {
     ///
     /// Returns the new volume.
     fn add_volume(&mut self, volume: VolumeSigned) -> Volume {
+        // TODO: maybe remove this from the trait and instead only have "volume" & "set_volume"?
         let volume = self.volume().saturating_add_signed(volume);
         self.set_volume(volume)
     }
@@ -77,6 +78,7 @@ pub trait PlayerTrait {
     ///
     /// Returns the new speed.
     fn add_speed(&mut self, speed: SpeedSigned) -> Speed {
+        // TODO: maybe remove this from the trait and instead only have "speed" & "set_speed"?
         // NOTE: the clamping should likely be done in `set_speed` instead of here
         let speed = (self.speed() + speed).clamp(MIN_SPEED, MAX_SPEED);
         self.set_speed(speed)
@@ -102,6 +104,7 @@ pub trait PlayerTrait {
     ///
     /// This should ALWAYS match up with [`PlayerTrait::get_progress`]'s `.position`!
     fn position(&self) -> Option<PlayerTimeUnit> {
+        // TODO: maybe remove this from the trait and instead only have "get_progress"?
         self.get_progress()?.position
     }
 
