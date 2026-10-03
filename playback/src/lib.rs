@@ -2,7 +2,6 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result};
-use async_trait::async_trait;
 use parking_lot::RwLock;
 pub use playlist::Playlist;
 use termusiclib::config::SharedServerSettings;
@@ -19,7 +18,6 @@ use termusiclib::player::{
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaTypes, MediaTypesSimple, Track};
 use termusiclib::utils::get_app_config_path;
-use tokio::runtime::Handle;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::{broadcast, oneshot};
@@ -509,10 +507,7 @@ impl GeneralPlayer {
             drop(run_info);
             info!("Starting Track {track:#?}");
 
-            let wait = async {
-                self.add_and_play(&track).await;
-            };
-            Handle::current().block_on(wait);
+            self.add_and_play(&track);
 
             self.run_info.write().set_current_track(track);
 
@@ -894,10 +889,9 @@ impl GeneralPlayer {
     }
 }
 
-#[async_trait]
 impl PlayerTrait for GeneralPlayer {
-    async fn add_and_play(&mut self, track: &Track) {
-        self.get_player_mut().add_and_play(track).await;
+    fn add_and_play(&mut self, track: &Track) {
+        self.get_player_mut().add_and_play(track);
     }
     fn volume(&self) -> Volume {
         self.get_player().volume()
@@ -1034,10 +1028,9 @@ pub const MIN_SPEED: Speed = 1;
 pub const MAX_SPEED: Speed = 30;
 
 #[allow(clippy::module_name_repetitions)]
-#[async_trait]
 pub trait PlayerTrait {
     /// Add the given track, skip to it (if not already) and start playing
-    async fn add_and_play(&mut self, track: &Track);
+    fn add_and_play(&mut self, track: &Track);
     /// Get the currently set volume
     fn volume(&self) -> Volume;
     /// Add a relative amount to the current volume

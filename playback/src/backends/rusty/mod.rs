@@ -7,7 +7,6 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use async_trait::async_trait;
 use parking_lot::Mutex;
 use rodio::{DeviceSinkBuilder, Source};
 use std::num::{NonZeroU16, NonZeroU32, NonZeroUsize};
@@ -147,9 +146,8 @@ impl RustyBackend {
     }
 }
 
-#[async_trait]
 impl PlayerTrait for RustyBackend {
-    async fn add_and_play(&mut self, track: &Track) {
+    fn add_and_play(&mut self, track: &Track) {
         // this has to be a extra scope as rust does not see "drop(config_read)" as a drop and complains with:
         // "await occurs here (rx.await), with `config_read` maybe used later"
         let query_options = {
@@ -190,7 +188,7 @@ impl PlayerTrait for RustyBackend {
             PlayerCmdCallbackSender(Some(tx)),
         ));
         self.resume();
-        let _ = rx.await;
+        let _ = rx.blocking_recv();
     }
 
     fn volume(&self) -> Volume {

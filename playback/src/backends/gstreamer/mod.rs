@@ -4,7 +4,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use anyhow::Result;
-use async_trait::async_trait;
 use glib::value::FromValue;
 use glib::{ControlFlow, FlagsClass};
 use gstreamer::bus::BusWatchGuard;
@@ -499,9 +498,8 @@ impl GStreamerBackend {
     }
 }
 
-#[async_trait]
 impl PlayerTrait for GStreamerBackend {
-    async fn add_and_play(&mut self, track: &Track) {
+    fn add_and_play(&mut self, track: &Track) {
         self.playbin
             .set_state(gst::State::Ready)
             .expect("set gst state ready error");

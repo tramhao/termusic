@@ -4,7 +4,6 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
 use anyhow::Result;
-use async_trait::async_trait;
 use libmpv::Mpv;
 use libmpv::{
     Format,
@@ -333,9 +332,8 @@ fn track_to_string(track: &Track) -> String {
     }
 }
 
-#[async_trait]
 impl PlayerTrait for MpvBackend {
-    async fn add_and_play(&mut self, track: &Track) {
+    fn add_and_play(&mut self, track: &Track) {
         let file = track_to_string(track);
 
         self.command_tx
