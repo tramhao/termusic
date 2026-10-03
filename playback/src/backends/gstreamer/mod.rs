@@ -17,7 +17,8 @@ use termusiclib::player::ChangeSpeed;
 use termusiclib::track::{MediaTypes, Track};
 use tokio::sync::mpsc;
 
-use crate::{MediaInfo, PlayerCmd, PlayerErrorType, PlayerProgress, PlayerTrait, Speed, Volume};
+use crate::player_cmd::{PlayerCmd, PlayerErrorType};
+use crate::{MediaInfo, PlayerProgress, PlayerTrait, Speed, Volume};
 
 /// This trait allows for easy conversion of a path to a URI for gstreamer
 trait PathToURI {

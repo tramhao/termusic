@@ -7,20 +7,14 @@ pub use playlist::Playlist;
 use termusiclib::config::SharedServerSettings;
 use termusiclib::config::v2::server::config_extra::ServerConfigVersionedDefaulted;
 use termusiclib::new_database::{Database, track_ops};
-use termusiclib::player::playlist_helpers::{
-    PlaylistAddTrack, PlaylistPlaySpecific, PlaylistRemoveTrackIndexed, PlaylistSwapTrack,
-};
-use termusiclib::player::protobuf::queue::{SortCriterion, SortDirection};
+use termusiclib::player::playlist_helpers::PlaylistPlaySpecific;
 use termusiclib::player::{
-    ChangeLoopMode, ChangeSpeed, ChangeVolume, PlayerProgress, PlayerTimeUnit, RunningStatus,
-    SeekReq, TrackChangedInfo, UpdateEvents,
+    PlayerProgress, PlayerTimeUnit, RunningStatus, TrackChangedInfo, UpdateEvents,
 };
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::track::{MediaTypes, MediaTypesSimple, Track};
 use termusiclib::utils::get_app_config_path;
-use tokio::sync::mpsc::error::SendError;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use tokio::sync::{broadcast, oneshot};
+use tokio::sync::broadcast;
 
 pub use backends::{Backend, BackendSelect};
 pub use playertrait::{MediaInfo, PlayerTrait, Speed, SpeedSigned, Volume, VolumeSigned};
@@ -29,6 +23,9 @@ mod discord;
 mod mpris;
 #[cfg(target_os = "macos")]
 pub use mpris::macos;
+
+use crate::player_cmd::PlayerCmdSender;
+pub mod player_cmd;
 mod playertrait;
 pub mod playlist;
 
@@ -42,111 +39,6 @@ mod backends;
 /// This is necessary as benchmarking via criterion can only access public lib(crate) level function, like any other outside binary / crate.
 pub mod __bench {
     pub use super::backends::rusty::source::async_ring;
-}
-
-pub type PlayerCmdCallback = oneshot::Receiver<()>;
-pub type PlayerCmdReciever = UnboundedReceiver<(PlayerCmd, PlayerCmdCallbackSender)>;
-
-/// Wrapper around the potential oneshot sender to implement convenience functions.
-#[derive(Debug)]
-pub struct PlayerCmdCallbackSender(Option<oneshot::Sender<()>>);
-
-impl PlayerCmdCallbackSender {
-    /// Send on the oneshot, if there is any.
-    pub fn call(self) {
-        let Some(sender) = self.0 else {
-            return;
-        };
-        let _ = sender.send(());
-    }
-}
-
-/// Wrapper for the actual sender, to make it easier to implement new functions.
-#[derive(Debug, Clone)]
-pub struct PlayerCmdSender(UnboundedSender<(PlayerCmd, PlayerCmdCallbackSender)>);
-
-impl PlayerCmdSender {
-    /// Send a given [`PlayerCmd`] without any callback.
-    ///
-    /// # Errors
-    /// Also see [`oneshot::Sender::send`].
-    pub fn send(
-        &self,
-        cmd: PlayerCmd,
-    ) -> Result<(), SendError<(PlayerCmd, PlayerCmdCallbackSender)>> {
-        self.0.send((cmd, PlayerCmdCallbackSender(None)))
-    }
-
-    /// Send a given [`PlayerCmd`] with a callback, returning the receiver.
-    ///
-    /// # Errors
-    /// Also see [`oneshot::Sender::send`].
-    pub fn send_cb(
-        &self,
-        cmd: PlayerCmd,
-    ) -> Result<PlayerCmdCallback, SendError<(PlayerCmd, PlayerCmdCallbackSender)>> {
-        let (tx, rx) = oneshot::channel();
-        self.0.send((cmd, PlayerCmdCallbackSender(Some(tx))))?;
-        Ok(rx)
-    }
-
-    #[must_use]
-    pub fn new(tx: UnboundedSender<(PlayerCmd, PlayerCmdCallbackSender)>) -> Self {
-        Self(tx)
-    }
-}
-
-#[derive(Clone, Debug, Copy, PartialEq)]
-pub enum PlayerErrorType {
-    /// The error happened for the currently playing track.
-    Current,
-    /// The error happened for the track that was tried to be enqueued.
-    Enqueue,
-}
-
-#[derive(Clone, Debug)]
-pub enum PlayerCmd {
-    // Mainly called from the backends
-    /// The Backend indicates the current track is about to end.
-    AboutToFinish,
-    /// The Backend indicates that the current track has ended.
-    Eos,
-    /// The Backend indicates new metadata is available.
-    MetadataChanged,
-    /// A Error happened in the backend (for example `NotFound`) that makes it unrecoverable to continue to play the current track.
-    /// This will basically be treated as a [`Eos`](PlayerCmd::Eos), with some extra handling.
-    ///
-    /// This should **not** be used if the whole backend is unrecoverable.
-    Error(PlayerErrorType),
-
-    // Internal only
-    Tick,
-
-    // Mainly called from outside sources (client, mpris)
-    ChangeLoopMode(ChangeLoopMode),
-    SkipPrevious,
-    Pause,
-    Play,
-    /// Quit the server process. Includes the source triggering the quit.
-    Quit(&'static str),
-    ReloadConfig,
-    ReloadPlaylist,
-    Seek(SeekReq),
-    SkipNext,
-    ChangeSpeed(ChangeSpeed),
-    ToggleGapless,
-    TogglePause,
-    ChangeVolume(ChangeVolume),
-    VolumeSet(Volume),
-
-    PlaylistPlaySpecific(PlaylistPlaySpecific),
-    PlaylistAddTrack(PlaylistAddTrack),
-    PlaylistRemoveTrack(PlaylistRemoveTrackIndexed),
-    PlaylistClear,
-    PlaylistSwapTrack(PlaylistSwapTrack),
-    PlaylistShuffle,
-    PlaylistSort(SortCriterion, SortDirection),
-    PlaylistRemoveDeletedTracks,
 }
 
 /// Sources for [`PlayerCmd::Quit`].

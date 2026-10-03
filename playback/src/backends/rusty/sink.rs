@@ -9,10 +9,11 @@ use parking_lot::{Mutex, RwLock};
 use rodio::mixer::Mixer;
 use rodio::{Source, queue};
 
+use crate::player_cmd::PlayerCmd;
+
 use super::PlayerInternalCmd;
 use super::source::SourceExt as _;
 use super::source::{SampleType, SpecificType};
-use crate::PlayerCmd;
 
 /// Handle to an device that outputs sounds.
 ///

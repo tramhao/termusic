@@ -10,7 +10,8 @@ use termusiclib::player::protobuf::player::{
     ChangeRunningStateRequest, ChangeSpeedRequest, ChangeVolumeRequest, GaplessState,
     GetProgressResponse, PlayState, SeekRequest, SpeedReply, VolumeReply,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedRunInfo};
+use termusicplayback::SharedRunInfo;
+use termusicplayback::player_cmd::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender};
 use tonic::{Request, Response, Status};
 
 use crate::PlayerStats;

@@ -13,7 +13,8 @@ use parking_lot::Mutex;
 use termusiclib::config::ServerOverlay;
 use termusiclib::track::{MediaTypes, Track};
 
-use crate::{MediaInfo, PlayerCmd, PlayerProgress, PlayerTrait, Speed, Volume};
+use crate::player_cmd::{PlayerCmd, PlayerErrorType};
+use crate::{MediaInfo, PlayerProgress, PlayerTrait, Speed, Volume};
 
 pub type ArcTotalDuration = Arc<Mutex<Option<Duration>>>;
 
@@ -152,8 +153,7 @@ impl MpvBackend {
                             // -17 = Unknown format
                             if matches!(raw_i32, -13 | -14 | -16 | -17) {
                                 // Note that mpv only errors for the current file and does not pre-evaluate / pre-emit errors for enqueuement
-                                let _ =
-                                    cmd_tx.send(PlayerCmd::Error(crate::PlayerErrorType::Current));
+                                let _ = cmd_tx.send(PlayerCmd::Error(PlayerErrorType::Current));
                             }
                         }
 

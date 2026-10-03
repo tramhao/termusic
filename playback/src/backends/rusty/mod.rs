@@ -32,10 +32,8 @@ use tokio::select;
 use tokio::sync::oneshot;
 
 use crate::backends::rusty::decoder::SymphoniaDecoderError;
-use crate::{
-    MediaInfo, PlayerCmd, PlayerCmdCallbackSender, PlayerCmdSender, PlayerProgress, PlayerTrait,
-    Speed, Volume,
-};
+use crate::player_cmd::{PlayerCmd, PlayerCmdCallbackSender, PlayerErrorType};
+use crate::{MediaInfo, PlayerCmdSender, PlayerProgress, PlayerTrait, Speed, Volume};
 use decoder::buffered_source::BufferedSource;
 use decoder::read_seek_source::ReadSeekSource;
 use decoder::{MediaTitleRx, MediaTitleType, Symphonia};
@@ -185,7 +183,7 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::Play(
             Box::new(track.clone()),
             query_options,
-            PlayerCmdCallbackSender(Some(tx)),
+            PlayerCmdCallbackSender::new(Some(tx)),
         ));
         self.resume();
         let _ = rx.blocking_recv();
@@ -293,7 +291,7 @@ impl PlayerTrait for RustyBackend {
                 ringbuf_size,
                 enqueue: true,
             },
-            PlayerCmdCallbackSender(None),
+            PlayerCmdCallbackSender::new(None),
         ));
     }
 
@@ -661,11 +659,11 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                     if options.enqueue {
                         let _ = args
                             .pcmd_tx
-                            .send(PlayerCmd::Error(crate::PlayerErrorType::Enqueue));
+                            .send(PlayerCmd::Error(PlayerErrorType::Enqueue));
                     } else {
                         let _ = args
                             .pcmd_tx
-                            .send(PlayerCmd::Error(crate::PlayerErrorType::Current));
+                            .send(PlayerCmd::Error(PlayerErrorType::Current));
                     }
                 }
                 // maybe this should be called by the source / decoder to be fully correct
