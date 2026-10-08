@@ -48,7 +48,6 @@ mod services;
 extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
-pub const VOLUME_STEP: VolumeSigned = 5;
 pub const SPEED_STEP: SpeedSigned = 1;
 
 /// The Limit of continues errors before stopping playback and awaiting user input to start something specific again.
@@ -523,13 +522,17 @@ fn player_loop(
             PlayerCmd::ChangeVolume(vol) => {
                 match vol {
                     ChangeVolume::Steps(steps) => {
+                        // Copy the step before the loop so the config read guard is not held across `add_volume`.
+                        let volume_step = VolumeSigned::from(
+                            player.config.read().settings.player.volume_step.get(),
+                        );
                         if steps.is_positive() {
                             for _ in 0..steps {
-                                player.add_volume(VOLUME_STEP);
+                                player.add_volume(volume_step);
                             }
                         } else {
                             for _ in steps..0 {
-                                player.add_volume(-VOLUME_STEP);
+                                player.add_volume(-volume_step);
                             }
                         }
                     }

@@ -126,6 +126,48 @@ impl From<PreviousTrackThreshold> for u8 {
     }
 }
 
+/// How much the volume changes for one step on the 0-100 scale.
+///
+/// Range: 1-100. Default: 5.
+/// Applied once per `ChangeVolume::Steps` count (`Steps(2)` applies this value twice).
+///
+/// `0` is invalid, so [`Default`] is implemented manually instead of derived.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "u8", into = "u8")]
+pub struct VolumeStep(u8);
+
+impl VolumeStep {
+    /// Get the step size.
+    #[must_use]
+    pub fn get(&self) -> u8 {
+        self.0
+    }
+}
+
+impl Default for VolumeStep {
+    fn default() -> Self {
+        Self(5)
+    }
+}
+
+impl TryFrom<u8> for VolumeStep {
+    type Error = String;
+
+    fn try_from(v: u8) -> Result<Self, Self::Error> {
+        if (1..=100).contains(&v) {
+            Ok(Self(v))
+        } else {
+            Err(format!("volume_step must be between 1 and 100, got {v}"))
+        }
+    }
+}
+
+impl From<VolumeStep> for u8 {
+    fn from(v: VolumeStep) -> Self {
+        v.0
+    }
+}
+
 /// Seek amount maybe depending on track length
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
@@ -323,6 +365,8 @@ pub struct PlayerSettings {
     pub loop_mode: LoopMode,
     /// Volume, how loud something is
     pub volume: u16,
+    /// How much the volume changes per step on the 0-100 scale (1-100, default 5).
+    pub volume_step: VolumeStep,
     /// Speed, both positive (forward) or negative (backwards)
     ///
     /// speed / 10 = actual speed (float but not floats)
@@ -372,6 +416,7 @@ impl Default for PlayerSettings {
             loop_mode: LoopMode::default(),
             // rather use a lower value than a high so that ears dont get blown off
             volume: 30,
+            volume_step: VolumeStep::default(),
             speed: 10,
             gapless: true,
             seek_step: SeekStep::default(),
@@ -567,7 +612,7 @@ mod v1_interop {
     use super::{
         Backend, ComSettings, LoopMode, NonZeroU8, NonZeroU32, PlayerSettings, PodcastSettings,
         PositionYesNo, PositionYesNoLower, PreviousTrackThreshold, RememberLastPosition, ScanDepth,
-        SeekStep, ServerSettings, backends::BackendSettings,
+        SeekStep, ServerSettings, VolumeStep, backends::BackendSettings,
     };
     use crate::config::{
         v1,
@@ -662,6 +707,7 @@ mod v1_interop {
                 remember_position: value.player_remember_last_played_position.into(),
                 loop_mode: value.player_loop_mode.into(),
                 volume: value.player_volume,
+                volume_step: VolumeStep::default(),
                 speed: value.player_speed,
                 gapless: value.player_gapless,
                 seek_step: value.player_seek_step.into(),
@@ -760,6 +806,7 @@ mod v1_interop {
                     },
                     loop_mode: LoopMode::Random,
                     volume: 70,
+                    volume_step: VolumeStep::default(),
                     speed: 10,
                     gapless: true,
                     seek_step: SeekStep::Depends {
@@ -776,5 +823,61 @@ mod v1_interop {
                 }
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+
+    use super::PlayerSettings;
+    use super::config_extra::ServerConfigVersionedDefaulted;
+
+    #[test]
+    fn should_default_volume_step_when_omitted() {
+        // A versioned server config that never had the key still loads the historical step of 5.
+        let parsed: ServerConfigVersionedDefaulted<'_> = toml::from_str(
+            r#"
+version = "2"
+
+[player]
+volume = 30
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(parsed.into_settings().player.volume_step.get(), 5);
+        assert_eq!(PlayerSettings::default().volume_step.get(), 5);
+    }
+
+    #[test]
+    fn should_parse_volume_step_bounds_and_reject_out_of_range() {
+        let one: PlayerSettings = toml::from_str("volume_step = 1").unwrap();
+        assert_eq!(one.volume_step.get(), 1);
+
+        let hundred: PlayerSettings = toml::from_str("volume_step = 100").unwrap();
+        assert_eq!(hundred.volume_step.get(), 100);
+
+        let err = toml::from_str::<PlayerSettings>("volume_step = 0").unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("volume_step must be between 1 and 100, got 0"),
+            "{err}"
+        );
+
+        let err = toml::from_str::<PlayerSettings>("volume_step = 101").unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("volume_step must be between 1 and 100, got 101"),
+            "{err}"
+        );
+
+        // A negative integer is not a `u8`, so it fails before `TryFrom<u8>`.
+        let err = toml::from_str::<PlayerSettings>("volume_step = -1").unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("invalid value: integer `-1`, expected u8"),
+            "{err}"
+        );
     }
 }
