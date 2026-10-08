@@ -35,6 +35,7 @@ pathdiff.workspace = true
 rand.workspace = true
 reqwest.workspace = true
 soundtouch = { workspace = true, optional = true }
+rodio-wsola.workspace = true
 souvlaki.workspace = true
 stream-download.workspace = true
 symphonia.workspace = true

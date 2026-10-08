@@ -160,9 +160,9 @@ impl Sink {
             // as of rodio 0.20.x, "stoppable" is the same as "skippable"
             // .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
-                let _ = progress_tx.send(PlayerInternalCmd::Progress(
-                    src.inner().inner().inner().inner().get_pos(),
-                ));
+                // let _ = progress_tx.send(PlayerInternalCmd::Progress(
+                //     src.inner().inner().inner().inner().get_pos(),
+                // ));
             })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
@@ -185,7 +185,7 @@ impl Sink {
                             return;
                         }
                     }
-                    *controls.position.write() = src.inner().inner().inner().inner().get_pos();
+                    // *controls.position.write() = src.inner().inner().inner().inner().get_pos();
 
                     let amp = src.inner_mut();
                     amp.inner_mut().set_factor(controls.real_volume());
