@@ -561,7 +561,6 @@ mod tests {
             backends::rusty::source::async_ring::{MessageDataActual, MessageDataValue},
         };
 
-        #[expect(clippy::float_cmp)] // we dont to arthihmatic, we store and parse bytes, which *are* exact
         #[test]
         fn should_read_complete_once() {
             let input: Vec<u8> = vec![1; SAMPLE_TYPE_SIZE];
@@ -591,7 +590,6 @@ mod tests {
             assert!(!msg.is_done());
         }
 
-        #[expect(clippy::float_cmp)] // we dont to arthihmatic, we store and parse bytes, which *are* exact
         #[test]
         fn should_resume_additional() {
             let input: Vec<u8> = vec![1; SAMPLE_TYPE_SIZE * 2];
@@ -662,7 +660,6 @@ mod tests {
     mod parse_message_value {
         use crate::backends::rusty::source::async_ring::MessageDataValue;
 
-        #[expect(clippy::float_cmp)] // we dont to arthihmatic, we store and parse bytes, which *are* exact
         #[test]
         fn should_read_complete_once() {
             let input: &[u8] = &10f32.to_ne_bytes();
@@ -674,7 +671,6 @@ mod tests {
             assert_eq!(res, 10f32);
         }
 
-        #[expect(clippy::float_cmp)] // we dont to arthihmatic, we store and parse bytes, which *are* exact
         #[test]
         fn should_report_additional() {
             let input: &[u8] = &10f32.to_ne_bytes();

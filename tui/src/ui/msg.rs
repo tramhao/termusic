@@ -905,6 +905,8 @@ impl Eq for ServerReqResponse {}
 mod tests {
     use std::collections::HashSet;
 
+    use pretty_assertions::{assert_eq, assert_ne};
+
     use crate::ui::{ids::IdKey, msg::CONFIG_EDITOR_TABS_ORDER};
 
     use super::{KFGLOBAL_FOCUS_ORDER, KFOTHER_FOCUS_ORDER};
@@ -914,7 +916,7 @@ mod tests {
     // clippy complains that it is always "false", but if the array actually *is* empty, then rust will **NOT** complain on "[0]" access
     #[allow(clippy::const_is_empty)]
     fn kfglobal_focus_order_should_be_nonzero() {
-        assert!(!KFGLOBAL_FOCUS_ORDER.is_empty());
+        assert_ne!(KFGLOBAL_FOCUS_ORDER, []);
     }
 
     // i dont think there is a compile-time way to ensure only a specific enum variant is used, so test here
@@ -933,7 +935,7 @@ mod tests {
     // clippy complains that it is always "false", but if the array actually *is* empty, then rust will **NOT** complain on "[0]" access
     #[allow(clippy::const_is_empty)]
     fn kfother_focus_order_should_be_nonzero() {
-        assert!(!KFOTHER_FOCUS_ORDER.is_empty());
+        assert_ne!(KFOTHER_FOCUS_ORDER, []);
     }
 
     // i dont think there is a compile-time way to ensure only a specific enum variant is used, so test here
@@ -952,7 +954,7 @@ mod tests {
     // clippy complains that it is always "false", but if the array actually *is* empty, then rust will **NOT** complain on "[0]" access
     #[allow(clippy::const_is_empty)]
     fn config_editor_tabs_order_should_be_nonzero() {
-        assert!(!CONFIG_EDITOR_TABS_ORDER.is_empty());
+        assert_ne!(CONFIG_EDITOR_TABS_ORDER, []);
     }
 
     #[test]

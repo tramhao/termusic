@@ -740,7 +740,7 @@ mod v1_interop {
                 }
             );
 
-            assert!(!converted.player.music_dirs.is_empty());
+            assert_ne!(converted.player.music_dirs, [] as [PathBuf; 0]);
 
             let player_settings = {
                 let mut set = converted.player;
