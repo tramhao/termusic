@@ -9,6 +9,7 @@ pub mod soundtouch;
 pub mod async_ring;
 mod cb_done;
 mod custom_speed;
+mod wsola;
 
 /// Our sample type we choose to use across all places
 pub type SampleType = f32;

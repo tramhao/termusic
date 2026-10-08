@@ -9,6 +9,7 @@ pub enum SpecificType {
     Rodio,
     #[cfg(feature = "rusty-soundtouch")]
     Soundtouch,
+    Wsola,
 }
 
 impl SpecificType {
@@ -21,7 +22,13 @@ impl SpecificType {
             return Self::Soundtouch;
         }
 
-        Self::Rodio
+        // Temporary experimental environment toggle to try with WSola
+        let wsola_env = std::env::var("TERMUSIC_RUSTY_WSOLA");
+        if wsola_env.is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1") {
+            Self::Wsola
+        } else {
+            Self::Rodio
+        }
     }
 }
 
@@ -37,16 +44,18 @@ where
             trace!("Using soundtouch");
             CustomSpeed::SoundTouch(super::soundtouch::soundtouch(input, initial_speed))
         }
+        SpecificType::Wsola => CustomSpeed::WSola(super::wsola::WSola::new(input, initial_speed)),
     }
 }
 
 /// A custom [`Source`] implementation to abstract away which speed module gets chosen.
 #[derive(Debug)]
 #[allow(dead_code)]
-pub enum CustomSpeed<I> {
+pub enum CustomSpeed<I: Source<Item = SampleType>> {
     Rodio(rodio::source::Speed<I>),
     #[cfg(feature = "rusty-soundtouch")]
     SoundTouch(super::soundtouch::SoundTouchSource<I>),
+    WSola(super::wsola::WSola<I>),
 }
 
 impl<I> Iterator for CustomSpeed<I>
@@ -98,6 +107,7 @@ where
             CustomSpeed::Rodio(speed) => speed,
             #[cfg(feature = "rusty-soundtouch")]
             CustomSpeed::SoundTouch(soundtouch) => soundtouch,
+            CustomSpeed::WSola(wsola) => wsola,
         }
     }
 
@@ -107,6 +117,7 @@ where
             CustomSpeed::Rodio(speed) => speed,
             #[cfg(feature = "rusty-soundtouch")]
             CustomSpeed::SoundTouch(soundtouch) => soundtouch,
+            CustomSpeed::WSola(wsola) => wsola,
         }
     }
 
@@ -117,6 +128,7 @@ where
             CustomSpeed::Rodio(speed) => speed.inner(),
             #[cfg(feature = "rusty-soundtouch")]
             CustomSpeed::SoundTouch(soundtouch) => soundtouch.inner(),
+            CustomSpeed::WSola(wsola) => wsola.inner(),
         }
     }
 
@@ -128,6 +140,7 @@ where
             CustomSpeed::Rodio(speed) => speed.inner_mut(),
             #[cfg(feature = "rusty-soundtouch")]
             CustomSpeed::SoundTouch(soundtouch) => soundtouch.inner_mut(),
+            CustomSpeed::WSola(wsola) => wsola.inner_mut(),
         }
     }
 
@@ -138,6 +151,7 @@ where
             CustomSpeed::Rodio(speed) => speed.set_factor(factor),
             #[cfg(feature = "rusty-soundtouch")]
             CustomSpeed::SoundTouch(soundtouch) => soundtouch.set_factor(f64::from(factor)),
+            CustomSpeed::WSola(wsola) => wsola.set_factor(factor),
         }
     }
 }
