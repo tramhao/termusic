@@ -5488,7 +5488,6 @@ dependencies = [
  "anyhow",
  "assert_fs",
  "async-ringbuf",
- "async-trait",
  "base64",
  "criterion",
  "discord-rich-presence",

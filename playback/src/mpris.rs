@@ -11,7 +11,8 @@ use termusiclib::{
 };
 
 use crate::{
-    GeneralPlayer, PlayerCmd, PlayerProgress, PlayerTimeUnit, PlayerTrait, RunningStatus, Volume,
+    GeneralPlayer, PlayerProgress, PlayerTimeUnit, RunningStatus, Volume,
+    player_cmd::{PlayerCmd, PlayerCmdSender},
 };
 
 pub struct Mpris {
@@ -20,7 +21,7 @@ pub struct Mpris {
 }
 
 impl Mpris {
-    pub fn new(cmd_tx: crate::PlayerCmdSender) -> Self {
+    pub fn new(cmd_tx: PlayerCmdSender) -> Self {
         #[cfg(not(target_os = "windows"))]
         let hwnd = None;
 
@@ -169,7 +170,7 @@ impl GeneralPlayer {
                 self.toggle_pause();
             }
             MediaControlEvent::Play => {
-                self.play();
+                self.resume();
             }
             // The "Seek" even seems to currently only be used for windows, mpris uses "SeekBy"
             MediaControlEvent::Seek(direction) => {

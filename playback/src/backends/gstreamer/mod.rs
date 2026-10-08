@@ -4,7 +4,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use anyhow::Result;
-use async_trait::async_trait;
 use glib::value::FromValue;
 use glib::{ControlFlow, FlagsClass};
 use gstreamer::bus::BusWatchGuard;
@@ -18,7 +17,8 @@ use termusiclib::player::ChangeSpeed;
 use termusiclib::track::{MediaTypes, Track};
 use tokio::sync::mpsc;
 
-use crate::{MediaInfo, PlayerCmd, PlayerErrorType, PlayerProgress, PlayerTrait, Speed, Volume};
+use crate::player_cmd::{PlayerCmd, PlayerErrorType};
+use crate::{MediaInfo, PlayerProgress, PlayerTrait, Speed, Volume};
 
 /// This trait allows for easy conversion of a path to a URI for gstreamer
 trait PathToURI {
@@ -499,9 +499,8 @@ impl GStreamerBackend {
     }
 }
 
-#[async_trait]
 impl PlayerTrait for GStreamerBackend {
-    async fn add_and_play(&mut self, track: &Track) {
+    fn add_and_play(&mut self, track: &Track) {
         self.playbin
             .set_state(gst::State::Ready)
             .expect("set gst state ready error");

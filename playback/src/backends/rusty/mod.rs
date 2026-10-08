@@ -7,7 +7,6 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use async_trait::async_trait;
 use parking_lot::Mutex;
 use rodio::{DeviceSinkBuilder, Source};
 use std::num::{NonZeroU16, NonZeroU32, NonZeroUsize};
@@ -33,10 +32,8 @@ use tokio::select;
 use tokio::sync::oneshot;
 
 use crate::backends::rusty::decoder::SymphoniaDecoderError;
-use crate::{
-    MediaInfo, PlayerCmd, PlayerCmdCallbackSender, PlayerCmdSender, PlayerProgress, PlayerTrait,
-    Speed, Volume,
-};
+use crate::player_cmd::{PlayerCmd, PlayerCmdCallbackSender, PlayerErrorType};
+use crate::{MediaInfo, PlayerCmdSender, PlayerProgress, PlayerTrait, Speed, Volume};
 use decoder::buffered_source::BufferedSource;
 use decoder::read_seek_source::ReadSeekSource;
 use decoder::{MediaTitleRx, MediaTitleType, Symphonia};
@@ -147,9 +144,8 @@ impl RustyBackend {
     }
 }
 
-#[async_trait]
 impl PlayerTrait for RustyBackend {
-    async fn add_and_play(&mut self, track: &Track) {
+    fn add_and_play(&mut self, track: &Track) {
         // this has to be a extra scope as rust does not see "drop(config_read)" as a drop and complains with:
         // "await occurs here (rx.await), with `config_read` maybe used later"
         let query_options = {
@@ -187,10 +183,10 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::Play(
             Box::new(track.clone()),
             query_options,
-            PlayerCmdCallbackSender(Some(tx)),
+            PlayerCmdCallbackSender::new(Some(tx)),
         ));
         self.resume();
-        let _ = rx.await;
+        let _ = rx.blocking_recv();
     }
 
     fn volume(&self) -> Volume {
@@ -295,7 +291,7 @@ impl PlayerTrait for RustyBackend {
                 ringbuf_size,
                 enqueue: true,
             },
-            PlayerCmdCallbackSender(None),
+            PlayerCmdCallbackSender::new(None),
         ));
     }
 
@@ -447,7 +443,10 @@ async fn decode_task_seek_fut(
     seek_data: SeekData,
 ) -> Option<()> {
     trace!("Seeking Decoder");
-    decoder.try_seek(seek_data.0).ok()?;
+    if let Err(err) = decoder.try_seek(seek_data.0) {
+        error!("Seeking failed: {err:#?}");
+        return None;
+    }
 
     let spec = decoder.get_spec();
     prod.process_seek(&spec.0, spec.1, seek_data.1).await;
@@ -663,11 +662,11 @@ async fn player_thread(mut args: PlayerThreadArgs) {
                     if options.enqueue {
                         let _ = args
                             .pcmd_tx
-                            .send(PlayerCmd::Error(crate::PlayerErrorType::Enqueue));
+                            .send(PlayerCmd::Error(PlayerErrorType::Enqueue));
                     } else {
                         let _ = args
                             .pcmd_tx
-                            .send(PlayerCmd::Error(crate::PlayerErrorType::Current));
+                            .send(PlayerCmd::Error(PlayerErrorType::Current));
                     }
                 }
                 // maybe this should be called by the source / decoder to be fully correct

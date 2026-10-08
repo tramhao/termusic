@@ -3,7 +3,7 @@ use termusiclib::player::protobuf::{
     common::Empty,
     server::{InfoResponse, server_control_server::ServerControl},
 };
-use termusicplayback::{PlayerCmd, PlayerCmdSender};
+use termusicplayback::player_cmd::{PlayerCmd, PlayerCmdSender};
 use tonic::{Request, Response, Status};
 
 #[derive(Debug)]

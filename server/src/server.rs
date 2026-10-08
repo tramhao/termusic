@@ -19,10 +19,12 @@ use termusiclib::player::{
 };
 use termusiclib::track::{MediaTypesSimple, Track};
 use termusiclib::{podcast, utils};
+use termusicplayback::player_cmd::{
+    PlayerCmd, PlayerCmdReciever, PlayerCmdSender, PlayerErrorType,
+};
 use termusicplayback::{
-    Backend, BackendSelect, GeneralPlayer, PlayerCmd, PlayerCmdReciever, PlayerCmdSender,
-    PlayerErrorType, PlayerTrait, Playlist, RunInfo, SharedPlaylist, SharedRunInfo, SpeedSigned,
-    VolumeSigned, quit_sources,
+    Backend, BackendSelect, GeneralPlayer, PlayerTrait, Playlist, RunInfo, SharedPlaylist,
+    SharedRunInfo, SpeedSigned, VolumeSigned, quit_sources,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -416,28 +418,28 @@ fn player_loop(
                     error!("Reloading config failed, using old: {err:#?}");
                 }
             }
-            PlayerCmd::ReloadPlaylist => {
-                player.playlist.write().reload_tracks().ok();
+            PlayerCmd::Seek(seek) => {
+                debug!("Doing seek with {seek:#?}");
+                match seek {
+                    SeekReq::Steps(steps) => {
+                        if steps.is_positive() {
+                            for _ in 0..steps {
+                                player.seek_relative(true);
+                            }
+                        } else {
+                            for _ in steps..0 {
+                                player.seek_relative(false)
+                            }
+                        }
+                    }
+                    SeekReq::Unit(units) => {
+                        if let Err(err) = player.seek(units) {
+                            error!("Error running seek: {err:#?}");
+                        }
+                    }
+                    SeekReq::RestartTrack => player.restart_track(),
+                }
             }
-            PlayerCmd::Seek(seek) => match seek {
-                SeekReq::Steps(steps) => {
-                    if steps.is_positive() {
-                        for _ in 0..steps {
-                            player.seek_relative(true);
-                        }
-                    } else {
-                        for _ in steps..0 {
-                            player.seek_relative(false)
-                        }
-                    }
-                }
-                SeekReq::Unit(units) => {
-                    if let Err(err) = player.seek(units) {
-                        error!("Error running seek: {err:#?}");
-                    }
-                }
-                SeekReq::RestartTrack => player.restart_track(),
-            },
             PlayerCmd::SkipNext => {
                 player.reset_errors();
                 info!("skip to next track.");

@@ -8,7 +8,8 @@ use termusiclib::player::protobuf::queue::{
     PlaylistSwapTracksRequest, PlaylistTracksToAddRequest, PlaylistTracksToRemoveRequest,
     SortCriterion, SortDirection, SortPlaylistRequest,
 };
-use termusicplayback::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender, SharedPlaylist};
+use termusicplayback::SharedPlaylist;
+use termusicplayback::player_cmd::{PlayerCmd, PlayerCmdCallback, PlayerCmdSender};
 use tonic::{Request, Response, Status};
 
 #[derive(Debug)]
