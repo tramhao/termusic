@@ -4438,6 +4438,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rodio-wsola"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7a9846f28f3dec5c369fa0bf68bfa35bff5017d71bcd52fd7f864df948ded73"
+dependencies = [
+ "rodio",
+]
+
+[[package]]
 name = "rsqlite-vfs"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5504,6 +5513,7 @@ dependencies = [
  "rand 0.10.1",
  "reqwest",
  "rodio",
+ "rodio-wsola",
  "soundtouch",
  "souvlaki",
  "stream-download",
