@@ -5512,6 +5512,7 @@ dependencies = [
  "termusic-lib",
  "tokio",
  "windows 0.62.2",
+ "wsola",
 ]
 
 [[package]]
@@ -6957,6 +6958,15 @@ name = "writeable"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
+
+[[package]]
+name = "wsola"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "542a5d4e1f44b1af2eeef27a918d15d117ce326af641153efbfe436b586418f5"
+dependencies = [
+ "thiserror 2.0.18",
+]
 
 [[package]]
 name = "xdg-home"
