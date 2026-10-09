@@ -100,6 +100,7 @@ tuirealm = { version = "~4.1.0", features = ["async-ports"] }
 
 # --- termusic-playback specific Dependencies ---
 soundtouch = { version = "0.5.4", features = ["bundled"] }
+wsola = "0.1"
 stream-download = { version = "0.24.1", features = ["reqwest-rustls"] }
 symphonia = { version = "0.6.0", features = [
     "aac",
