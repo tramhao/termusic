@@ -40,6 +40,7 @@ stream-download.workspace = true
 symphonia.workspace = true
 symphonia-adapter-libopus = { workspace = true, optional = true }
 rodio.workspace = true
+wsola.workspace = true
 tokio.workspace = true
 # soundtouch= { git = 'https://github.com/Drewol/soundtouch-rs.git' }
 
