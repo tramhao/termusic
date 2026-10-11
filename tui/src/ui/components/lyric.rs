@@ -36,6 +36,10 @@ static RE_HTML_TAGS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^<>]*>").
 static RE_MULT_LINE_BREAKS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"((\r\n)|\r|\n){3,}").unwrap());
 
+fn format_lyric_title(artist: &str, title: &str) -> String {
+    format!(" Lyrics of {artist:^20} - {title:^20} ")
+}
+
 #[derive(Component)]
 pub struct Lyric {
     component: Textarea,
@@ -458,7 +462,7 @@ impl Model {
                 // Updated from "Loading..." by calling the function again when data is ready.
                 let title =
                     track.map_or("Loading...", |track| track.title().unwrap_or(UNKNOWN_TITLE));
-                format!(" Lyrics of {artist:^.20} - {title:^.20} ")
+                format_lyric_title(artist, title)
             }
             MediaTypesSimple::LiveRadio => " Live Radio ".to_string(),
             MediaTypesSimple::Podcast => Self::LYRIC_PODCAST_TITLE.to_string(),
@@ -475,5 +479,21 @@ impl Model {
                 AttrValue::Title(Title::from(lyric_title).alignment(HorizontalAlignment::Center)),
             )
             .ok();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_lyric_title;
+
+    #[test]
+    fn lyric_title_keeps_artist_and_track_title_beyond_twenty_characters() {
+        assert_eq!(
+            format_lyric_title(
+                "An Artist With A Long Name",
+                "A Much Longer Track Title Than Twenty"
+            ),
+            " Lyrics of An Artist With A Long Name - A Much Longer Track Title Than Twenty "
+        );
     }
 }
