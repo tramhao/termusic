@@ -37,7 +37,7 @@ static RE_MULT_LINE_BREAKS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"((\r\n)|\r|\n){3,}").unwrap());
 
 fn format_lyric_title(artist: &str, title: &str) -> String {
-    format!("Lyrics of {artist} - {title}")
+    format!("Lyrics of {artist:.20} - {title:.40}")
 }
 
 #[derive(Component)]
@@ -517,27 +517,22 @@ mod tests {
     }
 
     #[test]
-    fn lyric_title_keeps_artist_and_track_title_beyond_twenty_characters() {
+    fn lyric_title_caps_artist_at_twenty_and_track_title_at_forty_characters() {
         assert_eq!(
             format_lyric_title(
                 "An Artist With A Long Name",
-                "A Much Longer Track Title Than Twenty"
+                "0123456789012345678901234567890123456789"
             ),
-            "Lyrics of An Artist With A Long Name - A Much Longer Track Title Than Twenty"
+            "Lyrics of An Artist With A Lon - 0123456789012345678901234567890123456789"
         );
     }
 
     #[test]
-    fn long_lyric_title_is_fully_visible_when_panel_is_wide_enough() {
-        let top_border = render_lyric_title(
-            "An Artist With A Long Name",
-            "A Much Longer Track Title Than Twenty",
-            100,
-        );
+    fn track_title_longer_than_forty_characters_is_truncated() {
+        let top_border = render_lyric_title("Alan Walker", &"x".repeat(41), 100);
 
-        assert!(top_border.contains(
-            "Lyrics of An Artist With A Long Name - A Much Longer Track Title Than Twenty"
-        ));
+        assert!(top_border.contains(&format!("Lyrics of Alan Walker - {}", "x".repeat(40))));
+        assert!(!top_border.contains(&"x".repeat(41)));
         assert_eq!(top_border.chars().count(), 100);
     }
 
