@@ -37,7 +37,7 @@ static RE_MULT_LINE_BREAKS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"((\r\n)|\r|\n){3,}").unwrap());
 
 fn format_lyric_title(artist: &str, title: &str) -> String {
-    format!(" Lyrics of {artist:^20} - {title:^20} ")
+    format!("Lyrics of {artist} - {title}")
 }
 
 #[derive(Component)]
@@ -485,6 +485,36 @@ impl Model {
 #[cfg(test)]
 mod tests {
     use super::format_lyric_title;
+    use tui_realm_stdlib::components::Textarea;
+    use tuirealm::component::Component;
+    use tuirealm::props::{BorderType, Borders, HorizontalAlignment, Title};
+    use tuirealm::ratatui::Terminal;
+    use tuirealm::ratatui::backend::TestBackend;
+
+    fn render_lyric_title(artist: &str, title: &str, width: u16) -> String {
+        let backend = TestBackend::new(width, 3);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let title = format_lyric_title(artist, title);
+        let mut textarea =
+            Textarea::default().borders(Borders::default().modifiers(BorderType::Rounded));
+        textarea = textarea.title(Title::from(title).alignment(HorizontalAlignment::Center));
+
+        terminal
+            .draw(|frame| textarea.view(frame, frame.area()))
+            .unwrap();
+
+        (0..width)
+            .map(|x| terminal.backend().buffer()[(x, 0)].symbol())
+            .collect()
+    }
+
+    #[test]
+    fn lyric_title_does_not_pad_short_artist_and_track_names() {
+        assert_eq!(
+            format_lyric_title("Alan Walker", "Jump Start"),
+            "Lyrics of Alan Walker - Jump Start"
+        );
+    }
 
     #[test]
     fn lyric_title_keeps_artist_and_track_title_beyond_twenty_characters() {
@@ -493,7 +523,29 @@ mod tests {
                 "An Artist With A Long Name",
                 "A Much Longer Track Title Than Twenty"
             ),
-            " Lyrics of An Artist With A Long Name - A Much Longer Track Title Than Twenty "
+            "Lyrics of An Artist With A Long Name - A Much Longer Track Title Than Twenty"
         );
+    }
+
+    #[test]
+    fn long_lyric_title_is_fully_visible_when_panel_is_wide_enough() {
+        let top_border = render_lyric_title(
+            "An Artist With A Long Name",
+            "A Much Longer Track Title Than Twenty",
+            100,
+        );
+
+        assert!(top_border.contains(
+            "Lyrics of An Artist With A Long Name - A Much Longer Track Title Than Twenty"
+        ));
+        assert_eq!(top_border.chars().count(), 100);
+    }
+
+    #[test]
+    fn lyric_title_is_clipped_by_a_narrow_panel() {
+        let top_border = render_lyric_title("Alan Walker", "Jump Start", 20);
+        assert!(top_border.contains("Jump Start"));
+        assert!(!top_border.contains("Lyrics of"));
+        assert_eq!(top_border.chars().count(), 20);
     }
 }
