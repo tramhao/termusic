@@ -152,6 +152,10 @@ pretty_assertions = "1.4.1"
 assert_fs = "1.1"
 predicates = { version = "3.1", default-features = false }
 
+# Always optimize the "wsola" crate, as otherwise using it consumes way more CPU than it should
+[profile.dev.package.wsola]
+opt-level = 3
+
 [profile.release]
 lto = true
 # panic = 'abort'
