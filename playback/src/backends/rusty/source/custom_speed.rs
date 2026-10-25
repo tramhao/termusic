@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{fmt::Display, time::Duration};
 
 use rodio::{ChannelCount, SampleRate, Source};
 
@@ -10,6 +10,21 @@ pub enum SpecificType {
     #[cfg(feature = "rusty-soundtouch")]
     Soundtouch,
     Wsola,
+}
+
+impl Display for SpecificType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Rodio => "Rodio",
+                #[cfg(feature = "rusty-soundtouch")]
+                Self::Soundtouch => "Soundtouch",
+                Self::Wsola => "WSola",
+            }
+        )
+    }
 }
 
 impl SpecificType {
@@ -37,11 +52,12 @@ pub fn custom_speed<I>(input: I, initial_speed: f32, specific: SpecificType) -> 
 where
     I: Source<Item = SampleType>,
 {
+    trace!("Using Timestrecher {specific}");
+
     match specific {
         SpecificType::Rodio => CustomSpeed::Rodio(input.speed(initial_speed)),
         #[cfg(feature = "rusty-soundtouch")]
         SpecificType::Soundtouch => {
-            trace!("Using soundtouch");
             CustomSpeed::SoundTouch(super::soundtouch::soundtouch(input, initial_speed))
         }
         SpecificType::Wsola => CustomSpeed::WSola(super::wsola::WSola::new(input, initial_speed)),
