@@ -1,0 +1,26 @@
+[workspace]
+changelog_update = true
+changelog_path = "./CHANGELOG.md"
+changelog_config = "cliff.toml" # TODO: deprecated; replace with "[changelog]" section
+dependencies_update = false
+# create GitHub/Gitea releases
+git_release_enable = true
+pr_branch_prefix = "release-plz/"
+pr_labels = ["release"]
+publish_allow_dirty = false
+# disable API breaking changes checks
+semver_check = false
+# set a timeout for `cargo publish`
+publish_timeout = "10m"
+# Default would add "{{ package }}"; we dont publish packages individually
+git_release_name = "v{{ version }}"
+git_release_body = "{{ changelog }}"
+# Default would add "{{ package }}"; we dont publish packages individually
+git_tag_name = "v{{ version }}"
+# Default would add "{{ package }}"; we dont publish packages individually
+pr_name = "chore: release v{{ version }}"
+# Regex of commit messages which trigger the creation of a PR (ie to not create a release PR if only a chore is done)
+release_commits = "^(feat|fix|perf|deps)"
+
+# [changelog]
+# protect_breaking_commits = true # always include commits with breaking changes in the changelog
