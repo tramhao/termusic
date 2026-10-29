@@ -1,0 +1,65 @@
+# Release flow:
+# 1. release-plz open a PR (or updates a existing unmerged one) with new changes
+# 2. The release PR is merged
+# 3. release-plz notices the release commit and creates a tag and release
+# 4. The "binaries" workflow notices a new tag and runs
+
+name: Release-plz
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  # Release unpublished packages.
+  # Note that this *should* only publish things if it notices a release commit (though details are not exactly known; still testing)
+  release-plz-release:
+    name: Release-plz release
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'tramhao' }}
+    permissions:
+      contents: write
+      pull-requests: read
+      id-token: write
+    steps:
+      - &checkout
+        name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - &install-rust
+        name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run release-plz
+        uses: release-plz/action@v0.5
+        with:
+          command: release
+        # No env token; using trusted publishing
+        # env:
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # Create a PR with the new versions and changelog, preparing the next release.
+  # TODO: use a PAT or private App; otherwise a commit created in a workflow does not trigger other workflows (ie binary build & attach)
+  release-plz-pr:
+    name: Release-plz PR
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'tramhao' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: release-plz-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - *checkout
+      - *install-rust
+      - name: Run release-plz
+        uses: release-plz/action@v0.5
+        with:
+          command: release-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
