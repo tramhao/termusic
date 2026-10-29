@@ -36,6 +36,10 @@ static RE_HTML_TAGS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^<>]*>").
 static RE_MULT_LINE_BREAKS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"((\r\n)|\r|\n){3,}").unwrap());
 
+fn format_lyric_title(artist: &str, title: &str) -> String {
+    format!("Lyrics of {artist:.20} - {title:.40}")
+}
+
 #[derive(Component)]
 pub struct Lyric {
     component: Textarea,
@@ -458,7 +462,7 @@ impl Model {
                 // Updated from "Loading..." by calling the function again when data is ready.
                 let title =
                     track.map_or("Loading...", |track| track.title().unwrap_or(UNKNOWN_TITLE));
-                format!(" Lyrics of {artist:^.20} - {title:^.20} ")
+                format_lyric_title(artist, title)
             }
             MediaTypesSimple::LiveRadio => " Live Radio ".to_string(),
             MediaTypesSimple::Podcast => Self::LYRIC_PODCAST_TITLE.to_string(),
@@ -475,5 +479,68 @@ impl Model {
                 AttrValue::Title(Title::from(lyric_title).alignment(HorizontalAlignment::Center)),
             )
             .ok();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_lyric_title;
+    use tui_realm_stdlib::components::Textarea;
+    use tuirealm::component::Component;
+    use tuirealm::props::{BorderType, Borders, HorizontalAlignment, Title};
+    use tuirealm::ratatui::Terminal;
+    use tuirealm::ratatui::backend::TestBackend;
+
+    fn render_lyric_title(artist: &str, title: &str, width: u16) -> String {
+        let backend = TestBackend::new(width, 3);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let title = format_lyric_title(artist, title);
+        let mut textarea =
+            Textarea::default().borders(Borders::default().modifiers(BorderType::Rounded));
+        textarea = textarea.title(Title::from(title).alignment(HorizontalAlignment::Center));
+
+        terminal
+            .draw(|frame| textarea.view(frame, frame.area()))
+            .unwrap();
+
+        (0..width)
+            .map(|x| terminal.backend().buffer()[(x, 0)].symbol())
+            .collect()
+    }
+
+    #[test]
+    fn lyric_title_does_not_pad_short_artist_and_track_names() {
+        assert_eq!(
+            format_lyric_title("Alan Walker", "Jump Start"),
+            "Lyrics of Alan Walker - Jump Start"
+        );
+    }
+
+    #[test]
+    fn lyric_title_caps_artist_at_twenty_and_track_title_at_forty_characters() {
+        assert_eq!(
+            format_lyric_title(
+                "An Artist With A Long Name",
+                "0123456789012345678901234567890123456789"
+            ),
+            "Lyrics of An Artist With A Lon - 0123456789012345678901234567890123456789"
+        );
+    }
+
+    #[test]
+    fn track_title_longer_than_forty_characters_is_truncated() {
+        let top_border = render_lyric_title("Alan Walker", &"x".repeat(41), 100);
+
+        assert!(top_border.contains(&format!("Lyrics of Alan Walker - {}", "x".repeat(40))));
+        assert!(!top_border.contains(&"x".repeat(41)));
+        assert_eq!(top_border.chars().count(), 100);
+    }
+
+    #[test]
+    fn lyric_title_is_clipped_by_a_narrow_panel() {
+        let top_border = render_lyric_title("Alan Walker", "Jump Start", 20);
+        assert!(top_border.contains("Jump Start"));
+        assert!(!top_border.contains("Lyrics of"));
+        assert_eq!(top_border.chars().count(), 20);
     }
 }
