@@ -1,14 +1,13 @@
 [workspace]
 changelog_update = true
 changelog_path = "./CHANGELOG.md"
-changelog_config = "cliff.toml" # TODO: deprecated; replace with "[changelog]" section
 dependencies_update = false
 # create GitHub/Gitea releases
 git_release_enable = true
 pr_branch_prefix = "release-plz/"
 pr_labels = ["release"]
 publish_allow_dirty = false
-# disable API breaking changes checks
+# Disable semver API check as termusic packages are not meant for public API consumption
 semver_check = false
 # set a timeout for `cargo publish`
 publish_timeout = "10m"
@@ -22,5 +21,102 @@ pr_name = "chore: release v{{ version }}"
 # Regex of commit messages which trigger the creation of a PR (ie to not create a release PR if only a chore is done)
 release_commits = "^(feat|fix|perf|deps)"
 
-# [changelog]
-# protect_breaking_commits = true # always include commits with breaking changes in the changelog
+[changelog]
+# Any commit that contains "BREAKING CHANGE" will be protected from being filtered out.
+protect_breaking_commits = true
+# An array of regex based parsers for extracting data from the commit message.
+# Assigns commits to groups.
+# Optionally sets the commit's scope and can decide to exclude commits from further processing.
+# HTML comments are used for group order, as groups are sorted alphabetically.
+commit_parsers = [
+    { message = "^feat", group = "<!-- 1 -->Features" },
+    { message = "^fix", group = "<!-- 2 -->Bug Fixes" },
+    { message = "^docs", group = "<!-- 7 -->Documentation" },
+    { message = "^perf", group = "<!-- 3 -->Performance" },
+    { message = "^refactor", group = "<!-- 5 -->Refactor" },
+    # Style changes dont need to be mentioned
+    { message = "^style", group = "Styling", skip = true },
+    { message = "^test", group = "<!-- 6 -->Testing" },
+    # Release commits dont add anything noteworthy to add to a changelog
+    { message = "^chore\\(release\\): prepare for", skip = true },
+    { message = "^chore", group = "<!-- 5 -->Miscellaneous Tasks" },
+    # Merge commits themself dont add anything noteworthy
+    { message = "^[mM]erge", skip = true },
+    { message = "^[rR]evert", group = "<!-- 8 -->Revert" },
+    { message = "^deps", group = "<!-- 4 -->Dependencies" },
+    { body = ".*security", group = "<!-- 0 -->Security" },
+    { body = ".*", group = "<!-- 99 -->Other (unconventional)" },
+]
+commit_preprocessors = [
+    # Remove the "(#XXX)" that gets added in the default squash merge message in the github web interface
+    { pattern = '\(#\d+\)', replace = "" }
+]
+# A Tera template to be rendered as the changelog's header.
+# See https://keats.github.io/tera/docs/#introduction
+header = """
+# Changelog\n
+All notable changes to this project will be documented in this file.\n
+"""
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+{%- macro remote_url() -%}
+    https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{%- endmacro -%}
+{%- macro scoped(commit) -%}
+    {% if commit.scope -%} *{{ commit.scope | split(pat="::") | first }}*: {% endif %}
+{%- endmacro -%}
+{%- macro first_message(commit) -%}
+    {{ commit.message | split(pat="\n") | first | upper_first | trim_end }}
+{%- endmacro -%}
+{%- macro print_commit(commit) -%}
+    - {{ self::scoped(commit=commit) }}\
+        {{ self::first_message(commit=commit) }}\
+        {% if commit.remote.pr_number %} ([#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }})){% endif %}
+{%- endmacro -%}
+
+{% if version %}\
+    ## [{{ version }}]
+
+    Released on: {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [Unreleased]
+{% endif %}
+{% if commits | filter(attribute="breaking", value=true) | length != 0 %}\
+    ### Breaking Changes
+    {% for commit in commits| filter(attribute="breaking", value=true) %}
+        - {{ self::scoped(commit=commit) }}\
+            {{ self::first_message(commit=commit) }}\
+            {% if commit.remote.pr_number %} ([#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }})){% endif %}
+            {% raw %}  {% endraw %}- **BREAKING CHANGE**: {{ commit.breaking_description }}
+    {% endfor -%}
+{% endif -%}
+
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+
+    {% for commit in commits %}
+        {%- if commit.scope -%}
+        {% else -%}
+            {{ self::print_commit(commit=commit) }}
+        {% endif -%}
+    {%- endfor -%}
+    {%- for commit in commits | filter(attribute="scope") | sort(attribute="scope") -%}
+        {{ self::print_commit(commit=commit) }}
+    {% endfor -%}
+{% endfor %}
+### Commit Statistics\n
+- {{ statistics.commit_count }} commit(s) contributed to the release.
+- {{ statistics.commits_timespan | default(value=0) }} day(s) passed between the first and last commit.
+{%- if statistics.days_passed_since_last_release %}
+	- {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
+{%- endif %}
+
+{% if version %}\
+    [{{ version }}]({{ self::remote_url() }}/compare/{{ previous.version }}..{{ version }})
+{% else %}\
+    [Unreleased]: {{ self::remote_url() }}/compare/{{ previous.version }}..HEAD
+{% endif %}\n
+"""
+# Remove leading and trailing whitespaces from the changelog's body.
+trim = true
