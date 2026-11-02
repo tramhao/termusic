@@ -3,6 +3,8 @@ use std::{collections::VecDeque, time::Duration};
 use rodio::{ChannelCount, SampleRate, Source};
 use soundtouch::{Setting, SoundTouch};
 
+const FLOAT_CMP_ERROR: f64 = 5e-9;
+
 /// Modify samples to sound similar as 1.0 speed when sped-up or slowed-down via [`::soundtouch`] (via `libSoundTouch`)
 pub fn soundtouch<I>(input: I, rate: f32) -> SoundTouchSource<I>
 where
@@ -53,21 +55,24 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         // This is to skip soundtouch processing if speed is nominal 1.0.
-        // Note that due to how soundtouch consumes and produces samples, once we go to non-1.0 once, we might not be able to use this path anymore
+        // Note that due to how soundtouch consumes and produces samples, once we go to non-1.0, we might not be able to use this path anymore
         // for the duration of this source, at least not without losing samples.
-        // Due to float weirdness, the following has to be done to check for a approximation of "1.0"
-        if (self.factor - 1.0).abs() < 0.000_000_005
+        // We also want to drain the input buffer before transitioning to the Timestretcher, as otherwise we could output the wrong channels
+        if ((self.factor - 1.0).abs() < FLOAT_CMP_ERROR || !self.in_buffer.is_empty())
             && self.out_buffer.is_empty()
             && self.soundtouch.num_unprocessed_samples() == 0
         {
             // use the samples from the in_buffer, otherwise we could be dropping samples without actually playing them
             // when quickly changing between 1.0 and other speeds, there may still be a audible drop, but this lowers it
-            if !self.in_buffer.is_empty() {
-                let _ = self.out_buffer.pop_front();
-                return self.in_buffer.pop_front();
+            if self.in_buffer.is_empty() {
+                // take multiple samples at once, so that we dont accidentally feed the wrong channel to the Timestretcher.
+                let take_samples = self.channels().get() as usize;
+                self.in_buffer
+                    .extend(self.input.by_ref().take(take_samples));
             }
 
-            return self.input.next();
+            let _ = self.out_buffer.pop_front();
+            return self.in_buffer.pop_front();
         }
 
         if self.out_buffer.is_empty() {
