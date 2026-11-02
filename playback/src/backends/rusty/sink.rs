@@ -153,7 +153,7 @@ impl Sink {
         let progress_tx = self.picmd_tx.clone();
         let source = source
             .track_position()
-            .custom_speed(1.0, SpecificType::soundtouch(options.soundtouch))
+            .custom_speed(1.0, SpecificType::auto_select(options.soundtouch))
             .amplify(1.0)
             .pausable(false)
             .skippable()
