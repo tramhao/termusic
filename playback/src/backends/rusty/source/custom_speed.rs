@@ -28,21 +28,25 @@ impl Display for SpecificType {
 }
 
 impl SpecificType {
-    /// Enable or disable soundtouch usage, has no effect if soundtouch has not been compiled-in
+    /// Automatically select which time stretcher to use.
     #[must_use]
     #[allow(unused_variables)] // because of feature gates
-    pub fn soundtouch(value: bool) -> Self {
+    pub fn auto_select(use_soundtouch: bool) -> Self {
+        // Ability to select the timestrecher in use, overwrites the config options.
+        // This is meant as a debug-only option.
+        let stretcher = std::env::var("TERMUSIC_RUSTY_TIMESTRETCH")
+            .ok()
+            .map(|v| v.to_lowercase());
+
         #[cfg(feature = "rusty-soundtouch")]
-        if value {
+        if use_soundtouch && stretcher.as_ref().is_none_or(|v| v == "soundtouch") {
             return Self::Soundtouch;
         }
 
-        // Temporary experimental environment toggle to try with WSola
-        let wsola_env = std::env::var("TERMUSIC_RUSTY_WSOLA");
-        if wsola_env.is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1") {
-            Self::Wsola
-        } else {
-            Self::Rodio
+        match stretcher.as_deref().unwrap_or("wsola") {
+            "wsola" => Self::Wsola,
+            "rodio" => Self::Rodio,
+            v => unimplemented!("Unknown stretcher \"{v}\""),
         }
     }
 }
