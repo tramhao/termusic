@@ -40,9 +40,9 @@ stream-download.workspace = true
 symphonia.workspace = true
 symphonia-adapter-libopus = { workspace = true, optional = true }
 rodio.workspace = true
+rodio-async-sync-bridge.workspace = true
 wsola.workspace = true
 tokio.workspace = true
-# soundtouch= { git = 'https://github.com/Drewol/soundtouch-rs.git' }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2.workspace = true
