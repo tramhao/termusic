@@ -372,22 +372,12 @@ dependencies = [
 
 [[package]]
 name = "async-ringbuf"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57d99a9002e217633946c76364ee2058c9e62341fc56d24c6deb317ca272a1e5"
-dependencies = [
- "futures-util",
- "ringbuf 0.5.0",
-]
-
-[[package]]
-name = "async-ringbuf"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3173ca7670bc6ea9e2fafaff91036e6f9d45b9d5a886a03d41a0f9cbaaa17034"
 dependencies = [
  "futures-util",
- "ringbuf 0.6.0",
+ "ringbuf",
 ]
 
 [[package]]
@@ -4473,17 +4463,6 @@ dependencies = [
 
 [[package]]
 name = "ringbuf"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d3ecbcab081b935fb9c618b07654924f27686b4aac8818e700580a83eedcb7f"
-dependencies = [
- "crossbeam-utils",
- "portable-atomic",
- "portable-atomic-util",
-]
-
-[[package]]
-name = "ringbuf"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33d5f59e4145df5f29e84b6389394a8a3fedf7bd8c12570560ae67a917e6eae3"
@@ -4511,7 +4490,7 @@ version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6b81161ff4fc526134a0ac35912a68b73e83f948ab8812546038d873f8cc50a"
 dependencies = [
- "async-ringbuf 0.4.0",
+ "async-ringbuf",
  "log",
  "parking_lot",
  "rodio",
@@ -5594,7 +5573,6 @@ dependencies = [
  "alphanumeric-sort",
  "anyhow",
  "assert_fs",
- "async-ringbuf 0.3.6",
  "base64",
  "criterion",
  "discord-rich-presence",

@@ -113,7 +113,6 @@ symphonia = { version = "0.6.0", features = [
     "aiff"
 ] }
 symphonia-adapter-libopus = { version = "0.3.0", default-features = false }
-async-ringbuf = "0.3.6"
 discord-rich-presence = "1.1.0"
 souvlaki = { version = "0.8.3", default-features=false, features = ["use_zbus"] }
 rodio = { version = "0.23", default-features = false, features = ["playback"] }
