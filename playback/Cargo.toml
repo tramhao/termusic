@@ -69,7 +69,6 @@ all-backends = ["gst", "mpv"]
 
 [dev-dependencies]
 pretty_assertions.workspace = true
-criterion.workspace = true
 assert_fs.workspace = true
 predicates.workspace = true
 indoc.workspace = true
