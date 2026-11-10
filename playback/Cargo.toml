@@ -77,7 +77,3 @@ indoc.workspace = true
 
 [lints]
 workspace = true
-
-[[bench]]
-name = "async_ring"
-harness = false

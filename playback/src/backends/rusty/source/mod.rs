@@ -6,7 +6,6 @@ use rodio::Source;
 #[cfg(feature = "rusty-soundtouch")]
 pub mod soundtouch;
 
-pub mod async_ring;
 mod cb_done;
 mod custom_speed;
 mod wsola;
