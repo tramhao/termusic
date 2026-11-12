@@ -143,8 +143,6 @@ async fn actual_main() -> Result<()> {
         server_output.cancel_token.cancel();
     }
 
-    let mut ui = UI::new(config, client).await?;
-
     // this is a bad implementation, but there is no way to currently only shut off stderr / stdout
     // see https://github.com/emabee/flexi_logger/issues/142
     if !args.log_options.log_to_file {
@@ -154,6 +152,10 @@ async fn actual_main() -> Result<()> {
     {
         warn!("flexi_logger error: {err}");
     }
+
+    logger_handle.flush();
+
+    let mut ui = UI::new(config, client).await?;
 
     ui.run()?;
 
