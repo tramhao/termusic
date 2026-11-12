@@ -4359,15 +4359,14 @@ dependencies = [
 
 [[package]]
 name = "rodio-async-sync-bridge"
-version = "0.1.3"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6b81161ff4fc526134a0ac35912a68b73e83f948ab8812546038d873f8cc50a"
+checksum = "24f8e0629d807cff0432aa8f69b288867fc3d9c6632041f8b64f0d7c1838bff2"
 dependencies = [
  "async-ringbuf",
  "log",
  "parking_lot",
  "rodio",
- "symphonia",
  "tokio",
 ]
 

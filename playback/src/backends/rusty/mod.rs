@@ -9,7 +9,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use parking_lot::Mutex;
 use rodio::{DeviceSinkBuilder, Source};
-use rodio_async_sync_bridge::{AsyncRingProducer, AudioSpec, SeekData, new_bridge};
+use rodio_async_sync_bridge::{AsyncRingProducer, AudioSpec, SeekRequest, new_bridge};
 use std::num::{NonZeroU16, NonZeroU32, NonZeroUsize};
 use stream_download::http::{
     HttpStream,
@@ -422,12 +422,12 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingProducer) -> Opt
         let spec_len = decoder.get_spec();
         if decoder.decode_once().is_none() {
             trace!("Sending decoder EOS");
-            prod.new_eos().await?;
+            prod.write_eos().await?;
             send_eos = true;
         }
         let new_spec = decoder.get_spec();
         if spec_len != new_spec {
-            prod.new_spec(
+            prod.write_spec(
                 &spec_to_spec(&new_spec.0).expect("Expected a valid AudioSpec"),
                 new_spec.1,
             )
@@ -444,7 +444,7 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingProducer) -> Opt
 async fn decode_task_seek_fut(
     decoder: &mut Symphonia,
     prod: &mut AsyncRingProducer,
-    seek_data: SeekData,
+    seek_data: SeekRequest,
 ) -> Option<()> {
     trace!("Seeking Decoder");
     if let Err(err) = decoder.try_seek(seek_data.seek_to) {
@@ -453,7 +453,7 @@ async fn decode_task_seek_fut(
     }
 
     let spec = decoder.get_spec();
-    prod.process_seek(
+    prod.complete_seek(
         &spec_to_spec(&spec.0).expect("Expected a valid AudioSpec"),
         spec.1,
         seek_data.callback,
