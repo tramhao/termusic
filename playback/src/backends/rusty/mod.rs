@@ -9,6 +9,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use parking_lot::Mutex;
 use rodio::{DeviceSinkBuilder, Source};
+use rodio_async_sync_bridge::{AsyncRingProducer, AudioSpec, SeekRequest, new_bridge};
 use std::num::{NonZeroU16, NonZeroU32, NonZeroUsize};
 use stream_download::http::{
     HttpStream,
@@ -38,7 +39,6 @@ use decoder::buffered_source::BufferedSource;
 use decoder::read_seek_source::ReadSeekSource;
 use decoder::{MediaTitleRx, MediaTitleType, Symphonia};
 use sink::{Sink, SourceOptions};
-use source::async_ring::{AsyncRingSource, AsyncRingSourceProvider, SeekData};
 
 mod decoder;
 mod icy_metadata;
@@ -355,8 +355,8 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
         let handle = tokio::runtime::Handle::current();
         let (spec, current_span_len) = decoder.get_spec();
         let total_duration = decoder.total_duration();
-        let (prod, cons) = AsyncRingSource::new(
-            &spec,
+        let (prod, cons) = new_bridge(
+            &spec_to_spec(&spec).expect("Expected a valid AudioSpec"),
             total_duration,
             current_span_len,
             common_options.ringbuf_size,
@@ -387,7 +387,7 @@ fn append_to_sink_inner<TD: Display, F: FnOnce(&mut Symphonia, Option<MediaTitle
 }
 
 /// The task that runs the decoder and writes to the ringbuffer, until a error or the consumer closes.
-async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) -> Option<()> {
+async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingProducer) -> Option<()> {
     let mut send_eos = false;
     loop {
         // will always write the full buffer as long as the consumer is connected
@@ -422,12 +422,16 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
         let spec_len = decoder.get_spec();
         if decoder.decode_once().is_none() {
             trace!("Sending decoder EOS");
-            prod.new_eos().await?;
+            prod.write_eos().await?;
             send_eos = true;
         }
         let new_spec = decoder.get_spec();
         if spec_len != new_spec {
-            prod.new_spec(&new_spec.0, new_spec.1).await?;
+            prod.write_spec(
+                &spec_to_spec(&new_spec.0).expect("Expected a valid AudioSpec"),
+                new_spec.1,
+            )
+            .await?;
         }
     }
 }
@@ -439,19 +443,33 @@ async fn decode_task(mut decoder: Symphonia, mut prod: AsyncRingSourceProvider) 
 /// Return [`Some`] if seek was successful, [`None`] otherwise.
 async fn decode_task_seek_fut(
     decoder: &mut Symphonia,
-    prod: &mut AsyncRingSourceProvider,
-    seek_data: SeekData,
+    prod: &mut AsyncRingProducer,
+    seek_data: SeekRequest,
 ) -> Option<()> {
     trace!("Seeking Decoder");
-    if let Err(err) = decoder.try_seek(seek_data.0) {
+    if let Err(err) = decoder.try_seek(seek_data.seek_to) {
         error!("Seeking failed: {err:#?}");
         return None;
     }
 
     let spec = decoder.get_spec();
-    prod.process_seek(&spec.0, spec.1, seek_data.1).await;
+    prod.complete_seek(
+        &spec_to_spec(&spec.0).expect("Expected a valid AudioSpec"),
+        spec.1,
+        seek_data.callback,
+    )
+    .await;
 
     Some(())
+}
+
+/// Convert a Symphonia audio spec to an rodio-ASB audio spec.
+fn spec_to_spec(spec: &symphonia::core::audio::AudioSpec) -> Result<AudioSpec> {
+    let sample_rate = NonZeroU32::new(spec.rate()).context("Invalid sample rate")?;
+    let channels = u16::try_from(spec.channels().count()).context("Invalid channel count")?;
+    let channels = NonZeroU16::new(channels).context("Invalid channel count")?;
+
+    Ok(AudioSpec::new(sample_rate, channels))
 }
 
 /// Append the `media_source` to the `sink`, while also setting `total_duration*`

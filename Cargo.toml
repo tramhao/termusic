@@ -113,10 +113,10 @@ symphonia = { version = "0.6.0", features = [
     "aiff"
 ] }
 symphonia-adapter-libopus = { version = "0.3.0", default-features = false }
-async-ringbuf = "0.3.6"
 discord-rich-presence = "1.1.0"
 souvlaki = { version = "0.8.3", default-features=false, features = ["use_zbus"] }
-rodio = { version = "0.22", default-features = false, features = ["playback"]}
+rodio = { version = "0.23", default-features = false, features = ["playback"] }
+rodio-async-sync-bridge = "0.2.0"
 # macos media controls event pump
 objc2 = "0.6"
 
@@ -147,7 +147,6 @@ wildmatch = "2.6"
 alphanumeric-sort = "1.5.7"
 
 # --- Dev Dependencies ---
-criterion = "0.8"
 pretty_assertions = "1.4.1"
 assert_fs = "1.1"
 predicates = { version = "3.1", default-features = false }
