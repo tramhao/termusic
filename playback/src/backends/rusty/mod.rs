@@ -73,8 +73,6 @@ pub struct RustyBackend {
     position: Arc<Mutex<Duration>>,
     total_duration: ArcTotalDuration,
     media_title: Arc<Mutex<String>>,
-    pub radio_downloaded: Arc<Mutex<u64>>,
-    // cmd_tx_outside: crate::PlayerCmdSender,
     config: SharedServerSettings,
 }
 
@@ -99,8 +97,6 @@ impl RustyBackend {
         let pcmd_tx_local = cmd_tx;
         let media_title = Arc::new(Mutex::new(String::new()));
         let media_title_local = media_title.clone();
-        let radio_downloaded = Arc::new(Mutex::new(100_u64));
-        // let radio_downloaded_local = radio_downloaded.clone();
         // this should likely be a parameter, but works for now
         let tokio_handle = Handle::current();
 
@@ -113,7 +109,6 @@ impl RustyBackend {
                     picmd_tx: picmd_tx_local,
                     picmd_rx,
                     media_title: media_title_local,
-                    // radio_downloaded_local,
                     position: position_local,
                     volume_inside: volume_local,
                     speed_inside: speed,
@@ -130,8 +125,6 @@ impl RustyBackend {
             command_tx: picmd_tx,
             position,
             media_title,
-            radio_downloaded,
-            // cmd_tx_outside: cmd_tx,
             config,
         }
     }

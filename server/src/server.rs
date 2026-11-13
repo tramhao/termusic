@@ -23,8 +23,8 @@ use termusicplayback::player_cmd::{
     PlayerCmd, PlayerCmdReciever, PlayerCmdSender, PlayerErrorType,
 };
 use termusicplayback::{
-    Backend, BackendSelect, GeneralPlayer, PlayerTrait, Playlist, RunInfo, SharedPlaylist,
-    SharedRunInfo, SpeedSigned, VolumeSigned, quit_sources,
+    Backend, BackendSelect, GeneralPlayer, Playlist, RunInfo, SharedPlaylist, SharedRunInfo,
+    SpeedSigned, VolumeSigned, quit_sources,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -633,11 +633,9 @@ fn update_metadata_changed(p_tick: &mut PlayerStats, player: &GeneralPlayer, tra
         // TODO: consider changing "radio_title" and "media_title" to be consistent
         p_tick.radio_title = player.media_info().media_title.unwrap_or_default();
 
-        if let Backend::Rusty(backend) = &player.backend {
-            p_tick.progress.total_duration = Some(Duration::from_secs(
-                ((*backend.radio_downloaded.lock() as f32 * 44100.0 / 1_000_000.0 / 1024.0)
-                    * (backend.speed() as f32 / 10.0)) as u64,
-            ));
+        if let Backend::Rusty(_backend) = &player.backend {
+            // TODO: implement some way to track buffered time for at least radio sources.
+            p_tick.progress.total_duration = None;
         }
 
         #[cfg(feature = "gst")]
