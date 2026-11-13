@@ -1,12 +1,11 @@
 [package]
 name = "termusic-lib"
-description = "library to support termusic."
+description = "Shared code between different components of termusic."
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
 rust-version.workspace = true

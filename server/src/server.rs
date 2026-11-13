@@ -23,8 +23,8 @@ use termusicplayback::player_cmd::{
     PlayerCmd, PlayerCmdReciever, PlayerCmdSender, PlayerErrorType,
 };
 use termusicplayback::{
-    Backend, BackendSelect, GeneralPlayer, PlayerTrait, Playlist, RunInfo, SharedPlaylist,
-    SharedRunInfo, SpeedSigned, VolumeSigned, quit_sources,
+    Backend, BackendSelect, GeneralPlayer, Playlist, RunInfo, SharedPlaylist, SharedRunInfo,
+    SpeedSigned, VolumeSigned, quit_sources,
 };
 use tokio::runtime::Handle;
 use tokio::select;
@@ -185,7 +185,7 @@ async fn actual_main() -> Result<()> {
 
     let cancel_token = service_cancel_token.clone();
     let playlist_c = playlist.clone();
-    start_playlist_save_interval(tokio_handle.clone(), cancel_token, playlist_c);
+    start_playlist_save_interval(&tokio_handle, cancel_token, playlist_c);
 
     let (player_handle_os_tx, player_handle_os_rx) = oneshot::channel();
     let player_handle = std::thread::Builder::new()
@@ -197,11 +197,11 @@ async fn actual_main() -> Result<()> {
                 cmd_tx,
                 cmd_rx,
                 config,
-                playerstats,
+                &playerstats,
                 stream_tx,
                 playlist,
                 run_info,
-                active_connections_data,
+                &active_connections_data,
             );
             let _ = player_handle_os_tx.send(res);
         })?;
@@ -230,7 +230,7 @@ const PLAYLIST_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 
 /// Spawn a task to periodically save the playlist to disk, if modified.
 fn start_playlist_save_interval(
-    handle: Handle,
+    handle: &Handle,
     cancel_token: CancellationToken,
     playlist: SharedPlaylist,
 ) {
@@ -248,7 +248,7 @@ fn start_playlist_save_interval(
                         Ok(false) => ()
                     }
                 },
-                _ = cancel_token.cancelled() => {
+                () = cancel_token.cancelled() => {
                     break;
                 }
             }
@@ -317,16 +317,17 @@ async fn start_service(
 
 /// The main player loop where we handle all events
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_lines)] // TODO: look into whether this function can be split.
 fn player_loop(
     backend: BackendSelect,
     cmd_tx: PlayerCmdSender,
     mut cmd_rx: PlayerCmdReciever,
     config: SharedServerSettings,
-    playerstats: Arc<Mutex<PlayerStats>>,
+    playerstats: &Arc<Mutex<PlayerStats>>,
     stream_tx: termusicplayback::StreamTX,
     playlist: SharedPlaylist,
     run_info: SharedRunInfo,
-    active_connections_data: ActiveConnections,
+    active_connections_data: &ActiveConnections,
 ) -> Result<()> {
     let mut player =
         GeneralPlayer::new_backend(backend, config, cmd_tx, stream_tx, playlist, run_info)?;
@@ -354,7 +355,7 @@ fn player_loop(
                 }
             }
             PlayerCmd::Quit(source) => {
-                info!("PlayerCmd::Quit received, source: \"{}\"", source);
+                info!("PlayerCmd::Quit received, source: \"{source}\"");
 
                 // only quit if there are no more active clients OR a client triggered it and is the last client
                 if (source != quit_sources::CLIENT
@@ -371,7 +372,7 @@ fn player_loop(
                     player.player_save_last_position();
                     if let Err(e) = player.playlist.write().save() {
                         error!("error when saving playlist: {e}");
-                    };
+                    }
                     // clear out all currently queued rodio sources
                     // without this, on rusty backend, may keep the process around until the last source has been consumed
                     player.stop();
@@ -379,7 +380,7 @@ fn player_loop(
                         &player.config.read().settings,
                     ) {
                         error!("error when saving config: {e}");
-                    };
+                    }
                     return Ok(());
                 }
             }
@@ -427,7 +428,7 @@ fn player_loop(
                             }
                         } else {
                             for _ in steps..0 {
-                                player.seek_relative(false)
+                                player.seek_relative(false);
                             }
                         }
                     }
@@ -464,7 +465,7 @@ fn player_loop(
                     ChangeSpeed::Reset => {
                         player.set_speed(0);
                     }
-                };
+                }
                 let new_speed = player.speed();
                 info!("After speed change: {new_speed}");
                 player.config.write().settings.player.speed = new_speed;
@@ -632,11 +633,9 @@ fn update_metadata_changed(p_tick: &mut PlayerStats, player: &GeneralPlayer, tra
         // TODO: consider changing "radio_title" and "media_title" to be consistent
         p_tick.radio_title = player.media_info().media_title.unwrap_or_default();
 
-        if let Backend::Rusty(backend) = &player.backend {
-            p_tick.progress.total_duration = Some(Duration::from_secs(
-                ((*backend.radio_downloaded.lock() as f32 * 44100.0 / 1000000.0 / 1024.0)
-                    * (backend.speed() as f32 / 10.0)) as u64,
-            ));
+        if let Backend::Rusty(_backend) = &player.backend {
+            // TODO: implement some way to track buffered time for at least radio sources.
+            p_tick.progress.total_duration = None;
         }
 
         #[cfg(feature = "gst")]
@@ -769,7 +768,7 @@ async fn execute_action(action: cli::Action, config: &ServerOverlay) -> Result<(
                     .context("refresh feeds")?;
             }
         },
-    };
+    }
 
     Ok(())
 }
