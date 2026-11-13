@@ -1,10 +1,10 @@
 [package]
 name = "termusic-server"
+description = "Server component for termusic. Handles all the logic for music playback and management."
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "server that can play music and running by itself. Works with termusic. "
 repository.workspace = true
 keywords.workspace = true
 categories.workspace = true

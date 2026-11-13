@@ -1,6 +1,6 @@
 [package]
 name = "termusic-lib"
-description = "library to support termusic."
+description = "Shared code between different components of termusic."
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

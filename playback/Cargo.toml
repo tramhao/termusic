@@ -1,6 +1,6 @@
 [package]
 name = "termusic-playback"
-description = "playback library to support termusic."
+description = "Termusic library that handles the music playback for different backends."
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

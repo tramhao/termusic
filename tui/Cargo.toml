@@ -1,6 +1,6 @@
 [package]
 name = "termusic"
-description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
+description = "TUI Music and Podcast Player written in Rust. Can download music from youtube,netease,migu & kugou and then embed lyrics and album covers."
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
