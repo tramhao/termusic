@@ -46,15 +46,15 @@ impl PlayerControlService {
 impl PlayerControlService {
     /// Send a command without a callback.
     fn command(&self, cmd: PlayerCmd) {
-        if let Err(e) = self.cmd_tx.send(cmd.clone()) {
-            error!("error {cmd:?}: {e}");
+        if let Err(err) = self.cmd_tx.send(cmd) {
+            error!("Sending Command failed: {err}");
         }
     }
 
     /// Send a command with a callback that can be waited for.
     fn command_cb(&self, cmd: PlayerCmd) -> Result<PlayerCmdCallback, Status> {
-        let rx = self.cmd_tx.send_cb(cmd.clone()).map_err(|err| {
-            error!("error {cmd:?}: {err}");
+        let rx = self.cmd_tx.send_cb(cmd).map_err(|err| {
+            error!("Sending Command failed: {err}");
             Status::from_error(err.into())
         })?;
 

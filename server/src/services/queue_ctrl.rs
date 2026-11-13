@@ -36,8 +36,8 @@ impl QueueControlService {
 impl QueueControlService {
     /// Send a command with a callback that can be waited for.
     fn command_cb(&self, cmd: PlayerCmd) -> Result<PlayerCmdCallback, Status> {
-        let rx = self.cmd_tx.send_cb(cmd.clone()).map_err(|err| {
-            error!("error {cmd:?}: {err}");
+        let rx = self.cmd_tx.send_cb(cmd).map_err(|err| {
+            error!("Sending Command failed: {err}");
             Status::from_error(err.into())
         })?;
 
