@@ -317,6 +317,7 @@ async fn start_service(
 
 /// The main player loop where we handle all events
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_lines)] // TODO: look into whether this function can be split.
 fn player_loop(
     backend: BackendSelect,
     cmd_tx: PlayerCmdSender,

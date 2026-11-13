@@ -230,16 +230,12 @@ impl Database {
         {
             pd_match = pd == old_pd.timestamp();
         }
-        if !(new_ep.title == old_ep.title
+        !(new_ep.title == old_ep.title
             && new_ep.url == old_ep.url
             && new_ep.guid == old_ep.guid
             && new_ep.description == old_ep.description
             && new_ep.duration == old_ep.duration
             && pd_match)
-        {
-            return true;
-        }
-        false
     }
 
     /// Updates an episode to mark it as played or unplayed.
