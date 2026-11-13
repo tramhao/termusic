@@ -8,7 +8,6 @@ edition = "2024"
 license = "MIT"
 description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
 repository = "https://github.com/tramhao/termusic"
-homepage = "https://github.com/tramhao/termusic"
 keywords = ["terminal", "tui", "music", "youtube", "podcast"]
 categories = [
     "command-line-interface",
