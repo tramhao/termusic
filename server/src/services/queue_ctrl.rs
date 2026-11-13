@@ -27,8 +27,8 @@ impl QueueControlService {
     ) -> Self {
         Self {
             cmd_tx,
-            playlist,
             config,
+            playlist,
         }
     }
 }

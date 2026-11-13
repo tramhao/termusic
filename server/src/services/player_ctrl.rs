@@ -36,9 +36,9 @@ impl PlayerControlService {
 
         Self {
             cmd_tx,
-            player_stats,
             config,
             run_info,
+            player_stats,
         }
     }
 }
