@@ -14,6 +14,7 @@ pub mod player;
 pub mod playlist;
 pub mod podcast;
 pub mod songtag;
+mod sqlite;
 pub mod taskpool;
 pub mod track;
 pub mod utils;

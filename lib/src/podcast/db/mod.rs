@@ -12,6 +12,7 @@ use parking_lot::Mutex;
 use rusqlite::{Connection, params};
 
 use super::{Episode, EpisodeNoId, Podcast, PodcastNoId, RE_ARTICLES};
+use crate::sqlite::configure_connection;
 use crate::track::Track;
 use podcast_db::{PodcastDB, PodcastDBInsertable};
 
@@ -49,13 +50,9 @@ impl Database {
         let mut db_path = path.to_path_buf();
         std::fs::create_dir_all(&db_path).context("Unable to create subdirectory for database.")?;
         db_path.push("data.db");
-        let conn = Connection::open(&db_path)?;
+        let conn = Self::open_connection(&db_path)?;
 
         migration::migrate(&conn).context("Database migration (podcast)")?;
-
-        // SQLite defaults to foreign key support off
-        conn.execute("PRAGMA foreign_keys=ON;", [])
-            .context("Could not set database parameters.")?;
 
         Ok(Database {
             path: db_path,
@@ -63,10 +60,17 @@ impl Database {
         })
     }
 
+    /// Open a connection with the settings required by the podcast database.
+    fn open_connection(path: &Path) -> Result<Connection> {
+        let conn = Connection::open(path).context("Error connecting to database.")?;
+        configure_connection(&conn).context("enable podcast database foreign keys")?;
+        Ok(conn)
+    }
+
     /// Inserts a new podcast and list of podcast episodes into the
     /// database.
     pub fn insert_podcast(&self, podcast: &PodcastNoId) -> Result<u64> {
-        let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
+        let mut conn = Self::open_connection(&self.path)?;
         let tx = conn.transaction()?;
 
         PodcastDBInsertable::from(podcast).insert_podcast(&tx)?;
@@ -156,7 +160,7 @@ impl Database {
             }
         }
 
-        let mut conn = Connection::open(&self.path).context("Error connecting to database.")?;
+        let mut conn = Self::open_connection(&self.path)?;
         let tx = conn.transaction()?;
 
         let mut inserted = 0;
@@ -464,5 +468,83 @@ mod test_utils {
     /// Open a new In-Memory sqlite database
     pub fn gen_database() -> Connection {
         Connection::open_in_memory().expect("open db failed")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        fs,
+        path::{Path, PathBuf},
+        thread,
+    };
+
+    use pretty_assertions::assert_eq;
+
+    use super::{Database, EpisodeNoId, PodcastNoId};
+
+    struct TempDatabase(PathBuf);
+
+    impl TempDatabase {
+        fn new() -> Self {
+            let dir = std::env::temp_dir().join(format!(
+                "termusic-podcast-{}-{}",
+                std::process::id(),
+                rand::random::<u64>()
+            ));
+            fs::create_dir(&dir).unwrap();
+            Self(dir)
+        }
+    }
+
+    impl Drop for TempDatabase {
+        fn drop(&mut self) {
+            // Connections must be dropped first, including on Windows.
+            let result = fs::remove_dir_all(&self.0);
+            if !thread::panicking() {
+                result.unwrap();
+            }
+        }
+    }
+
+    #[test]
+    fn remove_podcast_deletes_episodes_and_files() {
+        let temp = TempDatabase::new();
+        let db = Database::new(&temp.0).unwrap();
+        let mut podcast = PodcastNoId::dummy();
+        podcast.episodes.push(EpisodeNoId::dummy());
+        assert_eq!(db.insert_podcast(&podcast).unwrap(), 1);
+
+        let podcast = db.get_podcasts().unwrap().pop().unwrap();
+        db.insert_file(podcast.episodes[0].id, Path::new("episode.mp3"))
+            .unwrap();
+
+        db.remove_podcast(podcast.id).unwrap();
+
+        let conn = db.conn.lock();
+        for table in ["podcasts", "episodes", "files"] {
+            let count: i64 = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(count, 0, "{table}");
+        }
+    }
+
+    #[test]
+    fn update_episodes_rejects_missing_podcast() {
+        let temp = TempDatabase::new();
+        let db = Database::new(&temp.0).unwrap();
+
+        let err = db
+            .update_episodes(1, &[EpisodeNoId::dummy()])
+            .unwrap_err()
+            .downcast::<rusqlite::Error>()
+            .unwrap();
+        assert_eq!(
+            err.sqlite_error().unwrap().extended_code,
+            rusqlite::ffi::SQLITE_CONSTRAINT_FOREIGNKEY
+        );
     }
 }
