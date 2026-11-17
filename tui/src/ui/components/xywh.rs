@@ -165,7 +165,20 @@ impl Model {
 
     /// Fetch the given url as a image and send events when done or error.
     async fn fetch_podcast_image(tx: TxToMain, url: String) {
-        match reqwest::get(&url).await {
+        let client = match reqwest::Client::builder()
+            .user_agent(termusiclib::USER_AGENT)
+            .build()
+        {
+            Ok(v) => v,
+            Err(err) => {
+                let _ = tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
+                    CoverDLResult::FetchPhotoErr(format!("Error building reqwest client: {err}")),
+                )));
+                return;
+            }
+        };
+
+        match client.get(&url).send().await {
             Ok(result) => {
                 if result.status() != reqwest::StatusCode::OK {
                     tx.send(Msg::Xywh(XYWHMsg::CoverDLResult(
