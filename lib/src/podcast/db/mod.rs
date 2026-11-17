@@ -473,44 +473,17 @@ mod test_utils {
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        fs,
-        path::{Path, PathBuf},
-        thread,
-    };
+    use std::path::Path;
 
     use pretty_assertions::assert_eq;
 
     use super::{Database, EpisodeNoId, PodcastNoId};
-
-    struct TempDatabase(PathBuf);
-
-    impl TempDatabase {
-        fn new() -> Self {
-            let dir = std::env::temp_dir().join(format!(
-                "termusic-podcast-{}-{}",
-                std::process::id(),
-                rand::random::<u64>()
-            ));
-            fs::create_dir(&dir).unwrap();
-            Self(dir)
-        }
-    }
-
-    impl Drop for TempDatabase {
-        fn drop(&mut self) {
-            // Connections must be dropped first, including on Windows.
-            let result = fs::remove_dir_all(&self.0);
-            if !thread::panicking() {
-                result.unwrap();
-            }
-        }
-    }
+    use crate::test_utils::TempDir;
 
     #[test]
     fn remove_podcast_deletes_episodes_and_files() {
-        let temp = TempDatabase::new();
-        let db = Database::new(&temp.0).unwrap();
+        let temp = TempDir::new();
+        let db = Database::new(temp.path()).unwrap();
         let mut podcast = PodcastNoId::dummy();
         podcast.episodes.push(EpisodeNoId::dummy());
         assert_eq!(db.insert_podcast(&podcast).unwrap(), 1);
@@ -534,8 +507,8 @@ mod tests {
 
     #[test]
     fn update_episodes_rejects_missing_podcast() {
-        let temp = TempDatabase::new();
-        let db = Database::new(&temp.0).unwrap();
+        let temp = TempDir::new();
+        let db = Database::new(temp.path()).unwrap();
 
         let err = db
             .update_episodes(1, &[EpisodeNoId::dummy()])
