@@ -132,6 +132,7 @@ pub fn check_feed(
 /// episodes from an RSS feed.
 async fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId> {
     let agent = ClientBuilder::new()
+        .user_agent(crate::USER_AGENT)
         .connect_timeout(Duration::from_secs(5))
         .build()?;
 
@@ -583,6 +584,7 @@ async fn download_file(
     mut max_retries: usize,
 ) -> PodcastDLResult {
     let agent = ClientBuilder::new()
+        .user_agent(crate::USER_AGENT)
         .connect_timeout(Duration::from_secs(10))
         .build()
         .expect("reqwest client build failed");
