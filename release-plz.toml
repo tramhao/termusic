@@ -38,7 +38,6 @@ commit_parsers = [
     { message = "^style", group = "Styling", skip = true },
     { message = "^test", group = "<!-- 6 -->Testing" },
     # Release commits dont add anything noteworthy to add to a changelog
-    { message = "^chore\\(release\\): prepare for", skip = true },
     { message = "^chore", group = "<!-- 5 -->Miscellaneous Tasks" },
     # Merge commits themself dont add anything noteworthy
     { message = "^[mM]erge", skip = true },
@@ -53,15 +52,12 @@ commit_preprocessors = [
 ]
 # A Tera template to be rendered as the changelog's header.
 # See https://keats.github.io/tera/docs/#introduction
-header = """
-# Changelog\n
-All notable changes to this project will be documented in this file.\n
-"""
+header = "# Changelog\n"
 # A Tera template to be rendered for each release in the changelog.
 # See https://keats.github.io/tera/docs/#introduction
 body = """
 {%- macro remote_url() -%}
-    https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+    https://github.com/{{ remote.owner }}/{{ remote.repo }}
 {%- endmacro -%}
 {%- macro scoped(commit) -%}
     {% if commit.scope -%} *{{ commit.scope | split(pat="::") | first }}*: {% endif %}
@@ -78,7 +74,7 @@ body = """
 {% if version %}\
     ## [{{ version }}]
 
-    Released on: {{ timestamp | date(format="%Y-%m-%d") }}
+    Released on: {{ timestamp | date(format="%Y.%m.%d") }}
 {% else %}\
     ## [Unreleased]
 {% endif %}
@@ -89,10 +85,9 @@ body = """
             {{ self::first_message(commit=commit) }}\
             {% if commit.remote.pr_number %} ([#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }})){% endif %}
             {% raw %}  {% endraw %}- **BREAKING CHANGE**: {{ commit.breaking_description }}
-    {% endfor -%}
+    {% endfor %}
 {% endif -%}
-
-{% for group, commits in commits | group_by(attribute="group") %}
+{% for group, commits in commits | group_by(attribute="group") %}\
     ### {{ group | striptags | trim | upper_first }}
 
     {% for commit in commits %}
@@ -101,10 +96,10 @@ body = """
             {{ self::print_commit(commit=commit) }}
         {% endif -%}
     {%- endfor -%}
-    {%- for commit in commits | filter(attribute="scope") | sort(attribute="scope") -%}
+    {% for commit in commits | filter(attribute="scope") | sort(attribute="scope") -%}
         {{ self::print_commit(commit=commit) }}
-    {% endfor -%}
-{% endfor %}
+    {% endfor %}
+{% endfor -%}
 ### Commit Statistics\n
 - {{ statistics.commit_count }} commit(s) contributed to the release.
 - {{ statistics.commits_timespan | default(value=0) }} day(s) passed between the first and last commit.
@@ -112,11 +107,11 @@ body = """
 	- {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
 {%- endif %}
 
-{% if version %}\
+{% if version and previous.version %}\
     [{{ version }}]({{ self::remote_url() }}/compare/{{ previous.version }}..{{ version }})
-{% else %}\
+{% elif previous.version %}\
     [Unreleased]: {{ self::remote_url() }}/compare/{{ previous.version }}..HEAD
-{% endif %}\n
+{% endif %}
 """
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true

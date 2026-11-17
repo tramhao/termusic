@@ -18,6 +18,7 @@ jobs:
     name: Release-plz release
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'tramhao' }}
+    environment: release-plz
     permissions:
       contents: write
       pull-requests: read
@@ -36,9 +37,9 @@ jobs:
         uses: release-plz/action@v0.5
         with:
           command: release
-        # No env token; using trusted publishing
-        # env:
-          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # No tokens are actually set, as we use oidc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   # Create a PR with the new versions and changelog, preparing the next release.
@@ -47,6 +48,7 @@ jobs:
     name: Release-plz PR
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'tramhao' }}
+    environment: release-plz
     permissions:
       contents: write
       pull-requests: write
@@ -60,6 +62,7 @@ jobs:
         uses: release-plz/action@v0.5
         with:
           command: release-pr
+        # No tokens are actually set, as we use oidc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          # CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
