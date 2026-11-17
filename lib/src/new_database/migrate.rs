@@ -150,8 +150,6 @@ fn set_last_updated_with(conn: &Connection) -> Result<()> {
 mod tests {
     use std::{
         cell::RefCell,
-        fs,
-        path::PathBuf,
         sync::{Arc, Barrier, mpsc},
         thread,
         time::{Duration, Instant},
@@ -167,39 +165,12 @@ mod tests {
             set_user_version,
         },
     };
+    use crate::test_utils::TempDir;
 
     use super::super::test_utils::gen_database_raw;
 
     const WAIT_TIMEOUT: Duration = Duration::from_secs(10);
     const ADDED_AT: &str = "2024-01-02T03:04:05+00:00";
-
-    struct TempDatabase(PathBuf);
-
-    impl TempDatabase {
-        fn new() -> Self {
-            let dir = std::env::temp_dir().join(format!(
-                "termusic-migrate-{}-{}",
-                std::process::id(),
-                rand::random::<u64>()
-            ));
-            fs::create_dir(&dir).unwrap();
-            Self(dir)
-        }
-
-        fn path(&self) -> PathBuf {
-            self.0.join("library.db")
-        }
-    }
-
-    impl Drop for TempDatabase {
-        fn drop(&mut self) {
-            // Connections must be dropped first, including on Windows.
-            let result = fs::remove_dir_all(&self.0);
-            if !thread::panicking() {
-                result.unwrap();
-            }
-        }
-    }
 
     fn version_one(conn: &Connection) {
         apply_version_1(conn).unwrap();
@@ -370,8 +341,9 @@ mod tests {
 
     #[test]
     fn should_recheck_version_after_competing_migration() {
-        let temp = TempDatabase::new();
-        let mut conn = Connection::open(temp.path()).unwrap();
+        let temp = TempDir::new();
+        let path = temp.path().join("library.db");
+        let mut conn = Connection::open(&path).unwrap();
         version_one(&conn);
         let tx = conn
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -380,7 +352,6 @@ mod tests {
         let (locked_tx, locked_rx) = mpsc::channel();
         let (committed_tx, committed_rx) = mpsc::channel();
         let (done_tx, done_rx) = mpsc::channel();
-        let path = temp.path();
         let worker = thread::spawn(move || {
             let mut conn = Connection::open(path).unwrap();
             BUSY_SIGNAL.with(|signal| *signal.borrow_mut() = Some((locked_tx, committed_rx)));
@@ -407,13 +378,14 @@ mod tests {
 
     #[test]
     fn should_initialize_fresh_database_concurrently() {
-        let temp = TempDatabase::new();
-        assert!(!temp.path().exists());
+        let temp = TempDir::new();
+        let path = temp.path().join("library.db");
+        assert!(!path.exists());
         let barrier = Arc::new(Barrier::new(3));
         let (done_tx, done_rx) = mpsc::channel();
         let workers: Vec<_> = (0..2)
             .map(|_| {
-                let path = temp.path();
+                let path = path.clone();
                 let barrier = Arc::clone(&barrier);
                 let done_tx = done_tx.clone();
                 thread::spawn(move || {
@@ -504,10 +476,11 @@ mod tests {
 
     #[test]
     fn should_return_lock_error_and_allow_retry() {
-        let temp = TempDatabase::new();
-        let mut writer = Connection::open(temp.path()).unwrap();
+        let temp = TempDir::new();
+        let path = temp.path().join("library.db");
+        let mut writer = Connection::open(&path).unwrap();
         version_one(&writer);
-        let mut conn = Connection::open(temp.path()).unwrap();
+        let mut conn = Connection::open(&path).unwrap();
         conn.busy_timeout(Duration::from_millis(50)).unwrap();
         let original_schema = get_all_schemas(&conn);
         let tx = writer

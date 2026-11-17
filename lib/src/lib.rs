@@ -14,6 +14,7 @@ pub mod player;
 pub mod playlist;
 pub mod podcast;
 pub mod songtag;
+mod sqlite;
 pub mod taskpool;
 pub mod track;
 pub mod utils;
@@ -27,6 +28,9 @@ pub static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
 
 #[macro_use]
 extern crate log;
+
+#[cfg(test)]
+mod test_utils;
 
 #[cfg(test)]
 mod tests {

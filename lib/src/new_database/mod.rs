@@ -14,6 +14,7 @@ use crate::{
     new_database::{
         album_ops::delete_all_unreferenced_albums, artist_ops::delete_all_unreferenced_artists,
     },
+    sqlite::configure_connection,
     track::{MetadataOptions, parse_metadata_from_file},
     utils::{filetype_supported, get_app_new_database_path},
 };
@@ -81,6 +82,7 @@ impl Database {
     fn new_from_connection(mut conn: Connection) -> Result<Self> {
         conn.busy_timeout(Duration::from_secs(5))
             .context("configure library database busy timeout")?;
+        configure_connection(&conn).context("enable library database foreign keys")?;
         migrate::migrate(&mut conn).context("Database migration (library)")?;
 
         let conn = Arc::new(Mutex::new(conn));
@@ -326,5 +328,26 @@ mod test_utils {
         assert!(path.is_absolute());
 
         assert_eq!(path, Path::new("C:\\somewhere\\else"));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rusqlite::Connection;
+
+    use super::Database;
+
+    #[test]
+    fn should_enable_foreign_keys() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.pragma_update(None, "foreign_keys", false).unwrap();
+
+        let db = Database::new_from_connection(conn).unwrap();
+        let foreign_keys: bool = db
+            .get_connection()
+            .pragma_query_value(None, "foreign_keys", |row| row.get(0))
+            .unwrap();
+
+        assert!(foreign_keys);
     }
 }
