@@ -20,8 +20,8 @@ impl ServerControlService {
 impl ServerControlService {
     /// Send a command without a callback.
     fn command(&self, cmd: PlayerCmd) {
-        if let Err(e) = self.cmd_tx.send(cmd.clone()) {
-            error!("error {cmd:?}: {e}");
+        if let Err(err) = self.cmd_tx.send(cmd) {
+            error!("Sending Command failed: {err}");
         }
     }
 }

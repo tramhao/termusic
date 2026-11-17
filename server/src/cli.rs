@@ -9,7 +9,7 @@ pub struct Args {
     /// Subcommands, overwriting the default action of starting the server
     #[command(subcommand)]
     pub action: Option<Action>,
-    /// With no MUSIC_DIRECTORY, use config in `~/.config/termusic/config.toml`,
+    /// With no `MUSIC_DIRECTORY`, use config in `~/.config/termusic/config.toml`,
     /// default is ~/Music.
     pub music_directory: Option<PathBuf>,
     // /// Not showing album cover. default is showing.
