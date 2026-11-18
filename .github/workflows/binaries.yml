@@ -1,4 +1,4 @@
-name: Release
+name: Build & Attach binaries to Release
 on:
   workflow_dispatch: # allow manually running the workflow on a given branch to check that it works before running a release
   schedule:
@@ -21,8 +21,8 @@ env:
   PROJECT_NAME: termusic
 
 jobs:
-  dist:
-    name: Dist
+  build:
+    name: Build binaries
     runs-on: ${{ matrix.build.os }}
     timeout-minutes: 20
     strategy:
@@ -118,8 +118,8 @@ jobs:
           path: dist
 
   publish:
-    name: Publish
-    needs: [dist]
+    name: Attach Binaries to Release
+    needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
