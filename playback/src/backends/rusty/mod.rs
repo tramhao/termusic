@@ -854,7 +854,11 @@ async fn queue_next(
 
             let mut headers = HeaderMap::new();
             headers.insert("icy-metadata", HeaderValue::from_static("1"));
-            let client = Client::builder().default_headers(headers).build().unwrap();
+            let client = Client::builder()
+                .user_agent(termusiclib::USER_AGENT)
+                .default_headers(headers)
+                .build()
+                .unwrap();
 
             let stream = HttpStream::new(client, url.parse()?).await?;
 
@@ -980,7 +984,10 @@ async fn queue_next(
             let url = podcast_track_data.url();
             let settings = StreamSettings::default();
 
-            let stream = HttpStream::<Client>::create(url.parse()?).await?;
+            let client = Client::builder()
+                .user_agent(termusiclib::USER_AGENT)
+                .build()?;
+            let stream = HttpStream::new(client, url.parse()?).await?;
 
             let file_len = stream.content_length();
 

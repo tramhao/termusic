@@ -460,6 +460,7 @@ impl Model {
         let url =
             format!("https://itunes.apple.com/search?media=podcast&entity=podcast&term={encoded}");
         let agent = ClientBuilder::new()
+            .user_agent(termusiclib::USER_AGENT)
             .connect_timeout(Duration::from_secs(5))
             .build()
             .expect("error build client");

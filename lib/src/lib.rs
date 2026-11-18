@@ -22,6 +22,11 @@ pub mod xywh;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/// The `User-Agent` to send with HTTP requests (podcast feeds, episode downloads, streams).
+///
+/// Some hosts reject requests that do not send any `User-Agent` (like `content.rss.com` responding with `403`).
+pub const USER_AGENT: &str = concat!("termusic/", env!("CARGO_PKG_VERSION"));
+
 use include_dir::{Dir, include_dir};
 // TODO: move this to be in the TUI
 pub static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
