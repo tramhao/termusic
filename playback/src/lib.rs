@@ -35,13 +35,6 @@ extern crate log;
 
 mod backends;
 
-/// Private module for benchmarking only, should never be used outside.
-///
-/// This is necessary as benchmarking via criterion can only access public lib(crate) level function, like any other outside binary / crate.
-pub mod __bench {
-    pub use super::backends::rusty::source::async_ring;
-}
-
 /// Sources for [`PlayerCmd::Quit`].
 pub mod quit_sources {
     pub const CLIENT: &str = "client quit";
