@@ -202,11 +202,20 @@ impl Caption {
     /// or non-standard `mm:ss.xxx` where `x` is milliseconds
     fn parse_time(string: &str) -> Option<u64> {
         let double_idx = string.find(':')?;
-        let dot_idx = string[double_idx..].find('.')? + double_idx;
+        let dot_idx = string[double_idx..].find('.').map(|v| v + double_idx);
 
         let minutes: u32 = string[..double_idx].parse().ok()?;
-        let seconds: u32 = string[double_idx + 1..dot_idx].parse().ok()?;
-        let centis_or_millis: u32 = string[dot_idx + 1..].parse().ok()?;
+        let seconds: u32 = if let Some(dot_idx) = dot_idx {
+            string[double_idx + 1..dot_idx].parse().ok()?
+        } else {
+            string[double_idx + 1..].parse().ok()?
+        };
+
+        let centis_or_millis: u32 = if let Some(dot_idx) = dot_idx {
+            string[dot_idx + 1..].parse().ok()?
+        } else {
+            0
+        };
 
         // support non-standard ".xxx" (milliseconds)
         // will still have to below 1 second (999 milliseconds max)
@@ -362,6 +371,23 @@ mod tests {
             lyrics.captions.as_slice(),
             &[Caption {
                 timestamp: 12 * 1000 + 305,
+                text: "Lyrics beginning ...".into()
+            },]
+        );
+    }
+
+    #[test]
+    fn should_parse_without_milliseconds() {
+        let txt = r"[00:12]Lyrics beginning ...";
+
+        let lyrics = Lyric::from_str(txt).unwrap();
+
+        assert_eq!(lyrics.offset, 0);
+
+        assert_eq!(
+            lyrics.captions.as_slice(),
+            &[Caption {
+                timestamp: 12 * 1000,
                 text: "Lyrics beginning ...".into()
             },]
         );
