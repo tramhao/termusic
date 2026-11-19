@@ -102,8 +102,18 @@ impl Xywh {
     }
 
     pub fn update_size(&self, image: &DynamicImage) -> Result<Self> {
+        self.update_size_with_cell_aspect_ratio(image, None)
+    }
+
+    /// Calculate the drawing position using the pixel width / height of a terminal cell.
+    pub fn update_size_with_cell_aspect_ratio(
+        &self,
+        image: &DynamicImage,
+        cell_aspect_ratio: Option<f64>,
+    ) -> Result<Self> {
         let (term_width, term_height) = Self::get_terminal_size_u32();
-        let (x, y, width, height) = self.calculate_xywh(term_width, term_height, image)?;
+        let (x, y, width, height) =
+            self.calculate_xywh(term_width, term_height, image, cell_aspect_ratio)?;
         Ok(Self {
             x_between_1_100: self.x_between_1_100,
             y_between_1_100: self.y_between_1_100,
@@ -120,9 +130,10 @@ impl Xywh {
         term_width: u32,
         term_height: u32,
         image: &DynamicImage,
+        cell_aspect_ratio: Option<f64>,
     ) -> Result<(u32, u32, u32, u32)> {
         let width = self.get_width(term_width)?;
-        let height = Self::get_height(width, term_height, image)?;
+        let height = Self::get_height(width, term_height, image, cell_aspect_ratio)?;
         let (absolute_x, absolute_y) = (
             self.x_between_1_100 * term_width / 100,
             self.y_between_1_100 * term_height / 100,
@@ -146,10 +157,21 @@ impl Xywh {
         Ok(size)
     }
 
-    fn get_height(width: u32, term_height: u32, image: &DynamicImage) -> Result<u32> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    fn get_height(
+        width: u32,
+        term_height: u32,
+        image: &DynamicImage,
+        cell_aspect_ratio: Option<f64>,
+    ) -> Result<u32> {
         let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
-        let height = (width * pic_height_orig) / (pic_width_orig);
-        Self::safe_guard_width_or_height(height, term_height * 2)
+        let height = f64::from(width) * f64::from(pic_height_orig) / f64::from(pic_width_orig);
+        // The stored height is in half rows. Kitty positioning needs the full rows occupied.
+        let height = match cell_aspect_ratio {
+            Some(ratio) => 2.0 * (height * ratio).ceil(),
+            None => height,
+        };
+        Self::safe_guard_width_or_height(height as u32, term_height * 2)
     }
 
     #[must_use]
