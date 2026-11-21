@@ -83,7 +83,9 @@ jobs:
 
       - name: Install developer package dependencies (Windows)
         if: runner.os == 'windows'
-        run: choco install protoc
+        run: | # TODO: remove llvm install again, once github actions has updated their toolchain to match MSVC requirements
+          choco install protoc
+          choco upgrade llvm
 
       - name: Run cargo test
         run: cargo test --release --workspace --features ${{ matrix.build.features }} --target ${{ matrix.build.target }}

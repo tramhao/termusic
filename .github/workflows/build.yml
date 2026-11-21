@@ -135,7 +135,10 @@ jobs:
           toolchain: ${{ matrix.rust }}
 
       - name: Install dependencies
-        run: choco install protoc
+        run: | # TODO: remove llvm install again, once github actions has updated their toolchain to match MSVC requirements
+          choco install protoc
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          choco upgrade llvm
 
       - uses: Swatinem/rust-cache@v2
 
