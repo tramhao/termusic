@@ -246,15 +246,35 @@ impl Model {
     }
 
     #[allow(clippy::cast_possible_truncation, clippy::unnecessary_wraps)]
-    pub fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
-        #[allow(unused_variables)]
-        let xywh = self.xywh.update_size(img)?;
-
-        // error!("{:?}", self.viuer_supported);
+    pub fn show_image(&mut self, #[allow(unused_variables)] img: &DynamicImage) -> Result<()> {
         match self.viuer_supported {
+            #[cfg(feature = "cover-viuer-kitty")]
+            ViuerSupported::Kitty => {
+                use tuirealm::ratatui::crossterm::terminal::window_size;
+                use tuirealm::terminal::TerminalAdapter;
+
+                let cell_aspect_ratio = window_size()
+                    .ok()
+                    .filter(|size| {
+                        size.width > 0 && size.height > 0 && size.columns > 0 && size.rows > 0
+                    })
+                    .map_or(0.5, |size| {
+                        (f64::from(size.width) / f64::from(size.columns))
+                            / (f64::from(size.height) / f64::from(size.rows))
+                    });
+                let xywh = self
+                    .xywh
+                    .update_size_with_cell_aspect_ratio(img, Some(cell_aspect_ratio))?;
+                if xywh.width == 0 {
+                    return Ok(());
+                }
+                let backend = self.terminal.raw_mut().backend_mut();
+                write_kitty_cover(backend, img, &xywh).context("displaying Kitty cover art")?;
+            }
             ViuerSupported::NotSupported => {
                 #[cfg(all(feature = "cover-ueberzug", not(target_os = "windows")))]
                 if let Some(instance) = self.ueberzug_instance.as_mut() {
+                    let xywh = self.xywh.update_size(img)?;
                     let mut cache_file = dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
                     cache_file.push("termusic");
                     if !cache_file.exists() {
@@ -270,12 +290,9 @@ impl Model {
                     }
                 }
             }
-            #[cfg(any(
-                feature = "cover-viuer-iterm",
-                feature = "cover-viuer-kitty",
-                feature = "cover-viuer-sixel"
-            ))]
+            #[cfg(any(feature = "cover-viuer-iterm", feature = "cover-viuer-sixel"))]
             _ => {
+                let xywh = self.xywh.update_size(img)?;
                 let config = viuer::Config {
                     transparent: true,
                     absolute_offset: true,
@@ -286,8 +303,7 @@ impl Model {
                     // Force the specific protocol we probed for earlier
                     #[cfg(feature = "cover-viuer-iterm")]
                     use_iterm: self.viuer_supported == ViuerSupported::ITerm,
-                    #[cfg(feature = "cover-viuer-kitty")]
-                    use_kitty: self.viuer_supported == ViuerSupported::Kitty,
+                    use_kitty: false,
                     #[cfg(feature = "cover-viuer-sixel")]
                     use_sixel: self.viuer_supported == ViuerSupported::Sixel,
                     ..viuer::Config::default()
@@ -306,7 +322,6 @@ impl Model {
             ViuerSupported::Kitty => {
                 self.clear_image_viuer_kitty()
                     .context("clear_photo kitty")?;
-                Self::remove_temp_files()?;
             }
             #[cfg(feature = "cover-viuer-iterm")]
             ViuerSupported::ITerm => {
@@ -343,7 +358,7 @@ impl Model {
         Ok(())
     }
 
-    #[cfg(any(feature = "cover-viuer-iterm", feature = "cover-viuer-kitty"))]
+    #[cfg(feature = "cover-viuer-iterm")]
     fn remove_temp_files() -> Result<()> {
         // Clean up temp files created by `viuer`'s kitty printer to avoid
         // possible freeze because of too many temp files in the temp folder.
@@ -357,5 +372,80 @@ impl Model {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(feature = "cover-viuer-kitty")]
+fn write_kitty_cover(
+    output: &mut impl Write,
+    image: &DynamicImage,
+    placement: &termusiclib::xywh::Xywh,
+) -> Result<()> {
+    use base64::Engine;
+    use std::io::Cursor;
+
+    let mut png = Cursor::new(Vec::new());
+    image.write_to(&mut png, image::ImageFormat::Png)?;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(png.into_inner());
+    // Kitty limits each base64 payload chunk to 4096 bytes.
+    let mut chunks = encoded.as_bytes().chunks(4096).peekable();
+
+    // Kitty graphics protocol: https://sw.kovidgoyal.net/kitty/graphics-protocol/
+    // ESC 7 saves the cursor, and CSI row;col H moves it to the cover's top-left cell.
+    // ESC _ G starts a graphics command. a=T transmits and displays the image,
+    // t=d sends data inline (also over SSH), and f=100 identifies the payload as PNG.
+    // q=2 suppresses replies, and C=1 keeps the cursor at the placement position.
+    // c sets the width in columns. Omitting r lets the terminal preserve the image aspect ratio.
+    write!(
+        output,
+        "\x1b7\x1b[{};{}H\x1b_Ga=T,t=d,f=100,q=2,C=1,c={},",
+        placement.y + 1,
+        placement.x + 1,
+        placement.width,
+    )?;
+    // m=1 announces more chunks, and m=0 marks the last chunk. The semicolon
+    // starts the payload, and ESC backslash ends each graphics command.
+    while let Some(chunk) = chunks.next() {
+        write!(output, "m={};", u8::from(chunks.peek().is_some()))?;
+        output.write_all(chunk)?;
+        output.write_all(b"\x1b\\")?;
+        if chunks.peek().is_some() {
+            output.write_all(b"\x1b_G")?;
+        }
+    }
+    // ESC 8 restores the saved cursor position.
+    output.write_all(b"\x1b8")?;
+    output.flush()?;
+    Ok(())
+}
+
+#[cfg(all(test, feature = "cover-viuer-kitty"))]
+mod tests {
+    use super::*;
+    use base64::Engine;
+    use termusiclib::xywh::Xywh;
+
+    #[test]
+    fn kitty_cover_uses_only_columns_for_scaling() {
+        let image = DynamicImage::new_rgb8(60, 40);
+        let placement = Xywh {
+            x: 3,
+            y: 5,
+            width: 20,
+            ..Xywh::default()
+        };
+        let mut output = Vec::new();
+        write_kitty_cover(&mut output, &image, &placement).unwrap();
+        let output = std::str::from_utf8(&output).unwrap();
+        let payload = output
+            .strip_prefix("\x1b7\x1b[6;4H\x1b_Ga=T,t=d,f=100,q=2,C=1,c=20,m=0;")
+            .unwrap()
+            .strip_suffix("\x1b\\\x1b8")
+            .unwrap();
+        let png = base64::engine::general_purpose::STANDARD
+            .decode(payload)
+            .unwrap();
+        let image = image::load_from_memory(&png).unwrap();
+        assert_eq!((image.width(), image.height()), (60, 40));
     }
 }
