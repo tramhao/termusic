@@ -387,9 +387,15 @@ fn write_kitty_cover(
     let mut png = Cursor::new(Vec::new());
     image.write_to(&mut png, image::ImageFormat::Png)?;
     let encoded = base64::engine::general_purpose::STANDARD.encode(png.into_inner());
+    // Kitty limits each base64 payload chunk to 4096 bytes.
     let mut chunks = encoded.as_bytes().chunks(4096).peekable();
 
-    // Specify only the column count so the terminal derives the pixel height from the image.
+    // Kitty graphics protocol: https://sw.kovidgoyal.net/kitty/graphics-protocol/
+    // ESC 7 saves the cursor, and CSI row;col H moves it to the cover's top-left cell.
+    // ESC _ G starts a graphics command. a=T transmits and displays the image,
+    // t=d sends data inline (also over SSH), and f=100 identifies the payload as PNG.
+    // q=2 suppresses replies, and C=1 keeps the cursor at the placement position.
+    // c sets the width in columns. Omitting r lets the terminal preserve the image aspect ratio.
     write!(
         output,
         "\x1b7\x1b[{};{}H\x1b_Ga=T,t=d,f=100,q=2,C=1,c={},",
@@ -397,6 +403,8 @@ fn write_kitty_cover(
         placement.x + 1,
         placement.width,
     )?;
+    // m=1 announces more chunks, and m=0 marks the last chunk. The semicolon
+    // starts the payload, and ESC backslash ends each graphics command.
     while let Some(chunk) = chunks.next() {
         write!(output, "m={};", u8::from(chunks.peek().is_some()))?;
         output.write_all(chunk)?;
@@ -405,6 +413,7 @@ fn write_kitty_cover(
             output.write_all(b"\x1b_G")?;
         }
     }
+    // ESC 8 restores the saved cursor position.
     output.write_all(b"\x1b8")?;
     output.flush()?;
     Ok(())
